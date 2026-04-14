@@ -338,3 +338,10 @@
 - Türkçe karakter toleranslı arama normalizasyonu eklendi; Postane gibi mahalle aramaları öneri ve listeleme tarafında doğrulandı.
 - /oteller sayfasındaki favori butonları kullanıcı oturumuyla tekrar test edildi; /api/favoriler/toggle başarılı çalıştı.
 - Arama sonrası kategori hızlı linklerinde ?/& birleşim hatası giderildi.
+
+## 2026-04-14 - Public header session görünürlüğü ve tam mahalle importu
+- Anasayfa, kurumsal ve firma header alanlarında oturum açmış kullanıcı/partner/firma hesapları için panel ve çıkış aksiyonları görünür hale getirildi.
+- Anasayfa üst header araması gerçek /oteller?q akışına bağlandı.
+- ücretsiz API kaynağı ile tüm Türkiye mahalle verisi idempotent şekilde import edildi.
+- ilceler tablosunda mahalle kaydı olmayan ilçe kalmadı.
+

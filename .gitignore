@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Project local temporary/runtime artifacts
+*_pid
+temp_*.ps1
+tmp_*.txt
+tmp_*.log
+
+# Local duplicate/copy assets (Windows)
+* - Kopya.*

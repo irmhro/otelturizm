@@ -4,6 +4,22 @@
 @{
     var firmaAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
     var firmaAuthenticated = User.Identity?.IsAuthenticated == true;
+    var firmaPanelUrl = firmaAccountType.ToLowerInvariant() switch
+    {
+        "partner" => "/panel/partner",
+        "firma" => "/panel/firma",
+        "admin" => "/admin/dashboard",
+        "sales" => "/panel/satis",
+        _ => "/panel/user"
+    };
+    var firmaPanelLabel = firmaAccountType.ToLowerInvariant() switch
+    {
+        "partner" => "Partner Paneli",
+        "firma" => "Firma Paneli",
+        "admin" => "Admin Paneli",
+        "sales" => "Satış Paneli",
+        _ => "Hesabım"
+    };
 }
 <header class="site-header firma-site-header" id="firmaHeader">
     <div class="top-utility-bar firma-utility-bar">
@@ -56,8 +72,19 @@
     </div>
 
     <div class="drawer-actions drawer-actions-row">
-        <a href="/firma-giris" class="drawer-action primary">Firma Girişi</a>
-        <a href="/firma-giris?sekme=kayit" class="drawer-action outline">Kayıt Ol</a>
+        @if (firmaAuthenticated)
+        {
+            <a href="@firmaPanelUrl" class="drawer-action primary">@firmaPanelLabel</a>
+            <form method="post" action="/cikis-yap" class="drawer-logout-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="drawer-action outline">Çıkış</button>
+            </form>
+        }
+        else
+        {
+            <a href="/firma-giris" class="drawer-action primary">Firma Girişi</a>
+            <a href="/firma-giris?sekme=kayit" class="drawer-action outline">Kayıt Ol</a>
+        }
     </div>
 
     <div class="drawer-nav">
@@ -67,7 +94,7 @@
             <a href="/kurumsal" class="drawer-link"><i class="fas fa-building"></i> Kurumsal</a>
             <a href="/firma" class="drawer-link"><i class="fas fa-briefcase"></i> Firma</a>
             <a href="/yardim-merkezi" class="drawer-link"><i class="fas fa-headset"></i> Destek</a>
-            <a href="/panel/firma" class="drawer-link"><i class="fas fa-chart-pie"></i> Firma Paneli</a>
+            <a href="@firmaPanelUrl" class="drawer-link"><i class="fas fa-chart-pie"></i> @firmaPanelLabel</a>
         </div>
     </div>
 </div>

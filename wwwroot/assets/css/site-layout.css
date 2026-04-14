@@ -590,6 +590,23 @@ body {
   box-shadow: 0 10px 22px rgba(0, 59, 149, 0.18);
 }
 
+.drawer-logout-form,
+.drawer-inline-form {
+  margin: 0;
+}
+
+.drawer-logout-form .drawer-action,
+.drawer-inline-form .drawer-link-button {
+  width: 100%;
+}
+
+.drawer-link-button {
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
 .mobile-nav-toggle {
   display: none;
 }

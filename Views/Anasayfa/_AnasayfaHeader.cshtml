@@ -1,3 +1,26 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@{
+    var homeAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
+    var homeAuthenticated = User.Identity?.IsAuthenticated == true;
+    var homePanelUrl = homeAccountType.ToLowerInvariant() switch
+    {
+        "partner" => "/panel/partner",
+        "firma" => "/panel/firma",
+        "admin" => "/admin/dashboard",
+        "sales" => "/panel/satis",
+        _ => "/panel/user"
+    };
+    var homePanelLabel = homeAccountType.ToLowerInvariant() switch
+    {
+        "partner" => "Partner Paneli",
+        "firma" => "Firma Paneli",
+        "admin" => "Admin Paneli",
+        "sales" => "Satış Paneli",
+        _ => "Hesabım"
+    };
+}
+
 <header class="site-header" id="mainHeader">
     <div class="top-utility-bar">
         <!-- flag icons local vendor dosyasindan yuklenir -->
@@ -179,8 +202,19 @@
     </div>
     <div class="drawer-nav">
         <div class="drawer-auth-row">
-            <a href="/kullanici-giris" class="drawer-action primary"><i class="fas fa-right-to-bracket"></i> Giriş Yap</a>
-            <a href="/kullanici-giris?sekme=kayit" class="drawer-action outline"><i class="fas fa-user-plus"></i> Kayıt Ol</a>
+            @if (homeAuthenticated)
+            {
+                <a href="@homePanelUrl" class="drawer-action primary"><i class="fas fa-grid-2"></i> @homePanelLabel</a>
+                <form method="post" action="/cikis-yap" class="drawer-logout-form">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="drawer-action outline"><i class="fas fa-right-from-bracket"></i> Çıkış</button>
+                </form>
+            }
+            else
+            {
+                <a href="/kullanici-giris" class="drawer-action primary"><i class="fas fa-right-to-bracket"></i> Giriş Yap</a>
+                <a href="/kullanici-giris?sekme=kayit" class="drawer-action outline"><i class="fas fa-user-plus"></i> Kayıt Ol</a>
+            }
         </div>
 
         <div class="drawer-quick-features">
