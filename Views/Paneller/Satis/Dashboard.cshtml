@@ -1,0 +1,48 @@
+@model otelturizmnew.Models.Paneller.Satis.SalesDashboardPageViewModel
+@{
+    Layout = "~/Views/Paneller/Satis/_SalesPanelLayout.cshtml";
+    ViewData["SalesShell"] = Model.Shell;
+}
+<section class="sales-grid cards-4">
+    @foreach (var card in Model.SummaryCards)
+    {
+        <article class="sales-stat-card @card.ToneClass">
+            <div class="sales-stat-icon"><i class="fas @card.IconClass"></i></div>
+            <strong>@card.Value</strong>
+            <h3>@card.Label</h3>
+            <p>@card.Description</p>
+        </article>
+    }
+</section>
+<section class="sales-grid cols-2">
+    <article class="sales-panel-card">
+        <div class="sales-card-head"><h2>Son Oluşturduğum Rezervasyonlar</h2><a href="/panel/satis/rezervasyonlarim">Tümü</a></div>
+        <div class="sales-list">
+            @foreach (var item in Model.RecentReservations)
+            {
+                <div class="sales-list-row">
+                    <div>
+                        <strong>@item.HotelName · @item.CustomerName</strong>
+                        <p>@item.StayText · @item.RoomName</p>
+                    </div>
+                    <div class="sales-list-meta">
+                        <span class="sales-pill">@item.StatusText</span>
+                        <strong>@item.TotalText</strong>
+                    </div>
+                </div>
+            }
+        </div>
+    </article>
+    <article class="sales-goal-card">
+        <p>Nakit Hedefi</p>
+        <strong>@Model.MonthlyAchievedRevenue.ToString("N0") TL</strong>
+        <span>Aylık hedef: @Model.Shell.MonthlyTarget.ToString("N0") TL</span>
+        <div class="sales-progress"><span style="width:@Model.MonthlyProgressPercent%"></span></div>
+        <p>Kalan ciro: @Model.MonthlyRemainingRevenue.ToString("N0") TL</p>
+        <p>Kalan rezervasyon hedefi: @Model.RemainingReservationCount</p>
+        <div class="sales-quick-actions">
+            <a href="/panel/satis/yeni-rezervasyon">Hızlı Rezervasyon</a>
+            <a href="/panel/satis/musaitlik-takvimi">Müsaitlik Sorgula</a>
+        </div>
+    </article>
+</section>

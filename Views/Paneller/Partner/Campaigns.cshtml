@@ -1,0 +1,205 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerCampaignsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+}
+
+<section class="partner-campaigns-hero">
+    <div>
+        <p class="partner-room-kicker">Kampanya yönetimi</p>
+        <h2>Aktif kampanyalara katılın ve görünürlüğünüzü yönetin</h2>
+        <p>Yalnızca partner katılımına açık kampanyalar listelenir. Kampanya süresi bittiğinde public vitrinden otomatik düşer.</p>
+    </div>
+</section>
+
+<section class="partner-grid partner-pricing-summary-grid">
+    @foreach (var item in Model.SummaryCards)
+    {
+        <article class="partner-stat-card partner-pricing-stat @item.ToneClass">
+            <i class="fas @item.IconClass"></i>
+            <strong>@item.Value</strong>
+            <span>@item.Label</span>
+            <p>@item.Description</p>
+        </article>
+    }
+</section>
+
+<section class="partner-campaigns-layout">
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>Kampanyaya katıl</h2>
+                <p>Otelinizi kampanya vitrini, kampanyalı oteller sayfası ve özel listeleme bloklarına dahil edin.</p>
+            </div>
+        </div>
+
+        @if (Model.AvailableCampaigns.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Şu an katılıma açık kampanya görünmüyor.</strong>
+                <p>Yeni kampanyalar admin tarafından yayınlandığında burada otomatik listelenecek.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-campaign-option-grid">
+                @foreach (var campaign in Model.AvailableCampaigns)
+                {
+                    <article class="partner-campaign-option" style="--campaign-accent:@campaign.ColorCode;">
+                        <div class="partner-campaign-option__head">
+                            <div>
+                                <small>@campaign.CampaignCode</small>
+                                <h3>@campaign.CampaignName</h3>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(campaign.PromoBadge))
+                            {
+                                <span class="partner-campaign-option__promo">@campaign.PromoBadge</span>
+                            }
+                        </div>
+                        <p>@campaign.Description</p>
+                        <div class="partner-campaign-option__meta">
+                            <span><i class="fas fa-calendar"></i> @campaign.DateText</span>
+                            <span><i class="fas fa-percent"></i> @campaign.DiscountText</span>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <form method="post" action="/panel/partner/kampanyalar/katil" class="partner-campaign-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+
+                <label class="partner-form-span">
+                    <span>Kampanya seçimi</span>
+                    <select name="CampaignId" required>
+                        <option value="">Kampanya seçiniz</option>
+                        @foreach (var campaign in Model.AvailableCampaigns)
+                        {
+                            <option value="@campaign.CampaignId">@campaign.CampaignName (@campaign.CampaignCode)</option>
+                        }
+                    </select>
+                </label>
+
+                <label>
+                    <span>Katılım başlangıcı</span>
+                    <input type="date" name="StartDate" />
+                </label>
+
+                <label>
+                    <span>Katılım bitişi</span>
+                    <input type="date" name="EndDate" />
+                </label>
+
+                <label>
+                    <span>Özel indirim oranı</span>
+                    <input type="number" step="0.01" name="CustomDiscountRate" placeholder="% giriniz" />
+                </label>
+
+                <label>
+                    <span>Özel indirim tutarı</span>
+                    <input type="number" step="0.01" name="CustomDiscountAmount" placeholder="₺ giriniz" />
+                </label>
+
+                <label>
+                    <span>Özel kampanyalı fiyat</span>
+                    <input type="number" step="0.01" name="CustomCampaignPrice" placeholder="Özel fiyat" />
+                </label>
+
+                <label>
+                    <span>Kampanya etiketi</span>
+                    <input type="text" name="CampaignLabel" maxlength="120" placeholder="Örn. Ay Sonu Özel Fiyat" />
+                </label>
+
+                <label>
+                    <span>Landing URL</span>
+                    <input type="url" name="LandingUrl" maxlength="500" placeholder="/kampanyalar/..." />
+                </label>
+
+                <label>
+                    <span>Sıralama</span>
+                    <input type="number" name="SortOrder" value="@Model.JoinForm.SortOrder" min="0" />
+                </label>
+
+                <label class="partner-form-span">
+                    <span>Partner notu</span>
+                    <textarea name="PartnerNote" placeholder="Kampanya operasyonuna özel kısa not bırakabilirsiniz."></textarea>
+                </label>
+
+                <label class="partner-inline-toggle partner-form-span">
+                    <input type="checkbox" name="Featured" value="true" />
+                    <span>Bu kampanyayı vitrinde öne çıkar</span>
+                </label>
+
+                <button type="submit" class="partner-primary-btn partner-form-span">
+                    <i class="fas fa-bullhorn"></i>
+                    Kampanyaya Katıl
+                </button>
+            </form>
+        }
+    </article>
+
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>Katıldığınız kampanyalar</h2>
+                <p>Bu otelin aktif, pasif ve geçmiş kampanya kayıtlarını tek listede yönetin.</p>
+            </div>
+        </div>
+
+        @if (Model.JoinedCampaigns.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Bu otele ait kampanya katılımı yok.</strong>
+                <p>Yukarıdaki form ile ilk kampanyaya katılabilirsiniz.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-campaign-card-list">
+                @foreach (var item in Model.JoinedCampaigns)
+                {
+                    <article class="partner-campaign-card">
+                        <div class="partner-campaign-card__top">
+                            <div>
+                                <small>@item.CampaignCode</small>
+                                <h3>@item.CampaignName</h3>
+                            </div>
+                            <span class="partner-campaign-status @(item.StatusText == "Aktif" ? "is-active" : string.Empty)">@item.StatusText</span>
+                        </div>
+
+                        <div class="partner-campaign-meta">
+                            <span><i class="fas fa-calendar"></i> @item.DateText</span>
+                            @if (!string.IsNullOrWhiteSpace(item.CampaignLabel))
+                            {
+                                <span><i class="fas fa-tag"></i> @item.CampaignLabel</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(item.DiscountText))
+                            {
+                                <span><i class="fas fa-percent"></i> @item.DiscountText</span>
+                            }
+                            @if (item.IsFeatured)
+                            {
+                                <span><i class="fas fa-star"></i> Öne çıkan</span>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(item.PartnerNote))
+                        {
+                            <p class="partner-campaign-note">@item.PartnerNote</p>
+                        }
+
+                        <form method="post" action="/panel/partner/kampanyalar/ayril" class="partner-campaign-leave-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
+                            <input type="hidden" name="campaignId" value="@item.CampaignId" />
+                            <button type="submit" class="partner-secondary-btn">
+                                <i class="fas fa-xmark"></i>
+                                Kampanyadan Ayrıl
+                            </button>
+                        </form>
+                    </article>
+                }
+            </div>
+        }
+    </article>
+</section>

@@ -1,0 +1,31 @@
+@model otelturizmnew.Models.Paneller.Satis.SalesHotelGuidePageViewModel
+@{
+    Layout = "~/Views/Paneller/Satis/_SalesPanelLayout.cshtml";
+    ViewData["SalesShell"] = Model.Shell;
+}
+<section class="sales-panel-card">
+    <div class="sales-card-head"><h2>Otel Rehberi</h2><span>Müşteriye hızlıca aktarılabilecek operasyon bilgileri</span></div>
+    <form method="get" class="sales-search-inline">
+        <input type="text" name="search" value="@Model.Search" placeholder="Otel, il veya ilçe ara" />
+        <button type="submit">Ara</button>
+    </form>
+    <div class="sales-hotel-guide-list">
+        @foreach (var hotel in Model.Hotels)
+        {
+            <article class="sales-guide-card">
+                <div>
+                    <strong>@hotel.HotelName</strong>
+                    <p>@hotel.Address</p>
+                    <small>@hotel.PreferredCountText</small>
+                </div>
+                <div class="sales-guide-meta">
+                    <span><i class="fas fa-phone"></i> @hotel.Phone</span>
+                    <span><i class="fas fa-user-tie"></i> @hotel.SalesContactName</span>
+                    <span><i class="fas fa-mobile-screen"></i> @hotel.SalesContactPhone</span>
+                    <span><i class="fas fa-envelope"></i> @hotel.SalesContactEmail</span>
+                    <p>@hotel.Note</p>
+                </div>
+            </article>
+        }
+    </div>
+</section>

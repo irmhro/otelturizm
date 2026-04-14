@@ -1,0 +1,127 @@
+@model otelturizmnew.Models.Paneller.Satis.SalesCreateReservationPageViewModel
+@{
+    Layout = "~/Views/Paneller/Satis/_SalesPanelLayout.cshtml";
+    ViewData["SalesShell"] = Model.Shell;
+}
+<section class="sales-panel-card sales-search-card">
+    <div class="sales-card-head"><h2>Otel Bulma Asistanı</h2><span>İl, ilçe, fiyat ve özellik ile daraltın</span></div>
+    <form method="get" class="sales-form-grid search-grid">
+        <input type="text" name="city" value="@Model.Form.SearchCity" placeholder="İl" />
+        <input type="text" name="district" value="@Model.Form.SearchDistrict" placeholder="İlçe" />
+        <input type="number" step="0.01" name="minPrice" value="@Model.Form.SearchMinPrice" placeholder="Min fiyat" />
+        <input type="number" step="0.01" name="maxPrice" value="@Model.Form.SearchMaxPrice" placeholder="Max fiyat" />
+        <input type="text" name="feature" value="@Model.Form.SearchFeature" placeholder="Özellik" />
+        <button type="submit">Filtrele</button>
+    </form>
+    <div class="sales-hotel-search-results">
+        @foreach (var hotel in Model.HotelSearchResults)
+        {
+            <article class="sales-hotel-card @(hotel.HotelId == Model.Form.HotelId ? "selected" : string.Empty)">
+                <div>
+                    <strong>@hotel.HotelName</strong>
+                    <p>@hotel.District, @hotel.City</p>
+                    <p>@hotel.Address</p>
+                    <div class="sales-badges">
+                        @foreach (var badge in hotel.FeatureBadges)
+                        {
+                            <span>@badge</span>
+                        }
+                    </div>
+                </div>
+                <div class="sales-hotel-card-side">
+                    <span>@hotel.PriceText</span>
+                    <small>@hotel.TodayDemandText</small>
+                    <a href="/panel/satis/yeni-rezervasyon?hotelId=@hotel.HotelId&city=@Model.Form.SearchCity&district=@Model.Form.SearchDistrict&feature=@Model.Form.SearchFeature">Bu oteli seç</a>
+                </div>
+            </article>
+        }
+    </div>
+</section>
+<section class="sales-grid cols-2">
+    <article class="sales-panel-card">
+        <div class="sales-card-head"><h2>Yeni Rezervasyon</h2><span>Müşteri ve oda bilgisi</span></div>
+        <form method="post" action="/panel/satis/yeni-rezervasyon" class="sales-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.Form.HotelId" />
+            <div>
+                <label>Müşteri Ad Soyad</label>
+                <input type="text" name="CustomerFullName" value="@Model.Form.CustomerFullName" required />
+            </div>
+            <div>
+                <label>E-posta</label>
+                <input type="email" name="CustomerEmail" value="@Model.Form.CustomerEmail" required />
+            </div>
+            <div>
+                <label>Telefon</label>
+                <input type="text" name="CustomerPhone" value="@Model.Form.CustomerPhone" required />
+            </div>
+            <div>
+                <label>Şehir</label>
+                <input type="text" name="CustomerCity" value="@Model.Form.CustomerCity" />
+            </div>
+            <div>
+                <label>Otel</label>
+                <select name="HotelId">
+                    @foreach (var hotel in Model.Hotels)
+                    {
+                        <option value="@hotel.Value" selected="@(hotel.Value == Model.Form.HotelId)">@hotel.Label</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label>Oda Tipi</label>
+                <select name="RoomTypeId">
+                    @foreach (var room in Model.RoomTypes)
+                    {
+                        <option value="@room.Value" selected="@(room.Value == Model.Form.RoomTypeId)">@room.Label</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label>Giriş</label>
+                <input type="date" name="CheckInDate" value="@Model.Form.CheckInDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div>
+                <label>Çıkış</label>
+                <input type="date" name="CheckOutDate" value="@Model.Form.CheckOutDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div>
+                <label>Yetişkin</label>
+                <input type="number" name="AdultCount" value="@Model.Form.AdultCount" min="1" />
+            </div>
+            <div>
+                <label>Çocuk</label>
+                <input type="number" name="ChildCount" value="@Model.Form.ChildCount" min="0" />
+            </div>
+            <div>
+                <label>Oda Sayısı</label>
+                <input type="number" name="RoomCount" value="@Model.Form.RoomCount" min="1" />
+            </div>
+            <div class="span-2">
+                <label>Müşteri Talep Notu</label>
+                <textarea name="DemandNote">@Model.Form.DemandNote</textarea>
+            </div>
+            <div class="span-2 sales-form-actions">
+                <button type="submit">Rezervasyonu Tamamla</button>
+            </div>
+        </form>
+    </article>
+    <article class="sales-panel-card">
+        <div class="sales-card-head"><h2>Uygun Oda ve Fiyat Özeti</h2><span>Çağrı sırasında hızlı karar desteği</span></div>
+        <div class="sales-room-list">
+            @foreach (var room in Model.AvailableRooms)
+            {
+                <div class="sales-room-card @(room.RoomTypeId == Model.Form.RoomTypeId ? "selected" : string.Empty)">
+                    <strong>@room.RoomName</strong>
+                    <p>@room.CapacityText · @room.StockText</p>
+                    <span>@room.PriceText</span>
+                </div>
+            }
+        </div>
+        <div class="sales-price-summary">
+            <div><span>Oda toplamı</span><strong>@Model.Summary.BaseAmountText</strong></div>
+            <div><span>Vergi</span><strong>@Model.Summary.TaxAmountText</strong></div>
+            <div class="total"><span>Genel toplam</span><strong>@Model.Summary.TotalAmountText</strong></div>
+        </div>
+    </article>
+</section>

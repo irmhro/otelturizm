@@ -1,0 +1,19 @@
+using otelturizmnew.Models.Oteller;
+using otelturizmnew.Models.Paneller.User;
+
+namespace otelturizmnew.Services.Abstractions;
+
+public interface IUserFavoriteService
+{
+    Task<HashSet<long>> GetFavoriteHotelIdsAsync(long userId, IEnumerable<long> hotelIds, CancellationToken cancellationToken = default);
+    Task<int> GetFavoriteCountAsync(long userId, CancellationToken cancellationToken = default);
+    Task<UserFavoritesPageViewModel> GetFavoritesPageAsync(long userId, CancellationToken cancellationToken = default);
+    Task<HotelFavoriteToggleResponse> ToggleFavoriteAsync(
+        long userId,
+        long hotelId,
+        string sourcePage,
+        string sourceUrl,
+        string? deviceType,
+        string? ipAddress,
+        CancellationToken cancellationToken = default);
+}

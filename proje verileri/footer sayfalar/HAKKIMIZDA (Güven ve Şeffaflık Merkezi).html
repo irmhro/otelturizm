@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Hakkımızda · Otelturizm - Türkiye'nin Lider Seyahat Platformu</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root{--primary:#003B95;--secondary:#FF385C;--success:#00A86B;--bg-light:#F8FAFC;--text-dark:#0F172A;--text-gray:#64748B;--border-light:#E2E8F0;--radius-xl:32px;--radius-lg:24px}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:"Inter",sans-serif;background:var(--bg-light);color:var(--text-dark);line-height:1.6}
+    .container{max-width:1280px;margin:0 auto;padding:0 24px}
+    .hero-about{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;padding:60px 0}
+    .hero-content h1{font-size:clamp(36px,5vw,56px);font-weight:800;line-height:1.1;margin-bottom:24px;background:linear-gradient(135deg,var(--primary),#00A86B);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-top:40px}
+    .stat-item h3{font-size:36px;color:var(--primary)}
+    .hero-image{position:relative}
+    .hero-image img{width:100%;height:500px;object-fit:cover;border-radius:var(--radius-xl);box-shadow:0 30px 50px rgba(0,0,0,0.1)}
+    .trust-section{background:#fff;border-radius:var(--radius-xl);padding:48px;margin:60px 0;box-shadow:0 10px 30px rgba(0,0,0,0.05)}
+    .certificates{display:flex;justify-content:space-around;flex-wrap:wrap;gap:30px}
+    .cert-item{text-align:center}
+    .cert-item i{font-size:48px;color:var(--primary);margin-bottom:16px}
+    .team-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;margin:60px 0}
+    .team-card{background:#fff;border-radius:var(--radius-lg);padding:30px;text-align:center;box-shadow:0 5px 15px rgba(0,0,0,0.03)}
+    .team-avatar{width:120px;height:120px;border-radius:50%;margin:0 auto 20px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:40px;font-weight:700}
+    .btn{display:inline-block;background:var(--primary);color:#fff;padding:16px 36px;border-radius:60px;font-weight:700;text-decoration:none;transition:0.2s}
+    @media (max-width:900px){.hero-about{grid-template-columns:1fr}.team-grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:600px){.team-grid{grid-template-columns:1fr}.hero-stats{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="container">
+  <section class="hero-about">
+    <div class="hero-content">
+      <h1>Tatilini Şansa Bırakma, Otelturizm ile Garantile</h1>
+      <p style="font-size:18px;color:var(--text-gray);margin-bottom:30px;">2015'ten beri 10 milyondan fazla gezgini hayallerindeki konaklamayla buluşturduk. Sadece bir rezervasyon platformu değil, aynı zamanda seyahat danışmanınızız.</p>
+      <div class="hero-stats">
+        <div class="stat-item"><h3>500K+</h3><p>Anlaşmalı Otel</p></div>
+        <div class="stat-item"><h3>120+</h3><p>Ülke</p></div>
+        <div class="stat-item"><h3>4.8 ★</h3><p>Kullanıcı Puanı</p></div>
+      </div>
+    </div>
+    <div class="hero-image"><img src="https://images.pexels.com/photos/3184298/pexels-photo-3184298.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Ekibimiz"></div>
+  </section>
+
+  <section class="trust-section">
+    <h2 style="text-align:center;font-size:32px;margin-bottom:40px;">Güven Sertifikalarımız</h2>
+    <div class="certificates">
+      <div class="cert-item"><i class="fas fa-shield-alt"></i><h4>TÜRSAB</h4><p>Belge No: A-12345</p></div>
+      <div class="cert-item"><i class="fas fa-lock"></i><h4>PCI DSS Level 1</h4><p>Kart Bilgileriniz Güvende</p></div>
+      <div class="cert-item"><i class="fas fa-check-circle"></i><h4>256-Bit SSL</h4><p>Şifreli Veri Trafiği</p></div>
+      <div class="cert-item"><i class="fas fa-building"></i><h4>ETBİS</h4><p>Ticaret Bakanlığı Kayıtlı</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 style="text-align:center;font-size:32px;margin-bottom:20px;">Yönetim Ekibimiz</h2>
+    <p style="text-align:center;color:var(--text-gray);margin-bottom:40px;">Seyahat sektöründe 20+ yıllık deneyime sahip, tutkulu bir ekibiz.</p>
+    <div class="team-grid">
+      <div class="team-card"><div class="team-avatar">AK</div><h3>Ahmet Kaya</h3><p style="color:var(--primary);font-weight:600;">CEO & Kurucu</p><p style="color:var(--text-gray);">Eski bir turizmci, şimdi teknoloji girişimcisi.</p></div>
+      <div class="team-card"><div class="team-avatar">ZD</div><h3>Zeynep Demir</h3><p style="color:var(--primary);font-weight:600;">COO</p><p style="color:var(--text-gray);">Operasyonel mükemmellik uzmanı.</p></div>
+      <div class="team-card"><div class="team-avatar">MY</div><h3>Mehmet Yıldız</h3><p style="color:var(--primary);font-weight:600;">CTO</p><p style="color:var(--text-gray);">Eski Booking.com yazılım mimarı.</p></div>
+      <div class="team-card"><div class="team-avatar">EA</div><h3>Elif Aksoy</h3><p style="color:var(--primary);font-weight:600;">CMO</p><p style="color:var(--text-gray);">Pazarlama ve büyüme stratejisti.</p></div>
+    </div>
+  </section>
+
+  <div style="background:linear-gradient(135deg, var(--primary), #00A86B);border-radius:var(--radius-xl);padding:60px;margin:60px 0;color:#fff;text-align:center;">
+    <h2 style="font-size:36px;margin-bottom:20px;">Otelturizm Ailesine Katılın</h2>
+    <p style="margin-bottom:30px;">Tesisinizi milyonlarca gezginle buluşturun.</p>
+    <a href="#" class="btn" style="background:#fff;color:var(--primary);">Partner Başvurusu Yap</a>
+  </div>
+</div>
+</body>
+</html>

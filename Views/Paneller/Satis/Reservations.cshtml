@@ -1,0 +1,27 @@
+@model otelturizmnew.Models.Paneller.Satis.SalesReservationsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Satis/_SalesPanelLayout.cshtml";
+    ViewData["SalesShell"] = Model.Shell;
+}
+<section class="sales-panel-card">
+    <div class="sales-card-head"><h2>Satış Paneli Rezervasyonları</h2><span>Tüm kişisel satış kayıtların</span></div>
+    <div class="sales-table-wrap">
+        <table class="sales-table">
+            <thead><tr><th>No</th><th>Otel</th><th>Misafir</th><th>Konaklama</th><th>Durum</th><th>Tutar</th><th>Komisyon</th></tr></thead>
+            <tbody>
+            @foreach (var item in Model.Reservations)
+            {
+                <tr>
+                    <td>@item.ReservationNo</td>
+                    <td>@item.HotelName</td>
+                    <td>@item.CustomerName</td>
+                    <td>@item.StayText<br /><small>@item.RoomName</small></td>
+                    <td><span class="sales-pill">@item.StatusText</span></td>
+                    <td>@item.TotalText</td>
+                    <td>@item.CommissionText</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

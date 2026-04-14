@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Bildirim Tercihleri · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-light: #0055CC; --primary-dark: #002A6B;
+      --secondary: #FF385C; --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --info: #3B82F6; --bg-light: #F8FAFC; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-body: #1E293B; --text-gray: #64748B;
+      --text-light: #94A3B8; --border-light: #E2E8F0; --border-medium: #CBD5E1;
+      --sidebar-width: 280px; --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0,59,149,0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-body); line-height: 1.5; }
+    
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--card-bg);
+      border-right: 1px solid var(--border-light); position: fixed;
+      height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid var(--border-light); }
+    .user-profile-card { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .user-avatar {
+      width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 22px;
+    }
+    .user-info h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .user-info p { font-size: 13px; color: var(--text-gray); }
+    .membership-badge { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .tier-badge {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: var(--text-dark);
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 700;
+    }
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-light); margin-bottom: 12px; padding-left: 16px; font-weight: 600;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      border-radius: 12px; color: var(--text-gray); text-decoration: none;
+      transition: all var(--transition-base); margin-bottom: 4px; font-weight: 500; font-size: 14px;
+    }
+    .nav-item i { width: 24px; font-size: 20px; }
+    .nav-item:hover { background: rgba(0,59,149,0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .nav-item .badge {
+      margin-left: auto; background: var(--secondary); color: white;
+      padding: 2px 8px; border-radius: 40px; font-size: 11px; font-weight: 700;
+    }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header { margin-bottom: 28px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: var(--text-dark); }
+    .page-title p { color: var(--text-gray); font-size: 15px; }
+    
+    /* Settings Container */
+    .settings-container { max-width: 800px; }
+    
+    /* Section */
+    .settings-section {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      padding: 28px; border: 1px solid var(--border-light); margin-bottom: 24px;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light);
+    }
+    .section-title {
+      font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+    }
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    
+    /* Preference Item */
+    .preference-item {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 18px 0; border-bottom: 1px solid var(--border-light);
+    }
+    .preference-item:last-child { border-bottom: none; }
+    .preference-info { flex: 1; padding-right: 20px; }
+    .preference-info h4 { font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .preference-info p { color: var(--text-gray); font-size: 14px; }
+    .preference-info .channel-icons { display: flex; gap: 12px; margin-top: 8px; }
+    .channel-icon {
+      display: flex; align-items: center; gap: 4px; color: var(--text-light); font-size: 13px;
+    }
+    .channel-icon.active { color: var(--primary); }
+    
+    /* Toggle Switch */
+    .toggle-switch {
+      width: 52px; height: 28px; background: var(--border-light);
+      border-radius: 40px; position: relative; cursor: pointer;
+      transition: background var(--transition-base); flex-shrink: 0;
+    }
+    .toggle-switch.active { background: var(--success); }
+    .toggle-switch::after {
+      content: ''; position: absolute; width: 22px; height: 22px;
+      background: white; border-radius: 50%; top: 3px; left: 3px;
+      transition: left var(--transition-base); box-shadow: var(--shadow-sm);
+    }
+    .toggle-switch.active::after { left: 27px; }
+    
+    /* Channel Toggle Group */
+    .channel-toggle-group {
+      display: flex; gap: 8px; flex-shrink: 0;
+    }
+    .channel-toggle {
+      width: 40px; height: 40px; border-radius: 10px; display: flex;
+      align-items: center; justify-content: center; cursor: pointer;
+      background: var(--bg-light); border: 1px solid var(--border-light);
+      color: var(--text-gray); transition: all var(--transition-base);
+    }
+    .channel-toggle.active {
+      background: var(--primary); color: white; border-color: var(--primary);
+    }
+    
+    /* Save Bar */
+    .save-bar {
+      display: flex; justify-content: flex-end; gap: 16px;
+      margin-top: 32px; padding-top: 24px;
+    }
+    
+    /* Notification Preview */
+    .preview-box {
+      background: var(--bg-light); border-radius: 12px; padding: 20px;
+      border: 1px solid var(--border-light); margin-top: 20px;
+    }
+    .preview-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .preview-content { color: var(--text-gray); }
+    
+    /* Mobile */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+    }
+    @media (max-width: 600px) {
+      .preference-item { flex-direction: column; gap: 16px; }
+      .channel-toggle-group { align-self: flex-start; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-top: 1px solid var(--border-light);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: var(--text-gray); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    @media (max-width: 900px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    /* Toast */
+    .toast-message {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--text-dark); color: white; padding: 14px 28px;
+      border-radius: 40px; box-shadow: var(--shadow-lg); z-index: 9999;
+      display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease;
+    }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    
+    /* Badge */
+    .badge-new { background: var(--secondary); color: white; padding: 2px 8px; border-radius: 40px; font-size: 11px; margin-left: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="user-profile-card">
+        <div class="user-avatar">AY</div>
+        <div class="user-info">
+          <h4>Ahmet Yılmaz</h4>
+          <p>ahmet.yilmaz@email.com</p>
+          <div class="membership-badge">
+            <span class="tier-badge"><i class="fas fa-crown"></i> Gold Üye</span>
+          </div>
+        </div>
+      </div>
+      <a href="/" style="display: flex; align-items: center; gap: 8px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 14px;">
+        <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+      </a>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item"><i class="fas fa-columns"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlarım <span class="badge">3</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-heart"></i> Favorilerim <span class="badge" style="background: var(--success);">8</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-star"></i> Puanlarım</a>
+        <a href="#" class="nav-item"><i class="fas fa-envelope"></i> Mesajlarım</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Hesap Ayarları</div>
+        <a href="#" class="nav-item"><i class="fas fa-user-circle"></i> Profil Bilgilerim</a>
+        <a href="#" class="nav-item"><i class="fas fa-credit-card"></i> Ödeme Yöntemleri</a>
+        <a href="#" class="nav-item active"><i class="fas fa-bell"></i> Bildirim Tercihleri</a>
+        <a href="#" class="nav-item"><i class="fas fa-shield-alt"></i> Güvenlik & Giriş</a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- Header -->
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Bildirim Tercihleri</h1>
+        <p>Hangi bildirimleri, hangi kanallardan alacağınızı özelleştirin.</p>
+      </div>
+    </header>
+    
+    <div class="settings-container">
+      
+      <!-- Genel Bildirim Ayarı -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-bell"></i> Genel Bildirimler</h3>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Tüm Bildirimleri Aç/Kapat</h4>
+            <p>Tüm bildirimleri tek seferde açıp kapatabilirsiniz.</p>
+          </div>
+          <div class="toggle-switch active" id="masterToggle" onclick="toggleMaster(this)"></div>
+        </div>
+      </div>
+      
+      <!-- Rezervasyon Bildirimleri -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-calendar-check"></i> Rezervasyon Bildirimleri</h3>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Rezervasyon Onayı</h4>
+            <p>Rezervasyonunuz onaylandığında bildirim alın.</p>
+            <div class="channel-icons">
+              <span class="channel-icon active"><i class="fas fa-envelope"></i> E-posta</span>
+              <span class="channel-icon active"><i class="fas fa-sms"></i> SMS</span>
+              <span class="channel-icon active"><i class="fas fa-bell"></i> Push</span>
+            </div>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" data-channel="email" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle active" data-channel="sms" onclick="toggleChannel(this)"><i class="fas fa-sms"></i></div>
+            <div class="channel-toggle active" data-channel="push" onclick="toggleChannel(this)"><i class="fas fa-bell"></i></div>
+          </div>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Check-in Hatırlatması</h4>
+            <p>Konaklamanızdan 24 saat önce hatırlatma alın.</p>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-sms"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-bell"></i></div>
+          </div>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Rezervasyon Değişiklikleri</h4>
+            <p>Rezervasyonunuzda değişiklik olduğunda bildirim alın.</p>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle" onclick="toggleChannel(this)"><i class="fas fa-sms"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-bell"></i></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Fırsat ve Kampanya Bildirimleri -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-tag"></i> Fırsat ve Kampanyalar</h3>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Özel İndirimler ve Kampanyalar</h4>
+            <p>Size özel indirimler ve kampanyalardan haberdar olun.</p>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle" onclick="toggleChannel(this)"><i class="fas fa-sms"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-bell"></i></div>
+          </div>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Son Dakika Fırsatları</h4>
+            <p>Yakın tarihli indirimli konaklama fırsatları.</p>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle" onclick="toggleChannel(this)"><i class="fas fa-sms"></i></div>
+            <div class="channel-toggle" onclick="toggleChannel(this)"><i class="fas fa-bell"></i></div>
+          </div>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Haftalık Bülten</h4>
+            <p>Haftalık seyahat önerileri ve popüler destinasyonlar.</p>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle" style="visibility: hidden;"></div>
+            <div class="channel-toggle" style="visibility: hidden;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Puan ve Sadakat Bildirimleri -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-star"></i> OtelPuan ve Sadakat</h3>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Puan Kazanımı ve Harcama</h4>
+            <p>Puan kazandığınızda veya harcadığınızda bildirim alın.</p>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle" onclick="toggleChannel(this)"><i class="fas fa-sms"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-bell"></i></div>
+          </div>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Seviye Atlama</h4>
+            <p>Yeni bir üyelik seviyesine ulaştığınızda bildirim alın.</p>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-sms"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-bell"></i></div>
+          </div>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Doğum Günü ve Özel Günler</h4>
+            <p>Doğum gününüzde özel sürprizler ve puanlar.</p>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-sms"></i></div>
+            <div class="channel-toggle" onclick="toggleChannel(this)"><i class="fas fa-bell"></i></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mesaj ve Destek Bildirimleri -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-comment-dots"></i> Mesaj ve Destek</h3>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Yeni Mesaj</h4>
+            <p>Otellerden veya destek ekibinden yeni mesaj aldığınızda.</p>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-sms"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-bell"></i></div>
+          </div>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Destek Talebi Güncellemesi</h4>
+            <p>Açtığınız destek talebine yanıt geldiğinde.</p>
+          </div>
+          <div class="channel-toggle-group">
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-envelope"></i></div>
+            <div class="channel-toggle" onclick="toggleChannel(this)"><i class="fas fa-sms"></i></div>
+            <div class="channel-toggle active" onclick="toggleChannel(this)"><i class="fas fa-bell"></i></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Bildirim Önizleme -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-eye"></i> Bildirim Önizleme</h3>
+        </div>
+        
+        <div class="preview-box">
+          <div class="preview-header">
+            <div style="width: 40px; height: 40px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;"><i class="fas fa-bell"></i></div>
+            <div>
+              <h4>Rezervasyonunuz Onaylandı! 🎉</h4>
+              <p style="font-size: 12px; color: var(--text-light);">Az önce</p>
+            </div>
+          </div>
+          <div class="preview-content">
+            <p>Swissôtel The Bosphorus rezervasyonunuz onaylanmıştır. Rezervasyon No: #OTL-2025-0482</p>
+            <p style="margin-top: 8px;"><strong>Giriş:</strong> 15 Nis 2025 · <strong>Çıkış:</strong> 18 Nis 2025</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Kaydetme Barı -->
+      <div class="save-bar">
+        <button class="btn btn-outline" onclick="window.history.back()">İptal</button>
+        <button class="btn btn-primary" onclick="savePreferences()"><i class="fas fa-save"></i> Tercihleri Kaydet</button>
+      </div>
+      
+    </div>
+    
+  </main>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-heart"></i><span>Favoriler</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-star"></i><span>Puanlar</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-user"></i><span>Profil</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    // Master Toggle
+    window.toggleMaster = function(btn) {
+      const isActive = btn.classList.contains('active');
+      btn.classList.toggle('active');
+      
+      // Tüm toggle'ları ve channel toggle'ları etkile
+      document.querySelectorAll('.toggle-switch:not(#masterToggle)').forEach(toggle => {
+        if (!isActive) {
+          toggle.classList.add('active');
+        } else {
+          toggle.classList.remove('active');
+        }
+      });
+      
+      document.querySelectorAll('.channel-toggle').forEach(ct => {
+        if (!isActive) {
+          ct.classList.add('active');
+        } else {
+          ct.classList.remove('active');
+        }
+      });
+      
+      updateChannelIcons();
+    };
+    
+    // Channel Toggle
+    window.toggleChannel = function(btn) {
+      btn.classList.toggle('active');
+      updateChannelIcons();
+      checkMasterState();
+    };
+    
+    function updateChannelIcons() {
+      document.querySelectorAll('.preference-item').forEach(item => {
+        const toggles = item.querySelectorAll('.channel-toggle');
+        const icons = item.querySelectorAll('.channel-icon');
+        
+        if (toggles.length && icons.length) {
+          icons.forEach((icon, index) => {
+            if (toggles[index] && toggles[index].classList.contains('active')) {
+              icon.classList.add('active');
+            } else {
+              icon.classList.remove('active');
+            }
+          });
+        }
+      });
+    }
+    
+    function checkMasterState() {
+      const allToggles = document.querySelectorAll('.channel-toggle');
+      const activeToggles = document.querySelectorAll('.channel-toggle.active');
+      const masterToggle = document.getElementById('masterToggle');
+      
+      if (activeToggles.length === allToggles.length) {
+        masterToggle.classList.add('active');
+      } else {
+        masterToggle.classList.remove('active');
+      }
+    }
+    
+    window.savePreferences = function() {
+      showToast('✅ Bildirim tercihleriniz başarıyla kaydedildi!', 'success');
+    };
+    
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    console.log('✅ Bildirim Tercihleri Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

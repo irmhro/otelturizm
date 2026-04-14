@@ -1,0 +1,25 @@
+ADMIN PANELİ - TAM SAYFA LİSTESİ
+#	Sayfa Adı	Kategori	Açıklama
+1	Dashboard	Ana Sayfa	Sistem genel durumu, KPI'lar, grafikler, son işlemler
+2	Oteller	Yönetim	Tüm otellerin listesi, onay bekleyenler, düzenleme, silme
+3	Otel Detay	Yönetim	Tek bir otelin tüm bilgileri, performansı, rezervasyonları
+4	Kullanıcılar	Yönetim	Tüm kullanıcılar, roller, durumlar, düzenleme
+5	Kullanıcı Detay	Yönetim	Tek kullanıcının profili, rezervasyonları, log kayıtları
+6	Rezervasyonlar	Yönetim	Platformdaki tüm rezervasyonlar, filtreleme, işlemler
+7	Partner Başvuruları	Yönetim	Yeni otel başvuruları, onaylama, reddetme
+8	Ödemeler	Finans	Tüm ödemeler, komisyonlar, havale işlemleri
+9	Faturalar	Finans	Kesilen faturalar, KDV raporları
+10	Komisyonlar	Finans	Komisyon oranları, özel anlaşmalar, raporlar
+11	Raporlar	Finans	Detaylı finansal ve operasyonel raporlar
+12	Değerlendirmeler	İçerik	Tüm otel yorumları, onaylama, silme, yanıtlama
+13	Şikayetler	İçerik	Kullanıcı şikayetleri, çözüm yönetimi
+14	Kampanyalar	İçerik	İndirim kampanyaları, kupon kodları oluşturma
+15	Blog Yönetimi	İçerik	Blog yazıları, kategoriler, yayınlama
+16	SSS Yönetimi	İçerik	Sıkça sorulan soruları düzenleme
+17	Bildirimler	Sistem	Toplu bildirim gönderme, şablon yönetimi
+18	E-posta Şablonları	Sistem	Tüm e-posta şablonlarını düzenleme
+19	Ayarlar	Sistem	Site genel ayarları, API anahtarları, entegrasyonlar
+20	Log Kayıtları	Sistem	Sistem logları, hata kayıtları, audit trail
+21	Yöneticiler	Sistem	Admin kullanıcıları, roller, yetkiler
+22	Yedekleme	Sistem	Veritabanı yedekleme, geri yükleme
+23	Güvenlik	Sistem	Güvenlik duvarı, IP engelleme, 2FA ayarları

@@ -1,0 +1,37 @@
+.partner-performance-hero {
+    display: grid;
+    grid-template-columns: 1.15fr .85fr;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.partner-performance-note {
+    background:
+        radial-gradient(circle at top right, rgba(31, 191, 143, .16), transparent 34%),
+        linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.partner-performance-bullets {
+    margin: 18px 0 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 10px;
+    color: var(--partner-muted);
+}
+
+.partner-performance-layout {
+    align-items: start;
+}
+
+.partner-table-note {
+    margin-top: 6px;
+    color: var(--partner-muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+    .partner-performance-hero {
+        grid-template-columns: 1fr;
+    }
+}

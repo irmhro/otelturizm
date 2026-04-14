@@ -1,0 +1,357 @@
+@{
+    Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
+    ViewData["Title"] = "Puanlarim";
+}
+
+<section class="content-header">
+    <div class="page-title">
+        <h1>OtelPuan Programı</h1>
+        <p>Puan kazan, seviye atla, özel ayricaliklardan faydalan.</p>
+    </div>
+</section>
+
+<section class="loyalty-hero">
+    <div class="loyalty-header">
+        <div class="tier-info">
+            <div class="tier-icon gold"><i class="fas fa-crown"></i></div>
+            <div class="tier-details">
+                <h3>Gold Üye</h3>
+                <p><i class="fas fa-check-circle"></i> Avantajlarin aktif</p>
+            </div>
+        </div>
+        <div class="points-display">
+            <div class="points-value">1.250</div>
+            <div class="points-label">Toplam OtelPuan</div>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-info">
+            <span><i class="fas fa-gem"></i> Platinum uyelige kalan puan</span>
+            <span>1.250 / 2.500</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: 50%;"></div>
+        </div>
+    </div>
+
+    <div class="next-tier">
+        <span><i class="fas fa-calendar"></i> 31 Aralik 2026'ya kadar 1.250 puan daha kazan</span>
+        <span><i class="fas fa-gift"></i> Platinum'da yuzde 30 indirim</span>
+    </div>
+</section>
+
+<section class="stats-mini-grid">
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon stat-success"><i class="fas fa-plus-circle"></i></div>
+        <div class="stat-mini-content">
+            <h3>1.830</h3>
+            <p>Bu Yil Kazanilan</p>
+        </div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon stat-danger"><i class="fas fa-minus-circle"></i></div>
+        <div class="stat-mini-content">
+            <h3>580</h3>
+            <p>Harcanan Puan</p>
+        </div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon stat-gold"><i class="fas fa-calendar"></i></div>
+        <div class="stat-mini-content">
+            <h3>31 Ara</h3>
+            <p>Puan Gecerlilik</p>
+        </div>
+    </div>
+</section>
+
+<section class="tabs-root" data-tab-root>
+    <div class="tabs-container">
+        <button type="button" class="tab active" data-tab="benefits"><i class="fas fa-gem"></i> Avantajlarim</button>
+        <button type="button" class="tab" data-tab="history"><i class="fas fa-history"></i> Puan Gecmisi</button>
+        <button type="button" class="tab" data-tab="rewards"><i class="fas fa-gift"></i> Odul Katalogu</button>
+        <button type="button" class="tab" data-tab="tiers"><i class="fas fa-trophy"></i> Üyelik Seviyeleri</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="benefits">
+        <div class="tiers-grid">
+            <div class="tier-card">
+                <div class="tier-icon-sm">B</div>
+                <h4>Bronz</h4>
+                <div class="tier-range">0 - 999 Puan</div>
+                <ul class="tier-benefits">
+                    <li><i class="fas fa-check-circle"></i> Yuzde 5 indirim</li>
+                    <li><i class="fas fa-check-circle"></i> Hos geldin puani</li>
+                </ul>
+            </div>
+            <div class="tier-card">
+                <div class="tier-icon-sm">S</div>
+                <h4>Silver</h4>
+                <div class="tier-range">1.000 - 2.499 Puan</div>
+                <ul class="tier-benefits">
+                    <li><i class="fas fa-check-circle"></i> Yuzde 10 indirim</li>
+                    <li><i class="fas fa-check-circle"></i> Erken check-in</li>
+                </ul>
+            </div>
+            <div class="tier-card active">
+                <div class="tier-icon-sm">G</div>
+                <h4>Gold <span class="tier-current-pill">Mevcut</span></h4>
+                <div class="tier-range">2.500 - 4.999 Puan</div>
+                <ul class="tier-benefits">
+                    <li><i class="fas fa-check-circle"></i> Yuzde 15 indirim</li>
+                    <li><i class="fas fa-check-circle"></i> Erken check-in</li>
+                    <li><i class="fas fa-check-circle"></i> Hos geldin hediyesi</li>
+                    <li><i class="fas fa-check-circle"></i> Oncelikli destek</li>
+                </ul>
+            </div>
+            <div class="tier-card">
+                <div class="tier-icon-sm">P</div>
+                <h4>Platinum</h4>
+                <div class="tier-range">5.000+ Puan</div>
+                <ul class="tier-benefits">
+                    <li><i class="fas fa-check-circle"></i> Yuzde 30 indirim</li>
+                    <li><i class="fas fa-check-circle"></i> Lounge erisimi</li>
+                    <li><i class="fas fa-check-circle"></i> Ucretsiz oda yukseltme</li>
+                    <li><i class="fas fa-check-circle"></i> VIP transfer</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3 class="section-inline-title">Gold Üyelik Avantajlarin</h3>
+        <div class="benefits-grid">
+            <div class="benefit-card">
+                <div class="benefit-icon benefit-primary"><i class="fas fa-percent"></i></div>
+                <h4>Yuzde 15 Indirim</h4>
+                <p>Tüm rezervasyonlarda gecerli ekstra indirim.</p>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon benefit-warning"><i class="fas fa-clock"></i></div>
+                <h4>Erken Check-in</h4>
+                <p>Musaitlik durumuna gore saat 12:00'de giris.</p>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon benefit-success"><i class="fas fa-gift"></i></div>
+                <h4>Hos Geldin Hediyesi</h4>
+                <p>Secili otellerde oda upgrade veya ikram.</p>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon benefit-info"><i class="fas fa-headset"></i></div>
+                <h4>Oncelikli Destek</h4>
+                <p>7/24 özel musteri hizmetleri hattı.</p>
+            </div>
+            <div class="benefit-card locked">
+                <div class="benefit-icon benefit-muted"><i class="fas fa-cocktail"></i></div>
+                <h4>Lounge Erisimi</h4>
+                <p>Havalimani lounge kullanimi.</p>
+                <div class="unlock-text"><i class="fas fa-lock"></i> Platinum'da acilir</div>
+            </div>
+            <div class="benefit-card locked">
+                <div class="benefit-icon benefit-muted"><i class="fas fa-bed"></i></div>
+                <h4>Oda Yukseltme</h4>
+                <p>Ucretsiz oda kategorisi yukseltme.</p>
+                <div class="unlock-text"><i class="fas fa-lock"></i> Platinum'da acilir</div>
+            </div>
+            <div class="benefit-card locked">
+                <div class="benefit-icon benefit-muted"><i class="fas fa-car"></i></div>
+                <h4>VIP Transfer</h4>
+                <p>Havalimani özel transfer hizmeti.</p>
+                <div class="unlock-text"><i class="fas fa-lock"></i> Platinum'da acilir</div>
+            </div>
+            <div class="benefit-card locked">
+                <div class="benefit-icon benefit-muted"><i class="fas fa-spa"></i></div>
+                <h4>Ucretsiz Spa</h4>
+                <p>Secili otellerde spa kullanimi.</p>
+                <div class="unlock-text"><i class="fas fa-lock"></i> Platinum'da acilir</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-panel" data-panel="history">
+        <div class="history-section">
+            <div class="history-header">
+                <h3>Puan Hareketleri</h3>
+                <select>
+                    <option>Son 3 Ay</option>
+                    <option>Son 6 Ay</option>
+                    <option>2026</option>
+                    <option>2025</option>
+                </select>
+            </div>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Islem</th>
+                        <th>Aciklama</th>
+                        <th>Puan</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>08 Nis 2026</td><td>Rezervasyon</td><td>Swissotel The Bosphorus #OTL-0482</td><td class="points-earned">+380</td><td><span class="status-badge status-completed">Onaylandi</span></td></tr>
+                    <tr><td>05 Nis 2026</td><td>Dogum Gunu</td><td>Gold uye dogum gunu bonusu</td><td class="points-earned">+250</td><td><span class="status-badge status-completed">Tamamlandi</span></td></tr>
+                    <tr><td>28 Mar 2026</td><td>Rezervasyon</td><td>Rixos Premium Belek #OTL-0391</td><td class="points-earned">+1.200</td><td><span class="status-badge status-pending">Beklemede</span></td></tr>
+                    <tr><td>15 Mar 2026</td><td>Harcama</td><td>150 TL indirim kuponu</td><td class="points-spent">-300</td><td><span class="status-badge status-completed">Tamamlandi</span></td></tr>
+                    <tr><td>10 Mar 2026</td><td>Rezervasyon</td><td>Cappadocia Cave Resort #OTL-0215</td><td class="points-earned">+250</td><td><span class="status-badge status-completed">Tamamlandi</span></td></tr>
+                    <tr><td>01 Mar 2026</td><td>Seviye Atlama</td><td>Silver - Gold uyelik bonusu</td><td class="points-earned">+500</td><td><span class="status-badge status-completed">Tamamlandi</span></td></tr>
+                    <tr><td>20 Sub 2026</td><td>Harcama</td><td>Oda yukseltme kuponu</td><td class="points-spent">-200</td><td><span class="status-badge status-completed">Tamamlandi</span></td></tr>
+                    <tr><td>15 Sub 2026</td><td>Rezervasyon</td><td>Four Seasons Bosphorus #OTL-0123</td><td class="points-earned">+500</td><td><span class="status-badge status-completed">Tamamlandi</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <span class="page-item"><i class="fas fa-chevron-left"></i></span>
+            <span class="page-item active">1</span>
+            <span class="page-item">2</span>
+            <span class="page-item">3</span>
+            <span class="page-item"><i class="fas fa-chevron-right"></i></span>
+        </div>
+    </div>
+
+    <div class="tab-panel" data-panel="rewards">
+        <div class="current-points-copy">
+            <p>Mevcut puaniniz: <strong>1.250</strong></p>
+        </div>
+
+        <div class="rewards-grid">
+            <div class="reward-card">
+                <div class="reward-icon benefit-primary"><i class="fas fa-ticket-alt"></i></div>
+                <h4>Indirim Kuponu</h4>
+                <p>250 TL degerinde</p>
+                <div class="reward-points">500 <small>puan</small></div>
+                <button class="btn btn-primary" type="button"><i class="fas fa-exchange-alt"></i> Kullan</button>
+            </div>
+            <div class="reward-card">
+                <div class="reward-icon benefit-warning"><i class="fas fa-bed"></i></div>
+                <h4>Oda Yukseltme</h4>
+                <p>1 gece ucretsiz upgrade</p>
+                <div class="reward-points">1.000 <small>puan</small></div>
+                <button class="btn btn-primary" type="button"><i class="fas fa-exchange-alt"></i> Kullan</button>
+            </div>
+            <div class="reward-card">
+                <div class="reward-icon benefit-success"><i class="fas fa-utensils"></i></div>
+                <h4>Ucretsiz Kahvalti</h4>
+                <p>2 kisilik</p>
+                <div class="reward-points">300 <small>puan</small></div>
+                <button class="btn btn-primary" type="button"><i class="fas fa-exchange-alt"></i> Kullan</button>
+            </div>
+            <div class="reward-card">
+                <div class="reward-icon benefit-secondary"><i class="fas fa-spa"></i></div>
+                <h4>Spa Kullanımi</h4>
+                <p>1 saat masaj</p>
+                <div class="reward-points">800 <small>puan</small></div>
+                <button class="btn btn-primary" type="button"><i class="fas fa-exchange-alt"></i> Kullan</button>
+            </div>
+            <div class="reward-card">
+                <div class="reward-icon benefit-info"><i class="fas fa-car"></i></div>
+                <h4>Havalimani Transfer</h4>
+                <p>Tek yon</p>
+                <div class="reward-points">1.500 <small>puan</small></div>
+                <button class="btn btn-primary" type="button" disabled><i class="fas fa-lock"></i> Yetersiz Puan</button>
+            </div>
+            <div class="reward-card">
+                <div class="reward-icon benefit-platinum"><i class="fas fa-crown"></i></div>
+                <h4>Platinum Deneme</h4>
+                <p>30 gunluk deneme</p>
+                <div class="reward-points">2.000 <small>puan</small></div>
+                <button class="btn btn-primary" type="button" disabled><i class="fas fa-lock"></i> Yetersiz Puan</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-panel" data-panel="tiers">
+        <div class="tiers-grid tiers-detailed">
+            <div class="tier-card">
+                <div class="tier-icon-sm tier-bronze">B</div>
+                <h4>Bronz</h4>
+                <div class="tier-range">0 - 999 Puan</div>
+                <ul class="tier-benefits">
+                    <li><i class="fas fa-check-circle"></i> Yuzde 5 indirim</li>
+                    <li><i class="fas fa-check-circle"></i> Hos geldin puani</li>
+                    <li><i class="fas fa-check-circle"></i> Bulten aboneligi</li>
+                </ul>
+            </div>
+            <div class="tier-card">
+                <div class="tier-icon-sm tier-silver">S</div>
+                <h4>Silver</h4>
+                <div class="tier-range">1.000 - 2.499 Puan</div>
+                <ul class="tier-benefits">
+                    <li><i class="fas fa-check-circle"></i> Yuzde 10 indirim</li>
+                    <li><i class="fas fa-check-circle"></i> Erken check-in</li>
+                    <li><i class="fas fa-check-circle"></i> Dogum gunu bonusu</li>
+                    <li><i class="fas fa-check-circle"></i> Hizli iptal</li>
+                </ul>
+            </div>
+            <div class="tier-card active">
+                <div class="tier-icon-sm tier-gold">G</div>
+                <h4>Gold</h4>
+                <div class="tier-range">2.500 - 4.999 Puan</div>
+                <ul class="tier-benefits">
+                    <li><i class="fas fa-check-circle"></i> Yuzde 15 indirim</li>
+                    <li><i class="fas fa-check-circle"></i> Erken check-in</li>
+                    <li><i class="fas fa-check-circle"></i> Hos geldin hediyesi</li>
+                    <li><i class="fas fa-check-circle"></i> Oncelikli destek</li>
+                    <li><i class="fas fa-check-circle"></i> Ucretsiz iptal</li>
+                </ul>
+            </div>
+            <div class="tier-card">
+                <div class="tier-icon-sm tier-platinum">P</div>
+                <h4>Platinum</h4>
+                <div class="tier-range">5.000+ Puan</div>
+                <ul class="tier-benefits">
+                    <li><i class="fas fa-check-circle"></i> Yuzde 30 indirim</li>
+                    <li><i class="fas fa-check-circle"></i> Lounge erisimi</li>
+                    <li><i class="fas fa-check-circle"></i> Ucretsiz oda yukseltme</li>
+                    <li><i class="fas fa-check-circle"></i> VIP transfer</li>
+                    <li><i class="fas fa-check-circle"></i> Ozel danisman</li>
+                    <li><i class="fas fa-check-circle"></i> Sinirsiz iptal</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="earn-panel">
+            <h3><i class="fas fa-info-circle"></i> Puan Nasil Kazanilir?</h3>
+            <div class="earn-grid">
+                <div><i class="fas fa-hotel"></i> <strong>Rezervasyon:</strong> Harcadiginiz her 10 TL = 1 Puan</div>
+                <div><i class="fas fa-star"></i> <strong>Degerlendirme:</strong> Otel yorumu basina 50 Puan</div>
+                <div><i class="fas fa-gift"></i> <strong>Ozel Gunler:</strong> Dogum gununde 250 Puan</div>
+                <div><i class="fas fa-user-plus"></i> <strong>Arkadasini Getir:</strong> 500 Puan</div>
+                <div><i class="fas fa-calendar-check"></i> <strong>Erken Rezervasyon:</strong> 2x Puan</div>
+                <div><i class="fas fa-mobile-alt"></i> <strong>Uygulama:</strong> Ilk rezervasyon 200 Puan</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            const root = document.querySelector('[data-tab-root]');
+            if (!root) {
+                return;
+            }
+
+            const tabs = root.querySelectorAll('[data-tab]');
+            const panels = root.querySelectorAll('[data-panel]');
+
+            function switchTab(tabId) {
+                tabs.forEach(function (tab) {
+                    tab.classList.toggle('active', tab.getAttribute('data-tab') === tabId);
+                });
+
+                panels.forEach(function (panel) {
+                    panel.classList.toggle('active', panel.getAttribute('data-panel') === tabId);
+                });
+            }
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    switchTab(tab.getAttribute('data-tab'));
+                });
+            });
+        })();
+    </script>
+}
+
+

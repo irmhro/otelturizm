@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Ödeme Yöntemleri · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-light: #0055CC; --primary-dark: #002A6B;
+      --secondary: #506C9B; --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --info: #3B82F6; --bg-light: #F8FAFC; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-body: #1E293B; --text-gray: #64748B;
+      --text-light: #94A3B8; --border-light: #E2E8F0; --border-medium: #CBD5E1;
+      --sidebar-width: 280px; --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0,59,149,0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-body); line-height: 1.5; }
+    
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--card-bg);
+      border-right: 1px solid var(--border-light); position: fixed;
+      height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid var(--border-light); }
+    .user-profile-card { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .user-avatar {
+      width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 22px;
+    }
+    .user-info h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .user-info p { font-size: 13px; color: var(--text-gray); }
+    .membership-badge { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .tier-badge {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: var(--text-dark);
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 700;
+    }
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-light); margin-bottom: 12px; padding-left: 16px; font-weight: 600;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      border-radius: 12px; color: var(--text-gray); text-decoration: none;
+      transition: all var(--transition-base); margin-bottom: 4px; font-weight: 500; font-size: 14px;
+    }
+    .nav-item i { width: 24px; font-size: 20px; }
+    .nav-item:hover { background: rgba(0,59,149,0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .nav-item .badge {
+      margin-left: auto; background: var(--secondary); color: white;
+      padding: 2px 8px; border-radius: 40px; font-size: 11px; font-weight: 700;
+    }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header { margin-bottom: 28px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: var(--text-dark); }
+    .page-title p { color: var(--text-gray); font-size: 15px; }
+    
+    /* Payment Container */
+    .payment-container { max-width: 800px; }
+    
+    /* Section */
+    .payment-section {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      padding: 28px; border: 1px solid var(--border-light); margin-bottom: 24px;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light);
+    }
+    .section-title {
+      font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+    }
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-danger { background: transparent; border: 1.5px solid var(--error); color: var(--error); }
+    .btn-danger:hover { background: var(--error); color: white; }
+    .btn-sm { padding: 8px 14px; font-size: 13px; }
+    
+    /* Credit Cards */
+    .card-list { display: flex; flex-direction: column; gap: 16px; }
+    
+    .credit-card-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px; border: 1px solid var(--border-light); border-radius: 16px;
+      transition: all var(--transition-base);
+    }
+    .credit-card-item:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+    .credit-card-item.default { border-color: var(--success); background: rgba(0,168,107,0.02); }
+    
+    .card-info { display: flex; align-items: center; gap: 20px; }
+    .card-icon {
+      width: 60px; height: 40px; border-radius: 8px; display: flex;
+      align-items: center; justify-content: center; font-size: 28px;
+    }
+    .card-icon.visa { background: #1A1F71; color: white; }
+    .card-icon.mastercard { background: #EB001B; color: white; }
+    .card-icon.amex { background: #006FCF; color: white; }
+    .card-icon.troy { background: #003B95; color: white; }
+    
+    .card-details h4 { font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 12px; }
+    .default-badge {
+      background: var(--success); color: white; padding: 2px 10px;
+      border-radius: 40px; font-size: 11px; font-weight: 600;
+    }
+    .card-details p { color: var(--text-gray); font-size: 14px; }
+    .card-expiry { margin-top: 4px; font-size: 13px; color: var(--text-gray); }
+    
+    .card-actions { display: flex; gap: 8px; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; background: transparent;
+      border: 1px solid var(--border-light); cursor: pointer;
+      transition: all var(--transition-base); color: var(--text-gray);
+    }
+    .icon-btn:hover { background: var(--bg-light); color: var(--primary); }
+    .icon-btn.delete:hover { background: var(--error); color: white; border-color: var(--error); }
+    
+    /* Add Card Button */
+    .add-card-btn {
+      width: 100%; padding: 20px; border: 2px dashed var(--border-light);
+      border-radius: 16px; background: transparent; text-align: center;
+      cursor: pointer; transition: all var(--transition-base);
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+    }
+    .add-card-btn:hover { border-color: var(--primary); background: rgba(0,59,149,0.02); }
+    .add-card-btn i { font-size: 24px; color: var(--text-gray); }
+    
+    /* Billing Info */
+    .billing-info { }
+    .info-row {
+      display: flex; padding: 14px 0; border-bottom: 1px solid var(--border-light);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { width: 150px; color: var(--text-gray); font-weight: 500; }
+    .info-value { flex: 1; font-weight: 500; }
+    
+    /* Saved Payment Methods */
+    .payment-method-item {
+      display: flex; align-items: center; gap: 16px; padding: 16px;
+      border: 1px solid var(--border-light); border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .payment-icon {
+      width: 48px; height: 48px; border-radius: 12px; display: flex;
+      align-items: center; justify-content: center; font-size: 24px;
+    }
+    
+    /* Security Note */
+    .security-note {
+      background: var(--bg-light); border-radius: 12px; padding: 20px;
+      display: flex; gap: 16px; align-items: flex-start;
+      border: 1px solid var(--border-light);
+    }
+    .security-note i { color: var(--success); font-size: 24px; }
+    .security-note h4 { margin-bottom: 4px; }
+    .security-note p { color: var(--text-gray); font-size: 14px; }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal {
+      background: white; border-radius: var(--radius-xl); padding: 32px;
+      max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px;
+    }
+    .modal-header h3 { font-size: 20px; }
+    .close-modal { cursor: pointer; font-size: 24px; color: var(--text-gray); }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 8px; }
+    .form-control {
+      width: 100%; padding: 14px 16px; border: 1.5px solid var(--border-light);
+      border-radius: 12px; font-size: 15px;
+    }
+    .form-control:focus { outline: none; border-color: var(--primary); }
+    .card-row { display: flex; gap: 12px; }
+    
+    /* Mobile */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+    }
+    @media (max-width: 600px) {
+      .credit-card-item { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .card-actions { align-self: flex-end; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-top: 1px solid var(--border-light);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: var(--text-gray); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    @media (max-width: 900px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    /* Toast */
+    .toast-message {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--text-dark); color: white; padding: 14px 28px;
+      border-radius: 40px; box-shadow: var(--shadow-lg); z-index: 9999;
+      display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease;
+    }
+    .toast-message.success { background: var(--success); }
+    .toast-message.error { background: var(--error); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="user-profile-card">
+        <div class="user-avatar">AY</div>
+        <div class="user-info">
+          <h4>Ahmet Yılmaz</h4>
+          <p>ahmet.yilmaz@email.com</p>
+          <div class="membership-badge">
+            <span class="tier-badge"><i class="fas fa-crown"></i> Gold Üye</span>
+          </div>
+        </div>
+      </div>
+      <a href="/" style="display: flex; align-items: center; gap: 8px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 14px;">
+        <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+      </a>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item"><i class="fas fa-columns"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlarım <span class="badge">3</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-heart"></i> Favorilerim <span class="badge" style="background: var(--success);">8</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-star"></i> Puanlarım</a>
+        <a href="#" class="nav-item"><i class="fas fa-envelope"></i> Mesajlarım</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Hesap Ayarları</div>
+        <a href="#" class="nav-item"><i class="fas fa-user-circle"></i> Profil Bilgilerim</a>
+        <a href="#" class="nav-item active"><i class="fas fa-credit-card"></i> Ödeme Yöntemleri</a>
+        <a href="#" class="nav-item"><i class="fas fa-bell"></i> Bildirim Tercihleri</a>
+        <a href="#" class="nav-item"><i class="fas fa-shield-alt"></i> Güvenlik & Giriş</a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- Header -->
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Ödeme Yöntemleri</h1>
+        <p>Kayıtlı kartlarınızı, fatura bilgilerinizi ve ödeme tercihlerinizi yönetin.</p>
+      </div>
+    </header>
+    
+    <div class="payment-container">
+      
+      <!-- Kayıtlı Kredi Kartları -->
+      <div class="payment-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-credit-card"></i> Kayıtlı Kartlarım</h3>
+          <button class="btn btn-primary btn-sm" onclick="openAddCardModal()"><i class="fas fa-plus"></i> Yeni Kart Ekle</button>
+        </div>
+        
+        <div class="card-list">
+          <!-- Varsayılan Kart - Visa -->
+          <div class="credit-card-item default">
+            <div class="card-info">
+              <div class="card-icon visa"><i class="fab fa-cc-visa"></i></div>
+              <div class="card-details">
+                <h4>Visa •••• 4242 <span class="default-badge"><i class="fas fa-check"></i> Varsayılan</span></h4>
+                <p>Ahmet Yılmaz</p>
+                <div class="card-expiry">Son Kullanma: 08/2026</div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="icon-btn" onclick="setAsDefault(this)" title="Varsayılan Yap"><i class="fas fa-star"></i></button>
+              <button class="icon-btn" onclick="editCard(this)" title="Düzenle"><i class="fas fa-edit"></i></button>
+              <button class="icon-btn delete" onclick="deleteCard(this)" title="Sil"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+          
+          <!-- Mastercard -->
+          <div class="credit-card-item">
+            <div class="card-info">
+              <div class="card-icon mastercard"><i class="fab fa-cc-mastercard"></i></div>
+              <div class="card-details">
+                <h4>Mastercard •••• 8888</h4>
+                <p>Ahmet Yılmaz</p>
+                <div class="card-expiry">Son Kullanma: 12/2025</div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="icon-btn" onclick="setAsDefault(this)" title="Varsayılan Yap"><i class="far fa-star"></i></button>
+              <button class="icon-btn" onclick="editCard(this)" title="Düzenle"><i class="fas fa-edit"></i></button>
+              <button class="icon-btn delete" onclick="deleteCard(this)" title="Sil"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+          
+          <!-- American Express -->
+          <div class="credit-card-item">
+            <div class="card-info">
+              <div class="card-icon amex"><i class="fab fa-cc-amex"></i></div>
+              <div class="card-details">
+                <h4>American Express •••• 1005</h4>
+                <p>Ahmet Yılmaz</p>
+                <div class="card-expiry">Son Kullanma: 03/2027</div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="icon-btn" onclick="setAsDefault(this)" title="Varsayılan Yap"><i class="far fa-star"></i></button>
+              <button class="icon-btn" onclick="editCard(this)" title="Düzenle"><i class="fas fa-edit"></i></button>
+              <button class="icon-btn delete" onclick="deleteCard(this)" title="Sil"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        </div>
+        
+        <button class="add-card-btn" onclick="openAddCardModal()">
+          <i class="fas fa-plus-circle"></i> Yeni Kredi veya Banka Kartı Ekle
+        </button>
+      </div>
+      
+      <!-- Fatura Bilgileri -->
+      <div class="payment-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-file-invoice"></i> Fatura Bilgileri</h3>
+          <button class="btn btn-outline btn-sm" onclick="enableEdit()"><i class="fas fa-edit"></i> Düzenle</button>
+        </div>
+        
+        <div class="billing-info">
+          <div class="info-row">
+            <span class="info-label">Fatura Tipi</span>
+            <span class="info-value">Bireysel</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Ad Soyad</span>
+            <span class="info-value">Ahmet Yılmaz</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">T.C. Kimlik No</span>
+            <span class="info-value">•••••••••</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Vergi Dairesi</span>
+            <span class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Vergi No</span>
+            <span class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Fatura Adresi</span>
+            <span class="info-value">Vişnezade Mah. Süleyman Seba Cad. No:45 D:12, Beşiktaş / İstanbul</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">E-posta (Fatura)</span>
+            <span class="info-value">ahmet.yilmaz@email.com</span>
+          </div>
+        </div>
+        
+        <button class="btn btn-outline btn-sm" style="margin-top: 16px;" onclick="enableEdit()">
+          <i class="fas fa-building"></i> Kurumsal Fatura Bilgisi Ekle
+        </button>
+      </div>
+      
+      <!-- Kayıtlı Diğer Ödeme Yöntemleri -->
+      <div class="payment-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-wallet"></i> Diğer Ödeme Yöntemleri</h3>
+        </div>
+        
+        <div class="payment-method-item">
+          <div class="payment-icon" style="background: rgba(0,168,107,0.1); color: var(--success);"><i class="fas fa-gift"></i></div>
+          <div style="flex: 1;">
+            <h4>Hediye Kartı / Kupon Kodu</h4>
+            <p style="color: var(--text-gray); font-size: 14px;">Hediye kartı veya indirim kuponu ekleyin.</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="openCouponModal()">Kupon Ekle</button>
+        </div>
+        
+        <div class="payment-method-item">
+          <div class="payment-icon" style="background: rgba(59,130,246,0.1); color: var(--info);"><i class="fas fa-coins"></i></div>
+          <div style="flex: 1;">
+            <h4>OtelPuan ile Öde</h4>
+            <p style="color: var(--text-gray); font-size: 14px;">Mevcut puan: 1.250 (₺250 değerinde)</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="alert('Puanlarınızı kullanmak için rezervasyon sırasında seçim yapabilirsiniz.')">Kullan</button>
+        </div>
+      </div>
+      
+      <!-- Ödeme Tercihleri -->
+      <div class="payment-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-sliders-h"></i> Ödeme Tercihleri</h3>
+        </div>
+        
+        <div class="preference-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;">
+          <div>
+            <h4>Tek Tıkla Ödeme</h4>
+            <p style="color: var(--text-gray); font-size: 14px;">Varsayılan kartınızla hızlı ödeme yapın.</p>
+          </div>
+          <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+        </div>
+        
+        <div class="preference-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;">
+          <div>
+            <h4>3D Secure Onayı</h4>
+            <p style="color: var(--text-gray); font-size: 14px;">Tüm ödemelerde ek güvenlik katmanı.</p>
+          </div>
+          <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+        </div>
+        
+        <div class="preference-item" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;">
+          <div>
+            <h4>Para Birimi</h4>
+            <p style="color: var(--text-gray); font-size: 14px;">Ödemelerde kullanılacak para birimi.</p>
+          </div>
+          <select class="form-control" style="width: auto; padding: 8px 32px 8px 16px;">
+            <option>TRY (₺)</option>
+            <option>USD ($)</option>
+            <option>EUR (€)</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Güvenlik Notu -->
+      <div class="security-note">
+        <i class="fas fa-shield-alt"></i>
+        <div>
+          <h4>Ödemeleriniz Güvende</h4>
+          <p>Kart bilgileriniz PCI DSS Level 1 standartlarında şifrelenerek saklanır. 256-bit SSL sertifikası ve 3D Secure ile korunmaktadır. Otelturizm, kart bilgilerinizi hiçbir şekilde kaydetmez, yalnızca tokenize edilmiş halini saklar.</p>
+          <div style="display: flex; gap: 16px; margin-top: 16px;">
+            <span><i class="fas fa-check-circle" style="color: var(--success);"></i> PCI DSS Level 1</span>
+            <span><i class="fas fa-check-circle" style="color: var(--success);"></i> 256-bit SSL</span>
+            <span><i class="fas fa-check-circle" style="color: var(--success);"></i> 3D Secure</span>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+  </main>
+</div>
+
+<!-- Yeni Kart Ekleme Modal -->
+<div class="modal-overlay" id="addCardModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-plus-circle"></i> Yeni Kart Ekle</h3>
+      <span class="close-modal" onclick="closeAddCardModal()">&times;</span>
+    </div>
+    <form onsubmit="event.preventDefault(); addNewCard();">
+      <div class="form-group">
+        <label>Kart Üzerindeki İsim</label>
+        <input type="text" class="form-control" placeholder="Ad Soyad" value="Ahmet Yılmaz" required>
+      </div>
+      <div class="form-group">
+        <label>Kart Numarası</label>
+        <input type="text" class="form-control" placeholder="•••• •••• •••• ••••" required>
+      </div>
+      <div class="card-row">
+        <div class="form-group" style="flex: 1;">
+          <label>Son Kullanma</label>
+          <input type="text" class="form-control" placeholder="AA/YY" required>
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>CVV/CVC</label>
+          <input type="text" class="form-control" placeholder="•••" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" checked> Bu kartı varsayılan ödeme yöntemim olarak ayarla
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Kartı Kaydet</button>
+    </form>
+  </div>
+</div>
+
+<!-- Kupon Kodu Modal -->
+<div class="modal-overlay" id="couponModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-ticket-alt"></i> Kupon Kodu Ekle</h3>
+      <span class="close-modal" onclick="closeCouponModal()">&times;</span>
+    </div>
+    <form onsubmit="event.preventDefault(); applyCoupon();">
+      <div class="form-group">
+        <label>Kupon Kodu</label>
+        <input type="text" class="form-control" placeholder="Örn: GOLD2025" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Kuponu Kullan</button>
+    </form>
+  </div>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-heart"></i><span>Favoriler</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-star"></i><span>Puanlar</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-user"></i><span>Profil</span></a>
+  </div>
+</nav>
+
+<style>
+  .toggle-switch {
+    width: 52px; height: 28px; background: var(--border-light);
+    border-radius: 40px; position: relative; cursor: pointer;
+    transition: background var(--transition-base);
+  }
+  .toggle-switch.active { background: var(--success); }
+  .toggle-switch::after {
+    content: ''; position: absolute; width: 22px; height: 22px;
+    background: white; border-radius: 50%; top: 3px; left: 3px;
+    transition: left var(--transition-base); box-shadow: var(--shadow-sm);
+  }
+  .toggle-switch.active::after { left: 27px; }
+</style>
+
+<script>
+  (function() {
+    window.openAddCardModal = function() {
+      document.getElementById('addCardModal').style.display = 'flex';
+    };
+    
+    window.closeAddCardModal = function() {
+      document.getElementById('addCardModal').style.display = 'none';
+    };
+    
+    window.openCouponModal = function() {
+      document.getElementById('couponModal').style.display = 'flex';
+    };
+    
+    window.closeCouponModal = function() {
+      document.getElementById('couponModal').style.display = 'none';
+    };
+    
+    window.addNewCard = function() {
+      closeAddCardModal();
+      showToast('✅ Yeni kart başarıyla eklendi!', 'success');
+    };
+    
+    window.applyCoupon = function() {
+      closeCouponModal();
+      showToast('✅ Kupon kodu başarıyla tanımlandı!', 'success');
+    };
+    
+    window.setAsDefault = function(btn) {
+      const card = btn.closest('.credit-card-item');
+      document.querySelectorAll('.credit-card-item').forEach(c => c.classList.remove('default'));
+      card.classList.add('default');
+      
+      document.querySelectorAll('.default-badge').forEach(b => b.remove());
+      const details = card.querySelector('.card-details h4');
+      const badge = document.createElement('span');
+      badge.className = 'default-badge';
+      badge.innerHTML = '<i class="fas fa-check"></i> Varsayılan';
+      details.appendChild(badge);
+      
+      showToast('✅ Varsayılan kart güncellendi!', 'success');
+    };
+    
+    window.editCard = function(btn) {
+      openAddCardModal();
+      showToast('Kart bilgilerini düzenleyebilirsiniz.', 'info');
+    };
+    
+    window.deleteCard = function(btn) {
+      if (confirm('Bu kartı silmek istediğinize emin misiniz?')) {
+        const card = btn.closest('.credit-card-item');
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          card.remove();
+          showToast('✅ Kart başarıyla silindi.', 'success');
+        }, 300);
+      }
+    };
+    
+    window.enableEdit = function() {
+      showToast('Fatura bilgilerini düzenleyebilirsiniz.', 'info');
+    };
+    
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    // Modal dışına tıklayınca kapat
+    document.getElementById('addCardModal').addEventListener('click', function(e) {
+      if (e.target === this) closeAddCardModal();
+    });
+    document.getElementById('couponModal').addEventListener('click', function(e) {
+      if (e.target === this) closeCouponModal();
+    });
+    
+    console.log('✅ Ödeme Yöntemleri Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

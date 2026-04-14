@@ -1,0 +1,98 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminDashboardViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+}
+<section class="admin-kpi-grid">
+    @foreach (var metric in Model.Metrics)
+    {
+        <article class="admin-kpi-card @metric.ToneClass">
+            <div class="kpi-icon"><i class="fas @metric.IconClass"></i></div>
+            <div>
+                <p>@metric.Label</p>
+                <h2>@metric.Value</h2>
+                <span>@metric.TrendText</span>
+            </div>
+        </article>
+    }
+</section>
+
+<section class="admin-dashboard-grid">
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">REZERVASYON HAREKETI</p>
+                <h2>Son 6 Ay</h2>
+            </div>
+        </div>
+        <div class="admin-chart-bars">
+            @foreach (var bar in Model.ReservationChart)
+            {
+                <div class="chart-bar-item">
+                    <div class="chart-bar" style="height:@bar.HeightPercent%"></div>
+                    <strong>@bar.Value</strong>
+                    <span>@bar.Label</span>
+                </div>
+            }
+        </div>
+    </article>
+
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">AKTIVITE AKISI</p>
+                <h2>Son Hareketler</h2>
+            </div>
+        </div>
+        <div class="admin-activity-list">
+            @foreach (var activity in Model.Activities)
+            {
+                <div class="admin-activity-item @activity.ToneClass">
+                    <div class="activity-icon"><i class="fas @activity.IconClass"></i></div>
+                    <div>
+                        <strong>@activity.Title</strong>
+                        <p>@activity.Subtitle</p>
+                    </div>
+                    <span>@activity.TimeText</span>
+                </div>
+            }
+        </div>
+    </article>
+</section>
+
+<section class="admin-section-card">
+    <div class="admin-section-head">
+        <div>
+            <p class="mini-caption">ONE CIKAN TESISLER</p>
+            <h2>Rezervasyon Yogunlugu Yuksek Oteller</h2>
+        </div>
+    </div>
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Otel</th>
+                    <th>Konum</th>
+                    <th>Durum</th>
+                    <th>Puan</th>
+                    <th>Rezervasyon</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.HighlightHotels)
+                {
+                    <tr>
+                        <td>@row.HotelName</td>
+                        <td>@row.CityLabel</td>
+                        <td><span class="table-status @row.StatusToneClass">@row.StatusLabel</span></td>
+                        <td>@row.ScoreText</td>
+                        <td>@row.ReservationText</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+

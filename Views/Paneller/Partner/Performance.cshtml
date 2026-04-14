@@ -1,0 +1,174 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerPerformancePageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+}
+
+<section class="partner-grid">
+    @foreach (var card in Model.SummaryCards)
+    {
+        <article class="partner-stat-card @card.ToneClass">
+            <i class="fas @card.IconClass"></i>
+            <strong>@card.Value</strong>
+            <span>@card.Label</span>
+            <p>@card.Description</p>
+        </article>
+    }
+</section>
+
+<section class="partner-performance-hero">
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <p class="partner-room-kicker">Operasyon özeti</p>
+                <h2>Gelir ve rezervasyon trendi</h2>
+            </div>
+            <a class="partner-primary-btn partner-toolbar-link" href="/panel/partner/performans/rapor-indir?otelId=@Model.Shell.SelectedHotelId">
+                <i class="fas fa-file-arrow-down"></i>
+                Rapor indir
+            </a>
+        </div>
+        @if (Model.RevenueTrend.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Henüz performans verisi oluşmadı</strong>
+                <p>Rezervasyon, fiyat ve otel istatistikleri geldikçe bu grafik otomatik olarak dolacak.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-chart-bars">
+                @foreach (var point in Model.RevenueTrend)
+                {
+                    <div class="chart-col">
+                        <span style="height:@(point.HeightPercent)%"></span>
+                        <strong>@point.Label</strong>
+                        <small>@point.ReservationCount rezervasyon</small>
+                    </div>
+                }
+            </div>
+        }
+    </article>
+
+    <article class="partner-section-card partner-performance-note">
+        <h2>Akıllı not</h2>
+        <p>@Model.InfoNote</p>
+        <ul class="partner-performance-bullets">
+            <li>Doluluk, fiyat ve yorum verileri tek tabloda birleşir.</li>
+            <li>Rakip otelleri ekleyerek günlük benchmark görünümü oluşturabilirsiniz.</li>
+            <li>İndirilen CSV raporu satış ve yönetim ekipleriyle paylaşılabilir.</li>
+        </ul>
+    </article>
+</section>
+
+<section class="partner-two-column partner-performance-layout">
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>Rakip analizi kayıtları</h2>
+                <p>Rakip otellerin fiyat ve tahmini doluluk notlarını tarih bazında takip edin.</p>
+            </div>
+        </div>
+        @if (Model.Competitors.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Henüz rakip kaydı yok</strong>
+                <p>Sağdaki formdan ilk rakip analizi kaydını oluşturabilirsiniz.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-table-wrap">
+                <table class="partner-table">
+                    <thead>
+                        <tr>
+                            <th>Rakip otel</th>
+                            <th>Konum</th>
+                            <th>Analiz tarihi</th>
+                            <th>Ortalama fiyat</th>
+                            <th>Doluluk</th>
+                            <th>Kaynak</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var competitor in Model.Competitors)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@competitor.HotelName</strong>
+                                    @if (!string.IsNullOrWhiteSpace(competitor.Notes))
+                                    {
+                                        <div class="partner-table-note">@competitor.Notes</div>
+                                    }
+                                </td>
+                                <td>@competitor.LocationText</td>
+                                <td>@competitor.AnalysisDateText</td>
+                                <td>@competitor.AveragePriceText</td>
+                                <td>@competitor.OccupancyText</td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(competitor.SourceUrl))
+                                    {
+                                        <a href="@competitor.SourceUrl" target="_blank" rel="noreferrer" class="partner-text-link">Kaynağı aç</a>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </article>
+
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>Rakip ekle</h2>
+                <p>Satış ekibinin kullandığı benchmark bilgilerini canlı panelde tutun.</p>
+            </div>
+        </div>
+        <form method="post" action="/panel/partner/performans/rakip-kaydet" class="partner-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.CompetitorForm.HotelId" />
+            <label>
+                <span>Rakip otel adı</span>
+                <input type="text" name="CompetitorHotelName" value="@Model.CompetitorForm.CompetitorHotelName" placeholder="Örn. X Tuzla Business Hotel" />
+            </label>
+            <label>
+                <span>Analiz tarihi</span>
+                <input type="date" name="AnalysisDate" value="@Model.CompetitorForm.AnalysisDate.ToString("yyyy-MM-dd")" />
+            </label>
+            <label>
+                <span>Şehir</span>
+                <input type="text" name="CompetitorCity" value="@Model.CompetitorForm.CompetitorCity" placeholder="İstanbul" />
+            </label>
+            <label>
+                <span>İlçe</span>
+                <input type="text" name="CompetitorDistrict" value="@Model.CompetitorForm.CompetitorDistrict" placeholder="Tuzla" />
+            </label>
+            <label>
+                <span>Ortalama gecelik fiyat</span>
+                <input type="number" step="0.01" name="AverageNightlyPrice" value="@Model.CompetitorForm.AverageNightlyPrice?.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+            </label>
+            <label>
+                <span>Tahmini doluluk (%)</span>
+                <input type="number" step="0.01" name="EstimatedOccupancyRate" value="@Model.CompetitorForm.EstimatedOccupancyRate?.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+            </label>
+            <label class="partner-form-span">
+                <span>Kaynak URL</span>
+                <input type="text" name="SourceUrl" value="@Model.CompetitorForm.SourceUrl" placeholder="https://ornek.com/rakip-otel" />
+            </label>
+            <label class="partner-form-span">
+                <span>Notlar</span>
+                <textarea name="Notes" placeholder="Fiyat avantajı, doluluk, kampanya veya dikkat çeken yorum notları">@Model.CompetitorForm.Notes</textarea>
+            </label>
+            <button type="submit" class="partner-primary-btn partner-form-span">
+                <i class="fas fa-chart-line"></i>
+                Rakip analizi kaydet
+            </button>
+        </form>
+    </article>
+</section>

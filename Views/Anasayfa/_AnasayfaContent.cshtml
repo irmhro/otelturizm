@@ -1,0 +1,200 @@
+@model otelturizmnew.Models.Anasayfa.AnasayfaViewModel
+
+<section class="hero-section">
+    <div class="container-xl px-4">
+        <div class="hero-layout">
+
+            <div class="hero-copy" style="text-align:center;">
+                <h1 class="hero-title">Hayalindeki <span>Oteli</span> Keşfet</h1>
+                <p class="hero-text">@Model.HeroDescription</p>
+
+                <form class="fancy-search-card" asp-controller="Oteller" asp-action="OtelListeleme" method="get" aria-label="Gelişmiş arama">
+                    <div class="fancy-main">
+                        <label class="fancy-label">Nereye gidiyorsun?</label>
+                        <div class="fancy-input-wrap">
+                            <div class="fancy-pin"><i class="fas fa-location-dot"></i></div>
+                            <input class="fancy-input" type="text" name="city" value="İstanbul" placeholder="İstanbul, Kadıköy veya bir semt girin" autocomplete="off" />
+                        </div>
+                        <div class="fancy-suggestions" aria-hidden="true">Öneriler: Beşiktaş · Taksim · Kadıköy</div>
+                    </div>
+
+                    <div class="fancy-controls">
+                        <div class="pill-row">
+                            <label class="pill">
+                                <i class="fa-regular fa-calendar"></i>
+                                <input type="date" name="checkIn" />
+                            </label>
+
+                            <label class="pill">
+                                <i class="fa-regular fa-calendar"></i>
+                                <input type="date" name="checkOut" />
+                            </label>
+
+                            <label class="pill">
+                                <i class="fas fa-user"></i>
+                                <select name="guests">
+                                    <option value="2">2 Yetişkin</option>
+                                    <option value="1">1 Yetişkin</option>
+                                    <option value="3">3 Yetişkin</option>
+                                    <option value="4">4 Yetişkin</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="fancy-cta"><span>Ara</span> <i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+
+                <!-- Feature hub: quick access to curated searches / tools -->
+                <div class="feature-hub" aria-label="Öne çıkan özellikler">
+                    <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="budget" class="feature-card" title="Bütçeye Uygun Oteller">
+                        <div class="feature-icon gradient-budget"><i class="fas fa-wallet"></i></div>
+                        <div class="feature-content">
+                            <div class="feature-title">Bütçeye Uygun</div>
+                            <div class="feature-sub">Ekonomik ve kaliteli seçenekler</div>
+                        </div>
+                    </a>
+
+                    <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="discount" class="feature-card" title="İndirimli Oteller">
+                        <div class="feature-icon gradient-discount"><i class="fas fa-tag"></i></div>
+                        <div class="feature-content">
+                            <div class="feature-title">İndirimli Oteller</div>
+                            <div class="feature-sub">Güncel kampanyalarla tasarruf edin</div>
+                        </div>
+                    </a>
+
+                    <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="weekend" class="feature-card" title="Hafta Sonu Fırsatları">
+                        <div class="feature-icon gradient-weekend"><i class="fas fa-calendar-week"></i></div>
+                        <div class="feature-content">
+                            <div class="feature-title">Hafta Sonu</div>
+                            <div class="feature-sub">Kısa tatil fırsatları</div>
+                        </div>
+                    </a>
+
+                    <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="pool" class="feature-card" title="Havuzlu Oteller">
+                        <div class="feature-icon gradient-pool"><i class="fas fa-swimming-pool"></i></div>
+                        <div class="feature-content">
+                            <div class="feature-title">Havuzlu Oteller</div>
+                            <div class="feature-sub">Havuz keyfini yaşayın</div>
+                        </div>
+                    </a>
+
+                    <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="campaign" class="feature-card" title="Kampanyalı Oteller">
+                        <div class="feature-icon gradient-campaign"><i class="fas fa-bolt"></i></div>
+                        <div class="feature-content">
+                            <div class="feature-title">Kampanyalı</div>
+                            <div class="feature-sub">Özel fırsatlar ve erken rezervasyon</div>
+                        </div>
+                    </a>
+
+                    <a asp-controller="Home" asp-action="Index" class="feature-card feature-cta" title="Seyahat Planlama">
+                        <div class="feature-icon gradient-plan"><i class="fas fa-route"></i></div>
+                        <div class="feature-content">
+                            <div class="feature-title">Seyahat Planlama</div>
+                            <div class="feature-sub">Kişiselleştirilmiş gezi planları</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="hero-slider-shell">
+                    @if (Model.HeroSlides.Count == 0)
+                {
+                    <div class="hero-slide-empty">
+                        <strong>Hero görseli hazır değil</strong>
+                        <span>Kapak fotoğrafı olan oteller geldiğinde bu alan otomatik dolar.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="swiper hero-swiper">
+                        <div class="swiper-wrapper">
+                            @foreach (var slide in Model.HeroSlides)
+                            {
+                                <div class="swiper-slide">
+                                    <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@slide.DetailSlug" class="hero-slide-card">
+                                        <img src="@slide.ImageUrl" alt="@slide.Title" />
+                                        <div class="hero-slide-overlay">
+                                            <h3>@slide.Title</h3>
+                                            <p>@slide.Subtitle</p>
+                                        </div>
+                                @if (!string.IsNullOrWhiteSpace(slide.Temperature) || !string.IsNullOrWhiteSpace(slide.WeatherIcon))
+                                {
+                                    <div class="hero-slide-weather">
+                                        <i class="fas @slide.WeatherIcon"></i>
+                                        <span class="hero-slide-temp">@slide.Temperature</span>
+                                    </div>
+                                }
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                        <div class="swiper-pagination hero-pagination"></div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Populer Konaklama Yerleri removed as requested; placeholder kept for future feature -->
+
+
+<section class="home-section">
+    <div class="container-xl px-4">
+        <div class="section-header">
+            <h2 class="section-title">Öne Çıkan Oteller</h2>
+            <a asp-controller="Oteller" asp-action="OtelListeleme" class="section-link">Tümünü Gör <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        @if (Model.PopularHotels.Count == 0)
+        {
+            <div class="hotel-empty-state">
+                <h3>Yayınlanmış otel bulunamadı</h3>
+                <p>`oteller` tablosunda yayın ve onay durumu aktif kayıtlar geldiğinde bu alan otomatik dolacak.</p>
+            </div>
+        }
+        else
+        {
+            <div class="hotel-grid">
+                @foreach (var hotel in Model.PopularHotels)
+                {
+                    <partial name="~/Views/Anasayfa/_HomeHotelCard.cshtml" model="hotel" />
+                }
+            </div>
+        }
+    </div>
+</section>
+
+<section class="home-section weekend-section">
+    <div class="container-xl px-4">
+        <div class="section-header">
+            <h2 class="section-title">İstanbul'da Hafta Sonu</h2>
+            <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-city="istanbul" class="section-link">Tümünü Gör <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        @if (Model.WeekendHotels.Count == 0)
+        {
+            <div class="hotel-empty-state">
+                <h3>İstanbul için önerilen otel bulunamadı</h3>
+                <p>`tavsiye_edilen_otel` veya İstanbul yayındaki tesis kayıtlarını kontrol ederek bu alanı doldurabiliriz.</p>
+            </div>
+        }
+        else
+        {
+            <div class="swiper weekend-swiper">
+                <div class="swiper-wrapper">
+                    @foreach (var hotel in Model.WeekendHotels)
+                    {
+                        <div class="swiper-slide">
+                            <partial name="~/Views/Anasayfa/_HomeHotelCard.cshtml" model="hotel" />
+                        </div>
+                    }
+                </div>
+                <div class="swiper-button-prev weekend-prev"></div>
+                <div class="swiper-button-next weekend-next"></div>
+            </div>
+        }
+    </div>
+</section>
+

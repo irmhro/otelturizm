@@ -1,0 +1,360 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerPhotosPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    var photoTypes = new[] { "Dış Cephe", "Lobi", "Restoran", "Havuz", "Plaj", "Oda", "Banyo", "Spor Salonu", "SPA", "Toplantı Odası", "Genel Alan", "Yemek", "Manzara" };
+}
+
+<section class="partner-grid">
+    @foreach (var card in Model.SummaryCards)
+    {
+        <article class="partner-stat-card @card.ToneClass">
+            <i class="fas @card.IconClass"></i>
+            <strong>@card.Value</strong>
+            <span>@card.Label</span>
+            <p>@card.Description</p>
+        </article>
+    }
+</section>
+
+<section class="partner-two-column partner-photo-layout">
+    <article id="fotograf-yukle" class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>Fotograf yukle</h2>
+                <p>Yeni galeri gorsellerini aninda yukleyin, kapaga alin ve referans sablondaki medya alanlarini doldurun.</p>
+            </div>
+        </div>
+        <form id="partner-photo-upload-form" method="post" action="/panel/partner/fotograflar/yukle" enctype="multipart/form-data" class="partner-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+            <label>
+                <span>Baslik</span>
+                <input type="text" name="Title" value="@Model.UploadForm.Title" placeholder="Orn. Giris cephesi gun batimi cekimi" />
+            </label>
+            <label>
+                <span>Gorsel tipi</span>
+                <select name="PhotoType">
+                    @foreach (var photoType in photoTypes)
+                    {
+                        <option value="@photoType" selected="@(Model.UploadForm.PhotoType == photoType)">@photoType</option>
+                    }
+                </select>
+            </label>
+            <label class="partner-form-span">
+                <span>Aciklama</span>
+                <textarea name="Description" placeholder="Misafirlerin galeride gorecegi kisa aciklama">@Model.UploadForm.Description</textarea>
+            </label>
+            <label>
+                <span>Siralama</span>
+                <input type="number" name="DisplayOrder" value="@Model.UploadForm.DisplayOrder" min="0" />
+            </label>
+            <label class="partner-file-input">
+                <span>Dosyalar</span>
+                <input id="partner-photo-files" type="file" name="Files" multiple accept="image/*" />
+            </label>
+            <div class="partner-upload-meta partner-form-span" id="partner-upload-meta" hidden>
+                <div class="partner-upload-meta-row">
+                    <strong id="partner-upload-count">0 dosya secildi</strong>
+                    <span id="partner-upload-size">0 MB</span>
+                </div>
+                <div class="partner-upload-progress-shell" hidden id="partner-upload-progress-shell">
+                    <div class="partner-upload-progress-bar" id="partner-upload-progress-bar"></div>
+                </div>
+                <p class="partner-upload-help" id="partner-upload-help">Secilen gorseller yuklenmeye hazir.</p>
+            </div>
+            <label class="partner-checkbox-inline partner-form-span">
+                <input type="checkbox" name="MakeCover" value="true" checked="@(Model.UploadForm.MakeCover)" />
+                <span>Ilk yuklenen gorseli kapak fotografi yap</span>
+            </label>
+            <button type="submit" class="partner-primary-btn partner-form-span" id="partner-upload-submit">
+                <i class="fas fa-cloud-arrow-up"></i>
+                Fotograflari yukle
+            </button>
+        </form>
+    </article>
+
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>@(Model.IsEditingPhoto ? "Fotografi duzenle" : "Galeri karti secin")</h2>
+                <p>@(Model.IsEditingPhoto ? "Secili gorselin baslik, aciklama ve one cikan ayarlarini duzenleyin." : "Galeriden bir gorsel sectiginizde duzenleme formu burada dolacaktir.")</p>
+            </div>
+            @if (Model.IsEditingPhoto)
+            {
+                <a href="/panel/partner/fotograflar?otelId=@Model.SelectedHotelId" class="partner-text-link">Secimi temizle</a>
+            }
+        </div>
+        <form method="post" action="/panel/partner/fotograflar/guncelle" class="partner-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+            <input type="hidden" name="PhotoId" value="@Model.EditForm.PhotoId" />
+            <label>
+                <span>Baslik</span>
+                <input type="text" name="Title" value="@Model.EditForm.Title" placeholder="Galeri basligi" />
+            </label>
+            <label>
+                <span>Gorsel tipi</span>
+                <select name="PhotoType">
+                    @foreach (var photoType in photoTypes)
+                    {
+                        <option value="@photoType" selected="@(Model.EditForm.PhotoType == photoType)">@photoType</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Siralama</span>
+                <input type="number" name="DisplayOrder" value="@Model.EditForm.DisplayOrder" min="0" />
+            </label>
+            <label class="partner-checkbox-inline">
+                <input type="checkbox" name="MarkAsFeatured" value="true" checked="@(Model.EditForm.MarkAsFeatured)" />
+                <span>One cikan gorsel olarak isaretle</span>
+            </label>
+            <label class="partner-form-span">
+                <span>Aciklama</span>
+                <textarea name="Description" placeholder="Kisa aciklama">@Model.EditForm.Description</textarea>
+            </label>
+            <button type="submit" class="partner-primary-btn partner-form-span" @(Model.IsEditingPhoto ? null : "disabled")>
+                <i class="fas fa-floppy-disk"></i>
+                Fotografi guncelle
+            </button>
+        </form>
+    </article>
+</section>
+
+<section class="partner-section-card">
+    <div class="partner-section-head">
+        <div>
+            <h2>Galeri</h2>
+            <p>Kapak, one cikan ve kategori bazli tum gorselleri tek ekranda yonetin.</p>
+        </div>
+        <button type="button" class="partner-secondary-btn" id="partner-photo-bulk-toggle">
+            <i class="fas fa-check-double"></i>
+            Toplu secim
+        </button>
+    </div>
+    @if (Model.Photos.Count == 0)
+    {
+        <div class="partner-empty-state">
+            <strong>Henuz galeri gorseli yok</strong>
+            <p>Yuklediginiz tum otel fotograflari bu alanda kart duzeninde listelenecek.</p>
+        </div>
+    }
+    else
+    {
+        <form id="partner-photo-bulk-form" method="post" action="/panel/partner/fotograflar/toplu-sil" class="partner-photo-bulk-shell">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+            <div class="partner-photo-bulk-bar" hidden>
+                <strong id="partner-photo-bulk-count">0 gorsel secildi</strong>
+                <button type="submit" class="partner-danger-btn" onclick="return confirm('Secilen gorseller kalici olarak silinsin mi?');">
+                    <i class="fas fa-trash"></i>
+                    Secilenleri sil
+                </button>
+            </div>
+            <div class="partner-photo-gallery">
+                @foreach (var photo in Model.Photos)
+                {
+                    <article class="partner-photo-card @(photo.IsCover ? "is-cover" : string.Empty)">
+                        <div class="partner-photo-visual">
+                            <label class="partner-photo-selector" hidden>
+                                <input type="checkbox" name="PhotoIds" value="@photo.PhotoId" />
+                                <span><i class="fas fa-check"></i></span>
+                            </label>
+                            <img src="@photo.Url" alt="@photo.Title" />
+                            <div class="partner-photo-badges">
+                                @if (photo.IsCover)
+                                {
+                                    <span class="partner-chip is-cover">Kapak</span>
+                                }
+                                @if (photo.IsApproved)
+                                {
+                                    <span class="partner-chip is-approved">Onayli</span>
+                                }
+                                <span class="partner-chip">@photo.Type</span>
+                            </div>
+                        </div>
+                        <div class="partner-photo-card-content">
+                            <div class="partner-photo-head">
+                                <div>
+                                    <strong>@photo.Title</strong>
+                                    <p>@photo.SortText</p>
+                                </div>
+                            </div>
+                            <p class="partner-photo-description">@(string.IsNullOrWhiteSpace(photo.Description) ? "Bu gorsel icin aciklama eklenmemis." : photo.Description)</p>
+                            <div class="partner-photo-card-actions">
+                                <a href="/panel/partner/fotograflar?otelId=@Model.SelectedHotelId&photoId=@photo.PhotoId" class="partner-secondary-btn">
+                                    <i class="fas fa-pen"></i>
+                                    Duzenle
+                                </a>
+                                <form method="post" action="/panel/partner/fotograflar/kapak-yap">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
+                                    <input type="hidden" name="photoId" value="@photo.PhotoId" />
+                                    <button type="submit" class="partner-secondary-btn">
+                                        <i class="fas fa-image-portrait"></i>
+                                        Kapak yap
+                                    </button>
+                                </form>
+                                <form method="post" action="/panel/partner/fotograflar/sil" onsubmit="return confirm('Bu fotograf galeriden kalici olarak silinsin mi?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
+                                    <input type="hidden" name="photoId" value="@photo.PhotoId" />
+                                    <button type="submit" class="partner-danger-btn">
+                                        <i class="fas fa-trash"></i>
+                                        Sil
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        </form>
+    }
+</section>
+
+@section Scripts {
+<script>
+(() => {
+    const form = document.getElementById('partner-photo-upload-form');
+    const fileInput = document.getElementById('partner-photo-files');
+    const meta = document.getElementById('partner-upload-meta');
+    const countText = document.getElementById('partner-upload-count');
+    const sizeText = document.getElementById('partner-upload-size');
+    const helpText = document.getElementById('partner-upload-help');
+    const progressShell = document.getElementById('partner-upload-progress-shell');
+    const progressBar = document.getElementById('partner-upload-progress-bar');
+    const submitButton = document.getElementById('partner-upload-submit');
+    const bulkToggleButton = document.getElementById('partner-photo-bulk-toggle');
+    const bulkForm = document.getElementById('partner-photo-bulk-form');
+    const bulkBar = bulkForm?.querySelector('.partner-photo-bulk-bar');
+    const bulkCount = document.getElementById('partner-photo-bulk-count');
+    const selectors = Array.from(document.querySelectorAll('.partner-photo-selector'));
+    let bulkMode = false;
+
+    if (!form || !fileInput || !meta || !countText || !sizeText || !helpText || !progressShell || !progressBar || !submitButton) {
+        return;
+    }
+
+    const formatMb = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+
+    fileInput.addEventListener('change', () => {
+        const files = Array.from(fileInput.files || []);
+        if (files.length === 0) {
+            meta.hidden = true;
+            progressShell.hidden = true;
+            progressBar.style.width = '0%';
+            helpText.textContent = 'Secilen gorseller yuklenmeye hazir.';
+            return;
+        }
+
+        const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+        meta.hidden = false;
+        progressShell.hidden = true;
+        progressBar.style.width = '0%';
+        countText.textContent = `${files.length} dosya secildi`;
+        sizeText.textContent = formatMb(totalSize);
+        helpText.textContent = 'Toplu yukleme hazir. Gorseller WebP formatina cevrilerek kaydedilecek.';
+    });
+
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            meta.hidden = false;
+            helpText.textContent = 'Lutfen en az bir gorsel secin.';
+            helpText.classList.add('is-error');
+            return;
+        }
+
+        helpText.classList.remove('is-error');
+        submitButton.disabled = true;
+        progressShell.hidden = false;
+        progressBar.style.width = '0%';
+        helpText.textContent = 'Yukleme basladi. Gorseller optimize edilip WebP formatina donusturuluyor...';
+
+        const formData = new FormData(form);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', form.action, true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        xhr.upload.addEventListener('progress', (progressEvent) => {
+            if (!progressEvent.lengthComputable) {
+                return;
+            }
+
+            const percent = Math.min(100, Math.round((progressEvent.loaded / progressEvent.total) * 100));
+            progressBar.style.width = `${percent}%`;
+            helpText.textContent = `Yukleme suruyor... %${percent}`;
+        });
+
+        xhr.onload = () => {
+            submitButton.disabled = false;
+
+            let payload = null;
+            try {
+                payload = JSON.parse(xhr.responseText);
+            } catch (_) {
+                payload = null;
+            }
+
+            if (xhr.status >= 200 && xhr.status < 300 && payload?.success) {
+                progressBar.style.width = '100%';
+                helpText.textContent = payload.message || 'Fotograflar basariyla yuklendi.';
+                window.location.href = payload.redirectUrl || `/panel/partner/fotograflar?otelId=@Model.SelectedHotelId`;
+                return;
+            }
+
+            helpText.textContent = payload?.message || 'Toplu gorsel yukleme sirasinda bir hata olustu.';
+            helpText.classList.add('is-error');
+        };
+
+        xhr.onerror = () => {
+            submitButton.disabled = false;
+            helpText.textContent = 'Yukleme baglantisi kurulamadi. Lutfen tekrar deneyin.';
+            helpText.classList.add('is-error');
+        };
+
+        xhr.send(formData);
+    });
+
+    const updateBulkState = () => {
+        if (!bulkBar || !bulkCount) {
+            return;
+        }
+
+        const selected = Array.from(document.querySelectorAll('.partner-photo-selector input:checked'));
+        bulkBar.hidden = !bulkMode;
+        bulkCount.textContent = `${selected.length} gorsel secildi`;
+    };
+
+    bulkToggleButton?.addEventListener('click', () => {
+        bulkMode = !bulkMode;
+        selectors.forEach((selector) => {
+            selector.hidden = !bulkMode;
+            if (!bulkMode) {
+                const checkbox = selector.querySelector('input');
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+            }
+        });
+        bulkToggleButton.classList.toggle('is-active', bulkMode);
+        updateBulkState();
+    });
+
+    document.querySelectorAll('.partner-photo-selector input').forEach((input) => {
+        input.addEventListener('change', updateBulkState);
+    });
+
+    bulkForm?.addEventListener('submit', (event) => {
+        const selectedCount = document.querySelectorAll('.partner-photo-selector input:checked').length;
+        if (selectedCount === 0) {
+            event.preventDefault();
+            alert('Lutfen once silinecek gorselleri secin.');
+        }
+    });
+})();
+</script>
+}

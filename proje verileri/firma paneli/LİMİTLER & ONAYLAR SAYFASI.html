@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Limitler & Onaylar · Otelturizm Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #64748B; --border-light: #E2E8F0; --sidebar-width: 280px;
+      --radius-xl: 24px; --radius-lg: 20px; --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.08); --transition-base: 0.25s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    .sidebar { width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border-light); position: fixed; height: 100vh; overflow-y: auto; }
+    .sidebar-header { padding: 28px 24px; border-bottom: 1px solid var(--border-light); }
+    .company-profile { display: flex; align-items: center; gap: 14px; }
+    .company-avatar { width: 52px; height: 52px; border-radius: 16px; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; }
+    .company-info h4 { font-size: 16px; }
+    .company-badge { background: var(--success); color: white; padding: 4px 12px; border-radius: 40px; font-size: 12px; margin-top: 8px; display: inline-block; }
+    .sidebar-nav { padding: 24px 16px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title { font-size: 11px; text-transform: uppercase; color: var(--text-gray); margin-bottom: 12px; padding-left: 12px; }
+    .nav-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: var(--text-gray); text-decoration: none; transition: var(--transition-base); margin-bottom: 4px; font-size: 14px; }
+    .nav-item i { width: 24px; }
+    .nav-item:hover { background: rgba(0, 59, 149, 0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 28px 32px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .page-header h1 { font-size: 28px; font-weight: 700; }
+    .btn { padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: var(--transition-base); display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    
+    .section-card { background: var(--card-bg); border-radius: var(--radius-xl); border: 1px solid var(--border-light); padding: 24px; margin-bottom: 24px; }
+    .section-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    
+    .limit-table { width: 100%; border-collapse: collapse; }
+    .limit-table th { text-align: left; padding: 16px 0; font-weight: 600; font-size: 13px; color: var(--text-gray); border-bottom: 1px solid var(--border-light); }
+    .limit-table td { padding: 16px 0; border-bottom: 1px solid var(--border-light); }
+    
+    .toggle-switch { width: 48px; height: 24px; background: var(--border-light); border-radius: 40px; position: relative; cursor: pointer; transition: var(--transition-base); }
+    .toggle-switch.active { background: var(--success); }
+    .toggle-switch::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: var(--transition-base); }
+    .toggle-switch.active::after { left: 26px; }
+    
+    .pending-approvals { margin-top: 24px; }
+    .approval-item { display: flex; align-items: center; justify-content: space-between; padding: 20px; background: var(--bg-light); border-radius: var(--radius-lg); margin-bottom: 12px; }
+    .approval-info h4 { font-size: 16px; margin-bottom: 4px; }
+    .approval-info p { color: var(--text-gray); font-size: 13px; }
+    .approval-actions { display: flex; gap: 8px; }
+    
+    .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-top: 1px solid var(--border-light); padding: 12px 20px; z-index: 99; }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item { color: var(--text-gray); text-decoration: none; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    
+    @media (max-width: 900px) { .sidebar { display: none; } .main-content { margin-left: 0; padding: 20px; } .mobile-bottom-nav { display: block; } body { padding-bottom: 80px; } }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  
+  <aside class="sidebar">
+    <div class="sidebar-header"><div class="company-profile"><div class="company-avatar">AB</div><div class="company-info"><h4>ABC Teknoloji A.Ş.</h4><span class="company-badge">Aktif</span></div></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section"><div class="nav-section-title">Yönetim</div><a href="#" class="nav-item"><i class="fas fa-users"></i> Çalışanlar</a><a href="#" class="nav-item active"><i class="fas fa-sliders-h"></i> Limitler & Onaylar</a><a href="#" class="nav-item"><i class="fas fa-file-invoice"></i> Faturalar</a></div>
+    </nav>
+  </aside>
+  
+  <main class="main-content">
+    
+    <div class="page-header"><h1>⚙️ Limitler & Onaylar</h1><button class="btn btn-primary" onclick="alert('✅ Toplu limit güncelleme')"><i class="fas fa-save"></i> Değişiklikleri Kaydet</button></div>
+    
+    <div class="section-card">
+      <h3 class="section-title"><i class="fas fa-users"></i> Çalışan Limitleri ve Onay Durumları</h3>
+      <table class="limit-table">
+        <thead><tr><th>Çalışan</th><th>Departman</th><th>Gecelik Limit</th><th>Aylık Limit</th><th>Onay Gereksin</th><th>Durum</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Ahmet Yılmaz</strong></td><td>Satış</td><td>₺5.000 <button class="btn btn-outline btn-sm" style="padding:2px 8px; margin-left:8px;" onclick="alert('Limit düzenle')"><i class="fas fa-edit"></i></button></td><td>Sınırsız</td><td><div class="toggle-switch" onclick="this.classList.toggle('active')"></div></td><td><span style="color:var(--success);"><i class="fas fa-check-circle"></i> Onaysız</span></td></tr>
+          <tr><td><strong>Zeynep Kaya</strong></td><td>Satış</td><td>₺4.000</td><td>₺50.000</td><td><div class="toggle-switch active" onclick="this.classList.toggle('active')"></div></td><td><span style="color:var(--warning);">Onay Gerekli</span></td></tr>
+          <tr><td><strong>Mehmet Demir</strong></td><td>Teknik</td><td>₺3.500</td><td>Sınırsız</td><td><div class="toggle-switch" onclick="this.classList.toggle('active')"></div></td><td>Onaysız</td></tr>
+          <tr><td><strong>Elif Aksoy</strong></td><td>Yönetim</td><td>₺4.500</td><td>₺100.000</td><td><div class="toggle-switch" onclick="this.classList.toggle('active')"></div></td><td>Onaysız</td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="section-card">
+      <h3 class="section-title"><i class="fas fa-clock"></i> Onay Bekleyen Rezervasyonlar (3)</h3>
+      <div class="pending-approvals">
+        <div class="approval-item"><div class="approval-info"><h4>Zeynep Kaya · Rixos Premium Belek</h4><p>22-29 Mayıs · 3 oda · ₺103.530 · Limit aşımı: ₺13.530</p></div><div class="approval-actions"><button class="btn btn-primary btn-sm" onclick="alert('✅ Onaylandı')"><i class="fas fa-check"></i> Onayla</button><button class="btn btn-outline btn-sm" onclick="alert('❌ Reddedildi')"><i class="fas fa-times"></i> Reddet</button></div></div>
+        <div class="approval-item"><div class="approval-info"><h4>Burak Koç · D Maris Bay</h4><p>1-5 Mayıs · 4 oda · ₺90.880 · Departman bütçesi aşımı</p></div><div class="approval-actions"><button class="btn btn-primary btn-sm">Onayla</button><button class="btn btn-outline btn-sm">Reddet</button></div></div>
+        <div class="approval-item"><div class="approval-info"><h4>Selin Çelik · Swissôtel</h4><p>20-22 Mart · 2 oda · ₺13.600 · Onay gerekiyor</p></div><div class="approval-actions"><button class="btn btn-primary btn-sm">Onayla</button><button class="btn btn-outline btn-sm">Reddet</button></div></div>
+      </div>
+    </div>
+    
+    <div class="section-card">
+      <h3 class="section-title"><i class="fas fa-building"></i> Departman Bazlı Bütçe Limitleri</h3>
+      <table class="limit-table">
+        <thead><tr><th>Departman</th><th>Aylık Bütçe</th><th>Harcanan</th><th>Kalan</th><th>İşlem</th></tr></thead>
+        <tbody>
+          <tr><td>Satış</td><td>₺200.000</td><td>₺154.530</td><td>₺45.470</td><td><button class="btn btn-outline btn-sm">Düzenle</button></td></tr>
+          <tr><td>Teknik</td><td>₺100.000</td><td>₺108.240</td><td style="color:var(--error);">-₺8.240</td><td><button class="btn btn-outline btn-sm">Düzenle</button></td></tr>
+          <tr><td>Yönetim</td><td>₺150.000</td><td>₺120.000</td><td>₺30.000</td><td><button class="btn btn-outline btn-sm">Düzenle</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+  </main>
+</div>
+
+<nav class="mobile-bottom-nav"><div class="bottom-nav-items"><a href="#" class="bottom-nav-item"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-hotel"></i><span>Fiyatlar</span></a><a href="#" class="bottom-nav-item active"><i class="fas fa-users"></i><span>Çalışanlar</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-user"></i><span>Profil</span></a></div></nav>
+
+<script>console.log('✅ Limitler & Onaylar Sayfası Yüklendi');</script>
+</body>
+</html>

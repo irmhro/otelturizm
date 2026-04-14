@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Faturalar · Otelturizm Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #64748B; --border-light: #E2E8F0; --sidebar-width: 280px;
+      --radius-xl: 24px; --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    .sidebar { width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border-light); position: fixed; height: 100vh; overflow-y: auto; }
+    .sidebar-header { padding: 28px 24px; border-bottom: 1px solid var(--border-light); }
+    .company-profile { display: flex; align-items: center; gap: 14px; }
+    .company-avatar { width: 52px; height: 52px; border-radius: 16px; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; }
+    .company-info h4 { font-size: 16px; }
+    .company-badge { background: var(--success); color: white; padding: 4px 12px; border-radius: 40px; font-size: 12px; margin-top: 8px; display: inline-block; }
+    .sidebar-nav { padding: 24px 16px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title { font-size: 11px; text-transform: uppercase; color: var(--text-gray); margin-bottom: 12px; padding-left: 12px; }
+    .nav-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: var(--text-gray); text-decoration: none; transition: 0.25s; margin-bottom: 4px; font-size: 14px; }
+    .nav-item i { width: 24px; }
+    .nav-item:hover { background: rgba(0, 59, 149, 0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 28px 32px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .page-header h1 { font-size: 28px; font-weight: 700; }
+    .btn { padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    
+    .section-card { background: var(--card-bg); border-radius: var(--radius-xl); border: 1px solid var(--border-light); overflow: hidden; }
+    .invoice-table { width: 100%; border-collapse: collapse; }
+    .invoice-table th { text-align: left; padding: 16px 20px; background: var(--bg-light); font-weight: 600; font-size: 13px; color: var(--text-gray); }
+    .invoice-table td { padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
+    .status-badge { padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+    .status-paid { background: rgba(0, 168, 107, 0.1); color: var(--success); }
+    .status-pending { background: rgba(255, 184, 0, 0.1); color: var(--warning); }
+    
+    .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-top: 1px solid var(--border-light); padding: 12px 20px; z-index: 99; }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item { color: var(--text-gray); text-decoration: none; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    
+    @media (max-width: 900px) { .sidebar { display: none; } .main-content { margin-left: 0; padding: 20px; } .mobile-bottom-nav { display: block; } body { padding-bottom: 80px; } .invoice-table { display: block; overflow-x: auto; } }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  
+  <aside class="sidebar">
+    <div class="sidebar-header"><div class="company-profile"><div class="company-avatar">AB</div><div class="company-info"><h4>ABC Teknoloji A.Ş.</h4><span class="company-badge">Aktif</span></div></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section"><div class="nav-section-title">Yönetim</div><a href="#" class="nav-item"><i class="fas fa-users"></i> Çalışanlar</a><a href="#" class="nav-item"><i class="fas fa-sliders-h"></i> Limitler & Onaylar</a><a href="#" class="nav-item active"><i class="fas fa-file-invoice"></i> Faturalar</a></div>
+    </nav>
+  </aside>
+  
+  <main class="main-content">
+    
+    <div class="page-header"><h1>🧾 Faturalar</h1><button class="btn btn-outline" onclick="alert('📥 Tüm faturalar indiriliyor')"><i class="fas fa-download"></i> Toplu İndir</button></div>
+    
+    <div class="section-card">
+      <table class="invoice-table">
+        <thead><tr><th>Fatura No</th><th>Dönem</th><th>Kesim Tarihi</th><th>Toplam Tutar</th><th>KDV</th><th>Genel Toplam</th><th>Durum</th><th>İşlem</th></tr></thead>
+        <tbody>
+          <tr><td>INV-2025-0042</td><td>Mart 2025</td><td>31.03.2025</td><td>₺142.500</td><td>₺11.400</td><td>₺153.900</td><td><span class="status-badge status-paid"><i class="fas fa-check-circle"></i> Ödendi</span></td><td><button class="btn btn-outline btn-sm" style="padding:6px 12px;" onclick="alert('PDF indiriliyor')"><i class="fas fa-download"></i> PDF</button></td></tr>
+          <tr><td>INV-2025-0028</td><td>Şubat 2025</td><td>28.02.2025</td><td>₺98.400</td><td>₺7.872</td><td>₺106.272</td><td><span class="status-badge status-paid">Ödendi</span></td><td><button class="btn btn-outline btn-sm">PDF</button></td></tr>
+          <tr><td>INV-2025-0014</td><td>Ocak 2025</td><td>31.01.2025</td><td>₺76.200</td><td>₺6.096</td><td>₺82.296</td><td><span class="status-badge status-paid">Ödendi</span></td><td><button class="btn btn-outline btn-sm">PDF</button></td></tr>
+          <tr><td>INV-2025-0045</td><td>Nisan 2025</td><td>-</td><td>₺167.800</td><td>₺13.424</td><td>₺181.224</td><td><span class="status-badge status-pending"><i class="fas fa-clock"></i> Ay sonu kesilecek</span></td><td><button class="btn btn-outline btn-sm" disabled>PDF</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div style="margin-top:24px; padding:24px; background:var(--card-bg); border-radius:var(--radius-xl); border:1px solid var(--border-light);">
+      <h3 style="margin-bottom:16px;"><i class="fas fa-building"></i> Fatura Bilgileri</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div><label style="color:var(--text-gray);">Firma Ünvanı</label><p><strong>ABC Teknoloji A.Ş.</strong></p></div>
+        <div><label style="color:var(--text-gray);">Vergi Dairesi / No</label><p><strong>Beşiktaş / 1234567890</strong></p></div>
+        <div><label style="color:var(--text-gray);">Fatura Adresi</label><p>Vişnezade Mah. Beşiktaş / İstanbul</p></div>
+        <div><label style="color:var(--text-gray);">E-Fatura Kayıtlı</label><p><span style="color:var(--success);"><i class="fas fa-check-circle"></i> Kayıtlı</span></p></div>
+      </div>
+      <button class="btn btn-outline btn-sm" style="margin-top:16px;" onclick="alert('Fatura bilgileri düzenleniyor')"><i class="fas fa-edit"></i> Fatura Bilgilerini Düzenle</button>
+    </div>
+    
+  </main>
+</div>
+
+<nav class="mobile-bottom-nav"><div class="bottom-nav-items"><a href="#" class="bottom-nav-item"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-hotel"></i><span>Fiyatlar</span></a><a href="#" class="bottom-nav-item active"><i class="fas fa-users"></i><span>Çalışanlar</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-user"></i><span>Profil</span></a></div></nav>
+
+<script>console.log('✅ Faturalar Sayfası Yüklendi');</script>
+</body>
+</html>

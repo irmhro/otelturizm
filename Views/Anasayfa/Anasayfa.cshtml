@@ -1,0 +1,117 @@
+@model otelturizmnew.Models.Anasayfa.AnasayfaViewModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Anasayfa";
+    var pageCss = ViewData["PageCss"] as string;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+    <title>@ViewData["Title"] - Otelturizm</title>
+    <script type="importmap"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
+    @if (!string.IsNullOrWhiteSpace(pageCss))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
+    }
+    @{
+        var pageCssMobile = ViewData["PageCssMobile"] as string;
+    }
+    @if (!string.IsNullOrWhiteSpace(pageCssMobile))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCssMobile).css" asp-append-version="true" media="(max-width: 900px)" />
+    }
+</head>
+<body class="anasayfa-page">
+    <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
+
+    <main class="site-main">
+        <partial name="~/Views/Anasayfa/_AnasayfaContent.cshtml" model="Model" />
+    </main>
+
+    <partial name="~/Views/Anasayfa/_AnasayfaFooter.cshtml" />
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+    (function(){
+        const header = document.getElementById('mainHeader');
+        const overlay = document.getElementById('mobileMenuOverlay');
+        const drawer = document.getElementById('mobileMenuDrawer');
+        const toggle = document.getElementById('mobileMenuToggle');
+        const closeBtn = document.getElementById('drawerClose');
+
+        window.addEventListener('scroll', function(){
+            if(header && window.scrollY > 40){ header.classList.add('scrolled'); }
+            else if(header) { header.classList.remove('scrolled'); }
+        });
+
+        function openMenu(){
+            if(overlay){ overlay.classList.add('active'); }
+            if(drawer){ drawer.classList.add('active'); }
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMenu(){
+            if(overlay){ overlay.classList.remove('active'); }
+            if(drawer){ drawer.classList.remove('active'); }
+            document.body.style.overflow = '';
+        }
+
+        if(toggle){ toggle.addEventListener('click', openMenu); }
+        if(closeBtn){ closeBtn.addEventListener('click', closeMenu); }
+        if(overlay){ overlay.addEventListener('click', closeMenu); }
+
+        if(window.Swiper){
+            if(document.querySelector('.hero-swiper')){
+                new Swiper('.hero-swiper', {
+                    loop: true,
+                    autoplay: { delay: 3500, disableOnInteraction: false },
+                    pagination: { el: '.hero-pagination', clickable: true }
+                });
+            }
+
+            if(document.querySelector('.weekend-swiper')){
+                new Swiper('.weekend-swiper', {
+                    slidesPerView: 1.1,
+                    spaceBetween: 16,
+                    breakpoints: {
+                        640: { slidesPerView: 2.1 },
+                        960: { slidesPerView: 3 },
+                        1280: { slidesPerView: 4 }
+                    },
+                    navigation: { nextEl: '.weekend-next', prevEl: '.weekend-prev' }
+                });
+            }
+        }
+
+        document.addEventListener('click', function(e){
+            const favorite = e.target.closest('.favorite-btn');
+            if(!favorite){ return; }
+
+            e.preventDefault();
+            favorite.classList.toggle('active');
+            const icon = favorite.querySelector('i');
+            if(icon){
+                icon.classList.toggle('far');
+                icon.classList.toggle('fas');
+            }
+        });
+    })();
+    </script>
+</body>
+</html>
+

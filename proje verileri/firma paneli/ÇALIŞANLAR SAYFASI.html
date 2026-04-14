@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Çalışanlar · Otelturizm Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #64748B; --border-light: #E2E8F0; --sidebar-width: 280px;
+      --radius-xl: 24px; --radius-lg: 20px; --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.08); --transition-base: 0.25s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    .sidebar { width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border-light); position: fixed; height: 100vh; overflow-y: auto; }
+    .sidebar-header { padding: 28px 24px; border-bottom: 1px solid var(--border-light); }
+    .company-profile { display: flex; align-items: center; gap: 14px; }
+    .company-avatar { width: 52px; height: 52px; border-radius: 16px; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; }
+    .company-info h4 { font-size: 16px; }
+    .company-badge { background: var(--success); color: white; padding: 4px 12px; border-radius: 40px; font-size: 12px; margin-top: 8px; display: inline-block; }
+    .sidebar-nav { padding: 24px 16px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title { font-size: 11px; text-transform: uppercase; color: var(--text-gray); margin-bottom: 12px; padding-left: 12px; }
+    .nav-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: var(--text-gray); text-decoration: none; transition: var(--transition-base); margin-bottom: 4px; font-size: 14px; }
+    .nav-item i { width: 24px; }
+    .nav-item:hover { background: rgba(0, 59, 149, 0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 28px 32px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .page-header h1 { font-size: 28px; font-weight: 700; }
+    .btn { padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: var(--transition-base); display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--primary); color: white; }
+    
+    .stats-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--card-bg); border-radius: var(--radius-lg); padding: 20px; border: 1px solid var(--border-light); }
+    .stat-value { font-size: 28px; font-weight: 700; }
+    
+    .employee-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .employee-card { background: var(--card-bg); border-radius: var(--radius-xl); padding: 24px; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); transition: var(--transition-base); }
+    .employee-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-4px); }
+    .employee-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .employee-avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 24px; }
+    .employee-info h3 { font-size: 18px; margin-bottom: 4px; }
+    .employee-info p { color: var(--text-gray); font-size: 13px; }
+    .employee-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; padding: 16px 0; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+    .employee-stat { text-align: center; }
+    .employee-stat .value { font-size: 20px; font-weight: 700; }
+    .employee-stat .label { font-size: 12px; color: var(--text-gray); }
+    .limit-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .limit-badge { background: var(--bg-light); padding: 6px 14px; border-radius: 40px; font-size: 13px; }
+    .limit-badge i { color: var(--warning); margin-right: 6px; }
+    .card-actions { display: flex; gap: 8px; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); flex: 1; justify-content: center; }
+    
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal { background: white; border-radius: var(--radius-xl); padding: 32px; max-width: 500px; width: 90%; }
+    .modal-header { display: flex; justify-content: space-between; margin-bottom: 24px; }
+    .close-modal { cursor: pointer; font-size: 24px; color: var(--text-gray); }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 8px; }
+    .form-control { width: 100%; padding: 14px 16px; border: 1.5px solid var(--border-light); border-radius: 16px; font-size: 15px; }
+    
+    .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-top: 1px solid var(--border-light); padding: 12px 20px; z-index: 99; }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item { color: var(--text-gray); text-decoration: none; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    
+    @media (max-width: 1100px) { .employee-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 900px) { .sidebar { display: none; } .main-content { margin-left: 0; padding: 20px; } .mobile-bottom-nav { display: block; } body { padding-bottom: 80px; } }
+    @media (max-width: 600px) { .employee-grid { grid-template-columns: 1fr; } .stats-mini { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  
+  <aside class="sidebar">
+    <div class="sidebar-header"><div class="company-profile"><div class="company-avatar">AB</div><div class="company-info"><h4>ABC Teknoloji A.Ş.</h4><span class="company-badge"><i class="fas fa-check-circle"></i> Aktif</span></div></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section"><div class="nav-section-title">Yönetim</div><a href="#" class="nav-item active"><i class="fas fa-users"></i> Çalışanlar</a><a href="#" class="nav-item"><i class="fas fa-sliders-h"></i> Limitler & Onaylar</a><a href="#" class="nav-item"><i class="fas fa-file-invoice"></i> Faturalar</a></div>
+    </nav>
+  </aside>
+  
+  <main class="main-content">
+    
+    <div class="page-header"><h1>👥 Çalışanlar</h1><button class="btn btn-primary" onclick="openAddEmployeeModal()"><i class="fas fa-plus"></i> Çalışan Ekle</button></div>
+    
+    <div class="stats-mini">
+      <div class="stat-card"><span class="stat-value">24</span><div class="stat-label">Toplam Çalışan</div></div>
+      <div class="stat-card"><span class="stat-value">18</span><div class="stat-label">Bu Ay Seyahat Eden</div></div>
+      <div class="stat-card"><span class="stat-value">₺5.000</span><div class="stat-label">Ortalama Limit</div></div>
+    </div>
+    
+    <div class="employee-grid">
+      
+      <div class="employee-card">
+        <div class="employee-header"><div class="employee-avatar">AY</div><div class="employee-info"><h3>Ahmet Yılmaz</h3><p>ahmet.yilmaz@abc.com</p><p style="color:var(--primary);">Satış Direktörü</p></div></div>
+        <div class="employee-stats"><div class="employee-stat"><span class="value">5</span><div class="label">Rezervasyon</div></div><div class="employee-stat"><span class="value">₺51K</span><div class="label">Harcama</div></div></div>
+        <div class="limit-info"><span class="limit-badge"><i class="fas fa-coins"></i> Gecelik Limit: ₺5.000</span><span class="limit-badge" style="background:rgba(0,168,107,0.1);"><i class="fas fa-check-circle" style="color:var(--success);"></i> Onaysız Rezervasyon</span></div>
+        <div class="card-actions"><button class="btn btn-outline" onclick="alert('Limit düzenle')"><i class="fas fa-edit"></i> Limit Düzenle</button><button class="btn btn-outline" onclick="alert('Rezervasyonlar')"><i class="fas fa-history"></i></button></div>
+      </div>
+      
+      <div class="employee-card">
+        <div class="employee-header"><div class="employee-avatar">ZK</div><div class="employee-info"><h3>Zeynep Kaya</h3><p>zeynep.kaya@abc.com</p><p style="color:var(--primary);">Satış Müdürü</p></div></div>
+        <div class="employee-stats"><div class="employee-stat"><span class="value">3</span><div class="label">Rezervasyon</div></div><div class="employee-stat"><span class="value">₺103K</span><div class="label">Harcama</div></div></div>
+        <div class="limit-info"><span class="limit-badge"><i class="fas fa-coins"></i> Gecelik Limit: ₺4.000</span><span class="limit-badge" style="background:rgba(255,184,0,0.1);"><i class="fas fa-clock" style="color:var(--warning);"></i> Onay Gerekiyor</span></div>
+        <div class="card-actions"><button class="btn btn-outline"><i class="fas fa-edit"></i> Limit Düzenle</button><button class="btn btn-outline"><i class="fas fa-history"></i></button></div>
+      </div>
+      
+      <div class="employee-card">
+        <div class="employee-header"><div class="employee-avatar">MD</div><div class="employee-info"><h3>Mehmet Demir</h3><p>mehmet.demir@abc.com</p><p>Teknik Müdür</p></div></div>
+        <div class="employee-stats"><div class="employee-stat"><span class="value">2</span><div class="label">Rezervasyon</div></div><div class="employee-stat"><span class="value">₺18K</span><div class="label">Harcama</div></div></div>
+        <div class="limit-info"><span class="limit-badge"><i class="fas fa-coins"></i> Gecelik Limit: ₺3.500</span><span class="limit-badge" style="background:rgba(0,168,107,0.1);">Onaysız</span></div>
+        <div class="card-actions"><button class="btn btn-outline"><i class="fas fa-edit"></i> Limit Düzenle</button><button class="btn btn-outline"><i class="fas fa-history"></i></button></div>
+      </div>
+      
+      <div class="employee-card">
+        <div class="employee-header"><div class="employee-avatar">EA</div><div class="employee-info"><h3>Elif Aksoy</h3><p>elif.aksoy@abc.com</p><p>Yönetim</p></div></div>
+        <div class="employee-stats"><div class="employee-stat"><span class="value">4</span><div class="label">Rezervasyon</div></div><div class="employee-stat"><span class="value">₺120K</span><div class="label">Harcama</div></div></div>
+        <div class="limit-info"><span class="limit-badge">Gecelik Limit: ₺4.500</span></div>
+        <div class="card-actions"><button class="btn btn-outline">Limit Düzenle</button><button class="btn btn-outline"><i class="fas fa-history"></i></button></div>
+      </div>
+      
+      <div class="employee-card">
+        <div class="employee-header"><div class="employee-avatar">BK</div><div class="employee-info"><h3>Burak Koç</h3><p>burak.koc@abc.com</p><p>Teknik</p></div></div>
+        <div class="employee-stats"><div class="employee-stat"><span class="value">1</span><div class="label">Rezervasyon</div></div><div class="employee-stat"><span class="value">₺90K</span><div class="label">Harcama</div></div></div>
+        <div class="limit-info"><span class="limit-badge">Gecelik Limit: ₺3.000</span></div>
+        <div class="card-actions"><button class="btn btn-outline">Limit Düzenle</button><button class="btn btn-outline"><i class="fas fa-history"></i></button></div>
+      </div>
+      
+      <div class="employee-card">
+        <div class="employee-header"><div class="employee-avatar">SC</div><div class="employee-info"><h3>Selin Çelik</h3><p>selin.celik@abc.com</p><p>Satış</p></div></div>
+        <div class="employee-stats"><div class="employee-stat"><span class="value">2</span><div class="label">Rezervasyon</div></div><div class="employee-stat"><span class="value">₺13K</span><div class="label">Harcama</div></div></div>
+        <div class="limit-info"><span class="limit-badge">Gecelik Limit: ₺5.500</span></div>
+        <div class="card-actions"><button class="btn btn-outline">Limit Düzenle</button><button class="btn btn-outline"><i class="fas fa-history"></i></button></div>
+      </div>
+      
+    </div>
+    
+  </main>
+</div>
+
+<div class="modal-overlay" id="addEmployeeModal">
+  <div class="modal"><div class="modal-header"><h3>Çalışan Ekle</h3><span class="close-modal" onclick="closeAddEmployeeModal()">&times;</span></div>
+    <form onsubmit="event.preventDefault(); addEmployee();"><div class="form-group"><label>Ad Soyad</label><input type="text" class="form-control" required></div><div class="form-group"><label>E-posta</label><input type="email" class="form-control" required></div><div class="form-group"><label>Departman</label><select class="form-control"><option>Satış</option><option>Teknik</option><option>Yönetim</option></select></div><div class="form-group"><label>Gecelik Limit (₺)</label><input type="number" class="form-control" value="5000"></div><div class="form-group"><label><input type="checkbox" checked> Onaysız rezervasyon yapabilsin</label></div><button type="submit" class="btn btn-primary" style="width:100%;">Çalışan Ekle</button></form>
+  </div>
+</div>
+
+<nav class="mobile-bottom-nav"><div class="bottom-nav-items"><a href="#" class="bottom-nav-item"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-hotel"></i><span>Fiyatlar</span></a><a href="#" class="bottom-nav-item active"><i class="fas fa-users"></i><span>Çalışanlar</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-user"></i><span>Profil</span></a></div></nav>
+
+<script>
+  window.openAddEmployeeModal = () => document.getElementById('addEmployeeModal').style.display = 'flex';
+  window.closeAddEmployeeModal = () => document.getElementById('addEmployeeModal').style.display = 'none';
+  window.addEmployee = () => { closeAddEmployeeModal(); alert('✅ Çalışan eklendi!'); };
+  document.getElementById('addEmployeeModal').addEventListener('click', e => { if(e.target === e.currentTarget) closeAddEmployeeModal(); });
+  console.log('✅ Çalışanlar Sayfası Yüklendi');
+</script>
+</body>
+</html>

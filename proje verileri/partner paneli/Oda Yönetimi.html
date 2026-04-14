@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Oda Yönetimi · Extranet · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0F172A; --primary-light: #1E293B; --primary-dark: #020617;
+      --secondary: #00A86B; --success: #10B981; --warning: #F59E0B; --error: #EF4444;
+      --info: #3B82F6; --bg-light: #F1F5F9; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-body: #1E293B; --text-gray: #64748B;
+      --text-light: #94A3B8; --border-light: #E2E8F0; --border-medium: #CBD5E1;
+      --sidebar-width: 280px; --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0,0,0,0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-body); line-height: 1.5; }
+    
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--primary);
+      color: white; position: fixed; height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .hotel-profile { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .hotel-avatar {
+      width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, var(--secondary) 0%, #00994D 100%);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 22px;
+    }
+    .hotel-info h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .hotel-info p { font-size: 13px; opacity: 0.7; }
+    .hotel-status { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    
+    .hotel-selector {
+      background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px;
+      margin-top: 16px; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .hotel-selector select {
+      width: 100%; background: transparent; border: none; color: white;
+      font-weight: 500; padding: 4px 0; outline: none;
+    }
+    .hotel-selector select option { color: var(--text-dark); }
+    
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: rgba(255,255,255,0.4); margin-bottom: 12px; padding-left: 16px; font-weight: 600;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      border-radius: 12px; color: rgba(255,255,255,0.7); text-decoration: none;
+      transition: all var(--transition-base); margin-bottom: 4px; font-weight: 500; font-size: 14px;
+    }
+    .nav-item i { width: 24px; font-size: 20px; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-item.active { background: var(--secondary); color: white; }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+    }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: var(--text-dark); }
+    .page-title p { color: var(--text-gray); font-size: 15px; }
+    
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--secondary); color: white; }
+    .btn-primary:hover { background: #00994D; transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    
+    /* Stats */
+    .stats-mini {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+    }
+    .stat-mini {
+      background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border-light);
+    }
+    .stat-mini .label { color: var(--text-gray); font-size: 13px; }
+    .stat-mini .value { font-size: 24px; font-weight: 700; }
+    
+    /* Room Cards */
+    .room-cards-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 32px;
+    }
+    .room-card {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light); overflow: hidden;
+      transition: all var(--transition-base);
+    }
+    .room-card:hover { box-shadow: var(--shadow-lg); }
+    
+    .room-image {
+      height: 180px; background-size: cover; background-position: center;
+      position: relative;
+    }
+    .room-image .room-status {
+      position: absolute; top: 16px; right: 16px; padding: 6px 14px;
+      border-radius: 40px; font-size: 12px; font-weight: 600;
+    }
+    .room-image .status-active { background: var(--success); color: white; }
+    .room-image .status-inactive { background: var(--error); color: white; }
+    
+    .room-content { padding: 24px; }
+    .room-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .room-name { font-size: 20px; font-weight: 700; }
+    .room-base-price { font-size: 24px; font-weight: 700; color: var(--secondary); }
+    .room-base-price small { font-size: 13px; font-weight: 400; color: var(--text-gray); }
+    
+    .room-specs {
+      display: flex; gap: 20px; margin: 16px 0; flex-wrap: wrap;
+    }
+    .spec-item { display: flex; align-items: center; gap: 8px; color: var(--text-gray); font-size: 14px; }
+    
+    .room-amenities {
+      display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0;
+    }
+    .amenity-tag {
+      background: var(--bg-light); padding: 6px 12px; border-radius: 40px;
+      font-size: 12px; color: var(--text-gray);
+    }
+    
+    .room-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-light);
+    }
+    .room-availability {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .availability-bar {
+      width: 100px; height: 8px; background: var(--border-light);
+      border-radius: 4px; overflow: hidden;
+    }
+    .availability-fill { height: 100%; background: var(--secondary); border-radius: 4px; }
+    
+    .room-actions { display: flex; gap: 8px; }
+    
+    /* Inventory Table */
+    .section-card {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light); overflow: hidden; margin-top: 32px;
+    }
+    .section-header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border-light);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .section-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    
+    .inventory-table { width: 100%; border-collapse: collapse; }
+    .inventory-table th {
+      text-align: left; padding: 16px 24px; background: var(--bg-light);
+      font-weight: 600; font-size: 13px; color: var(--text-gray);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .inventory-table td { padding: 16px 24px; border-bottom: 1px solid var(--border-light); }
+    
+    .toggle-switch {
+      width: 48px; height: 24px; background: var(--border-light);
+      border-radius: 40px; position: relative; cursor: pointer;
+      transition: background var(--transition-base);
+    }
+    .toggle-switch.active { background: var(--success); }
+    .toggle-switch::after {
+      content: ''; position: absolute; width: 18px; height: 18px;
+      background: white; border-radius: 50%; top: 3px; left: 3px;
+      transition: left var(--transition-base);
+    }
+    .toggle-switch.active::after { left: 27px; }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal {
+      background: white; border-radius: var(--radius-xl); padding: 32px;
+      max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px;
+    }
+    .modal-header h3 { font-size: 20px; }
+    .close-modal { cursor: pointer; font-size: 24px; color: var(--text-gray); }
+    
+    .form-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group.full-width { grid-column: span 2; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 8px; }
+    .form-control {
+      width: 100%; padding: 14px 16px; border: 1.5px solid var(--border-light);
+      border-radius: 12px; font-size: 15px;
+    }
+    .form-control:focus { outline: none; border-color: var(--secondary); }
+    textarea.form-control { resize: vertical; min-height: 80px; }
+    
+    /* Mobile */
+    @media (max-width: 1200px) { .room-cards-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .stats-mini { grid-template-columns: 1fr; }
+      .inventory-table { display: block; overflow-x: auto; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full-width { grid-column: span 1; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--primary); border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--secondary); }
+    @media (max-width: 900px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    /* Toast */
+    .toast-message {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--text-dark); color: white; padding: 14px 28px;
+      border-radius: 40px; box-shadow: var(--shadow-lg); z-index: 9999;
+      display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease;
+    }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="hotel-profile">
+        <div class="hotel-avatar">SW</div>
+        <div class="hotel-info">
+          <h4>Swissôtel The Bosphorus</h4>
+          <p>ID: PTR-12345</p>
+          <div class="hotel-status"><span class="status-dot"></span> Online</div>
+        </div>
+      </div>
+      <div class="hotel-selector">
+        <select><option>Swissôtel The Bosphorus</option></select>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item"><i class="fas fa-columns"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlar</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-alt"></i> Takvim & Fiyatlar</a>
+        <a href="#" class="nav-item active"><i class="fas fa-bed"></i> Oda Yönetimi</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Analiz & Raporlar</div>
+        <a href="#" class="nav-item"><i class="fas fa-chart-line"></i> Performans</a>
+        <a href="#" class="nav-item"><i class="fas fa-star"></i> Değerlendirmeler</a>
+        <a href="#" class="nav-item"><i class="fas fa-credit-card"></i> Finans</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Ayarlar</div>
+        <a href="#" class="nav-item"><i class="fas fa-hotel"></i> Otel Bilgileri</a>
+        <a href="#" class="nav-item"><i class="fas fa-images"></i> Fotoğraflar</a>
+        <a href="#" class="nav-item"><i class="fas fa-cog"></i> Tercihler</a>
+      </div>
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <a href="#" class="nav-item"><i class="fas fa-headset"></i> 7/24 Destek</a>
+        <a href="#" class="nav-item" style="color: var(--error);"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Oda Yönetimi</h1>
+        <p>Oda tiplerini, özelliklerini ve kontenjanlarını yönetin.</p>
+      </div>
+      <button class="btn btn-primary" onclick="openAddRoomModal()"><i class="fas fa-plus"></i> Yeni Oda Tipi Ekle</button>
+    </header>
+    
+    <!-- Mini Stats -->
+    <div class="stats-mini">
+      <div class="stat-mini"><span class="label">Toplam Oda</span><div class="value">45</div></div>
+      <div class="stat-mini"><span class="label">Aktif Oda Tipi</span><div class="value">4</div></div>
+      <div class="stat-mini"><span class="label">Ortalama Fiyat</span><div class="value" style="color: var(--secondary);">₺4.250</div></div>
+      <div class="stat-mini"><span class="label">Bu Ay Doluluk</span><div class="value">%78</div></div>
+    </div>
+    
+    <!-- Room Cards -->
+    <div class="room-cards-grid">
+      
+      <!-- Standart Oda -->
+      <div class="room-card">
+        <div class="room-image" style="background-image: url('https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=600');">
+          <span class="room-status status-active">Aktif</span>
+        </div>
+        <div class="room-content">
+          <div class="room-header">
+            <h3 class="room-name">Standart Oda</h3>
+            <div class="room-base-price">₺3.200 <small>/ gece</small></div>
+          </div>
+          <div class="room-specs">
+            <span class="spec-item"><i class="fas fa-vector-square"></i> 32 m²</span>
+            <span class="spec-item"><i class="fas fa-user"></i> Max 2 Kişi</span>
+            <span class="spec-item"><i class="fas fa-bed"></i> 1 King veya 2 Tek</span>
+          </div>
+          <div class="room-amenities">
+            <span class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</span>
+            <span class="amenity-tag"><i class="fas fa-tv"></i> TV</span>
+            <span class="amenity-tag"><i class="fas fa-wind"></i> Klima</span>
+            <span class="amenity-tag"><i class="fas fa-shower"></i> Duş</span>
+          </div>
+          <div class="room-footer">
+            <div class="room-availability">
+              <span>Müsaitlik</span>
+              <div class="availability-bar"><div class="availability-fill" style="width: 65%;"></div></div>
+              <span>13/20</span>
+            </div>
+            <div class="room-actions">
+              <button class="btn btn-outline btn-sm" onclick="editRoom('Standart Oda')"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-outline btn-sm" onclick="viewRoomDetails()"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Deluxe Oda -->
+      <div class="room-card">
+        <div class="room-image" style="background-image: url('https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=600');">
+          <span class="room-status status-active">Aktif</span>
+        </div>
+        <div class="room-content">
+          <div class="room-header">
+            <h3 class="room-name">Deluxe Oda</h3>
+            <div class="room-base-price">₺4.250 <small>/ gece</small></div>
+          </div>
+          <div class="room-specs">
+            <span class="spec-item"><i class="fas fa-vector-square"></i> 45 m²</span>
+            <span class="spec-item"><i class="fas fa-user"></i> Max 3 Kişi</span>
+            <span class="spec-item"><i class="fas fa-bed"></i> 1 King + Balkon</span>
+          </div>
+          <div class="room-amenities">
+            <span class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</span>
+            <span class="amenity-tag"><i class="fas fa-tv"></i> TV</span>
+            <span class="amenity-tag"><i class="fas fa-wind"></i> Klima</span>
+            <span class="amenity-tag"><i class="fas fa-bath"></i> Küvet</span>
+            <span class="amenity-tag"><i class="fas fa-mountain"></i> Boğaz Manzaralı</span>
+          </div>
+          <div class="room-footer">
+            <div class="room-availability">
+              <span>Müsaitlik</span>
+              <div class="availability-bar"><div class="availability-fill" style="width: 80%;"></div></div>
+              <span>12/15</span>
+            </div>
+            <div class="room-actions">
+              <button class="btn btn-outline btn-sm" onclick="editRoom('Deluxe Oda')"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-outline btn-sm" onclick="viewRoomDetails()"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Executive Suite -->
+      <div class="room-card">
+        <div class="room-image" style="background-image: url('https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=600');">
+          <span class="room-status status-active">Aktif</span>
+        </div>
+        <div class="room-content">
+          <div class="room-header">
+            <h3 class="room-name">Executive Suite</h3>
+            <div class="room-base-price">₺8.900 <small>/ gece</small></div>
+          </div>
+          <div class="room-specs">
+            <span class="spec-item"><i class="fas fa-vector-square"></i> 75 m²</span>
+            <span class="spec-item"><i class="fas fa-user"></i> Max 4 Kişi</span>
+            <span class="spec-item"><i class="fas fa-bed"></i> 1 King + Oturma Odası</span>
+          </div>
+          <div class="room-amenities">
+            <span class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</span>
+            <span class="amenity-tag"><i class="fas fa-tv"></i> TV</span>
+            <span class="amenity-tag"><i class="fas fa-wind"></i> Klima</span>
+            <span class="amenity-tag"><i class="fas fa-hot-tub"></i> Jakuzi</span>
+            <span class="amenity-tag"><i class="fas fa-couch"></i> Lounge Erişimi</span>
+          </div>
+          <div class="room-footer">
+            <div class="room-availability">
+              <span>Müsaitlik</span>
+              <div class="availability-bar"><div class="availability-fill" style="width: 50%;"></div></div>
+              <span>4/8</span>
+            </div>
+            <div class="room-actions">
+              <button class="btn btn-outline btn-sm" onclick="editRoom('Executive Suite')"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-outline btn-sm" onclick="viewRoomDetails()"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Presidential Suite -->
+      <div class="room-card">
+        <div class="room-image" style="background-image: url('https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=600');">
+          <span class="room-status status-inactive">Pasif</span>
+        </div>
+        <div class="room-content">
+          <div class="room-header">
+            <h3 class="room-name">Presidential Suite</h3>
+            <div class="room-base-price">₺15.000 <small>/ gece</small></div>
+          </div>
+          <div class="room-specs">
+            <span class="spec-item"><i class="fas fa-vector-square"></i> 120 m²</span>
+            <span class="spec-item"><i class="fas fa-user"></i> Max 6 Kişi</span>
+            <span class="spec-item"><i class="fas fa-bed"></i> 2 King + Teras</span>
+          </div>
+          <div class="room-amenities">
+            <span class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</span>
+            <span class="amenity-tag"><i class="fas fa-tv"></i> TV</span>
+            <span class="amenity-tag"><i class="fas fa-hot-tub"></i> Jakuzi</span>
+            <span class="amenity-tag"><i class="fas fa-cocktail"></i> Özel Havuz</span>
+            <span class="amenity-tag"><i class="fas fa-concierge-bell"></i> Butler Hizmeti</span>
+          </div>
+          <div class="room-footer">
+            <div class="room-availability">
+              <span>Müsaitlik</span>
+              <div class="availability-bar"><div class="availability-fill" style="width: 100%;"></div></div>
+              <span>2/2</span>
+            </div>
+            <div class="room-actions">
+              <button class="btn btn-outline btn-sm" onclick="editRoom('Presidential Suite')"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-outline btn-sm" onclick="viewRoomDetails()"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- Envanter Tablosu -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3 class="section-title"><i class="fas fa-clipboard-list"></i> Oda Envanteri ve Kısıtlamalar</h3>
+        <button class="btn btn-outline btn-sm" onclick="exportInventory()"><i class="fas fa-download"></i> Dışa Aktar</button>
+      </div>
+      <table class="inventory-table">
+        <thead>
+          <tr>
+            <th>Oda Tipi</th><th>Toplam Oda</th><th>Satışa Açık</th><th>Bakımda</th><th>Min Fiyat</th><th>Max Fiyat</th><th>Durum</th><th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Standart Oda</strong></td><td>20</td><td>18</td><td>2</td><td>₺2.800</td><td>₺4.500</td>
+            <td><div class="toggle-switch active" onclick="this.classList.toggle('active')"></div></td>
+            <td><button class="btn btn-outline btn-sm" onclick="editInventory('Standart Oda')"><i class="fas fa-edit"></i></button></td>
+          </tr>
+          <tr>
+            <td><strong>Deluxe Oda</strong></td><td>15</td><td>14</td><td>1</td><td>₺3.800</td><td>₺6.200</td>
+            <td><div class="toggle-switch active" onclick="this.classList.toggle('active')"></div></td>
+            <td><button class="btn btn-outline btn-sm" onclick="editInventory('Deluxe Oda')"><i class="fas fa-edit"></i></button></td>
+          </tr>
+          <tr>
+            <td><strong>Executive Suite</strong></td><td>8</td><td>8</td><td>0</td><td>₺7.500</td><td>₺12.000</td>
+            <td><div class="toggle-switch active" onclick="this.classList.toggle('active')"></div></td>
+            <td><button class="btn btn-outline btn-sm" onclick="editInventory('Executive Suite')"><i class="fas fa-edit"></i></button></td>
+          </tr>
+          <tr>
+            <td><strong>Presidential Suite</strong></td><td>2</td><td>0</td><td>2</td><td>₺12.000</td><td>₺20.000</td>
+            <td><div class="toggle-switch" onclick="this.classList.toggle('active')"></div></td>
+            <td><button class="btn btn-outline btn-sm" onclick="editInventory('Presidential Suite')"><i class="fas fa-edit"></i></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+  </main>
+</div>
+
+<!-- Oda Ekleme/Düzenleme Modal -->
+<div class="modal-overlay" id="roomModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-bed"></i> <span id="modalTitle">Yeni Oda Tipi Ekle</span></h3>
+      <span class="close-modal" onclick="closeRoomModal()">&times;</span>
+    </div>
+    <form onsubmit="event.preventDefault(); saveRoom();">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Oda Tipi Adı</label>
+          <input type="text" class="form-control" id="roomName" placeholder="Örn: Deluxe Oda" required>
+        </div>
+        <div class="form-group">
+          <label>Baz Fiyat (₺)</label>
+          <input type="number" class="form-control" id="basePrice" placeholder="4250" required>
+        </div>
+        <div class="form-group">
+          <label>Oda Sayısı</label>
+          <input type="number" class="form-control" id="roomCount" placeholder="15" required>
+        </div>
+        <div class="form-group">
+          <label>Maksimum Kişi</label>
+          <input type="number" class="form-control" id="maxGuests" placeholder="3" required>
+        </div>
+        <div class="form-group">
+          <label>Oda Büyüklüğü (m²)</label>
+          <input type="number" class="form-control" id="roomSize" placeholder="45">
+        </div>
+        <div class="form-group">
+          <label>Yatak Tipi</label>
+          <select class="form-control" id="bedType">
+            <option>1 King Yatak</option><option>2 Tek Yatak</option><option>1 King + 1 Tek</option><option>2 King Yatak</option>
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label>Oda Açıklaması</label>
+          <textarea class="form-control" id="roomDescription" placeholder="Oda özelliklerini açıklayın..."></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label>Olanaklar</label>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;">
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked> WiFi</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked> TV</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked> Klima</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox"> Mini Bar</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox"> Jakuzi</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox"> Balkon</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox"> Manzara</label>
+          </div>
+        </div>
+        <div class="form-group full-width">
+          <label>Fotoğraf Yükle</label>
+          <input type="file" class="form-control" accept="image/*" multiple>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary" style="flex: 1;">Kaydet</button>
+        <button type="button" class="btn btn-outline" onclick="closeRoomModal()">İptal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-columns"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar-alt"></i><span>Takvim</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-chart-line"></i><span>Raporlar</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-cog"></i><span>Ayarlar</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    window.openAddRoomModal = function() {
+      document.getElementById('modalTitle').textContent = 'Yeni Oda Tipi Ekle';
+      document.getElementById('roomName').value = '';
+      document.getElementById('basePrice').value = '';
+      document.getElementById('roomModal').style.display = 'flex';
+    };
+    
+    window.editRoom = function(roomName) {
+      document.getElementById('modalTitle').textContent = roomName + ' - Düzenle';
+      document.getElementById('roomName').value = roomName;
+      document.getElementById('roomModal').style.display = 'flex';
+    };
+    
+    window.closeRoomModal = function() {
+      document.getElementById('roomModal').style.display = 'none';
+    };
+    
+    window.saveRoom = function() {
+      closeRoomModal();
+      showToast('✅ Oda tipi başarıyla kaydedildi!', 'success');
+    };
+    
+    window.viewRoomDetails = function() {
+      showToast('📋 Oda detayları görüntüleniyor', 'info');
+    };
+    
+    window.editInventory = function(roomType) {
+      showToast('📝 ' + roomType + ' envanteri düzenleniyor', 'info');
+    };
+    
+    window.exportInventory = function() {
+      showToast('📥 Envanter dışa aktarılıyor...', 'success');
+    };
+    
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    
+    document.getElementById('roomModal').addEventListener('click', function(e) {
+      if (e.target === this) closeRoomModal();
+    });
+    
+    console.log('✅ Oda Yönetimi Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

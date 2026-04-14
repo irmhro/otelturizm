@@ -1,0 +1,43 @@
+@model otelturizmnew.Models.Paneller.Satis.SalesCustomersPageViewModel
+@{
+    Layout = "~/Views/Paneller/Satis/_SalesPanelLayout.cshtml";
+    ViewData["SalesShell"] = Model.Shell;
+}
+<section class="sales-grid cols-2">
+    <article class="sales-panel-card">
+        <div class="sales-card-head"><h2>Müşteri Havuzu</h2><span>Geçmiş talep ve rezervasyon özeti</span></div>
+        <form method="get" class="sales-search-inline">
+            <input type="text" name="search" value="@Model.Search" placeholder="Ad, telefon veya e-posta" />
+            <button type="submit">Ara</button>
+        </form>
+        <div class="sales-customer-list">
+            @foreach (var item in Model.Customers)
+            {
+                <article class="sales-customer-card">
+                    <div>
+                        <strong>@item.FullName</strong>
+                        <p>@item.Email · @item.Phone</p>
+                        <small>@item.MembershipLevel · @item.ReservationCountText</small>
+                    </div>
+                    <div>
+                        <span>@item.LastStayText</span>
+                        <p>@item.LastRequestSummary</p>
+                    </div>
+                </article>
+            }
+        </div>
+    </article>
+    <article class="sales-panel-card">
+        <div class="sales-card-head"><h2>Yeni Müşteri Ekle</h2><span>Çağrı sırasında anında kayıt oluştur</span></div>
+        <form method="post" action="/panel/satis/musteri-yonetimi/yeni" class="sales-form-grid">
+            @Html.AntiForgeryToken()
+            <div><label>Ad Soyad</label><input type="text" name="FullName" required /></div>
+            <div><label>E-posta</label><input type="email" name="Email" required /></div>
+            <div><label>Telefon</label><input type="text" name="Phone" required /></div>
+            <div><label>Şehir</label><input type="text" name="City" /></div>
+            <div><label>Üyelik Seviyesi</label><select name="MembershipLevel"><option>Standart</option><option>Silver</option><option>Gold</option><option>Platinum</option></select></div>
+            <div class="span-2"><label>Not</label><textarea name="Note"></textarea></div>
+            <div class="span-2 sales-form-actions"><button type="submit">Müşteri Kaydet</button></div>
+        </form>
+    </article>
+</section>

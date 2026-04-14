@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Profil Bilgilerim · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-light: #0055CC; --primary-dark: #002A6B;
+      --secondary: #FF385C; --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --info: #3B82F6; --bg-light: #F8FAFC; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-body: #1E293B; --text-gray: #64748B;
+      --text-light: #94A3B8; --border-light: #E2E8F0; --border-medium: #CBD5E1;
+      --sidebar-width: 280px; --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0,59,149,0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-body); line-height: 1.5; }
+    
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--card-bg);
+      border-right: 1px solid var(--border-light); position: fixed;
+      height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid var(--border-light); }
+    .user-profile-card { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .user-avatar {
+      width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 22px;
+    }
+    .user-info h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .user-info p { font-size: 13px; color: var(--text-gray); }
+    .membership-badge { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .tier-badge {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: var(--text-dark);
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 700;
+    }
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-light); margin-bottom: 12px; padding-left: 16px; font-weight: 600;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      border-radius: 12px; color: var(--text-gray); text-decoration: none;
+      transition: all var(--transition-base); margin-bottom: 4px; font-weight: 500; font-size: 14px;
+    }
+    .nav-item i { width: 24px; font-size: 20px; }
+    .nav-item:hover { background: rgba(0,59,149,0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .nav-item .badge {
+      margin-left: auto; background: var(--secondary); color: white;
+      padding: 2px 8px; border-radius: 40px; font-size: 11px; font-weight: 700;
+    }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header { margin-bottom: 28px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: var(--text-dark); }
+    .page-title p { color: var(--text-gray); font-size: 15px; }
+    
+    /* Profile Layout */
+    .profile-container { max-width: 900px; }
+    
+    /* Profile Section */
+    .profile-section {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      padding: 28px; border: 1px solid var(--border-light); margin-bottom: 24px;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light);
+    }
+    .section-title {
+      font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+    }
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-danger { background: transparent; border: 1.5px solid var(--error); color: var(--error); }
+    .btn-danger:hover { background: var(--error); color: white; }
+    
+    /* Avatar Upload */
+    .avatar-upload-section {
+      display: flex; align-items: center; gap: 24px; margin-bottom: 28px;
+    }
+    .avatar-preview {
+      width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex; align-items: center; justify-content: center; color: white;
+      font-weight: 700; font-size: 36px; position: relative;
+    }
+    .avatar-edit-btn {
+      position: absolute; bottom: 0; right: 0; width: 32px; height: 32px;
+      border-radius: 50%; background: white; border: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      color: var(--primary); box-shadow: var(--shadow-sm);
+    }
+    .avatar-actions { display: flex; flex-direction: column; gap: 8px; }
+    .avatar-hint { color: var(--text-gray); font-size: 13px; margin-top: 4px; }
+    
+    /* Form Grid */
+    .form-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group.full-width { grid-column: span 2; }
+    .form-group label {
+      display: block; font-weight: 500; font-size: 14px; margin-bottom: 8px;
+      color: var(--text-dark);
+    }
+    .form-control {
+      width: 100%; padding: 14px 16px; border: 1.5px solid var(--border-light);
+      border-radius: 12px; font-family: "Inter", sans-serif; font-size: 15px;
+      transition: all var(--transition-base); background: white;
+    }
+    .form-control:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(0, 59, 149, 0.08);
+    }
+    .form-control[readonly] { background: var(--bg-light); color: var(--text-gray); }
+    .input-with-icon { position: relative; }
+    .input-with-icon i {
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+      color: var(--text-gray); font-size: 18px;
+    }
+    .input-with-icon input { padding-left: 46px; }
+    
+    /* Verification Badges */
+    .verification-status {
+      display: flex; align-items: center; gap: 16px; padding: 16px;
+      background: var(--bg-light); border-radius: 12px; margin-bottom: 24px;
+    }
+    .verified-badge { color: var(--success); display: flex; align-items: center; gap: 6px; }
+    .not-verified-badge { color: var(--warning); display: flex; align-items: center; gap: 6px; }
+    .verify-link { color: var(--primary); font-weight: 500; margin-left: 8px; text-decoration: none; }
+    
+    /* Preferences */
+    .preference-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 0; border-bottom: 1px solid var(--border-light);
+    }
+    .preference-item:last-child { border-bottom: none; }
+    .preference-info h4 { font-size: 15px; margin-bottom: 4px; }
+    .preference-info p { color: var(--text-gray); font-size: 13px; }
+    
+    /* Toggle Switch */
+    .toggle-switch {
+      width: 52px; height: 28px; background: var(--border-light);
+      border-radius: 40px; position: relative; cursor: pointer;
+      transition: background var(--transition-base);
+    }
+    .toggle-switch.active { background: var(--success); }
+    .toggle-switch::after {
+      content: ''; position: absolute; width: 22px; height: 22px;
+      background: white; border-radius: 50%; top: 3px; left: 3px;
+      transition: left var(--transition-base); box-shadow: var(--shadow-sm);
+    }
+    .toggle-switch.active::after { left: 27px; }
+    
+    /* Save Bar */
+    .save-bar {
+      display: flex; justify-content: flex-end; gap: 16px;
+      margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-light);
+    }
+    
+    /* Mobile */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full-width { grid-column: span 1; }
+      .avatar-upload-section { flex-direction: column; text-align: center; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-top: 1px solid var(--border-light);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: var(--text-gray); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    @media (max-width: 900px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    /* Toast */
+    .toast-message {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--text-dark); color: white; padding: 14px 28px;
+      border-radius: 40px; box-shadow: var(--shadow-lg); z-index: 9999;
+      display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease;
+    }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="user-profile-card">
+        <div class="user-avatar">AY</div>
+        <div class="user-info">
+          <h4>Ahmet Yılmaz</h4>
+          <p>ahmet.yilmaz@email.com</p>
+          <div class="membership-badge">
+            <span class="tier-badge"><i class="fas fa-crown"></i> Gold Üye</span>
+          </div>
+        </div>
+      </div>
+      <a href="/" style="display: flex; align-items: center; gap: 8px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 14px;">
+        <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+      </a>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item"><i class="fas fa-columns"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlarım <span class="badge">3</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-heart"></i> Favorilerim <span class="badge" style="background: var(--success);">8</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-star"></i> Puanlarım</a>
+        <a href="#" class="nav-item"><i class="fas fa-envelope"></i> Mesajlarım <span class="badge" style="background: var(--warning);">2</span></a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Hesap Ayarları</div>
+        <a href="#" class="nav-item active"><i class="fas fa-user-circle"></i> Profil Bilgilerim</a>
+        <a href="#" class="nav-item"><i class="fas fa-credit-card"></i> Ödeme Yöntemleri</a>
+        <a href="#" class="nav-item"><i class="fas fa-bell"></i> Bildirim Tercihleri</a>
+        <a href="#" class="nav-item"><i class="fas fa-shield-alt"></i> Güvenlik & Giriş</a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- Header -->
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Profil Bilgilerim</h1>
+        <p>Kişisel bilgilerinizi ve hesap ayarlarınızı yönetin.</p>
+      </div>
+    </header>
+    
+    <div class="profile-container">
+      
+      <!-- Profil Fotoğrafı Bölümü -->
+      <div class="profile-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-camera"></i> Profil Fotoğrafı</h3>
+        </div>
+        <div class="avatar-upload-section">
+          <div class="avatar-preview">
+            AY
+            <span class="avatar-edit-btn" onclick="alert('Fotoğraf yükleme simülasyonu')"><i class="fas fa-camera"></i></span>
+          </div>
+          <div class="avatar-actions">
+            <button class="btn btn-outline" onclick="alert('Fotoğraf yükleme')"><i class="fas fa-upload"></i> Yeni Fotoğraf Yükle</button>
+            <button class="btn btn-outline" style="color: var(--error); border-color: var(--error);"><i class="fas fa-trash"></i> Fotoğrafı Kaldır</button>
+            <p class="avatar-hint">JPG, PNG veya GIF · Maksimum 5MB</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Kişisel Bilgiler -->
+      <div class="profile-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-user"></i> Kişisel Bilgiler</h3>
+          <button class="btn btn-outline btn-sm" onclick="enableEdit('personal')"><i class="fas fa-edit"></i> Düzenle</button>
+        </div>
+        
+        <div class="verification-status">
+          <div class="verified-badge"><i class="fas fa-check-circle"></i> E-posta Onaylandı</div>
+          <div class="not-verified-badge"><i class="fas fa-exclamation-circle"></i> Telefon Onaylanmadı <a href="#" class="verify-link">Onayla</a></div>
+          <div class="verified-badge"><i class="fas fa-check-circle"></i> Kimlik Doğrulandı</div>
+        </div>
+        
+        <form id="personalForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Ad</label>
+              <input type="text" class="form-control" value="Ahmet" readonly>
+            </div>
+            <div class="form-group">
+              <label>Soyad</label>
+              <input type="text" class="form-control" value="Yılmaz" readonly>
+            </div>
+            <div class="form-group">
+              <label>Doğum Tarihi</label>
+              <input type="text" class="form-control" value="15/05/1990" readonly>
+            </div>
+            <div class="form-group">
+              <label>Cinsiyet</label>
+              <select class="form-control" disabled>
+                <option>Erkek</option>
+                <option>Kadın</option>
+                <option>Belirtmek İstemiyorum</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Uyruk</label>
+              <input type="text" class="form-control" value="T.C. Vatandaşı" readonly>
+            </div>
+            <div class="form-group">
+              <label>T.C. Kimlik No</label>
+              <input type="text" class="form-control" value="•••••••••" readonly>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <!-- İletişim Bilgileri -->
+      <div class="profile-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-address-card"></i> İletişim Bilgileri</h3>
+          <button class="btn btn-outline btn-sm" onclick="enableEdit('contact')"><i class="fas fa-edit"></i> Düzenle</button>
+        </div>
+        
+        <form id="contactForm">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>E-posta Adresi</label>
+              <div class="input-with-icon">
+                <i class="far fa-envelope"></i>
+                <input type="email" class="form-control" value="ahmet.yilmaz@email.com" readonly>
+              </div>
+              <p style="color: var(--text-gray); font-size: 12px; margin-top: 6px;">E-posta adresini değiştirmek için destek talebi oluşturun.</p>
+            </div>
+            <div class="form-group">
+              <label>Telefon Numarası</label>
+              <div class="input-with-icon">
+                <i class="fas fa-phone-alt"></i>
+                <input type="tel" class="form-control" value="+90 532 111 22 33" readonly>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Alternatif Telefon</label>
+              <div class="input-with-icon">
+                <i class="fas fa-phone-alt"></i>
+                <input type="tel" class="form-control" placeholder="Opsiyonel" readonly>
+              </div>
+            </div>
+            <div class="form-group full-width">
+              <label>Adres</label>
+              <textarea class="form-control" rows="2" readonly>Vişnezade Mah. Süleyman Seba Cad. No:45 D:12, Beşiktaş / İstanbul</textarea>
+            </div>
+            <div class="form-group">
+              <label>Şehir</label>
+              <input type="text" class="form-control" value="İstanbul" readonly>
+            </div>
+            <div class="form-group">
+              <label>Posta Kodu</label>
+              <input type="text" class="form-control" value="34357" readonly>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Seyahat Tercihleri -->
+      <div class="profile-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-suitcase"></i> Seyahat Tercihleri</h3>
+          <button class="btn btn-outline btn-sm" onclick="enableEdit('travel')"><i class="fas fa-edit"></i> Düzenle</button>
+        </div>
+        
+        <form id="travelForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Tercih Edilen Oda Tipi</label>
+              <select class="form-control" disabled>
+                <option>Fark Etmez</option>
+                <option selected>Sigara İçilmeyen Oda</option>
+                <option>Manzaralı Oda</option>
+                <option>Üst Kat</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Yatak Tercihi</label>
+              <select class="form-control" disabled>
+                <option selected>King Yatak</option>
+                <option>İki Tek Yatak</option>
+                <option>Queen Yatak</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Konuşulan Diller</label>
+              <input type="text" class="form-control" value="Türkçe, İngilizce" readonly>
+            </div>
+            <div class="form-group">
+              <label>Seyahat Amacı</label>
+              <select class="form-control" disabled>
+                <option>İş</option>
+                <option selected>Tatil</option>
+                <option>Her İkisi</option>
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label>Özel İstekler / Notlar</label>
+              <textarea class="form-control" rows="2" placeholder="Geç giriş, manzara tercihi, özel kutlamalar..." readonly>Geç check-in yapabilirim. Balkon tercih ederim.</textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Bildirim ve Gizlilik Tercihleri (Özet) -->
+      <div class="profile-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-shield-alt"></i> Gizlilik ve Paylaşım</h3>
+        </div>
+        
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Profilimi herkese açık yap</h4>
+            <p>Diğer kullanıcılar değerlendirmelerinizi görebilir.</p>
+          </div>
+          <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+        </div>
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Seyahat geçmişimi paylaş</h4>
+            <p>Arkadaşlarınız seyahatlerinizi görebilir.</p>
+          </div>
+          <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+        </div>
+        <div class="preference-item">
+          <div class="preference-info">
+            <h4>Kişiselleştirilmiş öneriler</h4>
+            <p>Seyahat geçmişinize göre otel önerileri alın.</p>
+          </div>
+          <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+          <a href="#" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+            <i class="fas fa-external-link-alt"></i> Tam gizlilik ayarlarına git
+          </a>
+        </div>
+      </div>
+      
+      <!-- Hesap Silme -->
+      <div class="profile-section" style="border-color: var(--error);">
+        <div class="section-header">
+          <h3 class="section-title" style="color: var(--error);"><i class="fas fa-trash-alt"></i> Hesap Silme</h3>
+        </div>
+        <p style="color: var(--text-gray); margin-bottom: 16px;">Hesabınızı sildiğinizde tüm kişisel verileriniz, rezervasyon geçmişiniz ve puanlarınız kalıcı olarak silinir. Bu işlem geri alınamaz.</p>
+        <button class="btn btn-danger" onclick="alert('Hesap silme talebi oluşturuldu. Destek ekibimiz sizinle iletişime geçecektir.')">
+          <i class="fas fa-exclamation-triangle"></i> Hesabımı Sil
+        </button>
+      </div>
+      
+      <!-- Kaydetme Barı -->
+      <div class="save-bar" id="saveBar" style="display: none;">
+        <button class="btn btn-outline" onclick="cancelEdit()">İptal</button>
+        <button class="btn btn-primary" onclick="saveChanges()"><i class="fas fa-save"></i> Değişiklikleri Kaydet</button>
+      </div>
+      
+    </div>
+    
+  </main>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-heart"></i><span>Favoriler</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-star"></i><span>Puanlar</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-user"></i><span>Profil</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    let editMode = false;
+    
+    window.enableEdit = function(section) {
+      editMode = true;
+      document.getElementById('saveBar').style.display = 'flex';
+      
+      // İlgili formdaki inputları aktif et
+      const form = section === 'personal' ? 'personalForm' : (section === 'contact' ? 'contactForm' : 'travelForm');
+      const inputs = document.querySelectorAll(`#${form} input, #${form} select, #${form} textarea`);
+      inputs.forEach(input => {
+        input.removeAttribute('readonly');
+        input.removeAttribute('disabled');
+      });
+      
+      // Düzenle butonlarını gizle
+      document.querySelectorAll('.section-header .btn-outline').forEach(btn => {
+        btn.style.display = 'none';
+      });
+      
+      showToast('Düzenleme modu aktif', 'info');
+    };
+    
+    window.cancelEdit = function() {
+      editMode = false;
+      document.getElementById('saveBar').style.display = 'none';
+      
+      // Tüm inputları tekrar readonly yap
+      document.querySelectorAll('.form-control').forEach(input => {
+        input.setAttribute('readonly', true);
+        if (input.tagName === 'SELECT') input.setAttribute('disabled', true);
+      });
+      
+      // Düzenle butonlarını göster
+      document.querySelectorAll('.section-header .btn-outline').forEach(btn => {
+        btn.style.display = 'inline-flex';
+      });
+    };
+    
+    window.saveChanges = function() {
+      cancelEdit();
+      showToast('✅ Değişiklikler başarıyla kaydedildi!', 'success');
+    };
+    
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    console.log('✅ Profil Bilgilerim Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,223 @@
+<div class="info-banner subtle">
+    <i class="fas fa-building-circle-check"></i>
+    <span>Partner kaydi tamamlandiginda hesap veritabanina eklenir ve local test icin extranet girisi acilir.</span>
+</div>
+
+@if (TempData["PartnerRegisterError"] is string partnerRegisterError)
+{
+    <div class="auth-alert">@partnerRegisterError</div>
+}
+
+<form class="auth-form" id="partnerRegisterForm" method="post" asp-controller="Register" asp-action="Partner">
+    @Html.AntiForgeryToken()
+    <div class="form-group">
+        <label for="hotelName">Tesis / Otel Adi</label>
+        <div class="input-wrap">
+            <i class="fas fa-hotel"></i>
+            <input id="hotelName" name="hotelName" type="text" class="form-control" placeholder="Orn: 216 Prestige Hotel" autocomplete="organization" required />
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="companyName">Firma Unvani</label>
+            <div class="input-wrap">
+                <i class="fas fa-building"></i>
+                <input id="companyName" name="companyName" type="text" class="form-control" placeholder="Firma / sirket unvani" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="companyType">Firma Turu</label>
+            <div class="input-wrap select-wrap">
+                <i class="fas fa-landmark"></i>
+                <select id="companyType" name="companyType" class="form-control form-select" required>
+                    <option value="">Seciniz</option>
+                    <option value="Limited Şirketi">Limited Şirketi</option>
+                    <option value="Anonim Şirketi">Anonim Şirketi</option>
+                    <option value="Şahıs Firması">Sahis Firmasi</option>
+                    <option value="Adi Ortaklık">Adi Ortaklik</option>
+                    <option value="Vakıf">Vakif</option>
+                    <option value="Dernek">Dernek</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="contactName">Yetkili Ad Soyad</label>
+        <div class="input-wrap">
+                <i class="far fa-user"></i>
+                <input id="contactName" name="contactName" type="text" class="form-control" placeholder="Yetkili kisi" autocomplete="name" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="contactTitle">Yetkili Unvani</label>
+            <div class="input-wrap">
+                <i class="fas fa-briefcase"></i>
+                <input id="contactTitle" name="contactTitle" type="text" class="form-control" placeholder="Genel Mudur" required />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="partnerEmail">E-posta</label>
+        <div class="input-wrap">
+            <i class="far fa-envelope"></i>
+            <input id="partnerEmail" name="email" type="email" class="form-control" placeholder="email@otel.com" autocomplete="email" required />
+        </div>
+        </div>
+
+        <div class="form-group">
+            <label for="partnerPhone">Telefon</label>
+        <div class="input-wrap">
+            <i class="fas fa-phone-alt"></i>
+            <input id="partnerPhone" name="phoneNumber" type="tel" inputmode="tel" pattern="[0-9\s()+-]+" class="form-control" placeholder="5XX XXX XX XX" autocomplete="tel" required />
+        </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="partnerAddress">Tesis Adresi</label>
+        <div class="input-wrap">
+            <i class="fas fa-map-pin"></i>
+            <input id="partnerAddress" name="address" type="text" class="form-control" placeholder="Acik adres bilgisi" autocomplete="street-address" required />
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="partnerCity">Sehir</label>
+            <div class="input-wrap select-wrap">
+                <i class="fas fa-location-dot"></i>
+                <select id="partnerCity" name="city" class="form-control form-select" required>
+                    <option value="">Seciniz</option>
+                    <option>Istanbul</option>
+                    <option>Antalya</option>
+                    <option>Izmir</option>
+                    <option>Mugla</option>
+                    <option>Ankara</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="partnerDistrict">Ilce</label>
+            <div class="input-wrap">
+                <i class="fas fa-location-arrow"></i>
+                <input id="partnerDistrict" name="district" type="text" class="form-control" placeholder="Maltepe" required />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="taxOffice">Vergi Dairesi</label>
+            <div class="input-wrap">
+                <i class="fas fa-file-invoice"></i>
+                <input id="taxOffice" name="taxOffice" type="text" class="form-control" placeholder="Maltepe Vergi Dairesi" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="taxNumber">Vergi Numarasi</label>
+            <div class="input-wrap">
+                <i class="fas fa-hashtag"></i>
+                <input id="taxNumber" name="taxNumber" type="text" class="form-control" placeholder="1234567890" required />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="contactTcNo">Yetkili TC No</label>
+            <div class="input-wrap">
+                <i class="far fa-id-card"></i>
+                <input id="contactTcNo" name="contactTcNo" type="text" class="form-control" placeholder="11 haneli TC" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="roomCount">Oda Sayisi</label>
+            <div class="input-wrap">
+                <i class="fas fa-door-open"></i>
+                <input id="roomCount" name="roomCount" type="number" class="form-control" placeholder="50" />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="bankName">Banka Adi</label>
+            <div class="input-wrap">
+                <i class="fas fa-building-columns"></i>
+                <input id="bankName" name="bankName" type="text" class="form-control" placeholder="Orn: Is Bankasi" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="bankBranch">Banka Subesi</label>
+            <div class="input-wrap">
+                <i class="fas fa-code-branch"></i>
+                <input id="bankBranch" name="bankBranch" type="text" class="form-control" placeholder="Sube adi" />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="iban">IBAN</label>
+            <div class="input-wrap">
+                <i class="fas fa-money-check-dollar"></i>
+                <input id="iban" name="iban" type="text" class="form-control" placeholder="TR00 0000 0000 0000 0000 0000 00" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="partnerWebsite">Web Sitesi</label>
+            <div class="input-wrap">
+                <i class="fas fa-globe"></i>
+                <input id="partnerWebsite" name="website" type="url" class="form-control" placeholder="https://www.ornekotel.com" />
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="partnerRegisterPassword">Şifre</label>
+        <div class="input-wrap">
+            <i class="fas fa-lock"></i>
+            <input id="partnerRegisterPassword" name="password" type="password" class="form-control" placeholder="En az 8 karakter" required />
+            <button type="button" class="toggle-password" data-toggle-target="partnerRegisterPassword">
+                <i class="far fa-eye"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="partnerConfirmPassword">Şifre Tekrar</label>
+        <div class="input-wrap">
+            <i class="fas fa-lock"></i>
+            <input id="partnerConfirmPassword" name="confirmPassword" type="password" class="form-control" placeholder="Şifrenizi tekrar girin" required />
+            <button type="button" class="toggle-password" data-toggle-target="partnerConfirmPassword">
+                <i class="far fa-eye"></i>
+            </button>
+        </div>
+    </div>
+
+    <label class="checkbox-stack">
+        <input type="checkbox" name="acceptAgreement" value="true" required />
+        <span>Partner sozlesmesi ve komisyon politikasini kabul ediyorum.</span>
+    </label>
+
+    <label class="checkbox-stack">
+        <input type="checkbox" name="declareAccurate" value="true" required />
+        <span>Tesis bilgilerinin dogru ve resmi kayitlarla uyumlu oldugunu beyan ederim.</span>
+    </label>
+
+    <button type="submit" class="auth-submit-btn partner-submit-btn">Partner Basvurusu Yap <i class="fas fa-arrow-right"></i></button>
+</form>
+
+<p class="auth-helper">Zaten partner misiniz? <button type="button" class="text-button" data-switch-tab="partnerLoginPanel">Extranet'e giris yapin</button></p>

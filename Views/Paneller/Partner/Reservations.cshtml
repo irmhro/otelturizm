@@ -1,0 +1,302 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerReservationsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+}
+
+<section class="partner-grid">
+@foreach (var card in Model.SummaryCards)
+{
+    <article class="partner-stat-card @card.ToneClass">
+        <i class="fas @card.IconClass"></i>
+        <strong>@card.Value</strong>
+        <span>@card.Label</span>
+        <p>@card.Description</p>
+    </article>
+}
+</section>
+
+<section class="partner-section-card">
+    <div class="partner-section-head partner-reservation-toolbar">
+        <div>
+            <h2>Rezervasyon Listesi</h2>
+            <p>Onay, red, detay ve misafir mesaji aksiyonlarini tek ekranda yonetin.</p>
+        </div>
+        <div class="partner-reservation-toolbar-actions">
+            <label class="partner-search-shell">
+                <i class="fas fa-magnifying-glass"></i>
+                <input id="partner-reservation-search" type="search" placeholder="Rezervasyon veya misafir ara" />
+            </label>
+            <a href="/panel/partner/rezervasyonlar/disa-aktar?otelId=@Model.Shell.SelectedHotelId" class="partner-secondary-btn">
+                <i class="fas fa-download"></i>
+                Disa aktar
+            </a>
+        </div>
+    </div>
+    <div class="partner-table-wrap">
+        <table class="partner-table partner-reservation-table">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Misafir</th>
+                    <th>Oda</th>
+                    <th>Konaklama</th>
+                    <th>Durum</th>
+                    <th>Odeme</th>
+                    <th>Tutar</th>
+                    <th>Olusturma</th>
+                    <th>Aksiyon</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var row in Model.Reservations)
+            {
+                <tr class="partner-reservation-row" data-reservation-search="@($"{row.ReservationNo} {row.GuestName} {row.GuestEmail} {row.GuestPhone} {row.RoomName}".ToLowerInvariant())">
+                    <td>
+                        <strong>@row.ReservationNo</strong>
+                        <small>@(row.SourceLabel ?? "Web")</small>
+                    </td>
+                    <td>
+                        <strong>@row.GuestName</strong>
+                        <small>@row.GuestEmail</small>
+                    </td>
+                    <td>
+                        <strong>@(row.RoomName ?? "Oda bilgisi yok")</strong>
+                        <small>@row.AdultCount yetiskin / @row.ChildCount cocuk</small>
+                    </td>
+                    <td>
+                        <strong>@row.StayText</strong>
+                        <small>@row.NightCount gece</small>
+                    </td>
+                    <td>
+                        <span class="partner-status-pill">@row.StatusLabel</span>
+                    </td>
+                    <td>
+                        <strong>@row.PaymentStatusLabel</strong>
+                        <small>@(row.PaymentMethodLabel ?? "Yontem belirtilmedi")</small>
+                    </td>
+                    <td>@row.TotalText</td>
+                    <td>@row.CreatedText</td>
+                    <td>
+                        <div class="partner-table-actions">
+                            @if (row.CanApprove)
+                            {
+                                <form method="post" action="/panel/partner/rezervasyonlar/durum">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                                    <input type="hidden" name="ReservationId" value="@row.ReservationId" />
+                                    <input type="hidden" name="ActionType" value="approve" />
+                                    <button type="submit" class="partner-icon-btn is-success" title="Onayla">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                            }
+                            @if (row.CanReject)
+                            {
+                                <form method="post" action="/panel/partner/rezervasyonlar/durum">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                                    <input type="hidden" name="ReservationId" value="@row.ReservationId" />
+                                    <input type="hidden" name="ActionType" value="reject" />
+                                    <input type="hidden" name="Reason" value="Partner panelinden reddedildi." />
+                                    <button type="submit" class="partner-icon-btn is-danger" title="Reddet" onclick="return confirm('Bu rezervasyon reddedilsin mi?');">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            }
+                            <button type="button"
+                                    class="partner-icon-btn"
+                                    title="Detay gor"
+                                    data-reservation-detail
+                                    data-reservation-no="@row.ReservationNo"
+                                    data-guest-name="@row.GuestName"
+                                    data-guest-email="@row.GuestEmail"
+                                    data-guest-phone="@row.GuestPhone"
+                                    data-room-name="@(row.RoomName ?? string.Empty)"
+                                    data-stay-text="@row.StayText"
+                                    data-status="@row.StatusLabel"
+                                    data-payment-status="@row.PaymentStatusLabel"
+                                    data-payment-method="@(row.PaymentMethodLabel ?? string.Empty)"
+                                    data-source="@(row.SourceLabel ?? string.Empty)"
+                                    data-total="@row.TotalText"
+                                    data-created="@row.CreatedText"
+                                    data-guest-note="@(row.GuestNote ?? string.Empty)"
+                                    data-request-note="@(row.RequestNote ?? string.Empty)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            @if (row.CanMessageGuest)
+                            {
+                                <button type="button"
+                                        class="partner-icon-btn is-info"
+                                        title="Misafire mesaj"
+                                        data-reservation-message
+                                        data-reservation-id="@row.ReservationId"
+                                        data-reservation-no="@row.ReservationNo"
+                                        data-guest-name="@row.GuestName">
+                                    <i class="fas fa-envelope"></i>
+                                </button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<dialog id="partner-reservation-detail-dialog" class="partner-dialog">
+    <div class="partner-dialog-card">
+        <div class="partner-dialog-head">
+            <div>
+                <p class="partner-dialog-kicker">Rezervasyon detaylari</p>
+                <h3 id="reservation-detail-no">-</h3>
+            </div>
+            <button type="button" class="partner-icon-btn" data-close-dialog>
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <div class="partner-dialog-grid">
+            <article class="partner-dialog-panel">
+                <h4>Misafir</h4>
+                <dl>
+                    <div><dt>Ad Soyad</dt><dd id="reservation-detail-guest-name">-</dd></div>
+                    <div><dt>E-posta</dt><dd id="reservation-detail-guest-email">-</dd></div>
+                    <div><dt>Telefon</dt><dd id="reservation-detail-guest-phone">-</dd></div>
+                </dl>
+            </article>
+            <article class="partner-dialog-panel">
+                <h4>Konaklama</h4>
+                <dl>
+                    <div><dt>Oda</dt><dd id="reservation-detail-room-name">-</dd></div>
+                    <div><dt>Tarih</dt><dd id="reservation-detail-stay">-</dd></div>
+                    <div><dt>Durum</dt><dd id="reservation-detail-status">-</dd></div>
+                </dl>
+            </article>
+            <article class="partner-dialog-panel">
+                <h4>Odeme</h4>
+                <dl>
+                    <div><dt>Odeme durumu</dt><dd id="reservation-detail-payment-status">-</dd></div>
+                    <div><dt>Yontem</dt><dd id="reservation-detail-payment-method">-</dd></div>
+                    <div><dt>Tutar</dt><dd id="reservation-detail-total">-</dd></div>
+                </dl>
+            </article>
+            <article class="partner-dialog-panel">
+                <h4>Kayit</h4>
+                <dl>
+                    <div><dt>Kanal</dt><dd id="reservation-detail-source">-</dd></div>
+                    <div><dt>Olusturma</dt><dd id="reservation-detail-created">-</dd></div>
+                </dl>
+            </article>
+        </div>
+        <div class="partner-dialog-notes">
+            <article class="partner-dialog-panel">
+                <h4>Misafir notu</h4>
+                <p id="reservation-detail-guest-note">-</p>
+            </article>
+            <article class="partner-dialog-panel">
+                <h4>Talep notu</h4>
+                <p id="reservation-detail-request-note">-</p>
+            </article>
+        </div>
+    </div>
+</dialog>
+
+<dialog id="partner-reservation-message-dialog" class="partner-dialog">
+    <div class="partner-dialog-card">
+        <div class="partner-dialog-head">
+            <div>
+                <p class="partner-dialog-kicker">Misafire mesaj</p>
+                <h3 id="reservation-message-title">Mesaj paneli</h3>
+            </div>
+            <button type="button" class="partner-icon-btn" data-close-dialog>
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <form method="post" action="/panel/partner/rezervasyonlar/misafire-mesaj" class="partner-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+            <input type="hidden" name="ReservationId" id="reservation-message-id" value="0" />
+            <label>
+                <span>Konu</span>
+                <input type="text" name="Subject" id="reservation-message-subject" value="Konaklama bilgilendirmesi" />
+            </label>
+            <label class="partner-form-span">
+                <span>Mesaj</span>
+                <textarea name="Message" rows="5" placeholder="Misafire gonderilecek mesaj"></textarea>
+            </label>
+            <button type="submit" class="partner-primary-btn partner-form-span">
+                <i class="fas fa-paper-plane"></i>
+                Mesaji gonder
+            </button>
+        </form>
+    </div>
+</dialog>
+
+@section Scripts {
+<script>
+(() => {
+    const searchInput = document.getElementById('partner-reservation-search');
+    const rows = Array.from(document.querySelectorAll('.partner-reservation-row'));
+    const detailDialog = document.getElementById('partner-reservation-detail-dialog');
+    const messageDialog = document.getElementById('partner-reservation-message-dialog');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            rows.forEach((row) => {
+                row.hidden = query.length > 0 && !row.dataset.reservationSearch.includes(query);
+            });
+        });
+    }
+
+    document.querySelectorAll('[data-reservation-detail]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!detailDialog) return;
+            document.getElementById('reservation-detail-no').textContent = button.dataset.reservationNo || '-';
+            document.getElementById('reservation-detail-guest-name').textContent = button.dataset.guestName || '-';
+            document.getElementById('reservation-detail-guest-email').textContent = button.dataset.guestEmail || '-';
+            document.getElementById('reservation-detail-guest-phone').textContent = button.dataset.guestPhone || '-';
+            document.getElementById('reservation-detail-room-name').textContent = button.dataset.roomName || '-';
+            document.getElementById('reservation-detail-stay').textContent = button.dataset.stayText || '-';
+            document.getElementById('reservation-detail-status').textContent = button.dataset.status || '-';
+            document.getElementById('reservation-detail-payment-status').textContent = button.dataset.paymentStatus || '-';
+            document.getElementById('reservation-detail-payment-method').textContent = button.dataset.paymentMethod || '-';
+            document.getElementById('reservation-detail-source').textContent = button.dataset.source || '-';
+            document.getElementById('reservation-detail-total').textContent = button.dataset.total || '-';
+            document.getElementById('reservation-detail-created').textContent = button.dataset.created || '-';
+            document.getElementById('reservation-detail-guest-note').textContent = button.dataset.guestNote || 'Misafir notu bulunmuyor.';
+            document.getElementById('reservation-detail-request-note').textContent = button.dataset.requestNote || 'Ek talep bulunmuyor.';
+            detailDialog.showModal();
+        });
+    });
+
+    document.querySelectorAll('[data-reservation-message]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!messageDialog) return;
+            document.getElementById('reservation-message-id').value = button.dataset.reservationId || '0';
+            document.getElementById('reservation-message-title').textContent = `${button.dataset.guestName || 'Misafir'} icin mesaj`;
+            document.getElementById('reservation-message-subject').value = `${button.dataset.reservationNo || 'Rezervasyon'} bilgilendirmesi`;
+            messageDialog.showModal();
+        });
+    });
+
+    document.querySelectorAll('[data-close-dialog]').forEach((button) => {
+        button.addEventListener('click', () => {
+            button.closest('dialog')?.close();
+        });
+    });
+
+    [detailDialog, messageDialog].forEach((dialog) => {
+        if (!dialog) return;
+        dialog.addEventListener('click', (event) => {
+            const rect = dialog.getBoundingClientRect();
+            const inDialog = rect.top <= event.clientY && event.clientY <= rect.top + rect.height && rect.left <= event.clientX && event.clientX <= rect.left + rect.width;
+            if (!inDialog) {
+                dialog.close();
+            }
+        });
+    });
+})();
+</script>
+}

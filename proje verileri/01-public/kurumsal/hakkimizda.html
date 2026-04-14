@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Hakkımızda · Otelturizm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --secondary: #FF385C; --success: #00A86B;
+      --bg-light: #F5F7FA; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #6B7380; --border-light: #E7E9EC; --radius-card: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    
+    .container { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
+    
+    /* Hero */
+    .about-hero {
+      text-align: center; margin-bottom: 48px;
+    }
+    .about-hero h1 { font-size: 42px; margin-bottom: 16px; }
+    .about-hero p { font-size: 18px; color: var(--text-gray); max-width: 700px; margin: 0 auto; }
+    
+    /* Stats */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+      margin-bottom: 60px;
+    }
+    @media (max-width: 800px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr; } }
+    
+    .stat-card {
+      background: white; border-radius: var(--radius-card); padding: 32px;
+      text-align: center; border: 1px solid var(--border-light);
+    }
+    .stat-number { font-size: 42px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+    .stat-label { color: var(--text-gray); }
+    
+    /* Mission & Vision */
+    .mission-section {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 60px;
+    }
+    @media (max-width: 700px) { .mission-section { grid-template-columns: 1fr; } }
+    
+    .mission-card {
+      background: white; border-radius: var(--radius-card); padding: 36px;
+      border: 1px solid var(--border-light);
+    }
+    .mission-icon {
+      width: 64px; height: 64px; border-radius: 20px; margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: center; font-size: 28px;
+    }
+    .mission-card h3 { font-size: 24px; margin-bottom: 16px; }
+    .mission-card p { color: var(--text-gray); line-height: 1.7; }
+    
+    /* Trust Badges */
+    .trust-section {
+      background: white; border-radius: var(--radius-card); padding: 40px;
+      border: 1px solid var(--border-light); margin-bottom: 60px;
+    }
+    .trust-section h2 { text-align: center; margin-bottom: 32px; }
+    .trust-badges {
+      display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;
+    }
+    .trust-badge {
+      text-align: center; max-width: 200px;
+    }
+    .trust-badge i { font-size: 48px; color: var(--primary); margin-bottom: 16px; }
+    .trust-badge h4 { margin-bottom: 8px; }
+    .trust-badge p { color: var(--text-gray); font-size: 14px; }
+    
+    /* Team */
+    .team-section { margin-bottom: 60px; }
+    .team-section h2 { text-align: center; margin-bottom: 40px; }
+    .team-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+    }
+    @media (max-width: 900px) { .team-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .team-grid { grid-template-columns: 1fr; } }
+    
+    .team-card {
+      background: white; border-radius: var(--radius-card); padding: 24px;
+      text-align: center; border: 1px solid var(--border-light);
+    }
+    .team-avatar {
+      width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 16px;
+      background: var(--primary); display: flex; align-items: center;
+      justify-content: center; color: white; font-size: 32px; font-weight: 600;
+    }
+    .team-card h4 { margin-bottom: 4px; }
+    .team-role { color: var(--primary); font-size: 14px; margin-bottom: 12px; }
+    
+    /* KVKK Quick Info */
+    .kvkk-box {
+      background: rgba(0, 59, 149, 0.03); border: 1px solid var(--primary);
+      border-radius: var(--radius-card); padding: 24px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    @media (max-width: 600px) { .kvkk-box { flex-direction: column; text-align: center; gap: 20px; } }
+    .kvkk-box i { font-size: 40px; color: var(--primary); }
+    .btn { padding: 12px 24px; border-radius: 40px; text-decoration: none; font-weight: 600; }
+    .btn-primary { background: var(--primary); color: white; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Hero -->
+  <div class="about-hero">
+    <h1>Hayalinizdeki Tatili Keşfedin</h1>
+    <p>Otelturizm, 2015'ten beri milyonlarca gezgini hayallerindeki konaklamayla buluşturuyor.</p>
+  </div>
+  
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-number">500K+</div><div class="stat-label">Otel</div></div>
+    <div class="stat-card"><div class="stat-number">120+</div><div class="stat-label">Ülke</div></div>
+    <div class="stat-card"><div class="stat-number">10M+</div><div class="stat-label">Mutlu Misafir</div></div>
+    <div class="stat-card"><div class="stat-number">4.8 ★</div><div class="stat-label">Kullanıcı Puanı</div></div>
+  </div>
+  
+  <!-- Mission & Vision -->
+  <div class="mission-section">
+    <div class="mission-card">
+      <div class="mission-icon" style="background: rgba(0,59,149,0.1); color: var(--primary);"><i class="fas fa-bullseye"></i></div>
+      <h3>Misyonumuz</h3>
+      <p>Gezginlere en iyi fiyat garantisiyle, güvenli ve keyifli bir rezervasyon deneyimi sunmak. Her bütçeye uygun, kaliteli konaklama seçeneklerini tek platformda buluşturmak.</p>
+    </div>
+    <div class="mission-card">
+      <div class="mission-icon" style="background: rgba(0,168,107,0.1); color: var(--success);"><i class="fas fa-eye"></i></div>
+      <h3>Vizyonumuz</h3>
+      <p>Türkiye'nin ve dünyanın en güvenilir seyahat platformu olmak. Teknoloji ve insan odaklı yaklaşımımızla seyahat sektöründe global bir lider haline gelmek.</p>
+    </div>
+  </div>
+  
+  <!-- Trust Badges -->
+  <div class="trust-section">
+    <h2>Güveniniz Bizim Önceliğimiz</h2>
+    <div class="trust-badges">
+      <div class="trust-badge"><i class="fas fa-shield-alt"></i><h4>TÜRSAB Üyesi</h4><p>Belge No: 12345 · A Grubu Seyahat Acentası</p></div>
+      <div class="trust-badge"><i class="fas fa-lock"></i><h4>PCI DSS Level 1</h4><p>Kart bilgileriniz en yüksek güvenlikle korunur</p></div>
+      <div class="trust-badge"><i class="fas fa-certificate"></i><h4>256-Bit SSL</h4><p>Tüm veri trafiğiniz şifrelenir</p></div>
+      <div class="trust-badge"><i class="fas fa-building"></i><h4>ETBİS Kayıtlı</h4><p>Ticaret Bakanlığı onaylı e-ticaret</p></div>
+    </div>
+  </div>
+  
+  <!-- Team -->
+  <div class="team-section">
+    <h2>Yönetim Ekibimiz</h2>
+    <div class="team-grid">
+      <div class="team-card"><div class="team-avatar">AK</div><h4>Ahmet Kaya</h4><div class="team-role">CEO & Kurucu</div><p style="color: var(--text-gray); font-size: 14px;">20+ yıl turizm deneyimi</p></div>
+      <div class="team-card"><div class="team-avatar">ZD</div><h4>Zeynep Demir</h4><div class="team-role">COO</div><p style="color: var(--text-gray); font-size: 14px;">Operasyon ve strateji</p></div>
+      <div class="team-card"><div class="team-avatar">MY</div><h4>Mehmet Yıldız</h4><div class="team-role">CTO</div><p style="color: var(--text-gray); font-size: 14px;">Teknoloji ve inovasyon</p></div>
+      <div class="team-card"><div class="team-avatar">EA</div><h4>Elif Aksoy</h4><div class="team-role">CMO</div><p style="color: var(--text-gray); font-size: 14px;">Pazarlama ve büyüme</p></div>
+    </div>
+  </div>
+  
+  <!-- KVKK Quick -->
+  <div class="kvkk-box">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <i class="fas fa-database"></i>
+      <div><h4>Kişisel Verilerinizin Korunması</h4><p>6698 sayılı KVKK kapsamında verileriniz güvence altındadır.</p></div>
+    </div>
+    <a href="#" class="btn btn-primary">KVKK Aydınlatma Metni <i class="fas fa-arrow-right"></i></a>
+  </div>
+  
+</div>
+
+<script>console.log('✅ Hakkımızda Sayfası Yüklendi');</script>
+</body>
+</html>

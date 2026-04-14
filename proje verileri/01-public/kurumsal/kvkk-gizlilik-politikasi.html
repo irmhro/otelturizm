@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>KVKK & Gizlilik Politikası · Otelturizm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --secondary: #FF385C; --success: #00A86B;
+      --bg-light: #F5F7FA; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #6B7380; --border-light: #E7E9EC; --radius-card: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.7; }
+    
+    .container { max-width: 1000px; margin: 40px auto; padding: 0 24px; }
+    
+    /* Header */
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 { font-size: 32px; margin-bottom: 12px; }
+    .page-header p { color: var(--text-gray); }
+    .last-updated { display: inline-block; background: white; padding: 8px 16px; border-radius: 40px; font-size: 13px; color: var(--text-gray); margin-top: 12px; }
+    
+    /* Quick Links */
+    .quick-links {
+      background: white; border-radius: var(--radius-card); padding: 20px 28px;
+      margin-bottom: 32px; border: 1px solid var(--border-light);
+      display: flex; flex-wrap: wrap; gap: 16px 32px;
+    }
+    .quick-links a { color: var(--primary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+    .quick-links a i { font-size: 12px; }
+    
+    /* Policy Card */
+    .policy-card {
+      background: white; border-radius: var(--radius-card); padding: 36px;
+      border: 1px solid var(--border-light); margin-bottom: 24px;
+    }
+    .policy-section { margin-bottom: 32px; }
+    .policy-section:last-child { margin-bottom: 0; }
+    .policy-section h2 {
+      font-size: 22px; margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 2px solid var(--border-light); display: flex; align-items: center; gap: 12px;
+    }
+    .policy-section h3 { font-size: 18px; margin: 20px 0 12px; color: var(--primary); }
+    .policy-section p { margin-bottom: 16px; color: var(--text-gray); }
+    .policy-section ul, .policy-section ol { margin: 16px 0 16px 24px; color: var(--text-gray); }
+    .policy-section li { margin-bottom: 8px; }
+    
+    /* Highlight Box */
+    .highlight-box {
+      background: rgba(0, 59, 149, 0.03); border-left: 4px solid var(--primary);
+      padding: 20px 24px; border-radius: 0 12px 12px 0; margin: 24px 0;
+    }
+    .highlight-box i { color: var(--primary); margin-right: 12px; }
+    
+    /* Cookie Table */
+    .cookie-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+    .cookie-table th { text-align: left; padding: 12px; background: var(--bg-light); font-weight: 600; }
+    .cookie-table td { padding: 12px; border-bottom: 1px solid var(--border-light); }
+    @media (max-width: 600px) { .cookie-table { display: block; overflow-x: auto; } }
+    
+    /* Consent Banner (Demo) */
+    .consent-demo {
+      background: white; border-radius: var(--radius-card); padding: 24px;
+      border: 1px solid var(--border-light); margin-top: 24px;
+    }
+    .consent-item { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border-light); }
+    .consent-item:last-child { border-bottom: none; }
+    .consent-toggle { width: 50px; height: 28px; background: var(--border-light); border-radius: 40px; position: relative; cursor: pointer; transition: background 0.2s; }
+    .consent-toggle.active { background: var(--success); }
+    .consent-toggle::after { content: ''; position: absolute; width: 22px; height: 22px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
+    .consent-toggle.active::after { left: 25px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Header -->
+  <div class="page-header">
+    <h1>KVKK Aydınlatma Metni & Gizlilik Politikası</h1>
+    <p>Kişisel verilerinizin korunması bizim için önceliklidir.</p>
+    <span class="last-updated"><i class="far fa-calendar-alt"></i> Son Güncelleme: 01 Nisan 2025</span>
+  </div>
+  
+  <!-- Quick Links -->
+  <div class="quick-links">
+    <a href="#kvkk"><i class="fas fa-chevron-right"></i> KVKK Aydınlatma Metni</a>
+    <a href="#veri-sorumlusu"><i class="fas fa-chevron-right"></i> Veri Sorumlusu</a>
+    <a href="#islenen-veriler"><i class="fas fa-chevron-right"></i> İşlenen Veriler</a>
+    <a href="#haklariniz"><i class="fas fa-chevron-right"></i> Haklarınız</a>
+    <a href="#cerezler"><i class="fas fa-chevron-right"></i> Çerez Politikası</a>
+    <a href="#guvenlik"><i class="fas fa-chevron-right"></i> Güvenlik</a>
+  </div>
+  
+  <!-- Main Policy Content -->
+  <div class="policy-card">
+    
+    <!-- KVKK Section -->
+    <section id="kvkk" class="policy-section">
+      <h2><i class="fas fa-shield-alt" style="color: var(--primary);"></i> KVKK Aydınlatma Metni</h2>
+      <p>Otelturizm ("Şirket") olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla, kişisel verilerinizin güvenliğine azami özen göstermekteyiz. Bu aydınlatma metni, kişisel verilerinizin işlenme amaçları, hukuki sebepleri, toplanma yöntemleri ve haklarınız hakkında sizi bilgilendirmek amacıyla hazırlanmıştır.</p>
+      
+      <div class="highlight-box">
+        <i class="fas fa-info-circle"></i> <strong>Önemli Bilgi:</strong> Kişisel verileriniz, yalnızca belirtilen amaçlar doğrultusunda ve yasal sürelerle sınırlı olarak işlenmektedir.
+      </div>
+    </section>
+    
+    <!-- Veri Sorumlusu -->
+    <section id="veri-sorumlusu" class="policy-section">
+      <h2><i class="fas fa-building" style="color: var(--primary);"></i> Veri Sorumlusu</h2>
+      <p><strong>Otelturizm Seyahat Acentası ve Turizm Ticaret A.Ş.</strong></p>
+      <p>Adres: Vişnezade Mah. Süleyman Seba Cad. No:45 Kat:12, Beşiktaş / İstanbul</p>
+      <p>Telefon: 0850 123 45 67</p>
+      <p>E-posta: kvkk@otelturizm.com</p>
+      <p>VERBİS Kayıt No: 12345-67890-ABCDE</p>
+    </section>
+    
+    <!-- İşlenen Kişisel Veriler -->
+    <section id="islenen-veriler" class="policy-section">
+      <h2><i class="fas fa-database" style="color: var(--primary);"></i> İşlenen Kişisel Veriler</h2>
+      <p>Aşağıdaki kişisel verileriniz, belirtilen amaçlarla sınırlı olarak işlenmektedir:</p>
+      <ul>
+        <li><strong>Kimlik Bilgileri:</strong> Ad, soyad, T.C. kimlik numarası, doğum tarihi</li>
+        <li><strong>İletişim Bilgileri:</strong> E-posta adresi, telefon numarası, adres bilgileri</li>
+        <li><strong>Finansal Bilgiler:</strong> Kredi kartı bilgileri (PCI DSS standartlarında maskelenerek), fatura bilgileri</li>
+        <li><strong>Rezervasyon Bilgileri:</strong> Konaklama tarihleri, oda tercihleri, özel istekler</li>
+        <li><strong>İşlem Güvenliği Bilgileri:</strong> IP adresi, giriş-çıkış logları, cihaz bilgileri</li>
+        <li><strong>Pazarlama Bilgileri:</strong> Çerezler aracılığıyla toplanan tercih ve ilgi alanları</li>
+      </ul>
+    </section>
+    
+    <!-- İşleme Amaçları -->
+    <section class="policy-section">
+      <h2><i class="fas fa-bullseye" style="color: var(--primary);"></i> Kişisel Verilerin İşlenme Amaçları</h2>
+      <p>Kişisel verileriniz aşağıdaki amaçlarla işlenmektedir:</p>
+      <ul>
+        <li>Rezervasyon işlemlerinin gerçekleştirilmesi ve yönetilmesi</li>
+        <li>Üyelik sözleşmesinin kurulması ve ifası</li>
+        <li>Ödeme işlemlerinin güvenli şekilde tamamlanması</li>
+        <li>Müşteri destek hizmetlerinin sunulması</li>
+        <li>Yasal yükümlülüklerin yerine getirilmesi (fatura düzenleme, Ticaret Bakanlığı denetimleri)</li>
+        <li>Kampanya, fırsat ve yeniliklerden haberdar etme (açık rıza ile)</li>
+        <li>Hizmet kalitesinin artırılması ve kişiselleştirilmiş öneriler sunulması</li>
+      </ul>
+    </section>
+    
+    <!-- Hukuki Sebepler -->
+    <section class="policy-section">
+      <h2><i class="fas fa-gavel" style="color: var(--primary);"></i> Hukuki Sebepler</h2>
+      <p>Kişisel verileriniz, KVKK'nın 5. ve 6. maddelerinde belirtilen hukuki sebeplere dayanarak işlenmektedir:</p>
+      <ul>
+        <li>Kanunlarda açıkça öngörülmesi (Vergi Usul Kanunu, Tüketicinin Korunması Hakkında Kanun)</li>
+        <li>Bir sözleşmenin kurulması veya ifasıyla doğrudan ilgili olması</li>
+        <li>Hukuki yükümlülüğümüzün yerine getirilmesi</li>
+        <li>Meşru menfaatlerimiz için zorunlu olması</li>
+        <li><strong>Açık Rıza:</strong> Pazarlama iletişimleri ve çerezler için açık rızanız alınmaktadır.</li>
+      </ul>
+    </section>
+    
+    <!-- Veri Aktarımı -->
+    <section class="policy-section">
+      <h2><i class="fas fa-share-alt" style="color: var(--primary);"></i> Kişisel Verilerin Aktarılması</h2>
+      <p>Kişisel verileriniz, yurt içinde aşağıdaki taraflara aktarılabilmektedir:</p>
+      <ul>
+        <li>Rezervasyonun gerçekleştirilmesi için ilgili otele</li>
+        <li>Ödeme işlemleri için banka ve ödeme kuruluşlarına</li>
+        <li>Yasal zorunluluk halinde yetkili kamu kurumlarına (Ticaret Bakanlığı, MASAK, mahkemeler)</li>
+        <li>Hizmet aldığımız tedarikçilere (sunucu hizmetleri, e-posta sağlayıcıları) - sözleşmelerle koruma altına alınmıştır</li>
+      </ul>
+      <p>Kişisel verileriniz, açık rızanız olmadan yurt dışına aktarılmamaktadır.</p>
+    </section>
+    
+    <!-- Haklarınız -->
+    <section id="haklariniz" class="policy-section">
+      <h2><i class="fas fa-user-check" style="color: var(--primary);"></i> KVKK Kapsamındaki Haklarınız</h2>
+      <p>KVKK'nın 11. maddesi uyarınca aşağıdaki haklara sahipsiniz:</p>
+      <ul>
+        <li>Kişisel verilerinizin işlenip işlenmediğini öğrenme</li>
+        <li>İşlenmişse buna ilişkin bilgi talep etme</li>
+        <li>İşlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme</li>
+        <li>Yurt içinde / yurt dışında aktarıldığı üçüncü kişileri bilme</li>
+        <li>Eksik veya yanlış işlenmişse düzeltilmesini isteme</li>
+        <li>KVKK 7. maddede öngörülen şartlar çerçevesinde silinmesini veya yok edilmesini isteme</li>
+        <li>Otomatik sistemlerle analiz edilmesi halinde aleyhinize sonuç doğmasına itiraz etme</li>
+        <li>Kanuna aykırı işlenmesi sebebiyle zarara uğramanız halinde zararın giderilmesini talep etme</li>
+      </ul>
+      <div class="highlight-box">
+        <i class="fas fa-envelope"></i> <strong>Başvuru Yöntemi:</strong> Haklarınıza ilişkin taleplerinizi, kvkk@otelturizm.com adresine e-posta göndererek veya genel merkezimize yazılı olarak iletebilirsiniz. Talepleriniz en geç 30 gün içinde ücretsiz olarak sonuçlandırılacaktır.
+      </div>
+    </section>
+    
+    <!-- Çerez Politikası -->
+    <section id="cerezler" class="policy-section">
+      <h2><i class="fas fa-cookie-bite" style="color: var(--primary);"></i> Çerez (Cookie) Politikası</h2>
+      <p>Web sitemizde, kullanıcı deneyimini iyileştirmek ve hizmetlerimizi optimize etmek amacıyla çerezler kullanılmaktadır.</p>
+      
+      <h3>Kullanılan Çerez Türleri</h3>
+      <table class="cookie-table">
+        <thead><tr><th>Çerez Türü</th><th>Amaç</th><th>Süre</th></tr></thead>
+        <tbody>
+          <tr><td>Zorunlu Çerezler</td><td>Sitenin temel işlevlerini yerine getirmesi için gereklidir (oturum, güvenlik).</td><td>Oturum süresi</td></tr>
+          <tr><td>Analitik Çerezler</td><td>Site trafiğini analiz etmek ve performansı ölçmek için kullanılır.</td><td>2 yıl</td></tr>
+          <tr><td>İşlevsel Çerezler</td><td>Tercihlerinizi hatırlamak (dil, para birimi) için kullanılır.</td><td>1 yıl</td></tr>
+          <tr><td>Pazarlama Çerezleri</td><td>İlgi alanlarınıza uygun reklam ve teklifler sunmak için kullanılır.</td><td>90 gün</td></tr>
+        </tbody>
+      </table>
+      
+      <h3>Çerez Tercihlerinizi Yönetin</h3>
+      <div class="consent-demo">
+        <div class="consent-item">
+          <div><strong>Zorunlu Çerezler</strong><p style="font-size: 13px; color: var(--text-gray);">Sitenin çalışması için gereklidir, kapatılamaz.</p></div>
+          <div class="consent-toggle active" style="cursor: not-allowed;"></div>
+        </div>
+        <div class="consent-item">
+          <div><strong>Analitik Çerezler</strong><p style="font-size: 13px; color: var(--text-gray);">Performans ölçümü için.</p></div>
+          <div class="consent-toggle active" id="analyticsToggle" onclick="this.classList.toggle('active')"></div>
+        </div>
+        <div class="consent-item">
+          <div><strong>Pazarlama Çerezleri</strong><p style="font-size: 13px; color: var(--text-gray);">Kişiselleştirilmiş reklamlar için.</p></div>
+          <div class="consent-toggle" id="marketingToggle" onclick="this.classList.toggle('active')"></div>
+        </div>
+        <button style="margin-top: 20px; padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 40px; font-weight: 600; cursor: pointer;">Tercihleri Kaydet</button>
+      </div>
+    </section>
+    
+    <!-- Güvenlik -->
+    <section id="guvenlik" class="policy-section">
+      <h2><i class="fas fa-lock" style="color: var(--primary);"></i> Veri Güvenliği</h2>
+      <p>Kişisel verilerinizin güvenliğini sağlamak için aşağıdaki teknik ve idari tedbirler alınmaktadır:</p>
+      <ul>
+        <li><strong>PCI DSS Level 1 Sertifikası:</strong> Kredi kartı bilgileriniz endüstri standardı güvenlik protokolleriyle korunur.</li>
+        <li><strong>256-Bit SSL Sertifikası:</strong> Tüm veri trafiğiniz şifrelenerek iletilir.</li>
+        <li><strong>Güvenlik Duvarı ve Saldırı Tespit Sistemleri:</strong> Yetkisiz erişimlere karşı 7/24 izleme.</li>
+        <li><strong>Düzenli Sızma Testleri:</strong> Bağımsız kuruluşlarca yılda 2 kez güvenlik denetimi.</li>
+        <li><strong>Erişim Yetkilendirmesi:</strong> Verilere yalnızca yetkili personel erişebilir.</li>
+        <li><strong>Veri Yedekleme:</strong> Günlük yedekleme ve felaket kurtarma planı.</li>
+      </ul>
+    </section>
+    
+  </div>
+  
+  <!-- Contact -->
+  <div style="text-align: center; margin-top: 32px; padding: 24px;">
+    <p style="color: var(--text-gray);">KVKK ile ilgili sorularınız için:</p>
+    <p><i class="fas fa-envelope"></i> kvkk@otelturizm.com · <i class="fas fa-phone"></i> 0850 123 45 67</p>
+  </div>
+  
+</div>
+
+<script>console.log('✅ KVKK & Gizlilik Politikası Sayfası Yüklendi');</script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+@model otelturizmnew.Models.Destek.YardimMerkeziViewModel
+@{
+    ViewData["Title"] = "Yardım Merkezi";
+}
+
+<section class="help-page">
+    <div class="help-container">
+        <div class="help-hero">
+            <h1>Size Nasıl Yardımcı Olabiliriz?</h1>
+            <p>7/24 destek ekibimiz sorularınızı yanıtlamak için burada.</p>
+            <form method="get" action="/yardim-merkezi" class="help-search">
+                <input type="text" name="ara" value="@Model.SearchTerm" placeholder="Sorunuzu yazın... (Örn: İptal politikası)" />
+                <button type="submit"><i class="fas fa-search"></i> Ara</button>
+            </form>
+        </div>
+
+        <div class="categories-grid">
+            @foreach (var category in Model.Categories)
+            {
+                <a href="@category.LinkUrl" class="category-card">
+                    <div class="category-icon" style="background: color-mix(in srgb, @category.ColorHex 14%, white); color: @category.ColorHex;">
+                        <i class="fas @category.IconClass"></i>
+                    </div>
+                    <h3>@category.Name</h3>
+                    <p>@category.Description</p>
+                </a>
+            }
+        </div>
+
+        <h2 class="section-title"><i class="fas fa-fire"></i> Sık Sorulan Konular</h2>
+        <div class="topics-grid">
+            @foreach (var topic in Model.PopularTopics)
+            {
+                <a href="@topic.LinkUrl" class="topic-card">
+                    <div class="topic-icon"><i class="fas @topic.IconClass"></i></div>
+                    <div class="topic-content">
+                        <h4>@topic.Title</h4>
+                        <p>@topic.Summary</p>
+                    </div>
+                </a>
+            }
+        </div>
+
+        <h2 class="section-title" id="destek-kanallari"><i class="fas fa-headset"></i> Destek Seçenekleri</h2>
+        <div class="support-options">
+            @foreach (var channel in Model.SupportChannels)
+            {
+                <div class="support-card support-card-@channel.Tone">
+                    <i class="fas @channel.IconClass"></i>
+                    <h4>@channel.Name</h4>
+                    <p>@channel.Description</p>
+                    <a href="@channel.Url" class="btn @(channel.Tone == "primary" ? "btn-primary" : "btn-outline")">@channel.ButtonText</a>
+                    @if (!string.IsNullOrWhiteSpace(channel.Note))
+                    {
+                        <p class="support-note">@channel.Note</p>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (Model.LiveChatChannel is not null)
+        {
+            <div class="live-chat-banner">
+                <div>
+                    <h3>Hemen Yardım Alın</h3>
+                    <p>@Model.LiveChatChannel.Description</p>
+                </div>
+                <a href="@Model.LiveChatChannel.Url" class="btn btn-live">@Model.LiveChatChannel.ButtonText <i class="fas fa-arrow-right"></i></a>
+            </div>
+        }
+    </div>
+</section>

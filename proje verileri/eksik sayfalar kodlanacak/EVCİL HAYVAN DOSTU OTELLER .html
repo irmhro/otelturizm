@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Evcil Hayvan Dostu Oteller · Patili Misafirler İçin · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2E4A3A; --primary-light: #3D6B4F; --secondary: #FF8C42;
+      --accent: #8B5CF6; --success: #00A86B; --bg-light: #F8FAFC; --card-bg: #FFFFFF;
+      --text-dark: #1A1F26; --text-gray: #64748B; --border-light: #E2E8F0;
+      --radius-xl: 32px; --radius-lg: 24px; --shadow-xl: 0 30px 50px -15px rgba(0,0,0,0.1);
+      --transition-base: 0.3s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+    /* Pet Hero */
+    .pet-hero {
+      background: linear-gradient(135deg, #2E4A3A 0%, #3D6B4F 50%, #5A8F6A 100%);
+      border-radius: var(--radius-xl); padding: 48px 40px; margin-bottom: 40px;
+      position: relative; overflow: hidden; color: white;
+    }
+    .pet-hero::before {
+      content: '🐕'; position: absolute; bottom: -20px; right: 20px; font-size: 180px; opacity: 0.1;
+      transform: rotate(-10deg);
+    }
+    .pet-hero::after {
+      content: '🐈'; position: absolute; top: -10px; left: 20px; font-size: 120px; opacity: 0.1;
+    }
+    .hero-content { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; }
+    .hero-text h1 { font-size: clamp(32px, 5vw, 46px); font-weight: 800; display: flex; align-items: center; gap: 16px; }
+    .hero-text p { font-size: 18px; opacity: 0.95; max-width: 500px; }
+    .pet-features { display: flex; gap: 24px; margin-top: 24px; }
+    .pet-feature { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); padding: 12px 24px; border-radius: 60px; }
+    .hero-stats .value { font-size: 42px; font-weight: 800; }
+
+    /* Filter Bar */
+    .filter-bar { display: flex; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+    .filter-tabs { display: flex; gap: 8px; }
+    .filter-tab { padding: 12px 24px; border-radius: 40px; background: white; border: 1px solid var(--border-light); font-weight: 600; cursor: pointer; }
+    .filter-tab.active { background: var(--primary); color: white; }
+
+    /* Hotels Grid */
+    .hotels-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+
+    .hotel-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid var(--border-light);
+      transition: var(--transition-base);
+    }
+    .hotel-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-xl); border-color: var(--secondary); }
+    .card-image { position: relative; height: 220px; }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; }
+    .pet-badge {
+      position: absolute; top: 16px; left: 16px; background: var(--secondary);
+      color: white; padding: 8px 18px; border-radius: 40px; font-weight: 700; z-index: 2;
+      box-shadow: 0 6px 20px rgba(255, 140, 66, 0.3); display: flex; align-items: center; gap: 8px;
+    }
+    .pet-policy { position: absolute; bottom: 16px; left: 16px; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); color: white; padding: 6px 14px; border-radius: 40px; font-size: 13px; z-index: 2; }
+    .favorite-btn { position: absolute; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--secondary); z-index: 2; }
+    
+    .card-content { padding: 24px; }
+    .hotel-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .hotel-location { color: var(--text-gray); font-size: 14px; margin-bottom: 16px; }
+    .pet-amenities { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .pet-amenity { background: rgba(255, 140, 66, 0.1); color: var(--secondary); padding: 6px 14px; border-radius: 40px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+    .price-section { display: flex; align-items: baseline; justify-content: space-between; }
+    .current-price { font-size: 26px; font-weight: 800; color: var(--primary); }
+    .btn-primary { background: var(--secondary); color: white; padding: 14px 20px; border-radius: 40px; font-weight: 700; text-decoration: none; }
+
+    @media (max-width: 1100px) { .hotels-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 700px) { .hotels-grid { grid-template-columns: 1fr; } .pet-hero { padding: 32px 20px; } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="pet-hero">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1><i class="fas fa-paw"></i> Patili Dostunla Tatil</h1>
+        <p>Evcil hayvan kabul eden, özel olanaklar sunan seçkin oteller.</p>
+        <div class="pet-features"><span class="pet-feature"><i class="fas fa-bone"></i> Mama Kabı</span><span class="pet-feature"><i class="fas fa-bed"></i> Pet Yatağı</span><span class="pet-feature"><i class="fas fa-tree"></i> Gezi Alanı</span></div>
+      </div>
+      <div class="hero-stats"><span class="value">18</span><span class="label">Pet-Friendly Otel</span></div>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-tabs"><span class="filter-tab active">Tümü (18)</span><span class="filter-tab">Ücretsiz</span><span class="filter-tab">Ek Ücretli</span></div>
+    <select class="sort-select" style="padding:12px 20px;border-radius:40px;border:1px solid var(--border-light);"><option>Önerilen</option></select>
+  </div>
+
+  <div class="hotels-grid">
+    <div class="hotel-card">
+      <div class="card-image"><img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&w=600"><span class="pet-badge"><i class="fas fa-paw"></i> Pet Friendly</span><span class="pet-policy"><i class="fas fa-check-circle"></i> Ücretsiz</span><span class="favorite-btn"><i class="far fa-heart"></i></span></div>
+      <div class="card-content"><h3 class="hotel-name">Swissôtel The Bosphorus</h3><p class="hotel-location">Beşiktaş, İstanbul</p><div class="pet-amenities"><span class="pet-amenity"><i class="fas fa-bone"></i> Mama Kabı</span><span class="pet-amenity"><i class="fas fa-bed"></i> Pet Yatağı</span></div><div class="price-section"><span class="current-price">₺4.250</span><a href="#" class="btn-primary">Rezerve Et</a></div></div>
+    </div>
+    <div class="hotel-card">
+      <div class="card-image"><img src="https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&w=600"><span class="pet-badge"><i class="fas fa-paw"></i> Pet Friendly</span><span class="pet-policy" style="background:rgba(255,140,66,0.9);">₺500 / gece</span><span class="favorite-btn"><i class="fas fa-heart" style="color:var(--secondary);"></i></span></div>
+      <div class="card-content"><h3>D Maris Bay</h3><p class="hotel-location">Marmaris, Muğla</p><div class="pet-amenities"><span class="pet-amenity"><i class="fas fa-tree"></i> Özel Bahçe</span></div><div class="price-section"><span class="current-price">₺7.100</span><a href="#" class="btn-primary">Rezerve Et</a></div></div>
+    </div>
+    <div class="hotel-card">
+      <div class="card-image"><img src="https://images.pexels.com/photos/672532/pexels-photo-672532.jpeg?auto=compress&w=600"><span class="pet-badge"><i class="fas fa-paw"></i> Pet Friendly</span><span class="pet-policy">Ücretsiz</span></div>
+      <div class="card-content"><h3>Cappadocia Cave Resort</h3><p>Göreme, Nevşehir</p><div class="price-section"><span class="current-price">₺3.200</span><a href="#" class="btn-primary">Rezerve Et</a></div></div>
+    </div>
+  </div>
+</div>
+<script>document.querySelectorAll('.filter-tab').forEach(t=>t.addEventListener('click',function(){document.querySelectorAll('.filter-tab').forEach(c=>c.classList.remove('active'));this.classList.add('active');}));</script>
+</body>
+</html>

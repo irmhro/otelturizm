@@ -1,0 +1,55 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerHotelInfoPageViewModel
+@{ Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml"; ViewData["PartnerShell"] = Model.Shell; }
+<section class="partner-section-card">
+    <h2>Otel Bilgileri</h2>
+    <form method="post" action="/panel/partner/otel-bilgileri/kaydet" class="partner-form-grid">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="HotelId" value="@Model.Form.HotelId" />
+        <input type="text" name="HotelName" value="@Model.Form.HotelName" placeholder="Otel adi" />
+        <input type="text" name="HotelType" value="@Model.Form.HotelType" placeholder="Otel turu" />
+        <input type="text" name="TourismDocumentNo" value="@Model.Form.TourismDocumentNo" placeholder="Turizm belge no" />
+        <input type="text" name="TourismDocumentType" value="@Model.Form.TourismDocumentType" placeholder="Belge turu" />
+        <input type="text" name="City" value="@Model.Form.City" placeholder="Sehir" />
+        <input type="text" name="District" value="@Model.Form.District" placeholder="Ilce" />
+        <input type="text" name="Neighborhood" value="@Model.Form.Neighborhood" placeholder="Mahalle" />
+        <input type="text" name="PostalCode" value="@Model.Form.PostalCode" placeholder="Posta kodu" />
+        <input type="text" name="Website" value="@Model.Form.Website" placeholder="Web sitesi" />
+        <input type="email" name="ContactEmail" value="@Model.Form.ContactEmail" placeholder="Iletisim e-postasi" />
+        <input type="text" name="HotelPhone" value="@Model.Form.HotelPhone" placeholder="Telefon" />
+        <input type="text" name="HotelPhone2" value="@Model.Form.HotelPhone2" placeholder="Telefon 2" />
+        <input type="text" name="Fax" value="@Model.Form.Fax" placeholder="Faks" />
+        <input type="text" name="CheckInTime" value="@Model.Form.CheckInTime" placeholder="Check-in" />
+        <input type="text" name="CheckOutTime" value="@Model.Form.CheckOutTime" placeholder="Check-out" />
+        <input type="number" step="0.01" name="Latitude" value="@Model.Form.Latitude" placeholder="Enlem" />
+        <input type="number" step="0.01" name="Longitude" value="@Model.Form.Longitude" placeholder="Boylam" />
+        <input type="number" name="StarCount" value="@Model.Form.StarCount" placeholder="Yildiz sayisi" />
+        <input type="number" name="TotalRoomCount" value="@Model.Form.TotalRoomCount" placeholder="Toplam oda sayisi" />
+        <input type="number" name="TotalBedCapacity" value="@Model.Form.TotalBedCapacity" placeholder="Yatak kapasitesi" />
+        <input type="number" name="FloorCount" value="@Model.Form.FloorCount" placeholder="Kat sayisi" />
+        <label class="checkbox-inline"><input type="checkbox" name="ElevatorAvailable" value="true" checked="@(Model.Form.ElevatorAvailable ? "checked" : null)" /> Asansor var</label>
+        <input type="number" name="ElevatorCount" value="@Model.Form.ElevatorCount" placeholder="Asansor sayisi" />
+        <label class="checkbox-inline"><input type="checkbox" name="LateCheckoutAvailable" value="true" checked="@(Model.Form.LateCheckoutAvailable ? "checked" : null)" /> Gec cikis mumkun</label>
+        <input type="number" step="0.01" name="LateCheckoutFee" value="@Model.Form.LateCheckoutFee" placeholder="Gec cikis ucreti" />
+        <label class="checkbox-inline"><input type="checkbox" name="EarlyCheckinAvailable" value="true" checked="@(Model.Form.EarlyCheckinAvailable ? "checked" : null)" /> Erken giris mumkun</label>
+        <input type="number" step="0.01" name="EarlyCheckinFee" value="@Model.Form.EarlyCheckinFee" placeholder="Erken giris ucreti" />
+        <input type="number" name="MinStay" value="@Model.Form.MinStay" placeholder="Min gece" />
+        <input type="number" name="MaxStay" value="@Model.Form.MaxStay" placeholder="Max gece" />
+        <input type="number" step="0.01" name="DefaultCommissionRate" value="@Model.Form.DefaultCommissionRate" placeholder="Varsayilan komisyon orani" />
+        <input type="number" step="0.01" name="DepositAmount" value="@Model.Form.DepositAmount" placeholder="Depozito tutari" />
+        <input type="number" name="DepositReturnDays" value="@Model.Form.DepositReturnDays" placeholder="Depozito iade suresi" />
+        <input type="text" name="SpokenLanguages" value="@Model.Form.SpokenLanguages" placeholder="Konusulan diller" />
+        <input type="text" name="VideoUrl" value="@Model.Form.VideoUrl" placeholder="Video URL" />
+        <input type="text" name="VirtualTourUrl" value="@Model.Form.VirtualTourUrl" placeholder="Sanal tur URL" />
+        <textarea name="Address" placeholder="Adres">@Model.Form.Address</textarea>
+        <textarea name="ShortDescription" placeholder="Kisa aciklama">@Model.Form.ShortDescription</textarea>
+        <textarea name="Description" placeholder="Uzun aciklama">@Model.Form.Description</textarea>
+        <textarea name="LocationDescription" placeholder="Konum aciklamasi">@Model.Form.LocationDescription</textarea>
+        <div class="partner-amenity-grid">
+            @foreach (var amenity in Model.AvailableAmenities)
+            {
+                <label><input type="checkbox" name="SelectedAmenityIds" value="@amenity.AmenityId" checked="@(amenity.IsSelected ? "checked" : null)" /> @amenity.Name</label>
+            }
+        </div>
+        <button type="submit" class="partner-primary-btn">Bilgileri Kaydet</button>
+    </form>
+</section>

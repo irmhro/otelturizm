@@ -1,0 +1,226 @@
+@using System.Globalization
+@model otelturizmnew.Models.Paneller.Partner.PartnerPricingPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    var culture = CultureInfo.GetCultureInfo("tr-TR");
+    var weekdays = new[] { "Pzt", "Sal", "Car", "Per", "Cum", "Cmt", "Paz" };
+    var hotelQuery = $"otelId={Model.SelectedHotelId}";
+    var roomQuery = Model.SelectedRoomId.HasValue ? $"&roomId={Model.SelectedRoomId.Value}" : string.Empty;
+}
+
+<section class="partner-pricing-toolbar">
+    <div>
+        <p class="partner-room-kicker">Gelismis fiyat yonetimi</p>
+        <h2>Takvim uzerinden fiyat, kampanya ve satis durumu yonetin</h2>
+        <p>Oda secin, ayi degistirin ve secili tarih araliginda birden fazla oda tipi icin tek seferde guncelleme yapin.</p>
+    </div>
+    <div class="partner-pricing-month-nav">
+        <a class="partner-secondary-btn" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.PreviousMonthKey">
+            <i class="fas fa-chevron-left"></i>
+            Onceki ay
+        </a>
+        <div class="partner-pricing-month-pill">@Model.MonthLabel</div>
+        <a class="partner-secondary-btn" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.NextMonthKey">
+            Sonraki ay
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    </div>
+</section>
+
+<section class="partner-grid partner-pricing-summary-grid">
+    @foreach (var item in Model.SummaryCards)
+    {
+        <article class="partner-stat-card partner-pricing-stat @item.ToneClass">
+            <i class="fas @item.IconClass"></i>
+            <strong>@item.Value</strong>
+            <span>@item.Label</span>
+            <p>@item.Description</p>
+        </article>
+    }
+</section>
+
+<section class="partner-section-card partner-pricing-room-filter">
+    <div class="partner-section-head">
+        <div>
+            <h2>Goruntulenen oda tipi</h2>
+            <p>Takvim gridi tek odanin detayini gosterir; toplu guncelleme alttaki secim listesiyle birden fazla odaya uygulanabilir.</p>
+        </div>
+    </div>
+    <div class="partner-room-chip-list">
+        @foreach (var room in Model.Rooms)
+        {
+            <a href="/panel/partner/takvim-fiyatlar?otelId=@Model.SelectedHotelId&roomId=@room.RoomId&month=@Model.MonthKey"
+               class="partner-room-chip @(room.RoomId == Model.SelectedRoomId ? "active" : string.Empty)">
+                <span class="partner-room-chip-title">@room.RoomName</span>
+                <span class="partner-room-chip-meta">@room.BasePriceText · @room.StockText</span>
+            </a>
+        }
+    </div>
+</section>
+
+<section class="partner-pricing-layout">
+    <article class="partner-section-card partner-calendar-panel">
+        <div class="partner-section-head partner-calendar-head">
+            <div>
+                <h2>Aylik fiyat takvimi</h2>
+                <p>@(Model.SelectedRoomId.HasValue ? Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId.Value)?.RoomName : "Oda seciniz")</p>
+            </div>
+            <div class="partner-calendar-legend">
+                <span><i class="fas fa-circle legend-discount"></i> Kampanyali</span>
+                <span><i class="fas fa-circle legend-warning"></i> Son odalar</span>
+                <span><i class="fas fa-circle legend-closed"></i> Satisa kapali</span>
+            </div>
+        </div>
+
+        @if (Model.CalendarDays.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Takvim verisi hazir degil</strong>
+                <p>Bu otel icin once oda tipi secin veya aktif oda tipleri tanimlayin.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-calendar-weekdays">
+                @foreach (var day in weekdays)
+                {
+                    <div>@day</div>
+                }
+            </div>
+            <div class="partner-calendar-month-grid">
+                @foreach (var day in Model.CalendarDays)
+                {
+                    <article class="partner-calendar-cell @(day.IsCurrentMonth ? string.Empty : "is-other-month") @(day.IsToday ? "is-today" : string.Empty) @(day.IsHighlighted ? "is-highlighted" : string.Empty) @(day.IsClosed ? "is-closed" : string.Empty)">
+                        <div class="partner-calendar-cell-head">
+                            <div>
+                                <strong>@day.DayLabel</strong>
+                                <span>@day.WeekdayLabel</span>
+                            </div>
+                            <b class="partner-calendar-status">@day.StatusText</b>
+                        </div>
+                        <div class="partner-calendar-price-block">
+                            @if (day.HasDiscount)
+                            {
+                                <small>@day.BasePriceText</small>
+                                <strong>@day.DiscountPriceText</strong>
+                            }
+                            else
+                            {
+                                <strong>@day.PriceText</strong>
+                            }
+                        </div>
+                        <div class="partner-calendar-meta">
+                            <span>@day.AvailabilityText</span>
+                            <span>@day.SoldText</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(day.CampaignLabel))
+                        {
+                            <span class="partner-calendar-tag">@day.CampaignLabel</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(day.PriceNote))
+                        {
+                            <p class="partner-calendar-note">@day.PriceNote</p>
+                        }
+                    </article>
+                }
+            </div>
+        }
+    </article>
+
+    <aside class="partner-section-card partner-bulk-panel">
+        <div class="partner-section-head">
+            <div>
+                <h2>Coklu fiyat guncelleme</h2>
+                <p>Secili tarih araliginda bir veya birden fazla oda tipine ayni anda fiyat, kampanya ve stok kurali uygulayin.</p>
+            </div>
+        </div>
+
+        <form method="post" action="/panel/partner/takvim-fiyatlar/toplu-guncelle" class="partner-pricing-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+            <input type="hidden" name="ViewRoomId" value="@Model.SelectedRoomId" />
+            <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
+
+            <div class="partner-multi-room-box">
+                <span class="partner-field-label">Guncelleme uygulanacak odalar</span>
+                <div class="partner-room-checkbox-list">
+                    @foreach (var room in Model.Rooms.Where(x => x.IsActive))
+                    {
+                        var isChecked = Model.BulkForm.SelectedRoomIds.Contains(room.RoomId);
+                        <label class="partner-room-checkbox @(room.RoomId == Model.SelectedRoomId ? "is-focused" : string.Empty)">
+                            <input type="checkbox" name="SelectedRoomIds" value="@room.RoomId" checked="@(isChecked ? "checked" : null)" />
+                            <span>
+                                <strong>@room.RoomName</strong>
+                                <small>@room.BasePriceText · @room.StockText</small>
+                            </span>
+                        </label>
+                    }
+                </div>
+            </div>
+
+            <label>
+                <span>Tarih baslangici</span>
+                <input type="date" name="DateFrom" value="@Model.BulkForm.DateFrom.ToString("yyyy-MM-dd")" />
+            </label>
+            <label>
+                <span>Tarih bitisi</span>
+                <input type="date" name="DateTo" value="@Model.BulkForm.DateTo.ToString("yyyy-MM-dd")" />
+            </label>
+            <label>
+                <span>Normal fiyat</span>
+                <input type="number" step="0.01" name="BasePrice" value="@(Model.BulkForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Bos birak: mevcut fiyat kalsin" />
+            </label>
+            <label>
+                <span>Kampanyali fiyat</span>
+                <input type="number" step="0.01" name="DiscountPrice" value="@(Model.BulkForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Opsiyonel" />
+            </label>
+            <label class="partner-inline-toggle">
+                <input type="checkbox" name="ClearDiscountPrice" value="true" />
+                <span>Kampanyali fiyati temizle</span>
+            </label>
+            <label>
+                <span>Satisa acik oda</span>
+                <input type="number" name="TotalRooms" min="0" value="@(Model.BulkForm.TotalRooms?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Stok korunacak" />
+            </label>
+            <label>
+                <span>Minimum geceleme</span>
+                <input type="number" name="MinStay" min="1" value="@(Model.BulkForm.MinStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Degistirme" />
+            </label>
+            <label>
+                <span>Maksimum geceleme</span>
+                <input type="number" name="MaxStay" min="1" value="@(Model.BulkForm.MaxStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Degistirme" />
+            </label>
+            <label>
+                <span>Satis durumu</span>
+                <select name="SaleStatusAction">
+                    <option value="keep" selected>Mevcut durum korunsun</option>
+                    <option value="open">Satisa ac</option>
+                    <option value="close">Satisa kapat</option>
+                </select>
+            </label>
+            <label>
+                <span>Kampanya seçimi</span>
+                <select name="CampaignId">
+                    <option value="">Kampanya uygulanmayacak</option>
+                    @foreach (var campaign in Model.AvailableCampaigns)
+                    {
+                        <option value="@campaign.CampaignId">@campaign.CampaignName (@campaign.CampaignCode)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Kampanya etiketi</span>
+                <input type="text" name="CampaignLabel" maxlength="120" placeholder="Orn. Yaz Firsati" />
+            </label>
+            <label class="partner-form-span">
+                <span>Takvim notu</span>
+                <textarea name="PriceNote" placeholder="Orn. Bu tarihte kahvalti dahil fiyat uygulaniyor."></textarea>
+            </label>
+            <button type="submit" class="partner-primary-btn partner-form-span">
+                <i class="fas fa-floppy-disk"></i>
+                Takvim ve fiyat kurallarini uygula
+            </button>
+        </form>
+    </aside>
+</section>

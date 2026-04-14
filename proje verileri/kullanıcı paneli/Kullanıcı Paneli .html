@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Hesabım · Kullanıcı Paneli · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95;
+      --primary-light: #0055CC;
+      --primary-dark: #002A6B;
+      --secondary: #FF385C;
+      --success: #00A86B;
+      --warning: #FFB800;
+      --error: #EF4444;
+      --info: #3B82F6;
+      --gold: #FFD700;
+      
+      --bg-light: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text-dark: #0F172A;
+      --text-body: #1E293B;
+      --text-gray: #64748B;
+      --text-light: #94A3B8;
+      --border-light: #E2E8F0;
+      --border-medium: #CBD5E1;
+      
+      --sidebar-width: 280px;
+      --sidebar-collapsed: 80px;
+      --header-height: 72px;
+      
+      --radius-xs: 4px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-2xl: 32px;
+      --radius-full: 9999px;
+      
+      --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0, 59, 149, 0.12);
+      --shadow-xl: 0 30px 50px -15px rgba(0,0,0,0.15);
+      
+      --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-light);
+      color: var(--text-body);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Dashboard Layout */
+    .dashboard { display: flex; min-height: 100vh; }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--card-bg);
+      border-right: 1px solid var(--border-light);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      transition: width var(--transition-base);
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .user-profile-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .user-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 22px;
+      flex-shrink: 0;
+      position: relative;
+      box-shadow: var(--shadow-md);
+    }
+
+    .user-avatar::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 14px;
+      height: 14px;
+      background: var(--success);
+      border-radius: 50%;
+      border: 3px solid white;
+    }
+
+    .user-info h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text-dark);
+    }
+
+    .user-info p {
+      font-size: 13px;
+      color: var(--text-gray);
+    }
+
+    .membership-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .tier-badge {
+      background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
+      color: var(--text-dark);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .points-badge {
+      background: var(--bg-light);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-gray);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 20px 12px;
+    }
+
+    .nav-section { margin-bottom: 28px; }
+
+    .nav-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+      padding-left: 16px;
+      font-weight: 600;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      color: var(--text-gray);
+      text-decoration: none;
+      transition: all var(--transition-fast);
+      margin-bottom: 4px;
+      font-weight: 500;
+      font-size: 14px;
+      position: relative;
+    }
+
+    .nav-item i {
+      width: 24px;
+      font-size: 20px;
+      transition: transform var(--transition-fast);
+    }
+
+    .nav-item:hover {
+      background: rgba(0, 59, 149, 0.05);
+      color: var(--primary);
+    }
+
+    .nav-item:hover i { transform: translateX(2px); }
+
+    .nav-item.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-item .badge {
+      margin-left: auto;
+      background: var(--secondary);
+      color: white;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .nav-item .badge.warning { background: var(--warning); color: var(--text-dark); }
+    .nav-item .badge.success { background: var(--success); }
+
+    .sidebar-footer {
+      padding: 20px 16px 24px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    /* ========== MAIN CONTENT ========== */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 24px 32px;
+      transition: margin-left var(--transition-base);
+    }
+
+    /* Top Header */
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .page-title h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text-dark);
+      letter-spacing: -0.02em;
+    }
+
+    .page-title p {
+      color: var(--text-gray);
+      font-size: 15px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-full);
+      padding: 8px 16px;
+      min-width: 280px;
+    }
+
+    .search-box i { color: var(--text-gray); margin-right: 12px; }
+    .search-box input {
+      border: none;
+      outline: none;
+      flex: 1;
+      font-size: 14px;
+      background: transparent;
+    }
+
+    .notification-btn {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .notification-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: var(--secondary);
+      color: white;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .quick-action-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      border: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .quick-action-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary);
+    }
+
+    .quick-action-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .quick-action-content h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .quick-action-content p {
+      font-size: 13px;
+      color: var(--text-gray);
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      border: 1px solid var(--border-light);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, rgba(0,59,149,0.03) 0%, transparent 70%);
+    }
+
+    .stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .stat-trend {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    .stat-trend.up { color: var(--success); background: rgba(0,168,107,0.1); }
+    .stat-trend.down { color: var(--error); background: rgba(239,68,68,0.1); }
+
+    .stat-value {
+      font-size: 34px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-label {
+      color: var(--text-gray);
+      font-size: 14px;
+    }
+
+    /* Tabs */
+    .tabs-container {
+      display: flex;
+      gap: 28px;
+      border-bottom: 2px solid var(--border-light);
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      padding: 14px 0;
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text-gray);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab i { font-size: 16px; }
+    .tab:hover { color: var(--primary); }
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* Panel İçerikleri */
+    .panel-content { display: none; }
+    .panel-content.active { display: block; }
+
+    /* Rezervasyon Kartları */
+    .reservation-filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-chip {
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      background: var(--card-bg);
+      border: 1px solid var(--border-light);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .filter-chip:hover, .filter-chip.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .reservation-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: all var(--transition-base);
+    }
+
+    .reservation-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-medium);
+    }
+
+    .reservation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-light);
+      background: rgba(0, 59, 149, 0.01);
+    }
+
+    .reservation-id {
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .reservation-date {
+      color: var(--text-gray);
+      font-size: 14px;
+    }
+
+    .status-badge {
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-confirmed { background: rgba(0,168,107,0.1); color: var(--success); }
+    .status-pending { background: rgba(255,184,0,0.1); color: var(--warning); }
+    .status-completed { background: rgba(100,116,139,0.1); color: var(--text-gray); }
+    .status-cancelled { background: rgba(239,68,68,0.1); color: var(--error); }
+    .status-upcoming { background: rgba(59,130,246,0.1); color: var(--info); }
+
+    .reservation-body {
+      display: flex;
+      padding: 24px;
+      gap: 24px;
+    }
+
+    .reservation-image {
+      width: 140px;
+      height: 120px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .reservation-details { flex: 1; }
+
+    .hotel-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hotel-stars {
+      color: var(--warning);
+      font-size: 14px;
+      letter-spacing: 2px;
+    }
+
+    .hotel-location {
+      color: var(--text-gray);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .reservation-meta {
+      display: flex;
+      gap: 24px;
+      margin: 12px 0;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-gray);
+      font-size: 14px;
+    }
+
+    .reservation-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      justify-content: center;
+      min-width: 140px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition-fast);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-danger { background: transparent; border: 1.5px solid var(--error); color: var(--error); }
+    .btn-danger:hover { background: var(--error); color: white; }
+    .btn-sm { padding: 8px 14px; font-size: 13px; }
+
+    /* Favoriler Grid */
+    .favorites-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .favorite-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      position: relative;
+      transition: all var(--transition-base);
+    }
+
+    .favorite-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .favorite-image {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    .favorite-remove {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-md);
+      color: var(--error);
+      transition: all var(--transition-fast);
+      border: none;
+    }
+
+    .favorite-remove:hover {
+      background: var(--error);
+      color: white;
+      transform: scale(1.1);
+    }
+
+    .favorite-content {
+      padding: 16px;
+    }
+
+    .favorite-content h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .favorite-location {
+      font-size: 13px;
+      color: var(--text-gray);
+      margin-bottom: 8px;
+    }
+
+    .favorite-price {
+      font-weight: 700;
+      color: var(--primary);
+      margin-top: 8px;
+    }
+
+    .favorite-rating {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .rating-badge {
+      background: var(--primary);
+      color: white;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    /* Profil Form */
+    .profile-container {
+      max-width: 800px;
+    }
+
+    .profile-section {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      border: 1px solid var(--border-light);
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .form-group { margin-bottom: 20px; }
+    .form-group.full-width { grid-column: span 2; }
+    .form-group label {
+      display: block;
+      font-weight: 500;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: var(--text-dark);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-md);
+      font-family: "Inter", sans-serif;
+      font-size: 15px;
+      transition: all var(--transition-fast);
+      background: white;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(0, 59, 149, 0.08);
+    }
+
+    /* Puanlarım */
+    .loyalty-hero {
+      background: linear-gradient(135deg, #1A1F26 0%, #2C333D 100%);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      color: white;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .loyalty-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+
+    .points-value {
+      font-size: 56px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .tier-progress {
+      margin: 24px 0;
+    }
+
+    .progress-bar {
+      height: 10px;
+      background: rgba(255,255,255,0.2);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin: 12px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 50%;
+      background: var(--gold);
+      border-radius: var(--radius-full);
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin: 32px 0;
+    }
+
+    .benefit-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      border: 1px solid var(--border-light);
+    }
+
+    .benefit-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin-bottom: 16px;
+    }
+
+    /* Mobil Responsive */
+    @media (max-width: 1200px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .quick-actions { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .reservation-body { flex-direction: column; }
+      .reservation-image { width: 100%; height: 180px; }
+      .reservation-actions { flex-direction: row; flex-wrap: wrap; }
+    }
+
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .quick-actions { grid-template-columns: 1fr; }
+      .content-header { flex-direction: column; align-items: flex-start; }
+      .search-box { width: 100%; }
+      .benefits-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full-width { grid-column: span 1; }
+    }
+
+    /* Mobil Bottom Navigation */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border-light);
+      padding: 8px 16px;
+      z-index: 99;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+    }
+
+    .bottom-nav-items {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      color: var(--text-gray);
+      text-decoration: none;
+      font-size: 11px;
+      border-radius: var(--radius-full);
+      transition: all var(--transition-fast);
+    }
+
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+
+    @media (max-width: 900px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+
+    /* Toast Container */
+    .toast-container {
+      position: fixed;
+      bottom: 100px;
+      right: 24px;
+      z-index: 9999;
+    }
+
+    .toast {
+      background: var(--text-dark);
+      color: white;
+      padding: 16px 24px;
+      border-radius: var(--radius-lg);
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-xl);
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--error); }
+    .toast.warning { background: var(--warning); color: var(--text-dark); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="user-profile-card">
+        <div class="user-avatar">AY</div>
+        <div class="user-info">
+          <h4>Ahmet Yılmaz</h4>
+          <p>ahmet.yilmaz@email.com</p>
+          <div class="membership-badge">
+            <span class="tier-badge"><i class="fas fa-crown"></i> Gold Üye</span>
+            <span class="points-badge"><i class="fas fa-star"></i> 1.250 Puan</span>
+          </div>
+        </div>
+      </div>
+      <a href="/" style="display: flex; align-items: center; gap: 8px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 14px;">
+        <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+      </a>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item active" data-panel="dashboard">
+          <i class="fas fa-columns"></i> Dashboard
+        </a>
+        <a href="#" class="nav-item" data-panel="reservations">
+          <i class="fas fa-calendar-check"></i> Rezervasyonlarım
+          <span class="badge">3</span>
+        </a>
+        <a href="#" class="nav-item" data-panel="favorites">
+          <i class="fas fa-heart"></i> Favorilerim
+          <span class="badge success">8</span>
+        </a>
+        <a href="#" class="nav-item" data-panel="loyalty">
+          <i class="fas fa-star"></i> Puanlarım & Ödüller
+        </a>
+        <a href="#" class="nav-item" data-panel="messages">
+          <i class="fas fa-envelope"></i> Mesajlarım
+          <span class="badge warning">2</span>
+        </a>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-title">Hesap Ayarları</div>
+        <a href="#" class="nav-item" data-panel="profile">
+          <i class="fas fa-user-circle"></i> Profil Bilgilerim
+        </a>
+        <a href="#" class="nav-item" data-panel="payment">
+          <i class="fas fa-credit-card"></i> Ödeme Yöntemleri
+        </a>
+        <a href="#" class="nav-item" data-panel="notifications">
+          <i class="fas fa-bell"></i> Bildirim Tercihleri
+        </a>
+        <a href="#" class="nav-item" data-panel="security">
+          <i class="fas fa-shield-alt"></i> Güvenlik & Giriş
+        </a>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-title">Seyahat</div>
+        <a href="#" class="nav-item" data-panel="reviews">
+          <i class="fas fa-star-half-alt"></i> Değerlendirmelerim
+        </a>
+        <a href="#" class="nav-item" data-panel="history">
+          <i class="fas fa-history"></i> Seyahat Geçmişi
+        </a>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-title">Destek</div>
+        <a href="#" class="nav-item">
+          <i class="fas fa-headset"></i> Canlı Destek
+        </a>
+        <a href="#" class="nav-item">
+          <i class="fas fa-question-circle"></i> Yardım Merkezi
+        </a>
+      </div>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <a href="#" class="nav-item" style="color: var(--error);">
+        <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+      </a>
+    </div>
+  </aside>
+  
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="main-content">
+    
+    <!-- Header -->
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Hoş Geldin, Ahmet! 👋</h1>
+        <p>Hesabını yönet, rezervasyonlarını takip et ve özel fırsatları keşfet.</p>
+      </div>
+      <div class="header-actions">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Rezervasyon ara...">
+        </div>
+        <div class="notification-btn">
+          <i class="far fa-bell"></i>
+          <span class="notification-badge">3</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========== DASHBOARD PANEL ========== -->
+    <div class="panel-content active" id="dashboard-panel">
+      
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <a href="#" class="quick-action-card" data-panel="reservations">
+          <div class="quick-action-icon" style="background: rgba(0,59,149,0.1); color: var(--primary);"><i class="fas fa-calendar-plus"></i></div>
+          <div class="quick-action-content"><h4>Yeni Rezervasyon</h4><p>Hemen otel ara</p></div>
+        </a>
+        <a href="#" class="quick-action-card" data-panel="favorites">
+          <div class="quick-action-icon" style="background: rgba(255,56,92,0.1); color: var(--secondary);"><i class="fas fa-heart"></i></div>
+          <div class="quick-action-content"><h4>Favorilerim</h4><p>8 kayıtlı otel</p></div>
+        </a>
+        <a href="#" class="quick-action-card" data-panel="loyalty">
+          <div class="quick-action-icon" style="background: rgba(255,215,0,0.15); color: #FFA500;"><i class="fas fa-gift"></i></div>
+          <div class="quick-action-content"><h4>Puanlarım</h4><p>1.250 puan birikti</p></div>
+        </a>
+        <a href="#" class="quick-action-card">
+          <div class="quick-action-icon" style="background: rgba(0,168,107,0.1); color: var(--success);"><i class="fas fa-headset"></i></div>
+          <div class="quick-action-content"><h4>Canlı Destek</h4><p>7/24 yardım</p></div>
+        </a>
+      </div>
+      
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon" style="background: rgba(0,59,149,0.1); color: var(--primary);"><i class="fas fa-calendar-alt"></i></div>
+            <span class="stat-trend up"><i class="fas fa-arrow-up"></i> +2</span>
+          </div>
+          <div class="stat-value">12</div>
+          <div class="stat-label">Toplam Rezervasyon</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon" style="background: rgba(255,184,0,0.1); color: var(--warning);"><i class="fas fa-clock"></i></div>
+            <span class="stat-trend up"><i class="fas fa-arrow-up"></i> 1</span>
+          </div>
+          <div class="stat-value">3</div>
+          <div class="stat-label">Yaklaşan Konaklama</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon" style="background: rgba(255,215,0,0.15); color: #FFA500;"><i class="fas fa-star"></i></div>
+          </div>
+          <div class="stat-value">1.250</div>
+          <div class="stat-label">OtelPuan</div>
+          <p style="color: var(--text-gray); font-size: 13px; margin-top: 4px;">1.250 puan daha → Platinum</p>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-icon" style="background: rgba(0,168,107,0.1); color: var(--success);"><i class="fas fa-tag"></i></div>
+          </div>
+          <div class="stat-value">₺450</div>
+          <div class="stat-label">Kullanılabilir İndirim</div>
+        </div>
+      </div>
+      
+      <!-- Tabs -->
+      <div class="tabs-container">
+        <div class="tab active" data-tab="upcoming"><i class="fas fa-calendar-check"></i> Yaklaşan Rezervasyonlar</div>
+        <div class="tab" data-tab="past"><i class="fas fa-history"></i> Geçmiş</div>
+        <div class="tab" data-tab="cancelled"><i class="fas fa-ban"></i> İptal Edilenler</div>
+      </div>
+      
+      <!-- Upcoming Reservations -->
+      <div class="reservation-list">
+        <div class="reservation-filters">
+          <span class="filter-chip active">Tümü</span>
+          <span class="filter-chip">Onaylandı</span>
+          <span class="filter-chip">Onay Bekliyor</span>
+          <span class="filter-chip">Check-in Yakın</span>
+        </div>
+        
+        <!-- Reservation Card 1 -->
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <span class="reservation-id"><i class="fas fa-hashtag"></i> OTL-2025-0482</span>
+              <span class="reservation-date" style="margin-left: 16px;"><i class="far fa-calendar-alt"></i> 05 Nis 2025</span>
+            </div>
+            <span class="status-badge status-confirmed"><i class="fas fa-check-circle"></i> Onaylandı</span>
+          </div>
+          <div class="reservation-body">
+            <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Swissôtel" class="reservation-image">
+            <div class="reservation-details">
+              <div class="hotel-name">
+                Swissôtel The Bosphorus
+                <span class="hotel-stars">★★★★★</span>
+              </div>
+              <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul · Dolmabahçe'ye 800m</div>
+              <div class="reservation-meta">
+                <span class="meta-item"><i class="far fa-calendar"></i> 15 Nis - 18 Nis 2025 (3 Gece)</span>
+                <span class="meta-item"><i class="far fa-user"></i> 2 Yetişkin, 1 Çocuk</span>
+                <span class="meta-item"><i class="far fa-moon"></i> Deluxe Oda, Boğaz Manzaralı</span>
+              </div>
+              <p style="color: var(--success); font-size: 14px;"><i class="fas fa-check-circle"></i> Ücretsiz iptal · 13 Nis 23:59'a kadar</p>
+              <p style="margin-top: 12px;"><strong>Toplam: ₺12.750</strong> (Ödendi)</p>
+            </div>
+            <div class="reservation-actions">
+              <a href="#" class="btn btn-primary">Rezervasyon Detayı</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-envelope"></i> Otelle İletişim</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-edit"></i> Değiştir</a>
+              <a href="#" class="btn btn-danger"><i class="fas fa-times"></i> İptal Et</a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Reservation Card 2 -->
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <span class="reservation-id"><i class="fas fa-hashtag"></i> OTL-2025-0391</span>
+              <span class="reservation-date" style="margin-left: 16px;"><i class="far fa-calendar-alt"></i> 28 Mar 2025</span>
+            </div>
+            <span class="status-badge status-pending"><i class="fas fa-clock"></i> Onay Bekliyor</span>
+          </div>
+          <div class="reservation-body">
+            <img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Rixos" class="reservation-image">
+            <div class="reservation-details">
+              <div class="hotel-name">
+                Rixos Premium Belek
+                <span class="hotel-stars">★★★★★</span>
+              </div>
+              <div class="hotel-location"><i class="fas fa-map-pin"></i> Belek, Antalya · Sahile 100m</div>
+              <div class="reservation-meta">
+                <span class="meta-item"><i class="far fa-calendar"></i> 22 May - 29 May 2025 (7 Gece)</span>
+                <span class="meta-item"><i class="far fa-user"></i> 2 Yetişkin</span>
+                <span class="meta-item"><i class="far fa-moon"></i> Standart Oda, Her Şey Dahil</span>
+              </div>
+              <p style="color: var(--warning); font-size: 14px;"><i class="fas fa-hourglass-half"></i> Otel onayı bekleniyor (En geç 24 saat)</p>
+              <p style="margin-top: 12px;"><strong>Toplam: ₺40.600</strong> (Onay sonrası ödeme)</p>
+            </div>
+            <div class="reservation-actions">
+              <a href="#" class="btn btn-primary">Rezervasyon Detayı</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-edit"></i> Değiştir</a>
+              <a href="#" class="btn btn-danger">İptal Et</a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Reservation Card 3 -->
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <span class="reservation-id"><i class="fas fa-hashtag"></i> OTL-2025-0215</span>
+              <span class="reservation-date" style="margin-left: 16px;"><i class="far fa-calendar-alt"></i> 10 Mar 2025</span>
+            </div>
+            <span class="status-badge status-upcoming"><i class="fas fa-door-open"></i> Check-in Yakın</span>
+          </div>
+          <div class="reservation-body">
+            <img src="https://images.pexels.com/photos/672532/pexels-photo-672532.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Cappadocia" class="reservation-image">
+            <div class="reservation-details">
+              <div class="hotel-name">
+                Cappadocia Cave Resort
+                <span class="hotel-stars">★★★★</span>
+              </div>
+              <div class="hotel-location"><i class="fas fa-map-pin"></i> Göreme, Nevşehir · Merkeze 500m</div>
+              <div class="reservation-meta">
+                <span class="meta-item"><i class="far fa-calendar"></i> 12 Nis - 14 Nis 2025 (2 Gece)</span>
+                <span class="meta-item"><i class="far fa-user"></i> 2 Yetişkin</span>
+                <span class="meta-item"><i class="far fa-moon"></i> Mağara Oda</span>
+              </div>
+              <p style="color: var(--info); font-size: 14px;"><i class="fas fa-info-circle"></i> 3 gün sonra check-in!</p>
+              <p style="margin-top: 12px;"><strong>Toplam: ₺6.400</strong> (Ödendi)</p>
+            </div>
+            <div class="reservation-actions">
+              <a href="#" class="btn btn-primary">Rezervasyon Detayı</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-qrcode"></i> Check-in Kodu</a>
+              <a href="#" class="btn btn-outline">Otelle İletişim</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Favoriler Önizleme -->
+      <div style="margin-top: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="font-size: 20px; font-weight: 700;">Kaydettiğin Oteller</h2>
+          <a href="#" style="color: var(--primary); text-decoration: none; font-weight: 600;">Tümünü Gör <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="favorites-grid">
+          <div class="favorite-card">
+            <button class="favorite-remove"><i class="fas fa-times"></i></button>
+            <img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Four Seasons" class="favorite-image">
+            <div class="favorite-content">
+              <h4>Four Seasons Bosphorus</h4>
+              <div class="favorite-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+              <div class="favorite-rating"><span class="rating-badge">9.7</span> Olağanüstü · 892 yorum</div>
+              <div class="favorite-price">₺12.500 <span style="font-weight: 400; color: var(--text-gray);">/ gece</span></div>
+            </div>
+          </div>
+          <div class="favorite-card">
+            <button class="favorite-remove"><i class="fas fa-times"></i></button>
+            <img src="https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=400" alt="D Maris" class="favorite-image">
+            <div class="favorite-content">
+              <h4>D Maris Bay</h4>
+              <div class="favorite-location"><i class="fas fa-map-pin"></i> Marmaris, Muğla</div>
+              <div class="favorite-rating"><span class="rating-badge">9.3</span> Muhteşem · 456 yorum</div>
+              <div class="favorite-price">₺7.100 <span style="font-weight: 400; color: var(--text-gray);">/ gece</span></div>
+            </div>
+          </div>
+          <div class="favorite-card">
+            <button class="favorite-remove"><i class="fas fa-times"></i></button>
+            <img src="https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Hilton" class="favorite-image">
+            <div class="favorite-content">
+              <h4>Hilton İstanbul Bomonti</h4>
+              <div class="favorite-location"><i class="fas fa-map-pin"></i> Şişli, İstanbul</div>
+              <div class="favorite-rating"><span class="rating-badge">8.9</span> Çok İyi · 1.234 yorum</div>
+              <div class="favorite-price">₺3.800 <span style="font-weight: 400; color: var(--text-gray);">/ gece</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Özel Teklif -->
+      <div style="margin-top: 40px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: var(--radius-xl); padding: 32px; color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+          <div>
+            <h2 style="font-size: 24px; margin-bottom: 8px;">🎁 Gold Üyelere Özel %20 İndirim!</h2>
+            <p style="opacity: 0.9;">1.250 puanın var. 1.250 puan daha kazan, Platinum üye ol, %30 indirim fırsatlarından yararlan.</p>
+          </div>
+          <a href="#" style="background: white; color: var(--primary); padding: 14px 32px; border-radius: var(--radius-full); text-decoration: none; font-weight: 700;">Fırsatları Keşfet →</a>
+        </div>
+      </div>
+    </div>
+    
+  </main>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item active" data-panel="dashboard"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item" data-panel="reservations"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item" data-panel="favorites"><i class="fas fa-heart"></i><span>Favoriler</span></a>
+    <a href="#" class="bottom-nav-item" data-panel="loyalty"><i class="fas fa-star"></i><span>Puanlar</span></a>
+    <a href="#" class="bottom-nav-item" data-panel="profile"><i class="fas fa-user"></i><span>Profil</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    "use strict";
+    
+    // Panel Geçişleri
+    const navItems = document.querySelectorAll('[data-panel]');
+    const panels = {
+      dashboard: document.getElementById('dashboard-panel')
+    };
+    
+    function switchPanel(panelId) {
+      // Sidebar aktif durumu
+      navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.panel === panelId) item.classList.add('active');
+      });
+      
+      // Panel gösterimi
+      Object.values(panels).forEach(panel => {
+        if (panel) panel.classList.remove('active');
+      });
+      if (panels[panelId]) panels[panelId].classList.add('active');
+    }
+    
+    navItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchPanel(item.dataset.panel);
+      });
+    });
+    
+    // Tab sistemi
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        // Tab içeriği değişimi burada yapılabilir
+      });
+    });
+    
+    // Filtre chip'leri
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', function() {
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+    
+    // Favori kaldırma
+    document.querySelectorAll('.favorite-remove').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (confirm('Bu oteli favorilerinizden kaldırmak istediğinize emin misiniz?')) {
+          this.closest('.favorite-card').style.opacity = '0';
+          setTimeout(() => this.closest('.favorite-card').remove(), 300);
+          showToast('Otel favorilerinizden kaldırıldı.', 'success');
+        }
+      });
+    });
+    
+    // Toast bildirimi
+    function showToast(message, type = 'info') {
+      const container = document.querySelector('.toast-container') || (() => {
+        const div = document.createElement('div');
+        div.className = 'toast-container';
+        document.body.appendChild(div);
+        return div;
+      })();
+      
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    // Notification butonu
+    document.querySelector('.notification-btn')?.addEventListener('click', () => {
+      showToast('3 yeni bildiriminiz var.', 'info');
+    });
+    
+    console.log('✅ Kullanıcı Paneli (User Dashboard) Yüklendi · Tüm özellikler aktif');
+  })();
+</script>
+
+</body>
+</html>

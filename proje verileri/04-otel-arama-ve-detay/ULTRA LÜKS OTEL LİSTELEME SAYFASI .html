@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>İstanbul Otelleri · 847 Tesis · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444; --gold: #FFD700;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #64748B; --text-light: #94A3B8; --border-light: #E2E8F0;
+      --radius-xl: 24px; --radius-lg: 20px; --radius-md: 16px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 40px -10px rgba(0, 59, 149, 0.12);
+      --shadow-glow: 0 0 30px rgba(0, 168, 107, 0.1);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 1440px; margin: 0 auto; padding: 20px 24px; }
+
+    /* Header - Arama Özeti */
+    .search-header {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 20px 28px;
+      margin-bottom: 24px; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    .search-summary h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .search-summary p { color: var(--text-gray); font-size: 14px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .search-actions { display: flex; gap: 12px; }
+    .btn { padding: 12px 24px; border-radius: 40px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: var(--transition-base); display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(0, 59, 149, 0.2); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+
+    /* Özel Konsept Hızlı Erişim Butonları */
+    .concept-bar { margin-bottom: 20px; }
+    .concept-title { font-size: 14px; font-weight: 600; color: var(--text-gray); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .concept-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+    .concept-btn {
+      padding: 12px 20px; border-radius: 60px; background: var(--card-bg); border: 1px solid var(--border-light);
+      font-weight: 600; font-size: 14px; cursor: pointer; transition: var(--transition-base);
+      display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow-sm);
+    }
+    .concept-btn i { font-size: 18px; }
+    .concept-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: transparent; }
+    .concept-btn.best-price:hover { background: var(--secondary); color: white; }
+    .concept-btn.weekend:hover { background: var(--success); color: white; }
+    .concept-btn.budget:hover { background: var(--primary); color: white; }
+    .concept-btn.star-rain:hover { background: var(--gold); color: var(--text-dark); }
+    .concept-btn.pet:hover { background: #8B5CF6; color: white; }
+    .concept-btn.pool:hover { background: #00B4D8; color: white; }
+    .concept-btn.campaign:hover { background: var(--warning); color: var(--text-dark); }
+
+    /* Main Layout */
+    .results-layout { display: flex; gap: 28px; }
+    
+    /* Sidebar - Gelişmiş Filtreleme */
+    .filter-sidebar { width: 300px; flex-shrink: 0; }
+    .filter-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); padding: 24px;
+      border: 1px solid var(--border-light); margin-bottom: 20px;
+    }
+    .filter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .filter-header h3 { font-size: 16px; font-weight: 700; }
+    .filter-header button { background: none; border: none; color: var(--primary); font-weight: 600; font-size: 13px; cursor: pointer; }
+    
+    .filter-section { margin-bottom: 24px; }
+    .filter-section-title { font-weight: 600; font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .filter-options { display: flex; flex-direction: column; gap: 10px; }
+    .filter-checkbox { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: var(--text-gray); }
+    .filter-checkbox input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+    
+    .price-slider { margin: 16px 0; }
+    .price-inputs { display: flex; gap: 12px; margin-top: 12px; }
+    .price-input { flex: 1; padding: 12px; border: 1px solid var(--border-light); border-radius: 12px; font-size: 14px; }
+    
+    .rating-filter { display: flex; gap: 8px; flex-wrap: wrap; }
+    .rating-btn {
+      padding: 8px 14px; border-radius: 40px; background: var(--bg-light); border: 1px solid var(--border-light);
+      font-size: 13px; cursor: pointer; transition: var(--transition-base);
+    }
+    .rating-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* Otel Listesi */
+    .hotel-list { flex: 1; }
+    .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .list-header p { color: var(--text-gray); font-size: 14px; }
+    .sort-select { padding: 10px 16px; border: 1px solid var(--border-light); border-radius: 40px; background: white; font-size: 14px; cursor: pointer; }
+
+    /* Otel Kartı - Ultra Lüks */
+    .hotel-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); overflow: hidden;
+      margin-bottom: 24px; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+      transition: var(--transition-base); display: flex; flex-direction: column;
+    }
+    .hotel-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
+    
+    .card-image { position: relative; height: 220px; }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; }
+    .image-badge {
+      position: absolute; top: 16px; left: 16px; padding: 6px 16px; border-radius: 40px;
+      font-weight: 700; font-size: 13px; z-index: 2;
+    }
+    .badge-discount { background: var(--secondary); color: white; }
+    .badge-popular { background: var(--gold); color: var(--text-dark); }
+    .badge-lastroom { background: var(--error); color: white; }
+    .favorite-btn {
+      position: absolute; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%;
+      background: white; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--secondary); z-index: 2;
+    }
+    
+    .card-content { padding: 24px; }
+    .hotel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .hotel-name { font-size: 20px; font-weight: 700; }
+    .hotel-stars { color: var(--gold); letter-spacing: 2px; font-size: 12px; }
+    .hotel-location { color: var(--text-gray); font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    
+    .hotel-features { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .feature-tag { display: flex; align-items: center; gap: 6px; color: var(--text-gray); font-size: 13px; }
+    .feature-tag i { color: var(--success); }
+    
+    .concept-tags { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .concept-tag {
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600;
+      background: var(--bg-light); color: var(--text-gray);
+    }
+    .concept-tag.highlight { background: rgba(0, 168, 107, 0.1); color: var(--success); }
+    
+    .price-section { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light); }
+    .price-info { display: flex; align-items: baseline; gap: 8px; }
+    .current-price { font-size: 28px; font-weight: 800; color: var(--primary); }
+    .old-price { text-decoration: line-through; color: var(--text-light); font-size: 16px; }
+    .savings { color: var(--success); font-weight: 600; font-size: 14px; }
+    .btn-book { background: var(--primary); color: white; padding: 14px 28px; border-radius: 40px; font-weight: 700; text-decoration: none; }
+
+    /* Pagination */
+    .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 32px; }
+    .page-item { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-light); border-radius: 12px; cursor: pointer; background: white; }
+    .page-item.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* Mobile Filter Button */
+    .mobile-filter-btn {
+      display: none; position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+      background: var(--primary); color: white; border: none; padding: 14px 32px;
+      border-radius: 60px; font-weight: 700; box-shadow: var(--shadow-lg); z-index: 99;
+    }
+
+    /* Mobile */
+    @media (max-width: 1100px) {
+      .results-layout { flex-direction: column; }
+      .filter-sidebar { width: 100%; }
+    }
+    @media (max-width: 700px) {
+      .container { padding: 16px; }
+      .filter-sidebar { display: none; }
+      .filter-sidebar.active { display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 1000; overflow-y: auto; padding: 20px; }
+      .mobile-filter-btn { display: block; }
+      .concept-buttons { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+      .concept-btn { flex-shrink: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Header -->
+  <div class="search-header">
+    <div class="search-summary">
+      <h1>İstanbul: 847 otel bulundu</h1>
+      <p><i class="fas fa-calendar"></i> 15 Nis - 18 Nis · 2 Yetişkin, 1 Çocuk <span>·</span> <i class="fas fa-map-pin"></i> Tüm İstanbul</p>
+    </div>
+    <div class="search-actions">
+      <button class="btn btn-outline" onclick="alert('🗺️ Harita görünümü')"><i class="fas fa-map"></i> Harita</button>
+      <button class="btn btn-primary" onclick="alert('🔍 Aramayı düzenle')"><i class="fas fa-sliders-h"></i> Aramayı Düzenle</button>
+    </div>
+  </div>
+
+  <!-- Özel Konsept Hızlı Erişim Butonları -->
+  <div class="concept-bar">
+    <div class="concept-title"><i class="fas fa-star" style="color: var(--gold);"></i> Özel Konseptler · Hızlı Filtrele</div>
+    <div class="concept-buttons">
+      <button class="concept-btn best-price" onclick="alert('🏷️ En İyi Fiyat sayfasına yönlendiriliyorsunuz')"><i class="fas fa-fire"></i> En İyi Fiyat</button>
+      <button class="concept-btn weekend" onclick="alert('📅 Hafta Sonu Fırsatları sayfasına yönlendiriliyorsunuz')"><i class="fas fa-calendar-week"></i> Hafta Sonu Fırsatları</button>
+      <button class="concept-btn budget" onclick="alert('💰 Bütçeme Uygun sayfasına yönlendiriliyorsunuz')"><i class="fas fa-wallet"></i> Bütçeme Uygun</button>
+      <button class="concept-btn star-rain" onclick="alert('⭐ Yıldız Yağmuru sayfasına yönlendiriliyorsunuz')"><i class="fas fa-crown"></i> Yıldız Yağmuru</button>
+      <button class="concept-btn pet" onclick="alert('🐾 Evcil Hayvan Dostu sayfasına yönlendiriliyorsunuz')"><i class="fas fa-paw"></i> Evcil Hayvan Dostu</button>
+      <button class="concept-btn pool" onclick="alert('🏊 Havuzlu Oteller sayfasına yönlendiriliyorsunuz')"><i class="fas fa-swimmer"></i> Havuzlu Oteller</button>
+      <button class="concept-btn campaign" onclick="alert('🎁 Kampanyalı Oteller sayfasına yönlendiriliyorsunuz')"><i class="fas fa-tag"></i> Kampanyalı Oteller</button>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="results-layout">
+    
+    <!-- Sidebar - Gelişmiş Filtreleme -->
+    <aside class="filter-sidebar" id="filterSidebar">
+      <div class="filter-card">
+        <div class="filter-header"><h3>🔍 Filtrele</h3><button onclick="alert('Filtreler temizlendi')">Temizle</button></div>
+        
+        <!-- Fiyat Aralığı -->
+        <div class="filter-section">
+          <div class="filter-section-title"><i class="fas fa-turkish-lira-sign"></i> Fiyat Aralığı</div>
+          <div class="price-slider"><input type="range" min="0" max="15000" value="8000" style="width:100%;"></div>
+          <div class="price-inputs"><input type="number" class="price-input" placeholder="Min ₺" value="0"><input type="number" class="price-input" placeholder="Max ₺" value="15000"></div>
+        </div>
+        
+        <!-- Yıldız Sayısı -->
+        <div class="filter-section">
+          <div class="filter-section-title"><i class="fas fa-star"></i> Yıldız Sayısı</div>
+          <div class="filter-options">
+            <label class="filter-checkbox"><input type="checkbox" checked> 5 Yıldız <span style="margin-left:auto; color:var(--text-light);">(124)</span></label>
+            <label class="filter-checkbox"><input type="checkbox" checked> 4 Yıldız <span style="margin-left:auto; color:var(--text-light);">(256)</span></label>
+            <label class="filter-checkbox"><input type="checkbox" checked> 3 Yıldız <span style="margin-left:auto; color:var(--text-light);">(312)</span></label>
+            <label class="filter-checkbox"><input type="checkbox"> 2 Yıldız <span style="margin-left:auto; color:var(--text-light);">(98)</span></label>
+            <label class="filter-checkbox"><input type="checkbox"> 1 Yıldız <span style="margin-left:auto; color:var(--text-light);">(57)</span></label>
+          </div>
+        </div>
+        
+        <!-- Misafir Puanı -->
+        <div class="filter-section">
+          <div class="filter-section-title"><i class="fas fa-smile"></i> Misafir Puanı</div>
+          <div class="rating-filter">
+            <span class="rating-btn active">9+ Muhteşem</span>
+            <span class="rating-btn">8+ Çok İyi</span>
+            <span class="rating-btn">7+ İyi</span>
+          </div>
+        </div>
+        
+        <!-- Popüler Filtreler -->
+        <div class="filter-section">
+          <div class="filter-section-title"><i class="fas fa-filter"></i> Popüler Filtreler</div>
+          <div class="filter-options">
+            <label class="filter-checkbox"><input type="checkbox" checked> Ücretsiz WiFi</label>
+            <label class="filter-checkbox"><input type="checkbox"> Havuz</label>
+            <label class="filter-checkbox"><input type="checkbox" checked> Otopark</label>
+            <label class="filter-checkbox"><input type="checkbox"> Spa & Wellness</label>
+            <label class="filter-checkbox"><input type="checkbox" checked> Restoran</label>
+            <label class="filter-checkbox"><input type="checkbox"> Evcil Hayvan Dostu</label>
+          </div>
+        </div>
+        
+        <!-- Yemek Seçenekleri -->
+        <div class="filter-section">
+          <div class="filter-section-title"><i class="fas fa-utensils"></i> Yemek Seçenekleri</div>
+          <div class="filter-options">
+            <label class="filter-checkbox"><input type="checkbox"> Oda Kahvaltı</label>
+            <label class="filter-checkbox"><input type="checkbox" checked> Her Şey Dahil</label>
+            <label class="filter-checkbox"><input type="checkbox"> Yarım Pansiyon</label>
+            <label class="filter-checkbox"><input type="checkbox"> Tam Pansiyon</label>
+          </div>
+        </div>
+        
+        <!-- Özel Konseptler -->
+        <div class="filter-section">
+          <div class="filter-section-title"><i class="fas fa-gem"></i> Özel Konseptler</div>
+          <div class="filter-options">
+            <label class="filter-checkbox"><input type="checkbox"> En İyi Fiyat</label>
+            <label class="filter-checkbox"><input type="checkbox" checked> Hafta Sonu İndirimi</label>
+            <label class="filter-checkbox"><input type="checkbox"> Yıldız Yağmuru (4.5+)</label>
+            <label class="filter-checkbox"><input type="checkbox"> Kampanyalı</label>
+          </div>
+        </div>
+        
+        <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="alert('✅ Filtreler uygulandı!')"><i class="fas fa-check"></i> Filtreleri Uygula</button>
+      </div>
+    </aside>
+    
+    <!-- Otel Listesi -->
+    <div class="hotel-list">
+      
+      <div class="list-header">
+        <p><i class="fas fa-info-circle"></i> 847 otelden 1-20 arası gösteriliyor</p>
+        <select class="sort-select"><option>Önerilen Sıralama</option><option>En Düşük Fiyat</option><option>En Yüksek Puan</option><option>Yıldız Sayısı</option></select>
+      </div>
+      
+      <!-- Otel Kartı 1 -->
+      <div class="hotel-card">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Swissôtel">
+          <span class="image-badge badge-discount"><i class="fas fa-tag"></i> %25 İndirim</span>
+          <span class="favorite-btn" onclick="this.classList.toggle('active'); this.querySelector('i').classList.toggle('far'); this.querySelector('i').classList.toggle('fas');"><i class="far fa-heart"></i></span>
+        </div>
+        <div class="card-content">
+          <div class="hotel-header"><h3 class="hotel-name">Swissôtel The Bosphorus</h3><span class="hotel-stars">★★★★★</span></div>
+          <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul · Merkeze 2.5 km</div>
+          <div class="hotel-features"><span class="feature-tag"><i class="fas fa-wifi"></i> WiFi</span><span class="feature-tag"><i class="fas fa-swimmer"></i> Havuz</span><span class="feature-tag"><i class="fas fa-spa"></i> Spa</span><span class="feature-tag"><i class="fas fa-parking"></i> Otopark</span></div>
+          <div class="concept-tags"><span class="concept-tag highlight"><i class="fas fa-fire"></i> En İyi Fiyat</span><span class="concept-tag highlight"><i class="fas fa-calendar-week"></i> Hafta Sonu</span><span class="concept-tag"><i class="fas fa-tag"></i> Kampanyalı</span></div>
+          <div class="price-section">
+            <div><div class="price-info"><span class="current-price">₺3.188</span><span class="old-price">₺4.250</span></div><div class="savings"><i class="fas fa-piggy-bank"></i> ₺1.062 tasarruf</div></div>
+            <a href="#" class="btn-book">Rezerve Et <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Otel Kartı 2 -->
+      <div class="hotel-card">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Rixos">
+          <span class="image-badge badge-popular"><i class="fas fa-fire"></i> Popüler</span>
+          <span class="favorite-btn"><i class="fas fa-heart" style="color:var(--secondary);"></i></span>
+        </div>
+        <div class="card-content">
+          <div class="hotel-header"><h3 class="hotel-name">Rixos Premium Belek</h3><span class="hotel-stars">★★★★★</span></div>
+          <div class="hotel-location"><i class="fas fa-map-pin"></i> Belek, Antalya · Sahile 100m</div>
+          <div class="hotel-features"><span class="feature-tag"><i class="fas fa-wifi"></i> WiFi</span><span class="feature-tag"><i class="fas fa-swimmer"></i> Havuz</span><span class="feature-tag"><i class="fas fa-utensils"></i> Her Şey Dahil</span></div>
+          <div class="concept-tags"><span class="concept-tag highlight"><i class="fas fa-swimmer"></i> Havuzlu</span><span class="concept-tag highlight"><i class="fas fa-tag"></i> Kampanyalı</span></div>
+          <div class="price-section">
+            <div><div class="price-info"><span class="current-price">₺4.930</span><span class="old-price">₺5.800</span></div><div class="savings">₺870 tasarruf</div></div>
+            <a href="#" class="btn-book">Rezerve Et <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Otel Kartı 3 -->
+      <div class="hotel-card">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Four Seasons">
+          <span class="image-badge badge-lastroom"><i class="fas fa-clock"></i> Son 2 Oda</span>
+          <span class="favorite-btn"><i class="far fa-heart"></i></span>
+        </div>
+        <div class="card-content">
+          <div class="hotel-header"><h3 class="hotel-name">Four Seasons Bosphorus</h3><span class="hotel-stars">★★★★★</span></div>
+          <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul · Boğaz Kenarı</div>
+          <div class="hotel-features"><span class="feature-tag"><i class="fas fa-wifi"></i> WiFi</span><span class="feature-tag"><i class="fas fa-swimmer"></i> Havuz</span><span class="feature-tag"><i class="fas fa-spa"></i> Spa</span></div>
+          <div class="concept-tags"><span class="concept-tag highlight"><i class="fas fa-crown"></i> Yıldız Yağmuru</span><span class="concept-tag"><i class="fas fa-swimmer"></i> Havuzlu</span></div>
+          <div class="price-section">
+            <div><div class="price-info"><span class="current-price">₺10.000</span><span class="old-price">₺12.500</span></div><div class="savings">₺2.500 tasarruf</div></div>
+            <a href="#" class="btn-book">Rezerve Et <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Otel Kartı 4 -->
+      <div class="hotel-card">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Hilton">
+          <span class="image-badge badge-discount">%20 İndirim</span>
+          <span class="favorite-btn"><i class="far fa-heart"></i></span>
+        </div>
+        <div class="card-content">
+          <div class="hotel-header"><h3 class="hotel-name">Hilton İstanbul Bomonti</h3><span class="hotel-stars">★★★★★</span></div>
+          <div class="hotel-location"><i class="fas fa-map-pin"></i> Şişli, İstanbul</div>
+          <div class="hotel-features"><span class="feature-tag"><i class="fas fa-wifi"></i> WiFi</span><span class="feature-tag"><i class="fas fa-swimmer"></i> Havuz</span><span class="feature-tag"><i class="fas fa-dumbbell"></i> Fitness</span></div>
+          <div class="concept-tags"><span class="concept-tag highlight"><i class="fas fa-wallet"></i> Bütçeye Uygun</span><span class="concept-tag"><i class="fas fa-paw"></i> Evcil Hayvan</span></div>
+          <div class="price-section">
+            <div><div class="price-info"><span class="current-price">₺3.040</span><span class="old-price">₺3.800</span></div><div class="savings">₺760 tasarruf</div></div>
+            <a href="#" class="btn-book">Rezerve Et</a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="pagination">
+        <span class="page-item"><i class="fas fa-chevron-left"></i></span>
+        <span class="page-item active">1</span><span class="page-item">2</span><span class="page-item">3</span><span class="page-item">4</span><span class="page-item">5</span>
+        <span class="page-item">...</span><span class="page-item">43</span>
+        <span class="page-item"><i class="fas fa-chevron-right"></i></span>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<!-- Mobil Filtre Butonu -->
+<button class="mobile-filter-btn" onclick="document.getElementById('filterSidebar').classList.toggle('active'); this.innerHTML = document.getElementById('filterSidebar').classList.contains('active') ? '✕ Kapat' : '🔍 Filtrele (847 otel)';">🔍 Filtrele (847 otel)</button>
+
+<script>
+  (function() {
+    // Favori toggle
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+      btn.addEventListener('click', function(e) { e.preventDefault(); });
+    });
+    
+    // Rating filter
+    document.querySelectorAll('.rating-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.parentElement.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+    
+    console.log('✅ Ultra Lüks Otel Listeleme Sayfası Yüklendi');
+  })();
+</script>
+</body>
+</html>

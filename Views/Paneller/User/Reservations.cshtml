@@ -1,0 +1,108 @@
+@{
+    Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
+    ViewData["Title"] = "Rezervasyonlarim";
+}
+
+<section class="panel-card">
+    <div class="stats-strip">
+        <article><strong>3</strong><span>Yaklasan Rezervasyon</span></article>
+        <article><strong>8</strong><span>Gecmis Rezervasyon</span></article>
+        <article><strong>1</strong><span>İptal Edilen</span></article>
+    </div>
+
+    <div class="section-head">
+        <div>
+            <p class="mini-label">YONETIM ALANI</p>
+            <h2>Rezervasyon listesi</h2>
+        </div>
+    </div>
+
+    <div class="chip-row">
+        <button type="button" class="chip active">Yaklasan</button>
+        <button type="button" class="chip">Gecmis</button>
+        <button type="button" class="chip">İptal Edilenler</button>
+    </div>
+
+    <div class="reservation-list-stack">
+        <article class="reservation-card">
+            <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Swissotel" />
+            <div class="reservation-body">
+                <div class="reservation-top">
+                    <div>
+                        <h3>Swissotel The Bosphorus</h3>
+                        <p>Besiktas, Istanbul</p>
+                    </div>
+                    <span class="status ok">Onaylandi</span>
+                </div>
+                <div class="reservation-meta">
+                    <span><i class="far fa-calendar"></i> 15 Nis - 18 Nis 2025</span>
+                    <span><i class="far fa-user"></i> 2 Yetiskin, 1 Cocuk</span>
+                    <span><i class="far fa-moon"></i> Deluxe Oda, Bogaz Manzarali</span>
+                </div>
+                <p class="sub-note success">Ucretsiz iptal 13 Nis 23:59'a kadar aktif.</p>
+                <div class="reservation-footer">
+                    <strong>TRY 12.750</strong>
+                    <div class="action-row">
+                        <button type="button" class="ghost-btn">Detaylar</button>
+                        <button type="button" class="ghost-btn">Otelle İletişim</button>
+                        <button type="button" class="ghost-btn danger">İptal</button>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article class="reservation-card">
+            <img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Rixos" />
+            <div class="reservation-body">
+                <div class="reservation-top">
+                    <div>
+                        <h3>Rixos Premium Belek</h3>
+                        <p>Belek, Antalya</p>
+                    </div>
+                    <span class="status wait">Onay Bekliyor</span>
+                </div>
+                <div class="reservation-meta">
+                    <span><i class="far fa-calendar"></i> 22 May - 29 May 2025</span>
+                    <span><i class="far fa-user"></i> 2 Yetiskin</span>
+                    <span><i class="fas fa-utensils"></i> Her Sey Dahil</span>
+                </div>
+                <p class="sub-note warning">Otel onayi bekleniyor, tahmini sure 24 saat.</p>
+                <div class="reservation-footer">
+                    <strong>TRY 40.600</strong>
+                    <div class="action-row">
+                        <button type="button" class="ghost-btn">Detaylar</button>
+                        <button type="button" class="ghost-btn">Degistir</button>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article class="reservation-card">
+            <img src="https://images.pexels.com/photos/672532/pexels-photo-672532.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Cappadocia" />
+            <div class="reservation-body">
+                <div class="reservation-top">
+                    <div>
+                        <h3>Cappadocia Cave Resort</h3>
+                        <p>Goreme, Nevsehir</p>
+                    </div>
+                    <span class="status info">Check-in Yakin</span>
+                </div>
+                <div class="reservation-meta">
+                    <span><i class="far fa-calendar"></i> 12 Nis - 14 Nis 2025</span>
+                    <span><i class="far fa-user"></i> 2 Yetiskin</span>
+                    <span><i class="far fa-moon"></i> Magara Oda</span>
+                </div>
+                <p class="sub-note info">2 gun sonra check-in basliyor.</p>
+                <div class="reservation-footer">
+                    <strong>TRY 6.400</strong>
+                    <div class="action-row">
+                        <button type="button" class="ghost-btn">Check-in Kodu</button>
+                        <button type="button" class="ghost-btn">Detaylar</button>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+
+

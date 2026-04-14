@@ -1,0 +1,518 @@
+@model otelturizmnew.Models.Oteller.HotelDetailPageViewModel
+
+@{
+    ViewData["Title"] = Model.Name;
+    var gallery = Model.GalleryImages.Count > 0 ? Model.GalleryImages : new List<string> { Model.MainImageUrl };
+    var mainImage = gallery.FirstOrDefault() ?? string.Empty;
+    var roomSelectOptions = Model.Rooms.Count > 0 ? Model.Rooms : new List<otelturizmnew.Models.Oteller.HotelRoomViewModel>
+    {
+        new()
+        {
+            Name = "Standart Oda",
+            Specs = "2 Kisi",
+            Price = Model.LowestRoomPrice,
+            CancellationText = "Ucretsiz iptal"
+        }
+    };
+    var locationText = $"{Model.District}, {Model.City}";
+    var longDescription = string.IsNullOrWhiteSpace(Model.LongDescription) ? Model.ShortDescription : Model.LongDescription;
+    var overallBarWidth = Math.Min(100m, Model.Rating * 20m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var locationBarWidth = Math.Min(100m, Model.Rating > 0 ? Model.Rating * 20m + 4m : 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var comfortBarWidth = Math.Min(100m, Model.Rating > 0 ? Model.Rating * 20m - 2m : 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var todayWeather = Model.Weather?.Days.FirstOrDefault();
+    var weatherThemeClass = "weather-theme-cloudy";
+    var weatherThemeTitle = "Ilce bazli hava durumu";
+    var weatherThemeSummary = "Bugun icin dengeli bir gezi ritmi planlayabilirsiniz.";
+    var weatherAccentIcon = "fa-cloud-sun";
+
+    if (todayWeather is not null)
+    {
+        if (todayWeather.ConditionText.Contains("Yağ", StringComparison.OrdinalIgnoreCase)
+            || todayWeather.ConditionText.Contains("Sağanak", StringComparison.OrdinalIgnoreCase)
+            || todayWeather.ConditionText.Contains("Fırtına", StringComparison.OrdinalIgnoreCase)
+            || todayWeather.ConditionText.Contains("Çisenti", StringComparison.OrdinalIgnoreCase))
+        {
+            weatherThemeClass = "weather-theme-rainy";
+            weatherThemeTitle = "Yagis etkili gorunuyor";
+            weatherThemeSummary = "Semsiye ile cikmak akilli olur. Kapali alanlar, kafe ve ic mekan planlari one cikabilir.";
+            weatherAccentIcon = "fa-cloud-showers-heavy";
+        }
+        else if (todayWeather.ConditionText.Contains("Açık", StringComparison.OrdinalIgnoreCase))
+        {
+            weatherThemeClass = "weather-theme-sunny";
+            weatherThemeTitle = "Gunesli bir tempo sizi bekliyor";
+            weatherThemeSummary = "Acik hava programlari, sahil rotalari ve teras deneyimleri icin guzel bir gorunum var.";
+            weatherAccentIcon = "fa-sun";
+        }
+        else if (todayWeather.ConditionText.Contains("Kar", StringComparison.OrdinalIgnoreCase))
+        {
+            weatherThemeClass = "weather-theme-snowy";
+            weatherThemeTitle = "Serin ve kis dokulu hava";
+            weatherThemeSummary = "Dis planlarinda daha sicak giyinmek faydali olur. Sicak icecek ve ic mekan deneyimleri daha keyifli olabilir.";
+            weatherAccentIcon = "fa-snowflake";
+        }
+    }
+}
+
+<section class="detail-breadcrumb detail-breadcrumb-with-weather">
+    <div class="detail-breadcrumb-left">
+        <a asp-controller="Oteller" asp-action="OtelListeleme"><i class="fas fa-arrow-left"></i> Otellere Don</a>
+        <span class="detail-code-chip">@Model.HotelCode</span>
+    </div>
+</section>
+
+<section class="gallery-grid">
+    <div class="gallery-main-image">
+        <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" />
+    </div>
+    <div class="gallery-side-grid">
+        @foreach (var image in gallery.Skip(1).Take(4))
+        {
+            <button type="button" class="gallery-thumb" data-image="@image">
+                <img src="@image" alt="@Model.Name galeri" />
+            </button>
+        }
+    </div>
+</section>
+
+<section class="detail-header">
+    <div>
+        <h1>@Model.Name</h1>
+        <div class="detail-stars">
+            @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+            {
+                @for (var i = 0; i < Model.StarCount.Value; i++)
+                {
+                    <text>★</text>
+                }
+            }
+            else
+            {
+                <text>Konaklama Tesisi</text>
+            }
+        </div>
+        <p class="detail-location"><i class="fas fa-location-dot"></i> @Model.Address</p>
+
+        @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+        {
+            <div class="detail-utility-row">
+                <button type="button" class="weather-inline-trigger @weatherThemeClass" id="weatherPopupOpen" aria-haspopup="dialog" aria-controls="weatherPopup">
+                    <span class="weather-inline-icon">
+                        <i class="fas @(todayWeather?.IconClass ?? "fa-cloud-sun")"></i>
+                    </span>
+                    <span class="weather-inline-copy">
+                        <strong>Hava durumunu gor</strong>
+                        <small>@Model.Weather.LocationLabel • @(todayWeather?.ConditionText ?? string.Empty)</small>
+                    </span>
+                    <span class="weather-inline-badge">3 Gunluk</span>
+                </button>
+            </div>
+        }
+    </div>
+    <div class="detail-actions">
+        <button type="button"><i class="far fa-share-square"></i> Paylas</button>
+        <button type="button" id="saveHotelBtn" class="favorite-btn @(Model.IsFavorite ? "active" : string.Empty)" data-hotel-id="@Model.Id" data-source-page="OtelDetay">
+            <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart"></i>
+            <span data-favorite-label>@(Model.IsFavorite ? "Kaydedildi" : "Kaydet")</span>
+        </button>
+    </div>
+</section>
+
+<section class="detail-grid">
+    <div class="detail-content">
+        <article class="content-card">
+            <div class="section-head">
+                <h2>One Cikan Ozellikler</h2>
+                <p>@(string.IsNullOrWhiteSpace(Model.ShortDescription) ? "Tesisin veritabanindaki one cikan olanaklari." : Model.ShortDescription)</p>
+            </div>
+            <div class="amenities-grid">
+                @foreach (var item in Model.Amenities)
+                {
+                    <div class="amenity-item"><i class="fas @item.IconClass"></i> @item.Name</div>
+                }
+            </div>
+        </article>
+
+        <article class="content-card">
+            <div class="section-head">
+                <h2>Tesis Hakkinda</h2>
+                <p>@longDescription</p>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.LocationDescription))
+            {
+                <p class="detail-long-copy">@Model.LocationDescription</p>
+            }
+        </article>
+
+        <article class="content-card">
+            <div class="section-head">
+                <h2>Oda Tipleri ve Fiyatlar</h2>
+                <p>Bu alandaki veriler `oda_tipleri` tablosundan gelmektedir.</p>
+            </div>
+
+            <div class="room-list">
+                @foreach (var room in Model.Rooms)
+                {
+                    <div class="room-card">
+                        <div>
+                            <h3>@room.Name</h3>
+                            <p>@room.Specs</p>
+                            <span class="cancellation-badge"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
+                        </div>
+                        <div class="room-price-box">
+                            <strong>₺@room.Price.ToString("N0")</strong>
+                            <span>Gecelik, vergiler dahil</span>
+                            <button type="button" class="select-room-btn" data-price="@room.Price.ToString("0")">Odayi Sec</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </article>
+
+        <article class="content-card">
+            <div class="section-head">
+                <h2>Misafir Değerlendirmeleri</h2>
+                <p>Yorumlar ve puan ortalamasi dogrudan veritabanindan alinmaktadir.</p>
+            </div>
+
+            <div class="review-summary">
+                <div class="review-score">
+                    <strong>@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</strong>
+                    <span>@Model.RatingText</span>
+                    <small>@(Model.ReviewCount > 0 ? $"{Model.ReviewCount} yorum" : "Henuz yorum yok")</small>
+                </div>
+                <div class="review-bars">
+                    <div><span>Genel</span><div class="bar"><span style="width:@(overallBarWidth)%"></span></div><strong>@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "-")</strong></div>
+                    <div><span>Konum</span><div class="bar"><span style="width:@(locationBarWidth)%"></span></div><strong>@(Model.Rating > 0 ? Math.Min(5m, Model.Rating + 0.2m).ToString("0.0") : "-")</strong></div>
+                    <div><span>Konfor</span><div class="bar"><span style="width:@(comfortBarWidth)%"></span></div><strong>@(Model.Rating > 0 ? Math.Max(0m, Model.Rating - 0.1m).ToString("0.0") : "-")</strong></div>
+                    <div><span>F/P</span><div class="bar"><span style="width:@(overallBarWidth)%"></span></div><strong>@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "-")</strong></div>
+                </div>
+            </div>
+
+            @if (Model.Reviews.Count == 0)
+            {
+                <div class="review-card">
+                    <p>Bu tesis icin onayli misafir yorumu bulunmuyor. Ilk yorumu yapan kullanıcı siz olabilirsiniz.</p>
+                </div>
+            }
+            else
+            {
+                <div class="review-list">
+                    @foreach (var review in Model.Reviews)
+                    {
+                        <article class="review-card">
+                            <div class="review-meta">
+                                <div class="review-avatar">@review.Avatar</div>
+                                <div>
+                                    <h4>@review.Name</h4>
+                                    <p>@review.DateText</p>
+                                </div>
+                                <span class="review-chip">@review.Score.ToString("0.0")</span>
+                            </div>
+                            <p>@review.Text</p>
+                        </article>
+                    }
+                </div>
+            }
+        </article>
+
+        <article class="content-card">
+            <div class="section-head">
+                <h2>Konum</h2>
+                <p>@locationText</p>
+            </div>
+            <div class="map-card">
+                @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+                {
+                    <iframe
+                        title="Otel Konum"
+                        src="https://www.openstreetmap.org/export/embed.html?layer=mapnik&marker=@Model.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)%2C@Model.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                        loading="lazy"></iframe>
+                }
+                else
+                {
+                    <div class="map-fallback">
+                        <strong>Koordinat bilgisi bekleniyor</strong>
+                        <span>@Model.Address</span>
+                    </div>
+                }
+            </div>
+        </article>
+
+        <article class="content-card">
+            <div class="section-head section-head-inline">
+                <div>
+                    <h2>Benzer Oteller</h2>
+                    <p>Ayni sehirdeki diger aktif tesisler.</p>
+                </div>
+                <a asp-controller="Oteller" asp-action="OtelListeleme" class="inline-link">Tümünü Gor</a>
+            </div>
+
+            <div class="similar-grid">
+                @foreach (var hotel in Model.SimilarHotels)
+                {
+                    <article class="similar-card">
+                        <img src="@hotel.ImageUrl" alt="@hotel.Name" />
+                        <div class="similar-card-body">
+                            <h3>@hotel.Name</h3>
+                            <p>@hotel.RatingText</p>
+                            <div class="similar-bottom">
+                                <strong>@hotel.PriceText</strong>
+                                <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug">Incele</a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        </article>
+    </div>
+
+    <aside class="booking-sidebar">
+        <div class="booking-card">
+            <div class="booking-price-head">
+                <div>
+                    <strong id="bookingPrice">₺@Model.LowestRoomPrice.ToString("N0")</strong>
+                    <span>/ gece</span>
+                </div>
+                <span class="discount-pill">Akilli fiyat</span>
+            </div>
+
+            <form class="booking-form" id="bookingForm">
+                <label>
+                    <span>Giriş Tarihi</span>
+                    <input type="text" value="15 Nis 2026" readonly />
+                </label>
+
+                <label>
+                    <span>Cikis Tarihi</span>
+                    <input type="text" value="18 Nis 2026" readonly />
+                </label>
+
+                <div class="guest-row">
+                    <span>Yetiskin</span>
+                    <div class="guest-controls">
+                        <button type="button" class="guest-btn" data-target="adult" data-action="minus">-</button>
+                        <strong id="adultCount">2</strong>
+                        <button type="button" class="guest-btn" data-target="adult" data-action="plus">+</button>
+                    </div>
+                </div>
+
+                <div class="guest-row">
+                    <span>Cocuk</span>
+                    <div class="guest-controls">
+                        <button type="button" class="guest-btn" data-target="child" data-action="minus">-</button>
+                        <strong id="childCount">0</strong>
+                        <button type="button" class="guest-btn" data-target="child" data-action="plus">+</button>
+                    </div>
+                </div>
+
+                <label>
+                    <span>Oda Tipi</span>
+                    <select id="roomTypeSelect">
+                        @foreach (var room in roomSelectOptions)
+                        {
+                            <option value="@room.Price.ToString("0")">@room.Name</option>
+                        }
+                    </select>
+                </label>
+
+                <label>
+                    <span>Check-in / Check-out</span>
+                    <input type="text" value="@(Model.CheckInTime?.ToString(@"hh\:mm") ?? "14:00") / @(Model.CheckOutTime?.ToString(@"hh\:mm") ?? "12:00")" readonly />
+                </label>
+
+                <button type="submit" class="reserve-btn">Rezervasyon Yap</button>
+            </form>
+
+            <div class="price-breakdown" id="priceBreakdown">
+                <div><span>₺@Model.LowestRoomPrice.ToString("N0") x 3 gece</span><strong>₺@((Model.LowestRoomPrice * 3).ToString("N0"))</strong></div>
+                <div><span>Vergi ve Harclar</span><strong>₺@Math.Round(Model.LowestRoomPrice * 3 * 0.08m, 0).ToString("N0")</strong></div>
+                <div class="total"><span>Toplam</span><strong>₺@Math.Round(Model.LowestRoomPrice * 3 * 1.08m, 0).ToString("N0")</strong></div>
+            </div>
+        </div>
+    </aside>
+</section>
+
+@if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+{
+    <div class="weather-popup-backdrop" id="weatherPopupBackdrop" hidden></div>
+    <section class="weather-popup @weatherThemeClass" id="weatherPopup" aria-hidden="true" hidden role="dialog" aria-modal="true" aria-labelledby="weatherPopupTitle">
+        <div class="weather-popup-scene" aria-hidden="true">
+            <span class="scene-orb"></span>
+            <span class="scene-halo"></span>
+            <span class="scene-cloud scene-cloud-one"></span>
+            <span class="scene-cloud scene-cloud-two"></span>
+            <span class="scene-rain rain-one"></span>
+            <span class="scene-rain rain-two"></span>
+            <span class="scene-rain rain-three"></span>
+            <span class="scene-snow snow-one"></span>
+            <span class="scene-snow snow-two"></span>
+            <span class="scene-snow snow-three"></span>
+            <span class="scene-spark spark-one"></span>
+            <span class="scene-spark spark-two"></span>
+            <span class="scene-ray ray-one"></span>
+            <span class="scene-ray ray-two"></span>
+        </div>
+
+        <div class="weather-popup-header">
+            <div class="weather-popup-title">
+                <span class="weather-popup-kicker">Ilce Bazli Hava Durumu</span>
+                <h3 id="weatherPopupTitle">@Model.Weather.LocationLabel</h3>
+                <p>@weatherThemeSummary</p>
+            </div>
+
+            <div class="weather-popup-actions">
+                <a href="#" class="detail-weather-assistant-btn">Hava Durumu & Aktivite Asistanı</a>
+                <button type="button" class="weather-popup-close" id="weatherPopupClose" aria-label="Hava durumunu kapat">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="weather-popup-hero">
+            <div class="weather-popup-highlight">
+                <span class="weather-popup-highlight-icon">
+                    <i class="fas @weatherAccentIcon"></i>
+                </span>
+                <div>
+                    <strong>@weatherThemeTitle</strong>
+                    <p>@(todayWeather?.TemperatureText ?? string.Empty) • @(todayWeather?.ConditionText ?? string.Empty)</p>
+                </div>
+            </div>
+
+            <div class="weather-popup-mini-info">
+                <span><i class="fas fa-calendar-day"></i> Bugun dahil 3 gun</span>
+                <span><i class="fas fa-location-dot"></i> @Model.Weather.LocationLabel</span>
+            </div>
+        </div>
+
+        <div class="detail-weather-cards popup-weather-cards">
+            @foreach (var day in Model.Weather.Days)
+            {
+                <article class="detail-weather-card">
+                    <span class="detail-weather-period">@day.PeriodLabel</span>
+                    <div class="detail-weather-main">
+                        <i class="fas @day.IconClass"></i>
+                        <div>
+                            <strong>@day.TemperatureText</strong>
+                            <small>@day.ConditionText</small>
+                        </div>
+                    </div>
+                    <span class="detail-weather-note">@day.DateLabel</span>
+                    <em class="detail-weather-precip">@day.PrecipitationText</em>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            const mainImage = document.getElementById('mainGalleryImage');
+            const saveButton = document.getElementById('saveHotelBtn');
+            const roomTypeSelect = document.getElementById('roomTypeSelect');
+            const bookingPrice = document.getElementById('bookingPrice');
+            const breakdown = document.getElementById('priceBreakdown');
+            const weatherPopup = document.getElementById('weatherPopup');
+            const weatherPopupBackdrop = document.getElementById('weatherPopupBackdrop');
+            const weatherPopupOpen = document.getElementById('weatherPopupOpen');
+            const weatherPopupClose = document.getElementById('weatherPopupClose');
+            let adults = 2;
+            let children = 0;
+
+            document.querySelectorAll('.gallery-thumb').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    mainImage.src = button.getAttribute('data-image');
+                });
+            });
+
+            document.querySelectorAll('.select-room-btn').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const price = button.getAttribute('data-price');
+                    roomTypeSelect.value = price;
+                    updatePrice(price);
+                    document.querySelector('.booking-sidebar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
+
+            document.querySelectorAll('.guest-btn').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const target = button.getAttribute('data-target');
+                    const action = button.getAttribute('data-action');
+
+                    if (target === 'adult') {
+                        adults = action === 'plus' ? Math.min(adults + 1, 6) : Math.max(adults - 1, 1);
+                        document.getElementById('adultCount').textContent = adults;
+                    } else {
+                        children = action === 'plus' ? Math.min(children + 1, 4) : Math.max(children - 1, 0);
+                        document.getElementById('childCount').textContent = children;
+                    }
+                });
+            });
+
+            roomTypeSelect.addEventListener('change', function () {
+                updatePrice(roomTypeSelect.value);
+            });
+
+            function openWeatherPopup() {
+                if (!weatherPopup || !weatherPopupBackdrop) {
+                    return;
+                }
+
+                weatherPopup.hidden = false;
+                weatherPopupBackdrop.hidden = false;
+                requestAnimationFrame(function () {
+                    weatherPopup.classList.add('is-open');
+                    weatherPopupBackdrop.classList.add('is-open');
+                    weatherPopup.setAttribute('aria-hidden', 'false');
+                });
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeWeatherPopup() {
+                if (!weatherPopup || !weatherPopupBackdrop) {
+                    return;
+                }
+
+                weatherPopup.classList.remove('is-open');
+                weatherPopupBackdrop.classList.remove('is-open');
+                weatherPopup.setAttribute('aria-hidden', 'true');
+                window.setTimeout(function () {
+                    weatherPopup.hidden = true;
+                    weatherPopupBackdrop.hidden = true;
+                }, 220);
+                document.body.style.overflow = '';
+            }
+
+            weatherPopupOpen?.addEventListener('click', openWeatherPopup);
+            weatherPopupClose?.addEventListener('click', closeWeatherPopup);
+            weatherPopupBackdrop?.addEventListener('click', closeWeatherPopup);
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && weatherPopup && !weatherPopup.hidden) {
+                    closeWeatherPopup();
+                }
+            });
+
+            document.getElementById('bookingForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                alert('Rezervasyon akisi veritabani baglantisi icin hazirlandi.');
+            });
+
+            function updatePrice(priceValue) {
+                const nightly = parseInt(priceValue, 10);
+                const subtotal = nightly * 3;
+                const tax = Math.round(subtotal * 0.08);
+                const total = subtotal + tax;
+
+                bookingPrice.textContent = '₺' + nightly.toLocaleString('tr-TR');
+                breakdown.innerHTML =
+                    '<div><span>₺' + nightly.toLocaleString('tr-TR') + ' x 3 gece</span><strong>₺' + subtotal.toLocaleString('tr-TR') + '</strong></div>' +
+                    '<div><span>Vergi ve Harclar</span><strong>₺' + tax.toLocaleString('tr-TR') + '</strong></div>' +
+                    '<div class=\"total\"><span>Toplam</span><strong>₺' + total.toLocaleString('tr-TR') + '</strong></div>';
+            }
+        })();
+    </script>
+    <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />
+}
+

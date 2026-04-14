@@ -1,0 +1,86 @@
+@model otelturizmnew.Models.Anasayfa.HomeHotelCardViewModel
+
+<article class="home-hotel-card">
+    <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@Model.DetailSlug" class="home-hotel-card-link">
+        <div class="card-image-shell">
+            <div class="card-image">
+                @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" alt="@Model.Name" />
+                }
+                else
+                {
+                    <div class="card-image-fallback"></div>
+                }
+            </div>
+
+            @if (Model.IsSmartPrice)
+            {
+                <span class="badge-smart"><i class="fas fa-bolt"></i> Akıllı Fiyat</span>
+            }
+
+            <button class="favorite-btn @(Model.IsFavorite ? "active" : string.Empty)" type="button" data-hotel-id="@Model.Id" data-source-page="Anasayfa" aria-label="Favorilere ekle">
+                <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart"></i>
+            </button>
+        </div>
+
+        <div class="card-content">
+            <div class="hotel-name-row">
+                <h3 class="hotel-name">@Model.Name</h3>
+            </div>
+
+            <div class="hotel-location">
+                <i class="fas fa-map-pin"></i>
+                <span>@Model.LocationText</span>
+                @if (!string.IsNullOrWhiteSpace(Model.Temperature) || !string.IsNullOrWhiteSpace(Model.WeatherIcon))
+                {
+                    <span class="hotel-weather">
+                        <i class="fas @Model.WeatherIcon" aria-hidden="true"></i>
+                        <span class="hotel-temp">@Model.Temperature</span>
+                    </span>
+                }
+            </div>
+
+            <div class="home-hotel-tags">
+                @foreach (var tag in Model.Tags)
+                {
+                    <span>@tag</span>
+                }
+            </div>
+
+            <div class="amenities">
+                @foreach (var amenity in Model.Amenities)
+                {
+                    <span><i class="fas @amenity.IconClass"></i> @amenity.Label</span>
+                }
+            </div>
+
+            <div class="rating-price">
+                <div class="rating-box">
+                    @if (Model.ReviewCount > 0)
+                    {
+                        <div class="rating-value">
+                            <i class="fas fa-star"></i>
+                            <strong>@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "-")</strong>
+                        </div>
+                        <small>@Model.ReviewCount yorum</small>
+                    }
+                    else
+                    {
+                        <div class="rating-value new-reviews">
+                            <i class="far fa-comment"></i>
+                            <strong>@Model.ReviewCount</strong>
+                        </div>
+                        <small>yorum</small>
+                    }
+                </div>
+                <div class="price-box">
+                    <span class="price-from">Gecelik</span>
+                    <span class="price-value">@Model.PriceText</span>
+                    <span class="price-note">@Model.PriceNote</span>
+                </div>
+            </div>
+        </div>
+    </a>
+</article>
+

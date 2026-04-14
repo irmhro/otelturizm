@@ -1,0 +1,31 @@
+@{
+    Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
+    ViewData["Title"] = "Odeme Yontemleri";
+}
+
+<section class="form-stack">
+    <article class="panel-card">
+        <div class="section-head"><h2>Kayıtli Kartlar</h2><button type="button" class="ghost-btn">Yeni Kart Ekle</button></div>
+        <div class="payment-card-list">
+            <div class="payment-method-row">
+                <div><h3>Visa •••• 4242</h3><p>Son kullanim 12/27 · Varsayilan kart</p></div>
+                <div class="action-row"><button type="button" class="ghost-btn">Duzenle</button><button type="button" class="ghost-btn danger">Sil</button></div>
+            </div>
+            <div class="payment-method-row">
+                <div><h3>Mastercard •••• 8844</h3><p>Son kullanim 09/28</p></div>
+                <div class="action-row"><button type="button" class="ghost-btn">Duzenle</button><button type="button" class="ghost-btn danger">Sil</button></div>
+            </div>
+        </div>
+    </article>
+
+    <article class="panel-card">
+        <div class="section-head"><h2>Fatura Bilgileri</h2></div>
+        <div class="info-list">
+            <div><span>Fatura Unvani</span><strong>Ahmet Yilmaz</strong></div>
+            <div><span>Adres</span><strong>Besiktas / Istanbul</strong></div>
+            <div><span>E-posta</span><strong>ahmet.yilmaz@email.com</strong></div>
+        </div>
+    </article>
+</section>
+
+

@@ -1,0 +1,74 @@
+@using otelturizmnew.Models.Paneller.Firma
+@{
+    Layout = null;
+    var pageCssPath = ViewData["PageCssPath"] as string;
+    var shell = ViewData["FirmaShell"] as FirmaPanelShellViewModel ?? Model as FirmaPanelShellViewModel;
+    var title = ViewData["Title"] as string ?? shell?.PanelTitle ?? "Firma Paneli";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - Otelturizm</title>
+    
+    
+    <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/assets/css/paneller/firma/shell.css" asp-append-version="true" />
+    @if (!string.IsNullOrWhiteSpace(pageCssPath))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
+    }
+</head>
+<body>
+    <div class="firma-panel-shell">
+        @if (shell is not null)
+        {
+            <partial name="~/Views/Paneller/Firma/_FirmaSidebar.cshtml" model="shell" />
+        }
+        <main class="firma-panel-main">
+            @if (shell is not null)
+            {
+                <header class="firma-page-header">
+                    <div>
+                        <p class="firma-kicker">FİRMA PANELİ</p>
+                        <h1>@shell.PanelTitle</h1>
+                        <p class="firma-subtitle">@shell.PanelSubtitle</p>
+                    </div>
+                    <div class="firma-header-badges">
+                        <span><i class="fas fa-users"></i> @shell.EmployeeCount çalışan</span>
+                        <span><i class="fas fa-tags"></i> @shell.DealCount özel fiyat</span>
+                        <span><i class="fas fa-hourglass-half"></i> @shell.PendingApprovalCount onay</span>
+                        <form method="post" action="/cikis-yap" class="panel-header-logout-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="panel-header-logout-btn">
+                                <i class="fas fa-right-from-bracket"></i>
+                                <span>Cikis Yap</span>
+                            </button>
+                        </form>
+                    </div>
+                </header>
+                @if (!string.IsNullOrWhiteSpace(shell.SuccessMessage))
+                {
+                    <div class="firma-alert firma-alert-success"><i class="fas fa-circle-check"></i><span>@shell.SuccessMessage</span></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(shell.ErrorMessage))
+                {
+                    <div class="firma-alert firma-alert-error"><i class="fas fa-triangle-exclamation"></i><span>@shell.ErrorMessage</span></div>
+                }
+            }
+            @RenderBody()
+            @if (shell is not null)
+            {
+                <partial name="~/Views/Paneller/Firma/_FirmaPanelFooter.cshtml" model="shell" />
+            }
+        </main>
+    </div>
+    @if (shell is not null)
+    {
+        <partial name="~/Views/Paneller/Firma/_FirmaMobileNav.cshtml" model="shell" />
+    }
+</body>
+</html>
+

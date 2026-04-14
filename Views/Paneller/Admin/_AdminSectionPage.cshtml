@@ -1,0 +1,78 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminSectionPageViewModel
+<section class="admin-summary-grid">
+    @foreach (var card in Model.SummaryCards)
+    {
+        <article class="admin-summary-card @card.ToneClass">
+            <div class="summary-icon"><i class="fas @card.IconClass"></i></div>
+            <div>
+                <p>@card.Label</p>
+                <h2>@card.Value</h2>
+                <span>@card.Description</span>
+            </div>
+        </article>
+    }
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.InfoNote))
+{
+    <div class="admin-info-note">
+        <i class="fas fa-circle-info"></i>
+        <span>@Model.InfoNote</span>
+    </div>
+}
+
+@if (Model.Columns.Count > 0)
+{
+    <section class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">VERITABANI LISTESI</p>
+                <h2>@Model.Shell.PanelTitle</h2>
+            </div>
+        </div>
+
+        @if (Model.Rows.Count == 0)
+        {
+            <div class="admin-empty-state">@Model.EmptyStateMessage</div>
+        }
+        else
+        {
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            @foreach (var column in Model.Columns)
+                            {
+                                <th>@column.Label</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.Rows)
+                        {
+                            <tr>
+                                @foreach (var cell in row)
+                                {
+                                    <td>@cell</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+}
+else
+{
+    <section class="admin-empty-panel">
+        <strong>@Model.EmptyStateMessage</strong>
+        @if (!string.IsNullOrWhiteSpace(Model.InfoNote))
+        {
+            <p>@Model.InfoNote</p>
+        }
+    </section>
+}
+
+

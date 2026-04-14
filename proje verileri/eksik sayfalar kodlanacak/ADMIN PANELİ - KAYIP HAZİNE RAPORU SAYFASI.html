@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kayıp Hazine · Admin Panel · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0F172A; --secondary: #3B82F6; --success: #10B981; --warning: #F59E0B;
+      --bg-light: #F1F5F9; --card-bg: #FFFFFF; --text-dark: #0F172A;
+      --text-gray: #64748B; --border-light: #E2E8F0; --sidebar-width: 280px;
+      --radius-xl: 24px; --shadow-lg: 0 20px 40px -10px rgba(0,0,0,0.1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    .sidebar {
+      width: var(--sidebar-width); background: var(--primary); color: white;
+      position: fixed; height: 100vh;
+    }
+    .sidebar-header { padding: 24px 20px; }
+    .logo { font-size: 22px; font-weight: 700; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      color: rgba(255,255,255,0.7); text-decoration: none;
+    }
+    .nav-item.active { background: var(--secondary); color: white; }
+    
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; }
+    .page-title p { color: var(--text-gray); }
+    
+    .stats-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
+    .stat-card { background: var(--card-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-light); }
+    .stat-value { font-size: 32px; font-weight: 700; color: var(--secondary); }
+    
+    .table-container { background: var(--card-bg); border-radius: var(--radius-xl); border: 1px solid var(--border-light); overflow: hidden; }
+    .lost-table { width: 100%; border-collapse: collapse; }
+    .lost-table th { text-align: left; padding: 16px 20px; background: var(--bg-light); font-weight: 600; font-size: 13px; }
+    .lost-table td { padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
+    
+    .btn { background: var(--secondary); color: white; padding: 10px 20px; border-radius: 40px; border: none; cursor: pointer; font-weight: 600; }
+    .btn-outline { background: transparent; border: 1px solid var(--border-light); color: var(--text-dark); }
+    
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .lost-table { display: block; overflow-x: auto; }
+      .stats-mini { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  <aside class="sidebar">
+    <div class="sidebar-header"><div class="logo"><i class="fas fa-crown"></i> Admin</div></div>
+    <nav style="padding:20px;">
+      <a href="#" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="#" class="nav-item active"><i class="fas fa-treasure-chest"></i> Kayıp Hazine</a>
+    </nav>
+  </aside>
+  <main class="main-content">
+    <div class="page-title"><h1>💎 Kayıp Hazine Raporu</h1><p>Rezervasyon yapmadan siteden ayrılan potansiyel müşteriler.</p></div>
+    
+    <div class="stats-mini">
+      <div class="stat-card"><span class="stat-value">1,247</span><div>Bu Ay Kaybedilen Rezervasyon</div></div>
+      <div class="stat-card"><span class="stat-value">₺4.2M</span><div>Tahmini Kayıp Gelir</div></div>
+      <div class="stat-card"><span class="stat-value">%68</span><div>Geri Kazanma Potansiyeli</div></div>
+    </div>
+    
+    <div class="table-container">
+      <table class="lost-table">
+        <thead><tr><th>Kullanıcı</th><th>İncelenen Otel</th><th>Tarih</th><th>Sepet Değeri</th><th>Terk Nedeni (Tahmini)</th><th>İşlem</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Ahmet Y.</strong><br>ahmet@email.com</td><td>Swissôtel Bosphorus</td><td>10.04.2025</td><td>₺12.750</td><td><span style="color:var(--warning);">Fiyat karşılaştırması</span></td><td><button class="btn btn-outline btn-sm" style="padding:6px 12px;">📧 Hatırlatma Gönder</button></td></tr>
+          <tr><td><strong>Zeynep K.</strong><br>zeynep@email.com</td><td>Rixos Premium</td><td>09.04.2025</td><td>₺40.600</td><td><span style="color:var(--error);">Ödeme sayfasında takıldı</span></td><td><button class="btn btn-outline btn-sm">📧 Hatırlatma Gönder</button></td></tr>
+          <tr><td><strong>John S.</strong><br>john@email.com</td><td>Four Seasons</td><td>08.04.2025</td><td>₺25.000</td><td><span style="color:var(--info);">Farklı tarih arayışı</span></td><td><button class="btn btn-outline btn-sm">📧 Hatırlatma Gönder</button></td></tr>
+          <tr><td><strong>Elena P.</strong><br>elena@email.com</td><td>Cappadocia Cave</td><td>07.04.2025</td><td>₺6.400</td><td><span style="color:var(--warning);">Fiyat karşılaştırması</span></td><td><button class="btn btn-outline btn-sm">📧 Hatırlatma Gönder</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div style="margin-top:24px; display:flex; gap:12px;">
+      <button class="btn"><i class="fas fa-paper-plane"></i> Seçili Kullanıcılara Toplu E-posta Gönder</button>
+      <button class="btn btn-outline"><i class="fas fa-chart-line"></i> Detaylı Analiz</button>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+@model otelturizmnew.Models.Paneller.Firma.FirmaPanelShellViewModel
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+}
+<nav class="firma-mobile-nav">
+    <a href="/panel/firma/dashboard" class="@(currentAction == "Index" ? "active" : string.Empty)"><i class="fas fa-chart-pie"></i><span>Özet</span></a>
+    <a href="/panel/firma/firma-fiyatlari" class="@(currentAction == "Deals" ? "active" : string.Empty)"><i class="fas fa-hotel"></i><span>Fiyat</span></a>
+    <a href="/panel/firma/rezervasyonlar" class="@(currentAction == "Reservations" ? "active" : string.Empty)"><i class="fas fa-calendar-check"></i><span>Rezerv.</span></a>
+    <a href="/panel/firma/calisanlar" class="@(currentAction == "Employees" ? "active" : string.Empty)"><i class="fas fa-users"></i><span>Çalışan</span></a>
+    <a href="/panel/firma/limitler-onaylar" class="@(currentAction == "Limits" ? "active" : string.Empty)"><i class="fas fa-sliders"></i><span>Onay</span></a>
+    <form method="post" action="/cikis-yap" class="panel-mobile-logout-form">
+        @Html.AntiForgeryToken()
+        <button type="submit"><i class="fas fa-right-from-bracket"></i><span>Cikis</span></button>
+    </form>
+</nav>

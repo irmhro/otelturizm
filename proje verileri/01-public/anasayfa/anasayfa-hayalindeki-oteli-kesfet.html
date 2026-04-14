@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Otelturizm · Hayalindeki Oteli Keşfet</title>
+  <!-- Google Fonts: Inter (Modern & Profesyonel) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 (İkonlar) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Swiper.js (Slider için) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <style>
+    /* === TASARIM RAPORUNA BİREBİR UYUMLU DEĞİŞKENLER === */
+    :root {
+      --primary: #003B95;        /* Booking Mavisi */
+      --secondary: #FF385C;      /* Airbnb Pembesi */
+      --bg-light: #F5F7FA;       /* Arka plan gri */
+      --card-bg: #FFFFFF;
+      --text-dark: #1A1F26;
+      --text-gray: #6B7380;
+      --border-light: #E7E9EC;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-hover: 0 20px 30px -10px rgba(0, 59, 149, 0.15);
+      --spacing-unit: 4px;
+      --radius-card: 16px;
+      --radius-button: 32px;
+      --radius-input: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Ana Konteyner - 4px Grid Sistemi */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+    @media (max-width: 1024px) { .container { padding: 0 24px; } }
+    @media (max-width: 640px) { .container { padding: 0 16px; } }
+
+    /* === HEADER (Sticky, Blurlu, Akıllı Daralma) === */
+    .main-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-light);
+      padding: 12px 0;
+      transition: box-shadow 0.3s;
+    }
+    .main-header.scrolled { box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .logo i { color: var(--secondary); font-size: 24px; }
+    .logo span { font-size: 14px; font-weight: 400; color: var(--text-gray); margin-left: 4px; }
+
+    /* Arama Inputu */
+    .search-bar {
+      flex: 1;
+      max-width: 500px;
+      background: white;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-button);
+      padding: 8px 8px 8px 20px;
+      display: flex;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.2s;
+    }
+    .search-bar:hover, .search-bar:focus-within { box-shadow: var(--shadow-hover); }
+    .search-bar i { color: var(--text-gray); margin-right: 12px; }
+    .search-bar input {
+      border: none;
+      outline: none;
+      flex: 1;
+      font-size: 14px;
+      font-family: "Inter", sans-serif;
+    }
+    .search-bar button {
+      background: var(--primary);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: var(--radius-button);
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .search-bar button:hover { background: #002a6b; }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .header-actions a { text-decoration: none; color: var(--text-dark); }
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      padding: 8px 16px;
+      border-radius: var(--radius-button);
+      border: 1px solid var(--border-light);
+    }
+
+    /* Mobil Header Adaptasyonu */
+    @media (max-width: 800px) {
+      .search-bar { display: none; }
+      .header-actions .hide-mobile { display: none; }
+    }
+    @media (min-width: 801px) {
+      .mobile-search-icon { display: none; }
+    }
+
+    /* === HERO / ARAMA PANELİ (Slogan + Slider) === */
+    .hero-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin: 32px 0 48px;
+    }
+    @media (max-width: 800px) { .hero-section { grid-template-columns: 1fr; } }
+    
+    .hero-content { display: flex; flex-direction: column; justify-content: center; }
+    .hero-slogan {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--text-dark);
+      margin-bottom: 16px;
+    }
+    .hero-slogan span { color: var(--secondary); }
+    .hero-sub {
+      font-size: 18px;
+      color: var(--text-gray);
+      margin-bottom: 32px;
+    }
+
+    /* Hero Sağ - Slider */
+    .hero-slider {
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow-hover);
+      height: 320px;
+    }
+    .swiper-hero { width: 100%; height: 100%; }
+    .swiper-hero img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* === BÖLÜM BAŞLIKLARI (Profesyonel Ritim) === */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 24px;
+    }
+    .section-title { font-size: 24px; font-weight: 700; }
+    .section-link { color: var(--primary); font-weight: 500; text-decoration: none; font-size: 15px; }
+    .section-link i { font-size: 12px; margin-left: 4px; }
+
+    /* === OTEL KARTI (Booking + Airbnb Hibrit) === */
+    .hotel-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+    @media (max-width: 1100px) { .hotel-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 800px) { .hotel-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .hotel-grid { grid-template-columns: 1fr; } }
+
+    .hotel-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+      border: 1px solid var(--border-light);
+    }
+    .hotel-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-hover);
+    }
+    .card-image {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+    }
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s;
+    }
+    .hotel-card:hover .card-image img { transform: scale(1.03); }
+    
+    /* Etiketler */
+    .badge-smart {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: #00A86B;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 2;
+    }
+    .favorite-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: white;
+      border: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 2;
+      color: var(--secondary);
+      transition: 0.2s;
+    }
+    .favorite-btn:hover { transform: scale(1.1); }
+    .favorite-btn.active i { font-weight: 900; color: #FF385C; }
+
+    .card-content { padding: 16px; }
+    .hotel-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .hotel-location {
+      font-size: 14px;
+      color: var(--text-gray);
+      margin-bottom: 12px;
+    }
+    .hotel-location i { margin-right: 4px; font-size: 12px; }
+    
+    .amenities {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      color: var(--text-gray);
+      font-size: 14px;
+    }
+    .amenities i { margin-right: 4px; }
+
+    .rating-price {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-light);
+      padding-top: 16px;
+    }
+    .rating {
+      background: var(--primary);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px 12px 12px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .rating small { font-size: 10px; font-weight: 400; opacity: 0.9; }
+    .price { text-align: right; }
+    .price-from { font-size: 12px; color: var(--text-gray); }
+    .price-value { font-size: 20px; font-weight: 700; color: var(--text-dark); }
+    .price-tax { font-size: 11px; color: var(--text-gray); }
+
+    /* === SLIDER (Önerilen Oteller) Swiper === */
+    .swiper-container { margin-bottom: 48px; }
+    .swiper-hotels { padding: 8px 4px; }
+    .swiper-slide { height: auto; }
+    .swiper-button-next, .swiper-button-prev {
+      background: white;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      color: var(--primary);
+    }
+    .swiper-button-next::after, .swiper-button-prev::after { font-size: 20px; }
+
+    /* === FOOTER (5 Kolon, Koyu Tema) === */
+    .main-footer {
+      background: #1A1F26;
+      color: #B0B8C5;
+      padding: 48px 0 24px;
+      margin-top: 48px;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 32px;
+      margin-bottom: 40px;
+    }
+    @media (max-width: 800px) { .footer-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .footer-grid { grid-template-columns: 1fr; } }
+    
+    .footer-col h4 { color: white; margin-bottom: 16px; font-weight: 600; }
+    .footer-col ul { list-style: none; }
+    .footer-col li { margin-bottom: 10px; font-size: 14px; }
+    .footer-col a { color: #B0B8C5; text-decoration: none; transition: 0.2s; }
+    .footer-col a:hover { color: white; }
+    
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 24px;
+      border-top: 1px solid #2C333D;
+      font-size: 13px;
+    }
+    .payment-logos i { font-size: 28px; margin-left: 12px; color: #8A94A3; }
+    @media (max-width: 600px) { .footer-bottom { flex-direction: column; gap: 16px; } }
+
+    /* Mobil Filtre Butonu (Alttan Drawer - Temsili) */
+    .mobile-filter-btn {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 40px;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(0,59,149,0.4);
+      z-index: 99;
+    }
+    @media (max-width: 800px) { .mobile-filter-btn { display: block; } }
+  </style>
+</head>
+<body>
+
+<!-- STICKY HEADER -->
+<header class="main-header" id="mainHeader">
+  <div class="container header-inner">
+    <div class="logo">
+      <i class="fas fa-hotel"></i> Otelturizm<span>.com</span>
+    </div>
+    <!-- Arama Inputu (Masaüstü) -->
+    <div class="search-bar">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="Nereye gidiyorsun? Tarih · Kişi sayısı">
+      <button><i class="fas fa-search"></i> Ara</button>
+    </div>
+    <div class="header-actions">
+      <a href="#" class="hide-mobile"><i class="fas fa-globe"></i> TR</a>
+      <a href="#" class="hide-mobile">Yardım</a>
+      <a href="#" class="hide-mobile">₺ TRY</a>
+      <a href="#" class="user-menu"><i class="fas fa-bars"></i> <i class="fas fa-user-circle"></i></a>
+      <a href="#" class="mobile-search-icon"><i class="fas fa-search"></i></a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- HERO BÖLÜMÜ: Slogan + Slider -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-slogan">Hayalindeki <span>Oteli</span> Keşfet</h1>
+      <p class="hero-sub">Türkiye'nin en iyi butik otelleri ve tatil köyleri tek tıkla kapında. Ücretsiz iptal seçenekleriyle.</p>
+      <div style="display: flex; gap: 12px;">
+        <span style="background: white; padding: 8px 20px; border-radius: 40px; font-weight: 500;"><i class="fa-regular fa-calendar" style="margin-right: 8px;"></i> Tarih Seç</span>
+        <span style="background: white; padding: 8px 20px; border-radius: 40px; font-weight: 500;"><i class="fa-regular fa-user"></i> 2 Yetişkin</span>
+      </div>
+    </div>
+    <div class="hero-slider">
+      <div class="swiper swiper-hero">
+        <div class="swiper-wrapper">
+          <div class="swiper-slide"><img src="https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Otel 1"></div>
+          <div class="swiper-slide"><img src="https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Otel 2"></div>
+          <div class="swiper-slide"><img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Otel 3"></div>
+        </div>
+        <div class="swiper-pagination"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- POPÜLER KONAKLAMA YERLERİ (Kart Grid) -->
+  <div class="section-header">
+    <h2 class="section-title">Popüler Konaklama Yerleri</h2>
+    <a href="#" class="section-link">Tümünü Gör <i class="fas fa-arrow-right"></i></a>
+  </div>
+  <div class="hotel-grid" id="hotelGrid">
+    <!-- Kartlar JavaScript ile dinamik oluşturulacak -->
+  </div>
+
+  <!-- ÖNERİLEN OTELLER SLIDER'ı (Swiper) -->
+  <div class="section-header">
+    <h2 class="section-title">İstanbul'da Hafta Sonu Kaçamakları</h2>
+    <a href="#" class="section-link">Tümünü Gör <i class="fas fa-arrow-right"></i></a>
+  </div>
+  <div class="swiper-container swiper-hotels">
+    <div class="swiper-wrapper" id="swiperWrapper"></div>
+    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev"></div>
+  </div>
+</main>
+
+<!-- FOOTER (5 Kolon) -->
+<footer class="main-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col"><h4>Şirket</h4><ul><li><a href="#">Hakkımızda</a></li><li><a href="#">Kariyer</a></li><li><a href="#">Basın</a></li><li><a href="#">Blog</a></li></ul></div>
+      <div class="footer-col"><h4>Keşfet</h4><ul><li><a href="#">Tüm Oteller</a></li><li><a href="#">Villalar</a></li><li><a href="#">Tatil Köyleri</a></li><li><a href="#">Son Dakika</a></li></ul></div>
+      <div class="footer-col"><h4>Otelciler İçin</h4><ul><li><a href="#">Tesisinizi Ekleyin</a></li><li><a href="#">Extranet Girişi</a></li><li><a href="#">Yardım Merkezi</a></li></ul></div>
+      <div class="footer-col"><h4>Uygulamayı İndir</h4><ul><li><i class="fab fa-apple"></i> App Store</li><li><i class="fab fa-google-play"></i> Google Play</li></ul></div>
+      <div class="footer-col"><h4>Sosyal Medya</h4><ul style="display: flex; gap: 20px;"><li><a href="#"><i class="fab fa-instagram fa-xl"></i></a></li><li><a href="#"><i class="fab fa-x-twitter fa-xl"></i></a></li><li><a href="#"><i class="fab fa-facebook fa-xl"></i></a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 Otelturizm · TÜRSAB Belge No: 12345</span>
+      <div class="payment-logos"><i class="fab fa-cc-visa"></i><i class="fab fa-cc-mastercard"></i><i class="fab fa-cc-amex"></i><i class="fas fa-shield-alt"></i></div>
+    </div>
+  </div>
+</footer>
+
+<!-- Mobil Filtre Butonu -->
+<button class="mobile-filter-btn"><i class="fas fa-sliders-h"></i> Filtrele</button>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+  (function(){
+    // Örnek Otel Verisi (Tasarım raporundaki içeriklere uygun)
+    const hotels = [
+      { name: "Swissôtel The Bosphorus", location: "Beşiktaş, İstanbul", price: 4250, rating: 9.2, img: "https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=400", amenities: ["wifi", "pool", "spa"] },
+      { name: "Rixos Premium Belek", location: "Belek, Antalya", price: 5800, rating: 9.4, img: "https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=400", amenities: ["wifi", "pool", "spa"] },
+      { name: "Cappadocia Cave Resort", location: "Göreme, Nevşehir", price: 3200, rating: 9.6, img: "https://images.pexels.com/photos/672532/pexels-photo-672532.jpeg?auto=compress&cs=tinysrgb&w=400", amenities: ["wifi", "spa"] },
+      { name: "D Maris Bay", location: "Marmaris, Muğla", price: 7100, rating: 9.3, img: "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=400", amenities: ["wifi", "pool"] },
+    ];
+
+    // Kart Render Fonksiyonu
+    function renderHotelCard(hotel) {
+      return `
+        <div class="hotel-card">
+          <div class="card-image">
+            <img src="${hotel.img}" alt="${hotel.name}">
+            <span class="badge-smart"><i class="fas fa-bolt"></i> Akıllı Fiyat</span>
+            <button class="favorite-btn" onclick="this.classList.toggle('active')"><i class="fa-heart far"></i></button>
+          </div>
+          <div class="card-content">
+            <div class="hotel-name">${hotel.name}</div>
+            <div class="hotel-location"><i class="fas fa-map-pin"></i> ${hotel.location}</div>
+            <div class="amenities">
+              ${hotel.amenities.includes('wifi') ? '<span><i class="fas fa-wifi"></i> WiFi</span>' : ''}
+              ${hotel.amenities.includes('pool') ? '<span><i class="fas fa-swimmer"></i> Havuz</span>' : ''}
+              ${hotel.amenities.includes('spa') ? '<span><i class="fas fa-spa"></i> Spa</span>' : ''}
+            </div>
+            <div class="rating-price">
+              <div class="rating">${hotel.rating} <small>Fevkalade</small></div>
+              <div class="price"><span class="price-from">Gecelik</span> <span class="price-value">₺${hotel.price}</span><br><span class="price-tax">Vergiler dahil</span></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Grid'i Doldur
+    const grid = document.getElementById('hotelGrid');
+    if(grid) { hotels.forEach(h => grid.innerHTML += renderHotelCard(h)); }
+
+    // Swiper Slider için wrapper
+    const swiperWrapper = document.getElementById('swiperWrapper');
+    if(swiperWrapper) {
+      hotels.slice(0,6).forEach(h => {
+        const slide = document.createElement('div');
+        slide.className = 'swiper-slide';
+        slide.innerHTML = renderHotelCard(h);
+        swiperWrapper.appendChild(slide);
+      });
+    }
+
+    // Hero Swiper
+    new Swiper('.swiper-hero', { loop: true, autoplay: { delay: 3000 }, pagination: { el: '.swiper-pagination', clickable: true } });
+    
+    // Otel Slider Swiper (Önerilenler)
+    new Swiper('.swiper-hotels', {
+      slidesPerView: 1.2, spaceBetween: 16,
+      breakpoints: { 640: { slidesPerView: 2.2 }, 900: { slidesPerView: 3 }, 1200: { slidesPerView: 4 } },
+      navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+    });
+
+    // Header Scroll Efekti
+    window.addEventListener('scroll', () => {
+      document.getElementById('mainHeader').classList.toggle('scrolled', window.scrollY > 20);
+    });
+
+    // Favori butonları için ek destek (class toggling)
+    document.addEventListener('click', (e) => {
+      if(e.target.closest('.favorite-btn')) {
+        const btn = e.target.closest('.favorite-btn');
+        const icon = btn.querySelector('i');
+        if(icon.classList.contains('far')) { icon.classList.remove('far'); icon.classList.add('fas'); }
+        else { icon.classList.remove('fas'); icon.classList.add('far'); }
+      }
+    });
+  })();
+</script>
+<!-- Mobil Filtre Drawer (Temsili) için küçük script -->
+<script>
+  document.querySelector('.mobile-filter-btn').addEventListener('click', ()=>{
+    alert('🎯 Mobil Filtre Paneli (Alttan Drawer) – Tasarım raporundaki gibi açılır.');
+  });
+</script>
+</body>
+</html>

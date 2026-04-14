@@ -1,0 +1,101 @@
+@model otelturizmnew.Models.Kampanyalar.CampaignDetailPageViewModel
+
+<section class="campaign-detail-hero" style="--campaign-accent:@Model.ColorCode;">
+    <div class="campaign-detail-hero__copy">
+        <a href="/kampanyalar" class="campaign-back-link"><i class="fas fa-arrow-left"></i> Kampanyalara dön</a>
+        <div class="campaign-detail-badges">
+            @if (!string.IsNullOrWhiteSpace(Model.BadgeText))
+            {
+                <span class="campaign-chip">@Model.BadgeText</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.PromoBadge))
+            {
+                <span class="campaign-chip campaign-chip--soft">@Model.PromoBadge</span>
+            }
+        </div>
+        <h1>@Model.CampaignName</h1>
+        <p>@Model.ShortDescription</p>
+        <div class="campaign-detail-meta">
+            <span><i class="fas fa-calendar"></i> @Model.DateText</span>
+            <span><i class="fas fa-hotel"></i> @Model.HotelCount otel kampanyada</span>
+            <span><i class="fas fa-hashtag"></i> @Model.CampaignCode</span>
+        </div>
+    </div>
+    <div class="campaign-detail-hero__visual @(string.IsNullOrWhiteSpace(Model.HeroImageUrl) ? string.Empty : "has-image")">
+        @if (!string.IsNullOrWhiteSpace(Model.HeroImageUrl))
+        {
+            <img src="@Model.HeroImageUrl" alt="@Model.CampaignName" />
+        }
+    </div>
+</section>
+
+<section class="campaign-detail-section">
+    <div class="campaign-detail-intro">
+        <div>
+            <span class="campaign-page-kicker">Kampanya açıklaması</span>
+            <h2>@Model.ListingTitle</h2>
+            <p>@Model.ListingDescription</p>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.Terms))
+        {
+            <article class="campaign-terms-card">
+                <strong>Kullanım Koşulları</strong>
+                <p>@Model.Terms</p>
+            </article>
+        }
+    </div>
+
+    <div class="campaign-hotels-grid">
+        @if (Model.Hotels.Count == 0)
+        {
+            <div class="campaign-empty-state">
+                <strong>Bu kampanyada şu an aktif otel görünmüyor.</strong>
+                <p>Partner katılım tarihleri veya kampanya otel durumu güncellendiğinde liste otomatik yenilenir.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var hotel in Model.Hotels)
+            {
+                <article class="campaign-hotel-card">
+                    <div class="campaign-hotel-card__media @(string.IsNullOrWhiteSpace(hotel.ImageUrl) ? string.Empty : "has-image")">
+                        @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
+                        {
+                            <img src="@hotel.ImageUrl" alt="@hotel.Name" />
+                        }
+                        <button type="button" class="favorite-btn @(hotel.IsFavorite ? "active" : string.Empty)" data-hotel-id="@hotel.Id" data-source-page="KampanyaDetay">
+                            <i class="@(hotel.IsFavorite ? "fas" : "far") fa-heart"></i>
+                        </button>
+                        @foreach (var tag in hotel.Tags.Take(1))
+                        {
+                            <span class="campaign-hotel-card__tag">@tag</span>
+                        }
+                    </div>
+                    <div class="campaign-hotel-card__body">
+                        <small>@hotel.HotelCode</small>
+                        <h3>@hotel.Name</h3>
+                        <p class="campaign-hotel-card__location"><i class="fas fa-location-dot"></i> @hotel.District, @hotel.City</p>
+                        <p class="campaign-hotel-card__summary">@hotel.Summary</p>
+                        <div class="campaign-hotel-card__amenities">
+                            @foreach (var amenity in hotel.Amenities)
+                            {
+                                <span>@amenity</span>
+                            }
+                        </div>
+                        <div class="campaign-hotel-card__footer">
+                            <div>
+                                <strong>@(hotel.StartingPrice.HasValue ? $"₺{hotel.StartingPrice.Value:N0}" : "Teklif Al")</strong>
+                                <small>@hotel.PriceNote</small>
+                            </div>
+                            <a href="/oteller/@hotel.Slug" class="campaign-hotel-card__link">Otele Git</a>
+                        </div>
+                    </div>
+                </article>
+            }
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />
+}

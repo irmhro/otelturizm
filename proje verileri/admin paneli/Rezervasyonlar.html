@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Rezervasyonlar · Admin Panel · Otelturizm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0F172A; --primary-light: #1E293B; --secondary: #3B82F6;
+      --success: #10B981; --warning: #F59E0B; --error: #EF4444; --info: #8B5CF6;
+      --bg-light: #F1F5F9; --card-bg: #FFFFFF; --text-dark: #0F172A;
+      --text-gray: #64748B; --border-light: #E2E8F0; --sidebar-width: 280px;
+      --radius-lg: 16px; --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08); --transition-base: 0.25s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--primary); color: white;
+      position: fixed; height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .sidebar-logo i { color: var(--secondary); }
+    .admin-badge { background: var(--secondary); padding: 2px 8px; border-radius: 40px; font-size: 10px; margin-left: 8px; }
+    .admin-profile { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px; }
+    .admin-avatar { width: 44px; height: 44px; border-radius: 12px; background: var(--secondary); display: flex; align-items: center; justify-content: center; }
+    .admin-info h4 { font-size: 14px; }
+    .admin-info p { font-size: 12px; opacity: 0.7; }
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title { font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 12px; padding-left: 16px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 10px;
+      color: rgba(255,255,255,0.7); text-decoration: none; transition: all var(--transition-base);
+      margin-bottom: 4px; font-size: 14px;
+    }
+    .nav-item i { width: 24px; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-item.active { background: var(--secondary); color: white; }
+    .nav-item .badge { margin-left: auto; background: var(--error); padding: 2px 6px; border-radius: 40px; font-size: 10px; }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .page-title p { color: var(--text-gray); }
+    
+    .header-actions { display: flex; gap: 12px; }
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary { background: var(--secondary); color: white; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    
+    /* Stats */
+    .stats-mini { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-mini { background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border-light); }
+    .stat-mini .label { color: var(--text-gray); font-size: 12px; }
+    .stat-mini .value { font-size: 22px; font-weight: 700; }
+    
+    /* Filter Bar */
+    .filter-bar { display: flex; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+    .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-tab {
+      padding: 8px 18px; border-radius: 40px; background: var(--card-bg);
+      border: 1px solid var(--border-light); font-size: 14px; cursor: pointer;
+    }
+    .filter-tab.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+    .search-box {
+      display: flex; align-items: center; background: var(--card-bg);
+      border: 1px solid var(--border-light); border-radius: 40px; padding: 4px 4px 4px 16px;
+    }
+    .search-box input { border: none; outline: none; padding: 8px 0; width: 200px; }
+    .search-box button { background: var(--secondary); color: white; border: none; padding: 8px 20px; border-radius: 40px; }
+    
+    /* Table */
+    .table-container { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light); overflow: hidden; }
+    .reservation-table { width: 100%; border-collapse: collapse; }
+    .reservation-table th {
+      text-align: left; padding: 16px 16px; background: var(--bg-light);
+      font-weight: 600; font-size: 13px; color: var(--text-gray);
+    }
+    .reservation-table td { padding: 16px 16px; border-bottom: 1px solid var(--border-light); }
+    
+    .status-badge {
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+    }
+    .status-confirmed { background: rgba(16,185,129,0.1); color: var(--success); }
+    .status-pending { background: rgba(245,158,11,0.1); color: var(--warning); }
+    .status-cancelled { background: rgba(239,68,68,0.1); color: var(--error); }
+    .status-completed { background: rgba(100,116,139,0.1); color: var(--text-gray); }
+    .status-checkin { background: rgba(59,130,246,0.1); color: var(--secondary); }
+    
+    .action-btn { background: none; border: 1px solid var(--border-light); padding: 6px 10px; border-radius: 8px; margin-right: 6px; cursor: pointer; }
+    
+    /* Pagination */
+    .pagination { display: flex; justify-content: flex-end; gap: 8px; padding: 20px; }
+    .page-item {
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border-light); border-radius: 8px; cursor: pointer;
+    }
+    .page-item.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal {
+      background: white; border-radius: 24px; padding: 32px;
+      max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; justify-content: space-between; margin-bottom: 24px; }
+    .modal-header h3 { font-size: 20px; }
+    .close-modal { cursor: pointer; font-size: 24px; color: var(--text-gray); }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 8px; }
+    .form-control { width: 100%; padding: 14px 16px; border: 1.5px solid var(--border-light); border-radius: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    
+    /* Mobile */
+    @media (max-width: 1400px) { .stats-mini { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 1000px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .stats-mini { grid-template-columns: repeat(2, 1fr); }
+      .reservation-table { display: block; overflow-x: auto; }
+    }
+    @media (max-width: 600px) {
+      .stats-mini { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--primary); border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--secondary); }
+    @media (max-width: 1000px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    .toast-message {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--text-dark); color: white; padding: 14px 28px;
+      border-radius: 40px; z-index: 9999; animation: slideUp 0.3s;
+    }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><i class="fas fa-crown"></i> Otelturizm<span class="admin-badge">ADMIN</span></div>
+    </div>
+    <div class="admin-profile">
+      <div class="admin-avatar">AU</div>
+      <div class="admin-info"><h4>Admin User</h4><p>admin@otelturizm.com</p></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Yönetim</div>
+        <a href="#" class="nav-item"><i class="fas fa-hotel"></i> Oteller</a>
+        <a href="#" class="nav-item"><i class="fas fa-users"></i> Kullanıcılar</a>
+        <a href="#" class="nav-item active"><i class="fas fa-calendar-check"></i> Rezervasyonlar</a>
+        <a href="#" class="nav-item"><i class="fas fa-handshake"></i> Partner Başvuruları <span class="badge" style="background: var(--warning);">7</span></a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <header class="content-header">
+      <div class="page-title"><h1>Rezervasyonlar</h1><p>Platformdaki tüm rezervasyonları görüntüleyin ve yönetin.</p></div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="exportReservations()"><i class="fas fa-download"></i> Dışa Aktar</button>
+        <button class="btn btn-primary" onclick="openFilterModal()"><i class="fas fa-filter"></i> Gelişmiş Filtre</button>
+      </div>
+    </header>
+    
+    <!-- Stats -->
+    <div class="stats-mini">
+      <div class="stat-mini"><span class="label">Toplam</span><div class="value">1,847</div></div>
+      <div class="stat-mini"><span class="label">Onay Bekleyen</span><div class="value" style="color: var(--warning);">23</div></div>
+      <div class="stat-mini"><span class="label">Onaylandı</span><div class="value" style="color: var(--success);">1,256</div></div>
+      <div class="stat-mini"><span class="label">Check-in Yapıldı</span><div class="value" style="color: var(--secondary);">89</div></div>
+      <div class="stat-mini"><span class="label">Tamamlandı</span><div class="value">412</div></div>
+      <div class="stat-mini"><span class="label">İptal Edildi</span><div class="value" style="color: var(--error);">67</div></div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-tabs">
+        <span class="filter-tab active">Tümü</span>
+        <span class="filter-tab">Onay Bekleyen</span>
+        <span class="filter-tab">Onaylandı</span>
+        <span class="filter-tab">Check-in Yapıldı</span>
+        <span class="filter-tab">Tamamlandı</span>
+        <span class="filter-tab">İptal</span>
+      </div>
+      <div class="search-box">
+        <input type="text" placeholder="Rez. No, misafir, otel...">
+        <button><i class="fas fa-search"></i></button>
+      </div>
+    </div>
+    
+    <!-- Table -->
+    <div class="table-container">
+      <table class="reservation-table">
+        <thead>
+          <tr>
+            <th>Rez. No</th><th>Otel</th><th>Misafir</th><th>Giriş</th><th>Çıkış</th><th>Gece</th><th>Oda</th><th>Tutar</th><th>Komisyon</th><th>Durum</th><th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>#OTL-0482</strong></td><td>Swissôtel Bosphorus</td><td>Ahmet Yılmaz</td><td>15 Nis</td><td>18 Nis</td><td>3</td><td>Deluxe</td><td>₺12.750</td><td>₺1.530</td>
+            <td><span class="status-badge status-confirmed"><i class="fas fa-check-circle"></i> Onaylandı</span></td>
+            <td><button class="action-btn" onclick="viewReservation()"><i class="fas fa-eye"></i></button><button class="action-btn" onclick="editReservation()"><i class="fas fa-edit"></i></button></td>
+          </tr>
+          <tr>
+            <td><strong>#OTL-0491</strong></td><td>Rixos Premium</td><td>Zeynep Kaya</td><td>20 Nis</td><td>22 Nis</td><td>2</td><td>Suite</td><td>₺17.800</td><td>₺1.780</td>
+            <td><span class="status-badge status-pending"><i class="fas fa-clock"></i> Beklemede</span></td>
+            <td><button class="action-btn" style="color: var(--success);" onclick="approveReservation()"><i class="fas fa-check"></i></button><button class="action-btn" style="color: var(--error);" onclick="rejectReservation()"><i class="fas fa-times"></i></button><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+          </tr>
+          <tr>
+            <td><strong>#OTL-0471</strong></td><td>Four Seasons</td><td>Mehmet Kaya</td><td>10 May</td><td>17 May</td><td>7</td><td>Deluxe</td><td>₺40.600</td><td>₺6.090</td>
+            <td><span class="status-badge status-pending">Beklemede</span></td>
+            <td><button class="action-btn" style="color: var(--success);"><i class="fas fa-check"></i></button><button class="action-btn" style="color: var(--error);"><i class="fas fa-times"></i></button><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+          </tr>
+          <tr>
+            <td><strong>#OTL-0463</strong></td><td>Hilton Bomonti</td><td>John Smith</td><td>5 Nis</td><td>8 Nis</td><td>3</td><td>Standart</td><td>₺9.600</td><td>₺1.152</td>
+            <td><span class="status-badge status-checkin"><i class="fas fa-door-open"></i> Check-in</span></td>
+            <td><button class="action-btn"><i class="fas fa-eye"></i></button><button class="action-btn" onclick="checkOut()"><i class="fas fa-sign-out-alt"></i></button></td>
+          </tr>
+          <tr>
+            <td><strong>#OTL-0455</strong></td><td>Cappadocia Cave</td><td>Elena Petrova</td><td>1 Nis</td><td>4 Nis</td><td>3</td><td>Mağara</td><td>₺9.600</td><td>₺1.440</td>
+            <td><span class="status-badge status-completed"><i class="fas fa-check-double"></i> Tamamlandı</span></td>
+            <td><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+          </tr>
+          <tr>
+            <td><strong>#OTL-0448</strong></td><td>D Maris Bay</td><td>Ali Öztürk</td><td>20 Nis</td><td>27 Nis</td><td>7</td><td>Suite</td><td>₺49.700</td><td>₺4.970</td>
+            <td><span class="status-badge status-cancelled"><i class="fas fa-times-circle"></i> İptal</span></td>
+            <td><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+          </tr>
+          <tr>
+            <td><strong>#OTL-0432</strong></td><td>Swissôtel Bosphorus</td><td>Merve Aksoy</td><td>12 Nis</td><td>14 Nis</td><td>2</td><td>Standart</td><td>₺8.500</td><td>₺1.020</td>
+            <td><span class="status-badge status-confirmed">Onaylandı</span></td>
+            <td><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+          </tr>
+          <tr>
+            <td><strong>#OTL-0418</strong></td><td>Conrad Bosphorus</td><td>Burak Şahin</td><td>25 Nis</td><td>28 Nis</td><td>3</td><td>Deluxe</td><td>₺14.400</td><td>₺2.160</td>
+            <td><span class="status-badge status-pending">Beklemede</span></td>
+            <td><button class="action-btn" style="color: var(--success);"><i class="fas fa-check"></i></button><button class="action-btn" style="color: var(--error);"><i class="fas fa-times"></i></button><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <!-- Pagination -->
+      <div class="pagination">
+        <span class="page-item"><i class="fas fa-chevron-left"></i></span>
+        <span class="page-item active">1</span><span class="page-item">2</span><span class="page-item">3</span><span class="page-item">4</span><span class="page-item">5</span>
+        <span class="page-item">...</span><span class="page-item">62</span>
+        <span class="page-item"><i class="fas fa-chevron-right"></i></span>
+      </div>
+    </div>
+    
+  </main>
+</div>
+
+<!-- Gelişmiş Filtre Modal -->
+<div class="modal-overlay" id="filterModal">
+  <div class="modal">
+    <div class="modal-header"><h3><i class="fas fa-filter"></i> Gelişmiş Filtre</h3><span class="close-modal" onclick="closeFilterModal()">&times;</span></div>
+    <form onsubmit="event.preventDefault(); applyFilter();">
+      <div class="form-grid">
+        <div class="form-group"><label>Otel</label><select class="form-control"><option>Tümü</option><option>Swissôtel Bosphorus</option><option>Rixos Premium</option></select></div>
+        <div class="form-group"><label>Şehir</label><select class="form-control"><option>Tümü</option><option>İstanbul</option><option>Antalya</option></select></div>
+        <div class="form-group"><label>Başlangıç Tarihi</label><input type="date" class="form-control"></div>
+        <div class="form-group"><label>Bitiş Tarihi</label><input type="date" class="form-control"></div>
+        <div class="form-group"><label>Min Tutar</label><input type="number" class="form-control" placeholder="₺"></div>
+        <div class="form-group"><label>Max Tutar</label><input type="number" class="form-control" placeholder="₺"></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Filtre Uygula</button>
+    </form>
+  </div>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-hotel"></i><span>Oteller</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-users"></i><span>Kullanıcılar</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-cog"></i><span>Ayarlar</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    window.openFilterModal = () => document.getElementById('filterModal').style.display = 'flex';
+    window.closeFilterModal = () => document.getElementById('filterModal').style.display = 'none';
+    window.applyFilter = () => { closeFilterModal(); showToast('🔍 Filtre uygulandı!', 'success'); };
+    window.exportReservations = () => showToast('📥 Rezervasyonlar dışa aktarılıyor...', 'success');
+    window.viewReservation = () => showToast('👁️ Rezervasyon detayları görüntüleniyor', 'info');
+    window.editReservation = () => showToast('✏️ Rezervasyon düzenleme sayfası açılacak', 'info');
+    window.approveReservation = () => showToast('✅ Rezervasyon onaylandı!', 'success');
+    window.rejectReservation = () => showToast('❌ Rezervasyon reddedildi.', 'error');
+    window.checkOut = () => showToast('🏨 Check-out işlemi tamamlandı.', 'success');
+    
+    function showToast(msg, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':type==='error'?'exclamation-circle':'info-circle'}"></i> ${msg}`;
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity='0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    
+    document.querySelectorAll('.filter-tab').forEach(t => t.addEventListener('click', function() {
+      document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+      this.classList.add('active');
+    }));
+    
+    document.getElementById('filterModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeFilterModal(); });
+    console.log('✅ Rezervasyonlar Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

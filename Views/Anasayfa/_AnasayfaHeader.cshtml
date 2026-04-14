@@ -1,0 +1,197 @@
+<header class="site-header" id="mainHeader">
+    <div class="top-utility-bar">
+        <!-- flag icons provided by flag-icon-css CDN -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/css/flag-icon.min.css" />
+        <div class="utility-container">
+            <div class="utility-left">
+                <span><i class="fas fa-shield-alt"></i> Güvenli Odeme</span>
+                <span>
+                    <i class="fas fa-headset"></i>
+                    7/24 Destek
+                    <span class="support-contact">
+                        <i class="fas fa-envelope"></i>
+                        <a href="mailto:destek@otelturizm.com">destek@otelturizm.com</a>
+                    </span>
+                </span>
+                <span><i class="fas fa-tag"></i> En Iyi Fiyat</span>
+            </div>
+            <div class="utility-right">
+                <div class="dropdown language-dropdown" id="languageDropdown">
+                    <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+                        <span class="toggle-flag flag-icon flag-icon-tr" aria-hidden="true"></span>
+                        <span class="dropdown-label">TR</span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li class="dropdown-item" data-value="tr"><span class="flag-icon flag-icon-tr"></span> Türkçe</li>
+                        <li class="dropdown-item" data-value="en"><span class="flag-icon flag-icon-gb"></span> English</li>
+                        <li class="dropdown-item" data-value="fr"><span class="flag-icon flag-icon-fr"></span> Français</li>
+                        <li class="dropdown-item" data-value="ru"><span class="flag-icon flag-icon-ru"></span> Русский</li>
+                        <li class="dropdown-item" data-value="ar"><span class="flag-icon flag-icon-sa"></span> العربية</li>
+                    </ul>
+                </div>
+
+                <!-- currency selector removed -->
+            </div>
+        </div>
+    </div>
+
+    <div class="header-container">
+        <div class="logo-area">
+            <a asp-controller="Home" asp-action="Index" class="logo logo-image-only" aria-label="Otelturizm Anasayfa">
+                <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="brand-logo-image" />
+            </a>
+
+            <nav class="desktop-nav"><!-- desktop nav removed; primary link moved to header actions -->
+            </nav>
+        </div>
+
+        <div class="search-wrapper">
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Nereye gitmek istersin?">
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+            <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
+            <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">Kurumsal</a>
+            <button class="action-btn mobile-nav-toggle" id="mobileMenuToggle" type="button"><i class="fas fa-bars"></i></button>
+        </div>
+    </div>
+
+    <div class="home-header-quick-links" aria-label="Öne çıkan bağlantılar">
+        <div class="quick-links-container">
+        <div class="quick-links-pills" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+            <button type="button" class="quick-link-pill hot-pill">
+                <i class="fas fa-bolt"></i>
+                <span>Ay Sonu Özel</span>
+            </button>
+            <button type="button" class="quick-link-pill">
+                <i class="fas fa-tag"></i>
+                <span>Flash İndirim</span>
+            </button>
+            <button type="button" class="quick-link-pill">
+                <i class="fas fa-calendar-week"></i>
+                <span>Hafta Sonu Fırsatları</span>
+            </button>
+            <button type="button" class="quick-link-pill">
+                <i class="fas fa-clock"></i>
+                <span>Erken Rezervasyon</span>
+            </button>
+            <button type="button" class="quick-link-pill">
+                <i class="fas fa-wand-magic-sparkles"></i>
+                <span>Akıllı Fiyat</span>
+            </button>
+            <button type="button" class="quick-link-pill subtle-pill">
+                <i class="fas fa-headset"></i>
+                <span>Rezervasyon Desteği</span>
+            </button>
+        </div>
+    </div>
+    </div>
+</header>
+
+<script>
+    (function(){
+        function setupDropdown(id, storageKey){
+            const root = document.getElementById(id);
+            if(!root) return;
+            const btn = root.querySelector('.dropdown-toggle');
+            const menu = root.querySelector('.dropdown-menu');
+            const label = btn.querySelector('.dropdown-label');
+
+            // restore from localStorage
+            const saved = localStorage.getItem(storageKey);
+            if(saved){
+                // find matching item label
+                const item = menu.querySelector(`.dropdown-item[data-value="${saved}"]`);
+                if(item) label.textContent = item.textContent.trim();
+            }
+
+            btn.addEventListener('click', function(e){
+                e.stopPropagation();
+                const isOpen = root.classList.toggle('open');
+                btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+
+            menu.querySelectorAll('.dropdown-item').forEach(function(item){
+                item.addEventListener('click', function(ev){
+                    ev.stopPropagation();
+                    const value = item.getAttribute('data-value');
+                    label.textContent = item.textContent.trim();
+                    localStorage.setItem(storageKey, value);
+
+                    // update toggle icon for language or currency
+                    if(id === 'languageDropdown'){
+                        // language uses country flags; map data-value to flag code
+                        const map = { tr: 'tr', en: 'gb', fr: 'fr', ru: 'ru', ar: 'sa' };
+                        const code = map[value] || value;
+                        const toggleFlag = btn.querySelector('.toggle-flag');
+                        if(toggleFlag){
+                            toggleFlag.className = 'toggle-flag flag-icon flag-icon-' + code;
+                        }
+                    }
+                    if(id === 'currencyDropdown'){
+                        // update currency badge on toggle
+                        const toggleBadge = btn.querySelector('.currency-badge');
+                        if(toggleBadge){
+                            toggleBadge.className = 'currency-badge ' + (value === 'TRY' ? 'try' : value === 'EUR' ? 'eur' : 'usd');
+                            toggleBadge.textContent = value === 'TRY' ? '₺' : value === 'EUR' ? '€' : '$';
+                        }
+                    }
+
+                    root.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                    // optional: dispatch event for other scripts
+                    window.dispatchEvent(new CustomEvent(storageKey + ':changed', { detail: { value } }));
+                });
+            });
+
+            // close on outside click
+            document.addEventListener('click', function(){
+                if(root.classList.contains('open')){
+                    root.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function(){
+            setupDropdown('languageDropdown', 'site:language');
+        });
+    })();
+</script>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+<div class="mobile-menu-drawer" id="mobileMenuDrawer">
+    <div class="drawer-header">
+        <div class="drawer-user">
+            <div class="user-avatar">OT</div>
+            <div>
+                <h4>Otelturizm</h4>
+                <p>Hızlı Erişim Menüsü</p>
+            </div>
+        </div>
+        <button class="drawer-close" id="drawerClose" type="button"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="drawer-nav">
+        <div class="drawer-section">
+            <div class="drawer-section-title">Ana Menu</div>
+            <a asp-controller="Home" asp-action="Index" class="drawer-link"><i class="fas fa-home"></i> Anasayfa</a>
+            <a asp-controller="Home" asp-action="Kurumsal" class="drawer-link"><i class="fas fa-building"></i> Kurumsal</a>
+            <a href="/kullanici-giris" class="drawer-link"><i class="fas fa-user"></i> Kullanıcı Giriş</a>
+            <a href="/partner-giris" class="drawer-link"><i class="fas fa-briefcase"></i> Partner Giriş</a>
+        </div>
+    </div>
+</div>
+
+<nav class="mobile-bottom-nav">
+    <div class="bottom-nav-items">
+        <a asp-controller="Home" asp-action="Index" class="bottom-nav-item active"><i class="fas fa-home"></i><span>Keşfet</span></a>
+        <a href="/kullanici-giris" class="bottom-nav-item"><i class="fas fa-search"></i><span>Giriş</span></a>
+        <a href="/partner-giris" class="bottom-nav-item"><i class="fas fa-briefcase"></i><span>Partner</span></a>
+        <a asp-controller="Home" asp-action="Kurumsal" class="bottom-nav-item"><i class="fas fa-circle-info"></i><span>Kurumsal</span></a>
+        <a asp-controller="Home" asp-action="Privacy" class="bottom-nav-item"><i class="fas fa-shield-alt"></i><span>Güvenlik</span></a>
+    </div>
+</nav>
+

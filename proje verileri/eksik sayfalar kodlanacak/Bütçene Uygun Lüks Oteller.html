@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Bütçeme Uygun Oteller · Akıllı Fiyatlandırma · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444; --gold: #FFD700;
+      --bg-dark: #0B0E14; --bg-light: #F8FAFC; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-gray: #64748B; --text-light: #94A3B8;
+      --border-light: #E2E8F0; --glass-bg: rgba(255, 255, 255, 0.85);
+      --radius-xl: 32px; --radius-lg: 24px; --radius-md: 16px;
+      --shadow-sm: 0 4px 12px rgba(0,0,0,0.04); --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 30px 50px -15px rgba(0, 59, 149, 0.2);
+      --shadow-glow: 0 0 30px rgba(0, 168, 107, 0.15);
+      --transition-base: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Inter", sans-serif; background: var(--bg-light);
+      background-image: radial-gradient(circle at 10% 20%, rgba(0, 59, 149, 0.02) 0%, transparent 30%),
+                        radial-gradient(circle at 90% 80%, rgba(255, 56, 92, 0.02) 0%, transparent 40%);
+      color: var(--text-dark); -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+    /* Header */
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 { font-size: clamp(36px, 6vw, 48px); font-weight: 800; letter-spacing: -0.02em; display: flex; align-items: center; gap: 16px; }
+    .page-header h1 i { color: var(--gold); text-shadow: 0 4px 12px rgba(255, 215, 0, 0.3); }
+    .page-header p { color: var(--text-gray); font-size: 18px; margin-top: 8px; }
+
+    /* Glass Panel - Arama Kutusu */
+    .search-panel {
+      background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl); padding: 32px; margin-bottom: 40px;
+      box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .search-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr auto; gap: 16px; align-items: end; }
+    .form-group { }
+    .form-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
+    .input-wrapper { position: relative; display: flex; align-items: center; }
+    .input-wrapper i { position: absolute; left: 18px; color: var(--primary); font-size: 18px; z-index: 1; }
+    .form-control {
+      width: 100%; padding: 18px 18px 18px 52px; border: 1.5px solid var(--border-light);
+      border-radius: 60px; font-family: "Inter", sans-serif; font-size: 16px;
+      background: white; transition: var(--transition-base);
+    }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0, 59, 149, 0.08); }
+    .price-range { display: flex; align-items: center; gap: 8px; }
+    .price-range .form-control { padding: 18px 12px; text-align: center; }
+    .price-range span { color: var(--text-gray); font-weight: 500; }
+    .btn-search {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white; border: none; padding: 18px 36px; border-radius: 60px;
+      font-weight: 700; font-size: 16px; cursor: pointer; transition: var(--transition-base);
+      display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 25px rgba(0, 59, 149, 0.3);
+      white-space: nowrap;
+    }
+    .btn-search:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(0, 59, 149, 0.4); }
+
+    /* Quick Budget Chips */
+    .quick-budgets { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+    .budget-chip {
+      background: white; padding: 8px 18px; border-radius: 40px; border: 1px solid var(--border-light);
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: var(--transition-base);
+    }
+    .budget-chip:hover { background: var(--primary); color: white; border-color: var(--primary); }
+    .budget-chip i { margin-right: 6px; }
+
+    /* Results Header */
+    .results-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+    }
+    .results-header h2 { font-size: 26px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+    .results-badge {
+      background: var(--success); color: white; padding: 6px 18px; border-radius: 40px;
+      font-size: 16px; font-weight: 600;
+    }
+    .sort-select { padding: 12px 20px; border-radius: 40px; border: 1px solid var(--border-light); background: white; font-size: 14px; cursor: pointer; }
+
+    /* Hotels Grid - Ultra Lüks Kartlar */
+    .hotels-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+    
+    /* Lüks Otel Kartı */
+    .hotel-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); overflow: hidden;
+      box-shadow: var(--shadow-sm); border: 1px solid var(--border-light);
+      transition: var(--transition-base); position: relative;
+    }
+    .hotel-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-lg); border-color: var(--gold); }
+    
+    .card-image { position: relative; height: 220px; }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+    .hotel-card:hover .card-image img { transform: scale(1.05); }
+    
+    .budget-tag { position: absolute; top: 16px; left: 16px; background: var(--success); color: white; padding: 6px 16px; border-radius: 40px; font-weight: 700; font-size: 13px; z-index: 2; box-shadow: 0 4px 15px rgba(0, 168, 107, 0.3); backdrop-filter: blur(4px); }
+    .favorite-btn { position: absolute; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.9); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); color: var(--secondary); z-index: 2; transition: var(--transition-base); }
+    .favorite-btn:hover { transform: scale(1.15); background: white; }
+    
+    .card-content { padding: 24px; }
+    .hotel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .hotel-name { font-size: 20px; font-weight: 700; line-height: 1.3; }
+    .hotel-stars { color: var(--gold); letter-spacing: 2px; font-size: 12px; }
+    .hotel-location { color: var(--text-gray); font-size: 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .hotel-location i { color: var(--secondary); font-size: 14px; }
+    
+    .price-box { background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border-radius: var(--radius-md); padding: 18px; margin-bottom: 20px; border: 1px solid var(--border-light); }
+    .price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .price-label { color: var(--text-gray); font-size: 14px; }
+    .price-value { font-weight: 700; font-size: 16px; }
+    .price-value.old { text-decoration: line-through; color: var(--text-light); }
+    .price-value.current { color: var(--primary); font-size: 28px; font-weight: 800; }
+    .budget-fit { color: var(--success); font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    
+    .card-footer { display: flex; gap: 12px; }
+    .btn { flex: 1; padding: 14px 16px; border-radius: 40px; font-weight: 700; font-size: 15px; cursor: pointer; transition: var(--transition-base); text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; }
+    .btn-primary { background: var(--primary); color: white; box-shadow: 0 8px 20px rgba(0, 59, 149, 0.2); }
+    .btn-primary:hover { background: var(--primary-dark); transform: scale(1.02); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 80px 20px; background: var(--card-bg); border-radius: var(--radius-xl); border: 1px solid var(--border-light); }
+    .empty-state i { font-size: 64px; color: var(--text-light); margin-bottom: 24px; }
+    .empty-state h3 { font-size: 24px; margin-bottom: 12px; }
+    .empty-state p { color: var(--text-gray); }
+
+    /* Mobile */
+    @media (max-width: 1100px) { .hotels-grid { grid-template-columns: repeat(2, 1fr); } .search-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 700px) {
+      .hotels-grid { grid-template-columns: 1fr; } .container { padding: 16px; }
+      .search-grid { grid-template-columns: 1fr; } .search-panel { padding: 24px 20px; }
+      .btn-search { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Header -->
+  <div class="page-header">
+    <h1><i class="fas fa-gem"></i> Bütçene Uygun Lüks Oteller</h1>
+    <p>Nereye gitmek istediğini ve ne kadar bütçen olduğunu söyle, sana en iyi seçenekleri sunalım.</p>
+  </div>
+
+  <!-- Arama Paneli -->
+  <div class="search-panel">
+    <div class="search-grid">
+      <div class="form-group">
+        <label><i class="fas fa-map-pin"></i> İl</label>
+        <select class="form-control" id="citySelect" style="padding-left: 20px;">
+          <option value="">İl Seçiniz</option>
+          <option value="istanbul" selected>İstanbul</option>
+          <option value="antalya">Antalya</option>
+          <option value="izmir">İzmir</option>
+          <option value="mugla">Muğla</option>
+          <option value="ankara">Ankara</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-location-dot"></i> İlçe</label>
+        <select class="form-control" id="districtSelect" style="padding-left: 20px;">
+          <option value="">İlçe Seçiniz</option>
+          <option value="besiktas" selected>Beşiktaş</option>
+          <option value="sisli">Şişli</option>
+          <option value="fatih">Fatih</option>
+          <option value="kadikoy">Kadıköy</option>
+          <option value="beyoglu">Beyoğlu</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-turkish-lira-sign"></i> Gecelik Bütçe (Max)</label>
+        <div class="price-range">
+          <input type="number" class="form-control" id="maxPrice" placeholder="3.000" value="3000" style="padding-left: 16px;">
+          <span>TL</span>
+        </div>
+      </div>
+      <button class="btn-search" onclick="searchHotels()"><i class="fas fa-search"></i> Otel Ara</button>
+    </div>
+    <div class="quick-budgets">
+      <span class="budget-chip" onclick="setBudget(2000)"><i class="fas fa-tag"></i> ₺2.000 ve altı</span>
+      <span class="budget-chip" onclick="setBudget(3000)"><i class="fas fa-tag"></i> ₺3.000 ve altı</span>
+      <span class="budget-chip" onclick="setBudget(5000)"><i class="fas fa-tag"></i> ₺5.000 ve altı</span>
+      <span class="budget-chip" onclick="setBudget(10000)"><i class="fas fa-gem"></i> ₺10.000 ve altı</span>
+    </div>
+  </div>
+
+  <!-- Sonuçlar -->
+  <div class="results-header">
+    <h2><span id="resultCity">İstanbul, Beşiktaş</span> <span class="results-badge" id="resultCount">12 otel</span></h2>
+    <div style="display: flex; gap: 12px;">
+      <span style="display: flex; align-items: center; gap: 6px; background: white; padding: 8px 18px; border-radius: 40px; border: 1px solid var(--border-light);"><i class="fas fa-wallet" style="color: var(--success);"></i> Bütçe: ₺<span id="displayBudget">3.000</span></span>
+      <select class="sort-select">
+        <option>Önerilen Sıralama</option>
+        <option>En Düşük Fiyat</option>
+        <option>En Yüksek Puan</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Otel Listesi -->
+  <div class="hotels-grid" id="hotelsGrid">
+    
+    <!-- Kart 1 -->
+    <div class="hotel-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Swissôtel">
+        <span class="budget-tag"><i class="fas fa-check-circle"></i> Bütçene Uygun</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="far fa-heart"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-header"><h3 class="hotel-name">Swissôtel The Bosphorus</h3><span class="hotel-stars">★★★★★</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+        <div class="price-box">
+          <div class="price-row"><span class="price-label">Normal Fiyat</span><span class="price-value old">₺4.250</span></div>
+          <div class="price-row"><span class="price-label">İndirimli Fiyat</span><span class="price-value current">₺2.750</span></div>
+          <div class="budget-fit"><i class="fas fa-piggy-bank"></i> Bütçene uygun! ₺1.500 tasarruf</div>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="btn btn-primary">Rezerve Et</a>
+          <button class="btn btn-outline" onclick="viewDetails()"><i class="fas fa-info"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kart 2 -->
+    <div class="hotel-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Four Seasons">
+        <span class="budget-tag" style="background: var(--warning); color: var(--text-dark);"><i class="fas fa-exclamation-circle"></i> Bütçe Üstü</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="fas fa-heart" style="color: var(--secondary);"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-header"><h3 class="hotel-name">Four Seasons Bosphorus</h3><span class="hotel-stars">★★★★★</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+        <div class="price-box">
+          <div class="price-row"><span class="price-label">Normal Fiyat</span><span class="price-value old">₺12.500</span></div>
+          <div class="price-row"><span class="price-label">İndirimli Fiyat</span><span class="price-value current" style="color: var(--error);">₺8.750</span></div>
+          <div class="budget-fit" style="color: var(--error);"><i class="fas fa-times-circle"></i> Bütçenin ₺5.750 üzerinde</div>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="btn btn-primary">Rezerve Et</a>
+          <button class="btn btn-outline"><i class="fas fa-info"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kart 3 -->
+    <div class="hotel-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Hilton">
+        <span class="budget-tag"><i class="fas fa-check-circle"></i> Bütçene Uygun</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="far fa-heart"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-header"><h3 class="hotel-name">Hilton İstanbul Bomonti</h3><span class="hotel-stars">★★★★★</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Şişli, İstanbul</div>
+        <div class="price-box">
+          <div class="price-row"><span class="price-label">Normal Fiyat</span><span class="price-value old">₺3.800</span></div>
+          <div class="price-row"><span class="price-label">İndirimli Fiyat</span><span class="price-value current">₺2.850</span></div>
+          <div class="budget-fit"><i class="fas fa-piggy-bank"></i> Bütçene uygun! ₺950 tasarruf</div>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="btn btn-primary">Rezerve Et</a>
+          <button class="btn btn-outline"><i class="fas fa-info"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kart 4 -->
+    <div class="hotel-card">
+      <div class="card-image"><img src="https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&w=600"><span class="budget-tag">Bütçene Uygun</span></div>
+      <div class="card-content"><h3>Conrad Istanbul Bosphorus</h3><p>Beşiktaş, İstanbul</p><div class="price-box"><div class="price-row"><span>Normal</span><span class="old">₺4.800</span></div><div class="price-row"><span>İndirimli</span><span class="current">₺2.950</span></div></div><a href="#" class="btn btn-primary">Rezerve Et</a></div>
+    </div>
+    <!-- Kart 5 -->
+    <div class="hotel-card">
+      <div class="card-image"><img src="https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&w=600"><span class="budget-tag">Bütçene Uygun</span></div>
+      <div class="card-content"><h3>Wyndham Grand İstanbul</h3><p>Levent, İstanbul</p><div class="price-box"><div class="price-row"><span>Normal</span><span class="old">₺3.500</span></div><div class="price-row"><span>İndirimli</span><span class="current">₺2.600</span></div></div><a href="#" class="btn btn-primary">Rezerve Et</a></div>
+    </div>
+    <!-- Kart 6 -->
+    <div class="hotel-card">
+      <div class="card-image"><img src="https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg?auto=compress&w=600"><span class="budget-tag" style="background:var(--warning);color:var(--text-dark);">Bütçe Üstü</span></div>
+      <div class="card-content"><h3>Shangri-La Bosphorus</h3><p>Beşiktaş, İstanbul</p><div class="price-box"><div class="price-row"><span>Normal</span><span class="old">₺9.500</span></div><div class="price-row"><span>İndirimli</span><span class="current" style="color:var(--error);">₺6.800</span></div></div><a href="#" class="btn btn-primary">Rezerve Et</a></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function() {
+    // İl-İlçe bağlantısı (demo)
+    const districts = {
+      istanbul: ['Beşiktaş', 'Şişli', 'Fatih', 'Kadıköy', 'Beyoğlu'],
+      antalya: ['Muratpaşa', 'Konyaaltı', 'Belek', 'Kemer', 'Alanya'],
+      izmir: ['Konak', 'Karşıyaka', 'Bornova', 'Çeşme', 'Alaçatı'],
+      mugla: ['Bodrum', 'Marmaris', 'Fethiye', 'Datça', 'Ortaca'],
+      ankara: ['Çankaya', 'Keçiören', 'Mamak', 'Yenimahalle']
+    };
+    
+    const citySelect = document.getElementById('citySelect');
+    const districtSelect = document.getElementById('districtSelect');
+    
+    citySelect.addEventListener('change', function() {
+      const city = this.value;
+      districtSelect.innerHTML = '<option value="">İlçe Seçiniz</option>';
+      if (city && districts[city]) {
+        districts[city].forEach(d => { districtSelect.innerHTML += `<option value="${d.toLowerCase()}">${d}</option>`; });
+      }
+      updateResultHeader();
+    });
+    
+    districtSelect.addEventListener('change', updateResultHeader);
+    
+    function updateResultHeader() {
+      const city = citySelect.options[citySelect.selectedIndex]?.text || 'İstanbul';
+      const district = districtSelect.options[districtSelect.selectedIndex]?.text || 'Beşiktaş';
+      document.getElementById('resultCity').textContent = `${city}, ${district}`;
+    }
+
+    window.setBudget = (val) => { document.getElementById('maxPrice').value = val; document.getElementById('displayBudget').textContent = val.toLocaleString('tr-TR'); searchHotels(); };
+    window.searchHotels = () => { const val = document.getElementById('maxPrice').value; document.getElementById('displayBudget').textContent = parseInt(val).toLocaleString('tr-TR'); updateResultHeader(); alert(`🔍 ${document.getElementById('resultCity').textContent} bölgesinde ₺${val} bütçeye uygun oteller aranıyor...`); };
+    window.toggleFavorite = (btn) => { const icon = btn.querySelector('i'); icon.classList.toggle('far'); icon.classList.toggle('fas'); };
+    window.viewDetails = () => alert('🏨 Otel detayları görüntülenecek.');
+    
+    // Quick budget chips
+    document.querySelectorAll('.budget-chip').forEach(chip => { chip.addEventListener('click', function() { document.querySelectorAll('.budget-chip').forEach(c => c.style.background = ''); this.style.background = 'var(--primary)'; this.style.color = 'white'; }); });
+    
+    updateResultHeader();
+    console.log('✅ Bütçeme Uygun Oteller (Ultra Lüks) Yüklendi');
+  })();
+</script>
+</body>
+</html>

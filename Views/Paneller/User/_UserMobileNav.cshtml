@@ -1,0 +1,16 @@
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+}
+<nav class="mobile-bottom-nav">
+    <a asp-action="Index" class="@(currentAction == "Index" ? "active" : "")"><i class="fas fa-home"></i><span>Panel</span></a>
+    <a asp-action="Reservations" class="@(currentAction == "Reservations" ? "active" : "")"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a asp-action="Favorites" class="@(currentAction == "Favorites" ? "active" : "")"><i class="fas fa-heart"></i><span>Favori</span></a>
+    <a asp-action="Loyalty" class="@(currentAction == "Loyalty" ? "active" : "")"><i class="fas fa-star"></i><span>Puan</span></a>
+    <a asp-action="Profile" class="@(currentAction == "Profile" ? "active" : "")"><i class="fas fa-user"></i><span>Profil</span></a>
+    <form method="post" action="/cikis-yap" class="panel-mobile-logout-form">
+        @Html.AntiForgeryToken()
+        <button type="submit"><i class="fas fa-right-from-bracket"></i><span>Cikis</span></button>
+    </form>
+</nav>
+
+

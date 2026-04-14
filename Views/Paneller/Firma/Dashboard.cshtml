@@ -1,0 +1,13 @@
+@model otelturizmnew.Models.Paneller.Firma.FirmaDashboardPageViewModel
+@{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
+<section class="firma-grid">
+@foreach (var card in Model.SummaryCards)
+{
+    <article class="firma-stat-card @card.ToneClass"><i class="fas @card.IconClass"></i><strong>@card.Value</strong><span>@card.Label</span><p>@card.Description</p></article>
+}
+</section>
+<section class="firma-two-column">
+    <article class="firma-section-card"><h2>Firma Fiyatları</h2><div class="firma-list">@foreach (var deal in Model.HighlightDeals) { <div class="firma-list-row"><strong>@deal.HotelName</strong><span>@deal.MinimumRoomText</span><b>@deal.CorporatePriceText</b></div> }</div></article>
+    <article class="firma-section-card"><h2>Öne Çıkan Çalışanlar</h2><div class="firma-list">@foreach (var item in Model.FeaturedEmployees) { <div class="firma-list-row"><strong>@item.FullName</strong><span>@item.Department</span><b>@item.LimitText</b></div> }</div></article>
+</section>
+<section class="firma-section-card"><h2>Son Rezervasyonlar</h2><div class="firma-table-wrap"><table class="firma-table"><thead><tr><th>No</th><th>Çalışan</th><th>Otel</th><th>Konaklama</th><th>Durum</th><th>Tutar</th></tr></thead><tbody>@foreach (var item in Model.RecentReservations) { <tr><td>@item.ReservationNo</td><td>@item.EmployeeName</td><td>@item.HotelName</td><td>@item.StayText</td><td>@item.ApprovalText</td><td>@item.TotalText</td></tr> }</tbody></table></div></section>

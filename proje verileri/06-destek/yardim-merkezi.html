@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Yardım Merkezi · Otelturizm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --secondary: #FF385C; --success: #00A86B;
+      --bg-light: #F5F7FA; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #6B7380; --border-light: #E7E9EC; --radius-card: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    
+    .container { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
+    
+    /* Hero Search */
+    .help-hero {
+      background: linear-gradient(135deg, var(--primary) 0%, #0055CC 100%);
+      border-radius: var(--radius-card); padding: 48px; text-align: center;
+      color: white; margin-bottom: 40px;
+    }
+    .help-hero h1 { font-size: 36px; margin-bottom: 16px; }
+    .help-hero p { font-size: 18px; opacity: 0.9; margin-bottom: 32px; }
+    .help-search {
+      max-width: 600px; margin: 0 auto; display: flex;
+      background: white; border-radius: 60px; padding: 4px;
+    }
+    .help-search input {
+      flex: 1; border: none; padding: 16px 24px; border-radius: 60px;
+      font-size: 16px; outline: none;
+    }
+    .help-search button {
+      background: var(--primary); color: white; border: none;
+      padding: 12px 32px; border-radius: 60px; font-weight: 600; cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      .help-hero { padding: 32px 20px; }
+      .help-search { flex-direction: column; background: transparent; gap: 12px; }
+      .help-search input { border-radius: 60px; }
+    }
+    
+    /* Categories */
+    .categories-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+      margin-bottom: 48px;
+    }
+    @media (max-width: 900px) { .categories-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .categories-grid { grid-template-columns: 1fr; } }
+    
+    .category-card {
+      background: white; border-radius: var(--radius-card); padding: 28px;
+      text-align: center; border: 1px solid var(--border-light);
+      transition: all 0.2s; cursor: pointer; text-decoration: none; color: inherit;
+    }
+    .category-card:hover { transform: translateY(-4px); box-shadow: 0 20px 30px -10px rgba(0,59,149,0.15); }
+    .category-icon {
+      width: 64px; height: 64px; border-radius: 20px; margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center; font-size: 28px;
+    }
+    .category-card h3 { margin-bottom: 8px; }
+    .category-card p { color: var(--text-gray); font-size: 14px; }
+    
+    /* Popular Topics */
+    .section-title {
+      font-size: 24px; font-weight: 700; margin-bottom: 24px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .topics-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+      margin-bottom: 48px;
+    }
+    @media (max-width: 700px) { .topics-grid { grid-template-columns: 1fr; } }
+    
+    .topic-card {
+      background: white; border-radius: var(--radius-card); padding: 24px;
+      border: 1px solid var(--border-light); display: flex; gap: 16px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .topic-card:hover { border-color: var(--primary); }
+    .topic-icon { color: var(--primary); font-size: 24px; }
+    .topic-content h4 { margin-bottom: 8px; }
+    .topic-content p { color: var(--text-gray); font-size: 14px; }
+    
+    /* Support Options */
+    .support-options {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    }
+    @media (max-width: 800px) { .support-options { grid-template-columns: 1fr; } }
+    
+    .support-card {
+      background: white; border-radius: var(--radius-card); padding: 28px;
+      text-align: center; border: 1px solid var(--border-light);
+    }
+    .support-card i { font-size: 40px; color: var(--primary); margin-bottom: 20px; }
+    .support-card h4 { margin-bottom: 12px; }
+    .support-card p { color: var(--text-gray); margin-bottom: 20px; }
+    .btn {
+      display: inline-block; padding: 12px 24px; border-radius: 40px;
+      font-weight: 600; text-decoration: none; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-outline { border: 1.5px solid var(--primary); color: var(--primary); }
+    
+    /* Live Chat */
+    .live-chat-banner {
+      background: linear-gradient(90deg, var(--success) 0%, #00994D 100%);
+      border-radius: var(--radius-card); padding: 32px; margin-top: 48px;
+      color: white; display: flex; justify-content: space-between; align-items: center;
+    }
+    @media (max-width: 600px) { .live-chat-banner { flex-direction: column; text-align: center; gap: 20px; } }
+    .live-chat-banner .btn { background: white; color: var(--success); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Hero -->
+  <div class="help-hero">
+    <h1>Size Nasıl Yardımcı Olabiliriz?</h1>
+    <p>7/24 destek ekibimiz sorularınızı yanıtlamak için burada.</p>
+    <div class="help-search">
+      <input type="text" placeholder="Sorunuzu yazın... (Örn: İptal politikası)">
+      <button><i class="fas fa-search"></i> Ara</button>
+    </div>
+  </div>
+  
+  <!-- Categories -->
+  <div class="categories-grid">
+    <a href="#" class="category-card">
+      <div class="category-icon" style="background: rgba(0,168,107,0.1); color: var(--success);"><i class="fas fa-calendar-check"></i></div>
+      <h3>Rezervasyonlar</h3>
+      <p>Değişiklik, iptal, onay</p>
+    </a>
+    <a href="#" class="category-card">
+      <div class="category-icon" style="background: rgba(0,59,149,0.1); color: var(--primary);"><i class="fas fa-credit-card"></i></div>
+      <h3>Ödemeler</h3>
+      <p>İade, fatura, ödeme yöntemleri</p>
+    </a>
+    <a href="#" class="category-card">
+      <div class="category-icon" style="background: rgba(255,184,0,0.1); color: var(--warning);"><i class="fas fa-user-circle"></i></div>
+      <h3>Hesabım</h3>
+      <p>Giriş, profil, güvenlik</p>
+    </a>
+    <a href="#" class="category-card">
+      <div class="category-icon" style="background: rgba(255,56,92,0.1); color: var(--secondary);"><i class="fas fa-hotel"></i></div>
+      <h3>Otel Bilgileri</h3>
+      <p>Olanaklar, konum, iletişim</p>
+    </a>
+  </div>
+  
+  <!-- Popular Topics -->
+  <h2 class="section-title"><i class="fas fa-fire" style="color: var(--secondary);"></i> Sık Sorulan Konular</h2>
+  <div class="topics-grid">
+    <div class="topic-card">
+      <div class="topic-icon"><i class="fas fa-ban"></i></div>
+      <div class="topic-content"><h4>Rezervasyonumu nasıl iptal ederim?</h4><p>Ücretsiz iptal koşulları ve adım adım rehber.</p></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-icon"><i class="fas fa-undo-alt"></i></div>
+      <div class="topic-content"><h4>İade ücretim ne zaman hesabıma yatar?</h4><p>İade süreci ve banka işlem süreleri.</p></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-icon"><i class="fas fa-pen"></i></div>
+      <div class="topic-content"><h4>Rezervasyon tarihlerimi değiştirebilir miyim?</h4><p>Tarih değişikliği ve fiyat farkı hakkında.</p></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-icon"><i class="fas fa-child"></i></div>
+      <div class="topic-content"><h4>Çocuk politikası nedir?</h4><p>Yaş sınırları ve ek yatak ücretleri.</p></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-icon"><i class="fas fa-paw"></i></div>
+      <div class="topic-content"><h4>Evcil hayvan kabul ediliyor mu?</h4><p>Evcil hayvan dostu oteller ve kurallar.</p></div>
+    </div>
+    <div class="topic-card">
+      <div class="topic-icon"><i class="fas fa-shield-alt"></i></div>
+      <div class="topic-content"><h4>Rezervasyonum güvende mi?</h4><p>TÜRSAB ve PCI DSS güvencesi.</p></div>
+    </div>
+  </div>
+  
+  <!-- Support Options -->
+  <h2 class="section-title"><i class="fas fa-headset" style="color: var(--primary);"></i> Destek Seçenekleri</h2>
+  <div class="support-options">
+    <div class="support-card">
+      <i class="fas fa-comment-dots"></i>
+      <h4>Canlı Destek</h4>
+      <p>7/24 canlı destek ekibimizle anında yazışın.</p>
+      <a href="#" class="btn btn-primary">Sohbet Başlat</a>
+      <p style="margin-top: 12px; font-size: 13px;">Ortalama yanıt süresi: 2 dk</p>
+    </div>
+    <div class="support-card">
+      <i class="fas fa-envelope"></i>
+      <h4>E-posta Desteği</h4>
+      <p>Detaylı sorularınız için e-posta gönderin.</p>
+      <a href="#" class="btn btn-outline">Mesaj Gönder</a>
+      <p style="margin-top: 12px; font-size: 13px;">24 saat içinde dönüş</p>
+    </div>
+    <div class="support-card">
+      <i class="fas fa-phone-alt"></i>
+      <h4>Telefon Desteği</h4>
+      <p>Acil durumlar için 7/24 telefon hattı.</p>
+      <a href="tel:08501234567" class="btn btn-outline">0850 123 45 67</a>
+      <p style="margin-top: 12px; font-size: 13px;">Ücretsiz hat</p>
+    </div>
+  </div>
+  
+  <!-- Live Chat Banner -->
+  <div class="live-chat-banner">
+    <div>
+      <h3 style="font-size: 24px; margin-bottom: 8px;">Hemen Yardım Alın</h3>
+      <p style="opacity: 0.9;">Canlı destek ekibimiz şu anda çevrimiçi.</p>
+    </div>
+    <a href="#" class="btn">Sohbet Başlat <i class="fas fa-arrow-right"></i></a>
+  </div>
+  
+</div>
+
+<script>console.log('✅ Yardım Merkezi Sayfası Yüklendi');</script>
+</body>
+</html>

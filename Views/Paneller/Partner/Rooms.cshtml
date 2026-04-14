@@ -1,0 +1,232 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerRoomManagementPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    var roomCategories = new[]
+    {
+        "Standart", "Superior", "Deluxe", "Junior Suite", "Suite", "Executive Suite", "Presidential Suite", "Aile Odası", "Engelli Odası", "Villa"
+    };
+    var bedTypes = new[]
+    {
+        "Tek Kişilik", "Çift Kişilik", "Queen Size", "King Size", "Super King Size", "Ranza", "Çekyat"
+    };
+    var viewTypes = new[] { "Yok", "Deniz", "Havuz", "Bahçe", "Dağ", "Şehir", "Göl", "İç Avlu" };
+}
+
+<section class="partner-room-toolbar">
+    <div>
+        <p class="partner-room-kicker">Oda envanteri</p>
+        <h2>Oda tipleri, stok ve fiyat özeti</h2>
+        <p>216 SILVER SUITE için tüm oda tiplerini tek yerden düzenleyebilir, pasife alabilir ve fiyat akışını kontrol edebilirsiniz.</p>
+    </div>
+    <a class="partner-primary-btn partner-toolbar-link" href="/panel/partner/oda-yonetimi?otelId=@Model.SelectedHotelId">
+        <i class="fas fa-plus"></i>
+        Yeni oda tipi
+    </a>
+</section>
+
+<section class="partner-room-card-grid">
+    @if (Model.Rooms.Count == 0)
+    {
+        <article class="partner-empty-state">
+            <strong>Henüz oda tipi tanımlanmamış</strong>
+            <p>İlk oda tipini sağdaki formdan ekleyerek satış takvimini aktif hale getirebilirsiniz.</p>
+        </article>
+    }
+    else
+    {
+        @foreach (var room in Model.Rooms)
+        {
+            <article class="partner-room-card @(room.IsActive ? string.Empty : "is-passive")">
+                <div class="partner-room-card-media">
+                    @if (!string.IsNullOrWhiteSpace(room.CoverPhotoUrl))
+                    {
+                        <img src="@room.CoverPhotoUrl" alt="@room.RoomName" />
+                    }
+                    else
+                    {
+                        <div class="partner-room-card-placeholder">
+                            <i class="fas fa-bed"></i>
+                        </div>
+                    }
+                    <span class="partner-room-status @(room.IsActive ? "is-active" : "is-passive")">
+                        @(room.IsActive ? "Aktif" : "Pasif")
+                    </span>
+                </div>
+                <div class="partner-room-card-body">
+                    <div class="partner-room-card-head">
+                        <div>
+                            <h3>@room.RoomName</h3>
+                            <p>@room.Category</p>
+                        </div>
+                        <strong>@room.BasePriceText</strong>
+                    </div>
+                    <ul class="partner-room-meta">
+                        <li><i class="fas fa-users"></i> @room.CapacityText</li>
+                        <li><i class="fas fa-box-open"></i> @room.StockText</li>
+                        <li><i class="fas fa-tag"></i> @room.DiscountPriceText</li>
+                    </ul>
+                    <div class="partner-room-actions">
+                        <a href="/panel/partner/oda-yonetimi?otelId=@Model.SelectedHotelId&roomId=@room.RoomId" class="partner-secondary-btn">
+                            <i class="fas fa-pen"></i>
+                            Düzenle
+                        </a>
+                        <a href="/panel/partner/takvim-fiyatlar?otelId=@Model.SelectedHotelId&roomId=@room.RoomId" class="partner-secondary-btn">
+                            <i class="fas fa-calendar-days"></i>
+                            Takvim
+                        </a>
+                        <form method="post" action="/panel/partner/oda-yonetimi/sil" onsubmit="return confirm('Bu oda tipini pasife almak istediğinize emin misiniz?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
+                            <input type="hidden" name="roomId" value="@room.RoomId" />
+                            <button type="submit" class="partner-danger-btn">
+                                <i class="fas fa-trash"></i>
+                                Pasife al
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        }
+    }
+</section>
+
+<section class="partner-two-column partner-room-layout">
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>Oda stok özeti</h2>
+                <p>Yakın dönem stok, satılabilir oda ve fiyat aralığı görünümü.</p>
+            </div>
+        </div>
+        @if (Model.InventoryRows.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Stok özeti oluşturulamadı</strong>
+                <p>Oda tipleri eklendikten sonra takvim verileri burada otomatik görünecek.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-table-wrap">
+                <table class="partner-table">
+                    <thead>
+                        <tr>
+                            <th>Oda tipi</th>
+                            <th>Toplam oda</th>
+                            <th>Satılabilir</th>
+                            <th>Bakım / kapalı gün</th>
+                            <th>Min fiyat</th>
+                            <th>Max fiyat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.InventoryRows)
+                        {
+                            <tr>
+                                <td>@row.RoomName</td>
+                                <td>@row.TotalRooms</td>
+                                <td>@row.SellableRooms</td>
+                                <td>@row.MaintenanceRooms</td>
+                                <td>@row.MinPriceText</td>
+                                <td>@row.MaxPriceText</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </article>
+
+    <article class="partner-section-card partner-room-form-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>@(Model.IsEditingRoom ? "Oda tipini düzenle" : "Yeni oda tipi ekle")</h2>
+                <p>Form doğrudan veritabanındaki `oda_tipleri` yapısına kayıt atar.</p>
+            </div>
+            @if (Model.IsEditingRoom)
+            {
+                <a href="/panel/partner/oda-yonetimi?otelId=@Model.SelectedHotelId" class="partner-text-link">Yeni kayıt moduna dön</a>
+            }
+        </div>
+        <form method="post" action="/panel/partner/oda-yonetimi/kaydet" class="partner-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+            <input type="hidden" name="RoomId" value="@Model.Form.RoomId" />
+
+            <label>
+                <span>Oda adı</span>
+                <input type="text" name="RoomName" value="@Model.Form.RoomName" placeholder="Örn. Deluxe Deniz Manzaralı Oda" />
+            </label>
+            <label>
+                <span>Oda kategorisi</span>
+                <select name="RoomCategory">
+                    @foreach (var category in roomCategories)
+                    {
+                        <option value="@category" selected="@(Model.Form.RoomCategory == category)">@category</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Taban fiyat</span>
+                <input type="number" step="0.01" name="BasePrice" value="@Model.Form.BasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+            </label>
+            <label>
+                <span>Toplam oda</span>
+                <input type="number" name="TotalRooms" value="@Model.Form.TotalRooms" min="1" />
+            </label>
+            <label>
+                <span>Maks. yetişkin</span>
+                <input type="number" name="MaxAdults" value="@Model.Form.MaxAdults" min="1" />
+            </label>
+            <label>
+                <span>Maks. çocuk</span>
+                <input type="number" name="MaxChildren" value="@Model.Form.MaxChildren" min="0" />
+            </label>
+            <label>
+                <span>Bebek kapasitesi</span>
+                <input type="number" name="MaxBabies" value="@Model.Form.MaxBabies" min="0" />
+            </label>
+            <label>
+                <span>Oda büyüklüğü (m²)</span>
+                <input type="number" name="RoomSize" value="@Model.Form.RoomSize" min="0" />
+            </label>
+            <label>
+                <span>Yatak tipi</span>
+                <select name="BedType">
+                    <option value="">Seçiniz</option>
+                    @foreach (var bedType in bedTypes)
+                    {
+                        <option value="@bedType" selected="@(Model.Form.BedType == bedType)">@bedType</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Manzara tipi</span>
+                <select name="ViewType">
+                    <option value="">Seçiniz</option>
+                    @foreach (var viewType in viewTypes)
+                    {
+                        <option value="@viewType" selected="@(Model.Form.ViewType == viewType)">@viewType</option>
+                    }
+                </select>
+            </label>
+            <label class="partner-form-span">
+                <span>Kapak fotoğrafı yolu</span>
+                <input type="text" name="CoverPhotoPath" value="@Model.Form.CoverPhotoPath" placeholder="/uploads/hotels/partner/29/oda-1.webp" />
+            </label>
+            <label class="partner-form-span">
+                <span>Oda özellikleri</span>
+                <textarea name="RoomFeaturesText" placeholder="Örn. Klima, Balkon, Mini bar, Akıllı TV">@Model.Form.RoomFeaturesText</textarea>
+            </label>
+            <label class="partner-checkbox-inline partner-form-span">
+                <input type="checkbox" name="IsActive" value="true" checked="@Model.Form.IsActive" />
+                <span>Bu oda tipi satışta aktif olsun</span>
+            </label>
+            <button type="submit" class="partner-primary-btn partner-form-span">
+                <i class="fas fa-floppy-disk"></i>
+                @(Model.IsEditingRoom ? "Oda tipini güncelle" : "Oda tipini kaydet")
+            </button>
+        </form>
+    </article>
+</section>

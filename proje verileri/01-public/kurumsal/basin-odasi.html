@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Basın Odası · Otelturizm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --secondary: #FF385C; --success: #00A86B;
+      --bg-light: #F5F7FA; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #6B7380; --border-light: #E7E9EC; --radius-card: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    
+    .container { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+    
+    .page-header { text-align: center; margin-bottom: 40px; }
+    .page-header h1 { font-size: 36px; margin-bottom: 12px; }
+    .page-header p { color: var(--text-gray); }
+    
+    /* Media Contact */
+    .media-contact {
+      background: white; border-radius: var(--radius-card); padding: 24px 32px;
+      border: 1px solid var(--border-light); margin-bottom: 40px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    @media (max-width: 600px) { .media-contact { flex-direction: column; text-align: center; gap: 16px; } }
+    .contact-person { display: flex; align-items: center; gap: 16px; }
+    .contact-avatar {
+      width: 60px; height: 60px; border-radius: 50%; background: var(--primary);
+      display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;
+    }
+    
+    /* Press Releases */
+    .section-title { font-size: 24px; font-weight: 700; margin: 40px 0 24px; }
+    .press-list { display: flex; flex-direction: column; gap: 16px; }
+    .press-card {
+      background: white; border-radius: var(--radius-card); padding: 24px 28px;
+      border: 1px solid var(--border-light); display: flex; gap: 24px;
+    }
+    @media (max-width: 500px) { .press-card { flex-direction: column; } }
+    .press-date {
+      min-width: 80px; text-align: center;
+    }
+    .press-date .day { font-size: 32px; font-weight: 700; color: var(--primary); }
+    .press-date .month { color: var(--text-gray); }
+    .press-content { flex: 1; }
+    .press-content h3 { margin-bottom: 8px; }
+    .press-content p { color: var(--text-gray); margin-bottom: 12px; }
+    .press-link { color: var(--primary); text-decoration: none; font-weight: 500; }
+    
+    /* Resources */
+    .resources-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+      margin: 40px 0;
+    }
+    @media (max-width: 700px) { .resources-grid { grid-template-columns: 1fr; } }
+    .resource-card {
+      background: white; border-radius: var(--radius-card); padding: 28px;
+      text-align: center; border: 1px solid var(--border-light);
+    }
+    .resource-icon {
+      width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center; font-size: 32px;
+    }
+    .btn { display: inline-block; padding: 12px 24px; border-radius: 40px; text-decoration: none; font-weight: 600; }
+    .btn-outline { border: 1.5px solid var(--primary); color: var(--primary); }
+    
+    /* In The News */
+    .news-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+    }
+    @media (max-width: 600px) { .news-grid { grid-template-columns: 1fr; } }
+    .news-item {
+      background: white; border-radius: 12px; padding: 20px; border: 1px solid var(--border-light);
+      display: flex; gap: 16px;
+    }
+    .news-logo {
+      width: 60px; height: 60px; border-radius: 12px; background: var(--bg-light);
+      display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div class="page-header">
+    <h1><i class="fas fa-newspaper" style="color: var(--primary);"></i> Basın Odası</h1>
+    <p>Otelturizm hakkında en güncel haberler, basın bültenleri ve medya kaynakları.</p>
+  </div>
+  
+  <!-- Media Contact -->
+  <div class="media-contact">
+    <div class="contact-person">
+      <div class="contact-avatar"><i class="fas fa-user"></i></div>
+      <div><h4>Elif Aksoy</h4><p style="color: var(--text-gray);">Kurumsal İletişim Direktörü</p></div>
+    </div>
+    <div style="display: flex; gap: 24px;">
+      <a href="mailto:basin@otelturizm.com" style="color: var(--primary);"><i class="fas fa-envelope"></i> basin@otelturizm.com</a>
+      <a href="tel:+902123456789" style="color: var(--primary);"><i class="fas fa-phone"></i> +90 212 345 67 89</a>
+    </div>
+  </div>
+  
+  <!-- Press Releases -->
+  <h2 class="section-title">Basın Bültenleri</h2>
+  <div class="press-list">
+    <div class="press-card">
+      <div class="press-date"><div class="day">05</div><div class="month">Nis 2025</div></div>
+      <div class="press-content">
+        <h3>Otelturizm, 2025'in İlk Çeyreğinde %40 Büyüme Kaydetti</h3>
+        <p>Türkiye'nin lider online seyahat platformu Otelturizm, 2025 yılının ilk çeyrek finansal sonuçlarını açıkladı.</p>
+        <a href="#" class="press-link">Devamını Oku →</a>
+      </div>
+    </div>
+    <div class="press-card">
+      <div class="press-date"><div class="day">28</div><div class="month">Mar 2025</div></div>
+      <div class="press-content">
+        <h3>Otelturizm'den Deprem Bölgesine 10 Milyon TL Destek</h3>
+        <p>Otelturizm, Kahramanmaraş merkezli depremlerden etkilenen bölgelere yönelik yeni bir sosyal sorumluluk projesi başlattı.</p>
+        <a href="#" class="press-link">Devamını Oku →</a>
+      </div>
+    </div>
+    <div class="press-card">
+      <div class="press-date"><div class="day">15</div><div class="month">Mar 2025</div></div>
+      <div class="press-content">
+        <h3>Yeni Mobil Uygulamamız Yayında: "Seyahatin Cebinizde"</h3>
+        <p>Otelturizm, kullanıcı deneyimini tamamen yenileyen mobil uygulamasını App Store ve Google Play'de yayınladı.</p>
+        <a href="#" class="press-link">Devamını Oku →</a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Media Resources -->
+  <h2 class="section-title">Medya Kaynakları</h2>
+  <div class="resources-grid">
+    <div class="resource-card">
+      <div class="resource-icon" style="background: rgba(0,59,149,0.1); color: var(--primary);"><i class="fas fa-image"></i></div>
+      <h3>Logo Kiti</h3>
+      <p style="margin: 12px 0;">PNG, SVG, EPS formatlarında logolarımız.</p>
+      <a href="#" class="btn btn-outline">İndir</a>
+    </div>
+    <div class="resource-card">
+      <div class="resource-icon" style="background: rgba(0,168,107,0.1); color: var(--success);"><i class="fas fa-file-pdf"></i></div>
+      <h3>Basın Kiti</h3>
+      <p style="margin: 12px 0;">Şirket profili, yönetici biyografileri.</p>
+      <a href="#" class="btn btn-outline">İndir</a>
+    </div>
+    <div class="resource-card">
+      <div class="resource-icon" style="background: rgba(255,56,92,0.1); color: var(--secondary);"><i class="fas fa-camera"></i></div>
+      <h3>Görsel Arşivi</h3>
+      <p style="margin: 12px 0;">Yüksek çözünürlüklü ofis ve etkinlik fotoğrafları.</p>
+      <a href="#" class="btn btn-outline">Görüntüle</a>
+    </div>
+  </div>
+  
+  <!-- In The News -->
+  <h2 class="section-title">Otelturizm Haberlerde</h2>
+  <div class="news-grid">
+    <div class="news-item">
+      <div class="news-logo">Bloomberg</div>
+      <div><h4>"Türk Turizm Devi Global Açılımını Hızlandırıyor"</h4><p style="color: var(--text-gray); font-size: 13px;">2 Nisan 2025</p></div>
+    </div>
+    <div class="news-item">
+      <div class="news-logo">Webrazzi</div>
+      <div><h4>"Otelturizm, Yapay Zeka Destekli Fiyatlandırma Sistemini Duyurdu"</h4><p style="color: var(--text-gray); font-size: 13px;">28 Mart 2025</p></div>
+    </div>
+    <div class="news-item">
+      <div class="news-logo">Dünya</div>
+      <div><h4>"Otelturizm'den 500 Bin Otele Anında Rezervasyon"</h4><p style="color: var(--text-gray); font-size: 13px;">20 Mart 2025</p></div>
+    </div>
+    <div class="news-item">
+      <div class="news-logo">Hürriyet</div>
+      <div><h4>"Yerli Booking Otelturizm, Avrupa Pazarına Göz Dikti"</h4><p style="color: var(--text-gray); font-size: 13px;">15 Mart 2025</p></div>
+    </div>
+  </div>
+  
+</div>
+
+<script>console.log('✅ Basın Odası Sayfası Yüklendi');</script>
+</body>
+</html>

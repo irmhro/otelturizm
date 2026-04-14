@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Mesajlarım · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-light: #0055CC; --primary-dark: #002A6B;
+      --secondary: #FF385C; --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --info: #3B82F6; --bg-light: #F8FAFC; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-body: #1E293B; --text-gray: #64748B;
+      --text-light: #94A3B8; --border-light: #E2E8F0; --border-medium: #CBD5E1;
+      --sidebar-width: 280px; --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0,59,149,0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-body); line-height: 1.5; }
+    
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--card-bg);
+      border-right: 1px solid var(--border-light); position: fixed;
+      height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid var(--border-light); }
+    .user-profile-card { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .user-avatar {
+      width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 22px;
+    }
+    .user-info h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .user-info p { font-size: 13px; color: var(--text-gray); }
+    .membership-badge { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .tier-badge {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: var(--text-dark);
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 700;
+    }
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-light); margin-bottom: 12px; padding-left: 16px; font-weight: 600;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      border-radius: 12px; color: var(--text-gray); text-decoration: none;
+      transition: all var(--transition-base); margin-bottom: 4px; font-weight: 500; font-size: 14px;
+    }
+    .nav-item i { width: 24px; font-size: 20px; }
+    .nav-item:hover { background: rgba(0,59,149,0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .nav-item .badge {
+      margin-left: auto; background: var(--secondary); color: white;
+      padding: 2px 8px; border-radius: 40px; font-size: 11px; font-weight: 700;
+    }
+    .nav-item .badge.warning { background: var(--warning); color: var(--text-dark); }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+    }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: var(--text-dark); }
+    .page-title p { color: var(--text-gray); font-size: 15px; }
+    
+    .header-actions { display: flex; gap: 12px; }
+    .btn {
+      padding: 12px 24px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    
+    /* Messages Layout */
+    .messages-container {
+      background: var(--card-bg); border-radius: var(--radius-xl);
+      border: 1px solid var(--border-light); overflow: hidden;
+      display: flex; height: calc(100vh - 200px); min-height: 600px;
+    }
+    
+    /* Sidebar Left - Conversation List */
+    .conversation-sidebar {
+      width: 320px; border-right: 1px solid var(--border-light);
+      display: flex; flex-direction: column;
+    }
+    .conversation-header {
+      padding: 20px; border-bottom: 1px solid var(--border-light);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .conversation-header h3 { font-size: 16px; font-weight: 600; }
+    .search-box {
+      padding: 16px 20px; border-bottom: 1px solid var(--border-light);
+    }
+    .search-input-wrapper {
+      display: flex; align-items: center; background: var(--bg-light);
+      border-radius: 40px; padding: 8px 16px; border: 1px solid var(--border-light);
+    }
+    .search-input-wrapper i { color: var(--text-gray); margin-right: 10px; }
+    .search-input-wrapper input {
+      border: none; outline: none; background: transparent; flex: 1; font-size: 14px;
+    }
+    
+    .conversation-list { flex: 1; overflow-y: auto; }
+    .conversation-item {
+      display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px;
+      border-bottom: 1px solid var(--border-light); cursor: pointer;
+      transition: all var(--transition-base); position: relative;
+    }
+    .conversation-item:hover { background: var(--bg-light); }
+    .conversation-item.active {
+      background: rgba(0, 59, 149, 0.03); border-left: 3px solid var(--primary);
+    }
+    .conversation-item.unread { background: rgba(0, 59, 149, 0.02); }
+    .conversation-avatar {
+      width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 16px; position: relative;
+    }
+    .online-indicator {
+      position: absolute; bottom: 0; right: 0; width: 12px; height: 12px;
+      background: var(--success); border-radius: 50%; border: 2px solid white;
+    }
+    .conversation-info { flex: 1; min-width: 0; }
+    .conversation-name {
+      font-weight: 600; font-size: 15px; margin-bottom: 4px;
+      display: flex; justify-content: space-between;
+    }
+    .conversation-preview {
+      color: var(--text-gray); font-size: 13px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .conversation-meta { text-align: right; }
+    .conversation-time { font-size: 12px; color: var(--text-light); }
+    .unread-badge {
+      background: var(--primary); color: white; padding: 2px 8px;
+      border-radius: 40px; font-size: 11px; font-weight: 600; margin-top: 4px;
+    }
+    
+    /* Main Chat Area */
+    .chat-area {
+      flex: 1; display: flex; flex-direction: column;
+    }
+    .chat-header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border-light);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .chat-contact {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .contact-avatar {
+      width: 44px; height: 44px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-weight: 600;
+    }
+    .contact-info h4 { font-size: 16px; margin-bottom: 2px; }
+    .contact-info p { font-size: 13px; color: var(--text-gray); }
+    .chat-actions { display: flex; gap: 8px; }
+    .icon-btn {
+      width: 40px; height: 40px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; background: transparent;
+      border: 1px solid var(--border-light); cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .icon-btn:hover { background: var(--bg-light); color: var(--primary); }
+    
+    /* Messages */
+    .chat-messages {
+      flex: 1; padding: 24px; overflow-y: auto; background: var(--bg-light);
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .message-date-divider {
+      text-align: center; margin: 16px 0;
+    }
+    .date-badge {
+      background: white; padding: 6px 16px; border-radius: 40px;
+      font-size: 12px; color: var(--text-gray); border: 1px solid var(--border-light);
+    }
+    .message {
+      display: flex; gap: 12px; max-width: 70%;
+    }
+    .message.incoming { align-self: flex-start; }
+    .message.outgoing { align-self: flex-end; flex-direction: row-reverse; }
+    .message-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 13px;
+    }
+    .message-bubble {
+      padding: 14px 18px; border-radius: 20px; position: relative;
+    }
+    .message.incoming .message-bubble {
+      background: white; border: 1px solid var(--border-light);
+      border-top-left-radius: 4px;
+    }
+    .message.outgoing .message-bubble {
+      background: var(--primary); color: white;
+      border-top-right-radius: 4px;
+    }
+    .message-time {
+      font-size: 11px; margin-top: 6px; opacity: 0.7;
+    }
+    .message.outgoing .message-time { text-align: right; }
+    
+    /* Reservation Card in Chat */
+    .reservation-card-chat {
+      background: white; border-radius: 12px; padding: 16px;
+      border: 1px solid var(--border-light); margin-top: 12px;
+    }
+    
+    /* Chat Input */
+    .chat-input-area {
+      padding: 20px 24px; border-top: 1px solid var(--border-light);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .chat-input-wrapper {
+      flex: 1; display: flex; align-items: center; background: var(--bg-light);
+      border-radius: 40px; padding: 4px 4px 4px 20px; border: 1px solid var(--border-light);
+    }
+    .chat-input-wrapper input {
+      flex: 1; border: none; outline: none; background: transparent;
+      padding: 12px 0; font-size: 15px;
+    }
+    .attach-btn, .emoji-btn {
+      width: 40px; height: 40px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; background: transparent;
+      border: none; cursor: pointer; color: var(--text-gray);
+    }
+    .send-btn {
+      width: 48px; height: 48px; border-radius: 50%; background: var(--primary);
+      border: none; color: white; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; transition: all var(--transition-base);
+    }
+    .send-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
+    
+    /* Info Sidebar */
+    .info-sidebar {
+      width: 280px; border-left: 1px solid var(--border-light); padding: 20px;
+      display: flex; flex-direction: column;
+    }
+    .info-section { margin-bottom: 24px; }
+    .info-section h4 { font-size: 14px; margin-bottom: 16px; color: var(--text-gray); }
+    .reservation-link {
+      background: var(--bg-light); border-radius: 12px; padding: 16px;
+      border: 1px solid var(--border-light);
+    }
+    
+    /* Mobile */
+    @media (max-width: 1100px) {
+      .info-sidebar { display: none; }
+    }
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .messages-container { height: auto; min-height: 500px; }
+    }
+    @media (max-width: 700px) {
+      .conversation-sidebar { width: 100%; }
+      .chat-area { display: none; }
+      .messages-container.chat-open .conversation-sidebar { display: none; }
+      .messages-container.chat-open .chat-area { display: flex; }
+      .chat-header { padding: 16px; }
+      .back-to-list { display: flex !important; }
+    }
+    
+    .back-to-list {
+      display: none; align-items: center; gap: 12px; cursor: pointer;
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-top: 1px solid var(--border-light);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: var(--text-gray); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    @media (max-width: 900px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="user-profile-card">
+        <div class="user-avatar">AY</div>
+        <div class="user-info">
+          <h4>Ahmet Yılmaz</h4>
+          <p>ahmet.yilmaz@email.com</p>
+          <div class="membership-badge">
+            <span class="tier-badge"><i class="fas fa-crown"></i> Gold Üye</span>
+          </div>
+        </div>
+      </div>
+      <a href="/" style="display: flex; align-items: center; gap: 8px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 14px;">
+        <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+      </a>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item"><i class="fas fa-columns"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlarım <span class="badge">3</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-heart"></i> Favorilerim <span class="badge" style="background: var(--success);">8</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-star"></i> Puanlarım</a>
+        <a href="#" class="nav-item active"><i class="fas fa-envelope"></i> Mesajlarım <span class="badge warning">2</span></a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- Header -->
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Mesajlarım</h1>
+        <p>Oteller ve destek ekibiyle mesajlaşmalarınız.</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline"><i class="fas fa-archive"></i> Arşiv</button>
+        <button class="btn btn-primary"><i class="fas fa-plus"></i> Yeni Mesaj</button>
+      </div>
+    </header>
+    
+    <!-- Messages Container -->
+    <div class="messages-container" id="messagesContainer">
+      
+      <!-- Conversation Sidebar -->
+      <div class="conversation-sidebar">
+        <div class="conversation-header">
+          <h3>Tüm Mesajlar</h3>
+          <button class="icon-btn"><i class="fas fa-ellipsis-h"></i></button>
+        </div>
+        <div class="search-box">
+          <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Mesajlarda ara...">
+          </div>
+        </div>
+        <div class="conversation-list">
+          
+          <!-- Swissôtel - Unread -->
+          <div class="conversation-item unread active" data-chat="swissotel">
+            <div class="conversation-avatar" style="background: rgba(0,59,149,0.1); color: var(--primary);">
+              S
+              <span class="online-indicator"></span>
+            </div>
+            <div class="conversation-info">
+              <div class="conversation-name">
+                <span>Swissôtel The Bosphorus</span>
+                <span class="conversation-time">10:30</span>
+              </div>
+              <div class="conversation-preview">Erken check-in talebiniz onaylanmıştır...</div>
+              <div style="display: flex; gap: 4px; margin-top: 4px;">
+                <span style="font-size: 11px; color: var(--text-light);">#OTL-0482</span>
+              </div>
+            </div>
+            <div class="conversation-meta">
+              <span class="unread-badge">2</span>
+            </div>
+          </div>
+          
+          <!-- Rixos - Read -->
+          <div class="conversation-item" data-chat="rixos">
+            <div class="conversation-avatar" style="background: rgba(0,168,107,0.1); color: var(--success);">
+              R
+            </div>
+            <div class="conversation-info">
+              <div class="conversation-name">
+                <span>Rixos Premium Belek</span>
+                <span class="conversation-time">Dün</span>
+              </div>
+              <div class="conversation-preview">Rezervasyonunuz onaylanmıştır. Giriş...</div>
+              <div style="font-size: 11px; color: var(--text-light); margin-top: 4px;">#OTL-0391</div>
+            </div>
+          </div>
+          
+          <!-- Cappadocia - Read -->
+          <div class="conversation-item" data-chat="cappadocia">
+            <div class="conversation-avatar" style="background: rgba(255,184,0,0.1); color: var(--warning);">
+              C
+            </div>
+            <div class="conversation-info">
+              <div class="conversation-name">
+                <span>Cappadocia Cave Resort</span>
+                <span class="conversation-time">15 Mar</span>
+              </div>
+              <div class="conversation-preview">Check-in işleminiz tamamlanmıştır...</div>
+            </div>
+          </div>
+          
+          <!-- Destek Ekibi -->
+          <div class="conversation-item" data-chat="support">
+            <div class="conversation-avatar" style="background: rgba(59,130,246,0.1); color: var(--info);">
+              <i class="fas fa-headset"></i>
+            </div>
+            <div class="conversation-info">
+              <div class="conversation-name">
+                <span>Otelturizm Destek</span>
+                <span class="conversation-time">10 Mar</span>
+              </div>
+              <div class="conversation-preview">Destek talebiniz (#1234) yanıtlandı.</div>
+            </div>
+          </div>
+          
+          <!-- Four Seasons -->
+          <div class="conversation-item" data-chat="fourseasons">
+            <div class="conversation-avatar" style="background: rgba(139,92,246,0.1); color: #8B5CF6;">
+              FS
+            </div>
+            <div class="conversation-info">
+              <div class="conversation-name">
+                <span>Four Seasons Bosphorus</span>
+                <span class="conversation-time">5 Mar</span>
+              </div>
+              <div class="conversation-preview">Konaklamanız için teşekkür ederiz...</div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      
+      <!-- Chat Area -->
+      <div class="chat-area">
+        <div class="chat-header">
+          <div class="chat-contact">
+            <span class="back-to-list" onclick="backToList()"><i class="fas fa-arrow-left"></i> Geri</span>
+            <div class="contact-avatar" style="background: rgba(0,59,149,0.1); color: var(--primary);">S</div>
+            <div class="contact-info">
+              <h4>Swissôtel The Bosphorus <span style="color: var(--success); font-size: 12px; margin-left: 8px;"><i class="fas fa-circle"></i> Çevrimiçi</span></h4>
+              <p>Rezervasyon #OTL-0482 · 15-18 Nis 2025</p>
+            </div>
+          </div>
+          <div class="chat-actions">
+            <button class="icon-btn"><i class="fas fa-phone"></i></button>
+            <button class="icon-btn"><i class="fas fa-video"></i></button>
+            <button class="icon-btn"><i class="fas fa-info-circle"></i></button>
+          </div>
+        </div>
+        
+        <div class="chat-messages">
+          <div class="message-date-divider"><span class="date-badge">Bugün</span></div>
+          
+          <!-- Otelden gelen mesaj -->
+          <div class="message incoming">
+            <div class="message-avatar" style="background: rgba(0,59,149,0.1); color: var(--primary);">S</div>
+            <div class="message-bubble">
+              <p>Sayın Ahmet Bey,</p>
+              <p style="margin-top: 8px;">Swissôtel The Bosphorus'a hoş geldiniz! Erken check-in talebiniz onaylanmıştır. 15 Nisan'da saat 12:00'den itibaren odanız hazır olacaktır.</p>
+              <div class="reservation-card-chat">
+                <div style="display: flex; gap: 12px;">
+                  <div><i class="fas fa-calendar"></i></div>
+                  <div><strong>Giriş:</strong> 15 Nis 2025, 12:00<br><strong>Çıkış:</strong> 18 Nis 2025, 12:00</div>
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 8px;">
+                  <div><i class="fas fa-door-open"></i></div>
+                  <div><strong>Oda:</strong> Deluxe Oda, Boğaz Manzaralı (Oda 1204)</div>
+                </div>
+              </div>
+              <p style="margin-top: 12px;">Herhangi bir sorunuz olursa çekinmeden yazabilirsiniz. İyi günler dileriz.</p>
+              <div class="message-time">10:30 <i class="fas fa-check-double" style="margin-left: 4px;"></i></div>
+            </div>
+          </div>
+          
+          <!-- Kullanıcı yanıtı -->
+          <div class="message outgoing">
+            <div class="message-avatar" style="background: var(--primary); color: white;">AY</div>
+            <div class="message-bubble">
+              <p>Çok teşekkür ederim! Erken check-in onayı için minnettarım. Bir sorum olacak: Oda kahvaltı dahil miydi?</p>
+              <div class="message-time">10:35 <i class="fas fa-check-double"></i></div>
+            </div>
+          </div>
+          
+          <!-- Otel yanıtı -->
+          <div class="message incoming">
+            <div class="message-avatar" style="background: rgba(0,59,149,0.1); color: var(--primary);">S</div>
+            <div class="message-bubble">
+              <p>Rica ederim Ahmet Bey. Evet, rezervasyonunuza kahvaltı dahildir. Kahvaltı servisimiz 07:00 - 11:00 saatleri arasında ana restoranda sunulmaktadır. Ayrıca oda servisi kahvaltı seçeneğimiz de mevcuttur.</p>
+              <div class="message-time">10:38</div>
+            </div>
+          </div>
+          
+          <!-- Kullanıcı yanıtı -->
+          <div class="message outgoing">
+            <div class="message-avatar" style="background: var(--primary); color: white;">AY</div>
+            <div class="message-bubble">
+              <p>Harika! Bilgilendirme için teşekkürler. Görüşmek üzere.</p>
+              <div class="message-time">10:40 <i class="fas fa-check-double"></i></div>
+            </div>
+          </div>
+          
+        </div>
+        
+        <div class="chat-input-area">
+          <div class="chat-input-wrapper">
+            <input type="text" placeholder="Mesajınızı yazın...">
+            <button class="attach-btn"><i class="fas fa-paperclip"></i></button>
+            <button class="emoji-btn"><i class="far fa-smile"></i></button>
+            <button class="send-btn"><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Info Sidebar -->
+      <div class="info-sidebar">
+        <div class="info-section">
+          <h4>Rezervasyon Bilgileri</h4>
+          <div class="reservation-link">
+            <p style="font-weight: 600; margin-bottom: 8px;">#OTL-0482</p>
+            <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 4px;"><i class="far fa-calendar"></i> 15-18 Nis 2025</p>
+            <p style="font-size: 13px; color: var(--text-gray);"><i class="far fa-user"></i> 2 Yetişkin, 1 Çocuk</p>
+            <button class="btn btn-outline btn-sm" style="margin-top: 12px; width: 100%;">Rezervasyon Detayı</button>
+          </div>
+        </div>
+        <div class="info-section">
+          <h4>Hızlı Yanıtlar</h4>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn btn-outline btn-sm" style="justify-content: flex-start;"><i class="fas fa-clock"></i> Check-in saatleri?</button>
+            <button class="btn btn-outline btn-sm" style="justify-content: flex-start;"><i class="fas fa-parking"></i> Otopark var mı?</button>
+            <button class="btn btn-outline btn-sm" style="justify-content: flex-start;"><i class="fas fa-wifi"></i> WiFi şifresi?</button>
+            <button class="btn btn-outline btn-sm" style="justify-content: flex-start;"><i class="fas fa-utensils"></i> Kahvaltı saatleri?</button>
+          </div>
+        </div>
+        <div class="info-section">
+          <h4>Medya</h4>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=200" style="width: 100%; border-radius: 8px;">
+            <img src="https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=200" style="width: 100%; border-radius: 8px;">
+            <img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=200" style="width: 100%; border-radius: 8px;">
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+  </main>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-heart"></i><span>Favoriler</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-star"></i><span>Puanlar</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-user"></i><span>Profil</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    // Mobil sohbet görünümü
+    window.backToList = function() {
+      document.getElementById('messagesContainer').classList.remove('chat-open');
+    };
+    
+    // Sohbet seçimi
+    document.querySelectorAll('.conversation-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+        this.classList.remove('unread');
+        
+        // Mobilde sohbet alanını aç
+        if (window.innerWidth <= 700) {
+          document.getElementById('messagesContainer').classList.add('chat-open');
+        }
+      });
+    });
+    
+    // Mesaj gönderme
+    document.querySelector('.send-btn')?.addEventListener('click', function() {
+      const input = document.querySelector('.chat-input-wrapper input');
+      if (input.value.trim()) {
+        const messagesContainer = document.querySelector('.chat-messages');
+        const newMessage = document.createElement('div');
+        newMessage.className = 'message outgoing';
+        newMessage.innerHTML = `
+          <div class="message-avatar" style="background: var(--primary); color: white;">AY</div>
+          <div class="message-bubble">
+            <p>${input.value}</p>
+            <div class="message-time">Şimdi <i class="fas fa-check"></i></div>
+          </div>
+        `;
+        messagesContainer.appendChild(newMessage);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        input.value = '';
+      }
+    });
+    
+    // Enter ile gönderme
+    document.querySelector('.chat-input-wrapper input')?.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.querySelector('.send-btn').click();
+      }
+    });
+    
+    console.log('✅ Mesajlarım Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

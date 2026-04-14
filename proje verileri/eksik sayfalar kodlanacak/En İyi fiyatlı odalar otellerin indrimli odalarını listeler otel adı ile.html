@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>En İyi Fiyatlar · İndirimli Oteller · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #0F172A;
+      --text-gray: #64748B; --text-light: #94A3B8; --border-light: #E2E8F0;
+      --radius-xl: 24px; --radius-lg: 20px; --radius-md: 16px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 40px -10px rgba(0, 59, 149, 0.15);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); -webkit-font-smoothing: antialiased; }
+    
+    .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+    
+    /* Header */
+    .page-header { margin-bottom: 24px; }
+    .page-header h1 { font-size: clamp(28px, 6vw, 40px); font-weight: 800; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .page-header h1 i { color: var(--secondary); }
+    .page-header .highlight { background: linear-gradient(135deg, var(--secondary), #FF6B88); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .page-header p { color: var(--text-gray); font-size: 16px; margin-top: 8px; }
+    
+    /* Stats Bar */
+    .stats-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .stat-chip { background: var(--card-bg); padding: 8px 18px; border-radius: 40px; border: 1px solid var(--border-light); font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-sm); }
+    .stat-chip i { color: var(--secondary); }
+    .stat-chip strong { color: var(--text-dark); margin-left: 4px; }
+    
+    /* Filter Bar */
+    .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+    .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-tab { padding: 10px 20px; border-radius: 40px; background: var(--card-bg); border: 1px solid var(--border-light); font-weight: 500; font-size: 14px; cursor: pointer; transition: var(--transition-base); display: flex; align-items: center; gap: 6px; }
+    .filter-tab i { color: var(--text-gray); }
+    .filter-tab:hover, .filter-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .filter-tab.active i { color: white; }
+    .sort-select { padding: 10px 16px; border-radius: 40px; border: 1px solid var(--border-light); background: var(--card-bg); font-size: 14px; color: var(--text-dark); cursor: pointer; }
+    
+    /* Deals Grid */
+    .deals-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    
+    /* Deal Card */
+    .deal-card { background: var(--card-bg); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--border-light); transition: var(--transition-base); position: relative; display: flex; flex-direction: column; }
+    .deal-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); border-color: var(--secondary); }
+    
+    .card-image { position: relative; height: 200px; }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; }
+    
+    /* Rozetler */
+    .discount-badge { position: absolute; top: 16px; left: 16px; background: var(--secondary); color: white; padding: 6px 16px; border-radius: 40px; font-weight: 800; font-size: 18px; box-shadow: 0 6px 16px rgba(255, 56, 92, 0.3); z-index: 2; }
+    .flash-badge { position: absolute; top: 16px; right: 16px; background: var(--warning); color: var(--text-dark); padding: 6px 14px; border-radius: 40px; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; z-index: 2; }
+    .flash-badge i { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    
+    .favorite-btn { position: absolute; bottom: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--secondary); z-index: 2; transition: var(--transition-base); }
+    .favorite-btn:hover { transform: scale(1.1); }
+    
+    .card-content { padding: 20px; flex: 1; }
+    .hotel-name { font-size: 18px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .hotel-stars { color: var(--warning); letter-spacing: 2px; font-size: 12px; }
+    .hotel-location { color: var(--text-gray); font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    
+    .room-info { background: var(--bg-light); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px; }
+    .room-type { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .room-dates { color: var(--text-gray); font-size: 13px; }
+    
+    .price-section { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+    .current-price { font-size: 28px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .current-price small { font-size: 14px; font-weight: 400; color: var(--text-gray); }
+    .old-price { text-decoration: line-through; color: var(--text-light); font-size: 16px; }
+    .savings-badge { background: rgba(0, 168, 107, 0.1); color: var(--success); padding: 4px 10px; border-radius: 40px; font-size: 13px; font-weight: 700; }
+    
+    .card-footer { display: flex; gap: 10px; }
+    .btn { flex: 1; padding: 14px 16px; border-radius: 40px; font-weight: 700; font-size: 14px; cursor: pointer; transition: var(--transition-base); text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background: var(--primary); color: white; border: none; }
+    .btn-primary:hover { background: var(--primary-dark); transform: scale(1.02); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    
+    /* Limited Time Banner */
+    .limited-banner { background: linear-gradient(135deg, #FF385C, #FF6B88); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 32px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .limited-banner h3 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    .timer { display: flex; gap: 12px; }
+    .timer-block { text-align: center; }
+    .timer-number { background: rgba(255,255,255,0.2); padding: 10px 14px; border-radius: 12px; font-size: 24px; font-weight: 800; backdrop-filter: blur(4px); }
+    .timer-label { font-size: 11px; opacity: 0.9; margin-top: 4px; text-transform: uppercase; }
+    
+    /* Mobile */
+    @media (max-width: 1100px) { .deals-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 700px) { .deals-grid { grid-template-columns: 1fr; } .container { padding: 16px; } .filter-bar { flex-direction: column; align-items: stretch; } .sort-select { width: 100%; } .limited-banner { flex-direction: column; text-align: center; } }
+    
+    /* Toast */
+    .toast-message { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 14px 28px; border-radius: 60px; box-shadow: var(--shadow-lg); z-index: 9999; display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease; }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Header -->
+  <div class="page-header">
+    <h1><i class="fas fa-fire"></i> En İyi <span class="highlight">Fiyatlar</span></h1>
+    <p>Sadece kampanyalı, indirimli ve özel teklifli odalar. En düşük fiyat garantisi!</p>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-chip"><i class="fas fa-tag"></i> Toplam <strong>47</strong> indirimli otel</div>
+    <div class="stat-chip"><i class="fas fa-percent"></i> Ortalama <strong>%32</strong> indirim</div>
+    <div class="stat-chip"><i class="fas fa-clock"></i> Güncel: <strong>10 Nis 2025</strong></div>
+  </div>
+
+  <!-- Limited Time Banner -->
+  <div class="limited-banner">
+    <h3><i class="fas fa-hourglass-half"></i> FLASH İNDİRİM! Sınırlı Süre</h3>
+    <div class="timer" id="flashTimer">
+      <div class="timer-block"><div class="timer-number" id="hours">04</div><div class="timer-label">Saat</div></div>
+      <div class="timer-block"><div class="timer-number" id="minutes">32</div><div class="timer-label">Dakika</div></div>
+      <div class="timer-block"><div class="timer-number" id="seconds">15</div><div class="timer-label">Saniye</div></div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-tabs">
+      <span class="filter-tab active"><i class="fas fa-percent"></i> Tüm İndirimler</span>
+      <span class="filter-tab"><i class="fas fa-bolt"></i> Flash İndirim</span>
+      <span class="filter-tab"><i class="fas fa-calendar"></i> Erken Rezervasyon</span>
+      <span class="filter-tab"><i class="fas fa-clock"></i> Son Dakika</span>
+    </div>
+    <select class="sort-select">
+      <option>En Yüksek İndirim</option>
+      <option>En Düşük Fiyat</option>
+      <option>En Yüksek Puan</option>
+    </select>
+  </div>
+
+  <!-- Deals Grid -->
+  <div class="deals-grid">
+    
+    <!-- Deal 1 - Flash İndirim -->
+    <div class="deal-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Swissôtel">
+        <span class="discount-badge">%45</span>
+        <span class="flash-badge"><i class="fas fa-bolt"></i> FLASH</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="far fa-heart"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-name">Swissôtel The Bosphorus <span class="hotel-stars">★★★★★</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+        <div class="room-info">
+          <div class="room-type">Deluxe Oda · Boğaz Manzaralı</div>
+          <div class="room-dates"><i class="far fa-calendar"></i> 12-14 Nisan · 2 Gece</div>
+        </div>
+        <div class="price-section">
+          <div><span class="current-price">₺2.338</span> <small>/ gece</small></div>
+          <div><span class="old-price">₺4.250</span> <span class="savings-badge">₺1.912 tasarruf</span></div>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="btn btn-primary">Hemen Rezerve Et</a>
+          <button class="btn btn-outline" onclick="showDetails()"><i class="fas fa-info"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deal 2 - Erken Rezervasyon -->
+    <div class="deal-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Rixos">
+        <span class="discount-badge">%40</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="far fa-heart"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-name">Rixos Premium Belek <span class="hotel-stars">★★★★★</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Belek, Antalya</div>
+        <div class="room-info">
+          <div class="room-type">Standart Oda · Her Şey Dahil</div>
+          <div class="room-dates"><i class="far fa-calendar"></i> 22-29 Mayıs · 7 Gece</div>
+        </div>
+        <div class="price-section">
+          <div><span class="current-price">₺3.480</span> <small>/ gece</small></div>
+          <div><span class="old-price">₺5.800</span> <span class="savings-badge">Erken Rez.</span></div>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="btn btn-primary">Hemen Rezerve Et</a>
+          <button class="btn btn-outline"><i class="fas fa-info"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deal 3 - Son Dakika -->
+    <div class="deal-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=600" alt="D Maris">
+        <span class="discount-badge">%35</span>
+        <span class="flash-badge" style="background: var(--success);"><i class="fas fa-clock"></i> SON 2 ODA</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="far fa-heart"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-name">D Maris Bay <span class="hotel-stars">★★★★★</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Marmaris, Muğla</div>
+        <div class="room-info">
+          <div class="room-type">Deluxe Oda · Deniz Manzaralı</div>
+          <div class="room-dates"><i class="far fa-calendar"></i> 18-20 Nisan · 2 Gece</div>
+        </div>
+        <div class="price-section">
+          <div><span class="current-price">₺4.615</span> <small>/ gece</small></div>
+          <div><span class="old-price">₺7.100</span> <span class="savings-badge">Son Dakika</span></div>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="btn btn-primary">Hemen Rezerve Et</a>
+          <button class="btn btn-outline"><i class="fas fa-info"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deal 4 -->
+    <div class="deal-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Four Seasons">
+        <span class="discount-badge">%30</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="fas fa-heart" style="color: var(--secondary);"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-name">Four Seasons Bosphorus</div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+        <div class="room-info"><div class="room-type">Deluxe Oda</div></div>
+        <div class="price-section">
+          <div><span class="current-price">₺8.750</span></div>
+          <div><span class="old-price">₺12.500</span></div>
+        </div>
+        <div class="card-footer"><a href="#" class="btn btn-primary">Rezerve Et</a></div>
+      </div>
+    </div>
+
+    <!-- Deal 5 -->
+    <div class="deal-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/672532/pexels-photo-672532.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Cappadocia">
+        <span class="discount-badge">%25</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="far fa-heart"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-name">Cappadocia Cave Resort</div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Göreme, Nevşehir</div>
+        <div class="room-info"><div class="room-type">Mağara Oda</div></div>
+        <div class="price-section">
+          <div><span class="current-price">₺2.400</span></div>
+          <div><span class="old-price">₺3.200</span></div>
+        </div>
+        <div class="card-footer"><a href="#" class="btn btn-primary">Rezerve Et</a></div>
+      </div>
+    </div>
+
+    <!-- Deal 6 -->
+    <div class="deal-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Hilton">
+        <span class="discount-badge">%20</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="far fa-heart"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-name">Hilton İstanbul Bomonti</div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Şişli, İstanbul</div>
+        <div class="room-info"><div class="room-type">Standart Oda</div></div>
+        <div class="price-section">
+          <div><span class="current-price">₺3.040</span></div>
+          <div><span class="old-price">₺3.800</span></div>
+        </div>
+        <div class="card-footer"><a href="#" class="btn btn-primary">Rezerve Et</a></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function() {
+    // Favori Toggle
+    window.toggleFavorite = function(btn) {
+      const icon = btn.querySelector('i');
+      if (icon.classList.contains('far')) {
+        icon.classList.remove('far'); icon.classList.add('fas');
+        showToast('❤️ Otele favorilere eklendi!', 'success');
+      } else {
+        icon.classList.remove('fas'); icon.classList.add('far');
+        showToast('Otel favorilerden kaldırıldı.', 'info');
+      }
+    };
+
+    window.showDetails = function() { alert('🏨 Oda detayları ve tüm indirim koşulları görüntülenecek.'); };
+
+    // Filter Tabs
+    document.querySelectorAll('.filter-tab').forEach(t => {
+      t.addEventListener('click', function() {
+        document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Flash Timer
+    function startTimer() {
+      let hours = 4, minutes = 32, seconds = 15;
+      const hEl = document.getElementById('hours'), mEl = document.getElementById('minutes'), sEl = document.getElementById('seconds');
+      const interval = setInterval(() => {
+        seconds--;
+        if (seconds < 0) { seconds = 59; minutes--; }
+        if (minutes < 0) { minutes = 59; hours--; }
+        if (hours < 0) { clearInterval(interval); return; }
+        hEl.textContent = hours.toString().padStart(2, '0');
+        mEl.textContent = minutes.toString().padStart(2, '0');
+        sEl.textContent = seconds.toString().padStart(2, '0');
+      }, 1000);
+    }
+    startTimer();
+
+    function showToast(msg, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type || 'info'}`;
+      toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'info-circle'}"></i> ${msg}`;
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+
+    console.log('✅ En İyi Fiyatlar Sayfası Yüklendi');
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+@model otelturizmnew.Models.Paneller.Firma.FirmaPanelShellViewModel
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    var items = new[]
+    {
+        new { Action = "Index", Label = "Dashboard", Icon = "fa-chart-pie", Route = "/panel/firma/dashboard" },
+        new { Action = "Deals", Label = "Firma Fiyatları", Icon = "fa-hotel", Route = "/panel/firma/firma-fiyatlari" },
+        new { Action = "Reservations", Label = "Rezervasyonlar", Icon = "fa-calendar-check", Route = "/panel/firma/rezervasyonlar" },
+        new { Action = "Employees", Label = "Çalışanlar", Icon = "fa-users", Route = "/panel/firma/calisanlar" },
+        new { Action = "Limits", Label = "Limitler & Onaylar", Icon = "fa-sliders", Route = "/panel/firma/limitler-onaylar" },
+        new { Action = "Invoices", Label = "Faturalar", Icon = "fa-file-invoice", Route = "/panel/firma/faturalar" },
+        new { Action = "Spending", Label = "Harcama Raporları", Icon = "fa-chart-column", Route = "/panel/firma/harcama-raporlari" },
+        new { Action = "Hotels", Label = "Otel Bazlı Rapor", Icon = "fa-building", Route = "/panel/firma/otel-bazli-rapor" }
+    };
+}
+<aside class="firma-sidebar">
+    <div>
+        <a href="/panel/firma/dashboard" class="firma-brand" aria-label="Otelturizm Firma">
+            <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
+        </a>
+        <div class="firma-profile-card">
+            <div class="firma-avatar">@string.Concat(Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(static x => x[0]))</div>
+            <div>
+                <h3>@Model.CompanyName</h3>
+                <p>@Model.FullName</p>
+                <small>@Model.UserRole</small>
+            </div>
+        </div>
+        <nav class="firma-sidebar-nav">
+            @foreach (var item in items)
+            {
+                var badge = item.Action switch
+                {
+                    "Limits" when Model.PendingApprovalCount > 0 => Model.PendingApprovalCount.ToString(),
+                    "Employees" when Model.EmployeeCount > 0 => Model.EmployeeCount.ToString(),
+                    "Deals" when Model.DealCount > 0 => Model.DealCount.ToString(),
+                    _ => null
+                };
+                <a href="@item.Route" class="@(currentAction == item.Action ? "active" : string.Empty)"><i class="fas @item.Icon"></i><span>@item.Label</span>@if (!string.IsNullOrWhiteSpace(badge)) { <b class="firma-nav-badge">@badge</b> }</a>
+            }
+        </nav>
+    </div>
+    <div class="firma-sidebar-footer">
+        <a href="/firma"><i class="fas fa-arrow-left"></i> Firma sayfasına dön</a>
+        <form method="post" action="/cikis-yap" class="panel-logout-form">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="logout-link"><i class="fas fa-right-from-bracket"></i> Cikis Yap</button>
+        </form>
+    </div>
+</aside>

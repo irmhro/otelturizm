@@ -1,0 +1,42 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerReviewsPageViewModel
+@{ Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml"; ViewData["PartnerShell"] = Model.Shell; }
+<section class="partner-grid">
+@foreach (var card in Model.SummaryCards)
+{
+    <article class="partner-stat-card @card.ToneClass"><i class="fas @card.IconClass"></i><strong>@card.Value</strong><span>@card.Label</span><p>@card.Description</p></article>
+}
+</section>
+<section class="partner-section-card">
+    <h2>Yorumlar</h2>
+    <div class="partner-review-stack">
+    @foreach (var review in Model.Reviews)
+    {
+        <article class="partner-review-card">
+            <div class="partner-review-head">
+                <div>
+                    <strong>@review.GuestName</strong>
+                    <span>@review.ScoreText</span>
+                </div>
+                <small>@review.CreatedText · @review.StatusText</small>
+            </div>
+            <p>@review.Comment</p>
+            <form method="post" action="/panel/partner/degerlendirmeler/yanitla" class="partner-inline-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                <input type="hidden" name="ReviewId" value="@review.ReviewId" />
+                <input type="text" name="ResponseText" value="@review.ResponseText" placeholder="Yanit yazin" />
+                <button type="submit">Kaydet</button>
+            </form>
+            <form method="post" action="/panel/partner/degerlendirmeler/raporla" class="partner-review-report-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                <input type="hidden" name="ReviewId" value="@review.ReviewId" />
+                <button type="submit" class="partner-secondary-btn partner-inline-btn">
+                    <i class="fas fa-flag"></i>
+                    Incelemeye gonder
+                </button>
+            </form>
+        </article>
+    }
+    </div>
+</section>

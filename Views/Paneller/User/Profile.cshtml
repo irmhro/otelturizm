@@ -1,0 +1,30 @@
+@{
+    Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
+    ViewData["Title"] = "Profil Bilgilerim";
+}
+
+<section class="form-stack">
+    <article class="panel-card">
+        <div class="section-head"><h2>Kisisel Bilgiler</h2><button type="button" class="ghost-btn">Duzenle</button></div>
+        <div class="form-grid">
+            <label><span>Ad</span><input type="text" value="Ahmet" /></label>
+            <label><span>Soyad</span><input type="text" value="Yilmaz" /></label>
+            <label><span>Dogum Tarihi</span><input type="text" value="15/05/1990" /></label>
+            <label><span>Telefon</span><input type="text" value="+90 532 111 22 33" /></label>
+            <label class="full"><span>E-posta</span><input type="email" value="ahmet.yilmaz@email.com" /></label>
+            <label class="full"><span>Adres</span><textarea rows="3">Besiktas / Istanbul</textarea></label>
+        </div>
+    </article>
+
+    <article class="panel-card">
+        <div class="section-head"><h2>Seyahat Tercihleri</h2></div>
+        <div class="form-grid">
+            <label><span>Oda Tercihi</span><input type="text" value="Sigara icilmeyen oda" /></label>
+            <label><span>Yatak Tercihi</span><input type="text" value="King yatak" /></label>
+            <label><span>Seyahat Amaci</span><input type="text" value="Tatil" /></label>
+            <label><span>Konusulan Diller</span><input type="text" value="Turkce, Ingilizce" /></label>
+        </div>
+    </article>
+</section>
+
+

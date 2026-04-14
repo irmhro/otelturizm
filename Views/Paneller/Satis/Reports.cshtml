@@ -1,0 +1,10 @@
+@model otelturizmnew.Models.Paneller.Satis.SalesReportsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Satis/_SalesPanelLayout.cshtml";
+    ViewData["SalesShell"] = Model.Shell;
+}
+<section class="sales-grid cards-3">
+    <article class="sales-stat-card success"><div class="sales-stat-icon"><i class="fas fa-turkish-lira-sign"></i></div><strong>@Model.MonthlyRevenue.ToString("N0") TL</strong><h3>Aylık Ciro</h3><p>Satış paneli rezervasyon geliri</p></article>
+    <article class="sales-stat-card warning"><div class="sales-stat-icon"><i class="fas fa-percent"></i></div><strong>@Model.MonthlyCommission.ToString("N0") TL</strong><h3>Komisyon</h3><p>Platform komisyon toplamı</p></article>
+    <article class="sales-stat-card info"><div class="sales-stat-icon"><i class="fas fa-calendar-check"></i></div><strong>@Model.MonthlyReservationCount</strong><h3>Rezervasyon Adedi</h3><p>Bu ay oluşturulan satış kaydı</p></article>
+</section>

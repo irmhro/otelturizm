@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Favorilerim · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-light: #0055CC; --primary-dark: #002A6B;
+      --secondary: #FF385C; --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --info: #3B82F6; --bg-light: #F8FAFC; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-body: #1E293B; --text-gray: #64748B;
+      --text-light: #94A3B8; --border-light: #E2E8F0; --border-medium: #CBD5E1;
+      --sidebar-width: 280px; --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0,59,149,0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-body); line-height: 1.5; }
+    
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--card-bg);
+      border-right: 1px solid var(--border-light); position: fixed;
+      height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid var(--border-light); }
+    .user-profile-card { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .user-avatar {
+      width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 22px;
+    }
+    .user-info h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .user-info p { font-size: 13px; color: var(--text-gray); }
+    .membership-badge { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .tier-badge {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: var(--text-dark);
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 700;
+    }
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-light); margin-bottom: 12px; padding-left: 16px; font-weight: 600;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      border-radius: 12px; color: var(--text-gray); text-decoration: none;
+      transition: all var(--transition-base); margin-bottom: 4px; font-weight: 500; font-size: 14px;
+    }
+    .nav-item i { width: 24px; font-size: 20px; }
+    .nav-item:hover { background: rgba(0,59,149,0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .nav-item .badge {
+      margin-left: auto; background: var(--secondary); color: white;
+      padding: 2px 8px; border-radius: 40px; font-size: 11px; font-weight: 700;
+    }
+    .nav-item .badge.success { background: var(--success); }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+    }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: var(--text-dark); }
+    .page-title p { color: var(--text-gray); font-size: 15px; }
+    
+    .header-actions { display: flex; gap: 12px; }
+    .btn {
+      padding: 12px 24px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    
+    /* Stats Bar */
+    .stats-bar {
+      display: flex; gap: 24px; padding: 20px; background: var(--card-bg);
+      border-radius: var(--radius-lg); border: 1px solid var(--border-light); margin-bottom: 24px;
+    }
+    .stat-item { display: flex; align-items: center; gap: 12px; }
+    .stat-icon {
+      width: 44px; height: 44px; border-radius: 12px; display: flex;
+      align-items: center; justify-content: center; font-size: 20px;
+    }
+    .stat-content h4 { font-size: 20px; font-weight: 700; }
+    .stat-content p { color: var(--text-gray); font-size: 13px; }
+    
+    /* Filter Bar */
+    .filter-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 16px;
+    }
+    .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-tab {
+      padding: 8px 18px; border-radius: 40px; background: var(--card-bg);
+      border: 1px solid var(--border-light); font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all var(--transition-base);
+    }
+    .filter-tab:hover, .filter-tab.active {
+      background: var(--primary); color: white; border-color: var(--primary);
+    }
+    
+    .sort-actions { display: flex; gap: 12px; align-items: center; }
+    .sort-select {
+      padding: 10px 16px; border: 1px solid var(--border-light);
+      border-radius: 40px; font-size: 14px; background: var(--card-bg); cursor: pointer;
+    }
+    .view-toggle { display: flex; gap: 4px; }
+    .view-btn {
+      width: 40px; height: 40px; border-radius: 10px; display: flex;
+      align-items: center; justify-content: center; background: var(--card-bg);
+      border: 1px solid var(--border-light); cursor: pointer; transition: all var(--transition-base);
+    }
+    .view-btn:hover, .view-btn.active {
+      background: var(--primary); color: white; border-color: var(--primary);
+    }
+    
+    /* Favorites Grid */
+    .favorites-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+    }
+    .favorite-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); overflow: hidden;
+      border: 1px solid var(--border-light); position: relative;
+      transition: all var(--transition-base);
+    }
+    .favorite-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    
+    .card-image { position: relative; height: 180px; }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .favorite-remove {
+      position: absolute; top: 12px; right: 12px; width: 36px; height: 36px;
+      border-radius: 50%; background: white; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; box-shadow: var(--shadow-md);
+      color: var(--error); transition: all var(--transition-base); border: none;
+      z-index: 10;
+    }
+    .favorite-remove:hover { background: var(--error); color: white; transform: scale(1.1); }
+    
+    .favorite-badge {
+      position: absolute; top: 12px; left: 12px; padding: 4px 12px;
+      border-radius: 40px; font-size: 12px; font-weight: 600; z-index: 10;
+    }
+    .badge-discount { background: var(--success); color: white; }
+    .badge-popular { background: var(--warning); color: var(--text-dark); }
+    
+    .card-content { padding: 16px; }
+    .card-content h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .card-location {
+      display: flex; align-items: center; gap: 6px; color: var(--text-gray);
+      font-size: 13px; margin-bottom: 8px;
+    }
+    
+    .card-rating {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    }
+    .rating-score {
+      background: var(--primary); color: white; padding: 4px 8px;
+      border-radius: 8px; font-weight: 700; font-size: 13px;
+    }
+    .rating-text { color: var(--text-gray); font-size: 13px; }
+    
+    .card-amenities {
+      display: flex; gap: 12px; margin-bottom: 16px; color: var(--text-gray); font-size: 13px;
+    }
+    
+    .card-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 12px; border-top: 1px solid var(--border-light);
+    }
+    .price-info { text-align: right; }
+    .price-amount { font-size: 20px; font-weight: 700; color: var(--primary); }
+    .price-night { font-size: 12px; color: var(--text-gray); }
+    
+    .btn-sm { padding: 8px 16px; font-size: 13px; }
+    
+    /* List View */
+    .favorites-list { display: flex; flex-direction: column; gap: 16px; }
+    .list-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light);
+      display: flex; padding: 20px; gap: 20px; position: relative;
+      transition: all var(--transition-base);
+    }
+    .list-card:hover { box-shadow: var(--shadow-md); }
+    .list-image { width: 200px; height: 150px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+    .list-content { flex: 1; }
+    .list-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .list-actions { display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center; padding: 80px 20px; background: var(--card-bg);
+      border-radius: var(--radius-lg); border: 1px solid var(--border-light);
+    }
+    .empty-icon {
+      width: 100px; height: 100px; border-radius: 50%; background: var(--bg-light);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;
+      font-size: 44px; color: var(--text-light);
+    }
+    .empty-state h3 { font-size: 22px; margin-bottom: 12px; }
+    .empty-state p { color: var(--text-gray); margin-bottom: 28px; }
+    
+    /* Pagination */
+    .pagination {
+      display: flex; justify-content: center; gap: 8px; margin-top: 32px;
+    }
+    .page-item {
+      width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border-light); border-radius: 10px; cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .page-item:hover { border-color: var(--primary); color: var(--primary); }
+    .page-item.active { background: var(--primary); color: white; border-color: var(--primary); }
+    
+    /* Mobile */
+    @media (max-width: 1200px) {
+      .favorites-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 1000px) {
+      .favorites-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .list-card { flex-direction: column; }
+      .list-image { width: 100%; height: 180px; }
+      .list-actions { flex-direction: row; }
+    }
+    @media (max-width: 600px) {
+      .favorites-grid { grid-template-columns: 1fr; }
+      .stats-bar { flex-direction: column; gap: 16px; }
+      .filter-bar { flex-direction: column; align-items: flex-start; }
+      .sort-actions { width: 100%; justify-content: space-between; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-top: 1px solid var(--border-light);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: var(--text-gray); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    @media (max-width: 900px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    /* Bulk Actions */
+    .bulk-actions {
+      display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light); margin-bottom: 20px;
+    }
+    .select-all { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .select-all input { width: 20px; height: 20px; accent-color: var(--primary); }
+    .bulk-buttons { display: flex; gap: 10px; margin-left: auto; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="user-profile-card">
+        <div class="user-avatar">AY</div>
+        <div class="user-info">
+          <h4>Ahmet Yılmaz</h4>
+          <p>ahmet.yilmaz@email.com</p>
+          <div class="membership-badge">
+            <span class="tier-badge"><i class="fas fa-crown"></i> Gold Üye</span>
+          </div>
+        </div>
+      </div>
+      <a href="/" style="display: flex; align-items: center; gap: 8px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 14px;">
+        <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+      </a>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item"><i class="fas fa-columns"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlarım <span class="badge">3</span></a>
+        <a href="#" class="nav-item active"><i class="fas fa-heart"></i> Favorilerim <span class="badge success">8</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-star"></i> Puanlarım</a>
+        <a href="#" class="nav-item"><i class="fas fa-envelope"></i> Mesajlarım <span class="badge" style="background: var(--warning);">2</span></a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- Header -->
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Favorilerim <span style="font-weight: 400; color: var(--text-gray); font-size: 18px;">(8 otel)</span></h1>
+        <p>Kaydettiğin otelleri görüntüle, karşılaştır ve hemen rezervasyon yap.</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" id="shareFavorites"><i class="fas fa-share-alt"></i> Paylaş</button>
+        <button class="btn btn-primary" id="compareSelected" disabled><i class="fas fa-balance-scale"></i> Karşılaştır (0)</button>
+      </div>
+    </header>
+    
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-icon" style="background: rgba(0,59,149,0.1); color: var(--primary);"><i class="fas fa-building"></i></div>
+        <div class="stat-content"><h4>8</h4><p>Toplam Otel</p></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon" style="background: rgba(0,168,107,0.1); color: var(--success);"><i class="fas fa-tag"></i></div>
+        <div class="stat-content"><h4>₺3.200</h4><p>En Düşük Fiyat</p></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon" style="background: rgba(255,184,0,0.1); color: var(--warning);"><i class="fas fa-star"></i></div>
+        <div class="stat-content"><h4>9.7</h4><p>En Yüksek Puan</p></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon" style="background: rgba(255,56,92,0.1); color: var(--secondary);"><i class="fas fa-map-pin"></i></div>
+        <div class="stat-content"><h4>5</h4><p>İstanbul</p></div>
+      </div>
+    </div>
+    
+    <!-- Bulk Actions (Selection Mode) -->
+    <div class="bulk-actions" id="bulkActions" style="display: none;">
+      <label class="select-all"><input type="checkbox" id="selectAllCheckbox"> Tümünü Seç (8)</label>
+      <span id="selectedCount" style="color: var(--text-gray);">0 otel seçildi</span>
+      <div class="bulk-buttons">
+        <button class="btn btn-outline btn-sm" id="bulkCompare"><i class="fas fa-balance-scale"></i> Karşılaştır</button>
+        <button class="btn btn-outline btn-sm" id="bulkRemove" style="color: var(--error);"><i class="fas fa-trash"></i> Kaldır</button>
+      </div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-tabs">
+        <span class="filter-tab active">Tümü (8)</span>
+        <span class="filter-tab">İstanbul (5)</span>
+        <span class="filter-tab">Antalya (2)</span>
+        <span class="filter-tab">Muğla (1)</span>
+        <span class="filter-tab">İndirimli (3)</span>
+      </div>
+      
+      <div class="sort-actions">
+        <select class="sort-select">
+          <option>Son Eklenen</option>
+          <option>Fiyat (Düşükten Yükseğe)</option>
+          <option>Fiyat (Yüksekten Düşüğe)</option>
+          <option>Puana Göre</option>
+        </select>
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="grid"><i class="fas fa-grid-2"></i></button>
+          <button class="view-btn" data-view="list"><i class="fas fa-list"></i></button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Grid View (Default) -->
+    <div id="gridView" class="favorites-grid">
+      
+      <!-- Kart 1 -->
+      <div class="favorite-card" data-hotel-id="1">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Four Seasons">
+          <span class="favorite-badge badge-discount"><i class="fas fa-tag"></i> %15 İndirim</span>
+          <button class="favorite-remove" onclick="removeFavorite(this)"><i class="fas fa-times"></i></button>
+          <input type="checkbox" class="hotel-checkbox" style="position: absolute; top: 12px; left: 12px; width: 20px; height: 20px; accent-color: var(--primary); z-index: 10;">
+        </div>
+        <div class="card-content">
+          <h4>Four Seasons Bosphorus</h4>
+          <div class="card-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+          <div class="card-rating">
+            <span class="rating-score">9.7</span>
+            <span class="rating-text">Olağanüstü · 892 yorum</span>
+          </div>
+          <div class="card-amenities">
+            <span><i class="fas fa-wifi"></i> WiFi</span>
+            <span><i class="fas fa-swimmer"></i> Havuz</span>
+            <span><i class="fas fa-spa"></i> Spa</span>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary btn-sm"><i class="fas fa-calendar"></i> Rezervasyon</button>
+            <div class="price-info">
+              <div class="price-amount">₺12.500</div>
+              <div class="price-night">gecelik</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Kart 2 -->
+      <div class="favorite-card" data-hotel-id="2">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Rixos">
+          <span class="favorite-badge badge-popular"><i class="fas fa-fire"></i> Popüler</span>
+          <button class="favorite-remove" onclick="removeFavorite(this)"><i class="fas fa-times"></i></button>
+          <input type="checkbox" class="hotel-checkbox" style="position: absolute; top: 12px; left: 12px; width: 20px; height: 20px; accent-color: var(--primary); z-index: 10;">
+        </div>
+        <div class="card-content">
+          <h4>Rixos Premium Belek</h4>
+          <div class="card-location"><i class="fas fa-map-pin"></i> Belek, Antalya</div>
+          <div class="card-rating">
+            <span class="rating-score">9.4</span>
+            <span class="rating-text">Muhteşem · 2.156 yorum</span>
+          </div>
+          <div class="card-amenities">
+            <span><i class="fas fa-wifi"></i> WiFi</span>
+            <span><i class="fas fa-swimmer"></i> Havuz</span>
+            <span><i class="fas fa-utensils"></i> Her Şey Dahil</span>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary btn-sm">Rezervasyon</button>
+            <div class="price-info">
+              <div class="price-amount">₺5.800</div>
+              <div class="price-night">gecelik</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Kart 3 -->
+      <div class="favorite-card" data-hotel-id="3">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/672532/pexels-photo-672532.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Cappadocia">
+          <button class="favorite-remove" onclick="removeFavorite(this)"><i class="fas fa-times"></i></button>
+          <input type="checkbox" class="hotel-checkbox" style="position: absolute; top: 12px; left: 12px; width: 20px; height: 20px; accent-color: var(--primary); z-index: 10;">
+        </div>
+        <div class="card-content">
+          <h4>Cappadocia Cave Resort</h4>
+          <div class="card-location"><i class="fas fa-map-pin"></i> Göreme, Nevşehir</div>
+          <div class="card-rating">
+            <span class="rating-score">9.6</span>
+            <span class="rating-text">Olağanüstü · 412 yorum</span>
+          </div>
+          <div class="card-amenities">
+            <span><i class="fas fa-wifi"></i> WiFi</span>
+            <span><i class="fas fa-spa"></i> Spa</span>
+            <span><i class="fas fa-coffee"></i> Kahvaltı</span>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary btn-sm">Rezervasyon</button>
+            <div class="price-info">
+              <div class="price-amount">₺3.200</div>
+              <div class="price-night">gecelik</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Kart 4 -->
+      <div class="favorite-card" data-hotel-id="4">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=400" alt="D Maris">
+          <span class="favorite-badge badge-discount"><i class="fas fa-tag"></i> %10 İndirim</span>
+          <button class="favorite-remove" onclick="removeFavorite(this)"><i class="fas fa-times"></i></button>
+          <input type="checkbox" class="hotel-checkbox" style="position: absolute; top: 12px; left: 12px; width: 20px; height: 20px; accent-color: var(--primary); z-index: 10;">
+        </div>
+        <div class="card-content">
+          <h4>D Maris Bay</h4>
+          <div class="card-location"><i class="fas fa-map-pin"></i> Marmaris, Muğla</div>
+          <div class="card-rating">
+            <span class="rating-score">9.3</span>
+            <span class="rating-text">Muhteşem · 456 yorum</span>
+          </div>
+          <div class="card-amenities">
+            <span><i class="fas fa-wifi"></i> WiFi</span>
+            <span><i class="fas fa-swimmer"></i> Havuz</span>
+            <span><i class="fas fa-dumbbell"></i> Fitness</span>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary btn-sm">Rezervasyon</button>
+            <div class="price-info">
+              <div class="price-amount">₺7.100</div>
+              <div class="price-night">gecelik</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Kart 5 -->
+      <div class="favorite-card" data-hotel-id="5">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Hilton">
+          <button class="favorite-remove" onclick="removeFavorite(this)"><i class="fas fa-times"></i></button>
+          <input type="checkbox" class="hotel-checkbox" style="position: absolute; top: 12px; left: 12px; width: 20px; height: 20px; accent-color: var(--primary); z-index: 10;">
+        </div>
+        <div class="card-content">
+          <h4>Hilton İstanbul Bomonti</h4>
+          <div class="card-location"><i class="fas fa-map-pin"></i> Şişli, İstanbul</div>
+          <div class="card-rating">
+            <span class="rating-score">8.9</span>
+            <span class="rating-text">Çok İyi · 1.234 yorum</span>
+          </div>
+          <div class="card-amenities">
+            <span><i class="fas fa-wifi"></i> WiFi</span>
+            <span><i class="fas fa-swimmer"></i> Havuz</span>
+            <span><i class="fas fa-parking"></i> Otopark</span>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary btn-sm">Rezervasyon</button>
+            <div class="price-info">
+              <div class="price-amount">₺3.800</div>
+              <div class="price-night">gecelik</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Kart 6 -->
+      <div class="favorite-card" data-hotel-id="6">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Swissôtel">
+          <button class="favorite-remove" onclick="removeFavorite(this)"><i class="fas fa-times"></i></button>
+          <input type="checkbox" class="hotel-checkbox" style="position: absolute; top: 12px; left: 12px; width: 20px; height: 20px; accent-color: var(--primary); z-index: 10;">
+        </div>
+        <div class="card-content">
+          <h4>Swissôtel The Bosphorus</h4>
+          <div class="card-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+          <div class="card-rating">
+            <span class="rating-score">9.2</span>
+            <span class="rating-text">Fevkalade · 1.847 yorum</span>
+          </div>
+          <div class="card-amenities">
+            <span><i class="fas fa-wifi"></i> WiFi</span>
+            <span><i class="fas fa-swimmer"></i> Havuz</span>
+            <span><i class="fas fa-spa"></i> Spa</span>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary btn-sm">Rezervasyon</button>
+            <div class="price-info">
+              <div class="price-amount">₺4.250</div>
+              <div class="price-night">gecelik</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Kart 7 -->
+      <div class="favorite-card" data-hotel-id="7">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Conrad">
+          <button class="favorite-remove" onclick="removeFavorite(this)"><i class="fas fa-times"></i></button>
+          <input type="checkbox" class="hotel-checkbox" style="position: absolute; top: 12px; left: 12px; width: 20px; height: 20px; accent-color: var(--primary); z-index: 10;">
+        </div>
+        <div class="card-content">
+          <h4>Conrad Istanbul Bosphorus</h4>
+          <div class="card-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+          <div class="card-rating">
+            <span class="rating-score">9.0</span>
+            <span class="rating-text">Fevkalade · 956 yorum</span>
+          </div>
+          <div class="card-amenities">
+            <span><i class="fas fa-wifi"></i> WiFi</span>
+            <span><i class="fas fa-swimmer"></i> Havuz</span>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary btn-sm">Rezervasyon</button>
+            <div class="price-info">
+              <div class="price-amount">₺4.800</div>
+              <div class="price-night">gecelik</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Kart 8 -->
+      <div class="favorite-card" data-hotel-id="8">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Wyndham">
+          <span class="favorite-badge badge-discount"><i class="fas fa-tag"></i> %20 İndirim</span>
+          <button class="favorite-remove" onclick="removeFavorite(this)"><i class="fas fa-times"></i></button>
+          <input type="checkbox" class="hotel-checkbox" style="position: absolute; top: 12px; left: 12px; width: 20px; height: 20px; accent-color: var(--primary); z-index: 10;">
+        </div>
+        <div class="card-content">
+          <h4>Wyndham Grand İstanbul</h4>
+          <div class="card-location"><i class="fas fa-map-pin"></i> Levent, İstanbul</div>
+          <div class="card-rating">
+            <span class="rating-score">8.7</span>
+            <span class="rating-text">Çok İyi · 1.567 yorum</span>
+          </div>
+          <div class="card-amenities">
+            <span><i class="fas fa-wifi"></i> WiFi</span>
+            <span><i class="fas fa-swimmer"></i> Havuz</span>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary btn-sm">Rezervasyon</button>
+            <div class="price-info">
+              <div class="price-amount">₺3.500</div>
+              <div class="price-night">gecelik</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- List View (Hidden by default) -->
+    <div id="listView" class="favorites-list" style="display: none;">
+      <!-- List view cards will be dynamically populated -->
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination">
+      <span class="page-item"><i class="fas fa-chevron-left"></i></span>
+      <span class="page-item active">1</span>
+      <span class="page-item">2</span>
+      <span class="page-item"><i class="fas fa-chevron-right"></i></span>
+    </div>
+    
+  </main>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-heart"></i><span>Favoriler</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-star"></i><span>Puanlar</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-user"></i><span>Profil</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    // View Toggle (Grid/List)
+    const gridView = document.getElementById('gridView');
+    const listView = document.getElementById('listView');
+    const viewBtns = document.querySelectorAll('.view-btn');
+    
+    viewBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        viewBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const view = this.dataset.view;
+        if (view === 'grid') {
+          gridView.style.display = 'grid';
+          listView.style.display = 'none';
+        } else {
+          gridView.style.display = 'none';
+          listView.style.display = 'flex';
+          // Populate list view if empty
+          if (listView.children.length === 0) {
+            populateListView();
+          }
+        }
+      });
+    });
+    
+    function populateListView() {
+      const hotels = [
+        { name: 'Four Seasons Bosphorus', location: 'Beşiktaş, İstanbul', rating: '9.7', price: '12.500', img: '338504' },
+        { name: 'Rixos Premium Belek', location: 'Belek, Antalya', rating: '9.4', price: '5.800', img: '261169' },
+        { name: 'Cappadocia Cave Resort', location: 'Göreme, Nevşehir', rating: '9.6', price: '3.200', img: '672532' },
+        { name: 'D Maris Bay', location: 'Marmaris, Muğla', rating: '9.3', price: '7.100', img: '271624' }
+      ];
+      
+      hotels.forEach(hotel => {
+        const card = document.createElement('div');
+        card.className = 'list-card';
+        card.innerHTML = `
+          <img src="https://images.pexels.com/photos/${hotel.img}/pexels-photo-${hotel.img}.jpeg?auto=compress&cs=tinysrgb&w=400" class="list-image">
+          <div class="list-content">
+            <div class="list-header">
+              <h4>${hotel.name}</h4>
+              <span class="rating-score">${hotel.rating}</span>
+            </div>
+            <div class="card-location"><i class="fas fa-map-pin"></i> ${hotel.location}</div>
+            <div class="card-amenities"><span><i class="fas fa-wifi"></i> WiFi</span><span><i class="fas fa-swimmer"></i> Havuz</span></div>
+            <p style="margin: 12px 0; color: var(--text-gray);">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+            <div class="price-info">₺${hotel.price} <span style="color: var(--text-gray);">/ gece</span></div>
+          </div>
+          <div class="list-actions">
+            <button class="btn btn-primary btn-sm">Rezervasyon</button>
+            <button class="btn btn-outline btn-sm"><i class="far fa-heart" style="color: var(--error);"></i></button>
+          </div>
+        `;
+        listView.appendChild(card);
+      });
+    }
+    
+    // Filter Tabs
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+    
+    // Checkbox Selection
+    const checkboxes = document.querySelectorAll('.hotel-checkbox');
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    const compareBtn = document.getElementById('compareSelected');
+    const bulkCompare = document.getElementById('bulkCompare');
+    const selectAll = document.getElementById('selectAllCheckbox');
+    
+    function updateSelection() {
+      const checked = document.querySelectorAll('.hotel-checkbox:checked');
+      const count = checked.length;
+      
+      if (count > 0) {
+        bulkActions.style.display = 'flex';
+        selectedCount.textContent = `${count} otel seçildi`;
+        compareBtn.disabled = false;
+        compareBtn.innerHTML = `<i class="fas fa-balance-scale"></i> Karşılaştır (${count})`;
+      } else {
+        bulkActions.style.display = 'none';
+        compareBtn.disabled = true;
+        compareBtn.innerHTML = `<i class="fas fa-balance-scale"></i> Karşılaştır (0)`;
+      }
+    }
+    
+    checkboxes.forEach(cb => cb.addEventListener('change', updateSelection));
+    
+    selectAll?.addEventListener('change', function() {
+      checkboxes.forEach(cb => cb.checked = this.checked);
+      updateSelection();
+    });
+    
+    // Remove favorite
+    window.removeFavorite = function(btn) {
+      const card = btn.closest('.favorite-card') || btn.closest('.list-card');
+      if (confirm('Bu oteli favorilerinizden kaldırmak istediğinize emin misiniz?')) {
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          card.remove();
+          // Update stats
+          const remaining = document.querySelectorAll('.favorite-card, .list-card').length;
+          document.querySelector('.page-title h1').innerHTML = `Favorilerim <span style="font-weight: 400; color: var(--text-gray); font-size: 18px;">(${remaining} otel)</span>`;
+          document.querySelector('.filter-tab.active').textContent = `Tümü (${remaining})`;
+          document.querySelector('.stat-content h4').textContent = remaining;
+        }, 300);
+      }
+    };
+    
+    // Bulk remove
+    document.getElementById('bulkRemove')?.addEventListener('click', () => {
+      const checked = document.querySelectorAll('.hotel-checkbox:checked');
+      if (checked.length === 0) return;
+      if (confirm(`${checked.length} oteli favorilerinizden kaldırmak istediğinize emin misiniz?`)) {
+        checked.forEach(cb => {
+          const card = cb.closest('.favorite-card') || cb.closest('.list-card');
+          card.remove();
+        });
+        updateSelection();
+      }
+    });
+    
+    // Share
+    document.getElementById('shareFavorites')?.addEventListener('click', () => {
+      alert('📤 Favori listeniz paylaşıma hazır! Bağlantı kopyalandı.');
+    });
+    
+    // Compare
+    function openCompare() {
+      const checked = document.querySelectorAll('.hotel-checkbox:checked');
+      const ids = Array.from(checked).map(cb => cb.closest('[data-hotel-id]').dataset.hotelId);
+      alert(`🔄 ${ids.length} otel karşılaştırma sayfasına yönlendiriliyorsunuz.`);
+    }
+    
+    compareBtn?.addEventListener('click', openCompare);
+    bulkCompare?.addEventListener('click', openCompare);
+    
+    console.log('✅ Favorilerim Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

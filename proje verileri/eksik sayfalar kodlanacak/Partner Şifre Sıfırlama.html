@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Şifremi Unuttum · Partner · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0F172A; --primary-light: #1E293B; --secondary: #00A86B;
+      --success: #10B981; --warning: #F59E0B; --error: #EF4444;
+      --bg-dark: #020617; --card-bg: #FFFFFF; --text-dark: #0F172A;
+      --text-gray: #64748B; --border-light: #E2E8F0;
+      --radius-xl: 24px; --radius-md: 12px;
+      --shadow-xl: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+      --transition-base: 0.25s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Inter", sans-serif; background: var(--bg-dark);
+      background-image: radial-gradient(circle at 10% 20%, rgba(0, 168, 107, 0.05) 0%, transparent 30%);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .reset-container {
+      width: 100%; max-width: 480px; background: var(--card-bg);
+      border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); overflow: hidden;
+    }
+    .reset-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      padding: 36px 32px; text-align: center; color: white;
+    }
+    .reset-header i { font-size: 40px; color: var(--secondary); margin-bottom: 16px; }
+    .reset-header h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+    .reset-header p { opacity: 0.8; font-size: 14px; }
+    .reset-body { padding: 32px; }
+    
+    .step-indicator { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 28px; }
+    .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-light); transition: var(--transition-base); }
+    .step-dot.active { background: var(--secondary); width: 24px; border-radius: 40px; }
+    .step-dot.completed { background: var(--success); }
+    .step-line { width: 40px; height: 2px; background: var(--border-light); }
+    .step-line.completed { background: var(--success); }
+    
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+    
+    .form-group { margin-bottom: 24px; }
+    .form-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.3px; }
+    .input-wrapper { position: relative; display: flex; align-items: center; }
+    .input-wrapper i { position: absolute; left: 16px; color: var(--text-gray); font-size: 18px; }
+    .input-wrapper .toggle-password { left: auto; right: 16px; cursor: pointer; }
+    .form-control {
+      width: 100%; padding: 16px 16px 16px 48px; border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-md); font-family: "Inter", sans-serif; font-size: 15px;
+    }
+    .form-control:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 4px rgba(0, 168, 107, 0.1); }
+    
+    .code-inputs { display: flex; gap: 10px; justify-content: center; margin: 24px 0; }
+    .code-input {
+      width: 56px; height: 64px; text-align: center; font-size: 28px; font-weight: 700;
+      border: 2px solid var(--border-light); border-radius: var(--radius-md);
+    }
+    .code-input:focus { border-color: var(--secondary); outline: none; }
+    
+    .password-strength { margin-top: 8px; }
+    .strength-bar { height: 4px; background: var(--border-light); border-radius: 2px; }
+    .strength-fill { height: 100%; width: 0%; border-radius: 2px; transition: all 0.3s; }
+    .strength-text { font-size: 12px; color: var(--text-gray); margin-top: 4px; }
+    
+    .btn { width: 100%; padding: 16px; border-radius: 40px; font-weight: 700; font-size: 16px; cursor: pointer; transition: var(--transition-base); display: flex; align-items: center; justify-content: center; gap: 10px; border: none; }
+    .btn-primary { background: var(--secondary); color: white; box-shadow: 0 8px 20px rgba(0, 168, 107, 0.25); }
+    .btn-primary:hover { background: #00994D; transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0, 168, 107, 0.35); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); margin-top: 12px; }
+    
+    .timer-text { text-align: center; margin-top: 16px; color: var(--text-gray); font-size: 14px; }
+    .timer-text a { color: var(--secondary); text-decoration: none; font-weight: 600; }
+    
+    .back-link { text-align: center; margin-top: 20px; }
+    .back-link a { color: var(--secondary); text-decoration: none; font-weight: 500; }
+    
+    .toast-message { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 14px 28px; border-radius: 60px; box-shadow: var(--shadow-xl); z-index: 9999; display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease; }
+    .toast-message.error { background: var(--error); }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    
+    @media (max-width: 500px) {
+      .reset-body { padding: 24px 20px; }
+      .reset-header { padding: 32px 24px; }
+      .code-input { width: 48px; height: 56px; font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="reset-container">
+  <div class="reset-header">
+    <i class="fas fa-building"></i>
+    <h2>Partner Şifre Sıfırlama</h2>
+    <p>Extranet hesabınıza yeniden erişim sağlayın</p>
+  </div>
+  <div class="reset-body">
+    
+    <div class="step-indicator" id="stepIndicator">
+      <span class="step-dot active" id="step1Dot"></span><span class="step-line" id="line1"></span>
+      <span class="step-dot" id="step2Dot"></span><span class="step-line" id="line2"></span>
+      <span class="step-dot" id="step3Dot"></span>
+    </div>
+
+    <!-- Adım 1: Partner ID / E-posta -->
+    <div class="step-panel active" id="step1Panel">
+      <form id="emailForm">
+        <div class="form-group">
+          <label>Partner ID veya E-posta</label>
+          <div class="input-wrapper">
+            <i class="fas fa-building"></i>
+            <input type="text" class="form-control" id="partnerId" placeholder="PTR-12345 veya email@otel.com" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary"><span>Kod Gönder</span> <i class="fas fa-arrow-right"></i></button>
+      </form>
+      <div class="back-link"><a href="#"><i class="fas fa-arrow-left"></i> Extranet Girişi</a></div>
+    </div>
+
+    <!-- Adım 2: Kod -->
+    <div class="step-panel" id="step2Panel">
+      <p style="text-align:center; color:var(--text-gray); margin-bottom:16px;">Kayıtlı e-posta adresinize gönderilen 6 haneli kodu girin.</p>
+      <div class="code-inputs">
+        <input type="text" maxlength="1" class="code-input" pattern="[0-9]" inputmode="numeric">
+        <input type="text" maxlength="1" class="code-input" pattern="[0-9]" inputmode="numeric">
+        <input type="text" maxlength="1" class="code-input" pattern="[0-9]" inputmode="numeric">
+        <input type="text" maxlength="1" class="code-input" pattern="[0-9]" inputmode="numeric">
+        <input type="text" maxlength="1" class="code-input" pattern="[0-9]" inputmode="numeric">
+        <input type="text" maxlength="1" class="code-input" pattern="[0-9]" inputmode="numeric">
+      </div>
+      <button class="btn btn-primary" id="verifyCodeBtn"><span>Kodu Doğrula</span> <i class="fas fa-check"></i></button>
+      <div class="timer-text">Kodu almadınız mı? <a href="#" id="resendCodeLink">Tekrar gönder</a> (<span id="timer">03:00</span>)</div>
+      <button class="btn btn-outline" onclick="goToStep(1)"><i class="fas fa-arrow-left"></i> Bilgileri Düzenle</button>
+    </div>
+
+    <!-- Adım 3: Yeni Şifre -->
+    <div class="step-panel" id="step3Panel">
+      <form id="newPasswordForm">
+        <div class="form-group">
+          <label>Yeni Şifre</label>
+          <div class="input-wrapper">
+            <i class="fas fa-lock"></i>
+            <input type="password" class="form-control" id="newPassword" placeholder="En az 8 karakter" required>
+            <i class="far fa-eye toggle-password" data-target="newPassword"></i>
+          </div>
+          <div class="password-strength">
+            <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+            <div class="strength-text" id="strengthText">Şifre gücü: Girilmedi</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Yeni Şifre (Tekrar)</label>
+          <div class="input-wrapper">
+            <i class="fas fa-lock"></i>
+            <input type="password" class="form-control" id="confirmPassword" placeholder="Şifrenizi tekrar girin" required>
+            <i class="far fa-eye toggle-password" data-target="confirmPassword"></i>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary"><span>Şifreyi Güncelle</span> <i class="fas fa-check"></i></button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function() {
+    let currentStep = 1;
+    const panels = {1: 'step1Panel', 2: 'step2Panel', 3: 'step3Panel'};
+    const dots = {1: 'step1Dot', 2: 'step2Dot', 3: 'step3Dot'};
+    const lines = {1: 'line1', 2: 'line2'};
+
+    window.goToStep = (step) => {
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(panels[step]).classList.add('active');
+      document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active', 'completed'));
+      document.querySelectorAll('.step-line').forEach(l => l.classList.remove('completed'));
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.getElementById(dots[i]);
+        if (i < step) dot.classList.add('completed'); else if (i === step) dot.classList.add('active');
+      }
+      for (let i = 1; i < step; i++) { const line = document.getElementById(lines[i]); if (line) line.classList.add('completed'); }
+      currentStep = step;
+    };
+
+    document.querySelectorAll('.toggle-password').forEach(icon => { /* ... aynı şifre gösterme kodu ... */ });
+    
+    // Email Form
+    document.getElementById('emailForm').addEventListener('submit', (e) => {
+      e.preventDefault(); const id = document.getElementById('partnerId').value;
+      if (id) { goToStep(2); startTimer(); showToast('📧 Doğrulama kodu kayıtlı e-posta adresinize gönderildi.', 'success'); }
+    });
+
+    let timerInterval;
+    function startTimer() {
+      let seconds = 180; const timerEl = document.getElementById('timer'); clearInterval(timerInterval);
+      timerInterval = setInterval(() => { seconds--; const mins = Math.floor(seconds / 60); const secs = seconds % 60; timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`; if (seconds <= 0) clearInterval(timerInterval); }, 1000);
+    }
+
+    // Code Inputs & Verify
+    const codeInputs = document.querySelectorAll('.code-input');
+    codeInputs.forEach((input, index) => { /* ... aynı code input kodu ... */ });
+    document.getElementById('verifyCodeBtn').addEventListener('click', () => {
+      const code = Array.from(codeInputs).map(i => i.value).join('');
+      if (code.length === 6) { goToStep(3); clearInterval(timerInterval); } else { showToast('Lütfen 6 haneli kodu girin.', 'error'); }
+    });
+    document.getElementById('resendCodeLink').addEventListener('click', (e) => { e.preventDefault(); startTimer(); showToast('📧 Yeni doğrulama kodu gönderildi.', 'success'); });
+
+    // New Password Form
+    document.getElementById('newPasswordForm').addEventListener('submit', (e) => {
+      e.preventDefault(); const pwd = document.getElementById('newPassword').value; const confirm = document.getElementById('confirmPassword').value;
+      if (!pwd || !confirm) { showToast('Lütfen tüm alanları doldurun.', 'error'); return; }
+      if (pwd !== confirm) { showToast('Şifreler eşleşmiyor.', 'error'); return; }
+      if (pwd.length < 8) { showToast('Şifre en az 8 karakter olmalıdır.', 'error'); return; }
+      showToast('✅ Şifreniz başarıyla güncellendi! Extranet\'e giriş yapabilirsiniz.', 'success');
+      setTimeout(() => { window.location.href = 'extranet-login.html'; }, 2000);
+    });
+
+    function showToast(msg, type) {
+      const toast = document.createElement('div'); toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'exclamation-circle'}"></i> ${msg}`;
+      document.body.appendChild(toast); setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+  })();
+</script>
+</body>
+</html>

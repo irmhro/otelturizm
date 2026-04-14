@@ -1,0 +1,71 @@
+@using otelturizmnew.Models.Paneller.Admin
+@{
+    Layout = null;
+    var pageCss = ViewData["PageCss"] as string;
+    var shell = ViewData["AdminShell"] as AdminShellViewModel;
+    var title = ViewData["Title"] as string ?? shell?.PanelTitle ?? "Admin Panel";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+    <title>@title - Otelturizm</title>
+    
+    
+    <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/assets/css/panel-admin-shell.css" asp-append-version="true" />
+    @if (!string.IsNullOrWhiteSpace(pageCss))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
+    }
+</head>
+<body>
+    <div class="admin-dashboard-shell">
+        @if (shell is not null)
+        {
+            <partial name="~/Views/Paneller/Admin/_AdminSidebar.cshtml" model="shell" />
+        }
+
+        <main class="admin-dashboard-main">
+            @if (shell is not null)
+            {
+                <header class="admin-page-header">
+                    <div>
+                        <p class="admin-page-kicker">ADMIN PANEL</p>
+                        <h1>@shell.PanelTitle</h1>
+                        <p class="admin-page-subtitle">@shell.PanelSubtitle</p>
+                    </div>
+                    <div class="admin-header-tools">
+                        <div class="admin-search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Admin panel icinde ara..." />
+                        </div>
+                        <div class="admin-notify-pill"><i class="far fa-bell"></i><span>@shell.UnreadNotifications</span></div>
+                        <form method="post" action="/cikis-yap" class="panel-header-logout-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="panel-header-logout-btn">
+                                <i class="fas fa-right-from-bracket"></i>
+                                <span>Cikis Yap</span>
+                            </button>
+                        </form>
+                    </div>
+                </header>
+            }
+
+            @RenderBody()
+        </main>
+    </div>
+
+    @if (shell is not null)
+    {
+        <partial name="~/Views/Paneller/Admin/_AdminMobileNav.cshtml" model="shell" />
+    }
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
+
+
+
+

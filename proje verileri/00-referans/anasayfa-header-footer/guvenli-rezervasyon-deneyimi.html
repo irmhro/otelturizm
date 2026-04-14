@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Otelturizm · Güvenli Rezervasyon | TÜRSAB & PCI DSS</title>
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ==================== GELİŞMİŞ TASARIM SİSTEMİ ==================== */
+    :root {
+      /* Ana Renkler */
+      --primary: #003B95;
+      --primary-light: #0055CC;
+      --primary-dark: #002A6B;
+      --secondary: #FF385C;
+      --secondary-light: #FF6B88;
+      --success: #00A86B;
+      --warning: #FFB800;
+      --error: #EF4444;
+      --info: #3B82F6;
+      
+      /* Nötr Renkler */
+      --bg-white: #FFFFFF;
+      --bg-light: #F8FAFC;
+      --bg-gray: #F1F5F9;
+      --text-dark: #0F172A;
+      --text-body: #1E293B;
+      --text-gray: #64748B;
+      --text-light: #94A3B8;
+      --border-light: #E2E8F0;
+      --border-medium: #CBD5E1;
+      
+      /* Footer Özel - Koyu Tema */
+      --footer-bg: #0B1121;
+      --footer-bg-secondary: #111827;
+      --footer-text: #E2E8F0;
+      --footer-text-muted: #94A3B8;
+      --footer-border: rgba(255, 255, 255, 0.08);
+      
+      /* Gölgeler */
+      --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0, 59, 149, 0.15);
+      --shadow-xl: 0 30px 50px -15px rgba(0,0,0,0.2);
+      --shadow-glow: 0 0 40px rgba(0, 242, 254, 0.3);
+      --shadow-footer: 0 -10px 40px rgba(0,0,0,0.1);
+      
+      /* Border Radius */
+      --radius-xs: 4px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-2xl: 32px;
+      --radius-full: 9999px;
+      
+      /* Spacing (4px Grid) */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10: 40px;
+      --space-12: 48px;
+      --space-16: 64px;
+      
+      /* Animasyon */
+      --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      
+      /* Header Heights */
+      --header-height: 72px;
+      --header-height-mobile: 64px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-light);
+      color: var(--text-body);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ==================== TOPBAR (HEADER) ==================== */
+    .site-header {
+      position: fixed;
+      top: 0; left: 0; right: 0; z-index: 1000;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-base);
+    }
+
+    .site-header.scrolled {
+      --header-height: 60px;
+      --header-height-mobile: 56px;
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: var(--shadow-lg);
+      border-bottom-color: var(--border-light);
+    }
+
+    /* Üst Güvenlik Barı (TÜRSAB ve PCI vurgusu) */
+    .trust-utility-bar {
+      background: linear-gradient(90deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-dark) 100%);
+      color: white;
+      padding: var(--space-2) 0;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      transition: all var(--transition-base);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .trust-utility-bar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 200%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      animation: shimmer 4s infinite;
+    }
+
+    @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+    .site-header.scrolled .trust-utility-bar {
+      padding: 0; opacity: 0; height: 0;
+    }
+
+    .utility-container {
+      max-width: 1400px; margin: 0 auto; padding: 0 var(--space-8);
+      display: flex; justify-content: space-between; align-items: center;
+      position: relative; z-index: 1;
+    }
+
+    .trust-badges-header {
+      display: flex; align-items: center; gap: var(--space-6);
+    }
+
+    .trust-badge-item {
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+
+    .trust-badge-item i {
+      color: var(--success);
+      font-size: 14px;
+    }
+
+    .trust-badge-item .highlight {
+      background: rgba(255,255,255,0.2);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      margin-left: var(--space-1);
+    }
+
+    .utility-right {
+      display: flex; align-items: center; gap: var(--space-6);
+    }
+
+    .language-currency {
+      display: flex; align-items: center; gap: var(--space-4);
+    }
+
+    .lang-selector, .currency-selector {
+      display: flex; align-items: center; gap: var(--space-2);
+      cursor: pointer; padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+      transition: background var(--transition-fast);
+    }
+
+    .lang-selector:hover, .currency-selector:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* Ana Header */
+    .header-container {
+      max-width: 1400px; margin: 0 auto; padding: 0 var(--space-8);
+      display: flex; align-items: center; justify-content: space-between;
+      height: var(--header-height); transition: height var(--transition-base);
+    }
+
+    @media (max-width: 1024px) {
+      .utility-container, .header-container { padding: 0 var(--space-6); }
+    }
+
+    @media (max-width: 768px) {
+      .trust-utility-bar { display: none; }
+      .header-container { padding: 0 var(--space-4); height: var(--header-height-mobile); }
+    }
+
+    .logo-area { display: flex; align-items: center; gap: var(--space-10); }
+    .logo {
+      display: flex; align-items: center; gap: var(--space-2);
+      font-size: 28px; font-weight: 700; color: var(--primary);
+      text-decoration: none; transition: transform var(--transition-fast);
+    }
+    .logo i { color: var(--secondary); font-size: 32px; }
+    .logo span { font-size: 14px; font-weight: 400; color: var(--text-gray); margin-left: var(--space-1); }
+
+    .mobile-nav-toggle {
+      display: none; width: 44px; height: 44px; border-radius: var(--radius-full);
+      background: var(--bg-white); border: 1px solid var(--border-light);
+      align-items: center; justify-content: center; cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .mobile-nav-toggle:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* Masaüstü Navigasyon */
+    .desktop-nav { display: flex; align-items: center; gap: var(--space-2); }
+    .nav-link {
+      padding: var(--space-3) var(--space-4); color: var(--text-body);
+      text-decoration: none; font-weight: 500; font-size: 15px;
+      border-radius: var(--radius-full); transition: all var(--transition-fast);
+      position: relative;
+    }
+    .nav-link:hover { background: rgba(0, 59, 149, 0.05); color: var(--primary); }
+    .nav-link.active { color: var(--primary); }
+    .nav-link.active::after {
+      content: ''; position: absolute; bottom: -2px; left: 50%;
+      transform: translateX(-50%); width: 20px; height: 3px;
+      background: var(--primary); border-radius: var(--radius-full);
+    }
+
+    /* Arama Bar */
+    .search-wrapper { flex: 1; max-width: 480px; margin: 0 var(--space-6); }
+    .search-container {
+      display: flex; align-items: center; background: var(--bg-white);
+      border: 1.5px solid var(--border-light); border-radius: var(--radius-full);
+      padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
+      box-shadow: var(--shadow-sm); transition: all var(--transition-base);
+    }
+    .search-container:hover, .search-container:focus-within {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-lg), 0 0 0 4px rgba(0, 59, 149, 0.08);
+    }
+    .search-container i { color: var(--text-gray); font-size: 18px; }
+    .search-input {
+      flex: 1; border: none; outline: none; padding: var(--space-3) var(--space-4);
+      font-size: 15px; background: transparent;
+    }
+    .search-input::placeholder { color: var(--text-light); }
+    .search-divider { width: 1px; height: 24px; background: var(--border-light); margin: 0 var(--space-2); }
+    .search-date, .search-guests {
+      padding: var(--space-2) var(--space-4); cursor: pointer;
+      border-radius: var(--radius-full); transition: background var(--transition-fast);
+      white-space: nowrap; font-size: 14px; display: flex; align-items: center; gap: var(--space-2);
+    }
+    .search-date:hover, .search-guests:hover { background: var(--bg-light); }
+    .search-btn {
+      background: var(--primary); border: none; color: white;
+      width: 48px; height: 48px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all var(--transition-base); margin-left: var(--space-2);
+    }
+    .search-btn:hover { background: var(--primary-dark); transform: scale(1.05); box-shadow: 0 8px 20px rgba(0, 59, 149, 0.3); }
+
+    /* Header Actions */
+    .header-actions { display: flex; align-items: center; gap: var(--space-2); }
+    .action-btn {
+      position: relative; width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; cursor: pointer;
+      color: var(--text-body); transition: all var(--transition-fast);
+    }
+    .action-btn:hover { background: rgba(0, 59, 149, 0.05); color: var(--primary); }
+    .notification-badge {
+      position: absolute; top: 4px; right: 4px;
+      background: var(--secondary); color: white;
+      width: 18px; height: 18px; border-radius: 50%;
+      font-size: 11px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--bg-white);
+    }
+    .user-menu-btn {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
+      background: var(--bg-white); border: 1px solid var(--border-light);
+      border-radius: var(--radius-full); cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .user-menu-btn:hover { box-shadow: var(--shadow-md); border-color: var(--primary); }
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary); display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 600;
+    }
+    .user-info { display: flex; flex-direction: column; }
+    .user-name { font-weight: 600; font-size: 14px; }
+    .user-tier { font-size: 11px; color: var(--primary); }
+
+    /* Mobil Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border-light); padding: var(--space-2) var(--space-4);
+      z-index: 999; box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; align-items: center; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: var(--space-2) var(--space-4); color: var(--text-gray);
+      text-decoration: none; font-size: 12px; border-radius: var(--radius-full);
+      transition: all var(--transition-fast);
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+
+    /* Mobil Menü Drawer */
+    .mobile-menu-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      z-index: 1001; opacity: 0; visibility: hidden;
+      transition: all var(--transition-base);
+    }
+    .mobile-menu-overlay.active { opacity: 1; visibility: visible; }
+    .mobile-menu-drawer {
+      position: fixed; top: 0; left: -100%; width: 85%; max-width: 380px;
+      height: 100vh; background: var(--bg-white); z-index: 1002;
+      transition: left var(--transition-slow); overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+    }
+    .mobile-menu-drawer.active { left: 0; }
+    .drawer-header {
+      padding: var(--space-6); border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .drawer-close {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-light); border: none; cursor: pointer;
+    }
+    .drawer-nav { padding: var(--space-6); }
+    .drawer-section { margin-bottom: var(--space-8); }
+    .drawer-section-title {
+      font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-gray); margin-bottom: var(--space-4);
+    }
+    .drawer-link {
+      display: flex; align-items: center; gap: var(--space-4);
+      padding: var(--space-4) 0; color: var(--text-body);
+      text-decoration: none; font-size: 16px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .drawer-link i { width: 24px; color: var(--text-gray); }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .search-wrapper { max-width: 380px; }
+      .search-date span, .search-guests span { display: none; }
+      .desktop-nav .nav-link span { display: none; }
+    }
+    @media (max-width: 1024px) {
+      .desktop-nav { display: none; }
+      .mobile-nav-toggle { display: flex; }
+      .user-info { display: none; }
+      .user-menu-btn { padding: var(--space-2); }
+    }
+    @media (max-width: 768px) {
+      .search-wrapper { display: none; }
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+      .header-actions .action-btn:not(.mobile-nav-toggle) { display: none; }
+    }
+
+    /* ==================== FOOTER (PROFESYONEL & GÜVEN ODAKLI) ==================== */
+    .site-footer {
+      background: var(--footer-bg);
+      color: var(--footer-text);
+      position: relative;
+      margin-top: var(--space-16);
+      box-shadow: var(--shadow-footer);
+    }
+
+    /* Güvenlik Şeridi (En Üst) */
+    .footer-security-strip {
+      background: linear-gradient(90deg, var(--primary-dark) 0%, var(--primary) 100%);
+      padding: var(--space-4) 0;
+    }
+
+    .security-strip-container {
+      max-width: 1400px; margin: 0 auto; padding: 0 var(--space-8);
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: var(--space-4);
+    }
+
+    .security-message {
+      display: flex; align-items: center; gap: var(--space-8);
+      flex-wrap: wrap;
+    }
+
+    .security-message-item {
+      display: flex; align-items: center; gap: var(--space-3);
+      color: white; font-weight: 500; font-size: 15px;
+    }
+
+    .security-message-item i {
+      font-size: 20px; color: var(--success);
+      filter: drop-shadow(0 0 8px rgba(0, 168, 107, 0.5));
+    }
+
+    .security-phone {
+      display: flex; align-items: center; gap: var(--space-6);
+    }
+
+    .phone-number {
+      display: flex; align-items: center; gap: var(--space-2);
+      background: rgba(255,255,255,0.15);
+      padding: var(--space-2) var(--space-5);
+      border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+
+    /* Ana Footer İçeriği */
+    .footer-container {
+      max-width: 1400px; margin: 0 auto; padding: var(--space-12) var(--space-8) var(--space-6);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.8fr repeat(4, 1fr);
+      gap: var(--space-8);
+      margin-bottom: var(--space-12);
+    }
+
+    @media (max-width: 1200px) {
+      .footer-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .footer-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-container { padding: var(--space-8) var(--space-6) var(--space-6); }
+    }
+
+    /* Footer Kolonları */
+    .footer-col { }
+
+    .footer-logo {
+      display: flex; align-items: center; gap: var(--space-2);
+      font-size: 32px; font-weight: 700; margin-bottom: var(--space-4);
+      color: white;
+    }
+    .footer-logo i { color: var(--secondary); }
+
+    .footer-description {
+      color: var(--footer-text-muted);
+      font-size: 14px; line-height: 1.7;
+      margin-bottom: var(--space-6);
+    }
+
+    /* TÜRSAB ve Güven Rozetleri (Footer İçi) */
+    .footer-trust-badges {
+      display: flex; flex-wrap: wrap; gap: var(--space-3);
+      margin: var(--space-6) 0;
+    }
+
+    .footer-trust-badge {
+      display: flex; align-items: center; gap: var(--space-3);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--footer-border);
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-lg);
+      transition: all var(--transition-fast);
+    }
+
+    .footer-trust-badge:hover {
+      background: rgba(0, 59, 149, 0.15);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .footer-trust-badge i {
+      font-size: 24px; color: var(--primary-light);
+    }
+
+    .footer-trust-badge.tursab i { color: #00A86B; }
+    .footer-trust-badge.pci i { color: #FFB800; }
+    .footer-trust-badge.ssl i { color: #3B82F6; }
+    .footer-trust-badge.kvkk i { color: #A78BFA; }
+
+    .badge-content h5 {
+      font-size: 14px; font-weight: 600; color: white; margin-bottom: 2px;
+    }
+    .badge-content p {
+      font-size: 11px; color: var(--footer-text-muted);
+    }
+
+    /* Sosyal Medya */
+    .footer-social {
+      display: flex; gap: var(--space-3); margin: var(--space-6) 0;
+    }
+
+    .social-link {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      display: flex; align-items: center; justify-content: center;
+      color: white; text-decoration: none;
+      transition: all var(--transition-base);
+      border: 1px solid var(--footer-border);
+    }
+
+    .social-link:hover {
+      background: var(--primary);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 20px rgba(0, 59, 149, 0.3);
+      border-color: var(--primary);
+    }
+
+    /* Uygulama İndirme */
+    .app-download {
+      display: flex; gap: var(--space-3); margin-top: var(--space-6);
+    }
+
+    .app-btn {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--footer-border);
+      border-radius: var(--radius-lg);
+      color: white; text-decoration: none;
+      transition: all var(--transition-base);
+    }
+
+    .app-btn:hover {
+      background: rgba(255,255,255,0.1);
+      transform: translateY(-2px);
+    }
+
+    .app-btn i { font-size: 24px; }
+    .app-btn small { display: block; font-size: 10px; opacity: 0.7; }
+    .app-btn strong { font-size: 14px; }
+
+    /* Footer Başlıkları */
+    .footer-title {
+      font-size: 15px; font-weight: 600; margin-bottom: var(--space-5);
+      color: white; position: relative; padding-bottom: var(--space-3);
+      letter-spacing: 0.3px;
+    }
+
+    .footer-title::after {
+      content: ''; position: absolute; bottom: 0; left: 0;
+      width: 28px; height: 2px; background: var(--primary);
+      border-radius: var(--radius-full);
+    }
+
+    .footer-links { list-style: none; }
+    .footer-links li { margin-bottom: var(--space-3); }
+    .footer-links a {
+      color: var(--footer-text-muted); text-decoration: none;
+      font-size: 14px; transition: all var(--transition-fast);
+      display: inline-flex; align-items: center; gap: var(--space-2);
+    }
+    .footer-links a:hover {
+      color: white; transform: translateX(4px);
+    }
+    .footer-links a i {
+      font-size: 10px; opacity: 0;
+      transition: all var(--transition-fast);
+    }
+    .footer-links a:hover i { opacity: 1; color: var(--primary); }
+
+    /* Bülten */
+    .newsletter-box {
+      background: rgba(255,255,255,0.02);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      border: 1px solid var(--footer-border);
+      margin-top: var(--space-6);
+    }
+    .newsletter-title { font-size: 15px; font-weight: 600; margin-bottom: var(--space-2); }
+    .newsletter-text { font-size: 13px; color: var(--footer-text-muted); margin-bottom: var(--space-4); }
+    .newsletter-form { display: flex; gap: var(--space-2); }
+    .newsletter-input {
+      flex: 1; padding: var(--space-4) var(--space-5);
+      background: rgba(255,255,255,0.05); border: 1px solid var(--footer-border);
+      border-radius: var(--radius-full); color: white; font-size: 14px; outline: none;
+      transition: all var(--transition-fast);
+    }
+    .newsletter-input:focus { border-color: var(--primary); background: rgba(255,255,255,0.08); }
+    .newsletter-input::placeholder { color: var(--footer-text-muted); }
+    .newsletter-btn {
+      padding: var(--space-4) var(--space-6); background: var(--primary);
+      border: none; border-radius: var(--radius-full); color: white;
+      font-weight: 600; cursor: pointer; transition: all var(--transition-base);
+      white-space: nowrap; font-size: 13px;
+    }
+    .newsletter-btn:hover {
+      background: var(--primary-light);
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(0, 59, 149, 0.3);
+    }
+
+    /* Footer Alt Bilgi (Yasal ve Sertifikalar) */
+    .footer-legal {
+      border-top: 1px solid var(--footer-border);
+      padding-top: var(--space-6);
+      margin-top: var(--space-6);
+    }
+
+    .legal-grid {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: var(--space-6);
+    }
+
+    .copyright {
+      color: var(--footer-text-muted); font-size: 13px;
+    }
+
+    .legal-links {
+      display: flex; gap: var(--space-6); flex-wrap: wrap;
+    }
+
+    .legal-links a {
+      color: var(--footer-text-muted); text-decoration: none;
+      font-size: 13px; transition: color var(--transition-fast);
+    }
+
+    .legal-links a:hover { color: white; }
+
+    /* Ödeme ve Sertifika Logoları */
+    .payment-certificates {
+      display: flex; align-items: center; gap: var(--space-6);
+      flex-wrap: wrap;
+    }
+
+    .payment-methods {
+      display: flex; gap: var(--space-3); align-items: center;
+    }
+
+    .payment-icon {
+      font-size: 28px; color: var(--footer-text-muted);
+      transition: all var(--transition-fast);
+    }
+
+    .payment-icon:hover { color: white; transform: translateY(-2px); }
+
+    .certificate-badges {
+      display: flex; gap: var(--space-4); align-items: center;
+    }
+
+    .cert-badge {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-1) var(--space-3);
+      background: rgba(255,255,255,0.03);
+      border-radius: var(--radius-full);
+      font-size: 12px; color: var(--footer-text-muted);
+      border: 1px solid var(--footer-border);
+    }
+
+    .cert-badge i { color: var(--success); font-size: 14px; }
+
+    /* Alt Bilgi Ekstra (KVKK ve Ticari Bakanlık) */
+    .footer-bottom-extra {
+      margin-top: var(--space-8);
+      padding: var(--space-6);
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--footer-border);
+    }
+
+    .extra-info-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-6);
+    }
+
+    @media (max-width: 768px) {
+      .extra-info-grid { grid-template-columns: 1fr; }
+    }
+
+    .extra-info-item {
+      display: flex; align-items: flex-start; gap: var(--space-4);
+    }
+
+    .extra-info-item i {
+      font-size: 24px; color: var(--primary-light);
+    }
+
+    .extra-info-content h5 {
+      font-size: 14px; font-weight: 600; color: white; margin-bottom: 4px;
+    }
+
+    .extra-info-content p {
+      font-size: 12px; color: var(--footer-text-muted);
+      line-height: 1.6;
+    }
+
+    /* Mobil Footer Accordion */
+    .footer-accordion { display: none; }
+
+    @media (max-width: 600px) {
+      .footer-grid { display: none; }
+      .footer-accordion { display: block; }
+      
+      .accordion-item {
+        border-bottom: 1px solid var(--footer-border);
+      }
+      
+      .accordion-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: var(--space-5) 0; cursor: pointer;
+        font-weight: 600; color: white;
+      }
+      
+      .accordion-header i { transition: transform var(--transition-fast); }
+      .accordion-item.active .accordion-header i { transform: rotate(180deg); }
+      
+      .accordion-content {
+        max-height: 0; overflow: hidden;
+        transition: max-height var(--transition-base);
+        padding: 0;
+      }
+      
+      .accordion-item.active .accordion-content {
+        max-height: 500px; padding-bottom: var(--space-5);
+      }
+      
+      .accordion-content .footer-links li { margin-bottom: var(--space-4); }
+    }
+
+    /* Scroll to Top & Chat */
+    .scroll-top-btn {
+      position: fixed; bottom: 90px; right: 24px;
+      width: 48px; height: 48px; background: var(--primary);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 20px; box-shadow: var(--shadow-lg);
+      cursor: pointer; z-index: 997; opacity: 0; visibility: hidden;
+      transition: all var(--transition-base); border: 2px solid white;
+    }
+    .scroll-top-btn.visible { opacity: 1; visibility: visible; }
+    .scroll-top-btn:hover { background: var(--primary-dark); transform: translateY(-4px); }
+
+    .live-chat-btn {
+      position: fixed; bottom: 100px; right: 24px;
+      width: 60px; height: 60px; background: var(--secondary);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 24px; box-shadow: 0 8px 24px rgba(255, 56, 92, 0.4);
+      cursor: pointer; z-index: 998; transition: all var(--transition-base);
+      border: 3px solid white;
+    }
+    .live-chat-btn:hover { transform: scale(1.1) rotate(5deg); }
+    .live-chat-btn .chat-badge {
+      position: absolute; top: -5px; right: -5px;
+      background: var(--success); width: 18px; height: 18px;
+      border-radius: 50%; border: 2px solid white;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0, 168, 107, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(0, 168, 107, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 168, 107, 0); }
+    }
+
+    @media (max-width: 768px) {
+      .live-chat-btn { bottom: 90px; right: 16px; width: 52px; height: 52px; font-size: 20px; }
+      .scroll-top-btn { bottom: 90px; right: 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== TOPBAR (HEADER) ==================== -->
+<header class="site-header" id="mainHeader">
+  
+  <!-- Üst Güvenlik Barı (TÜRSAB ve PCI vurgusu) -->
+  <div class="trust-utility-bar">
+    <div class="utility-container">
+      <div class="trust-badges-header">
+        <span class="trust-badge-item"><i class="fas fa-shield-alt"></i> TÜRSAB Belge No: 12345 <span class="highlight">A Grubu</span></span>
+        <span class="trust-badge-item"><i class="fas fa-lock"></i> PCI DSS Level 1 <span class="highlight">Sertifikalı</span></span>
+        <span class="trust-badge-item"><i class="fas fa-check-circle"></i> 256-Bit SSL Güvenliği</span>
+      </div>
+      <div class="utility-right">
+        <div class="language-currency">
+          <span class="lang-selector"><i class="fas fa-globe"></i> TR <i class="fas fa-chevron-down" style="font-size: 10px;"></i></span>
+          <span class="currency-selector"><i class="fas fa-turkish-lira-sign"></i> TRY <i class="fas fa-chevron-down" style="font-size: 10px;"></i></span>
+        </div>
+        <a href="#" style="color: white; text-decoration: none;"><i class="fas fa-headset"></i> 7/24 Destek</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ana Header -->
+  <div class="header-container">
+    <div class="logo-area">
+      <button class="mobile-nav-toggle" id="mobileMenuToggle"><i class="fas fa-bars"></i></button>
+      <a href="/" class="logo"><i class="fas fa-hotel"></i> Otelturizm<span>.com</span></a>
+    </div>
+
+    <nav class="desktop-nav">
+      <a href="#" class="nav-link active"><i class="fas fa-home"></i> <span>Ana Sayfa</span></a>
+      <a href="#" class="nav-link"><i class="fas fa-building"></i> <span>Oteller</span></a>
+      <a href="#" class="nav-link"><i class="fas fa-fire"></i> <span>Fırsatlar</span></a>
+      <a href="#" class="nav-link"><i class="fas fa-blog"></i> <span>Keşfet</span></a>
+    </nav>
+
+    <div class="search-wrapper">
+      <div class="search-container">
+        <i class="fas fa-search"></i>
+        <input type="text" class="search-input" placeholder="Nereye gitmek istersin?">
+        <div class="search-divider"></div>
+        <div class="search-date"><i class="far fa-calendar"></i> <span>Tarihler</span></div>
+        <div class="search-divider"></div>
+        <div class="search-guests"><i class="far fa-user"></i> <span>2 Yetişkin</span></div>
+        <button class="search-btn"><i class="fas fa-search"></i></button>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="action-btn"><i class="far fa-heart"></i><span class="notification-badge">3</span></button>
+      <button class="action-btn"><i class="far fa-bell"></i><span class="notification-badge">5</span></button>
+      <div class="user-menu-btn">
+        <div class="user-avatar">AY</div>
+        <div class="user-info"><span class="user-name">Ahmet Y.</span><span class="user-tier">Gold Üye</span></div>
+        <i class="fas fa-chevron-down" style="font-size: 12px;"></i>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Mobil Menü -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+<div class="mobile-menu-drawer" id="mobileMenuDrawer">
+  <div class="drawer-header">
+    <div><h4>Ahmet Yılmaz</h4><p style="color: var(--text-gray);">Gold Üye</p></div>
+    <button class="drawer-close" id="drawerClose"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="drawer-nav">
+    <div class="drawer-section">
+      <div class="drawer-section-title">Ana Menü</div>
+      <a href="#" class="drawer-link"><i class="fas fa-home"></i> Ana Sayfa</a>
+      <a href="#" class="drawer-link"><i class="fas fa-building"></i> Oteller</a>
+      <a href="#" class="drawer-link"><i class="fas fa-fire"></i> Fırsatlar</a>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Güvenlik</div>
+      <a href="#" class="drawer-link"><i class="fas fa-shield-alt"></i> TÜRSAB Belgesi</a>
+      <a href="#" class="drawer-link"><i class="fas fa-lock"></i> PCI DSS Sertifikası</a>
+      <a href="#" class="drawer-link"><i class="fas fa-certificate"></i> SSL Sertifikası</a>
+    </div>
+  </div>
+</div>
+
+<!-- Mobil Alt Nav -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-home"></i><span>Keşfet</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-search"></i><span>Ara</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-heart"></i><span>Kaydet</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-user"></i><span>Profil</span></a>
+  </div>
+</nav>
+
+<!-- Demo İçerik -->
+<div style="padding: 140px 24px 80px; max-width: 1200px; margin: 0 auto;">
+  <h1 style="margin-bottom: 20px;">Güvenli Rezervasyon Deneyimi</h1>
+  <p style="margin-bottom: 30px;">TÜRSAB, PCI DSS ve SSL güvencesiyle tatilinizi planlayın.</p>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px;">
+    <div style="background: white; padding: 24px; border-radius: 16px; box-shadow: var(--shadow-sm);">
+      <i class="fas fa-shield-alt" style="font-size: 32px; color: var(--success); margin-bottom: 16px;"></i>
+      <h3>TÜRSAB Güvencesi</h3>
+      <p>Türkiye Seyahat Acentaları Birliği üyesiyiz.</p>
+    </div>
+    <div style="background: white; padding: 24px; border-radius: 16px; box-shadow: var(--shadow-sm);">
+      <i class="fas fa-lock" style="font-size: 32px; color: var(--primary); margin-bottom: 16px;"></i>
+      <h3>PCI DSS Level 1</h3>
+      <p>Kart bilgileriniz en yüksek güvenlikle korunur.</p>
+    </div>
+    <div style="background: white; padding: 24px; border-radius: 16px; box-shadow: var(--shadow-sm);">
+      <i class="fas fa-certificate" style="font-size: 32px; color: var(--warning); margin-bottom: 16px;"></i>
+      <h3>256-Bit SSL</h3>
+      <p>Tüm veri trafiğiniz şifrelenerek aktarılır.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== FOOTER (GÜVENLİK ODAKLI) ==================== -->
+<footer class="site-footer">
+  
+  <!-- Güvenlik Şeridi -->
+  <div class="footer-security-strip">
+    <div class="security-strip-container">
+      <div class="security-message">
+        <span class="security-message-item"><i class="fas fa-shield-alt"></i> TÜRSAB A-12345</span>
+        <span class="security-message-item"><i class="fas fa-lock"></i> PCI DSS Level 1</span>
+        <span class="security-message-item"><i class="fas fa-certificate"></i> 256-Bit SSL</span>
+        <span class="security-message-item"><i class="fas fa-check-circle"></i> KVKK Uyumlu</span>
+      </div>
+      <div class="security-phone">
+        <span class="phone-number"><i class="fas fa-phone-alt"></i> 0850 123 45 67</span>
+        <span style="display: flex; align-items: center; gap: 4px;"><i class="fas fa-clock"></i> 7/24 Canlı Destek</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-container">
+    
+    <!-- Masaüstü Footer Grid -->
+    <div class="footer-grid">
+      
+      <!-- 1. Kolon: Hakkımızda + Güven Rozetleri -->
+      <div class="footer-col">
+        <div class="footer-logo"><i class="fas fa-hotel"></i> Otelturizm</div>
+        <p class="footer-description">
+          Türkiye'nin en güvenilir otel rezervasyon platformu. 500.000+ otel, en iyi fiyat garantisi, TÜRSAB ve PCI DSS güvencesiyle hizmetinizdeyiz.
+        </p>
+        
+        <!-- Güven Rozetleri (Footer İçi - Vurgulu) -->
+        <div class="footer-trust-badges">
+          <div class="footer-trust-badge tursab">
+            <i class="fas fa-shield-alt"></i>
+            <div class="badge-content"><h5>TÜRSAB</h5><p>Belge No: 12345</p></div>
+          </div>
+          <div class="footer-trust-badge pci">
+            <i class="fas fa-credit-card"></i>
+            <div class="badge-content"><h5>PCI DSS</h5><p>Level 1 Sertifikalı</p></div>
+          </div>
+          <div class="footer-trust-badge ssl">
+            <i class="fas fa-lock"></i>
+            <div class="badge-content"><h5>SSL Secure</h5><p>256-Bit Şifreleme</p></div>
+          </div>
+          <div class="footer-trust-badge kvkk">
+            <i class="fas fa-user-shield"></i>
+            <div class="badge-content"><h5>KVKK</h5><p>Veri Koruma Uyumlu</p></div>
+          </div>
+        </div>
+        
+        <div class="footer-social">
+          <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+          <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-link"><i class="fab fa-x-twitter"></i></a>
+          <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+        </div>
+        
+        <div class="app-download">
+          <a href="#" class="app-btn"><i class="fab fa-apple"></i><div><small>App Store</small><strong>İndir</strong></div></a>
+          <a href="#" class="app-btn"><i class="fab fa-google-play"></i><div><small>Google Play</small><strong>İndir</strong></div></a>
+        </div>
+      </div>
+      
+      <!-- 2. Kolon: Şirket -->
+      <div class="footer-col">
+        <h4 class="footer-title">Şirket</h4>
+        <ul class="footer-links">
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Hakkımızda</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Kariyer</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Basın Odası</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Blog</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> İletişim</a></li>
+        </ul>
+      </div>
+      
+      <!-- 3. Kolon: Keşfet -->
+      <div class="footer-col">
+        <h4 class="footer-title">Keşfet</h4>
+        <ul class="footer-links">
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Tüm Oteller</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Son Dakika</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Erken Rezervasyon</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Balayı Otelleri</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> İş Seyahatleri</a></li>
+        </ul>
+      </div>
+      
+      <!-- 4. Kolon: Otelciler -->
+      <div class="footer-col">
+        <h4 class="footer-title">Otelciler İçin</h4>
+        <ul class="footer-links">
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Tesisinizi Ekleyin</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Extranet Girişi</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Partner Programı</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Eğitim ve Destek</a></li>
+        </ul>
+      </div>
+      
+      <!-- 5. Kolon: Destek + Bülten -->
+      <div class="footer-col">
+        <h4 class="footer-title">Destek</h4>
+        <ul class="footer-links">
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Yardım Merkezi</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> İptal ve İade</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> SSS</a></li>
+          <li><a href="#"><i class="fas fa-chevron-right"></i> Güvenli Seyahat</a></li>
+        </ul>
+        
+        <div class="newsletter-box">
+          <div class="newsletter-title">📧 Fırsatları Kaçırma</div>
+          <p class="newsletter-text">Özel indirimlerden haberdar ol!</p>
+          <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Bülten aboneliği alındı!');">
+            <input type="email" class="newsletter-input" placeholder="E-posta adresiniz" required>
+            <button type="submit" class="newsletter-btn">Kaydol</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobil Accordion Footer -->
+    <div class="footer-accordion">
+      <div class="accordion-item">
+        <div class="accordion-header">Şirket <i class="fas fa-chevron-down"></i></div>
+        <div class="accordion-content"><ul class="footer-links"><li><a href="#">Hakkımızda</a></li><li><a href="#">Kariyer</a></li></ul></div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header">Keşfet <i class="fas fa-chevron-down"></i></div>
+        <div class="accordion-content"><ul class="footer-links"><li><a href="#">Tüm Oteller</a></li><li><a href="#">Fırsatlar</a></li></ul></div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header">Otelciler İçin <i class="fas fa-chevron-down"></i></div>
+        <div class="accordion-content"><ul class="footer-links"><li><a href="#">Tesis Ekle</a></li><li><a href="#">Extranet</a></li></ul></div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header">Destek <i class="fas fa-chevron-down"></i></div>
+        <div class="accordion-content"><ul class="footer-links"><li><a href="#">Yardım</a></li><li><a href="#">İletişim</a></li></ul></div>
+      </div>
+    </div>
+
+    <!-- Yasal ve Sertifikalar -->
+    <div class="footer-legal">
+      <div class="legal-grid">
+        <div class="copyright">© 2025 Otelturizm. Tüm hakları saklıdır.</div>
+        <div class="legal-links">
+          <a href="#">Gizlilik Politikası</a>
+          <a href="#">Çerez Politikası</a>
+          <a href="#">Kullanım Koşulları</a>
+          <a href="#">KVKK Aydınlatma Metni</a>
+          <a href="#">İşlem Rehberi</a>
+        </div>
+        <div class="payment-certificates">
+          <span class="payment-methods">
+            <i class="fab fa-cc-visa payment-icon"></i>
+            <i class="fab fa-cc-mastercard payment-icon"></i>
+            <i class="fab fa-cc-amex payment-icon"></i>
+            <i class="fas fa-credit-card payment-icon"></i>
+          </span>
+          <span class="certificate-badges">
+            <span class="cert-badge"><i class="fas fa-shield-alt"></i> TÜRSAB</span>
+            <span class="cert-badge"><i class="fas fa-lock"></i> PCI DSS</span>
+            <span class="cert-badge"><i class="fas fa-globe"></i> SSL</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ekstra Yasal Bilgiler (KVKK, Ticaret Bakanlığı) -->
+    <div class="footer-bottom-extra">
+      <div class="extra-info-grid">
+        <div class="extra-info-item">
+          <i class="fas fa-gavel"></i>
+          <div class="extra-info-content">
+            <h5>Ticaret Bakanlığı</h5>
+            <p>Elektronik Ticaret Bilgi Sistemi'ne (ETBİS) kayıtlıdır. Sicil No: 123456</p>
+          </div>
+        </div>
+        <div class="extra-info-item">
+          <i class="fas fa-database"></i>
+          <div class="extra-info-content">
+            <h5>Kişisel Verilerin Korunması</h5>
+            <p>6698 sayılı KVKK kapsamında verileriniz güvence altındadır. VERBİS kaydı mevcuttur.</p>
+          </div>
+        </div>
+        <div class="extra-info-item">
+          <i class="fas fa-balance-scale"></i>
+          <div class="extra-info-content">
+            <h5>Tüketici Hakları</h5>
+            <p>6502 sayılı Tüketicinin Korunması Hakkında Kanun kapsamında hizmet verilmektedir.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</footer>
+
+<!-- Scroll to Top & Chat -->
+<div class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})"><i class="fas fa-arrow-up"></i></div>
+<div class="live-chat-btn" onclick="alert('Canlı destek bağlantısı açılacak')"><i class="fas fa-comment-dots"></i><span class="chat-badge"></span></div>
+
+<script>
+  (function() {
+    const header = document.getElementById('mainHeader');
+    const scrollBtn = document.getElementById('scrollTopBtn');
+    
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > 50);
+      scrollBtn.classList.toggle('visible', window.scrollY > 300);
+    });
+
+    // Mobil Menü
+    const toggle = document.getElementById('mobileMenuToggle');
+    const overlay = document.getElementById('mobileMenuOverlay');
+    const drawer = document.getElementById('mobileMenuDrawer');
+    const close = document.getElementById('drawerClose');
+    
+    function openMenu() { overlay.classList.add('active'); drawer.classList.add('active'); document.body.style.overflow = 'hidden'; }
+    function closeMenu() { overlay.classList.remove('active'); drawer.classList.remove('active'); document.body.style.overflow = ''; }
+    
+    toggle?.addEventListener('click', openMenu);
+    overlay?.addEventListener('click', closeMenu);
+    close?.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer.classList.contains('active')) closeMenu(); });
+
+    // Mobil Accordion
+    document.querySelectorAll('.accordion-header').forEach(header => {
+      header.addEventListener('click', function() {
+        this.parentElement.classList.toggle('active');
+      });
+    });
+
+    // Mobil bottom nav
+    document.querySelectorAll('.bottom-nav-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.bottom-nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    console.log('✅ TÜRSAB & PCI DSS Güvenlik Rozetleri Aktif');
+  })();
+</script>
+
+</body>
+</html>

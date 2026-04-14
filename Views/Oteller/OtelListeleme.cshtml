@@ -1,0 +1,210 @@
+@model otelturizmnew.Models.Oteller.HotelListingPageViewModel
+
+@{
+    // load page-specific styles (desktop + mobile overrides)
+    ViewData["PageCss"] = "otel-listeleme";
+    ViewData["PageCssMobile"] = "otel-listeleme.mobile";
+    var sortOptions = new[]
+    {
+        "Onerilen",
+        "En Dusuk Fiyat",
+        "En Yuksek Puan",
+        "Yildiz Sayisi"
+    };
+}
+
+<section class="listing-campaign-band">
+    <div class="listing-campaign-header">
+        <div>
+            <span class="listing-campaign-kicker">Kullanıcı kampanya akışı</span>
+            <h1>@Model.CampaignTitle</h1>
+            <p>@Model.CampaignDescription</p>
+        </div>
+        <a href="/oteller/istanbul" class="listing-campaign-reset">Tüm listeye dön</a>
+    </div>
+
+    <div class="listing-campaign-links-pills">
+        @foreach (var link in Model.QuickLinks)
+        {
+            <a href="@link.Url" class="small-quick-link @(link.IsActive ? "active" : string.Empty)">
+                <div class="sq-icon"><i class="fas @link.IconClass"></i></div>
+                <div class="sq-content">
+                    <span class="sq-title">@link.Title</span>
+                    <small class="sq-sub">@link.Subtitle</small>
+                </div>
+            </a>
+        }
+    </div>
+</section>
+
+<section class="listing-header">
+    <div class="listing-summary">
+        <a asp-controller="Home" asp-action="Index" class="back-link"><i class="fas fa-arrow-left"></i> Keşfete Don</a>
+        <div>
+            <h2>@Model.City: @Model.TotalCount otel bulundu</h2>
+            <p><i class="fas fa-calendar"></i> 15 Nis - 18 Nis · 2 Yetiskin, 1 Cocuk</p>
+        </div>
+    </div>
+    <button type="button" class="listing-action-btn"><i class="fas fa-sliders-h"></i> Aramayi Duzenle</button>
+</section>
+
+<section class="listing-toolbar">
+    <div class="sort-options">
+        @for (var i = 0; i < sortOptions.Length; i++)
+        {
+            <button type="button" class="sort-option @(i == 0 ? "active" : string.Empty)">@sortOptions[i]</button>
+        }
+    </div>
+
+    <div class="view-toggle">
+        <button type="button" class="view-btn active" data-view="list"><i class="fas fa-list"></i></button>
+        <button type="button" class="view-btn" data-view="map"><i class="fas fa-map-location-dot"></i></button>
+    </div>
+</section>
+
+<section class="results-layout" id="resultsLayout">
+    <aside class="filter-sidebar">
+        <article class="filter-card">
+            <div class="filter-head">
+                <h3>Fiyat Araligi</h3>
+                <i class="fas fa-chevron-up"></i>
+            </div>
+            <input type="range" min="0" max="25000" value="@(Model.MaxPrice > 0 ? Model.MaxPrice : 25000)" class="price-range" />
+            <div class="price-input-row">
+                <input type="number" value="@(Model.MinPrice > 0 ? Model.MinPrice : 0)" placeholder="Min" />
+                <input type="number" value="@(Model.MaxPrice > 0 ? Model.MaxPrice : 25000)" placeholder="Max" />
+            </div>
+        </article>
+
+        <article class="filter-card">
+            <div class="filter-head"><h3>Ilceler</h3></div>
+            @foreach (var district in Model.Districts)
+            {
+                <label><input type="checkbox" checked /> @district</label>
+            }
+        </article>
+
+        <article class="filter-card">
+            <div class="filter-head"><h3>Yildiz Sayisi</h3></div>
+            @foreach (var star in Model.StarOptions)
+            {
+                <label><input type="checkbox" checked /> @star Yildiz</label>
+            }
+        </article>
+
+        <article class="filter-card">
+            <div class="filter-head"><h3>Misafir Puani</h3></div>
+            <label><input type="checkbox" /> 9+ Muhtesem</label>
+            <label><input type="checkbox" checked /> 8+ Cok Iyi</label>
+            <label><input type="checkbox" checked /> 7+ Iyi</label>
+        </article>
+    </aside>
+
+    <div class="results-listing">
+            <div class="hotel-count"><i class="fas fa-circle-info"></i> @Model.TotalCount otelin tamami gosteriliyor</div>
+
+        @if (Model.Hotels.Count == 0)
+        {
+            <div class="listing-empty-state">
+                <h3>@Model.City icin yayinda ve onayli otel bulunamadi</h3>
+                <p>Listeleme ekraninin tasarima gore dolmasi icin `oteller` tablosunda sehir, yayin ve fiyat verilerinin hazir olmasi gerekiyor.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var hotel in Model.Hotels)
+            {
+                <article class="hotel-card">
+                    <div class="hotel-media @(string.IsNullOrWhiteSpace(hotel.ImageUrl) ? string.Empty : "has-image")">
+                        @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
+                        {
+                            <img src="@hotel.ImageUrl" alt="@hotel.Name" />
+                        }
+                        <button type="button" class="favorite-btn @(hotel.IsFavorite ? "active" : string.Empty)" data-hotel-id="@hotel.Id" data-source-page="OtelListeleme">
+                            <i class="@(hotel.IsFavorite ? "fas" : "far") fa-heart"></i>
+                        </button>
+                        <span class="listing-code-badge">@hotel.HotelCode</span>
+                    </div>
+
+                    <div class="hotel-body">
+                        <div class="hotel-topline">
+                            <div>
+                                <h2>@hotel.Name</h2>
+                                <p class="hotel-location"><i class="fas fa-location-dot"></i> @hotel.District, @hotel.City</p>
+                            </div>
+                            <div class="hotel-score">
+                                <span class="score-box">@(hotel.Rating > 0 ? hotel.Rating.ToString("0.0") : "-")</span>
+                                <div>
+                                    <strong>@hotel.RatingText</strong>
+                                    <small>@(hotel.ReviewCount > 0 ? $"{hotel.ReviewCount} yorum" : "Yorum bekleniyor")</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="amenity-row">
+                            @foreach (var amenity in hotel.Amenities)
+                            {
+                                <span><i class="fas fa-check"></i> @amenity</span>
+                            }
+                        </div>
+
+                        <div class="tag-row">
+                            @foreach (var tag in hotel.Tags)
+                            {
+                                <span class="hotel-tag">@tag</span>
+                            }
+                        </div>
+
+                        <div class="hotel-bottomline">
+                            <div class="hotel-copy">
+                                <p>@hotel.Summary</p>
+                            </div>
+                            <div class="hotel-pricebox">
+                                <strong>@(hotel.StartingPrice.HasValue ? $"₺{hotel.StartingPrice.Value:N0}" : "Teklif Al")</strong>
+                                <span>@hotel.PriceNote</span>
+                                <div class="card-actions">
+                                    <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="secondary-link-btn">Detayi Incele</a>
+                                    <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="primary-link-btn">Rezervasyon Yap</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            }
+        }
+    </div>
+
+    <div class="map-view-panel">
+        <div class="map-card">
+            <iframe
+                title="Istanbul Otel Haritasi"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=28.9%2C40.98%2C29.22%2C41.15&layer=mapnik"
+                loading="lazy"></iframe>
+        </div>
+    </div>
+</section>
+
+<button type="button" class="mobile-filter-btn"><i class="fas fa-sliders-h"></i> Filtrele (@Model.TotalCount otel)</button>
+
+@section Scripts {
+    <script>
+        (function () {
+            const layout = document.getElementById('resultsLayout');
+            const buttons = document.querySelectorAll('[data-view]');
+
+            buttons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const isMap = button.getAttribute('data-view') === 'map';
+
+                    buttons.forEach(function (item) {
+                        item.classList.toggle('active', item === button);
+                    });
+
+                    layout.classList.toggle('show-map', isMap);
+                });
+            });
+        })();
+    </script>
+    <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />
+}
+

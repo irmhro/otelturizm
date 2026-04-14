@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>İptal & İade · Otelturizm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --secondary: #FF385C; --success: #00A86B;
+      --warning: #FFB800; --error: #EF4444; --bg-light: #F5F7FA;
+      --card-bg: #FFFFFF; --text-dark: #1A1F26; --text-gray: #6B7380;
+      --border-light: #E7E9EC; --radius-card: 16px; --radius-button: 40px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    
+    .container { max-width: 900px; margin: 40px auto; padding: 0 24px; }
+    
+    /* Header */
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 { font-size: 28px; margin-bottom: 8px; }
+    .page-header p { color: var(--text-gray); }
+    .breadcrumb { display: flex; gap: 8px; color: var(--text-gray); font-size: 14px; margin-bottom: 16px; }
+    .breadcrumb a { color: var(--text-gray); text-decoration: none; }
+    
+    /* Progress Steps */
+    .cancel-progress {
+      display: flex; margin-bottom: 32px; background: white;
+      border-radius: var(--radius-card); padding: 24px;
+    }
+    .progress-step {
+      flex: 1; text-align: center; position: relative;
+    }
+    .progress-step:not(:last-child)::after {
+      content: ''; position: absolute; top: 16px; left: 60%;
+      width: 80%; height: 2px; background: var(--border-light);
+    }
+    .progress-step.completed:not(:last-child)::after { background: var(--success); }
+    .step-number {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--border-light);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 8px;
+      color: white; font-weight: 600;
+    }
+    .progress-step.active .step-number { background: var(--primary); }
+    .progress-step.completed .step-number { background: var(--success); }
+    .step-title { font-weight: 600; font-size: 14px; }
+    .step-desc { font-size: 12px; color: var(--text-gray); }
+    
+    /* Card */
+    .card {
+      background: white; border-radius: var(--radius-card); padding: 28px;
+      margin-bottom: 24px; border: 1px solid var(--border-light);
+    }
+    .card-title {
+      font-size: 18px; font-weight: 600; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    
+    /* Reservation Summary */
+    .reservation-summary {
+      display: flex; gap: 20px; padding: 20px; background: var(--bg-light);
+      border-radius: 12px; margin-bottom: 24px;
+    }
+    @media (max-width: 600px) { .reservation-summary { flex-direction: column; } }
+    .summary-img { width: 100px; height: 80px; border-radius: 12px; object-fit: cover; }
+    .summary-details { flex: 1; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    
+    /* Refund Amount */
+    .refund-box {
+      background: rgba(0, 168, 107, 0.05); border: 1px solid var(--success);
+      border-radius: 12px; padding: 20px; text-align: center;
+    }
+    .refund-amount { font-size: 36px; font-weight: 700; color: var(--success); }
+    .refund-note { color: var(--text-gray); font-size: 13px; margin-top: 8px; }
+    
+    /* Cancel Reasons */
+    .reason-options { display: flex; flex-direction: column; gap: 12px; }
+    .reason-option {
+      display: flex; align-items: flex-start; gap: 12px; padding: 16px;
+      border: 1.5px solid var(--border-light); border-radius: 12px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .reason-option:hover, .reason-option.selected {
+      border-color: var(--primary); background: rgba(0, 59, 149, 0.02);
+    }
+    .reason-option input { margin-top: 3px; accent-color: var(--primary); }
+    
+    /* Warning Box */
+    .warning-box {
+      background: rgba(255, 184, 0, 0.1); border-left: 4px solid var(--warning);
+      padding: 16px; border-radius: 8px; margin: 20px 0;
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 14px 28px; border-radius: var(--radius-button); font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.2s; font-size: 16px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-danger { background: var(--error); color: white; }
+    .btn-outline { background: white; border: 1.5px solid var(--border-light); }
+    .btn-block { width: 100%; }
+    .button-group { display: flex; gap: 16px; margin-top: 24px; }
+    @media (max-width: 500px) { .button-group { flex-direction: column; } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="/"><i class="fas fa-home"></i></a> <span>/</span>
+    <a href="#">Rezervasyonlarım</a> <span>/</span>
+    <span>İptal & İade</span>
+  </div>
+  
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Rezervasyon İptali</h1>
+    <p>Rezervasyonunuzu iptal edin ve iade tutarınızı görün.</p>
+  </div>
+  
+  <!-- Progress -->
+  <div class="cancel-progress">
+    <div class="progress-step completed">
+      <div class="step-number"><i class="fas fa-check"></i></div>
+      <div class="step-title">İptal Nedeni</div>
+      <div class="step-desc">Sebep seçimi</div>
+    </div>
+    <div class="progress-step active">
+      <div class="step-number">2</div>
+      <div class="step-title">İade Özeti</div>
+      <div class="step-desc">Tutar kontrolü</div>
+    </div>
+    <div class="progress-step">
+      <div class="step-number">3</div>
+      <div class="step-title">Onay</div>
+      <div class="step-desc">İptal tamamlama</div>
+    </div>
+  </div>
+  
+  <!-- Reservation Summary -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-hotel" style="color: var(--primary);"></i> İptal Edilecek Rezervasyon</div>
+    <div class="reservation-summary">
+      <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=200" alt="Swissôtel" class="summary-img">
+      <div class="summary-details">
+        <h4 style="margin-bottom: 8px;">Swissôtel The Bosphorus</h4>
+        <div class="summary-row"><span><i class="far fa-calendar"></i> Giriş - Çıkış</span><span>15 Nis - 18 Nis 2025 (3 Gece)</span></div>
+        <div class="summary-row"><span><i class="far fa-moon"></i> Oda Tipi</span><span>Deluxe Oda, Boğaz Manzaralı</span></div>
+        <div class="summary-row"><span><i class="far fa-user"></i> Misafir</span><span>2 Yetişkin, 1 Çocuk</span></div>
+        <div class="summary-row"><span><strong>Rezervasyon No</strong></span><span><strong>#OTL-2025-0482</strong></span></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Cancel Reasons -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-question-circle" style="color: var(--primary);"></i> İptal Nedeniniz Nedir?</div>
+    <div class="reason-options">
+      <label class="reason-option">
+        <input type="radio" name="cancelReason" value="plan_change" checked>
+        <div><strong>Seyahat Planım Değişti</strong><p style="font-size: 13px; color: var(--text-gray);">Tarihleri değiştirmek veya farklı bir otel seçmek istiyorum.</p></div>
+      </label>
+      <label class="reason-option">
+        <input type="radio" name="cancelReason" value="better_price">
+        <div><strong>Daha Uygun Fiyat Buldum</strong><p style="font-size: 13px; color: var(--text-gray);">Başka bir sitede daha iyi bir teklif buldum.</p></div>
+      </label>
+      <label class="reason-option">
+        <input type="radio" name="cancelReason" value="health">
+        <div><strong>Sağlık / Acil Durum</strong><p style="font-size: 13px; color: var(--text-gray);">Sağlık sorunları veya acil bir durum nedeniyle.</p></div>
+      </label>
+      <label class="reason-option">
+        <input type="radio" name="cancelReason" value="other">
+        <div><strong>Diğer</strong><p style="font-size: 13px; color: var(--text-gray);">Lütfen açıklayın...</p></div>
+      </label>
+    </div>
+    <textarea class="form-control" placeholder="Eklemek istediğiniz bir not var mı?" style="width: 100%; margin-top: 16px; padding: 14px; border: 1px solid var(--border-light); border-radius: 12px;" rows="2"></textarea>
+  </div>
+  
+  <!-- Refund Summary -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-calculator" style="color: var(--primary);"></i> İade Özeti</div>
+    
+    <div style="margin-bottom: 24px;">
+      <div class="summary-row" style="margin-bottom: 12px;"><span>Toplam Rezervasyon Tutarı</span><span>₺11.858</span></div>
+      <div class="summary-row" style="margin-bottom: 12px;"><span>İptal Kesintisi</span><span style="color: var(--success);">₺0 (Ücretsiz İptal)</span></div>
+      <div class="summary-row" style="font-weight: 700; font-size: 18px; padding-top: 12px; border-top: 1px solid var(--border-light);"><span>İade Edilecek Tutar</span><span style="color: var(--success);">₺11.858</span></div>
+    </div>
+    
+    <div class="refund-box">
+      <i class="fas fa-check-circle" style="font-size: 32px; color: var(--success); margin-bottom: 12px;"></i>
+      <div class="refund-amount">₺11.858</div>
+      <div class="refund-note">Tam iade · Kartınıza 3-5 iş günü içinde yansır</div>
+    </div>
+    
+    <div class="warning-box">
+      <p><i class="fas fa-info-circle"></i> <strong>Ücretsiz İptal Hakkınız</strong></p>
+      <p style="font-size: 13px; margin-top: 8px;">Bu rezervasyon 13 Nis 2025 23:59'a kadar ücretsiz iptal edilebilir. Bu tarihten sonra iptal durumunda 1 gecelik ücret kesintisi uygulanır.</p>
+    </div>
+  </div>
+  
+  <!-- Actions -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-shield-alt" style="color: var(--primary);"></i> İptal İşlemini Onayla</div>
+    
+    <label style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 24px; cursor: pointer;">
+      <input type="checkbox" id="confirmCancel">
+      <span style="font-size: 14px;">İptal politikasını okudum ve anladım. Rezervasyonumu iptal etmek istediğimi onaylıyorum. İptal işleminin geri alınamayacağını biliyorum.</span>
+    </label>
+    
+    <div class="button-group">
+      <button class="btn btn-outline" onclick="history.back()"><i class="fas fa-arrow-left"></i> Vazgeç</button>
+      <button class="btn btn-danger btn-block" id="cancelButton" disabled>
+        <i class="fas fa-times-circle"></i> Rezervasyonu İptal Et
+      </button>
+    </div>
+  </div>
+  
+</div>
+
+<script>
+  const checkbox = document.getElementById('confirmCancel');
+  const button = document.getElementById('cancelButton');
+  
+  checkbox.addEventListener('change', function() {
+    button.disabled = !this.checked;
+    button.style.opacity = this.checked ? '1' : '0.6';
+  });
+  
+  button.addEventListener('click', function() {
+    if (confirm('Rezervasyonunuzu iptal etmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+      alert('✅ Rezervasyonunuz iptal edilmiştir. İade tutarı kartınıza 3-5 iş günü içinde yansıtılacaktır. Onay e-postası gönderilmiştir.');
+      // window.location.href = '/rezervasyonlarim';
+    }
+  });
+  
+  // Reason selection style
+  document.querySelectorAll('.reason-option input').forEach(radio => {
+    radio.addEventListener('change', function() {
+      document.querySelectorAll('.reason-option').forEach(opt => opt.classList.remove('selected'));
+      this.closest('.reason-option').classList.add('selected');
+    });
+  });
+  
+  console.log('✅ İptal & İade Sayfası Yüklendi');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+.partner-finance-callout {
+    margin-top: 16px;
+    display: flex;
+    align-items: start;
+    gap: 10px;
+    padding: 16px 18px;
+    border: 1px solid var(--partner-border);
+    border-radius: 18px;
+    background: linear-gradient(180deg, #f8fbff, #fefefe);
+    color: var(--partner-muted);
+}

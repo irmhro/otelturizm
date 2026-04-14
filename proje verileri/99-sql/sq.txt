@@ -1,0 +1,298 @@
+KULLANICI YÖNETİMİ TABLOLARI
+Tablo: roller
+sql
+CREATE TABLE roller (
+    id TINYINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    rol_adi VARCHAR(30) NOT NULL UNIQUE COMMENT 'admin, partner, misafir, muhasebe, destek',
+    yetki_seviyesi TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '1:misafir, 10:partner, 50:muhasebe, 99:admin',
+    aciklama VARCHAR(200),
+    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_rol_adi (rol_adi)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Kullanıcı rolleri tanım tablosu';
+
+-- INSERT ÖRNEKLERİ
+INSERT INTO roller (rol_adi, yetki_seviyesi, aciklama) VALUES
+('admin', 99, 'Tam yetkili sistem yöneticisi'),
+('partner', 10, 'Otel sahibi veya yetkilisi'),
+('misafir', 1, 'Standart rezervasyon yapan kullanıcı'),
+('muhasebe
+rolleri en gelişmiş halde tut tüm ekip depart kadro eklensin şimdiden
+Anlaşıldı. Kurumsal bir rezervasyon platformunda sadece "admin, partner, misafir" yetmez. İşletme büyüdüğünde Finans, Satış, Destek, İçerik, Hukuk, Güvenlik gibi departmanların her biri için farklı yetki seviyeleri gerekir.
+
+İşte en gelişmiş haliyle departman bazlı, yetki matrisine uygun roller tablosu:
+
+📊 KURUMSAL ROL VE YETKİ SİSTEMİ
+1.1 Ana Rol Tanımları Tablosu: roller
+sql
+CREATE TABLE roller (
+    id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    rol_kodu VARCHAR(30) NOT NULL UNIQUE COMMENT 'Sistemde kullanılacak sabit kod',
+    rol_adi VARCHAR(50) NOT NULL COMMENT 'Görünen ad',
+    departman VARCHAR(50) NOT NULL COMMENT 'Yönetim, Operasyon, Finans, Satış, Destek, IT, Hukuk',
+    seviye TINYINT UNSIGNED NOT NULL COMMENT '1-99 arası yetki seviyesi',
+    ust_rol_id SMALLINT UNSIGNED NULL COMMENT 'Hiyerarşi için üst rol',
+    varsayilan_mi TINYINT(1) DEFAULT 0 COMMENT 'Yeni kullanıcıya otomatik atanır mı?',
+    aciklama VARCHAR(255),
+    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_departman (departman),
+    INDEX idx_seviye (seviye),
+    INDEX idx_rol_kodu (rol_kodu),
+    FOREIGN KEY (ust_rol_id) REFERENCES roller(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Kurumsal rol ve departman tanımları';
+1.2 Roller Veri Girişi (INSERT)
+sql
+-- ==================== YÖNETİM KURULU / ÜST DÜZEY ====================
+INSERT INTO roller (rol_kodu, rol_adi, departman, seviye, varsayilan_mi, aciklama) VALUES
+('super_admin', 'Süper Yönetici', 'Yönetim', 99, 0, 'Sunucu ayarları dahil her şeye erişim'),
+('genel_mudur', 'Genel Müdür', 'Yönetim', 95, 0, 'Tüm raporlara ve finansal özetlere erişim'),
+('genel_mudur_yardimcisi', 'Genel Müdür Yardımcısı', 'Yönetim', 90, 0, 'Operasyonel genel yetkili');
+
+-- ==================== FİNANS / MUHASEBE DEPARTMANI ====================
+INSERT INTO roller (rol_kodu, rol_adi, departman, seviye, varsayilan_mi, aciklama) VALUES
+('finans_direktoru', 'Finans Direktörü', 'Finans', 85, 0, 'Tüm mali işlemler ve raporlar'),
+('finans_yoneticisi', 'Finans Yöneticisi', 'Finans', 80, 0, 'Ödeme onayları, iade işlemleri'),
+('muhasebe_sefi', 'Muhasebe Şefi', 'Finans', 75, 0, 'Cari hesap mutabakatları'),
+('muhasebe_uzmani', 'Muhasebe Uzmanı', 'Finans', 70, 0, 'Fatura kesme, ödeme takibi'),
+('muhasebe_yardimcisi', 'Muhasebe Yardımcısı', 'Finans', 65, 0, 'Veri girişi, dekont eşleştirme'),
+('finansal_raporlama_uzmani', 'Finansal Raporlama Uzmanı', 'Finans', 72, 0, 'İleri seviye raporlama ve analiz');
+
+-- ==================== SATIŞ VE İŞ GELİŞTİRME ====================
+INSERT INTO roller (rol_kodu, rol_adi, departman, seviye, varsayilan_mi, aciklama) VALUES
+('satis_direktoru', 'Satış Direktörü', 'Satış', 80, 0, 'Satış stratejisi ve hedefler'),
+('satis_yoneticisi', 'Satış Yöneticisi', 'Satış', 75, 0, 'Satış ekibi yönetimi'),
+('kurumsal_satis_temsilcisi', 'Kurumsal Satış Temsilcisi', 'Satış', 70, 0, 'Büyük otel zincirleri ile görüşmeler'),
+('satis_temsilcisi', 'Satış Temsilcisi', 'Satış', 65, 0, 'Yeni otel kazanımı ve sözleşme'),
+('is_gelistirme_uzmani', 'İş Geliştirme Uzmanı', 'Satış', 70, 0, 'Yeni pazarlar ve stratejik ortaklıklar'),
+('sozlesme_yoneticisi', 'Sözleşme Yöneticisi', 'Satış', 72, 0, 'Otel sözleşmelerinin hazırlanması ve takibi');
+
+-- ==================== OPERASYON (OTEL İLİŞKİLERİ) ====================
+INSERT INTO roller (rol_kodu, rol_adi, departman, seviye, varsayilan_mi, aciklama) VALUES
+('operasyon_direktoru', 'Operasyon Direktörü', 'Operasyon', 80, 0, 'Tüm otel operasyonlarından sorumlu'),
+('operasyon_yoneticisi', 'Operasyon Yöneticisi', 'Operasyon', 75, 0, 'Otel entegrasyonları ve sorun çözme'),
+('otel_iliskileri_yoneticisi', 'Otel İlişkileri Yöneticisi', 'Operasyon', 72, 0, 'Partner otellerle günlük iletişim'),
+('otel_iliskileri_uzmani', 'Otel İlişkileri Uzmanı', 'Operasyon', 68, 0, 'Otel talepleri ve sorun takibi'),
+('icerik_yoneticisi', 'İçerik Yöneticisi', 'Operasyon', 65, 0, 'Otel sayfaları içerik ve görsel onay'),
+('icerik_editoru', 'İçerik Editörü', 'Operasyon', 60, 0, 'Metin düzenleme, çeviri kontrol'),
+('fotograf_onay_sorumlusu', 'Fotoğraf Onay Sorumlusu', 'Operasyon', 60, 0, 'Otel görsellerinin kalite kontrolü'),
+('extranet_destek_uzmani', 'Extranet Destek Uzmanı', 'Operasyon', 62, 0, 'Partner paneli teknik desteği');
+
+-- ==================== MÜŞTERİ HİZMETLERİ / DESTEK ====================
+INSERT INTO roller (rol_kodu, rol_adi, departman, seviye, varsayilan_mi, aciklama) VALUES
+('destek_direktoru', 'Destek Direktörü', 'Destek', 75, 0, 'Müşteri hizmetleri yönetimi'),
+('destek_yoneticisi', 'Destek Yöneticisi', 'Destek', 70, 0, 'Vardiya ve ekip yönetimi'),
+('kdemli_destek_uzmani', 'Kıdemli Destek Uzmanı', 'Destek', 60, 0, 'Zorlu vakalar ve iade onayları'),
+('destek_uzmani', 'Destek Uzmanı', 'Destek', 50, 0, 'Canlı destek, e-posta, çağrı'),
+('destek_asistani', 'Destek Asistanı', 'Destek', 45, 0, 'Stajyer veya yeni başlayan'),
+('sosyal_medya_destek', 'Sosyal Medya Destek', 'Destek', 48, 0, 'Sosyal medya kanallarından gelen talepler'),
+('iade_ve_anlasmazlik_uzmani', 'İade ve Anlaşmazlık Uzmanı', 'Destek', 65, 0, 'İptal/iade talepleri değerlendirme');
+
+-- ==================== PAZARLAMA ====================
+INSERT INTO roller (rol_kodu, rol_adi, departman, seviye, varsayilan_mi, aciklama) VALUES
+('pazarlama_direktoru', 'Pazarlama Direktörü', 'Pazarlama', 80, 0, 'Pazarlama stratejisi ve bütçe'),
+('pazarlama_yoneticisi', 'Pazarlama Yöneticisi', 'Pazarlama', 75, 0, 'Kampanya ve marka yönetimi'),
+('dijital_pazarlama_uzmani', 'Dijital Pazarlama Uzmanı', 'Pazarlama', 70, 0, 'SEO, SEM, sosyal medya reklamları'),
+('kampanya_yoneticisi', 'Kampanya Yöneticisi', 'Pazarlama', 72, 0, 'İndirim ve promosyon yönetimi'),
+('seo_uzmani', 'SEO Uzmanı', 'Pazarlama', 68, 0, 'Arama motoru optimizasyonu'),
+('icerik_pazarlama_uzmani', 'İçerik Pazarlama Uzmanı', 'Pazarlama', 68, 0, 'Blog, e-posta, içerik takvimi'),
+('marka_iletisim_uzmani', 'Marka İletişim Uzmanı', 'Pazarlama', 70, 0, 'PR ve kurumsal iletişim'),
+('veri_analisti', 'Veri Analisti', 'Pazarlama', 72, 0, 'Müşteri davranış analizi ve raporlama');
+
+-- ==================== BİLGİ İŞLEM / YAZILIM ====================
+INSERT INTO roller (rol_kodu, rol_adi, departman, seviye, varsayilan_mi, aciklama) VALUES
+('cto', 'Teknoloji Direktörü', 'IT', 95, 0, 'Tüm teknoloji altyapısından sorumlu'),
+('teknik_lider', 'Teknik Lider', 'IT', 85, 0, 'Yazılım ekibi teknik yönetimi'),
+('kidemli_yazilimci', 'Kıdemli Yazılım Uzmanı', 'IT', 80, 0, 'Tam yetkili geliştirici'),
+('yazilim_uzmani', 'Yazılım Uzmanı', 'IT', 70, 0, 'Backend/Frontend geliştirici'),
+('stajyer_yazilimci', 'Stajyer Yazılımcı', 'IT', 40, 0, 'Sınırlı erişimli geliştirici'),
+('sistem_yoneticisi', 'Sistem Yöneticisi', 'IT', 85, 0, 'Sunucu ve altyapı yönetimi'),
+('veritabani_yoneticisi', 'Veritabanı Yöneticisi', 'IT', 88, 0, 'Veritabanı optimizasyon ve bakım'),
+('devops_muhendisi', 'DevOps Mühendisi', 'IT', 82, 0, 'CI/CD ve deployment yönetimi'),
+('guvenlik_uzmani', 'Siber Güvenlik Uzmanı', 'IT', 90, 0, 'Güvenlik açıkları ve sızma testleri'),
+('test_muhendisi', 'Test Mühendisi', 'IT', 65, 0, 'QA ve otomasyon testleri');
+
+-- ==================== HUKUK VE UYUMLULUK ====================
+INSERT INTO roller (rol_kodu, rol_adi, departman, seviye, varsayilan_mi, aciklama) VALUES
+('hukuk_direktoru', 'Hukuk Direktörü', 'Hukuk', 90, 0, 'Tüm hukuki süreçler'),
+('hukuk_musaviri', 'Hukuk Müşaviri', 'Hukuk', 85, 0, 'Sözleşme ve uyuşmazlıklar'),
+('veri_koruma_gorevlisi', 'KVKK / GDPR Uzmanı', 'Hukuk', 88, 0, 'Kişisel verilerin korunması'),
+('uyumluluk_uzmani', 'Uyumluluk Uzmanı', 'Hukuk', 80, 0, 'Mevzuat ve politika uyumluluğu');
+
+-- ==================== İNSAN KAYNAKLARI ====================
+INSERT INTO roller (rol_kodu, rol_adi, departman, seviye, varsayilan_mi, aciklama) VALUES
+('ik_direktoru', 'İK Direktörü', 'İnsan Kaynakları', 80, 0, 'İnsan kaynakları yönetimi'),
+('ik_yoneticisi', 'İK Yöneticisi', 'İnsan Kaynakları', 75, 0, 'İşe alım ve performans'),
+('ik_uzmani', 'İK Uzmanı', 'İnsan Kaynakları', 70, 0, 'Özlük işleri ve bordro'),
+('egitim_koordinatoru', 'Eğitim Koordinatörü', 'İnsan Kaynakları', 68, 0, 'Çalışan eğitimleri organizasyonu');
+
+-- ==================== DIŞ PAYDAŞLAR ====================
+INSERT INTO roller (rol_kodu, rol_adi, departman, seviye, varsayilan_mi, aciklama) VALUES
+('otel_sahibi', 'Otel Sahibi / Partner', 'Partner', 10, 0, 'Otel sahibi veya yetkilisi'),
+('otel_resepsiyon', 'Otel Resepsiyon Yetkilisi', 'Partner', 5, 0, 'Sınırlı erişimli otel personeli'),
+('misafir', 'Kayıtlı Misafir', 'Misafir', 1, 1, 'Standart rezervasyon yapan kullanıcı'),
+('kurumsal_musteri', 'Kurumsal Müşteri', 'Misafir', 2, 0, 'Şirket anlaşmalı müşteri'),
+('seyahat_acentesi', 'Seyahat Acentesi', 'Partner', 8, 0, 'Acente anlaşmalı satış kanalı'),
+('denetmen', 'Bağımsız Denetmen', 'Denetim', 50, 0, 'Sadece rapor okuma yetkili denetçi');
+1.3 Yetki Matrisi Tablosu: yetkiler
+Bu tablo, her bir sayfa/işlem için ayrı ayrı yetki kontrolü yapabilmek içindir. Rol bazlı değil, eylem bazlı yetkilendirme sağlar.
+
+sql
+CREATE TABLE yetkiler (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    yetki_kodu VARCHAR(100) NOT NULL UNIQUE COMMENT 'örn: otel.sil, rezervasyon.iptal, finans.rapor.gor',
+    modul VARCHAR(50) NOT NULL COMMENT 'Otel, Rezervasyon, Finans, Kullanici, Rapor, Sistem',
+    eylem VARCHAR(50) NOT NULL COMMENT 'listele, goruntule, ekle, duzenle, sil, onayla, reddet, indir',
+    aciklama VARCHAR(255),
+    varsayilan_izin TINYINT(1) DEFAULT 0 COMMENT 'Tüm roller için varsayılan izin',
+    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_modul (modul),
+    INDEX idx_eylem (eylem)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Sistemdeki tüm yetki tanımları';
+
+-- Yetki Örnekleri
+INSERT INTO yetkiler (yetki_kodu, modul, eylem, aciklama, varsayilan_izin) VALUES
+-- Otel Modülü
+('otel.listele', 'Otel', 'listele', 'Otelleri listeleme', 1),
+('otel.goruntule', 'Otel', 'goruntule', 'Otel detay sayfası görüntüleme', 1),
+('otel.ekle', 'Otel', 'ekle', 'Yeni otel ekleme', 0),
+('otel.duzenle', 'Otel', 'duzenle', 'Otel bilgilerini düzenleme', 0),
+('otel.sil', 'Otel', 'sil', 'Otel silme (soft delete)', 0),
+('otel.onayla', 'Otel', 'onayla', 'Otel yayına alma onayı', 0),
+('otel.yorum.sil', 'Otel', 'sil', 'Otel yorumu silme', 0),
+
+-- Finans Modülü
+('finans.komisyon.gor', 'Finans', 'goruntule', 'Komisyon oranlarını görme', 0),
+('finans.komisyon.duzenle', 'Finans', 'duzenle', 'Komisyon oranı değiştirme', 0),
+('finans.odeme.onayla', 'Finans', 'onayla', 'Partnere ödeme onayı verme', 0),
+('finans.fatura.kes', 'Finans', 'ekle', 'Fatura kesme yetkisi', 0),
+('finans.rapor.gor', 'Finans', 'goruntule', 'Finansal raporları görüntüleme', 0),
+('finans.iade.onayla', 'Finans', 'onayla', 'İade taleplerini onaylama', 0),
+
+-- Rezervasyon Modülü
+('rezervasyon.listele', 'Rezervasyon', 'listele', 'Tüm rezervasyonları listeleme', 0),
+('rezervasyon.iptal.et', 'Rezervasyon', 'sil', 'Rezervasyon iptal etme', 0),
+('rezervasyon.tarih.degistir', 'Rezervasyon', 'duzenle', 'Rezervasyon tarihi değiştirme', 0),
+
+-- Sistem Modülü
+('sistem.ayarlar.gor', 'Sistem', 'goruntule', 'Sistem ayarlarını görme', 0),
+('sistem.ayarlar.duzenle', 'Sistem', 'duzenle', 'Sistem ayarlarını değiştirme', 0),
+('sistem.log.gor', 'Sistem', 'goruntule', 'Sistem loglarını görüntüleme', 0),
+('sistem.kullanici.rol.ata', 'Sistem', 'duzenle', 'Kullanıcıya rol atama', 0);
+1.4 Rol-Yetki İlişki Tablosu: rol_yetkileri
+sql
+CREATE TABLE rol_yetkileri (
+    rol_id SMALLINT UNSIGNED NOT NULL,
+    yetki_id INT UNSIGNED NOT NULL,
+    izin_var TINYINT(1) DEFAULT 1 COMMENT '1: İzin var, 0: Özel olarak engellenmiş',
+    atayan_kullanici_id BIGINT UNSIGNED NULL,
+    atama_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (rol_id, yetki_id),
+    FOREIGN KEY (rol_id) REFERENCES roller(id) ON DELETE CASCADE,
+    FOREIGN KEY (yetki_id) REFERENCES yetkiler(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Rollere atanmış yetkiler';
+
+-- Örnek: Super Admin'e tüm yetkiler (uygulama seviyesinde kodla da yapılabilir)
+INSERT INTO rol_yetkileri (rol_id, yetki_id, izin_var)
+SELECT (SELECT id FROM roller WHERE rol_kodu = 'super_admin'), id, 1 FROM yetkiler;
+1.5 Ana Kullanıcı Tablosu: kullanicilar
+sql
+CREATE TABLE kullanicilar (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    ad_soyad VARCHAR(100) NOT NULL,
+    eposta VARCHAR(100) NOT NULL UNIQUE,
+    telefon VARCHAR(20) NULL UNIQUE,
+    sifre VARCHAR(255) NOT NULL,
+    profil_fotografi VARCHAR(255) NULL,
+    email_dogrulama_tarihi TIMESTAMP NULL,
+    telefon_dogrulama_tarihi TIMESTAMP NULL,
+    son_giris_tarihi TIMESTAMP NULL,
+    son_giris_ip VARCHAR(45) NULL,
+    hesap_durumu TINYINT NOT NULL DEFAULT 1 COMMENT '1:Aktif, 0:Pasif, 2:Askıda, 3:Banlı',
+    dil_tercihi VARCHAR(5) DEFAULT 'tr',
+    para_birimi VARCHAR(3) DEFAULT 'TRY',
+    ulke VARCHAR(50) DEFAULT 'Türkiye',
+    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    guncellenme_tarihi TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_eposta (eposta),
+    INDEX idx_telefon (telefon),
+    INDEX idx_hesap_durumu (hesap_durumu)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Tüm kullanıcıların ana tablosu';
+1.6 Kullanıcı-Rol İlişki Tablosu: kullanici_rolleri
+sql
+CREATE TABLE kullanici_rolleri (
+    kullanici_id BIGINT UNSIGNED NOT NULL,
+    rol_id SMALLINT UNSIGNED NOT NULL,
+    atayan_kullanici_id BIGINT UNSIGNED NULL,
+    atama_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    bitis_tarihi TIMESTAMP NULL COMMENT 'Geçici rol atamaları için',
+    
+    PRIMARY KEY (kullanici_id, rol_id),
+    FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE,
+    FOREIGN KEY (rol_id) REFERENCES roller(id) ON DELETE CASCADE,
+    FOREIGN KEY (atayan_kullanici_id) REFERENCES kullanicilar(id) ON DELETE SET NULL,
+    
+    INDEX idx_rol (rol_id),
+    INDEX idx_bitis (bitis_tarihi)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Kullanıcıların sahip olduğu roller';
+1.7 Departman Tablosu (Genişletilmiş)
+sql
+CREATE TABLE departmanlar (
+    id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    departman_kodu VARCHAR(30) NOT NULL UNIQUE,
+    departman_adi VARCHAR(50) NOT NULL,
+    ust_departman_id SMALLINT UNSIGNED NULL,
+    yonetici_rol_id SMALLINT UNSIGNED NULL COMMENT 'Bu departmanın varsayılan yönetici rolü',
+    bina_kat VARCHAR(20) NULL,
+    dahili_telefon VARCHAR(10) NULL,
+    aciklama VARCHAR(255),
+    aktif_mi TINYINT(1) DEFAULT 1,
+    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (ust_departman_id) REFERENCES departmanlar(id) ON DELETE SET NULL,
+    FOREIGN KEY (yonetici_rol_id) REFERENCES roller(id) ON DELETE SET NULL,
+    
+    INDEX idx_departman_kodu (departman_kodu),
+    INDEX idx_aktif (aktif_mi)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Şirket departman hiyerarşisi';
+
+-- Departman Veri Girişi
+INSERT INTO departmanlar (departman_kodu, departman_adi, yonetici_rol_id, aciklama) VALUES
+('YK', 'Yönetim Kurulu', (SELECT id FROM roller WHERE rol_kodu = 'super_admin'), 'En üst karar organı'),
+('GM', 'Genel Müdürlük', (SELECT id FROM roller WHERE rol_kodu = 'genel_mudur'), 'İcra kurulu başkanlığı'),
+('FIN', 'Finans ve Muhasebe', (SELECT id FROM roller WHERE rol_kodu = 'finans_direktoru'), 'Tüm mali işlemler'),
+('SAT', 'Satış ve İş Geliştirme', (SELECT id FROM roller WHERE rol_kodu = 'satis_direktoru'), 'Otel kazanımı ve satış'),
+('OPS', 'Operasyon', (SELECT id FROM roller WHERE rol_kodu = 'operasyon_direktoru'), 'Günlük operasyon yönetimi'),
+('DESTEK', 'Müşteri Hizmetleri', (SELECT id FROM roller WHERE rol_kodu = 'destek_direktoru'), '7/24 destek hizmetleri'),
+('PAZ', 'Pazarlama', (SELECT id FROM roller WHERE rol_kodu = 'pazarlama_direktoru'), 'Marka ve dijital pazarlama'),
+('IT', 'Bilgi Teknolojileri', (SELECT id FROM roller WHERE rol_kodu = 'cto'), 'Yazılım ve altyapı'),
+('HUK', 'Hukuk ve Uyumluluk', (SELECT id FROM roller WHERE rol_kodu = 'hukuk_direktoru'), 'Hukuki işler ve KVKK'),
+('IK', 'İnsan Kaynakları', (SELECT id FROM roller WHERE rol_kodu = 'ik_direktoru'), 'Personel yönetimi'),
+('DIS', 'Dış Paydaşlar', NULL, 'Oteller, acenteler, misafirler');
+1.8 Kullanıcı-Departman İlişkisi (Opsiyonel)
+Bir kullanıcı şirket çalışanıysa hangi departmanda çalıştığını tutar.
+
+sql
+CREATE TABLE kullanici_departman (
+    kullanici_id BIGINT UNSIGNED NOT NULL,
+    departman_id SMALLINT UNSIGNED NOT NULL,
+    unvan VARCHAR(100) NULL COMMENT 'Kıdemli Yazılım Uzmanı vb.',
+    ise_baslama_tarihi DATE NULL,
+    yonetici_mi TINYINT(1) DEFAULT 0,
+    
+    PRIMARY KEY (kullanici_id, departman_id),
+    FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE,
+    FOREIGN KEY (departman_id) REFERENCES departmanlar(id) ON DELETE CASCADE,
+    
+    INDEX idx_departman (departman_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Şirket çalışanlarının departman bilgileri';

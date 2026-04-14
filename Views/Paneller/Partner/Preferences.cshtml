@@ -1,0 +1,18 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerPreferencesPageViewModel
+@{ Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml"; ViewData["PartnerShell"] = Model.Shell; }
+<section class="partner-section-card">
+    <h2>Panel Tercihleri</h2>
+    <form method="post" action="/panel/partner/tercihler/kaydet" class="partner-form-grid">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="HotelId" value="@Model.Form.HotelId" />
+        <select name="DefaultHotelId">@foreach (var hotel in Model.Shell.ManagedHotels) { <option value="@hotel.HotelId" selected="@(hotel.HotelId == Model.Form.DefaultHotelId ? "selected" : null)">@hotel.HotelName</option> }</select>
+        <input type="text" name="Language" value="@Model.Form.Language" placeholder="Dil" />
+        <input type="text" name="Currency" value="@Model.Form.Currency" placeholder="Para birimi" />
+        <input type="text" name="Timezone" value="@Model.Form.Timezone" placeholder="Zaman dilimi" />
+        <input type="text" name="CalendarView" value="@Model.Form.CalendarView" placeholder="Takvim gorunumu" />
+        <label><input type="checkbox" name="EmailNotifications" value="true" checked="@(Model.Form.EmailNotifications ? "checked" : null)" /> Email bildirimleri</label>
+        <label><input type="checkbox" name="SmsNotifications" value="true" checked="@(Model.Form.SmsNotifications ? "checked" : null)" /> SMS bildirimleri</label>
+        <label><input type="checkbox" name="RememberDevice" value="true" checked="@(Model.Form.RememberDevice ? "checked" : null)" /> Cihazi hatirla</label>
+        <button type="submit" class="partner-primary-btn">Tercihleri Kaydet</button>
+    </form>
+</section>

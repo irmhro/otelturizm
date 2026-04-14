@@ -1,0 +1,74 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminShellViewModel
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Dashboard";
+    var items = new[]
+    {
+        new { Action = "Dashboard", Label = "Dashboard", Icon = "fa-grid-2", Badge = "", Route = "dashboard" },
+        new { Action = "Hotels", Label = "Oteller", Icon = "fa-hotel", Badge = "", Route = "oteller" },
+        new { Action = "Reservations", Label = "Rezervasyonlar", Icon = "fa-calendar-check", Badge = "", Route = "rezervasyonlar" },
+        new { Action = "Payments", Label = "Odemeler", Icon = "fa-credit-card", Badge = "", Route = "odemeler" },
+        new { Action = "Users", Label = "Kullanıcılar", Icon = "fa-users", Badge = "", Route = "kullanıcılar" },
+        new { Action = "Managers", Label = "Yöneticiler", Icon = "fa-user-tie", Badge = "", Route = "yoneticiler" },
+        new { Action = "PartnerApplications", Label = "Partner Başvuruları", Icon = "fa-handshake-angle", Badge = Model.PendingPartnerApplications > 0 ? Model.PendingPartnerApplications.ToString() : "", Route = "partner-basvurulari" },
+        new { Action = "Reviews", Label = "Değerlendirmeler", Icon = "fa-star", Badge = Model.PendingReviews > 0 ? Model.PendingReviews.ToString() : "", Route = "degerlendirmeler" },
+        new { Action = "Campaigns", Label = "Kampanyalar", Icon = "fa-bullhorn", Badge = "", Route = "kampanyalar" },
+        new { Action = "Invoices", Label = "Faturalar", Icon = "fa-file-invoice", Badge = "", Route = "faturalar" },
+        new { Action = "Commissions", Label = "Komisyonlar", Icon = "fa-percent", Badge = "", Route = "komisyonlar" },
+        new { Action = "Notifications", Label = "Bildirimler", Icon = "fa-bell", Badge = Model.UnreadNotifications > 0 ? Model.UnreadNotifications.ToString() : "", Route = "bildirimler" },
+        new { Action = "EmailTemplates", Label = "E-posta Sablonlari", Icon = "fa-envelope", Badge = "", Route = "eposta-sablonlari" },
+        new { Action = "Logs", Label = "Log Kayıtları", Icon = "fa-clipboard-list", Badge = Model.CriticalLogs > 0 ? Model.CriticalLogs.ToString() : "", Route = "log-kayitlari" },
+        new { Action = "Reports", Label = "Raporlar", Icon = "fa-chart-column", Badge = "", Route = "raporlar" },
+        new { Action = "Blog", Label = "Blog Yonetimi", Icon = "fa-blog", Badge = "", Route = "blog" },
+        new { Action = "Faq", Label = "SSS Yonetimi", Icon = "fa-circle-question", Badge = "", Route = "sss" },
+        new { Action = "Settings", Label = "Ayarlar", Icon = "fa-sliders", Badge = "", Route = "ayarlar" },
+        new { Action = "Security", Label = "Güvenlik", Icon = "fa-shield-halved", Badge = "", Route = "guvenlik" },
+        new { Action = "Complaints", Label = "Şikayetler", Icon = "fa-triangle-exclamation", Badge = "", Route = "sikayetler" },
+        new { Action = "Backups", Label = "Yedekleme", Icon = "fa-database", Badge = "", Route = "yedekleme" }
+    };
+}
+<aside class="admin-sidebar">
+    <div>
+        <div class="admin-brand-row">
+            <a asp-controller="AdminPanel" asp-action="Dashboard" class="admin-brand-link" aria-label="Otelturizm Admin">
+                <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
+            </a>
+        </div>
+
+        <div class="admin-profile-card">
+            <div class="admin-avatar">@string.Concat(Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(static p => p[0]))</div>
+            <div>
+                <h3>@Model.FullName</h3>
+                <p>@Model.Email</p>
+                <div class="admin-mini-badges">
+                    <span class="role-badge">@Model.UserRole</span>
+                    <span class="alert-badge">@Model.CriticalLogs kritik</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="admin-sidebar-nav">
+            @foreach (var item in items)
+            {
+                <a asp-controller="AdminPanel" asp-action="@item.Action" class="@(currentAction == item.Action ? "active" : "")">
+                    <i class="fas @item.Icon"></i>
+                    <span>@item.Label</span>
+                    @if (!string.IsNullOrWhiteSpace(item.Badge))
+                    {
+                        <strong>@item.Badge</strong>
+                    }
+                </a>
+            }
+        </nav>
+    </div>
+
+    <div class="admin-sidebar-bottom">
+        <a asp-controller="Home" asp-action="Index" class="secondary-link"><i class="fas fa-arrow-left"></i> Ana Sayfaya Don</a>
+        <form method="post" action="/cikis-yap" class="panel-logout-form">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="logout-link"><i class="fas fa-right-from-bracket"></i> Cikis Yap</button>
+        </form>
+    </div>
+</aside>
+
+

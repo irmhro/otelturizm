@@ -1,0 +1,74 @@
+@using otelturizmnew.Models.Paneller.Satis
+@{
+    Layout = null;
+    var shell = ViewData["SalesShell"] as SalesPanelShellViewModel ?? Model as SalesPanelShellViewModel;
+    var pageCssPath = ViewData["PageCssPath"] as string;
+    var title = ViewData["Title"] as string ?? shell?.PanelTitle ?? "Satış Paneli";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - Otelturizm</title>
+    
+    
+    <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/assets/css/paneller/satis/shell.css" asp-append-version="true" />
+    @if (!string.IsNullOrWhiteSpace(pageCssPath))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
+    }
+</head>
+<body>
+    <div class="sales-panel-shell">
+        @if (shell is not null)
+        {
+            <partial name="~/Views/Paneller/Satis/_SalesSidebar.cshtml" model="shell" />
+        }
+        <main class="sales-panel-main">
+            @if (shell is not null)
+            {
+                <header class="sales-page-header">
+                    <div>
+                        <p class="sales-kicker">SATIŞ PANELİ</p>
+                        <h1>@shell.PanelTitle</h1>
+                        <p class="sales-subtitle">@shell.PanelSubtitle</p>
+                    </div>
+                    <div class="sales-header-badges">
+                        <span><i class="fas fa-check-circle"></i> @shell.TodayReservationCount bugün</span>
+                        <span><i class="fas fa-money-bill-wave"></i> @shell.TodayRevenue.ToString("N0") TL</span>
+                        <span><i class="fas fa-trophy"></i> @(shell.Ranking <= 0 ? "-" : $"#{shell.Ranking}") sıra</span>
+                        <form method="post" action="/cikis-yap" class="panel-header-logout-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="panel-header-logout-btn">
+                                <i class="fas fa-right-from-bracket"></i>
+                                <span>Cikis Yap</span>
+                            </button>
+                        </form>
+                    </div>
+                </header>
+                @if (!string.IsNullOrWhiteSpace(shell.SuccessMessage))
+                {
+                    <div class="sales-alert sales-alert-success"><i class="fas fa-circle-check"></i><span>@shell.SuccessMessage</span></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(shell.ErrorMessage))
+                {
+                    <div class="sales-alert sales-alert-error"><i class="fas fa-triangle-exclamation"></i><span>@shell.ErrorMessage</span></div>
+                }
+            }
+            @RenderBody()
+            @if (shell is not null)
+            {
+                <partial name="~/Views/Paneller/Satis/_SalesPanelFooter.cshtml" model="shell" />
+            }
+        </main>
+    </div>
+    @if (shell is not null)
+    {
+        <partial name="~/Views/Paneller/Satis/_SalesMobileNav.cshtml" model="shell" />
+    }
+</body>
+</html>
+

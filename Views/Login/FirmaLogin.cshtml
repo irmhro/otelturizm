@@ -1,0 +1,160 @@
+@{
+    ViewData["Title"] = "Firma Giriş";
+}
+
+<section class="auth-shell user-auth-shell firma-auth-shell">
+    <div class="auth-stage">
+        <aside class="auth-sidebar firma-auth-sidebar">
+            <div class="auth-sidebar-top">
+                <span class="auth-sidebar-badge">Firma</span>
+            </div>
+
+            <div class="auth-sidebar-content">
+                <p class="auth-kicker">Kurumsal seyahat yönetimi</p>
+                <h1>Firmanızın konaklama bütçesini tek panelden yönetin</h1>
+                <p class="auth-lead">Firma hesabınızı açın, başvurunuzu yöneticilerimiz değerlendirsin ve onay sonrasında özel fiyatlar, çalışan limitleri ve rapor ekranlarıyla ilerleyin.</p>
+
+                <ul class="auth-feature-list">
+                    <li><i class="fas fa-tags"></i> Otellerin firmalara özel tanımladığı indirimli fiyatları görün</li>
+                    <li><i class="fas fa-user-group"></i> Çalışan bazlı limit ve onay akışlarını yönetin</li>
+                    <li><i class="fas fa-file-invoice"></i> Kurumsal faturaları ve rezervasyon geçmişini takip edin</li>
+                    <li><i class="fas fa-shield-check"></i> Onaylı hesap ile güvenli giriş ve merkezi kontrol sağlayın</li>
+                </ul>
+            </div>
+
+            <div class="auth-sidebar-bottom">
+                <span><i class="fas fa-clock"></i> Ortalama değerlendirme süresi: 24 saat</span>
+                <span><i class="fas fa-circle-check"></i> Onay sonrası firma paneli aktif olur</span>
+            </div>
+        </aside>
+
+        <div class="auth-panel-wrap">
+            <div class="auth-tabs" data-auth-tabs>
+                <button type="button" class="auth-tab active" data-target="firmaLoginPanel">
+                    <i class="fas fa-sign-in-alt"></i> Firma Girişi
+                </button>
+                <button type="button" class="auth-tab" data-target="firmaRegisterPanel">
+                    <i class="fas fa-building-circle-check"></i> Firma Hesabı Açın
+                </button>
+            </div>
+
+            <div class="auth-panel active" id="firmaLoginPanel">
+                @if (TempData["FirmaRegisterSuccess"] is string successMessage)
+                {
+                    <div class="auth-success">@successMessage</div>
+                }
+
+                @if (TempData["FirmaLoginError"] is string loginError)
+                {
+                    <div class="auth-alert">@loginError</div>
+                }
+
+                <div class="divider-line"><span>onaylı firma hesabı ile giriş yapın</span></div>
+
+                <form class="auth-form" id="firmaLoginForm" method="post" action="/firma-giris">
+                    @Html.AntiForgeryToken()
+                    <div class="form-group">
+                        <label for="firmaIdentity">Yetkili E-posta</label>
+                        <div class="input-wrap">
+                            <i class="far fa-envelope"></i>
+                            <input id="firmaIdentity" name="firmaIdentity" type="email" class="form-control" placeholder="yetkili@firma.com" required />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="firmaLoginPassword">Şifre</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-lock"></i>
+                            <input id="firmaLoginPassword" name="firmaPassword" type="password" class="form-control" placeholder="••••••••" required />
+                            <button type="button" class="toggle-password" data-toggle-target="firmaLoginPassword">
+                                <i class="far fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-row-meta">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" name="rememberMe" value="true" checked />
+                            <span>Beni hatırla</span>
+                        </label>
+                        <a href="#" class="text-link">Başvuru durumunu sor</a>
+                    </div>
+
+                    <button type="submit" class="auth-submit-btn firma-submit-btn">Firma Paneline Giriş Yap <i class="fas fa-arrow-right"></i></button>
+                </form>
+            </div>
+
+            <div class="auth-panel" id="firmaRegisterPanel">
+                <partial name="~/Views/Register/_FirmaRegisterForm.cshtml" />
+            </div>
+
+            <div class="auth-trust-row">
+                <span><i class="fas fa-shield-alt"></i> KVKK</span>
+                <span><i class="fas fa-building-shield"></i> Kurumsal Doğrulama</span>
+                <span><i class="fas fa-file-signature"></i> Onaylı Erişim</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            const scope = document.querySelector('.firma-auth-shell');
+            if (!scope) {
+                return;
+            }
+
+            const tabs = scope.querySelectorAll('[data-auth-tabs] .auth-tab');
+            const panels = scope.querySelectorAll('.auth-panel');
+
+            function switchPanel(id) {
+                tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.target === id));
+                panels.forEach(panel => panel.classList.toggle('active', panel.id === id));
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => switchPanel(tab.dataset.target));
+            });
+
+            scope.querySelectorAll('[data-toggle-target]').forEach(button => {
+                button.addEventListener('click', function () {
+                    const input = document.getElementById(this.dataset.toggleTarget);
+                    const icon = this.querySelector('i');
+                    if (!input || !icon) {
+                        return;
+                    }
+
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
+                    icon.className = isPassword ? 'far fa-eye-slash' : 'far fa-eye';
+                });
+            });
+
+            const loginForm = document.getElementById('firmaLoginForm');
+            loginForm?.addEventListener('submit', function () {
+                const submitButton = this.querySelector('.auth-submit-btn');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = 'Giriş doğrulanıyor <i class="fas fa-spinner fa-spin"></i>';
+                }
+            });
+
+            const registerForm = document.getElementById('firmaRegisterForm');
+            registerForm?.addEventListener('submit', function () {
+                const submitButton = this.querySelector('.auth-submit-btn');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = 'Başvuru oluşturuluyor <i class="fas fa-spinner fa-spin"></i>';
+                }
+            });
+
+            const query = new URLSearchParams(window.location.search);
+            const shouldOpenRegister = '@(TempData["OpenFirmaRegisterTab"] as string ?? string.Empty)';
+            const shouldOpenRegisterFromUrl = query.get('sekme') === 'kayit' || window.location.hash === '#firma-kayit';
+            if (shouldOpenRegister === '1' || shouldOpenRegisterFromUrl) {
+                switchPanel('firmaRegisterPanel');
+            }
+        })();
+    </script>
+}

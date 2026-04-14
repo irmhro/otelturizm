@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Swissôtel The Bosphorus · Otelturizm</title>
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Swiper (Galeri ve Benzer Oteller için) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <!-- Flatpickr (Tarih Seçici - Backend'e hazır) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    /* === TASARIM SİSTEMİ (Ana Sayfa ile Aynı Token'lar) === */
+    :root {
+      --primary: #003B95;
+      --secondary: #FF385C;
+      --bg-light: #F5F7FA;
+      --card-bg: #FFFFFF;
+      --text-dark: #1A1F26;
+      --text-gray: #6B7380;
+      --border-light: #E7E9EC;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-hover: 0 20px 30px -10px rgba(0, 59, 149, 0.15);
+      --radius-card: 16px;
+      --radius-button: 32px;
+      --success: #00A86B;
+      --warning: #FFB800;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+    @media (max-width: 1024px) { .container { padding: 0 24px; } }
+    @media (max-width: 640px) { .container { padding: 0 16px; } }
+
+    /* === HEADER (Aynı Sticky Sistem) === */
+    .main-header {
+      position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-light); padding: 12px 0;
+    }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 28px; font-weight: 700; color: var(--primary); }
+    .logo i { color: var(--secondary); }
+    .back-btn { color: var(--primary); font-weight: 500; }
+    .back-btn i { margin-right: 6px; }
+
+    /* === GALERİ BÖLÜMÜ === */
+    .gallery-section { margin: 24px 0; }
+    .gallery-main {
+      display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; height: 460px;
+      border-radius: var(--radius-card); overflow: hidden;
+    }
+    .gallery-item { position: relative; overflow: hidden; cursor: pointer; }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+    .gallery-item:hover img { transform: scale(1.05); }
+    .gallery-item:first-child { grid-row: span 2; }
+    .all-photos-btn {
+      position: absolute; bottom: 20px; right: 20px; background: white;
+      padding: 10px 20px; border-radius: 40px; font-weight: 500; border: none;
+      box-shadow: var(--shadow-sm); cursor: pointer;
+    }
+    @media (max-width: 700px) {
+      .gallery-main { display: none; }
+      .mobile-gallery { display: block; }
+    }
+    @media (min-width: 701px) { .mobile-gallery { display: none; } }
+    .mobile-gallery { height: 280px; border-radius: var(--radius-card); overflow: hidden; }
+
+    /* === OTEL BAŞLIK ALANI === */
+    .hotel-header { margin: 24px 0 20px; }
+    .hotel-title-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
+    .hotel-name { font-size: 32px; font-weight: 700; }
+    .stars { color: var(--warning); font-size: 18px; margin: 8px 0; letter-spacing: 2px; }
+    .hotel-address { color: var(--text-gray); margin: 8px 0; }
+    .hotel-address i { margin-right: 8px; color: var(--secondary); }
+    .action-icons { display: flex; gap: 16px; }
+    .action-icons button { background: white; border: 1px solid var(--border-light); padding: 10px 18px; border-radius: 40px; cursor: pointer; transition: 0.2s; }
+    .action-icons button:hover { box-shadow: var(--shadow-hover); }
+
+    /* === İÇERİK GRID (Sol İçerik + Sağ Rezervasyon Kartı) === */
+    .content-grid { display: grid; grid-template-columns: 1fr 380px; gap: 32px; margin: 32px 0; }
+    @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } }
+
+    /* === REZERVASYON KARTI (Sticky Sağ Panel) === */
+    .booking-card {
+      background: var(--card-bg); border-radius: var(--radius-card); padding: 24px;
+      box-shadow: var(--shadow-hover); border: 1px solid var(--border-light);
+      position: sticky; top: 100px; height: fit-content;
+    }
+    .price-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px; }
+    .price-amount { font-size: 28px; font-weight: 700; color: var(--text-dark); }
+    .price-night { color: var(--text-gray); font-size: 14px; }
+    .booking-form { display: flex; flex-direction: column; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-weight: 500; font-size: 14px; }
+    .form-group input, .form-group select {
+      padding: 14px 16px; border: 1px solid var(--border-light); border-radius: 12px;
+      font-family: "Inter", sans-serif; font-size: 15px; background: white;
+    }
+    .date-range { display: flex; gap: 8px; }
+    .date-range input { flex: 1; }
+    .guest-selector { display: flex; justify-content: space-between; align-items: center; }
+    .guest-controls { display: flex; align-items: center; gap: 12px; }
+    .guest-btn {
+      width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border-light);
+      background: white; cursor: pointer; font-size: 18px;
+    }
+    .book-cta {
+      background: var(--secondary); color: white; border: none; padding: 18px;
+      border-radius: var(--radius-button); font-weight: 700; font-size: 18px;
+      cursor: pointer; margin-top: 16px; transition: 0.2s;
+    }
+    .book-cta:hover { background: #e02e50; transform: scale(1.02); }
+    .price-breakdown { margin-top: 20px; font-size: 13px; color: var(--text-gray); }
+    .price-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .total-row { font-weight: 700; color: var(--text-dark); border-top: 1px solid var(--border-light); padding-top: 12px; margin-top: 8px; }
+
+    /* === ÖZELLİKLER BÖLÜMÜ === */
+    .section-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+    .amenities-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+      margin-bottom: 40px;
+    }
+    @media (max-width: 600px) { .amenities-grid { grid-template-columns: repeat(2, 1fr); } }
+    .amenity-item { display: flex; align-items: center; gap: 12px; }
+    .amenity-item i { width: 24px; color: var(--primary); font-size: 20px; }
+
+    /* === ODA TİPLERİ TABLOSU (Backend için Hazır) === */
+    .room-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+    .room-card {
+      background: var(--card-bg); border-radius: var(--radius-card); padding: 20px;
+      margin-bottom: 16px; border: 1px solid var(--border-light);
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+    }
+    .room-info h4 { font-size: 18px; margin-bottom: 4px; }
+    .room-specs { display: flex; gap: 16px; color: var(--text-gray); font-size: 14px; margin: 8px 0; }
+    .room-specs i { margin-right: 4px; }
+    .cancellation { color: var(--success); font-size: 13px; font-weight: 500; }
+    .room-price { text-align: right; }
+    .room-price .price { font-size: 22px; font-weight: 700; }
+    .select-room-btn {
+      background: var(--primary); color: white; border: none; padding: 12px 24px;
+      border-radius: 40px; font-weight: 600; cursor: pointer; margin-top: 12px;
+    }
+
+    /* === DEĞERLENDİRMELER === */
+    .reviews-section { margin: 40px 0; }
+    .rating-summary {
+      display: flex; gap: 40px; background: white; padding: 24px; border-radius: var(--radius-card);
+      margin-bottom: 30px;
+    }
+    .rating-big { text-align: center; }
+    .rating-number { font-size: 56px; font-weight: 700; color: var(--primary); }
+    .rating-bars { flex: 1; }
+    .bar-item { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .bar-label { width: 80px; font-size: 14px; }
+    .bar-bg { flex: 1; height: 8px; background: var(--border-light); border-radius: 4px; }
+    .bar-fill { height: 8px; background: var(--primary); border-radius: 4px; }
+    .review-card {
+      background: white; border-radius: var(--radius-card); padding: 20px; margin-bottom: 16px;
+    }
+    .reviewer { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .reviewer-avatar { width: 48px; height: 48px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; }
+    .review-text { color: var(--text-dark); margin-bottom: 12px; }
+
+    /* === HARİTA === */
+    .map-container { height: 300px; background: #ddd; border-radius: var(--radius-card); margin: 40px 0; overflow: hidden; }
+    #hotelMap { height: 100%; width: 100%; }
+
+    /* === BENZER OTELLER SLIDER === */
+    .similar-hotels { margin: 48px 0; }
+    .swiper-similar { padding: 8px 4px; }
+
+    /* === FOOTER === */
+    .main-footer { background: #1A1F26; color: #B0B8C5; padding: 48px 0 24px; margin-top: 60px; }
+    .footer-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 32px; }
+    @media (max-width: 800px) { .footer-grid { grid-template-columns: repeat(2, 1fr); } }
+    .footer-col h4 { color: white; margin-bottom: 16px; }
+    .footer-col ul { list-style: none; }
+    .footer-col li { margin-bottom: 10px; }
+    .footer-col a { color: #B0B8C5; text-decoration: none; }
+    .footer-bottom { display: flex; justify-content: space-between; padding-top: 24px; border-top: 1px solid #2C333D; margin-top: 32px; }
+
+    /* === MODAL (Galeri Lightbox) === */
+    .lightbox-modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.95); z-index: 9999; justify-content: center; align-items: center;
+    }
+    .lightbox-content { max-width: 90%; max-height: 80vh; }
+    .close-lightbox { position: absolute; top: 30px; right: 40px; color: white; font-size: 40px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="main-header">
+  <div class="container header-inner">
+    <div class="logo"><i class="fas fa-hotel"></i> Otelturizm</div>
+    <a href="anasayfa.html" class="back-btn"><i class="fas fa-arrow-left"></i> Otellere Dön</a>
+  </div>
+</header>
+
+<main class="container">
+  
+  <!-- === GALERİ (Grid + Mobil Swiper) === -->
+  <section class="gallery-section">
+    <div class="gallery-main" id="galleryGrid">
+      <!-- JS ile doldurulacak -->
+    </div>
+    <div class="mobile-gallery">
+      <div class="swiper gallery-swiper">
+        <div class="swiper-wrapper" id="mobileGalleryWrapper"></div>
+        <div class="swiper-pagination"></div>
+      </div>
+    </div>
+    <button class="all-photos-btn" id="showAllPhotos"><i class="far fa-images"></i> Tüm Fotoğraflar (24)</button>
+  </section>
+
+  <!-- === OTEL BAŞLIK === -->
+  <section class="hotel-header">
+    <div class="hotel-title-row">
+      <div>
+        <h1 class="hotel-name" id="hotelName">Swissôtel The Bosphorus</h1>
+        <div class="stars" id="hotelStars">★★★★★</div>
+        <div class="hotel-address"><i class="fas fa-map-pin"></i> <span id="hotelAddress">Vişnezade Mah. Acısu Sok. No:19, Beşiktaş, İstanbul</span> · <a href="#map" style="color: var(--primary);">Haritada Göster <i class="fas fa-external-link-alt"></i></a></div>
+      </div>
+      <div class="action-icons">
+        <button id="shareBtn"><i class="far fa-share-square"></i> Paylaş</button>
+        <button id="favoriteBtn"><i class="far fa-heart"></i> Kaydet</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- === İÇERİK GRID (SOL İÇERİK + SAĞ REZERVASYON) === -->
+  <div class="content-grid">
+    
+    <!-- SOL TARAF İÇERİKLERİ -->
+    <div class="left-content">
+      
+      <!-- Öne Çıkan Özellikler -->
+      <section>
+        <h2 class="section-title">Öne Çıkan Özellikler</h2>
+        <div class="amenities-grid" id="featuredAmenities"></div>
+      </section>
+
+      <!-- Oda Tipleri Tablosu -->
+      <section style="margin: 40px 0;">
+        <h2 class="section-title">Oda Tipleri ve Fiyatlar</h2>
+        <div id="roomTypesContainer"></div>
+      </section>
+
+      <!-- Tesis Olanakları (Tam Liste) -->
+      <section style="margin: 40px 0;">
+        <h2 class="section-title">Tüm Tesis Olanakları</h2>
+        <div class="amenities-grid" id="allAmenities"></div>
+        <button id="showMoreAmenities" style="background: none; border: 1px solid var(--border-light); padding: 12px 24px; border-radius: 40px; cursor: pointer; margin-top: 16px;">
+          Tüm Olanakları Göster (32) <i class="fas fa-chevron-down"></i>
+        </button>
+      </section>
+
+      <!-- Değerlendirmeler -->
+      <section class="reviews-section">
+        <h2 class="section-title">Misafir Değerlendirmeleri</h2>
+        <div class="rating-summary">
+          <div class="rating-big">
+            <div class="rating-number">9.2</div>
+            <div>Fevkalade</div>
+            <div style="font-size: 13px; color: var(--text-gray);">1.847 yorum</div>
+          </div>
+          <div class="rating-bars" id="ratingBars"></div>
+        </div>
+        <div id="reviewsList"></div>
+        <button id="loadMoreReviews" style="background: white; border: 1px solid var(--border-light); padding: 14px 28px; border-radius: 40px; cursor: pointer; width: 100%;">
+          Daha Fazla Yorum Yükle (1.847)
+        </button>
+      </section>
+
+      <!-- Harita -->
+      <section id="map">
+        <h2 class="section-title">Konum</h2>
+        <div class="map-container" id="mapContainer">
+          <iframe id="hotelMap" src="https://www.openstreetmap.org/export/embed.html?bbox=28.9925%2C41.0350%2C29.0125%2C41.0550&layer=mapnik&marker=41.0450%2C29.0025" style="width:100%; height:100%; border:0;" allowfullscreen loading="lazy"></iframe>
+        </div>
+        <p style="margin-top: 12px;"><i class="fas fa-location-dot"></i> Vişnezade Mah. Acısu Sok. No:19, Beşiktaş · Dolmabahçe Sarayı'na 800m</p>
+      </section>
+    </div>
+
+    <!-- SAĞ TARAF: STICKY REZERVASYON KARTI (Backend Form Alanları) -->
+    <aside class="booking-card" id="bookingCard">
+      <div class="price-header">
+        <div><span class="price-amount" id="basePrice">₺4.250</span> <span class="price-night">/ gece</span></div>
+        <div><span class="badge-smart" style="background: var(--success); color: white; padding: 4px 10px; border-radius: 20px;">%15 İndirim</span></div>
+      </div>
+      
+      <form class="booking-form" id="reservationForm">
+        <div class="form-group">
+          <label><i class="far fa-calendar"></i> Giriş - Çıkış Tarihi</label>
+          <div class="date-range">
+            <input type="text" id="checkinDate" placeholder="Giriş" readonly>
+            <input type="text" id="checkoutDate" placeholder="Çıkış" readonly>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label><i class="far fa-user"></i> Misafir Sayısı</label>
+          <div class="guest-selector">
+            <span>Yetişkin (12+ yaş)</span>
+            <div class="guest-controls">
+              <button type="button" class="guest-btn" data-target="adults" data-action="decrease">-</button>
+              <span id="adultsCount">2</span>
+              <button type="button" class="guest-btn" data-target="adults" data-action="increase">+</button>
+            </div>
+          </div>
+          <div class="guest-selector">
+            <span>Çocuk (2-11 yaş)</span>
+            <div class="guest-controls">
+              <button type="button" class="guest-btn" data-target="children" data-action="decrease">-</button>
+              <span id="childrenCount">0</span>
+              <button type="button" class="guest-btn" data-target="children" data-action="increase">+</button>
+            </div>
+          </div>
+          <div class="guest-selector" id="childrenAgesContainer" style="display: none; margin-top: 12px;">
+            <label>Çocuk Yaşları:</label>
+            <div id="childrenAges"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label><i class="far fa-moon"></i> Oda Tipi</label>
+          <select id="roomTypeSelect">
+            <option value="standard">Standart Oda (1 King Yatak)</option>
+            <option value="deluxe">Deluxe Oda (Boğaz Manzaralı)</option>
+            <option value="suite">Executive Suite</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label><i class="far fa-credit-card"></i> Promosyon Kodu</label>
+          <input type="text" placeholder="Kupon kodunuz varsa girin" id="promoCode">
+        </div>
+
+        <button type="submit" class="book-cta" id="reserveBtn">Rezervasyon Yap</button>
+      </form>
+
+      <div class="price-breakdown" id="priceBreakdown">
+        <div class="price-row"><span>₺4.250 x 2 gece</span> <span>₺8.500</span></div>
+        <div class="price-row"><span>Vergi ve Harçlar</span> <span>₺680</span></div>
+        <div class="price-row total-row"><span>Toplam</span> <span>₺9.180</span></div>
+        <p style="margin-top: 12px; font-size: 12px;"><i class="fas fa-check-circle" style="color: var(--success);"></i> Ücretsiz iptal · 24 saat öncesine kadar</p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- === BENZER OTELLER === -->
+  <section class="similar-hotels">
+    <div class="section-header" style="display: flex; justify-content: space-between;">
+      <h2 class="section-title">Bu Otele Bakanlar Şunlara da Baktı</h2>
+      <a href="#" style="color: var(--primary);">Tümünü Gör <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="swiper swiper-similar">
+      <div class="swiper-wrapper" id="similarHotelsWrapper"></div>
+      <div class="swiper-button-next"></div>
+      <div class="swiper-button-prev"></div>
+    </div>
+  </section>
+</main>
+
+<!-- FOOTER -->
+<footer class="main-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col"><h4>Şirket</h4><ul><li><a href="#">Hakkımızda</a></li><li><a href="#">Kariyer</a></li><li><a href="#">Basın</a></li></ul></div>
+      <div class="footer-col"><h4>Keşfet</h4><ul><li><a href="#">Tüm Oteller</a></li><li><a href="#">Villalar</a></li><li><a href="#">Tatil Köyleri</a></li></ul></div>
+      <div class="footer-col"><h4>Otelciler İçin</h4><ul><li><a href="#">Tesisinizi Ekleyin</a></li><li><a href="#">Extranet Girişi</a></li></ul></div>
+      <div class="footer-col"><h4>Uygulamayı İndir</h4><ul><li><i class="fab fa-apple"></i> App Store</li><li><i class="fab fa-google-play"></i> Google Play</li></ul></div>
+      <div class="footer-col"><h4>Sosyal Medya</h4><ul style="display: flex; gap: 20px;"><li><a href="#"><i class="fab fa-instagram fa-xl"></i></a></li><li><a href="#"><i class="fab fa-x-twitter fa-xl"></i></a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2025 Otelturizm · TÜRSAB 12345</span><div><i class="fab fa-cc-visa fa-2xl"></i> <i class="fab fa-cc-mastercard fa-2xl"></i></div></div>
+  </div>
+</footer>
+
+<!-- LIGHTBOX MODAL -->
+<div class="lightbox-modal" id="lightboxModal">
+  <span class="close-lightbox" id="closeLightbox">&times;</span>
+  <img src="" alt="Galeri" class="lightbox-content" id="lightboxImage">
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/tr.js"></script>
+<script>
+  (function(){
+    "use strict";
+
+    // ==================== BACKEND İÇİN VERİ MODELİ ====================
+    // Bu obje normalde API'den gelecek. Tüm alanlar eksiksiz tanımlandı.
+    const hotelData = {
+      id: 1847,
+      name: "Swissôtel The Bosphorus",
+      stars: 5,
+      address: "Vişnezade Mah. Acısu Sok. No:19, Beşiktaş, İstanbul",
+      coordinates: { lat: 41.0450, lng: 29.0025 },
+      basePrice: 4250,
+      currency: "TRY",
+      rating: 9.2,
+      reviewCount: 1847,
+      reviewCategories: { personel: 9.4, temizlik: 9.5, konfor: 9.1, konum: 9.6, fiyat: 8.8 },
+      images: [
+        "https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=600",
+        "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=600",
+        "https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=600",
+        "https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=600"
+      ],
+      featuredAmenities: [
+        { icon: "wifi", name: "Ücretsiz WiFi" }, { icon: "swimmer", name: "Havuz" },
+        { icon: "spa", name: "Spa Merkezi" }, { icon: "dumbbell", name: "Fitness" },
+        { icon: "parking", name: "Otopark" }, { icon: "utensils", name: "Restoran" }
+      ],
+      allAmenities: [ /* 32+ özellik */ ],
+      roomTypes: [
+        { id: 1, name: "Standart Oda", bed: "1 King Yatak", size: 32, maxGuests: 2, price: 4250, cancellation: "Ücretsiz iptal", amenities: ["wifi", "tv", "minibar"] },
+        { id: 2, name: "Deluxe Oda", bed: "1 King + Balkon", size: 45, maxGuests: 3, price: 5900, cancellation: "Ücretsiz iptal", amenities: ["wifi", "tv", "minibar", "bosphorus-view"] },
+        { id: 3, name: "Executive Suite", bed: "1 King + Oturma Odası", size: 75, maxGuests: 4, price: 8900, cancellation: "Kısmi iptal", amenities: ["wifi", "tv", "minibar", "bosphorus-view", "lounge"] }
+      ],
+      reviews: [
+        { name: "Ahmet Y.", date: "15 Mart 2025", rating: 10, text: "Boğaz manzarası muhteşemdi. Personel çok ilgiliydi.", avatar: "AY" },
+        { name: "Elena K.", date: "10 Mart 2025", rating: 9, text: "Konum harika, kahvaltı çeşidi bol. Havuz biraz küçük.", avatar: "EK" },
+        { name: "Mehmet C.", date: "5 Mart 2025", rating: 8, text: "Fiyat performans iyi. Otopark sıkıntılı olabiliyor.", avatar: "MC" }
+      ],
+      similarHotels: [
+        { name: "Conrad Istanbul", price: 4800, rating: 9.0, img: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=400" },
+        { name: "Four Seasons Bosphorus", price: 12500, rating: 9.7, img: "https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=400" }
+      ]
+    };
+
+    // ==================== DOM'U DOLDURMA ====================
+    
+    // Galeri Grid
+    const galleryGrid = document.getElementById('galleryGrid');
+    if(galleryGrid) {
+      hotelData.images.slice(0,5).forEach((img, i) => {
+        const div = document.createElement('div');
+        div.className = 'gallery-item';
+        if(i === 0) div.style.gridRow = 'span 2';
+        div.innerHTML = `<img src="${img}" alt="Otel Görsel ${i+1}" onclick="openLightbox('${img}')">`;
+        galleryGrid.appendChild(div);
+      });
+    }
+
+    // Mobil Galeri Swiper
+    const mobileWrapper = document.getElementById('mobileGalleryWrapper');
+    hotelData.images.forEach(img => {
+      mobileWrapper.innerHTML += `<div class="swiper-slide"><img src="${img}" style="width:100%; height:100%; object-fit:cover;"></div>`;
+    });
+    new Swiper('.gallery-swiper', { loop: true, pagination: { el: '.swiper-pagination' } });
+
+    // Öne Çıkan Özellikler
+    const featuredDiv = document.getElementById('featuredAmenities');
+    hotelData.featuredAmenities.forEach(a => {
+      featuredDiv.innerHTML += `<div class="amenity-item"><i class="fas fa-${a.icon}"></i> ${a.name}</div>`;
+    });
+
+    // Tüm Olanaklar (Örnek 12 tanesini göster)
+    const allAmenitiesDiv = document.getElementById('allAmenities');
+    const extraAmenities = ['7/24 Oda Servisi', 'Toplantı Salonları', 'Transfer', 'Vale', 'Concierge', 'Çamaşırhane'];
+    [...hotelData.featuredAmenities.map(a=>a.name), ...extraAmenities].forEach(a => {
+      allAmenitiesDiv.innerHTML += `<div class="amenity-item"><i class="fas fa-check-circle" style="color: var(--success);"></i> ${a}</div>`;
+    });
+
+    // Oda Tipleri
+    const roomContainer = document.getElementById('roomTypesContainer');
+    hotelData.roomTypes.forEach(room => {
+      const card = document.createElement('div');
+      card.className = 'room-card';
+      card.innerHTML = `
+        <div class="room-info">
+          <h4>${room.name}</h4>
+          <div class="room-specs"><span><i class="fas fa-bed"></i> ${room.bed}</span><span><i class="fas fa-vector-square"></i> ${room.size} m²</span><span><i class="fas fa-user"></i> Max ${room.maxGuests} kişi</span></div>
+          <div class="cancellation"><i class="fas fa-check-circle"></i> ${room.cancellation}</div>
+        </div>
+        <div class="room-price">
+          <div class="price">₺${room.price}</div>
+          <div>gecelik, vergiler dahil</div>
+          <button class="select-room-btn" data-room-id="${room.id}" data-room-price="${room.price}">Odayı Seç</button>
+        </div>
+      `;
+      roomContainer.appendChild(card);
+    });
+
+    // Değerlendirme Barları
+    const barsDiv = document.getElementById('ratingBars');
+    const cats = hotelData.reviewCategories;
+    for(let [key, val] of Object.entries(cats)) {
+      barsDiv.innerHTML += `<div class="bar-item"><span class="bar-label">${key.charAt(0).toUpperCase()+key.slice(1)}</span><div class="bar-bg"><div class="bar-fill" style="width:${val*10}%"></div></div><span>${val}</span></div>`;
+    }
+
+    // Yorumlar
+    const reviewsDiv = document.getElementById('reviewsList');
+    hotelData.reviews.forEach(r => {
+      reviewsDiv.innerHTML += `
+        <div class="review-card">
+          <div class="reviewer"><div class="reviewer-avatar">${r.avatar}</div><div><strong>${r.name}</strong><br><span style="color: var(--text-gray); font-size:13px;">${r.date}</span></div><div style="margin-left: auto; background: var(--primary); color: white; padding: 4px 10px; border-radius: 20px;">${r.rating}.0</div></div>
+          <div class="review-text">${r.text}</div>
+        </div>
+      `;
+    });
+
+    // Benzer Oteller Swiper
+    const similarWrapper = document.getElementById('similarHotelsWrapper');
+    hotelData.similarHotels.forEach(h => {
+      similarWrapper.innerHTML += `
+        <div class="swiper-slide">
+          <div class="hotel-card" style="background:white; border-radius:16px; overflow:hidden;">
+            <img src="${h.img}" style="width:100%; height:180px; object-fit:cover;">
+            <div style="padding:16px;"><h4>${h.name}</h4><div>⭐ ${h.rating}</div><div style="font-weight:700;">₺${h.price}</div></div>
+          </div>
+        </div>
+      `;
+    });
+    new Swiper('.swiper-similar', { slidesPerView: 1.2, spaceBetween: 16, navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }, breakpoints: { 640: { slidesPerView: 2 }, 1024: { slidesPerView: 3 } } });
+
+    // ==================== REZERVASYON FORM İŞLEMLERİ ====================
+    
+    // Flatpickr Tarih Seçici
+    const checkin = flatpickr("#checkinDate", { locale: "tr", minDate: "today", dateFormat: "d M Y", defaultDate: new Date() });
+    const checkout = flatpickr("#checkoutDate", { locale: "tr", minDate: new Date().fp_incr(1), dateFormat: "d M Y", defaultDate: new Date().fp_incr(2) });
+    
+    // Misafir Sayısı Kontrolleri
+    let adults = 2, children = 0;
+    const adultsSpan = document.getElementById('adultsCount');
+    const childrenSpan = document.getElementById('childrenCount');
+    const childrenAgesContainer = document.getElementById('childrenAgesContainer');
+    const childrenAgesDiv = document.getElementById('childrenAges');
+
+    document.querySelectorAll('.guest-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = btn.dataset.target;
+        const action = btn.dataset.action;
+        if(target === 'adults') {
+          if(action === 'increase' && adults < 6) adults++;
+          if(action === 'decrease' && adults > 1) adults--;
+          adultsSpan.textContent = adults;
+        } else {
+          if(action === 'increase' && children < 4) children++;
+          if(action === 'decrease' && children > 0) children--;
+          childrenSpan.textContent = children;
+          updateChildrenAges();
+        }
+        updatePriceBreakdown();
+      });
+    });
+
+    function updateChildrenAges() {
+      if(children > 0) {
+        childrenAgesContainer.style.display = 'block';
+        let html = '';
+        for(let i=0; i<children; i++) {
+          html += `<select style="margin-right:8px; padding:4px;" data-child-age="${i}">`;
+          for(let age=2; age<=11; age++) html += `<option value="${age}">${age} yaş</option>`;
+          html += '</select>';
+        }
+        childrenAgesDiv.innerHTML = html;
+      } else {
+        childrenAgesContainer.style.display = 'none';
+      }
+    }
+
+    // Oda Seçimi (Oda Kartlarındaki Butonlar)
+    document.addEventListener('click', (e) => {
+      if(e.target.classList.contains('select-room-btn')) {
+        const roomId = e.target.dataset.roomId;
+        const price = e.target.dataset.roomPrice;
+        document.getElementById('roomTypeSelect').value = 
+          roomId == 1 ? 'standard' : (roomId == 2 ? 'deluxe' : 'suite');
+        updatePriceBreakdown(parseInt(price));
+        // Sayfayı rezervasyon kartına kaydır
+        document.getElementById('bookingCard').scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    // Fiyat Güncelleme (Backend'de vergi hesaplaması buradan alınacak)
+    function updatePriceBreakdown(customPrice = null) {
+      const base = customPrice || hotelData.basePrice;
+      const nights = 2; // Tarih farkından hesaplanacak (backend)
+      const subtotal = base * nights;
+      const tax = Math.round(subtotal * 0.08);
+      const total = subtotal + tax;
+      
+      document.querySelector('#priceBreakdown').innerHTML = `
+        <div class="price-row"><span>₺${base} x ${nights} gece</span> <span>₺${subtotal}</span></div>
+        <div class="price-row"><span>Vergi ve Harçlar (%8)</span> <span>₺${tax}</span></div>
+        <div class="price-row total-row"><span>Toplam</span> <span>₺${total}</span></div>
+        <p style="margin-top:12px;"><i class="fas fa-check-circle" style="color:var(--success);"></i> Ücretsiz iptal</p>
+      `;
+      document.getElementById('basePrice').textContent = `₺${base}`;
+    }
+
+    document.getElementById('roomTypeSelect').addEventListener('change', (e) => {
+      const prices = { standard: 4250, deluxe: 5900, suite: 8900 };
+      updatePriceBreakdown(prices[e.target.value]);
+    });
+
+    // Rezervasyon Form Submit
+    document.getElementById('reservationForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      // Backend'e gönderilecek tam veri objesi
+      const reservationData = {
+        hotelId: hotelData.id,
+        checkin: document.getElementById('checkinDate').value,
+        checkout: document.getElementById('checkoutDate').value,
+        adults: adults,
+        children: children,
+        childrenAges: Array.from(document.querySelectorAll('[data-child-age]')).map(s => s.value),
+        roomType: document.getElementById('roomTypeSelect').value,
+        promoCode: document.getElementById('promoCode').value,
+        totalPrice: document.querySelector('.total-row span:last-child').textContent
+      };
+      
+      console.log('📦 Backend\'e Gönderilecek Rezervasyon:', reservationData);
+      alert(`✅ Rezervasyon alındı!\nOtel: ${hotelData.name}\nToplam: ${reservationData.totalPrice}\n\n(Backend API hazır olduğunda bu veri gönderilecek)`);
+    });
+
+    // Lightbox
+    window.openLightbox = (src) => {
+      document.getElementById('lightboxImage').src = src;
+      document.getElementById('lightboxModal').style.display = 'flex';
+    };
+    document.getElementById('closeLightbox').onclick = () => document.getElementById('lightboxModal').style.display = 'none';
+    document.getElementById('showAllPhotos').onclick = () => openLightbox(hotelData.images[0]);
+
+    // Diğer butonlar
+    document.getElementById('shareBtn').onclick = () => alert('🔗 Otel bağlantısı panoya kopyalandı!');
+    document.getElementById('favoriteBtn').onclick = function() { this.innerHTML = '<i class="fas fa-heart"></i> Kaydedildi'; };
+    document.getElementById('showMoreAmenities').onclick = () => alert('32 olanak listelenecek (Backend pagination)');
+    document.getElementById('loadMoreReviews').onclick = () => alert('1847 yorum API\'den sayfalama ile yüklenecek');
+
+    // İlk fiyat güncellemesi
+    updatePriceBreakdown();
+
+  })();
+</script>
+</body>
+</html>

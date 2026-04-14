@@ -1,0 +1,52 @@
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    var welcomeEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "ahmet.yilmaz@email.com";
+    var fullName = User.FindFirst("otelturizm:full_name")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
+    var favoriteCount = ViewData["FavoriteCount"] is int count ? count : (int?)null;
+}
+<aside class="user-sidebar">
+    <div>
+        <div class="brand-row">
+            <a asp-controller="Home" asp-action="Index" class="brand-link" aria-label="Otelturizm">
+                <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
+            </a>
+        </div>
+
+        <div class="profile-card">
+            <div class="profile-avatar">AY</div>
+            <div>
+                <h3>@fullName</h3>
+                <p>@welcomeEmail</p>
+                <div class="member-badges">
+                    <span class="tier-badge"><i class="fas fa-crown"></i> Gold Üye</span>
+                    <span class="point-badge">1.250 Puan</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <p class="nav-caption">Ana Menu</p>
+            <a asp-action="Index" class="@(currentAction == "Index" ? "active" : "")"><i class="fas fa-columns"></i> Dashboard</a>
+            <a asp-action="Reservations" class="@(currentAction == "Reservations" ? "active" : "")"><i class="fas fa-calendar-check"></i> Rezervasyonlarim <span>3</span></a>
+            <a asp-action="Favorites" class="@(currentAction == "Favorites" ? "active" : "")"><i class="fas fa-heart"></i> Favorilerim @if (favoriteCount.HasValue) { <span class="success">@favoriteCount.Value</span> }</a>
+            <a asp-action="Loyalty" class="@(currentAction == "Loyalty" ? "active" : "")"><i class="fas fa-star"></i> Puanlarim</a>
+            <a asp-action="Messages" class="@(currentAction == "Messages" ? "active" : "")"><i class="fas fa-envelope"></i> Mesajlarim <span class="warning">2</span></a>
+
+            <p class="nav-caption second">Hesap Ayarlari</p>
+            <a asp-action="Profile" class="@(currentAction == "Profile" ? "active" : "")"><i class="fas fa-user-circle"></i> Profil Bilgilerim</a>
+            <a asp-action="PaymentMethods" class="@(currentAction == "PaymentMethods" ? "active" : "")"><i class="fas fa-credit-card"></i> Odeme Yontemleri</a>
+            <a asp-action="Notifications" class="@(currentAction == "Notifications" ? "active" : "")"><i class="fas fa-bell"></i> Bildirim Tercihleri</a>
+            <a asp-action="Security" class="@(currentAction == "Security" ? "active" : "")"><i class="fas fa-shield-alt"></i> Güvenlik ve Giriş</a>
+        </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+        <a asp-controller="Home" asp-action="Index" class="secondary-link"><i class="fas fa-arrow-left"></i> Ana Sayfaya Don</a>
+        <form method="post" action="/cikis-yap" class="panel-logout-form">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="logout-link"><i class="fas fa-right-from-bracket"></i> Cikis Yap</button>
+        </form>
+    </div>
+</aside>
+
+

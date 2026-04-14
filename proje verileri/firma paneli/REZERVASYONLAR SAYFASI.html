@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Rezervasyonlar · Otelturizm Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #64748B; --border-light: #E2E8F0; --sidebar-width: 280px;
+      --radius-xl: 24px; --radius-lg: 20px; --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.08); --transition-base: 0.25s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    .sidebar { width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border-light); position: fixed; height: 100vh; overflow-y: auto; }
+    .sidebar-header { padding: 28px 24px; border-bottom: 1px solid var(--border-light); }
+    .company-profile { display: flex; align-items: center; gap: 14px; }
+    .company-avatar { width: 52px; height: 52px; border-radius: 16px; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; }
+    .company-info h4 { font-size: 16px; }
+    .company-badge { background: var(--success); color: white; padding: 4px 12px; border-radius: 40px; font-size: 12px; margin-top: 8px; display: inline-block; }
+    .sidebar-nav { padding: 24px 16px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title { font-size: 11px; text-transform: uppercase; color: var(--text-gray); margin-bottom: 12px; padding-left: 12px; }
+    .nav-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: var(--text-gray); text-decoration: none; transition: var(--transition-base); margin-bottom: 4px; font-size: 14px; }
+    .nav-item i { width: 24px; }
+    .nav-item:hover { background: rgba(0, 59, 149, 0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 28px 32px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .page-header h1 { font-size: 28px; font-weight: 700; }
+    .btn { padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: var(--transition-base); display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    
+    .stats-mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--card-bg); border-radius: var(--radius-lg); padding: 20px; border: 1px solid var(--border-light); }
+    .stat-value { font-size: 28px; font-weight: 700; }
+    .stat-label { color: var(--text-gray); font-size: 14px; }
+    
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .filter-tab { padding: 10px 20px; border-radius: 40px; background: var(--card-bg); border: 1px solid var(--border-light); font-weight: 500; cursor: pointer; transition: var(--transition-base); }
+    .filter-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+    
+    .section-card { background: var(--card-bg); border-radius: var(--radius-xl); border: 1px solid var(--border-light); overflow: hidden; }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { text-align: left; padding: 16px 20px; background: var(--bg-light); font-weight: 600; font-size: 13px; color: var(--text-gray); }
+    .data-table td { padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
+    .status-badge { padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+    .status-success { background: rgba(0, 168, 107, 0.1); color: var(--success); }
+    .status-pending { background: rgba(255, 184, 0, 0.1); color: var(--warning); }
+    .status-error { background: rgba(239, 68, 68, 0.1); color: var(--error); }
+    
+    .pagination { display: flex; justify-content: flex-end; gap: 8px; padding: 20px; }
+    .page-item { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-light); border-radius: 8px; cursor: pointer; }
+    .page-item.active { background: var(--primary); color: white; border-color: var(--primary); }
+    
+    .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-top: 1px solid var(--border-light); padding: 12px 20px; z-index: 99; }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item { color: var(--text-gray); text-decoration: none; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    
+    @media (max-width: 900px) { .sidebar { display: none; } .main-content { margin-left: 0; padding: 20px; } .stats-mini { grid-template-columns: repeat(2, 1fr); } .mobile-bottom-nav { display: block; } body { padding-bottom: 80px; } .data-table { display: block; overflow-x: auto; } }
+    @media (max-width: 500px) { .stats-mini { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  
+  <aside class="sidebar">
+    <div class="sidebar-header"><div class="company-profile"><div class="company-avatar">AB</div><div class="company-info"><h4>ABC Teknoloji A.Ş.</h4><span class="company-badge"><i class="fas fa-check-circle"></i> Aktif</span></div></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section"><div class="nav-section-title">Ana Menü</div><a href="#" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a><a href="#" class="nav-item"><i class="fas fa-hotel"></i> Firma Fiyatları</a><a href="#" class="nav-item active"><i class="fas fa-calendar-check"></i> Rezervasyonlar</a></div>
+    </nav>
+  </aside>
+  
+  <main class="main-content">
+    
+    <div class="page-header"><h1>📋 Tüm Rezervasyonlar</h1><button class="btn btn-primary" onclick="alert('🏨 Yeni rezervasyon sayfası')"><i class="fas fa-plus"></i> Yeni Rezervasyon</button></div>
+    
+    <div class="stats-mini">
+      <div class="stat-card"><span class="stat-value">24</span><div class="stat-label">Toplam Rezervasyon</div></div>
+      <div class="stat-card"><span class="stat-value" style="color:var(--success);">18</span><div class="stat-label">Onaylandı</div></div>
+      <div class="stat-card"><span class="stat-value" style="color:var(--warning);">3</span><div class="stat-label">Beklemede</div></div>
+      <div class="stat-card"><span class="stat-value">₺342.500</span><div class="stat-label">Toplam Harcama</div></div>
+    </div>
+    
+    <div class="filter-tabs">
+      <span class="filter-tab active">Tümü (24)</span>
+      <span class="filter-tab">Onaylandı (18)</span>
+      <span class="filter-tab">Beklemede (3)</span>
+      <span class="filter-tab">Tamamlandı (2)</span>
+      <span class="filter-tab">İptal (1)</span>
+    </div>
+    
+    <div class="section-card">
+      <table class="data-table">
+        <thead><tr><th>Rez. No</th><th>Otel</th><th>Çalışan</th><th>Giriş</th><th>Çıkış</th><th>Oda</th><th>Gece</th><th>Tutar</th><th>Tasarruf</th><th>Durum</th><th>İşlem</th></tr></thead>
+        <tbody>
+          <tr><td>#F-0482</td><td>Swissôtel Bosphorus</td><td>Ahmet Yılmaz</td><td>15 Nis</td><td>18 Nis</td><td>5</td><td>3</td><td>₺51.000</td><td>₺12.750</td><td><span class="status-badge status-success">Onaylandı</span></td><td><button class="btn btn-outline btn-sm" style="padding:6px 12px;" onclick="alert('Detay')"><i class="fas fa-eye"></i></button></td></tr>
+          <tr><td>#F-0471</td><td>Rixos Premium</td><td>Zeynep Kaya</td><td>22 May</td><td>29 May</td><td>3</td><td>7</td><td>₺103.530</td><td>₺18.270</td><td><span class="status-badge status-pending">Beklemede</span></td><td><button class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></button></td></tr>
+          <tr><td>#F-0463</td><td>Hilton Bomonti</td><td>Mehmet Demir</td><td>5 Nis</td><td>8 Nis</td><td>2</td><td>3</td><td>₺18.240</td><td>₺4.560</td><td><span class="status-badge status-success">Tamamlandı</span></td><td><button class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></button></td></tr>
+          <tr><td>#F-0455</td><td>Four Seasons</td><td>Elif Aksoy</td><td>10 Nis</td><td>12 Nis</td><td>5</td><td>2</td><td>₺100.000</td><td>₺25.000</td><td><span class="status-badge status-success">Onaylandı</span></td><td><button class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></button></td></tr>
+          <tr><td>#F-0448</td><td>D Maris Bay</td><td>Burak Koç</td><td>1 May</td><td>5 May</td><td>4</td><td>4</td><td>₺90.880</td><td>₺22.720</td><td><span class="status-badge status-pending">Beklemede</span></td><td><button class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></button></td></tr>
+          <tr><td>#F-0432</td><td>Swissôtel</td><td>Selin Çelik</td><td>20 Mar</td><td>22 Mar</td><td>2</td><td>2</td><td>₺13.600</td><td>₺3.400</td><td><span class="status-badge status-error">İptal</span></td><td><button class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></button></td></tr>
+        </tbody>
+      </table>
+      <div class="pagination"><span class="page-item active">1</span><span class="page-item">2</span><span class="page-item">3</span></div>
+    </div>
+    
+  </main>
+</div>
+
+<nav class="mobile-bottom-nav"><div class="bottom-nav-items"><a href="#" class="bottom-nav-item"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-hotel"></i><span>Fiyatlar</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-users"></i><span>Çalışanlar</span></a><a href="#" class="bottom-nav-item active"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-user"></i><span>Profil</span></a></div></nav>
+
+<script>console.log('✅ Rezervasyonlar Sayfası Yüklendi');</script>
+</body>
+</html>

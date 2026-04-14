@@ -1,0 +1,86 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminHotelsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+}
+
+<section class="admin-summary-grid">
+    @foreach (var card in Model.SummaryCards)
+    {
+        <article class="admin-summary-card @card.ToneClass">
+            <div class="summary-icon"><i class="fas @card.IconClass"></i></div>
+            <div>
+                <p>@card.Label</p>
+                <h2>@card.Value</h2>
+                <span>@card.Description</span>
+            </div>
+        </article>
+    }
+</section>
+
+@if (TempData["AdminHotelMessage"] is string successMessage)
+{
+    <div class="admin-alert is-success"><i class="fas fa-circle-check"></i><span>@successMessage</span></div>
+}
+@if (TempData["AdminHotelError"] is string errorMessage)
+{
+    <div class="admin-alert is-error"><i class="fas fa-triangle-exclamation"></i><span>@errorMessage</span></div>
+}
+
+<section class="admin-section-card admin-hotel-listing-card">
+    <div class="admin-section-head admin-hotel-listing-head">
+        <div>
+            <p class="mini-caption">MERKEZI OTEL YONETIMI</p>
+            <h2>Otel kayitlari</h2>
+            <p>Her otel icin oda, otel gorseli, oda gorseli ve temel operasyon bilgilerini tek tikla yonetin.</p>
+        </div>
+        <form method="get" action="/admin/oteller" class="admin-hotel-search-form">
+            <input type="text" name="q" value="@Model.SearchTerm" placeholder="Otel adi, kodu, sehir veya ilce ile ara" />
+            <button type="submit" class="admin-action-btn primary"><i class="fas fa-magnifying-glass"></i> Filtrele</button>
+        </form>
+    </div>
+
+    @if (Model.Hotels.Count == 0)
+    {
+        <div class="admin-empty-state">Arama kriterlerine uygun otel bulunamadi.</div>
+    }
+    else
+    {
+        <div class="admin-hotel-card-grid">
+            @foreach (var hotel in Model.Hotels)
+            {
+                <article class="admin-hotel-card">
+                    <div class="admin-hotel-card-head">
+                        <div>
+                            <span class="admin-chip muted">@hotel.HotelCode</span>
+                            @if (hotel.IsFeatured)
+                            {
+                                <span class="admin-chip success">One Cikan</span>
+                            }
+                            <h3>@hotel.HotelName</h3>
+                            <p>@hotel.LocationText</p>
+                        </div>
+                        <div class="admin-hotel-score">@hotel.ScoreText</div>
+                    </div>
+                    <div class="admin-hotel-card-meta">
+                        <span><i class="fas fa-hotel"></i> @hotel.HotelType</span>
+                        <span><i class="fas fa-bed"></i> @hotel.RoomCount oda tipi</span>
+                        <span><i class="fas fa-image"></i> @hotel.HotelPhotoCount otel gorseli</span>
+                        <span><i class="fas fa-camera-retro"></i> @hotel.RoomPhotoCount oda gorseli</span>
+                    </div>
+                    <div class="admin-hotel-card-statuses">
+                        <span class="admin-chip">Yayin: @hotel.PublishStatus</span>
+                        <span class="admin-chip warning">Onay: @hotel.ApprovalStatus</span>
+                    </div>
+                    <div class="admin-hotel-card-actions">
+                        <a class="admin-action-btn primary" href="/admin/oteller/duzenle/@hotel.HotelId">
+                            <i class="fas fa-pen-to-square"></i>
+                            Oteli Duzenle
+                        </a>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

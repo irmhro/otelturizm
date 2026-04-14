@@ -1,0 +1,167 @@
+@model otelturizmnew.Models.Firma.FirmaLandingPageViewModel
+<main class="firma-main">
+    <section class="site-shell firma-hero-section">
+        <div class="firma-hero-copy">
+            <h1>Firmanız İçin <span>Toplu Konaklama</span> Avantajları</h1>
+            <p class="firma-hero-lead">@Model.HeroDescription</p>
+
+            <div class="firma-hero-stats">
+                @foreach (var stat in Model.HeroStats)
+                {
+                    <div class="firma-hero-stat">
+                        <strong>@stat.Value</strong>
+                        <span>@stat.Label</span>
+                    </div>
+                }
+            </div>
+
+            <div class="firma-hero-actions">
+                <a href="/kullanici-giris?sekme=kayit" class="firma-btn firma-btn-primary">Firma Hesabı Açın <i class="fas fa-arrow-right"></i></a>
+                <a href="/kullanici-giris" class="firma-btn firma-btn-outline">Firma Girişi</a>
+            </div>
+        </div>
+
+        <div class="firma-hero-visual">
+            <span class="firma-visual-badge"><i class="fas fa-chart-line"></i> Canlı Fiyat Karşılaştırması</span>
+            @if (Model.FeaturedDeals.Count > 0)
+            {
+                var deal = Model.FeaturedDeals[0];
+                <p class="firma-visual-title">📊 @deal.HotelName · @deal.MinRoomText</p>
+                <div class="firma-price-comparison-mini">
+                    <div class="firma-price-row">
+                        <span>🏨 Standart Fiyat (Bireysel)</span>
+                        <span class="firma-price-standard">@deal.StandardPriceText</span>
+                    </div>
+                    <div class="firma-price-row">
+                        <span>📉 Firma Fiyatı (@deal.MinRoomText)</span>
+                        <span class="firma-price-corporate">@deal.CorporatePriceText <b class="firma-savings-tag"><i class="fas fa-arrow-down"></i> @deal.DiscountRateText</b></span>
+                    </div>
+                    <div class="firma-price-row">
+                        <span>💰 Toplam Tasarruf</span>
+                        <span class="firma-price-savings">@deal.SavingsText</span>
+                    </div>
+                </div>
+                <div class="firma-info-note">
+                    <i class="fas fa-circle-info"></i>
+                    <strong>Firma paneline sahip olmanız durumunda</strong>, otellerin firmalar için özel belirlediği toplu konaklama fiyatlarından yararlanırsınız.
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="site-shell firma-trust-bar">
+        <div class="firma-trust-item"><i class="fas fa-shield-alt"></i><span>Firma Güvencesi</span></div>
+        <div class="firma-trust-item"><i class="fas fa-headset"></i><span>7/24 Öncelikli Destek</span></div>
+        <div class="firma-trust-item"><i class="fas fa-file-invoice"></i><span>Otomatik E-Fatura</span></div>
+        <div class="firma-trust-item"><i class="fas fa-chart-bar"></i><span>Harcama Raporları</span></div>
+    </section>
+
+    <section class="site-shell firma-section">
+        <div class="firma-section-title">
+            <h2>3 Adımda Firma Avantajlarından Yararlanın</h2>
+            <p>Süreç son derece basit ve hızlı.</p>
+        </div>
+        <div class="firma-steps-grid">
+            <article class="firma-step-card">
+                <span class="firma-step-number">01</span>
+                <div class="firma-step-icon"><i class="fas fa-building"></i></div>
+                <h3>1. Firma Hesabı Oluşturun</h3>
+                <p>Kurumsal bilgilerinizle ücretsiz firma hesabı açın. Firma yapınız sisteme bağlı şekilde ilerler.</p>
+            </article>
+            <article class="firma-step-card">
+                <span class="firma-step-number">02</span>
+                <div class="firma-step-icon"><i class="fas fa-users-gear"></i></div>
+                <h3>2. Çalışanlarınızı Ekleyin</h3>
+                <p>Seyahat edecek çalışanları tanımlayın, departman ve harcama limitlerini merkezden yönetin.</p>
+            </article>
+            <article class="firma-step-card">
+                <span class="firma-step-number">03</span>
+                <div class="firma-step-icon"><i class="fas fa-hotel"></i></div>
+                <h3>3. Firma Fiyatlarıyla Rezervasyon Yapın</h3>
+                <p>Otellerin firmanız için tanımladığı özel fiyatlarla rezervasyon sürecini hızlandırın.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="site-shell firma-section firma-pricing-tiers">
+        <div class="firma-section-title">
+            <h2>Oteller Firmalar İçin Nasıl Fiyatlandırma Yapıyor?</h2>
+            <p>Her otel, firmalara özel minimum oda sayısı ve indirim yapısını kendi belirler.</p>
+        </div>
+        <div class="firma-tiers-grid">
+            @foreach (var tier in Model.PricingTiers)
+            {
+                <article class="firma-tier-card @(tier.Highlighted ? "highlight" : string.Empty)">
+                    <div class="firma-tier-icon">🏨</div>
+                    <div class="firma-tier-name">@tier.Name</div>
+                    <div class="firma-tier-range">@tier.Range</div>
+                    <div class="firma-tier-discount">@tier.DiscountText <small>indirim</small></div>
+                    <div class="firma-tier-example"><i class="fas fa-tag"></i> @tier.ExampleText</div>
+                </article>
+            }
+        </div>
+        <p class="firma-tier-note"><i class="fas fa-lightbulb"></i> <strong>Önemli:</strong> Bu kademeler otelden otele değişir. Firma panelinde her otelin kendi belirlediği şartları görebilirsiniz.</p>
+    </section>
+
+    <section class="site-shell firma-section" id="firma-fiyatlari">
+        <div class="firma-section-title">
+            <h2>Gerçek Otel Örnekleri ve Firma Fiyatları</h2>
+            <p>Aşağıdaki alan doğrudan veritabanındaki firma fiyat tanımlarından beslenir.</p>
+        </div>
+        <div class="firma-table-wrapper">
+            <table class="firma-example-table">
+                <thead>
+                    <tr>
+                        <th>Otel</th>
+                        <th>Şehir</th>
+                        <th>Standart Fiyat</th>
+                        <th>Min. Oda</th>
+                        <th>Firma Fiyatı</th>
+                        <th>Tasarruf</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var deal in Model.FeaturedDeals)
+                    {
+                        <tr>
+                            <td><strong>@deal.HotelName</strong></td>
+                            <td>@deal.City</td>
+                            <td>@deal.StandardPriceText</td>
+                            <td><span class="firma-room-badge">@deal.MinRoomText</span></td>
+                            <td>@deal.CorporatePriceText</td>
+                            <td><span class="firma-table-savings">@deal.SavingsText</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="site-shell firma-section">
+        <div class="firma-section-title">
+            <h2>Firma Paneli Size Neler Sunar?</h2>
+        </div>
+        <div class="firma-benefits-grid">
+            @foreach (var benefit in Model.Benefits)
+            {
+                <article class="firma-benefit-card">
+                    <div class="firma-benefit-icon"><i class="fas @benefit.IconClass"></i></div>
+                    <div class="firma-benefit-content">
+                        <h4>@benefit.Title</h4>
+                        <p>@benefit.Description</p>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section class="site-shell firma-cta-section">
+        <h2>Firmanız İçin Toplu Konaklama Avantajlarından Yararlanın</h2>
+        <p>Hemen ücretsiz firma hesabı oluşturun, otellerin firmalara özel fiyatlarını görmeye başlayın.</p>
+        <div class="firma-cta-actions">
+            <a href="/kullanici-giris?sekme=kayit" class="firma-btn firma-btn-white">Firma Hesabı Açın <i class="fas fa-arrow-right"></i></a>
+            <a href="/kullanici-giris" class="firma-btn firma-btn-outline-light">Firma Girişi</a>
+        </div>
+        <small>Ücretsizdir · Kredi kartı gerektirmez · 2 dakikada kurulum</small>
+    </section>
+</main>

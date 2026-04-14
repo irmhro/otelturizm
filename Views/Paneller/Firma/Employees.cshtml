@@ -1,0 +1,99 @@
+@model otelturizmnew.Models.Paneller.Firma.FirmaEmployeesPageViewModel
+@{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
+<section class="firma-mini-stats">
+    <article class="firma-mini-stat"><strong>@Model.Employees.Count</strong><span>Toplam Çalışan</span></article>
+    <article class="firma-mini-stat"><strong>@Model.TravelingEmployeeCount</strong><span>Rezervasyon Açan</span></article>
+    <article class="firma-mini-stat"><strong>@Model.AverageLimitText</strong><span>Ortalama Limit</span></article>
+    <button type="button" class="firma-action-btn" data-modal-open="employee-modal"><i class="fas fa-plus"></i> Çalışan Ekle</button>
+</section>
+
+<section class="firma-employee-grid">
+@foreach (var item in Model.Employees)
+{
+    <article class="firma-employee-card">
+        <div class="firma-employee-avatar">@item.Initials</div>
+        <div class="firma-employee-meta">
+            <div class="firma-row-between">
+                <div>
+                    <strong>@item.FullName</strong>
+                    <span>@item.Department · @item.Title</span>
+                    <small>@item.Email</small>
+                </div>
+                <b class="firma-role-badge @(item.IsManager ? "is-manager" : string.Empty)">@item.RoleText</b>
+            </div>
+            <div class="firma-card-stats">
+                <div><label>Rezervasyon</label><b>@item.ReservationCountText</b></div>
+                <div><label>Harcama</label><b>@item.SpendText</b></div>
+            </div>
+            <div class="firma-card-footer">
+                <span class="firma-pill">@item.LimitText</span>
+                <span class="firma-pill @(item.ApprovalText.Contains("Onaylı") ? "is-warning" : "is-success")">@item.ApprovalText</span>
+            </div>
+        </div>
+    </article>
+}
+</section>
+
+@if (Model.Employees.Count == 0)
+{
+    <section class="firma-empty-card">
+        <i class="fas fa-users"></i>
+        <h2>Henüz firma çalışanı yok</h2>
+        <p>İlk çalışanı eklediğinizde harcama limiti ve onay akışı aynı ekrandan yönetilebilir hale gelir.</p>
+    </section>
+}
+
+<div class="firma-modal-overlay" id="employee-modal">
+    <div class="firma-modal-card">
+        <div class="firma-row-between">
+            <div>
+                <p class="firma-kicker">FİRMA PERSONELİ</p>
+                <h2>Çalışan Ekle</h2>
+            </div>
+            <button type="button" class="firma-icon-btn" data-modal-close="employee-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="post" action="/panel/firma/calisan-ekle" class="firma-form-grid">
+            @Html.AntiForgeryToken()
+            <label><span>Ad Soyad</span><input type="text" name="FullName" value="@Model.CreateForm.FullName" required /></label>
+            <label><span>E-posta</span><input type="email" name="Email" value="@Model.CreateForm.Email" required /></label>
+            <label><span>Telefon</span><input type="text" name="Phone" value="@Model.CreateForm.Phone" /></label>
+            <label><span>Departman</span><input type="text" name="Department" value="@Model.CreateForm.Department" placeholder="Satış / Operasyon / Finans" /></label>
+            <label><span>Görev Ünvanı</span><input type="text" name="Title" value="@Model.CreateForm.Title" placeholder="Satış Müdürü" /></label>
+            <label>
+                <span>Rol</span>
+                <select name="Role">
+                    <option value="firma_staff">Firma Personeli</option>
+                    <option value="firma_manager">Departman Yöneticisi</option>
+                    <option value="firma_admin">Firma Yöneticisi</option>
+                </select>
+            </label>
+            <label><span>Gecelik Limit</span><input type="number" step="0.01" min="0" name="NightlyLimit" value="@(Model.CreateForm.NightlyLimit?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)" /></label>
+            <label class="firma-checkbox"><input type="checkbox" name="ApprovalRequired" value="true" @(Model.CreateForm.ApprovalRequired ? "checked" : string.Empty) /><span>Rezervasyonları onaya düşsün</span></label>
+            <div class="firma-form-actions">
+                <button type="button" class="firma-btn-light" data-modal-close="employee-modal">Vazgeç</button>
+                <button type="submit" class="firma-btn-primary">Çalışanı Oluştur</button>
+            </div>
+        </form>
+        <p class="firma-inline-note">İlk giriş şifresi sistem tarafından `1585` olarak atanır. Kullanıcı daha sonra şifresini değiştirebilir.</p>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('[data-modal-open]').forEach(button => {
+    button.addEventListener('click', () => {
+        const target = document.getElementById(button.getAttribute('data-modal-open'));
+        if (target) target.classList.add('is-visible');
+    });
+});
+document.querySelectorAll('[data-modal-close]').forEach(button => {
+    button.addEventListener('click', () => {
+        const target = document.getElementById(button.getAttribute('data-modal-close'));
+        if (target) target.classList.remove('is-visible');
+    });
+});
+document.querySelectorAll('.firma-modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', event => {
+        if (event.target === overlay) overlay.classList.remove('is-visible');
+    });
+});
+</script>

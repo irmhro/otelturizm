@@ -1,0 +1,70 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerShellViewModel
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    var selectedHotelId = Model.SelectedHotelId;
+    var hotelQuery = selectedHotelId.HasValue ? $"?otelId={selectedHotelId.Value}" : string.Empty;
+    var initials = string.Concat(Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(static x => x[0]));
+    var items = new[]
+    {
+        new { Action = "Index", Label = "Dashboard", Icon = "fa-grid-2", Route = "/panel/partner/dashboard" },
+        new { Action = "Reservations", Label = "Rezervasyonlar", Icon = "fa-calendar-check", Route = "/panel/partner/rezervasyonlar" },
+        new { Action = "Pricing", Label = "Takvim & Fiyatlar", Icon = "fa-calendar-days", Route = "/panel/partner/takvim-fiyatlar" },
+        new { Action = "Campaigns", Label = "Kampanyalar", Icon = "fa-bullhorn", Route = "/panel/partner/kampanyalar" },
+        new { Action = "Rooms", Label = "Oda Yonetimi", Icon = "fa-bed", Route = "/panel/partner/oda-yonetimi" },
+        new { Action = "HotelInfo", Label = "Otel Bilgileri", Icon = "fa-hotel", Route = "/panel/partner/otel-bilgileri" },
+        new { Action = "Photos", Label = "Fotograflar", Icon = "fa-images", Route = "/panel/partner/fotograflar" },
+        new { Action = "Performance", Label = "Performans", Icon = "fa-chart-line", Route = "/panel/partner/performans" },
+        new { Action = "Reviews", Label = "Degerlendirmeler", Icon = "fa-star", Route = "/panel/partner/degerlendirmeler" },
+        new { Action = "Finance", Label = "Finans", Icon = "fa-credit-card", Route = "/panel/partner/finans" },
+        new { Action = "Preferences", Label = "Tercihler", Icon = "fa-sliders", Route = "/panel/partner/tercihler" },
+        new { Action = "Support", Label = "7/24 Destek", Icon = "fa-headset", Route = "/panel/partner/724-destek" }
+    };
+}
+<aside class="partner-sidebar">
+    <div>
+        <a href="/panel/partner/dashboard@(hotelQuery)" class="partner-brand" aria-label="Otelturizm Partner">
+            <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
+        </a>
+        <div class="partner-profile-card">
+            <div class="partner-avatar">@initials</div>
+            <div>
+                <h3>@Model.FullName</h3>
+                <p>@Model.Email</p>
+                <small>@Model.UserRole</small>
+            </div>
+        </div>
+
+        <div class="partner-hotel-switcher">
+            <label>Yetkili Oteller</label>
+            <select onchange="if(this.value){ window.location=this.value; }">
+                @foreach (var hotel in Model.ManagedHotels)
+                {
+                    <option value="/panel/partner/dashboard?otelId=@hotel.HotelId" selected="@(hotel.IsSelected ? "selected" : null)">@hotel.HotelName</option>
+                }
+            </select>
+        </div>
+
+        <nav class="partner-sidebar-nav">
+            @foreach (var item in items)
+            {
+                var badge = item.Action switch
+                {
+                    "Reservations" when Model.PendingReservations > 0 => Model.PendingReservations.ToString(),
+                    "Reviews" when Model.UnansweredReviews > 0 => Model.UnansweredReviews.ToString(),
+                    "Support" when Model.OpenSupportTickets > 0 => Model.OpenSupportTickets.ToString(),
+                    "Pricing" when Model.LowStockAlerts > 0 => Model.LowStockAlerts.ToString(),
+                    _ => null
+                };
+                <a href="@item.Route@(hotelQuery)" class="@(currentAction == item.Action ? "active" : string.Empty)"><i class="fas @item.Icon"></i><span>@item.Label</span>@if (!string.IsNullOrWhiteSpace(badge)) { <b class="partner-nav-badge">@badge</b> }</a>
+            }
+        </nav>
+    </div>
+
+    <div class="partner-sidebar-footer">
+        <a href="/" class="secondary-link"><i class="fas fa-arrow-left"></i> Ana Sayfaya Don</a>
+        <form method="post" action="/cikis-yap" class="panel-logout-form">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="logout-link"><i class="fas fa-right-from-bracket"></i> Cikis Yap</button>
+        </form>
+    </div>
+</aside>

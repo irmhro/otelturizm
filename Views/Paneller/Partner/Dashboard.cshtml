@@ -1,0 +1,139 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerDashboardViewModel
+@{ Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml"; ViewData["PartnerShell"] = Model.Shell; }
+<section class="partner-grid partner-dashboard-grid">
+    @foreach (var card in Model.SummaryCards)
+    {
+        <article class="partner-stat-card @card.ToneClass">
+            <i class="fas @card.IconClass"></i>
+            <strong>@card.Value</strong>
+            <span>@card.Label</span>
+            <p>@card.Description</p>
+        </article>
+    }
+</section>
+<section class="partner-dashboard-actions">
+    @foreach (var action in Model.QuickActions)
+    {
+        <a href="@action.Url" class="partner-dashboard-action-card @action.ToneClass">
+            <i class="fas @action.IconClass"></i>
+            <div>
+                <strong>@action.Title</strong>
+                <p>@action.Description</p>
+            </div>
+        </a>
+    }
+</section>
+<section class="partner-two-column">
+    <article class="partner-section-card">
+        <h2>Gelir Trendi</h2>
+        @if (Model.RevenueTrend.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Henuz gelir verisi yok</strong>
+                <p>Rezervasyon ve odeme verileri geldikce grafikler burada dolacak.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-chart-bars">
+                @foreach (var point in Model.RevenueTrend)
+                {
+                    <div class="chart-col"><span style="height:@(point.HeightPercent)%"></span><strong>@point.Label</strong><small>@point.ReservationCount rezervasyon</small></div>
+                }
+            </div>
+        }
+    </article>
+    <article class="partner-section-card">
+        <h2>Yaklasan Rezervasyonlar</h2>
+        @if (Model.UpcomingReservations.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Yaklasan rezervasyon yok</strong>
+                <p>Yeni rezervasyonlar geldiginde burada goreceksiniz.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-list">
+                @foreach (var item in Model.UpcomingReservations)
+                {
+                    <div class="partner-list-row partner-list-row-rich">
+                        <div>
+                            <strong>@item.GuestName</strong>
+                            <span>@item.StayText</span>
+                            <small>@item.StatusLabel · @item.PaymentStatusLabel</small>
+                        </div>
+                        <div class="partner-list-actions">
+                            <b>@item.TotalText</b>
+                            @if (item.CanApprove)
+                            {
+                                <form method="post" action="/panel/partner/rezervasyonlar/durum">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                                    <input type="hidden" name="ReservationId" value="@item.ReservationId" />
+                                    <input type="hidden" name="ActionType" value="approve" />
+                                    <button type="submit" class="partner-inline-btn is-success">Onayla</button>
+                                </form>
+                            }
+                            @if (item.CanReject)
+                            {
+                                <form method="post" action="/panel/partner/rezervasyonlar/durum">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                                    <input type="hidden" name="ReservationId" value="@item.ReservationId" />
+                                    <input type="hidden" name="ActionType" value="reject" />
+                                    <input type="hidden" name="Reason" value="Dashboard hizli aksiyonundan reddedildi." />
+                                    <button type="submit" class="partner-inline-btn is-danger">Reddet</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </article>
+</section>
+<section class="partner-two-column">
+    <article class="partner-section-card">
+        <h2>Musaitlik Uyarilari</h2>
+        @if (Model.InventoryAlerts.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Kritik stok uyarisi yok</strong>
+                <p>Dusuk stok veya kapali satis gunleri burada listelenecek.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-list">
+                @foreach (var alert in Model.InventoryAlerts)
+                {
+                    <div class="partner-list-row"><strong>@alert.RoomName</strong><span>@alert.DateText</span><b>@alert.AvailabilityText</b></div>
+                }
+            </div>
+        }
+    </article>
+    <article class="partner-section-card">
+        <h2>Son Yorumlar</h2>
+        @if (Model.RecentReviews.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Yorum bulunmuyor</strong>
+                <p>Onayli veya bekleyen yorumlar bu alanda hizlica gorunur.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-review-stack">
+                @foreach (var review in Model.RecentReviews)
+                {
+                    <article class="partner-review-card">
+                        <strong>@review.GuestName - @review.ScoreText</strong>
+                        <span>@review.Title</span>
+                        <p>@review.Comment</p>
+                    </article>
+                }
+            </div>
+        }
+    </article>
+</section>

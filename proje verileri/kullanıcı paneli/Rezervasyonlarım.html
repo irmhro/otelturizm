@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Rezervasyonlarım · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-light: #0055CC; --primary-dark: #002A6B;
+      --secondary: #FF385C; --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --info: #3B82F6; --bg-light: #F8FAFC; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-body: #1E293B; --text-gray: #64748B;
+      --text-light: #94A3B8; --border-light: #E2E8F0; --border-medium: #CBD5E1;
+      --sidebar-width: 280px; --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0,59,149,0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-body); line-height: 1.5; }
+    
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--card-bg);
+      border-right: 1px solid var(--border-light); position: fixed;
+      height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid var(--border-light); }
+    .user-profile-card { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .user-avatar {
+      width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 22px;
+    }
+    .user-info h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .user-info p { font-size: 13px; color: var(--text-gray); }
+    .membership-badge { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .tier-badge {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: var(--text-dark);
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 700;
+    }
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-light); margin-bottom: 12px; padding-left: 16px; font-weight: 600;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      border-radius: 12px; color: var(--text-gray); text-decoration: none;
+      transition: all var(--transition-base); margin-bottom: 4px; font-weight: 500; font-size: 14px;
+    }
+    .nav-item i { width: 24px; font-size: 20px; }
+    .nav-item:hover { background: rgba(0,59,149,0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .nav-item .badge {
+      margin-left: auto; background: var(--secondary); color: white;
+      padding: 2px 8px; border-radius: 40px; font-size: 11px; font-weight: 700;
+    }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header { margin-bottom: 28px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: var(--text-dark); }
+    .page-title p { color: var(--text-gray); font-size: 15px; }
+    
+    /* Stats Cards */
+    .stats-mini-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px;
+    }
+    .stat-mini-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); padding: 20px;
+      border: 1px solid var(--border-light); display: flex; align-items: center; gap: 16px;
+    }
+    .stat-mini-icon {
+      width: 52px; height: 52px; border-radius: 14px; display: flex;
+      align-items: center; justify-content: center; font-size: 24px;
+    }
+    .stat-mini-content h3 { font-size: 26px; font-weight: 700; color: var(--text-dark); }
+    .stat-mini-content p { color: var(--text-gray); font-size: 14px; }
+    
+    /* Tabs */
+    .tabs-container {
+      display: flex; gap: 28px; border-bottom: 2px solid var(--border-light); margin-bottom: 24px;
+    }
+    .tab {
+      padding: 14px 0; font-weight: 600; font-size: 15px; color: var(--text-gray);
+      cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
+      transition: all var(--transition-base); display: flex; align-items: center; gap: 8px;
+    }
+    .tab i { font-size: 16px; }
+    .tab:hover { color: var(--primary); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab .count {
+      background: var(--border-light); color: var(--text-gray); padding: 2px 8px;
+      border-radius: 40px; font-size: 12px; margin-left: 4px;
+    }
+    .tab.active .count { background: var(--primary); color: white; }
+    
+    /* Panel İçerikleri */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    
+    /* Filtreler */
+    .filter-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 16px;
+    }
+    .filter-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+    .filter-chip {
+      padding: 8px 18px; border-radius: 40px; background: var(--card-bg);
+      border: 1px solid var(--border-light); font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all var(--transition-base);
+    }
+    .filter-chip:hover, .filter-chip.active {
+      background: var(--primary); color: white; border-color: var(--primary);
+    }
+    .sort-select {
+      padding: 10px 16px; border: 1px solid var(--border-light);
+      border-radius: 40px; font-size: 14px; background: var(--card-bg); cursor: pointer;
+    }
+    
+    /* Rezervasyon Kartları */
+    .reservation-list { display: flex; flex-direction: column; gap: 16px; }
+    
+    .reservation-card {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light); overflow: hidden;
+      transition: all var(--transition-base);
+    }
+    .reservation-card:hover { box-shadow: var(--shadow-md); }
+    
+    .reservation-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 24px; border-bottom: 1px solid var(--border-light);
+      background: rgba(0,59,149,0.01); flex-wrap: wrap; gap: 12px;
+    }
+    .reservation-id { font-weight: 600; color: var(--text-dark); }
+    .reservation-date { color: var(--text-gray); font-size: 14px; margin-left: 16px; }
+    .status-badge {
+      padding: 6px 14px; border-radius: 40px; font-size: 13px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .status-confirmed { background: rgba(0,168,107,0.1); color: var(--success); }
+    .status-pending { background: rgba(255,184,0,0.1); color: var(--warning); }
+    .status-completed { background: rgba(100,116,139,0.1); color: var(--text-gray); }
+    .status-cancelled { background: rgba(239,68,68,0.1); color: var(--error); }
+    .status-upcoming { background: rgba(59,130,246,0.1); color: var(--info); }
+    
+    .reservation-body {
+      display: flex; padding: 24px; gap: 24px;
+    }
+    .reservation-image {
+      width: 140px; height: 120px; border-radius: 12px; object-fit: cover; flex-shrink: 0;
+    }
+    .reservation-details { flex: 1; }
+    .hotel-name {
+      font-size: 18px; font-weight: 700; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .hotel-stars { color: var(--warning); font-size: 14px; letter-spacing: 2px; }
+    .hotel-location { color: var(--text-gray); font-size: 14px; margin-bottom: 12px; }
+    .reservation-meta {
+      display: flex; gap: 24px; margin: 12px 0; flex-wrap: wrap;
+    }
+    .meta-item { display: flex; align-items: center; gap: 8px; color: var(--text-gray); font-size: 14px; }
+    
+    .reservation-actions {
+      display: flex; flex-direction: column; gap: 10px; justify-content: center; min-width: 140px;
+    }
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-danger { background: transparent; border: 1.5px solid var(--error); color: var(--error); }
+    .btn-danger:hover { background: var(--error); color: white; }
+    .btn-sm { padding: 8px 14px; font-size: 13px; }
+    
+    .price-info { margin-top: 12px; font-weight: 600; }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center; padding: 60px 20px; background: var(--card-bg);
+      border-radius: var(--radius-lg); border: 1px solid var(--border-light);
+    }
+    .empty-icon {
+      width: 80px; height: 80px; border-radius: 50%; background: var(--bg-light);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
+      font-size: 36px; color: var(--text-light);
+    }
+    .empty-state h3 { font-size: 20px; margin-bottom: 8px; }
+    .empty-state p { color: var(--text-gray); margin-bottom: 24px; }
+    
+    /* Pagination */
+    .pagination {
+      display: flex; justify-content: center; gap: 8px; margin-top: 32px;
+    }
+    .page-item {
+      width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border-light); border-radius: 10px; cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .page-item:hover { border-color: var(--primary); color: var(--primary); }
+    .page-item.active { background: var(--primary); color: white; border-color: var(--primary); }
+    
+    /* Mobile */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .stats-mini-grid { grid-template-columns: 1fr; }
+      .reservation-body { flex-direction: column; }
+      .reservation-image { width: 100%; height: 180px; }
+      .reservation-actions { flex-direction: row; flex-wrap: wrap; }
+    }
+    
+    @media (max-width: 600px) {
+      .filter-bar { flex-direction: column; align-items: flex-start; }
+      .sort-select { width: 100%; }
+      .reservation-header { flex-direction: column; align-items: flex-start; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-top: 1px solid var(--border-light);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: var(--text-gray); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    @media (max-width: 900px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="user-profile-card">
+        <div class="user-avatar">AY</div>
+        <div class="user-info">
+          <h4>Ahmet Yılmaz</h4>
+          <p>ahmet.yilmaz@email.com</p>
+          <div class="membership-badge">
+            <span class="tier-badge"><i class="fas fa-crown"></i> Gold Üye</span>
+          </div>
+        </div>
+      </div>
+      <a href="/" style="display: flex; align-items: center; gap: 8px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 14px;">
+        <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+      </a>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item"><i class="fas fa-columns"></i> Dashboard</a>
+        <a href="#" class="nav-item active"><i class="fas fa-calendar-check"></i> Rezervasyonlarım <span class="badge">3</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-heart"></i> Favorilerim <span class="badge" style="background: var(--success);">8</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-star"></i> Puanlarım</a>
+        <a href="#" class="nav-item"><i class="fas fa-envelope"></i> Mesajlarım <span class="badge" style="background: var(--warning);">2</span></a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- Header -->
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Rezervasyonlarım</h1>
+        <p>Tüm rezervasyonlarını görüntüle ve yönet.</p>
+      </div>
+    </header>
+    
+    <!-- Mini Stats -->
+    <div class="stats-mini-grid">
+      <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background: rgba(0,59,149,0.1); color: var(--primary);"><i class="fas fa-calendar-check"></i></div>
+        <div class="stat-mini-content"><h3>3</h3><p>Yaklaşan Rezervasyon</p></div>
+      </div>
+      <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background: rgba(100,116,139,0.1); color: var(--text-gray);"><i class="fas fa-history"></i></div>
+        <div class="stat-mini-content"><h3>8</h3><p>Geçmiş Rezervasyon</p></div>
+      </div>
+      <div class="stat-mini-card">
+        <div class="stat-mini-icon" style="background: rgba(239,68,68,0.1); color: var(--error);"><i class="fas fa-ban"></i></div>
+        <div class="stat-mini-content"><h3>1</h3><p>İptal Edilen</p></div>
+      </div>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <div class="tab active" data-tab="upcoming"><i class="fas fa-calendar-alt"></i> Yaklaşan <span class="count">3</span></div>
+      <div class="tab" data-tab="past"><i class="fas fa-history"></i> Geçmiş <span class="count">8</span></div>
+      <div class="tab" data-tab="cancelled"><i class="fas fa-ban"></i> İptal Edilenler <span class="count">1</span></div>
+    </div>
+    
+    <!-- ========== YAKLAŞAN REZERVASYONLAR ========== -->
+    <div class="tab-panel active" id="upcoming-panel">
+      
+      <!-- Filtreler -->
+      <div class="filter-bar">
+        <div class="filter-chips">
+          <span class="filter-chip active">Tümü (3)</span>
+          <span class="filter-chip">Onaylandı (2)</span>
+          <span class="filter-chip">Onay Bekliyor (1)</span>
+          <span class="filter-chip">Check-in Yakın (1)</span>
+        </div>
+        <select class="sort-select">
+          <option>En Yakın Tarih</option>
+          <option>En Uzak Tarih</option>
+          <option>En Yüksek Fiyat</option>
+          <option>En Düşük Fiyat</option>
+        </select>
+      </div>
+      
+      <div class="reservation-list">
+        
+        <!-- Kart 1 - Onaylandı -->
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <span class="reservation-id"><i class="fas fa-hashtag"></i> OTL-2025-0482</span>
+              <span class="reservation-date"><i class="far fa-calendar-alt"></i> 05 Nis 2025</span>
+            </div>
+            <span class="status-badge status-confirmed"><i class="fas fa-check-circle"></i> Onaylandı</span>
+          </div>
+          <div class="reservation-body">
+            <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Swissôtel" class="reservation-image">
+            <div class="reservation-details">
+              <div class="hotel-name">Swissôtel The Bosphorus <span class="hotel-stars">★★★★★</span></div>
+              <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+              <div class="reservation-meta">
+                <span class="meta-item"><i class="far fa-calendar"></i> 15 Nis - 18 Nis 2025 (3 Gece)</span>
+                <span class="meta-item"><i class="far fa-user"></i> 2 Yetişkin, 1 Çocuk</span>
+                <span class="meta-item"><i class="far fa-moon"></i> Deluxe Oda, Boğaz Manzaralı</span>
+              </div>
+              <p style="color: var(--success); font-size: 14px;"><i class="fas fa-check-circle"></i> Ücretsiz iptal · 13 Nis 23:59'a kadar</p>
+              <p class="price-info">Toplam: ₺12.750 (Ödendi)</p>
+            </div>
+            <div class="reservation-actions">
+              <a href="#" class="btn btn-primary">Detaylar</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-envelope"></i> İletişim</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-edit"></i> Değiştir</a>
+              <a href="#" class="btn btn-danger"><i class="fas fa-times"></i> İptal</a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Kart 2 - Onay Bekliyor -->
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <span class="reservation-id"><i class="fas fa-hashtag"></i> OTL-2025-0391</span>
+              <span class="reservation-date"><i class="far fa-calendar-alt"></i> 28 Mar 2025</span>
+            </div>
+            <span class="status-badge status-pending"><i class="fas fa-clock"></i> Onay Bekliyor</span>
+          </div>
+          <div class="reservation-body">
+            <img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Rixos" class="reservation-image">
+            <div class="reservation-details">
+              <div class="hotel-name">Rixos Premium Belek <span class="hotel-stars">★★★★★</span></div>
+              <div class="hotel-location"><i class="fas fa-map-pin"></i> Belek, Antalya</div>
+              <div class="reservation-meta">
+                <span class="meta-item"><i class="far fa-calendar"></i> 22 May - 29 May 2025 (7 Gece)</span>
+                <span class="meta-item"><i class="far fa-user"></i> 2 Yetişkin</span>
+                <span class="meta-item"><i class="far fa-moon"></i> Standart Oda, Her Şey Dahil</span>
+              </div>
+              <p style="color: var(--warning); font-size: 14px;"><i class="fas fa-hourglass-half"></i> Otel onayı bekleniyor (En geç 24 saat)</p>
+              <p class="price-info">Toplam: ₺40.600 (Onay sonrası ödeme)</p>
+            </div>
+            <div class="reservation-actions">
+              <a href="#" class="btn btn-primary">Detaylar</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-edit"></i> Değiştir</a>
+              <a href="#" class="btn btn-danger">İptal Et</a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Kart 3 - Check-in Yakın -->
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <span class="reservation-id"><i class="fas fa-hashtag"></i> OTL-2025-0215</span>
+              <span class="reservation-date"><i class="far fa-calendar-alt"></i> 10 Mar 2025</span>
+            </div>
+            <span class="status-badge status-upcoming"><i class="fas fa-door-open"></i> Check-in Yakın</span>
+          </div>
+          <div class="reservation-body">
+            <img src="https://images.pexels.com/photos/672532/pexels-photo-672532.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Cappadocia" class="reservation-image">
+            <div class="reservation-details">
+              <div class="hotel-name">Cappadocia Cave Resort <span class="hotel-stars">★★★★</span></div>
+              <div class="hotel-location"><i class="fas fa-map-pin"></i> Göreme, Nevşehir</div>
+              <div class="reservation-meta">
+                <span class="meta-item"><i class="far fa-calendar"></i> 12 Nis - 14 Nis 2025 (2 Gece)</span>
+                <span class="meta-item"><i class="far fa-user"></i> 2 Yetişkin</span>
+                <span class="meta-item"><i class="far fa-moon"></i> Mağara Oda</span>
+              </div>
+              <p style="color: var(--info); font-size: 14px;"><i class="fas fa-info-circle"></i> 2 gün sonra check-in!</p>
+              <p class="price-info">Toplam: ₺6.400 (Ödendi)</p>
+            </div>
+            <div class="reservation-actions">
+              <a href="#" class="btn btn-primary">Detaylar</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-qrcode"></i> Check-in Kodu</a>
+              <a href="#" class="btn btn-outline">İletişim</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="pagination">
+        <span class="page-item"><i class="fas fa-chevron-left"></i></span>
+        <span class="page-item active">1</span>
+        <span class="page-item"><i class="fas fa-chevron-right"></i></span>
+      </div>
+    </div>
+    
+    <!-- ========== GEÇMİŞ REZERVASYONLAR ========== -->
+    <div class="tab-panel" id="past-panel">
+      
+      <div class="filter-bar">
+        <div class="filter-chips">
+          <span class="filter-chip active">Tümü (8)</span>
+          <span class="filter-chip">2025 (4)</span>
+          <span class="filter-chip">2024 (3)</span>
+          <span class="filter-chip">Daha Eski (1)</span>
+        </div>
+        <select class="sort-select">
+          <option>En Yeni</option>
+          <option>En Eski</option>
+          <option>En Yüksek Fiyat</option>
+        </select>
+      </div>
+      
+      <div class="reservation-list">
+        
+        <!-- Geçmiş Kart 1 -->
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <span class="reservation-id"><i class="fas fa-hashtag"></i> OTL-2025-0123</span>
+              <span class="reservation-date"><i class="far fa-calendar-alt"></i> 15 Şub 2025</span>
+            </div>
+            <span class="status-badge status-completed"><i class="fas fa-check-double"></i> Tamamlandı</span>
+          </div>
+          <div class="reservation-body">
+            <img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Four Seasons" class="reservation-image">
+            <div class="reservation-details">
+              <div class="hotel-name">Four Seasons Bosphorus <span class="hotel-stars">★★★★★</span></div>
+              <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+              <div class="reservation-meta">
+                <span class="meta-item"><i class="far fa-calendar"></i> 20 Mar - 22 Mar 2025 (2 Gece)</span>
+                <span class="meta-item"><i class="far fa-user"></i> 2 Yetişkin</span>
+              </div>
+              <p class="price-info">Toplam: ₺25.000 (Ödendi)</p>
+            </div>
+            <div class="reservation-actions">
+              <a href="#" class="btn btn-primary">Detaylar</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-star"></i> Değerlendir</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-redo-alt"></i> Tekrar Rezerve Et</a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Geçmiş Kart 2 -->
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <span class="reservation-id"><i class="fas fa-hashtag"></i> OTL-2024-0891</span>
+              <span class="reservation-date"><i class="far fa-calendar-alt"></i> 10 Ara 2024</span>
+            </div>
+            <span class="status-badge status-completed"><i class="fas fa-check-double"></i> Tamamlandı</span>
+          </div>
+          <div class="reservation-body">
+            <img src="https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=300" alt="D Maris" class="reservation-image">
+            <div class="reservation-details">
+              <div class="hotel-name">D Maris Bay <span class="hotel-stars">★★★★★</span></div>
+              <div class="hotel-location"><i class="fas fa-map-pin"></i> Marmaris, Muğla</div>
+              <div class="reservation-meta">
+                <span class="meta-item"><i class="far fa-calendar"></i> 5 Oca - 8 Oca 2025 (3 Gece)</span>
+                <span class="meta-item"><i class="far fa-user"></i> 2 Yetişkin, 2 Çocuk</span>
+              </div>
+              <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <span style="display: flex; align-items: center; gap: 4px; color: var(--warning);"><i class="fas fa-star"></i> 9.5</span>
+                <span style="color: var(--text-gray); font-size: 13px;">Değerlendirdiniz</span>
+              </div>
+              <p class="price-info">Toplam: ₺21.300 (Ödendi)</p>
+            </div>
+            <div class="reservation-actions">
+              <a href="#" class="btn btn-primary">Detaylar</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-redo-alt"></i> Tekrar Rezerve Et</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-receipt"></i> Fatura</a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Geçmiş Kart 3 -->
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <span class="reservation-id"><i class="fas fa-hashtag"></i> OTL-2024-0456</span>
+              <span class="reservation-date"><i class="far fa-calendar-alt"></i> 20 Tem 2024</span>
+            </div>
+            <span class="status-badge status-completed"><i class="fas fa-check-double"></i> Tamamlandı</span>
+          </div>
+          <div class="reservation-body">
+            <img src="https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Hilton" class="reservation-image">
+            <div class="reservation-details">
+              <div class="hotel-name">Hilton İstanbul Bomonti <span class="hotel-stars">★★★★★</span></div>
+              <div class="hotel-location"><i class="fas fa-map-pin"></i> Şişli, İstanbul</div>
+              <div class="reservation-meta">
+                <span class="meta-item"><i class="far fa-calendar"></i> 15 Ağu - 18 Ağu 2024 (3 Gece)</span>
+                <span class="meta-item"><i class="far fa-user"></i> 1 Yetişkin</span>
+              </div>
+              <p class="price-info">Toplam: ₺11.400 (Ödendi)</p>
+            </div>
+            <div class="reservation-actions">
+              <a href="#" class="btn btn-primary">Detaylar</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-star"></i> Değerlendir</a>
+              <a href="#" class="btn btn-outline"><i class="fas fa-redo-alt"></i> Tekrar Rezerve Et</a>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <div class="pagination">
+        <span class="page-item active">1</span>
+        <span class="page-item">2</span>
+        <span class="page-item">3</span>
+        <span class="page-item"><i class="fas fa-chevron-right"></i></span>
+      </div>
+    </div>
+    
+    <!-- ========== İPTAL EDİLENLER ========== -->
+    <div class="tab-panel" id="cancelled-panel">
+      
+      <div class="filter-bar">
+        <div class="filter-chips">
+          <span class="filter-chip active">Tümü (1)</span>
+          <span class="filter-chip">2025 (1)</span>
+        </div>
+      </div>
+      
+      <div class="reservation-list">
+        
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <div>
+              <span class="reservation-id"><i class="fas fa-hashtag"></i> OTL-2025-0015</span>
+              <span class="reservation-date"><i class="far fa-calendar-alt"></i> 05 Oca 2025</span>
+            </div>
+            <span class="status-badge status-cancelled"><i class="fas fa-times-circle"></i> İptal Edildi</span>
+          </div>
+          <div class="reservation-body">
+            <img src="https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=300" alt="Conrad" class="reservation-image">
+            <div class="reservation-details">
+              <div class="hotel-name">Conrad Istanbul Bosphorus <span class="hotel-stars">★★★★★</span></div>
+              <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+              <div class="reservation-meta">
+                <span class="meta-item"><i class="far fa-calendar"></i> 10 Şub - 12 Şub 2025 (2 Gece)</span>
+                <span class="meta-item"><i class="far fa-user"></i> 2 Yetişkin</span>
+              </div>
+              <p style="color: var(--text-gray); font-size: 14px; margin-top: 12px;">
+                <i class="fas fa-info-circle"></i> İptal Tarihi: 01 Şub 2025 · Tam iade yapıldı (₺9.600)
+              </p>
+            </div>
+            <div class="reservation-actions">
+              <a href="#" class="btn btn-outline"><i class="fas fa-eye"></i> Detaylar</a>
+              <a href="#" class="btn btn-primary">Tekrar Rezerve Et</a>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+    </div>
+    
+  </main>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-heart"></i><span>Favoriler</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-star"></i><span>Puanlar</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-user"></i><span>Profil</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    // Tab Sistemi
+    const tabs = document.querySelectorAll('.tab');
+    const panels = {
+      upcoming: document.getElementById('upcoming-panel'),
+      past: document.getElementById('past-panel'),
+      cancelled: document.getElementById('cancelled-panel')
+    };
+    
+    function switchTab(tabId) {
+      tabs.forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabId);
+      });
+      Object.entries(panels).forEach(([id, panel]) => {
+        if (panel) panel.classList.toggle('active', id === tabId);
+      });
+    }
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+    
+    // Filtre Chip'leri
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', function() {
+        const parent = this.parentElement;
+        parent.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+    
+    // Buton aksiyonları (örnek)
+    document.querySelectorAll('.btn-danger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm('Bu rezervasyonu iptal etmek istediğinize emin misiniz?')) {
+          alert('✅ Rezervasyon iptal edildi. İade tutarı kartınıza yansıtılacaktır.');
+        }
+      });
+    });
+    
+    document.querySelectorAll('[href*="Değerlendir"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert('⭐ Otel değerlendirme sayfası açılacak.');
+      });
+    });
+    
+    console.log('✅ Rezervasyonlarım Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Swissôtel The Bosphorus · Neden Burası? · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444; --gold: #FFD700;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #64748B; --text-light: #94A3B8; --border-light: #E2E8F0;
+      --radius-xl: 32px; --radius-lg: 24px; --radius-md: 16px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 40px -10px rgba(0, 59, 149, 0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+    /* Hero - Samimi Karşılama */
+    .hero-welcome {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      border-radius: var(--radius-xl); padding: 48px 40px; margin-bottom: 32px;
+      color: white; position: relative; overflow: hidden;
+    }
+    .hero-welcome::before {
+      content: '👋'; position: absolute; bottom: -20px; right: 20px; font-size: 200px; opacity: 0.05;
+      transform: rotate(-10deg);
+    }
+    .hero-content { position: relative; z-index: 2; }
+    .hero-content h1 { font-size: clamp(32px, 5vw, 48px); font-weight: 800; margin-bottom: 12px; }
+    .hero-content .welcome-badge {
+      display: inline-block; background: var(--gold); color: var(--text-dark);
+      padding: 6px 18px; border-radius: 40px; font-weight: 700; margin-bottom: 16px;
+    }
+    .hero-content p { font-size: 18px; opacity: 0.9; max-width: 700px; }
+    
+    /* YENİ: Anlık Hava Durumu Widget'ı */
+    .weather-widget {
+      position: absolute; bottom: 24px; right: 40px; z-index: 2;
+      background: rgba(255,255,255,0.15); backdrop-filter: blur(12px);
+      padding: 16px 24px; border-radius: 60px; border: 1px solid rgba(255,255,255,0.2);
+      display: flex; align-items: center; gap: 16px;
+    }
+    .weather-temp { font-size: 32px; font-weight: 700; }
+    .weather-desc { text-align: right; }
+    .weather-desc i { margin-right: 6px; }
+    @media (max-width: 700px) { .weather-widget { position: static; margin-top: 24px; justify-content: center; } }
+
+    /* Süper Güçler Kartı */
+    .superpowers-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px;
+    }
+    .superpower-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); padding: 28px;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+      transition: var(--transition-base);
+    }
+    .superpower-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .superpower-icon {
+      width: 56px; height: 56px; border-radius: 16px; display: flex;
+      align-items: center; justify-content: center; font-size: 26px; margin-bottom: 20px;
+    }
+    .superpower-card h3 { font-size: 20px; margin-bottom: 8px; }
+    .superpower-card p { color: var(--text-gray); font-size: 15px; }
+
+    /* YENİ: Anlık Doluluk Hissi */
+    .live-activity {
+      background: var(--card-bg); border-radius: 60px; padding: 12px 24px;
+      border: 1px solid var(--border-light); display: inline-flex; align-items: center; gap: 12px;
+      margin-bottom: 32px; box-shadow: var(--shadow-sm);
+    }
+    .live-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--success); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .live-activity span i { color: var(--secondary); margin-right: 4px; }
+
+    /* İki Sütun Layout */
+    .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+
+    /* Misafir Yorumları - Hikaye Anlatımı */
+    .review-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px;
+      border: 1px solid var(--border-light); height: fit-content;
+    }
+    .review-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .review-header i { font-size: 48px; color: var(--gold); }
+    .review-header h2 { font-size: 24px; font-weight: 700; }
+    .quote-of-month {
+      background: linear-gradient(135deg, rgba(255,215,0,0.05) 0%, transparent 100%);
+      border-left: 4px solid var(--gold); padding: 24px; border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin-bottom: 24px;
+    }
+    .quote-text { font-size: 20px; font-weight: 500; font-style: italic; margin-bottom: 12px; line-height: 1.4; }
+    .quote-author { display: flex; align-items: center; gap: 12px; }
+    .author-avatar {
+      width: 44px; height: 44px; border-radius: 50%; background: var(--primary);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;
+    }
+    .author-info h4 { font-weight: 700; }
+    .author-info p { color: var(--text-gray); font-size: 13px; }
+    .guest-types { display: flex; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
+    .guest-type {
+      background: var(--bg-light); padding: 10px 18px; border-radius: 40px;
+      display: flex; align-items: center; gap: 8px; font-size: 14px;
+    }
+    .guest-type i { color: var(--success); }
+
+    /* Çevre Rehberi */
+    .guide-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px;
+      border: 1px solid var(--border-light);
+    }
+    .guide-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .guide-header i { font-size: 32px; color: var(--primary); }
+    .guide-header h2 { font-size: 22px; font-weight: 700; }
+    .guide-section { margin-bottom: 24px; }
+    .guide-section h3 { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .guide-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; border-bottom: 1px solid var(--border-light);
+    }
+    .guide-item:last-child { border-bottom: none; }
+    .guide-item-left { display: flex; align-items: center; gap: 12px; }
+    .guide-item-left i { width: 24px; color: var(--secondary); }
+    .guide-badge {
+      background: var(--bg-light); padding: 4px 12px; border-radius: 40px;
+      font-size: 13px; color: var(--text-gray);
+    }
+
+    /* Ulaşım - Kurtarıcı Rehber */
+    .transport-card {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: var(--radius-xl); padding: 28px; color: white; margin-bottom: 32px;
+    }
+    .transport-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .transport-header i { font-size: 32px; }
+    .transport-header h2 { font-size: 22px; font-weight: 700; }
+    .transport-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .transport-item { background: rgba(255,255,255,0.1); backdrop-filter: blur(8px); padding: 20px; border-radius: var(--radius-md); }
+    .transport-item i { font-size: 24px; margin-bottom: 12px; }
+    .transport-item h4 { margin-bottom: 8px; }
+    .transport-item p { opacity: 0.9; font-size: 14px; }
+
+    /* YENİ: Rezervasyon Sonrası Zaman Çizelgesi */
+    .timeline-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px;
+      border: 1px solid var(--border-light); margin-bottom: 32px;
+    }
+    .timeline-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .timeline-header i { font-size: 28px; color: var(--success); }
+    .timeline-steps { display: flex; justify-content: space-between; position: relative; }
+    .timeline-steps::before {
+      content: ''; position: absolute; top: 24px; left: 40px; right: 40px; height: 2px;
+      background: var(--border-light); z-index: 0;
+    }
+    .timeline-step { text-align: center; position: relative; z-index: 1; flex: 1; }
+    .step-icon {
+      width: 48px; height: 48px; border-radius: 50%; background: white;
+      border: 2px solid var(--border-light); display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 12px; color: var(--text-gray);
+    }
+    .step-icon.active { background: var(--success); border-color: var(--success); color: white; }
+    .timeline-step p { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .timeline-step span { font-size: 12px; color: var(--text-gray); }
+
+    /* Dürüstlük Köşesi */
+    .honesty-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px;
+      border: 1px solid var(--warning); margin-bottom: 32px;
+    }
+    .honesty-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .honesty-header i { font-size: 28px; color: var(--warning); }
+    .honesty-header h2 { font-size: 20px; font-weight: 700; }
+    .honesty-items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .honesty-item { text-align: center; padding: 16px; }
+    .honesty-item i { font-size: 28px; color: var(--warning); margin-bottom: 12px; }
+    .honesty-item p { color: var(--text-gray); font-size: 14px; }
+    
+    /* YENİ: Sessizlik Garantisi Rozeti */
+    .quiet-badge {
+      display: inline-flex; align-items: center; gap: 8px; background: rgba(0,168,107,0.1);
+      padding: 8px 18px; border-radius: 40px; margin-top: 20px;
+    }
+    .quiet-badge i { color: var(--success); font-size: 18px; }
+    .quiet-badge span { font-weight: 600; color: var(--success); }
+
+    /* SSS - Sormaya Utandıkların */
+    .faq-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px;
+      border: 1px solid var(--border-light); margin-bottom: 32px;
+    }
+    .faq-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .faq-header i { font-size: 28px; color: var(--primary); }
+    .faq-header h2 { font-size: 20px; font-weight: 700; }
+    .faq-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .faq-item { }
+    .faq-question { font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .faq-question i { color: var(--success); font-size: 14px; }
+    .faq-answer { color: var(--text-gray); font-size: 14px; padding-left: 24px; }
+
+    /* YENİ: Personelden Bir Ses */
+    .staff-voice-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px;
+      border: 1px solid var(--border-light); margin-bottom: 32px;
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+    }
+    .staff-avatar {
+      width: 80px; height: 80px; border-radius: 50%; background: var(--gold);
+      display: flex; align-items: center; justify-content: center; font-size: 36px;
+    }
+    .staff-content { flex: 1; }
+    .staff-content h3 { margin-bottom: 8px; }
+    .staff-quote { font-style: italic; color: var(--text-gray); }
+    .play-btn {
+      width: 56px; height: 56px; border-radius: 50%; background: var(--primary);
+      display: flex; align-items: center; justify-content: center; color: white;
+      cursor: pointer; transition: var(--transition-base);
+    }
+    .play-btn:hover { transform: scale(1.1); background: var(--success); }
+
+    /* Hikaye */
+    .story-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px;
+      border: 1px solid var(--border-light); margin-bottom: 32px;
+    }
+    .story-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .story-header i { font-size: 28px; color: var(--gold); }
+    .story-text { font-size: 18px; font-style: italic; color: var(--text-gray); line-height: 1.7; }
+
+    /* YENİ: Unutmadan Check-list */
+    .checklist-card {
+      background: rgba(255, 56, 92, 0.05); border-radius: var(--radius-lg);
+      padding: 20px 24px; margin-bottom: 24px; border: 1px dashed var(--secondary);
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .checklist-card i { color: var(--secondary); font-size: 24px; }
+    .checklist-card span { font-weight: 600; margin-right: 8px; }
+    .checklist-card .item { background: white; padding: 6px 14px; border-radius: 40px; font-size: 14px; }
+
+    /* Son Söz & CTA */
+    .final-cta {
+      background: linear-gradient(135deg, var(--secondary) 0%, #FF6B88 100%);
+      border-radius: var(--radius-xl); padding: 40px; text-align: center; color: white;
+    }
+    .final-cta h2 { font-size: 32px; margin-bottom: 16px; }
+    .final-cta p { margin-bottom: 24px; opacity: 0.95; }
+    .btn-cta {
+      background: white; color: var(--secondary); padding: 18px 48px;
+      border-radius: 60px; font-weight: 800; font-size: 20px; text-decoration: none;
+      display: inline-block; transition: var(--transition-base);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .btn-cta:hover { transform: scale(1.05); box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+
+    /* Mobile */
+    @media (max-width: 900px) {
+      .superpowers-grid, .two-column, .transport-grid, .honesty-items, .faq-grid { grid-template-columns: 1fr; }
+      .hero-welcome { padding: 32px 24px; }
+      .timeline-steps { flex-direction: column; gap: 20px; }
+      .timeline-steps::before { display: none; }
+      .staff-voice-card { text-align: center; justify-content: center; }
+    }
+    @media (max-width: 500px) {
+      .container { padding: 16px; }
+    }
+
+    /* Sticky Rezervasyon Bar */
+    .sticky-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: white;
+      box-shadow: 0 -5px 30px rgba(0,0,0,0.1); padding: 16px 24px;
+      display: flex; justify-content: space-between; align-items: center; z-index: 100;
+    }
+    .sticky-left { display: flex; align-items: center; gap: 16px; }
+    .sticky-price { font-size: 24px; font-weight: 800; color: var(--primary); }
+    /* YENİ: FOMO Bildirimi */
+    .fomo-badge {
+      background: rgba(255,56,92,0.1); color: var(--secondary);
+      padding: 4px 12px; border-radius: 40px; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .fomo-badge i { animation: pulse 1s infinite; }
+    .sticky-btn { background: var(--secondary); color: white; padding: 14px 32px; border-radius: 40px; font-weight: 700; text-decoration: none; }
+    @media (min-width: 901px) { .sticky-bar { display: none; } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Hero - Samimi Karşılama -->
+  <div class="hero-welcome">
+    <div class="hero-content">
+      <span class="welcome-badge"><i class="fas fa-hand-peace"></i> Hoş Geldin!</span>
+      <h1>Swissôtel The Bosphorus</h1>
+      <p>Boğaz'ın tam kıyısında, sadece bir otel değil; ikinci evin gibi hissedeceğin, çalışanlarının adını öğreneceğin bir yer.</p>
+    </div>
+    <!-- YENİ: Anlık Hava Durumu -->
+    <div class="weather-widget">
+      <div><span class="weather-temp">14°C</span></div>
+      <div class="weather-desc"><i class="fas fa-cloud-sun"></i> Parçalı Bulutlu<br><small>İstanbul, Beşiktaş</small></div>
+    </div>
+  </div>
+
+  <!-- Süper Güçler -->
+  <div class="superpowers-grid">
+    <div class="superpower-card">
+      <div class="superpower-icon" style="background: rgba(0,168,107,0.1); color: var(--success);"><i class="fas fa-tree"></i></div>
+      <h3>İstanbul'un En Sessiz Bahçesi</h3>
+      <p>Şehrin göbeğinde, trafik sesini duymadan kitap okuyabileceğin 100 yıllık çınar ağaçları altında bir bahçe.</p>
+    </div>
+    <div class="superpower-card">
+      <div class="superpower-icon" style="background: rgba(255,215,0,0.1); color: var(--gold);"><i class="fas fa-mug-hot"></i></div>
+      <h3>Baristamız Dünya Üçüncüsü</h3>
+      <p>Evet, yanlış duymadın. Kahvaltıda içtiğin kahve, dünya barista şampiyonasında derece yapmış ellerden çıkıyor.</p>
+    </div>
+    <div class="superpower-card">
+      <div class="superpower-icon" style="background: rgba(59,130,246,0.1); color: var(--primary);"><i class="fas fa-user-check"></i></div>
+      <h3>Mehmet Bey Her Şeyi Çözer</h3>
+      <p>Resepsiyondaki Mehmet Bey, kayıp valizden konser biletine kadar aklına gelebilecek her sorunu 5 dakikada çözer.</p>
+    </div>
+  </div>
+
+  <!-- YENİ: Anlık Doluluk Hissi -->
+  <div class="live-activity">
+    <span class="live-dot"></span>
+    <span><i class="fas fa-user-check"></i> <strong>14 misafir</strong> şu anda burada konaklıyor.</span>
+    <span><i class="fas fa-eye"></i> <strong>8 kişi</strong> bu sayfayı inceliyor.</span>
+    <span><i class="fas fa-calendar-check"></i> Bugün <strong>3 giriş</strong> var.</span>
+  </div>
+
+  <!-- İki Sütun: Yorumlar + Çevre Rehberi -->
+  <div class="two-column">
+    
+    <!-- Sol: Misafir Yorumları -->
+    <div class="review-card">
+      <div class="review-header"><i class="fas fa-quote-right"></i><h2>Misafirlerimiz Anlatıyor</h2></div>
+      <div class="quote-of-month">
+        <div class="quote-text">"Bu otelde kendimi evimde hissettim. Personel o kadar samimi ki, 3 günde isimlerini ezberledim. Manzara zaten efsane!"</div>
+        <div class="quote-author"><div class="author-avatar">AY</div><div class="author-info"><h4>Ahmet Yılmaz</h4><p>Gold Üye · 12 Nisan 2025</p></div></div>
+      </div>
+      <div><h3 style="margin-bottom: 16px; font-size: 18px;">Kimler Burayı Seviyor?</h3></div>
+      <div class="guest-types">
+        <span class="guest-type"><i class="fas fa-heart"></i> Balayı Çiftleri</span>
+        <span class="guest-type"><i class="fas fa-briefcase"></i> Toplantıdan Kaçanlar</span>
+        <span class="guest-type"><i class="fas fa-camera"></i> Instagram Fenomenleri</span>
+        <span class="guest-type"><i class="fas fa-paw"></i> Patili Dostuyla Gelenler</span>
+      </div>
+      <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-light);">
+        <p style="color: var(--text-gray);"><i class="fas fa-trophy" style="color: var(--gold);"></i> <strong>En Çok Beğenilenler:</strong> Kahvaltıdaki pişi (%98) · Boğaz Manzarası (%95) · Yastıklar (%92)</p>
+      </div>
+    </div>
+
+    <!-- Sağ: Çevre Rehberi -->
+    <div class="guide-card">
+      <div class="guide-header"><i class="fas fa-map-signs"></i><h2>Odandan Çıkınca Seni Bekleyenler</h2></div>
+      <div class="guide-section">
+        <h3><i class="fas fa-mug-saucer"></i> Kahve Rotası</h3>
+        <div class="guide-item"><div class="guide-item-left"><i class="fas fa-store"></i><span>Petra Roasting Co.</span></div><span class="guide-badge">3 dk yürüme</span></div>
+        <div class="guide-item"><div class="guide-item-left"><i class="fas fa-store"></i><span>Kronotrop</span></div><span class="guide-badge">7 dk yürüme</span></div>
+      </div>
+      <div class="guide-section">
+        <h3><i class="fas fa-utensils"></i> Yeme-İçme</h3>
+        <div class="guide-item"><div class="guide-item-left"><i class="fas fa-wine-glass-alt"></i><span>Vogue Restoran</span></div><span class="guide-badge">Manzaralı</span></div>
+        <div class="guide-item"><div class="guide-item-left"><i class="fas fa-fish"></i><span>Kıyı Balık</span></div><span class="guide-badge">10 dk yürüme</span></div>
+      </div>
+      <div class="guide-section">
+        <h3><i class="fas fa-music"></i> Gece Hayatı</h3>
+        <div class="guide-item"><div class="guide-item-left"><i class="fas fa-cocktail"></i><span>Sortie</span></div><span class="guide-badge">Taksi ~₺60</span></div>
+        <div class="guide-item"><div class="guide-item-left"><i class="fas fa-guitar"></i><span>Nardis Jazz Club</span></div><span class="guide-badge">Taksi ~₺70</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ulaşım - Kurtarıcı Rehber -->
+  <div class="transport-card">
+    <div class="transport-header"><i class="fas fa-car-side"></i><h2>Kaybolma! İşte Kurtarıcı Bilgiler</h2></div>
+    <div class="transport-grid">
+      <div class="transport-item"><i class="fas fa-plane"></i><h4>Havalimanından</h4><p>Havaist Taksim'de in, sarı taksiye "Beşiktaş İskelesi" de. ~₺70 tutar.</p></div>
+      <div class="transport-item"><i class="fas fa-bus"></i><h4>Otobüsle</h4><p>Metrobüs Zincirlikuyu'da in, 30 saniye yürü. Otel tam karşında.</p></div>
+      <div class="transport-item"><i class="fas fa-car"></i><h4>Arabayla</h4><p>Navigasyona YAZMA! Vale kodun: <strong>SWISS10</strong> (%20 indirimli).</p></div>
+    </div>
+  </div>
+
+  <!-- YENİ: Rezervasyon Sonrası Zaman Çizelgesi -->
+  <div class="timeline-card">
+    <div class="timeline-header"><i class="fas fa-check-circle"></i><h2>Rezervasyon Yaparsan Ne Olur?</h2></div>
+    <div class="timeline-steps">
+      <div class="timeline-step"><div class="step-icon active"><i class="fas fa-check"></i></div><p>Anında Onay</p><span>E-postana gelecek</span></div>
+      <div class="timeline-step"><div class="step-icon"><i class="fas fa-bell"></i></div><p>24 Saat Kala</p><span>Hatırlatma SMS'i</span></div>
+      <div class="timeline-step"><div class="step-icon"><i class="fas fa-key"></i></div><p>Giriş Günü</p><span>Dijital anahtar hazır</span></div>
+      <div class="timeline-step"><div class="step-icon"><i class="fas fa-smile"></i></div><p>Çıkış Sonrası</p><span>Değerlendirme daveti</span></div>
+    </div>
+  </div>
+
+  <!-- Dürüstlük Köşesi -->
+  <div class="honesty-card">
+    <div class="honesty-header"><i class="fas fa-hand-peace"></i><h2>Küçük Bir Dürüstlük: Bizde Olmayanlar</h2></div>
+    <div class="honesty-items">
+      <div class="honesty-item"><i class="fas fa-water"></i><p>Deniz manzarası yok, onun yerine 100 yıllık çınar ağaçları var.</p></div>
+      <div class="honesty-item"><i class="fas fa-elevator"></i><p>Asansör biraz yavaş ama merdivenlerdeki sanat eserlerini seveceksin.</p></div>
+      <div class="honesty-item"><i class="fas fa-music"></i><p>Cumartesi geceleri hafif müzik sesi duyulabilir (kulak tıkacı resepsiyonda).</p></div>
+    </div>
+    <!-- YENİ: Sessizlik Garantisi -->
+    <div class="quiet-badge"><i class="fas fa-volume-mute"></i><span>Sessizlik Garantisi:</span> Gürültüye hassassan "Sessiz Oda" talebi oluştur, seni arka bahçeye bakan odaya alalım.</div>
+  </div>
+
+  <!-- SSS - Sormaya Utandıkların -->
+  <div class="faq-card">
+    <div class="faq-header"><i class="fas fa-question-circle"></i><h2>Sormaya Utandıkların (Ama Merak Ettiklerin)</h2></div>
+    <div class="faq-grid">
+      <div class="faq-item"><div class="faq-question"><i class="fas fa-check-circle"></i> Odada ütü var mı?</div><div class="faq-answer">Evet, ama lütfen gömleğini biz ütüleyelim (ücretsiz).</div></div>
+      <div class="faq-item"><div class="faq-question"><i class="fas fa-check-circle"></i> Geç çıkış yapabilir miyim?</div><div class="faq-answer">Müsaitsek tabii ki, değilsek lobide kahve ikram ederiz.</div></div>
+      <div class="faq-item"><div class="faq-question"><i class="fas fa-check-circle"></i> Evcil hayvan kabul ediliyor mu?</div><div class="faq-answer">Evet! 10kg altı patili dostlar ücretsiz, mama kabı bizden.</div></div>
+      <div class="faq-item"><div class="faq-question"><i class="fas fa-check-circle"></i> Otopark var mı?</div><div class="faq-answer">Vale hizmetimiz var. Günlük ₺150.</div></div>
+    </div>
+  </div>
+
+  <!-- YENİ: Personelden Bir Ses -->
+  <div class="staff-voice-card">
+    <div class="staff-avatar">👨‍🍳</div>
+    <div class="staff-content"><h3>Şef Ahmet'ten Bir Mesaj Var</h3><div class="staff-quote">"Misafirlerimiz için her sabah 04:30'da kalkıp pişi hamurunu yoğuruyorum. O iltifatları duymak her şeye değer."</div></div>
+    <div class="play-btn" onclick="alert('🎙️ Şef Ahmet anlatıyor: Her sabah 04:30...')"><i class="fas fa-play"></i></div>
+  </div>
+
+  <!-- Hikaye -->
+  <div class="story-card">
+    <div class="story-header"><i class="fas fa-book-open"></i><h2>Otelin Ruhu: Kısa Bir Hikaye</h2></div>
+    <div class="story-text">"Bu bina 1960'larda bir İsviçreli iş adamının İstanbul aşkıyla başladı. O günden beri duvarlarında binlerce 'hoşça kal' ve 'tekrar görüşmek üzere' birikti. Sabahları koridorda hafif bir kahve kokusu alırsan şaşırma, bu otelin sana 'günaydın' deme şekli."</div>
+  </div>
+
+  <!-- YENİ: Unutmadan Check-list -->
+  <div class="checklist-card">
+    <i class="fas fa-lightbulb"></i>
+    <span>🧳 Unutmadan:</span>
+    <span class="item"><i class="fas fa-umbrella"></i> Yanına şemsiye al</span>
+    <span class="item"><i class="fas fa-plug"></i> Adaptör unutma</span>
+    <span class="item"><i class="fas fa-walking"></i> Rahat ayakkabı giy</span>
+  </div>
+
+  <!-- Son Söz & CTA -->
+  <div class="final-cta">
+    <h2>Eee, Daha Ne Bekliyorsun?</h2>
+    <p>Buraya kadar okuduysan bu otel tam sana göre. Gel, kahve benden.</p>
+    <a href="#" class="btn-cta"><i class="fas fa-calendar-check"></i> Hemen Rezerve Et</a>
+  </div>
+
+</div>
+
+<!-- Sticky Bar (Mobil) -->
+<div class="sticky-bar">
+  <div class="sticky-left">
+    <span class="sticky-price">₺4.250 <span style="font-size:14px;font-weight:400;color:var(--text-gray);">/ gece</span></span>
+    <!-- YENİ: FOMO -->
+    <span class="fomo-badge"><i class="fas fa-fire"></i> Son 24 saatte 3 kişi inceledi</span>
+  </div>
+  <a href="#" class="sticky-btn">Rezerve Et <i class="fas fa-arrow-right"></i></a>
+</div>
+
+<script>
+  console.log('✅ Otele Özel İkna Merkezi (Geliştirilmiş Tam Sürüm) Yüklendi');
+</script>
+</body>
+</html>

@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>Otelturizm · E-posta Şablonları</title>
+  <style>
+    /* === ROOT DEĞİŞKENLER (Light/Dark Mode Desteği) === */
+    :root {
+      --primary: #003B95;
+      --secondary: #FF385C;
+      --success: #00A86B;
+      --warning: #FFB800;
+      --error: #FF385C;
+      --bg-light: #F5F7FA;
+      --text-dark: #1A1F26;
+      --text-gray: #6B7380;
+      --border-light: #E7E9EC;
+      --radius-card: 16px;
+      --radius-button: 40px;
+    }
+
+    /* Karanlık Mod Desteği (Outlook/Apple Mail) */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-light: #1A1F26;
+        --text-dark: #FFFFFF;
+        --text-gray: #B0B8C5;
+        --border-light: #2C333D;
+      }
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', Helvetica, Arial, sans-serif;
+      background: #E8ECF2;
+      line-height: 1.6;
+      padding: 40px 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* E-posta Konteyner (Maksimum 600px - Standart) */
+    .email-wrapper {
+      max-width: 600px;
+      margin: 0 auto 40px;
+      background: #FFFFFF;
+      border-radius: 24px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #0B0E14; }
+      .email-wrapper { background: #1E2430; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); }
+    }
+
+    /* Header */
+    .email-header {
+      background: linear-gradient(135deg, var(--primary) 0%, #002a6b 100%);
+      padding: 40px 32px;
+      text-align: center;
+      color: white;
+    }
+
+    .email-logo {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .email-logo i { color: var(--secondary); }
+
+    .email-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .email-header p {
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    /* İçerik */
+    .email-body {
+      padding: 40px 32px;
+    }
+
+    /* Kart Stili */
+    .info-card {
+      background: var(--bg-light);
+      border-radius: var(--radius-card);
+      padding: 24px;
+      margin: 24px 0;
+      border: 1px solid var(--border-light);
+    }
+
+    /* Butonlar */
+    .btn {
+      display: inline-block;
+      background: var(--primary);
+      color: white !important;
+      text-decoration: none;
+      padding: 16px 36px;
+      border-radius: var(--radius-button);
+      font-weight: 700;
+      font-size: 18px;
+      text-align: center;
+      margin: 24px 0;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--primary) !important;
+      border: 2px solid var(--primary);
+    }
+
+    .btn-block {
+      display: block;
+      width: 100%;
+    }
+
+    /* Rezervasyon Detay Grid */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-label {
+      font-size: 13px;
+      color: var(--text-gray);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .detail-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    /* Oda Detay Tablosu */
+    .room-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    .room-table th {
+      text-align: left;
+      padding: 12px 0;
+      border-bottom: 2px solid var(--border-light);
+      color: var(--text-gray);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .room-table td {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .room-table tr:last-child td { border-bottom: none; }
+
+    /* Fiyat Özeti */
+    .price-summary {
+      border-top: 2px solid var(--border-light);
+      margin-top: 24px;
+      padding-top: 24px;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .price-total {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    /* QR Kod Alanı */
+    .qr-section {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      background: var(--bg-light);
+      border-radius: var(--radius-card);
+      padding: 24px;
+      margin: 24px 0;
+    }
+
+    .qr-code {
+      width: 120px;
+      height: 120px;
+      background: white;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--text-gray);
+      border: 1px solid var(--border-light);
+    }
+
+    /* Uyarı/İptal Politikası */
+    .policy-box {
+      background: rgba(0, 168, 107, 0.1);
+      border-left: 4px solid var(--success);
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin: 24px 0;
+    }
+
+    .warning-box {
+      background: rgba(255, 184, 0, 0.1);
+      border-left: 4px solid var(--warning);
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin: 24px 0;
+    }
+
+    /* Otel Bilgi Kartı */
+    .hotel-mini-card {
+      display: flex;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .hotel-mini-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
+      background: var(--primary);
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* Footer */
+    .email-footer {
+      background: var(--bg-light);
+      padding: 32px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-gray);
+      border-top: 1px solid var(--border-light);
+    }
+
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin: 20px 0;
+    }
+
+    .social-links a {
+      color: var(--text-gray);
+      text-decoration: none;
+      font-size: 20px;
+    }
+
+    /* Başlık Stilleri */
+    h2 { font-size: 22px; font-weight: 700; margin-bottom: 16px; color: var(--text-dark); }
+    h3 { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: var(--text-dark); }
+
+    /* Yardımcı Sınıflar */
+    .text-center { text-align: center; }
+    .text-success { color: var(--success); }
+    .text-warning { color: var(--warning); }
+    .text-error { color: var(--error); }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-4 { margin-bottom: 24px; }
+    .mt-4 { margin-top: 24px; }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .email-body { padding: 24px 20px; }
+      .email-header { padding: 32px 20px; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .qr-section { flex-direction: column; text-align: center; }
+    }
+
+    /* Demo için şablonlar arası boşluk */
+    .template-label {
+      text-align: center;
+      margin: 60px 0 20px;
+      font-size: 14px;
+      color: var(--text-gray);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================ -->
+<!-- ŞABLON 1: E-POSTA ONAYLAMA (EMAIL VERIFICATION) -->
+<!-- ============================================ -->
+<div class="template-label">📧 ŞABLON 1: E-POSTA ONAYLAMA</div>
+<div class="email-wrapper">
+  <div class="email-header">
+    <div class="email-logo">
+      <i class="fas fa-hotel"></i> Otelturizm
+    </div>
+    <h1>E-posta Adresini Onayla</h1>
+    <p>Hesabını aktifleştirmek için son bir adım</p>
+  </div>
+
+  <div class="email-body">
+    <p style="font-size: 18px; margin-bottom: 16px;">Merhaba <strong>{{user_first_name}}</strong>, 👋</p>
+    <p>Otelturizm ailesine hoş geldin! Hesabını aktifleştirmek ve özel fırsatlara erişmek için aşağıdaki butona tıklayarak e-posta adresini onayla.</p>
+
+    <div class="info-card">
+      <p style="margin-bottom: 8px;"><strong>Hesap Bilgilerin:</strong></p>
+      <p>📧 {{user_email}}</p>
+      <p>📅 Kayıt Tarihi: {{registration_date}}</p>
+    </div>
+
+    <div class="text-center">
+      <a href="{{verification_link}}" class="btn">E-postamı Onayla →</a>
+    </div>
+
+    <div class="warning-box">
+      <p><strong>⏰ Bu bağlantı 24 saat süreyle geçerlidir.</strong></p>
+      <p style="margin-top: 8px;">Eğer bu hesabı sen oluşturmadıysan, bu e-postayı görmezden gelebilirsin.</p>
+    </div>
+
+    <p style="margin-top: 24px;">Buton çalışmıyorsa, aşağıdaki bağlantıyı tarayıcına kopyalayabilirsin:</p>
+    <p style="word-break: break-all; font-size: 13px; color: var(--text-gray);">{{verification_link}}</p>
+  </div>
+
+  <div class="email-footer">
+    <div class="social-links">
+      <a href="#"><i class="fab fa-instagram"></i></a>
+      <a href="#"><i class="fab fa-facebook"></i></a>
+      <a href="#"><i class="fab fa-x-twitter"></i></a>
+    </div>
+    <p>© 2025 Otelturizm. Tüm hakları saklıdır.</p>
+    <p style="margin-top: 12px;">Bu e-posta {{user_email}} adresine gönderilmiştir. <br> <a href="#" style="color: var(--primary);">Bildirim tercihlerini değiştir</a></p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ŞABLON 2: ŞİFRE SIFIRLAMA (PASSWORD RESET) -->
+<!-- ============================================ -->
+<div class="template-label">🔐 ŞABLON 2: ŞİFRE SIFIRLAMA</div>
+<div class="email-wrapper">
+  <div class="email-header" style="background: linear-gradient(135deg, #1A1F26 0%, #2C333D 100%);">
+    <div class="email-logo">
+      <i class="fas fa-lock"></i> Güvenlik Merkezi
+    </div>
+    <h1>Şifre Sıfırlama Talebi</h1>
+    <p>Hesabına yeniden erişim sağla</p>
+  </div>
+
+  <div class="email-body">
+    <p style="font-size: 18px; margin-bottom: 16px;">Merhaba <strong>{{user_first_name}}</strong>,</p>
+    <p><strong>{{user_email}}</strong> adresine ait Otelturizm hesabın için bir şifre sıfırlama talebi aldık.</p>
+
+    <div class="info-card text-center">
+      <p style="margin-bottom: 16px;">Yeni şifreni oluşturmak için aşağıdaki butona tıkla:</p>
+      <a href="{{reset_link}}" class="btn">Yeni Şifre Oluştur →</a>
+    </div>
+
+    <div class="warning-box">
+      <p><strong>🔒 Güvenlik Uyarısı:</strong></p>
+      <ul style="margin-left: 20px; margin-top: 8px;">
+        <li>Bu bağlantı 1 saat süreyle geçerlidir.</li>
+        <li>Bu talebi sen yapmadıysan, hesabın güvende. Şifreni kimseyle paylaşma.</li>
+        <li>Şüpheli bir durum sezersen hemen <a href="#" style="color: var(--primary);">destek ekibimizle</a> iletişime geç.</li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 32px; padding: 20px; background: var(--bg-light); border-radius: 12px;">
+      <p><strong>📱 İpucu:</strong> Otelturizm mobil uygulamasında biyometrik giriş (Face ID / Parmak İzi) kullanarak şifresiz giriş yapabilirsin.</p>
+    </div>
+
+    <p style="margin-top: 24px;">Bağlantı çalışmıyor mu? Aşağıdaki adresi kopyala:</p>
+    <p style="word-break: break-all; font-size: 13px; color: var(--text-gray);">{{reset_link}}</p>
+  </div>
+
+  <div class="email-footer">
+    <p>Bu e-posta {{request_ip}} IP adresinden yapılan talep üzerine gönderilmiştir.</p>
+    <p style="margin-top: 12px;">© 2025 Otelturizm · <a href="#" style="color: var(--primary);">Yardım Merkezi</a></p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ŞABLON 3: REZERVASYON BİLDİRİMİ (MÜŞTERİ - TALEP ALINDI) -->
+<!-- ============================================ -->
+<div class="template-label">📋 ŞABLON 3: REZERVASYON BİLDİRİMİ (TALEP ALINDI)</div>
+<div class="email-wrapper">
+  <div class="email-header" style="background: linear-gradient(135deg, #00A86B 0%, #00804B 100%);">
+    <div class="email-logo">
+      <i class="fas fa-check-circle"></i> Rezervasyon Talebi Alındı
+    </div>
+    <h1>Rezervasyon Talebin Alındı! 🎉</h1>
+    <p>Onay süreci başladı, en kısa sürede bilgilendirileceksin</p>
+  </div>
+
+  <div class="email-body">
+    <p style="font-size: 18px; margin-bottom: 16px;">Merhaba <strong>{{user_first_name}} {{user_last_name}}</strong>,</p>
+    <p><strong>{{hotel_name}}</strong> için yaptığın rezervasyon talebi başarıyla sistemimize ulaştı. Rezervasyon numaran: <strong style="font-size: 24px; color: var(--primary);">#{{booking_reference}}</strong></p>
+
+    <div class="hotel-mini-card">
+      <div class="hotel-mini-img" style="background-image: url('{{hotel_thumbnail}}');"></div>
+      <div>
+        <h3 style="margin-bottom: 4px;">{{hotel_name}}</h3>
+        <p style="color: var(--text-gray);"><i class="fas fa-map-pin"></i> {{hotel_address}}</p>
+        <p>⭐ {{hotel_rating}} ({{review_count}} değerlendirme)</p>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>📅 Rezervasyon Detayları</h3>
+      <div class="detail-grid">
+        <div class="detail-item"><span class="detail-label">Giriş Tarihi</span><span class="detail-value">{{check_in_date}}</span></div>
+        <div class="detail-item"><span class="detail-label">Çıkış Tarihi</span><span class="detail-value">{{check_out_date}}</span></div>
+        <div class="detail-item"><span class="detail-label">Gece Sayısı</span><span class="detail-value">{{total_nights}} Gece</span></div>
+        <div class="detail-item"><span class="detail-label">Misafir</span><span class="detail-value">{{adults}} Yetişkin, {{children}} Çocuk</span></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>🛏️ Oda Bilgisi</h3>
+      <p><strong>{{room_type_name}}</strong></p>
+      <p>{{room_description}}</p>
+      <p style="margin-top: 8px;"><i class="fas fa-check-circle text-success"></i> {{cancellation_policy_summary}}</p>
+    </div>
+
+    <div class="price-summary">
+      <div class="price-row"><span>{{total_nights}} gece konaklama</span><span>{{currency}} {{room_subtotal}}</span></div>
+      <div class="price-row"><span>Vergi ve harçlar</span><span>{{currency}} {{tax_amount}}</span></div>
+      <div class="price-row price-total"><span>Toplam Tutar</span><span>{{currency}} {{total_price}}</span></div>
+      <p style="font-size: 13px; color: var(--text-gray); margin-top: 8px;">* Ödeme, rezervasyon onaylandıktan sonra alınacaktır.</p>
+    </div>
+
+    <div class="policy-box">
+      <p><strong>📞 Sırada Ne Var?</strong></p>
+      <p>Otel, rezervasyon talebini 24 saat içinde değerlendirecek. Onay durumunda tarafına SMS ve e-posta ile bildirim yapılacaktır.</p>
+    </div>
+
+    <div class="text-center">
+      <a href="{{booking_details_link}}" class="btn btn-secondary">Rezervasyonumu Görüntüle →</a>
+    </div>
+  </div>
+
+  <div class="email-footer">
+    <p>Soruların için 7/24 destek hattımız: <strong>0850 XXX XX XX</strong></p>
+    <p style="margin-top: 12px;">© 2025 Otelturizm · Rezervasyon No: #{{booking_reference}}</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ŞABLON 4: REZERVASYON ONAY (MÜŞTERİ - KESİNLEŞTİ) -->
+<!-- ============================================ -->
+<div class="template-label">✅ ŞABLON 4: REZERVASYON ONAY (MÜŞTERİ - KESİN)</div>
+<div class="email-wrapper">
+  <div class="email-header" style="background: linear-gradient(135deg, #003B95 0%, #0055CC 100%);">
+    <div class="email-logo">
+      <i class="fas fa-check-double"></i> Rezervasyon Onaylandı
+    </div>
+    <h1>Rezervasyonun Onaylandı! 🎊</h1>
+    <p>Tatilin için geri sayım başladı</p>
+  </div>
+
+  <div class="email-body">
+    <p style="font-size: 18px; margin-bottom: 16px;">Harika haber <strong>{{user_first_name}}</strong>!</p>
+    <p><strong>{{hotel_name}}</strong> rezervasyonun onaylandı. Rezervasyon numaran: <strong style="font-size: 24px; color: var(--primary);">#{{booking_reference}}</strong></p>
+
+    <!-- QR Kod Bölümü -->
+    <div class="qr-section">
+      <div class="qr-code">
+        <!-- Gerçek uygulamada QR kod resmi base64 olarak gelir -->
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <rect x="10" y="10" width="80" height="80" fill="white"/>
+          <rect x="20" y="20" width="10" height="10" fill="black"/>
+          <rect x="40" y="20" width="10" height="10" fill="black"/>
+          <rect x="60" y="20" width="10" height="10" fill="black"/>
+          <rect x="20" y="40" width="10" height="10" fill="black"/>
+          <rect x="60" y="40" width="10" height="10" fill="black"/>
+          <rect x="20" y="60" width="10" height="10" fill="black"/>
+          <rect x="40" y="60" width="10" height="10" fill="black"/>
+          <rect x="60" y="60" width="10" height="10" fill="black"/>
+        </svg>
+      </div>
+      <div>
+        <h3 style="margin-bottom: 8px;">📱 Dijital Check-in Kodu</h3>
+        <p>Otele girişte bu QR kodu resepsiyona göster, hızlıca check-in yap.</p>
+        <p style="margin-top: 12px; font-size: 14px;">Check-in Saati: {{check_in_time}}<br>Check-out Saati: {{check_out_time}}</p>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>📍 Konaklama Detayları</h3>
+      <div class="detail-grid">
+        <div class="detail-item"><span class="detail-label">Otel</span><span class="detail-value">{{hotel_name}}</span></div>
+        <div class="detail-item"><span class="detail-label">Adres</span><span class="detail-value">{{hotel_address}}</span></div>
+        <div class="detail-item"><span class="detail-label">Giriş</span><span class="detail-value">{{check_in_date}} - 14:00</span></div>
+        <div class="detail-item"><span class="detail-label">Çıkış</span><span class="detail-value">{{check_out_date}} - 12:00</span></div>
+        <div class="detail-item"><span class="detail-label">Oda Tipi</span><span class="detail-value">{{room_type_name}}</span></div>
+        <div class="detail-item"><span class="detail-label">Misafir</span><span class="detail-value">{{adults}} Yetişkin, {{children}} Çocuk</span></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>💳 Ödeme Özeti</h3>
+      <table class="room-table">
+        <tr><td>Konaklama ({{total_nights}} gece)</td><td>{{currency}} {{room_subtotal}}</td></tr>
+        <tr><td>Vergi ve Harçlar</td><td>{{currency}} {{tax_amount}}</td></tr>
+        {{#if discount_applied}}
+        <tr><td>İndirim ({{discount_code}})</td><td class="text-success">-{{currency}} {{discount_amount}}</td></tr>
+        {{/if}}
+        <tr><td><strong>Toplam</strong></td><td><strong>{{currency}} {{total_price}}</strong></td></tr>
+      </table>
+      <p style="font-size: 13px; color: var(--text-gray);">Ödeme Yöntemi: {{payment_method}} (**** **** **** {{card_last4}})</p>
+    </div>
+
+    <div class="policy-box">
+      <p><strong>🔄 İptal Politikası:</strong> {{cancellation_policy_full}}</p>
+      <p style="margin-top: 8px;">Değişiklik veya iptal için son tarih: <strong>{{cancellation_deadline}}</strong></p>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-top: 24px;">
+      <a href="{{booking_details_link}}" style="flex:1;" class="btn">Rezervasyonu Yönet</a>
+      <a href="{{hotel_contact_link}}" style="flex:1;" class="btn btn-secondary">Otelle İletişim</a>
+    </div>
+  </div>
+
+  <div class="email-footer">
+    <p><i class="fas fa-calendar-plus"></i> Takvimine eklemek için <a href="{{calendar_link}}" style="color: var(--primary);">buraya tıkla</a>.</p>
+    <p style="margin-top: 12px;">© 2025 Otelturizm · Rezervasyon No: #{{booking_reference}}</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ŞABLON 5: REZERVASYON ONAY (FİRMA / OTEL İÇİN) -->
+<!-- ============================================ -->
+<div class="template-label">🏨 ŞABLON 5: REZERVASYON ONAY (OTEL / FİRMA BİLDİRİMİ)</div>
+<div class="email-wrapper">
+  <div class="email-header" style="background: linear-gradient(135deg, #6B7380 0%, #3A404A 100%);">
+    <div class="email-logo">
+      <i class="fas fa-building"></i> Partner Bildirimi
+    </div>
+    <h1>Yeni Rezervasyon Onayı</h1>
+    <p>Rezervasyon #{{booking_reference}} onaylandı ve ödemesi alındı</p>
+  </div>
+
+  <div class="email-body">
+    <p style="font-size: 18px; margin-bottom: 16px;">Sayın <strong>{{hotel_manager_name}}</strong>,</p>
+    <p><strong>{{hotel_name}}</strong> için yeni bir rezervasyon onaylanmıştır. Misafir bilgileri ve finansal detaylar aşağıdadır.</p>
+
+    <div class="info-card" style="border-left: 4px solid var(--success);">
+      <h3>🔖 Rezervasyon Özeti</h3>
+      <div class="detail-grid">
+        <div class="detail-item"><span class="detail-label">Rezervasyon No</span><span class="detail-value">#{{booking_reference}}</span></div>
+        <div class="detail-item"><span class="detail-label">Rezervasyon Tarihi</span><span class="detail-value">{{booking_created_at}}</span></div>
+        <div class="detail-item"><span class="detail-label">Konaklama</span><span class="detail-value">{{check_in_date}} → {{check_out_date}}</span></div>
+        <div class="detail-item"><span class="detail-label">Gece</span><span class="detail-value">{{total_nights}} Gece</span></div>
+        <div class="detail-item"><span class="detail-label">Oda Tipi</span><span class="detail-value">{{room_type_name}}</span></div>
+        <div class="detail-item"><span class="detail-label">Oda Sayısı</span><span class="detail-value">{{room_count}}</span></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>👤 Misafir Bilgileri (KVKK Kapsamında)</h3>
+      <div class="detail-grid">
+        <div class="detail-item"><span class="detail-label">Ad Soyad</span><span class="detail-value">{{guest_full_name}}</span></div>
+        <div class="detail-item"><span class="detail-label">E-posta</span><span class="detail-value">{{guest_email}}</span></div>
+        <div class="detail-item"><span class="detail-label">Telefon</span><span class="detail-value">{{guest_phone}}</span></div>
+        <div class="detail-item"><span class="detail-label">Ülke</span><span class="detail-value">{{guest_country}}</span></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <h3>💰 Finansal Özet (Komisyon Dahil)</h3>
+      <table class="room-table">
+        <tr><td>Toplam Rezervasyon Bedeli</td><td>{{currency}} {{total_price}}</td></tr>
+        <tr><td>Otelturizm Komisyonu (%{{commission_rate}})</td><td>- {{currency}} {{commission_amount}}</td></tr>
+        <tr><td><strong>Otele Ödenecek Net Tutar</strong></td><td><strong>{{currency}} {{net_payout_amount}}</strong></td></tr>
+      </table>
+      <p style="font-size: 13px; color: var(--text-gray); margin-top: 8px;">Ödeme, misafir çıkış yaptıktan sonraki {{payout_days}} iş günü içinde IBAN: {{hotel_iban}} hesabına yapılacaktır.</p>
+    </div>
+
+    <div class="info-card">
+      <h3>📋 Misafir Talepleri & Notlar</h3>
+      <p><strong>Özel İstekler:</strong> {{special_requests}}</p>
+      <p><strong>Tahmini Varış Saati:</strong> {{estimated_arrival_time}}</p>
+    </div>
+
+    <div class="warning-box">
+      <p><strong>⚠️ Önemli Hatırlatmalar:</strong></p>
+      <ul style="margin-left: 20px;">
+        <li>Misafir bilgileri KVKK kapsamında korunmaktadır, 3. şahıslarla paylaşılamaz.</li>
+        <li>İptal/değişiklik durumunda Extranet panelinden güncelleme yapınız.</li>
+        <li>Check-in sırasında misafirden kimlik bilgisi almayı unutmayınız.</li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 24px;">
+      <a href="{{extranet_booking_link}}" class="btn btn-block">Extranet'te Görüntüle →</a>
+    </div>
+  </div>
+
+  <div class="email-footer">
+    <p>Bu bildirim otomatik olarak gönderilmiştir. Lütfen yanıtlamayınız.</p>
+    <p>Sorularınız için: <a href="mailto:partners@otelturizm.com" style="color: var(--primary);">partners@otelturizm.com</a></p>
+    <p style="margin-top: 12px;">© 2025 Otelturizm Partner Ağı</p>
+  </div>
+</div>
+
+<!-- Font Awesome (E-posta istemcilerinde çalışmayabilir, fallback var) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+</body>
+</html>

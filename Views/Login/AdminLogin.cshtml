@@ -1,0 +1,133 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Admin Giriş";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>@ViewData["Title"] · Güvenli Yönetim Paneli · Otelturizm</title>
+    
+    
+    <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/assets/css/admin-login.css" asp-append-version="true" />
+</head>
+<body class="admin-login-page">
+    <div class="admin-login-container">
+        <aside class="admin-login-sidebar">
+            <div class="sidebar-logo">
+                <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
+                <div>
+                    <h2>Admin Paneli</h2>
+                    <p>Otelturizm Yönetim Sistemi</p>
+                </div>
+            </div>
+
+            <div class="security-features">
+                <div class="security-item"><i class="fas fa-shield-alt"></i> 256-bit SSL koruması</div>
+                <div class="security-item"><i class="fas fa-mobile-alt"></i> 2 faktörlü kimlik doğrulama hazırlığı</div>
+                <div class="security-item"><i class="fas fa-history"></i> Tüm yönetici oturumları kaydedilir</div>
+                <div class="security-item"><i class="fas fa-ban"></i> Yetki ve erişim logları aktif izlenir</div>
+            </div>
+
+            <div class="sidebar-footer">
+                <i class="fas fa-lock"></i> Yetkisiz girişler yasal işleme tabidir.<br />
+                © @DateTime.Now.Year Otelturizm · AdminX
+            </div>
+        </aside>
+
+        <div class="admin-login-form-wrapper">
+            <div class="form-header">
+                <span class="admin-badge"><i class="fas fa-user-shield"></i> YÖNETİCİ GİRİŞİ</span>
+                <h3>Hoş geldiniz</h3>
+                <p>Güvenli yönetim paneline erişmek için kimlik bilgilerinizi girin.</p>
+            </div>
+
+            @if (TempData["AdminLoginError"] is string loginError)
+            {
+                <div class="auth-alert">@loginError</div>
+            }
+
+            <form class="admin-login-form" method="post" asp-controller="Auth" asp-action="AdminLogin">
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    <label for="adminEmail">Yönetici E-postası</label>
+                    <div class="input-wrapper">
+                        <i class="far fa-envelope"></i>
+                        <input id="adminEmail" name="adminEmail" type="email" class="form-control" placeholder="root@otelturizm.com" required />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="adminPassword">Şifre</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input id="adminPassword" name="adminPassword" type="password" class="form-control" placeholder="••••••••" required />
+                        <button type="button" class="toggle-password" data-toggle-target="adminPassword" aria-label="Şifreyi göster veya gizle">
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-extra">
+                    <label class="checkbox-group">
+                        <input type="checkbox" name="rememberMe" value="true" checked />
+                        <span>Bu cihazı 30 gün hatırla</span>
+                    </label>
+                    <a asp-controller="Auth" asp-action="UserLogin" class="forgot-link">Normal kullanıcı girişine dön</a>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <span>Güvenli Giriş Yap</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="ip-warning">
+                <i class="fas fa-info-circle"></i>
+                <p>
+                    Bu ekran sadece admin ve yönetici ekip kullanıcıları içindir.
+                    Başarılı girişten sonra doğrudan admin paneline yönlendirilirsiniz.
+                    <a asp-controller="Home" asp-action="Index">Ana siteye dön</a>
+                </p>
+            </div>
+
+            <div class="admin-login-footer-links">
+                <a asp-controller="Home" asp-action="Privacy">Gizlilik ve güvenlik</a>
+                <a asp-controller="Home" asp-action="Index">Otelturizm ana sayfa</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            document.querySelectorAll('[data-toggle-target]').forEach(button => {
+                button.addEventListener('click', function () {
+                    const input = document.getElementById(this.dataset.toggleTarget);
+                    const icon = this.querySelector('i');
+                    if (!input || !icon) {
+                        return;
+                    }
+
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
+                    icon.className = isPassword ? 'far fa-eye-slash' : 'far fa-eye';
+                });
+            });
+
+            const loginForm = document.querySelector('.admin-login-form');
+            loginForm?.addEventListener('submit', function () {
+                const submitButton = this.querySelector('.btn-login');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<span>Giriş doğrulanıyor</span><i class="fas fa-spinner fa-spin"></i>';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
+

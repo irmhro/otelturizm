@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Firma Fiyatları · Otelturizm Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444; --gold: #FFD700;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #64748B; --text-light: #94A3B8; --border-light: #E2E8F0;
+      --sidebar-width: 280px; --radius-xl: 24px; --radius-lg: 20px; --radius-md: 16px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 40px -10px rgba(0, 59, 149, 0.12);
+      --transition-base: 0.25s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.5; }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    .sidebar { width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border-light); position: fixed; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+    .sidebar-header { padding: 28px 24px; border-bottom: 1px solid var(--border-light); }
+    .company-profile { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .company-avatar { width: 52px; height: 52px; border-radius: 16px; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; }
+    .company-info h4 { font-size: 16px; margin-bottom: 4px; }
+    .company-info p { font-size: 13px; color: var(--text-gray); }
+    .company-badge { background: var(--success); color: white; padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600; display: inline-block; margin-top: 8px; }
+    .sidebar-nav { flex: 1; padding: 24px 16px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); margin-bottom: 12px; padding-left: 12px; }
+    .nav-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; color: var(--text-gray); text-decoration: none; transition: var(--transition-base); margin-bottom: 4px; font-size: 14px; font-weight: 500; }
+    .nav-item i { width: 24px; font-size: 18px; }
+    .nav-item:hover { background: rgba(0, 59, 149, 0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 28px 32px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-header h1 { font-size: 28px; font-weight: 700; }
+    .btn { padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: var(--transition-base); display: inline-flex; align-items: center; gap: 8px; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    
+    .filter-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .filter-select { padding: 12px 20px; border: 1px solid var(--border-light); border-radius: 40px; background: white; font-size: 14px; }
+    .search-box { flex: 1; max-width: 400px; display: flex; align-items: center; background: white; border: 1px solid var(--border-light); border-radius: 40px; padding: 4px 4px 4px 20px; }
+    .search-box input { flex: 1; border: none; outline: none; padding: 12px 0; font-size: 14px; }
+    .search-box button { background: var(--primary); color: white; border: none; padding: 10px 24px; border-radius: 40px; cursor: pointer; }
+    
+    .deals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .deal-card { background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px; border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); transition: var(--transition-base); }
+    .deal-card:hover { border-color: var(--primary); box-shadow: var(--shadow-lg); transform: translateY(-4px); }
+    .deal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .hotel-name { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .hotel-stars { color: var(--warning); letter-spacing: 2px; }
+    .min-room-badge { background: rgba(0, 168, 107, 0.1); color: var(--success); padding: 6px 14px; border-radius: 40px; font-size: 13px; font-weight: 600; }
+    .hotel-location { color: var(--text-gray); font-size: 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 6px; }
+    .price-comparison { background: var(--bg-light); border-radius: var(--radius-md); padding: 20px; margin-bottom: 20px; }
+    .price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .price-standard { text-decoration: line-through; color: var(--text-light); font-size: 18px; }
+    .price-firm { font-size: 32px; font-weight: 800; color: var(--primary); }
+    .price-firm small { font-size: 14px; font-weight: 400; color: var(--text-gray); }
+    .savings { color: var(--success); font-weight: 700; font-size: 15px; }
+    .tier-info { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light); }
+    .tier-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-gray); margin-bottom: 8px; }
+    .tier-row span:last-child { font-weight: 600; color: var(--text-dark); }
+    .card-footer { display: flex; gap: 12px; margin-top: 20px; }
+    .btn-primary { background: var(--primary); color: white; flex: 1; justify-content: center; padding: 14px; }
+    
+    .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 32px; }
+    .page-item { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-light); border-radius: 10px; cursor: pointer; }
+    .page-item.active { background: var(--primary); color: white; border-color: var(--primary); }
+    
+    .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-top: 1px solid var(--border-light); padding: 12px 20px; z-index: 99; }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item { color: var(--text-gray); text-decoration: none; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    
+    @media (max-width: 1100px) { .deals-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .sidebar { display: none; } .main-content { margin-left: 0; padding: 20px; } .mobile-bottom-nav { display: block; } body { padding-bottom: 80px; } }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="company-profile">
+        <div class="company-avatar">AB</div>
+        <div class="company-info"><h4>ABC Teknoloji A.Ş.</h4><p>Vergi No: 1234567890</p><span class="company-badge"><i class="fas fa-check-circle"></i> Aktif Firma</span></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section"><div class="nav-section-title">Ana Menü</div><a href="#" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a><a href="#" class="nav-item active"><i class="fas fa-hotel"></i> Firma Fiyatları</a><a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlar</a></div>
+      <div class="nav-section"><div class="nav-section-title">Yönetim</div><a href="#" class="nav-item"><i class="fas fa-users"></i> Çalışanlar</a><a href="#" class="nav-item"><i class="fas fa-sliders-h"></i> Limitler & Onaylar</a><a href="#" class="nav-item"><i class="fas fa-file-invoice"></i> Faturalar</a></div>
+      <div class="nav-section"><div class="nav-section-title">Analiz</div><a href="#" class="nav-item"><i class="fas fa-chart-bar"></i> Harcama Raporları</a><a href="#" class="nav-item"><i class="fas fa-building"></i> Otel Bazlı Rapor</a></div>
+    </nav>
+  </aside>
+  
+  <main class="main-content">
+    
+    <div class="page-header"><h1>🏨 Firma Fiyatları</h1><button class="btn btn-outline" onclick="alert('🔔 Fiyat alarmı oluştur')"><i class="fas fa-bell"></i> Fiyat Alarmı Oluştur</button></div>
+    <p style="color:var(--text-gray); margin-bottom:24px;">Otellerin firmalar için özel olarak belirlediği fiyatlar. Minimum oda sayısını karşıladığınızda bu fiyatlardan yararlanabilirsiniz.</p>
+    
+    <div class="filter-bar">
+      <select class="filter-select"><option>Tüm Şehirler</option><option>İstanbul</option><option>Antalya</option><option>İzmir</option></select>
+      <select class="filter-select"><option>Min. Oda Sayısı</option><option>1-3 Oda</option><option>5+ Oda</option><option>10+ Oda</option></select>
+      <div class="search-box"><input type="text" placeholder="Otel adı veya şehir ara..."><button><i class="fas fa-search"></i></button></div>
+    </div>
+    
+    <div class="deals-grid">
+      
+      <div class="deal-card">
+        <div class="deal-header"><span class="hotel-name">Swissôtel The Bosphorus <span class="hotel-stars">★★★★★</span></span><span class="min-room-badge"><i class="fas fa-door-open"></i> Min. 5 Oda</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+        <div class="price-comparison">
+          <div class="price-row"><span>Standart Fiyat</span><span class="price-standard">₺4.250</span></div>
+          <div class="price-row"><span>Firma Fiyatı</span><span class="price-firm">₺3.400 <small>/ oda · gece</small></span></div>
+          <div class="price-row"><span>Tasarruf</span><span class="savings"><i class="fas fa-piggy-bank"></i> ₺850 (%20)</span></div>
+        </div>
+        <div class="tier-info">
+          <div class="tier-row"><span>5-9 Oda</span><span>₺3.400</span></div>
+          <div class="tier-row"><span>10+ Oda</span><span style="color:var(--success);">₺3.100 (%27)</span></div>
+        </div>
+        <div class="card-footer"><button class="btn btn-primary" onclick="alert('✅ Rezervasyon sayfasına yönlendiriliyorsunuz.')">Rezervasyon Yap</button><button class="btn btn-outline" onclick="alert('📋 Detaylar')"><i class="fas fa-info"></i></button></div>
+      </div>
+      
+      <div class="deal-card">
+        <div class="deal-header"><span class="hotel-name">Rixos Premium Belek <span class="hotel-stars">★★★★★</span></span><span class="min-room-badge"><i class="fas fa-door-open"></i> Min. 3 Oda</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Belek, Antalya</div>
+        <div class="price-comparison"><div class="price-row"><span>Standart Fiyat</span><span class="price-standard">₺5.800</span></div><div class="price-row"><span>Firma Fiyatı</span><span class="price-firm">₺4.930 <small>/ oda · gece</small></span></div><div class="price-row"><span>Tasarruf</span><span class="savings">₺870 (%15)</span></div></div>
+        <div class="tier-info"><div class="tier-row"><span>3-9 Oda</span><span>₺4.930</span></div><div class="tier-row"><span>10+ Oda</span><span style="color:var(--success);">₺4.350 (%25)</span></div></div>
+        <div class="card-footer"><button class="btn btn-primary">Rezervasyon Yap</button><button class="btn btn-outline"><i class="fas fa-info"></i></button></div>
+      </div>
+      
+      <div class="deal-card">
+        <div class="deal-header"><span class="hotel-name">Hilton İstanbul Bomonti <span class="hotel-stars">★★★★★</span></span><span class="min-room-badge"><i class="fas fa-door-open"></i> Min. 2 Oda</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Şişli, İstanbul</div>
+        <div class="price-comparison"><div class="price-row"><span>Standart</span><span class="price-standard">₺3.800</span></div><div class="price-row"><span>Firma</span><span class="price-firm">₺3.040 <small>/ oda</small></span></div><div class="price-row"><span>Tasarruf</span><span class="savings">₺760 (%20)</span></div></div>
+        <div class="tier-info"><div class="tier-row"><span>2-4 Oda</span><span>₺3.040</span></div><div class="tier-row"><span>5+ Oda</span><span style="color:var(--success);">₺2.750 (%28)</span></div></div>
+        <div class="card-footer"><button class="btn btn-primary">Rezervasyon Yap</button><button class="btn btn-outline"><i class="fas fa-info"></i></button></div>
+      </div>
+      
+      <div class="deal-card">
+        <div class="deal-header"><span class="hotel-name">Four Seasons Bosphorus <span class="hotel-stars">★★★★★</span></span><span class="min-room-badge">Min. 5 Oda</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+        <div class="price-comparison"><div class="price-row"><span>Standart</span><span class="price-standard">₺12.500</span></div><div class="price-row"><span>Firma</span><span class="price-firm">₺10.000</span></div><div class="price-row"><span>Tasarruf</span><span class="savings">₺2.500 (%20)</span></div></div>
+        <div class="card-footer"><button class="btn btn-primary">Rezervasyon Yap</button><button class="btn btn-outline"><i class="fas fa-info"></i></button></div>
+      </div>
+      
+      <div class="deal-card">
+        <div class="deal-header"><span class="hotel-name">D Maris Bay <span class="hotel-stars">★★★★★</span></span><span class="min-room-badge">Min. 5 Oda</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Marmaris, Muğla</div>
+        <div class="price-comparison"><div class="price-row"><span>Standart</span><span class="price-standard">₺7.100</span></div><div class="price-row"><span>Firma</span><span class="price-firm">₺5.680</span></div><div class="price-row"><span>Tasarruf</span><span class="savings">₺1.420 (%20)</span></div></div>
+        <div class="card-footer"><button class="btn btn-primary">Rezervasyon Yap</button><button class="btn btn-outline"><i class="fas fa-info"></i></button></div>
+      </div>
+      
+      <div class="deal-card">
+        <div class="deal-header"><span class="hotel-name">Cappadocia Cave Resort <span class="hotel-stars">★★★★</span></span><span class="min-room-badge">Min. 3 Oda</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Göreme, Nevşehir</div>
+        <div class="price-comparison"><div class="price-row"><span>Standart</span><span class="price-standard">₺3.200</span></div><div class="price-row"><span>Firma</span><span class="price-firm">₺2.560</span></div><div class="price-row"><span>Tasarruf</span><span class="savings">₺640 (%20)</span></div></div>
+        <div class="card-footer"><button class="btn btn-primary">Rezervasyon Yap</button><button class="btn btn-outline"><i class="fas fa-info"></i></button></div>
+      </div>
+      
+    </div>
+    
+    <div class="pagination"><span class="page-item active">1</span><span class="page-item">2</span><span class="page-item">3</span><span class="page-item">4</span><span class="page-item"><i class="fas fa-chevron-right"></i></span></div>
+    
+  </main>
+</div>
+
+<nav class="mobile-bottom-nav"><div class="bottom-nav-items"><a href="#" class="bottom-nav-item"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a><a href="#" class="bottom-nav-item active"><i class="fas fa-hotel"></i><span>Fiyatlar</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-users"></i><span>Çalışanlar</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a><a href="#" class="bottom-nav-item"><i class="fas fa-user"></i><span>Profil</span></a></div></nav>
+
+<script>console.log('✅ Firma Fiyatları Sayfası Yüklendi');</script>
+</body>
+</html>

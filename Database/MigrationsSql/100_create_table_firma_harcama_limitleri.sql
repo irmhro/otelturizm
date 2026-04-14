@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `firma_harcama_limitleri` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `firma_id` bigint unsigned NOT NULL,
+  `departman` varchar(100) DEFAULT NULL,
+  `kullanici_id` bigint unsigned DEFAULT NULL,
+  `gecelik_limit` decimal(10,2) DEFAULT NULL,
+  `rezervasyon_basi_limit` decimal(10,2) DEFAULT NULL,
+  `aylik_limit` decimal(10,2) DEFAULT NULL,
+  `onay_gereksinimi` tinyint(1) NOT NULL DEFAULT 0,
+  `otomatik_onay_limit` decimal(10,2) DEFAULT NULL,
+  `aktif_mi` tinyint(1) NOT NULL DEFAULT 1,
+  `olusturulma_tarihi` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `guncellenme_tarihi` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_firma_harcama_limitleri_firma` (`firma_id`),
+  KEY `idx_firma_harcama_limitleri_kullanici` (`kullanici_id`),
+  KEY `idx_firma_harcama_limitleri_departman` (`departman`),
+  CONSTRAINT `fk_firma_harcama_limitleri_firma` FOREIGN KEY (`firma_id`) REFERENCES `firmalar` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_firma_harcama_limitleri_kullanici` FOREIGN KEY (`kullanici_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;

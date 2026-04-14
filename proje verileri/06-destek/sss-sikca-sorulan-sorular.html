@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>SSS · Otelturizm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --bg-light: #F5F7FA; --card-bg: #FFFFFF;
+      --text-dark: #1A1F26; --text-gray: #6B7380; --border-light: #E7E9EC;
+      --radius-card: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    
+    .container { max-width: 1000px; margin: 40px auto; padding: 0 24px; }
+    
+    .page-header { text-align: center; margin-bottom: 40px; }
+    .page-header h1 { font-size: 36px; margin-bottom: 12px; }
+    .page-header p { color: var(--text-gray); }
+    
+    /* Search */
+    .faq-search {
+      max-width: 600px; margin: 0 auto 40px;
+    }
+    .search-wrapper {
+      display: flex; background: white; border-radius: 60px;
+      padding: 4px; border: 1px solid var(--border-light);
+    }
+    .search-wrapper input {
+      flex: 1; border: none; padding: 16px 24px; border-radius: 60px; outline: none;
+    }
+    .search-wrapper button {
+      background: var(--primary); color: white; border: none;
+      padding: 12px 32px; border-radius: 60px; font-weight: 600; cursor: pointer;
+    }
+    
+    /* Categories */
+    .category-tabs {
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+      margin-bottom: 32px;
+    }
+    .category-tab {
+      padding: 10px 24px; border-radius: 40px; background: white;
+      border: 1px solid var(--border-light); cursor: pointer;
+      transition: all 0.2s; font-weight: 500;
+    }
+    .category-tab:hover, .category-tab.active {
+      background: var(--primary); color: white; border-color: var(--primary);
+    }
+    
+    /* FAQ Sections */
+    .faq-section { margin-bottom: 32px; }
+    .faq-section-title {
+      font-size: 22px; font-weight: 700; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    
+    .faq-item {
+      background: white; border-radius: 12px; margin-bottom: 12px;
+      border: 1px solid var(--border-light); overflow: hidden;
+    }
+    .faq-question {
+      padding: 20px 24px; display: flex; justify-content: space-between;
+      align-items: center; cursor: pointer; font-weight: 600;
+      transition: background 0.2s;
+    }
+    .faq-question:hover { background: rgba(0,59,149,0.02); }
+    .faq-question i { color: var(--primary); transition: transform 0.3s; }
+    .faq-item.active .faq-question i { transform: rotate(180deg); }
+    .faq-answer {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+      padding: 0 24px; color: var(--text-gray);
+    }
+    .faq-item.active .faq-answer {
+      max-height: 300px; padding-bottom: 20px;
+    }
+    
+    /* Contact CTA */
+    .contact-cta {
+      background: var(--primary); border-radius: var(--radius-card);
+      padding: 40px; text-align: center; color: white; margin-top: 48px;
+    }
+    .contact-cta h3 { font-size: 24px; margin-bottom: 12px; }
+    .btn-white {
+      display: inline-block; padding: 14px 32px; border-radius: 40px;
+      background: white; color: var(--primary); text-decoration: none;
+      font-weight: 600; margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div class="page-header">
+    <h1>Sıkça Sorulan Sorular</h1>
+    <p>Aklınıza takılan her şey için cevaplar burada.</p>
+  </div>
+  
+  <!-- Search -->
+  <div class="faq-search">
+    <div class="search-wrapper">
+      <input type="text" placeholder="Sorunuzu yazın...">
+      <button><i class="fas fa-search"></i> Ara</button>
+    </div>
+  </div>
+  
+  <!-- Category Tabs -->
+  <div class="category-tabs">
+    <span class="category-tab active">Tümü</span>
+    <span class="category-tab">Rezervasyon</span>
+    <span class="category-tab">Ödeme</span>
+    <span class="category-tab">İptal & İade</span>
+    <span class="category-tab">Hesap</span>
+  </div>
+  
+  <!-- FAQ Sections -->
+  <div class="faq-section">
+    <h2 class="faq-section-title"><i class="fas fa-calendar-check" style="color: var(--primary);"></i> Rezervasyon</h2>
+    
+    <div class="faq-item">
+      <div class="faq-question">Rezervasyonumu nasıl yapabilirim? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-answer">Otel sayfasında tarih ve misafir bilgilerini seçip "Rezervasyon Yap" butonuna tıklayarak kolayca rezervasyon yapabilirsiniz.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">Rezervasyon onayımı nasıl alırım? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-answer">Rezervasyon tamamlandığında e-posta adresinize onay mesajı ve rezervasyon numaranız gönderilir.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">Rezervasyonumu değiştirebilir miyim? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-answer">Evet, "Rezervasyonlarım" sayfasından rezervasyonunuza tıklayarak değişiklik talebinde bulunabilirsiniz.</div>
+    </div>
+  </div>
+  
+  <div class="faq-section">
+    <h2 class="faq-section-title"><i class="fas fa-credit-card" style="color: var(--primary);"></i> Ödeme</h2>
+    
+    <div class="faq-item">
+      <div class="faq-question">Hangi ödeme yöntemlerini kabul ediyorsunuz? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-answer">Visa, Mastercard, American Express ve Troy kartları kabul edilmektedir. 3D Secure ile güvenli ödeme yapılır.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">Ödeme ne zaman alınır? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-answer">Ödeme, rezervasyon onaylandıktan sonra veya otele giriş sırasında alınır (otele göre değişir).</div>
+    </div>
+  </div>
+  
+  <div class="faq-section">
+    <h2 class="faq-section-title"><i class="fas fa-ban" style="color: var(--primary);"></i> İptal & İade</h2>
+    
+    <div class="faq-item">
+      <div class="faq-question">Rezervasyonumu ücretsiz iptal edebilir miyim? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-answer">Ücretsiz iptal koşulları otelden otele değişir. Rezervasyon detaylarında iptal politikasını görebilirsiniz.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question">İade ücretim ne zaman hesabıma yatar? <i class="fas fa-chevron-down"></i></div>
+      <div class="faq-answer">İadeler, iptal onayından sonra 3-5 iş günü içinde bankanıza bağlı olarak hesabınıza yansır.</div>
+    </div>
+  </div>
+  
+  <!-- Contact CTA -->
+  <div class="contact-cta">
+    <h3>Aradığınız cevabı bulamadınız mı?</h3>
+    <p>7/24 canlı destek ekibimiz size yardımcı olmaktan mutluluk duyar.</p>
+    <a href="#" class="btn-white">Canlı Desteğe Bağlan <i class="fas fa-arrow-right"></i></a>
+  </div>
+  
+</div>
+
+<script>
+  // Accordion
+  document.querySelectorAll('.faq-question').forEach(q => {
+    q.addEventListener('click', function() {
+      this.closest('.faq-item').classList.toggle('active');
+    });
+  });
+  
+  // Category tabs
+  document.querySelectorAll('.category-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+  
+  console.log('✅ SSS Sayfası Yüklendi');
+</script>
+
+</body>
+</html>

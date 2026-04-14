@@ -1,0 +1,144 @@
+.favorites-subtitle {
+    margin: 8px 0 0;
+    color: #64748b;
+}
+
+.favorites-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.favorite-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.favorite-card-image {
+    position: relative;
+    display: block;
+    height: 220px;
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    overflow: hidden;
+}
+
+.favorite-card-image img,
+.favorite-card-image-fallback {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.favorite-card-image-fallback {
+    background: linear-gradient(135deg, #dbeafe, #c7d2fe 52%, #d9f99d 100%);
+}
+
+.favorite-code-chip {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.8);
+    color: #fff;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.favorite-card-body {
+    padding: 18px;
+}
+
+.favorite-card-body h3 {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+    color: #0f172a;
+}
+
+.favorite-card-body p {
+    margin: 0;
+    color: #64748b;
+}
+
+.favorite-added-date {
+    display: block;
+    margin-top: 10px;
+    color: #94a3b8;
+}
+
+.rating-row {
+    margin: 14px 0;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rating-row span {
+    display: inline-flex;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: #003b95;
+    color: #fff;
+    margin-right: 0;
+}
+
+.card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.card-bottom strong {
+    color: #0f172a;
+    font-size: 1.05rem;
+}
+
+.favorites-empty-state {
+    display: grid;
+    gap: 10px;
+    justify-items: start;
+    padding: 32px;
+    border-radius: 24px;
+    border: 1px dashed #cbd5e1;
+    background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+    color: #475569;
+}
+
+.favorites-empty-state i {
+    font-size: 1.8rem;
+    color: #2563eb;
+}
+
+.favorites-empty-link {
+    text-decoration: none;
+}
+
+@media (max-width: 1200px) {
+    .favorites-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .favorites-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .favorite-card-image {
+        height: 210px;
+    }
+
+    .card-bottom {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

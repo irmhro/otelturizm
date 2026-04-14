@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Oteller · Admin Panel · Otelturizm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0F172A; --primary-light: #1E293B; --secondary: #3B82F6;
+      --success: #10B981; --warning: #F59E0B; --error: #EF4444; --info: #8B5CF6;
+      --bg-light: #F1F5F9; --card-bg: #FFFFFF; --text-dark: #0F172A;
+      --text-gray: #64748B; --border-light: #E2E8F0; --sidebar-width: 280px;
+      --radius-lg: 16px; --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08); --transition-base: 0.25s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--primary); color: white;
+      position: fixed; height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .sidebar-logo i { color: var(--secondary); }
+    .admin-badge { background: var(--secondary); padding: 2px 8px; border-radius: 40px; font-size: 10px; margin-left: 8px; }
+    .admin-profile { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px; }
+    .admin-avatar { width: 44px; height: 44px; border-radius: 12px; background: var(--secondary); display: flex; align-items: center; justify-content: center; }
+    .admin-info h4 { font-size: 14px; }
+    .admin-info p { font-size: 12px; opacity: 0.7; }
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title { font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 12px; padding-left: 16px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 10px;
+      color: rgba(255,255,255,0.7); text-decoration: none; transition: all var(--transition-base);
+      margin-bottom: 4px; font-size: 14px;
+    }
+    .nav-item i { width: 24px; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-item.active { background: var(--secondary); color: white; }
+    .nav-item .badge { margin-left: auto; background: var(--error); padding: 2px 6px; border-radius: 40px; font-size: 10px; }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .page-title p { color: var(--text-gray); }
+    
+    .header-actions { display: flex; gap: 12px; }
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary { background: var(--secondary); color: white; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    
+    /* Stats */
+    .stats-mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-mini { background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border-light); }
+    .stat-mini .label { color: var(--text-gray); font-size: 13px; }
+    .stat-mini .value { font-size: 24px; font-weight: 700; }
+    
+    /* Filter Bar */
+    .filter-bar { display: flex; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+    .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-tab {
+      padding: 8px 18px; border-radius: 40px; background: var(--card-bg);
+      border: 1px solid var(--border-light); font-size: 14px; cursor: pointer;
+    }
+    .filter-tab.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+    .search-box {
+      display: flex; align-items: center; background: var(--card-bg);
+      border: 1px solid var(--border-light); border-radius: 40px; padding: 4px 4px 4px 16px;
+    }
+    .search-box input { border: none; outline: none; padding: 8px 0; width: 200px; }
+    .search-box button { background: var(--secondary); color: white; border: none; padding: 8px 20px; border-radius: 40px; }
+    
+    /* Table */
+    .table-container { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light); overflow: hidden; }
+    .hotel-table { width: 100%; border-collapse: collapse; }
+    .hotel-table th {
+      text-align: left; padding: 16px 20px; background: var(--bg-light);
+      font-weight: 600; font-size: 13px; color: var(--text-gray);
+    }
+    .hotel-table td { padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
+    
+    .hotel-info { display: flex; align-items: center; gap: 12px; }
+    .hotel-avatar-table { width: 40px; height: 40px; border-radius: 8px; background-size: cover; }
+    
+    .status-badge {
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .status-active { background: rgba(16,185,129,0.1); color: var(--success); }
+    .status-pending { background: rgba(245,158,11,0.1); color: var(--warning); }
+    .status-suspended { background: rgba(239,68,68,0.1); color: var(--error); }
+    
+    .action-btn { background: none; border: 1px solid var(--border-light); padding: 6px 10px; border-radius: 8px; margin-right: 6px; cursor: pointer; }
+    
+    /* Pagination */
+    .pagination { display: flex; justify-content: flex-end; gap: 8px; padding: 20px; }
+    .page-item {
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border-light); border-radius: 8px; cursor: pointer;
+    }
+    .page-item.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal {
+      background: white; border-radius: 24px; padding: 32px;
+      max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; justify-content: space-between; margin-bottom: 24px; }
+    .modal-header h3 { font-size: 20px; }
+    .close-modal { cursor: pointer; font-size: 24px; color: var(--text-gray); }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 8px; }
+    .form-control { width: 100%; padding: 14px 16px; border: 1.5px solid var(--border-light); border-radius: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    
+    /* Mobile */
+    @media (max-width: 1000px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .stats-mini { grid-template-columns: repeat(2, 1fr); }
+      .hotel-table { display: block; overflow-x: auto; }
+    }
+    @media (max-width: 600px) {
+      .stats-mini { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--primary); border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--secondary); }
+    @media (max-width: 1000px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    .toast-message {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--text-dark); color: white; padding: 14px 28px;
+      border-radius: 40px; z-index: 9999; animation: slideUp 0.3s;
+    }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><i class="fas fa-crown"></i> Otelturizm<span class="admin-badge">ADMIN</span></div>
+    </div>
+    <div class="admin-profile">
+      <div class="admin-avatar">AU</div>
+      <div class="admin-info"><h4>Admin User</h4><p>admin@otelturizm.com</p></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Yönetim</div>
+        <a href="#" class="nav-item active"><i class="fas fa-hotel"></i> Oteller <span class="badge">48</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-users"></i> Kullanıcılar</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlar</a>
+        <a href="#" class="nav-item"><i class="fas fa-handshake"></i> Partner Başvuruları <span class="badge" style="background: var(--warning);">7</span></a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <header class="content-header">
+      <div class="page-title"><h1>Oteller</h1><p>Platformdaki tüm otelleri yönetin.</p></div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="exportHotels()"><i class="fas fa-download"></i> Dışa Aktar</button>
+        <button class="btn btn-primary" onclick="openAddHotelModal()"><i class="fas fa-plus"></i> Yeni Otel Ekle</button>
+      </div>
+    </header>
+    
+    <!-- Stats -->
+    <div class="stats-mini">
+      <div class="stat-mini"><span class="label">Toplam Otel</span><div class="value">48</div></div>
+      <div class="stat-mini"><span class="label">Aktif Otel</span><div class="value" style="color: var(--success);">42</div></div>
+      <div class="stat-mini"><span class="label">Onay Bekleyen</span><div class="value" style="color: var(--warning);">4</div></div>
+      <div class="stat-mini"><span class="label">Askıya Alınan</span><div class="value" style="color: var(--error);">2</div></div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-tabs">
+        <span class="filter-tab active">Tümü (48)</span>
+        <span class="filter-tab">Aktif (42)</span>
+        <span class="filter-tab">Onay Bekleyen (4)</span>
+        <span class="filter-tab">Askıya Alınan (2)</span>
+      </div>
+      <div class="search-box">
+        <input type="text" placeholder="Otel adı, şehir...">
+        <button><i class="fas fa-search"></i></button>
+      </div>
+    </div>
+    
+    <!-- Table -->
+    <div class="table-container">
+      <table class="hotel-table">
+        <thead>
+          <tr><th>Otel</th><th>Şehir</th><th>Yıldız</th><th>Oda</th><th>Partner ID</th><th>Komisyon</th><th>Durum</th><th>İşlem</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="hotel-info"><div class="hotel-avatar-table" style="background-image: url('https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&w=100');"></div><strong>Swissôtel Bosphorus</strong></div></td>
+            <td>İstanbul</td><td>★★★★★</td><td>45</td><td>PTR-12345</td><td>%12</td>
+            <td><span class="status-badge status-active"><i class="fas fa-check-circle"></i> Aktif</span></td>
+            <td>
+              <button class="action-btn" onclick="viewHotel()"><i class="fas fa-eye"></i></button>
+              <button class="action-btn" onclick="editHotel()"><i class="fas fa-edit"></i></button>
+              <button class="action-btn" onclick="toggleStatus(this)"><i class="fas fa-ban"></i></button>
+            </td>
+          </tr>
+          <tr>
+            <td><div class="hotel-info"><div class="hotel-avatar-table" style="background-image: url('https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&w=100');"></div><strong>Rixos Premium Belek</strong></div></td>
+            <td>Antalya</td><td>★★★★★</td><td>120</td><td>PTR-12346</td><td>%10</td>
+            <td><span class="status-badge status-active">Aktif</span></td>
+            <td><button class="action-btn"><i class="fas fa-eye"></i></button><button class="action-btn"><i class="fas fa-edit"></i></button><button class="action-btn"><i class="fas fa-ban"></i></button></td>
+          </tr>
+          <tr>
+            <td><div class="hotel-info"><div class="hotel-avatar-table" style="background-image: url('https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&w=100');"></div><strong>Four Seasons Bosphorus</strong></div></td>
+            <td>İstanbul</td><td>★★★★★</td><td>85</td><td>PTR-12347</td><td>%15</td>
+            <td><span class="status-badge status-active">Aktif</span></td>
+            <td><button class="action-btn"><i class="fas fa-eye"></i></button><button class="action-btn"><i class="fas fa-edit"></i></button><button class="action-btn"><i class="fas fa-ban"></i></button></td>
+          </tr>
+          <tr>
+            <td><div class="hotel-info"><div class="hotel-avatar-table" style="background: var(--secondary); display: flex; align-items: center; justify-content: center; color: white;">M</div><strong>Marmara Taksim</strong></div></td>
+            <td>İstanbul</td><td>★★★★</td><td>60</td><td>-</td><td>%12</td>
+            <td><span class="status-badge status-pending"><i class="fas fa-clock"></i> Onay Bekliyor</span></td>
+            <td><button class="action-btn" style="color: var(--success);" onclick="approveHotel()"><i class="fas fa-check"></i></button><button class="action-btn" style="color: var(--error);"><i class="fas fa-times"></i></button></td>
+          </tr>
+          <tr>
+            <td><div class="hotel-info"><div class="hotel-avatar-table" style="background-image: url('https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&w=100');"></div><strong>Hilton İzmir</strong></div></td>
+            <td>İzmir</td><td>★★★★★</td><td>95</td><td>-</td><td>%12</td>
+            <td><span class="status-badge status-pending">Onay Bekliyor</span></td>
+            <td><button class="action-btn" style="color: var(--success);"><i class="fas fa-check"></i></button><button class="action-btn" style="color: var(--error);"><i class="fas fa-times"></i></button></td>
+          </tr>
+          <tr>
+            <td><div class="hotel-info"><div class="hotel-avatar-table" style="background: var(--error); display: flex; align-items: center; justify-content: center; color: white;">C</div><strong>Cappadocia Cave</strong></div></td>
+            <td>Nevşehir</td><td>★★★★</td><td>30</td><td>PTR-12348</td><td>%12</td>
+            <td><span class="status-badge status-suspended"><i class="fas fa-pause-circle"></i> Askıya Alındı</span></td>
+            <td><button class="action-btn"><i class="fas fa-eye"></i></button><button class="action-btn"><i class="fas fa-edit"></i></button><button class="action-btn" style="color: var(--success);"><i class="fas fa-play"></i></button></td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <!-- Pagination -->
+      <div class="pagination">
+        <span class="page-item"><i class="fas fa-chevron-left"></i></span>
+        <span class="page-item active">1</span><span class="page-item">2</span><span class="page-item">3</span><span class="page-item">4</span>
+        <span class="page-item"><i class="fas fa-chevron-right"></i></span>
+      </div>
+    </div>
+    
+  </main>
+</div>
+
+<!-- Yeni Otel Ekleme Modal -->
+<div class="modal-overlay" id="addHotelModal">
+  <div class="modal">
+    <div class="modal-header"><h3><i class="fas fa-plus"></i> Yeni Otel Ekle</h3><span class="close-modal" onclick="closeAddHotelModal()">&times;</span></div>
+    <form onsubmit="event.preventDefault(); addHotel();">
+      <div class="form-grid">
+        <div class="form-group"><label>Otel Adı</label><input type="text" class="form-control" required></div>
+        <div class="form-group"><label>Şehir</label><input type="text" class="form-control" required></div>
+        <div class="form-group"><label>Yıldız</label><select class="form-control"><option>5 Yıldız</option><option>4 Yıldız</option><option>3 Yıldız</option></select></div>
+        <div class="form-group"><label>Oda Sayısı</label><input type="number" class="form-control"></div>
+        <div class="form-group"><label>Komisyon Oranı (%)</label><input type="number" class="form-control" value="12"></div>
+        <div class="form-group"><label>Partner ID</label><input type="text" class="form-control" placeholder="Otomatik oluşturulur"></div>
+      </div>
+      <div class="form-group"><label>Adres</label><textarea class="form-control" rows="2"></textarea></div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Oteli Ekle</button>
+    </form>
+  </div>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-hotel"></i><span>Oteller</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-users"></i><span>Kullanıcılar</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-cog"></i><span>Ayarlar</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    window.openAddHotelModal = () => document.getElementById('addHotelModal').style.display = 'flex';
+    window.closeAddHotelModal = () => document.getElementById('addHotelModal').style.display = 'none';
+    window.addHotel = () => { closeAddHotelModal(); showToast('✅ Yeni otel başarıyla eklendi!', 'success'); };
+    window.exportHotels = () => showToast('📥 Otel listesi dışa aktarılıyor...', 'success');
+    window.viewHotel = () => showToast('👁️ Otel detayları görüntüleniyor', 'info');
+    window.editHotel = () => { openAddHotelModal(); showToast('✏️ Otel bilgilerini düzenleyebilirsiniz', 'info'); };
+    window.approveHotel = () => showToast('✅ Otel onaylandı!', 'success');
+    window.toggleStatus = (btn) => {
+      const row = btn.closest('tr');
+      const statusCell = row.querySelector('.status-badge');
+      if (statusCell.classList.contains('status-active')) {
+        statusCell.className = 'status-badge status-suspended';
+        statusCell.innerHTML = '<i class="fas fa-pause-circle"></i> Askıya Alındı';
+        showToast('⏸️ Otel askıya alındı.', 'info');
+      } else {
+        statusCell.className = 'status-badge status-active';
+        statusCell.innerHTML = '<i class="fas fa-check-circle"></i> Aktif';
+        showToast('✅ Otel aktifleştirildi.', 'success');
+      }
+    };
+    
+    function showToast(msg, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'info-circle'}"></i> ${msg}`;
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity='0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    
+    document.querySelectorAll('.filter-tab').forEach(t => t.addEventListener('click', function() {
+      document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+      this.classList.add('active');
+    }));
+    
+    document.getElementById('addHotelModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeAddHotelModal(); });
+    console.log('✅ Oteller Sayfası Yüklendi');
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Keşfet · Otelturizm Blog</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --secondary: #FF385C; --success: #00A86B;
+      --bg-light: #F5F7FA; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #6B7380; --border-light: #E7E9EC; --radius-card: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    
+    .container { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
+    
+    /* Header */
+    .blog-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 32px; flex-wrap: wrap; gap: 20px;
+    }
+    .blog-header h1 { font-size: 32px; }
+    .blog-categories { display: flex; gap: 12px; flex-wrap: wrap; }
+    .category-tag {
+      padding: 8px 20px; border-radius: 40px; background: white;
+      border: 1px solid var(--border-light); cursor: pointer;
+      transition: all 0.2s; font-size: 14px;
+    }
+    .category-tag:hover, .category-tag.active {
+      background: var(--primary); color: white; border-color: var(--primary);
+    }
+    
+    /* Featured Post */
+    .featured-post {
+      display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px;
+      margin-bottom: 48px; background: white; border-radius: var(--radius-card);
+      overflow: hidden; border: 1px solid var(--border-light);
+    }
+    @media (max-width: 800px) { .featured-post { grid-template-columns: 1fr; } }
+    .featured-image { height: 400px; }
+    .featured-image img { width: 100%; height: 100%; object-fit: cover; }
+    .featured-content { padding: 36px; display: flex; flex-direction: column; justify-content: center; }
+    .featured-tag { color: var(--secondary); font-weight: 600; margin-bottom: 12px; }
+    .featured-content h2 { font-size: 28px; margin-bottom: 16px; }
+    .featured-content p { color: var(--text-gray); margin-bottom: 24px; line-height: 1.7; }
+    .read-more { color: var(--primary); text-decoration: none; font-weight: 600; }
+    
+    /* Posts Grid */
+    .section-title {
+      font-size: 24px; font-weight: 700; margin: 48px 0 24px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .posts-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    }
+    @media (max-width: 900px) { .posts-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .posts-grid { grid-template-columns: 1fr; } }
+    
+    .post-card {
+      background: white; border-radius: var(--radius-card); overflow: hidden;
+      border: 1px solid var(--border-light); transition: all 0.2s;
+    }
+    .post-card:hover { transform: translateY(-4px); box-shadow: 0 20px 30px -10px rgba(0,59,149,0.15); }
+    .post-image { height: 200px; }
+    .post-image img { width: 100%; height: 100%; object-fit: cover; }
+    .post-content { padding: 20px; }
+    .post-meta { display: flex; gap: 16px; color: var(--text-gray); font-size: 13px; margin-bottom: 12px; }
+    .post-card h3 { font-size: 18px; margin-bottom: 12px; }
+    .post-card p { color: var(--text-gray); font-size: 14px; margin-bottom: 16px; }
+    
+    /* Newsletter */
+    .newsletter-section {
+      background: linear-gradient(135deg, var(--primary) 0%, #0055CC 100%);
+      border-radius: var(--radius-card); padding: 48px; text-align: center;
+      color: white; margin-top: 60px;
+    }
+    .newsletter-section h3 { font-size: 28px; margin-bottom: 16px; }
+    .newsletter-form {
+      max-width: 500px; margin: 24px auto 0; display: flex; gap: 12px;
+    }
+    .newsletter-form input {
+      flex: 1; padding: 16px; border-radius: 40px; border: none; outline: none;
+    }
+    .newsletter-form button {
+      padding: 16px 32px; border-radius: 40px; border: none;
+      background: var(--secondary); color: white; font-weight: 600; cursor: pointer;
+    }
+    @media (max-width: 500px) { .newsletter-form { flex-direction: column; } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Header -->
+  <div class="blog-header">
+    <h1>Keşfet ✨</h1>
+    <div class="blog-categories">
+      <span class="category-tag active">Tümü</span>
+      <span class="category-tag">Seyahat Rehberleri</span>
+      <span class="category-tag">Otel Önerileri</span>
+      <span class="category-tag">İpuçları</span>
+      <span class="category-tag">Gastronomi</span>
+    </div>
+  </div>
+  
+  <!-- Featured Post -->
+  <div class="featured-post">
+    <div class="featured-image">
+      <img src="https://images.pexels.com/photos/672532/pexels-photo-672532.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Kapadokya">
+    </div>
+    <div class="featured-content">
+      <span class="featured-tag">🌟 Öne Çıkan</span>
+      <h2>Kapadokya'da Balayı: En Romantik Mağara Oteller</h2>
+      <p>Peri bacaları arasında unutulmaz bir balayı için en iyi mağara otelleri ve aktivite önerileri.</p>
+      <div class="post-meta"><span><i class="far fa-calendar"></i> 5 Nis 2025</span><span><i class="far fa-clock"></i> 8 dk okuma</span></div>
+      <a href="#" class="read-more">Yazıyı Oku <i class="fas fa-arrow-right"></i></a>
+    </div>
+  </div>
+  
+  <!-- Latest Posts -->
+  <h2 class="section-title"><i class="fas fa-clock" style="color: var(--primary);"></i> Son Yazılar</h2>
+  <div class="posts-grid">
+    <div class="post-card">
+      <div class="post-image"><img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Boğaz"></div>
+      <div class="post-content">
+        <div class="post-meta"><span>Otel Önerileri</span><span>3 Nis</span></div>
+        <h3>İstanbul Boğazı'nda Kahvaltı Keyfi: En İyi 10 Otel</h3>
+        <p>Boğaz manzaralı kahvaltı sunan en iyi otelleri sizin için listeledik.</p>
+        <a href="#" class="read-more">Devamını Oku →</a>
+      </div>
+    </div>
+    <div class="post-card">
+      <div class="post-image"><img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Antalya"></div>
+      <div class="post-content">
+        <div class="post-meta"><span>Seyahat Rehberi</span><span>1 Nis</span></div>
+        <h3>Antalya'da Her Şey Dahil Oteller: 2025 Rehberi</h3>
+        <p>Ailenizle rahat bir tatil için en iyi her şey dahil oteller.</p>
+        <a href="#" class="read-more">Devamını Oku →</a>
+      </div>
+    </div>
+    <div class="post-card">
+      <div class="post-image"><img src="https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Ege"></div>
+      <div class="post-content">
+        <div class="post-meta"><span>İpuçları</span><span>28 Mar</span></div>
+        <h3>Erken Rezervasyon ile %40'a Varan İndirim Fırsatları</h3>
+        <p>Yaz tatilinizi şimdiden planlayın, en iyi fiyatları yakalayın.</p>
+        <a href="#" class="read-more">Devamını Oku →</a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Popular Posts -->
+  <h2 class="section-title"><i class="fas fa-fire" style="color: var(--secondary);"></i> Popüler Yazılar</h2>
+  <div class="posts-grid">
+    <div class="post-card">
+      <div class="post-image"><img src="https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Bodrum"></div>
+      <div class="post-content">
+        <div class="post-meta"><span>Otel Önerileri</span><span>20 Mar</span></div>
+        <h3>Bodrum'un En İyi Butik Otelleri</h3>
+        <p>Kalabalıktan uzak, huzurlu bir tatil için butik otel önerileri.</p>
+        <a href="#" class="read-more">Devamını Oku →</a>
+      </div>
+    </div>
+    <div class="post-card">
+      <div class="post-image"><img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=400" alt="İstanbul"></div>
+      <div class="post-content">
+        <div class="post-meta"><span>Seyahat Rehberi</span><span>15 Mar</span></div>
+        <h3>İstanbul'da Tarihi Yarımada'da Konaklama</h3>
+        <p>Sultanahmet ve çevresindeki en iyi oteller.</p>
+        <a href="#" class="read-more">Devamını Oku →</a>
+      </div>
+    </div>
+    <div class="post-card">
+      <div class="post-image"><img src="https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Kayak"></div>
+      <div class="post-content">
+        <div class="post-meta"><span>Gastronomi</span><span>10 Mar</span></div>
+        <h3>Kayak Otellerinde Gastronomi Deneyimi</h3>
+        <p>Uludağ ve Palandöken'de lezzetli bir kayak tatili.</p>
+        <a href="#" class="read-more">Devamını Oku →</a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Newsletter -->
+  <div class="newsletter-section">
+    <h3>📧 Keşfet Bülteni</h3>
+    <p>En yeni seyahat rehberleri ve özel fırsatlardan haberdar olun.</p>
+    <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Bülten aboneliği alındı!');">
+      <input type="email" placeholder="E-posta adresiniz" required>
+      <button type="submit">Abone Ol</button>
+    </form>
+  </div>
+  
+</div>
+
+<script>console.log('✅ Blog / Keşfet Sayfası Yüklendi');</script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Seyahat Asistanın · Planla, Oyna, Keşfet · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444; --gold: #FFD700;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #64748B; --text-light: #94A3B8; --border-light: #E2E8F0;
+      --radius-xl: 32px; --radius-lg: 24px; --radius-md: 16px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 40px -10px rgba(0, 59, 149, 0.15);
+      --shadow-glow: 0 0 30px rgba(255, 215, 0, 0.15);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+    /* Hero - Kişiselleştirilmiş Karşılama */
+    .hero-personalized {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      border-radius: var(--radius-xl); padding: 36px 40px; margin-bottom: 32px;
+      color: white; position: relative; overflow: hidden;
+    }
+    .hero-personalized::before {
+      content: '👋'; position: absolute; bottom: -20px; right: 20px; font-size: 200px; opacity: 0.05;
+    }
+    .hero-content { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; }
+    .hero-text h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+    .hero-text p { opacity: 0.9; font-size: 16px; }
+    .hero-badge {
+      background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+      padding: 16px 24px; border-radius: 60px; text-align: center;
+    }
+    .hero-badge .points { font-size: 36px; font-weight: 800; color: var(--gold); }
+    .hero-badge .label { font-size: 14px; opacity: 0.9; }
+
+    /* Özellikler Grid - 2x3 + 1 */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px;
+    }
+    .feature-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+      transition: var(--transition-base);
+    }
+    .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--secondary); }
+    .feature-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .feature-icon {
+      width: 52px; height: 52px; border-radius: 16px; display: flex;
+      align-items: center; justify-content: center; font-size: 26px;
+    }
+    .feature-card h3 { font-size: 18px; font-weight: 700; }
+
+    /* 1. Fiyat Alarmı */
+    .alert-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; border-bottom: 1px solid var(--border-light);
+    }
+    .alert-item:last-child { border-bottom: none; }
+    .alert-hotel { font-weight: 600; }
+    .alert-price { color: var(--success); font-weight: 700; }
+    .btn-add { width: 100%; margin-top: 16px; background: var(--bg-light); border: 1px dashed var(--border-light); border-radius: 40px; padding: 14px; text-align: center; color: var(--text-gray); font-weight: 500; cursor: pointer; }
+
+    /* 2. Oyunlaştırma Rozetleri */
+    .badges-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .badge-item { text-align: center; }
+    .badge-icon {
+      width: 56px; height: 56px; border-radius: 50%; background: var(--bg-light);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 8px;
+      font-size: 28px; color: var(--text-light);
+    }
+    .badge-icon.earned { background: var(--gold); color: var(--primary); box-shadow: var(--shadow-glow); }
+    .badge-item span { font-size: 12px; color: var(--text-gray); }
+    .progress-bar { height: 8px; background: var(--border-light); border-radius: 4px; margin: 16px 0; }
+    .progress-fill { width: 68%; height: 8px; background: var(--secondary); border-radius: 4px; }
+
+    /* 3. Dijital Pasaport */
+    .passport-map {
+      background: linear-gradient(135deg, #E8F4F8 0%, #D1E9F6 100%);
+      border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;
+    }
+    .city-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .city-tag {
+      background: white; padding: 6px 14px; border-radius: 40px; font-size: 13px;
+      display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-sm);
+    }
+    .city-tag.visited { background: var(--success); color: white; }
+
+    /* 4. Ortak Sepet */
+    .shared-cart { }
+    .shared-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-light);
+    }
+    .shared-item i { color: var(--secondary); }
+    .vote-buttons { display: flex; gap: 4px; margin-left: auto; }
+    .vote-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border-light); background: white; cursor: pointer; }
+
+    /* 5. Sana Özel Fırsatlar */
+    .special-offer {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: var(--radius-md); padding: 20px; color: white; margin-bottom: 12px;
+    }
+    .offer-code {
+      background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 40px;
+      font-family: monospace; font-size: 18px; letter-spacing: 2px;
+    }
+
+    /* 6. Bütçe Planlayıcı */
+    .budget-planner { }
+    .budget-input-group { display: flex; gap: 8px; margin: 16px 0; }
+    .budget-input {
+      flex: 1; padding: 14px; border: 1px solid var(--border-light); border-radius: 40px;
+      font-size: 16px; font-weight: 600;
+    }
+    .suggestion-item {
+      padding: 12px; background: var(--bg-light); border-radius: 12px; margin-bottom: 8px;
+      display: flex; justify-content: space-between;
+    }
+
+    /* 7. Benzer Gezginler */
+    .similar-travelers { }
+    .traveler-tag {
+      display: inline-block; background: var(--bg-light); padding: 6px 14px;
+      border-radius: 40px; font-size: 13px; margin-right: 8px; margin-bottom: 8px;
+    }
+    .recommendation-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 0;
+    }
+    .rec-image { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; }
+
+    /* Bottom Full-Width Card */
+    .full-width-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px;
+      border: 1px solid var(--border-light); margin-top: 32px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;
+    }
+
+    .btn {
+      padding: 14px 28px; border-radius: 40px; font-weight: 700; font-size: 15px;
+      cursor: pointer; border: none; transition: var(--transition-base);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary { background: var(--secondary); color: white; box-shadow: 0 8px 20px rgba(255, 56, 92, 0.3); }
+    .btn-primary:hover { transform: scale(1.05); }
+
+    /* Mobile */
+    @media (max-width: 1100px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 700px) { .features-grid { grid-template-columns: 1fr; } .hero-content { flex-direction: column; text-align: center; } .container { padding: 16px; } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Hero - Kişiselleştirilmiş Karşılama -->
+  <div class="hero-personalized">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1><i class="fas fa-compass" style="color: var(--gold);"></i> Hoş Geldin, Ahmet!</h1>
+        <p>👋 Seyahat asistanın burada. Planla, oyna, keşfet, kazan.</p>
+      </div>
+      <div class="hero-badge">
+        <div class="points">1.250</div>
+        <div class="label">OtelPuan</div>
+        <div style="font-size:12px; margin-top:4px;">⭐ Gold Üye</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7 Özellik Grid -->
+  <div class="features-grid">
+    
+    <!-- 1. FİYAT ALARMI -->
+    <div class="feature-card">
+      <div class="feature-header">
+        <div class="feature-icon" style="background: rgba(255,56,92,0.1); color: var(--secondary);"><i class="fas fa-bell"></i></div>
+        <h3>🔔 Fiyat Alarmlarım</h3>
+      </div>
+      <div class="alert-item"><span class="alert-hotel">Swissôtel Bosphorus</span><span class="alert-price">₺3.950 <span style="color:var(--success);"><i class="fas fa-arrow-down"></i></span></span></div>
+      <div class="alert-item"><span class="alert-hotel">Rixos Premium</span><span class="alert-price">₺5.800</span></div>
+      <div class="alert-item"><span class="alert-hotel">Cappadocia Cave</span><span class="alert-price">₺2.850 <span style="color:var(--success);"><i class="fas fa-arrow-down"></i></span></span></div>
+      <div class="btn-add" onclick="alert('🔍 Takip edeceğiniz oteli arayın.')"><i class="fas fa-plus"></i> Yeni Fiyat Alarmı Ekle</div>
+    </div>
+
+    <!-- 2. OYUNLAŞTIRMA - ROZETLER -->
+    <div class="feature-card">
+      <div class="feature-header">
+        <div class="feature-icon" style="background: rgba(255,215,0,0.15); color: var(--gold);"><i class="fas fa-trophy"></i></div>
+        <h3>🏆 Rozet Koleksiyonun</h3>
+      </div>
+      <div class="badges-grid">
+        <div class="badge-item"><div class="badge-icon earned"><i class="fas fa-check"></i></div><span>İlk Rezervasyon</span></div>
+        <div class="badge-item"><div class="badge-icon earned"><i class="fas fa-star"></i></div><span>5 Yıldızlı</span></div>
+        <div class="badge-item"><div class="badge-icon earned"><i class="fas fa-umbrella-beach"></i></div><span>Sahil Kaşifi</span></div>
+        <div class="badge-item"><div class="badge-icon"><i class="fas fa-crown"></i></div><span>10 Rez.</span></div>
+      </div>
+      <p style="font-size:14px; margin-bottom:8px;"><strong>Gold</strong> · Platinum olmaya <strong>1.250 puan</strong> kaldı!</p>
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+      <button class="btn btn-primary btn-sm" style="margin-top:16px; padding:10px 16px; width:100%;" onclick="alert('🎁 Ödül kataloğu açılıyor...')">Ödülleri Gör</button>
+    </div>
+
+    <!-- 3. DİJİTAL PASAPORT -->
+    <div class="feature-card">
+      <div class="feature-header">
+        <div class="feature-icon" style="background: rgba(0,168,107,0.1); color: var(--success);"><i class="fas fa-passport"></i></div>
+        <h3>📖 Dijital Pasaport</h3>
+      </div>
+      <div class="passport-map">
+        <p style="font-weight:600; margin-bottom:8px;"><i class="fas fa-map-pin"></i> Ziyaret Ettiğin Şehirler</p>
+        <div class="city-list">
+          <span class="city-tag visited"><i class="fas fa-check"></i> İstanbul</span>
+          <span class="city-tag visited"><i class="fas fa-check"></i> Antalya</span>
+          <span class="city-tag visited"><i class="fas fa-check"></i> Muğla</span>
+          <span class="city-tag"><i class="fas fa-lock"></i> İzmir</span>
+          <span class="city-tag"><i class="fas fa-lock"></i> Nevşehir</span>
+        </div>
+      </div>
+      <p style="font-size:13px; color:var(--text-gray);">3 şehir keşfettin! Yeni şehirler eklemek için seyahatine devam et.</p>
+    </div>
+
+    <!-- 4. ORTAK SEPET -->
+    <div class="feature-card">
+      <div class="feature-header">
+        <div class="feature-icon" style="background: rgba(59,130,246,0.1); color: #3B82F6;"><i class="fas fa-users"></i></div>
+        <h3>👥 Arkadaşınla Planla</h3>
+      </div>
+      <p style="font-size:13px; color:var(--text-gray); margin-bottom:12px;">İzmir seyahati · 3 arkadaş</p>
+      <div class="shared-item"><i class="fab fa-whatsapp"></i><span>Swissôtel Efes</span><div class="vote-buttons"><button class="vote-btn">👍</button><button class="vote-btn">👎</button></div></div>
+      <div class="shared-item"><i class="fab fa-whatsapp"></i><span>Key Hotel</span><div class="vote-buttons"><button class="vote-btn">👍</button><button class="vote-btn">👎</button></div></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:12px; width:100%;" onclick="alert('👥 Yeni grup planı oluştur')"><i class="fas fa-plus"></i> Yeni Grup Planı</button>
+    </div>
+
+    <!-- 5. SANA ÖZEL FIRSATLAR -->
+    <div class="feature-card">
+      <div class="feature-header">
+        <div class="feature-icon" style="background: rgba(139,92,246,0.1); color: #8B5CF6;"><i class="fas fa-gift"></i></div>
+        <h3>🎁 Sana Özel Fırsatlar</h3>
+      </div>
+      <div class="special-offer">
+        <p style="font-size:13px; opacity:0.9;">İstanbul'da 3. konaklaman için</p>
+        <p style="font-size:20px; font-weight:700; margin:8px 0;">%15 İndirim</p>
+        <span class="offer-code">IST15AHMET</span>
+        <button class="btn" style="background:white; color:var(--primary); padding:8px 16px; margin-top:12px; width:100%;" onclick="alert('📋 Kod kopyalandı!')">Kodu Kopyala</button>
+      </div>
+    </div>
+
+    <!-- 6. SEYAHAT BÜTÇESİ PLANLAYICI -->
+    <div class="feature-card">
+      <div class="feature-header">
+        <div class="feature-icon" style="background: rgba(245,158,11,0.1); color: var(--warning);"><i class="fas fa-calculator"></i></div>
+        <h3>💰 Bütçe Planlayıcı</h3>
+      </div>
+      <div class="budget-input-group">
+        <input type="number" class="budget-input" placeholder="₺5.000" value="5000">
+        <button class="btn btn-primary" style="padding:12px 20px;" onclick="alert('🔍 Bütçene uygun seçenekler aranıyor...')">Planla</button>
+      </div>
+      <div class="suggestion-item"><span>🏨 Swissôtel + Uçak</span><span>₺4.850</span></div>
+      <div class="suggestion-item"><span>🏨 Hilton + Otobüs</span><span>₺3.950</span></div>
+    </div>
+
+    <!-- 7. BENZER GEZGİNLERİN SEÇİMLERİ -->
+    <div class="feature-card">
+      <div class="feature-header">
+        <div class="feature-icon" style="background: rgba(0,168,107,0.1); color: var(--success);"><i class="fas fa-user-friends"></i></div>
+        <h3>👯 Benzer Gezginler</h3>
+      </div>
+      <p style="font-size:13px; margin-bottom:12px;">30-35 yaş · Balayı · İstanbul</p>
+      <div class="traveler-tag">Romantik</div><div class="traveler-tag">Manzaralı</div><div class="traveler-tag">Spa</div>
+      <div style="margin-top:16px;">
+        <div class="recommendation-item"><img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&w=100" class="rec-image"><div><strong>Four Seasons</strong><br><span style="color:var(--text-gray);">⭐ 9.7 · 892 yorum</span></div></div>
+        <div class="recommendation-item"><img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&w=100" class="rec-image"><div><strong>Swissôtel</strong><br><span style="color:var(--text-gray);">⭐ 9.2 · 1.847 yorum</span></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom CTA - Partnerler için vurgu -->
+  <div class="full-width-card">
+    <div>
+      <h3 style="font-size:22px; font-weight:700; margin-bottom:4px;">🤝 Partner Oteller İçin</h3>
+      <p style="color:var(--text-gray);">Bu özellikler sayesinde misafirleriniz %40 daha fazla rezervasyon yapıyor. Siz de bu ekosisteme katılın.</p>
+    </div>
+    <button class="btn btn-primary" onclick="alert('📋 Partner başvuru sayfasına yönlendiriliyorsunuz.')"><i class="fas fa-handshake"></i> Partner Başvurusu</button>
+  </div>
+
+</div>
+
+<script>console.log('✅ 7 Efsane Özellikli Seyahat Asistanı Yüklendi');</script>
+</body>
+</html>

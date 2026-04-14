@@ -1,0 +1,65 @@
+@{
+    Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
+    ViewData["Title"] = "Mesajlarim";
+}
+
+<section class="messages-layout">
+    <aside class="message-list-panel">
+        <div class="message-list-head">
+            <h2>Yazismalar</h2>
+            <span>4 Konusma</span>
+        </div>
+        <div class="message-item active">
+            <div class="message-avatar">RP</div>
+            <div>
+                <h3>Rixos Premium Belek</h3>
+                <p>Rezervasyon teyidi icin size donus sagliyoruz.</p>
+            </div>
+        </div>
+        <div class="message-item">
+            <div class="message-avatar blue">OT</div>
+            <div>
+                <h3>Otelturizm Destek</h3>
+                <p>Odeme sorunuz inceleniyor.</p>
+            </div>
+        </div>
+        <div class="message-item">
+            <div class="message-avatar green">FS</div>
+            <div>
+                <h3>Four Seasons Bosphorus</h3>
+                <p>Check-in detaylariniz paylasildi.</p>
+            </div>
+        </div>
+    </aside>
+
+    <div class="chat-panel">
+        <div class="chat-head">
+            <div>
+                <h2>Rixos Premium Belek</h2>
+                <p>Onay bekleyen rezervasyon gorusmesi</p>
+            </div>
+        </div>
+
+        <div class="chat-body">
+            <div class="bubble incoming">
+                <p>Merhaba, rezervasyonunuz isleme alinmistir. Kisa sure icinde teyit donecegiz.</p>
+                <span>10:22</span>
+            </div>
+            <div class="bubble outgoing">
+                <p>Merhaba, havalimanindan transfer talebimi de eklemek istiyorum.</p>
+                <span>10:24</span>
+            </div>
+            <div class="bubble incoming">
+                <p>Not alindi. Transfer detayi teyit mesajinda paylasilacak.</p>
+                <span>10:26</span>
+            </div>
+        </div>
+
+        <div class="chat-input-row">
+            <input type="text" placeholder="Mesajini yaz..." />
+            <button type="button" class="send-btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+</section>
+
+

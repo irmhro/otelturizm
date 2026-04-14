@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Site Haritası · Otelturizm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --secondary: #506C9B; --bg-light: #F5F7FA;
+      --card-bg: #FFFFFF; --text-dark: #1A1F26; --text-gray: #6B7380;
+      --border-light: #E7E9EC; --radius-card: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.6; }
+    
+    .container { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
+    
+    .page-header { margin-bottom: 40px; text-align: center; }
+    .page-header h1 { font-size: 36px; margin-bottom: 12px; }
+    .page-header p { color: var(--text-gray); }
+    
+    .sitemap-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px;
+    }
+    @media (max-width: 1000px) { .sitemap-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .sitemap-grid { grid-template-columns: 1fr; } }
+    
+    .sitemap-col {
+      background: white; border-radius: var(--radius-card); padding: 28px;
+      border: 1px solid var(--border-light);
+    }
+    .sitemap-col h2 {
+      font-size: 18px; margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 2px solid var(--border-light); display: flex; align-items: center; gap: 10px;
+    }
+    .sitemap-col h2 i { color: var(--primary); }
+    
+    .sitemap-list { list-style: none; }
+    .sitemap-list li { margin-bottom: 12px; }
+    .sitemap-list a {
+      color: var(--text-gray); text-decoration: none; font-size: 15px;
+      display: flex; align-items: center; gap: 8px; transition: all 0.2s;
+    }
+    .sitemap-list a:hover { color: var(--primary); transform: translateX(4px); }
+    .sitemap-list a i { font-size: 10px; color: var(--primary); opacity: 0; transition: opacity 0.2s; }
+    .sitemap-list a:hover i { opacity: 1; }
+    
+    .sitemap-sublist { list-style: none; margin-left: 20px; margin-top: 8px; }
+    .sitemap-sublist li { margin-bottom: 8px; }
+    .sitemap-sublist a { font-size: 14px; }
+    
+    .popular-section { margin-top: 48px; }
+    .popular-section h2 { font-size: 24px; margin-bottom: 24px; text-align: center; }
+    .popular-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
+    }
+    @media (max-width: 800px) { .popular-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 500px) { .popular-grid { grid-template-columns: repeat(2, 1fr); } }
+    .popular-link {
+      background: white; border-radius: 40px; padding: 12px 20px;
+      text-align: center; text-decoration: none; color: var(--text-dark);
+      border: 1px solid var(--border-light); font-size: 14px; transition: all 0.2s;
+    }
+    .popular-link:hover { border-color: var(--primary); color: var(--primary); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div class="page-header">
+    <h1><i class="fas fa-sitemap" style="color: var(--primary);"></i> Site Haritası</h1>
+    <p>Otelturizm'deki tüm sayfalara hızlı erişim.</p>
+  </div>
+  
+  <div class="sitemap-grid">
+    
+    <!-- Ana Sayfalar -->
+    <div class="sitemap-col">
+      <h2><i class="fas fa-home"></i> Ana Sayfalar</h2>
+      <ul class="sitemap-list">
+        <li><a href="/"><i class="fas fa-chevron-right"></i> Ana Sayfa</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Oteller</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Fırsatlar</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Son Dakika</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Erken Rezervasyon</a></li>
+      </ul>
+    </div>
+    
+    <!-- Destinasyonlar -->
+    <div class="sitemap-col">
+      <h2><i class="fas fa-map-pin"></i> Popüler Şehirler</h2>
+      <ul class="sitemap-list">
+        <li><a href="#"><i class="fas fa-chevron-right"></i> İstanbul Otelleri</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Antalya Otelleri</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> İzmir Otelleri</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Muğla Otelleri</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Ankara Otelleri</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Bursa Otelleri</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Nevşehir Otelleri</a></li>
+      </ul>
+    </div>
+    
+    <!-- Kullanıcı Hesabı -->
+    <div class="sitemap-col">
+      <h2><i class="fas fa-user"></i> Hesabım</h2>
+      <ul class="sitemap-list">
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Giriş Yap / Kayıt Ol</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Dashboard</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Rezervasyonlarım</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Favorilerim</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Puanlarım</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Profil Düzenle</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Ödeme Yöntemleri</a></li>
+      </ul>
+    </div>
+    
+    <!-- Kurumsal & Destek -->
+    <div class="sitemap-col">
+      <h2><i class="fas fa-building"></i> Kurumsal & Destek</h2>
+      <ul class="sitemap-list">
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Hakkımızda</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> İletişim</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Blog / Keşfet</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Yardım Merkezi</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> SSS</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> KVKK & Gizlilik</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Kullanım Koşulları</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Çerez Politikası</a></li>
+      </ul>
+    </div>
+  </div>
+  
+  <!-- İkinci Satır -->
+  <div class="sitemap-grid" style="margin-top: 30px;">
+    
+    <!-- Otel Tipleri -->
+    <div class="sitemap-col">
+      <h2><i class="fas fa-hotel"></i> Otel Tipleri</h2>
+      <ul class="sitemap-list">
+        <li><a href="#"><i class="fas fa-chevron-right"></i> 5 Yıldızlı Oteller</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> 4 Yıldızlı Oteller</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Butik Oteller</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Tatil Köyleri</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Termal Oteller</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Kayak Otelleri</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Yetişkin Otelleri</a></li>
+      </ul>
+    </div>
+    
+    <!-- Olanaklar -->
+    <div class="sitemap-col">
+      <h2><i class="fas fa-swimmer"></i> Olanaklara Göre</h2>
+      <ul class="sitemap-list">
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Havuzlu Oteller</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Spa & Wellness</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Her Şey Dahil</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Denize Sıfır</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Evcil Hayvan Dostu</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Ücretsiz Otopark</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Aile Dostu</a></li>
+      </ul>
+    </div>
+    
+    <!-- Partner -->
+    <div class="sitemap-col">
+      <h2><i class="fas fa-handshake"></i> Otelciler İçin</h2>
+      <ul class="sitemap-list">
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Tesisinizi Ekleyin</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Extranet Girişi</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Partner Programı</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Komisyon Oranları</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Eğitim Videoları</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Sıkça Sorulan Sorular</a></li>
+      </ul>
+    </div>
+    
+    <!-- Diğer -->
+    <div class="sitemap-col">
+      <h2><i class="fas fa-ellipsis-h"></i> Diğer</h2>
+      <ul class="sitemap-list">
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Kariyer</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Basın Odası</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> Site Haritası</a></li>
+        <li><a href="#"><i class="fas fa-chevron-right"></i> RSS Beslemesi</a></li>
+      </ul>
+    </div>
+  </div>
+  
+  <!-- Popüler Aramalar -->
+  <div class="popular-section">
+    <h2>Popüler Aramalar</h2>
+    <div class="popular-grid">
+      <a href="#" class="popular-link">İstanbul Otel</a>
+      <a href="#" class="popular-link">Antalya Her Şey Dahil</a>
+      <a href="#" class="popular-link">Bodrum Butik Otel</a>
+      <a href="#" class="popular-link">Kapadokya Mağara Otel</a>
+      <a href="#" class="popular-link">Uludağ Kayak Oteli</a>
+      <a href="#" class="popular-link">Çeşme Termal Otel</a>
+      <a href="#" class="popular-link">Alanya 5 Yıldızlı</a>
+      <a href="#" class="popular-link">Fethiye Tatil Köyü</a>
+      <a href="#" class="popular-link">Sapanca Bungalov</a>
+      <a href="#" class="popular-link">Abant Gölü Otelleri</a>
+    </div>
+  </div>
+  
+</div>
+
+<script>console.log('✅ Site Haritası Sayfası Yüklendi');</script>
+</body>
+</html>

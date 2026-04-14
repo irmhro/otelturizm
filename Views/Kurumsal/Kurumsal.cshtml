@@ -1,0 +1,71 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Kurumsal";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+    <title>@ViewData["Title"] - Otelturizm</title>
+    <script type="importmap"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/kurumsal.css" asp-append-version="true" />
+</head>
+<body class="corporate-page-body">
+    <partial name="~/Views/Kurumsal/_KurumsalHeader.cshtml" />
+
+    <main class="corporate-main">
+        <partial name="~/Views/Kurumsal/_KurumsalContent.cshtml" />
+    </main>
+
+    <partial name="~/Views/Kurumsal/_KurumsalFooter.cshtml" />
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            const header = document.getElementById('corporateHeader');
+            const overlay = document.getElementById('corporateMenuOverlay');
+            const drawer = document.getElementById('corporateMenuDrawer');
+            const toggle = document.getElementById('corporateMenuToggle');
+            const closeBtn = document.getElementById('corporateDrawerClose');
+
+            window.addEventListener('scroll', function () {
+                if (!header) {
+                    return;
+                }
+
+                if (window.scrollY > 40) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            function openMenu() {
+                overlay?.classList.add('active');
+                drawer?.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeMenu() {
+                overlay?.classList.remove('active');
+                drawer?.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            toggle?.addEventListener('click', openMenu);
+            closeBtn?.addEventListener('click', closeMenu);
+            overlay?.addEventListener('click', closeMenu);
+        })();
+    </script>
+</body>
+</html>

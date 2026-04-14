@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Raporlar · Admin Panel · Otelturizm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0F172A; --primary-light: #1E293B; --secondary: #3B82F6;
+      --success: #10B981; --warning: #F59E0B; --error: #EF4444; --info: #8B5CF6;
+      --bg-light: #F1F5F9; --card-bg: #FFFFFF; --text-dark: #0F172A;
+      --text-gray: #64748B; --border-light: #E2E8F0; --sidebar-width: 280px;
+      --radius-lg: 16px; --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08); --transition-base: 0.25s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--primary); color: white;
+      position: fixed; height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .sidebar-logo i { color: var(--secondary); }
+    .admin-badge { background: var(--secondary); padding: 2px 8px; border-radius: 40px; font-size: 10px; margin-left: 8px; }
+    .admin-profile { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px; }
+    .admin-avatar { width: 44px; height: 44px; border-radius: 12px; background: var(--secondary); display: flex; align-items: center; justify-content: center; }
+    .admin-info h4 { font-size: 14px; }
+    .admin-info p { font-size: 12px; opacity: 0.7; }
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title { font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 12px; padding-left: 16px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 10px;
+      color: rgba(255,255,255,0.7); text-decoration: none; transition: all var(--transition-base);
+      margin-bottom: 4px; font-size: 14px;
+    }
+    .nav-item i { width: 24px; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-item.active { background: var(--secondary); color: white; }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .page-title p { color: var(--text-gray); }
+    
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary { background: var(--secondary); color: white; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    
+    /* Report Cards Grid */
+    .reports-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px;
+    }
+    .report-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); padding: 28px;
+      border: 1px solid var(--border-light); transition: all var(--transition-base);
+      cursor: pointer;
+    }
+    .report-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--secondary); }
+    .report-icon {
+      width: 60px; height: 60px; border-radius: 16px; display: flex;
+      align-items: center; justify-content: center; font-size: 28px; margin-bottom: 20px;
+    }
+    .report-card h3 { font-size: 18px; margin-bottom: 8px; }
+    .report-card p { color: var(--text-gray); font-size: 14px; margin-bottom: 20px; }
+    .report-meta { display: flex; justify-content: space-between; align-items: center; }
+    .report-badge {
+      padding: 4px 10px; border-radius: 40px; font-size: 11px; font-weight: 600;
+      background: var(--bg-light); color: var(--text-gray);
+    }
+    
+    /* Custom Report Builder */
+    .report-builder {
+      background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light);
+      padding: 28px; margin-bottom: 32px;
+    }
+    .builder-title { font-size: 18px; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+    
+    .builder-form {
+      display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 16px; align-items: end;
+    }
+    .form-group { }
+    .form-group label { display: block; font-size: 13px; margin-bottom: 6px; color: var(--text-gray); }
+    .form-control {
+      width: 100%; padding: 12px 16px; border: 1.5px solid var(--border-light);
+      border-radius: 12px; font-size: 14px; background: white;
+    }
+    
+    /* Recent Reports */
+    .section-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border-light);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .section-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    
+    .reports-table { width: 100%; border-collapse: collapse; }
+    .reports-table th {
+      text-align: left; padding: 16px 24px; background: var(--bg-light);
+      font-weight: 600; font-size: 13px; color: var(--text-gray);
+    }
+    .reports-table td { padding: 16px 24px; border-bottom: 1px solid var(--border-light); }
+    
+    .status-badge {
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .status-ready { background: rgba(16,185,129,0.1); color: var(--success); }
+    .status-generating { background: rgba(245,158,11,0.1); color: var(--warning); }
+    
+    .action-btn { background: none; border: 1px solid var(--border-light); padding: 6px 10px; border-radius: 8px; margin-right: 6px; cursor: pointer; }
+    
+    /* Mobile */
+    @media (max-width: 1200px) {
+      .reports-grid { grid-template-columns: repeat(2, 1fr); }
+      .builder-form { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 1000px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+    }
+    @media (max-width: 700px) {
+      .reports-grid { grid-template-columns: 1fr; }
+      .builder-form { grid-template-columns: 1fr; }
+      .reports-table { display: block; overflow-x: auto; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--primary); border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--secondary); }
+    @media (max-width: 1000px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    .toast-message {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--text-dark); color: white; padding: 14px 28px;
+      border-radius: 40px; z-index: 9999; animation: slideUp 0.3s;
+    }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><i class="fas fa-crown"></i> Otelturizm<span class="admin-badge">ADMIN</span></div>
+    </div>
+    <div class="admin-profile">
+      <div class="admin-avatar">AU</div>
+      <div class="admin-info"><h4>Admin User</h4><p>admin@otelturizm.com</p></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section"><div class="nav-section-title">Finans</div>
+        <a href="#" class="nav-item"><i class="fas fa-credit-card"></i> Ödemeler</a>
+        <a href="#" class="nav-item"><i class="fas fa-file-invoice"></i> Faturalar</a>
+        <a href="#" class="nav-item"><i class="fas fa-percent"></i> Komisyonlar</a>
+        <a href="#" class="nav-item active"><i class="fas fa-chart-line"></i> Raporlar</a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <header class="content-header">
+      <div class="page-title"><h1>Raporlar</h1><p>Özelleştirilebilir raporlar oluşturun ve analiz edin.</p></div>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="generateCustomReport()"><i class="fas fa-plus"></i> Özel Rapor Oluştur</button>
+      </div>
+    </header>
+    
+    <!-- Quick Report Cards -->
+    <div class="reports-grid">
+      <div class="report-card" onclick="generateReport('revenue')">
+        <div class="report-icon" style="background: rgba(59,130,246,0.1); color: var(--secondary);"><i class="fas fa-chart-bar"></i></div>
+        <h3>Gelir Raporu</h3>
+        <p>Aylık, çeyreklik ve yıllık gelir analizleri, komisyon özetleri.</p>
+        <div class="report-meta"><span class="report-badge"><i class="far fa-clock"></i> Son 30 gün</span><i class="fas fa-arrow-right" style="color: var(--secondary);"></i></div>
+      </div>
+      <div class="report-card" onclick="generateReport('occupancy')">
+        <div class="report-icon" style="background: rgba(16,185,129,0.1); color: var(--success);"><i class="fas fa-hotel"></i></div>
+        <h3>Doluluk Raporu</h3>
+        <p>Otel bazlı doluluk oranları, sezonluk trendler, tahminler.</p>
+        <div class="report-meta"><span class="report-badge"><i class="far fa-clock"></i> Son 30 gün</span><i class="fas fa-arrow-right" style="color: var(--secondary);"></i></div>
+      </div>
+      <div class="report-card" onclick="generateReport('user')">
+        <div class="report-icon" style="background: rgba(139,92,246,0.1); color: var(--info);"><i class="fas fa-users"></i></div>
+        <h3>Kullanıcı Raporu</h3>
+        <p>Yeni kayıtlar, aktif kullanıcılar, rezervasyon davranışları.</p>
+        <div class="report-meta"><span class="report-badge"><i class="far fa-clock"></i> Son 30 gün</span><i class="fas fa-arrow-right" style="color: var(--secondary);"></i></div>
+      </div>
+      <div class="report-card" onclick="generateReport('commission')">
+        <div class="report-icon" style="background: rgba(245,158,11,0.1); color: var(--warning);"><i class="fas fa-percent"></i></div>
+        <h3>Komisyon Raporu</h3>
+        <p>Otel bazlı komisyon gelirleri, özel anlaşma performansı.</p>
+        <div class="report-meta"><span class="report-badge"><i class="far fa-clock"></i> Son 30 gün</span><i class="fas fa-arrow-right" style="color: var(--secondary);"></i></div>
+      </div>
+      <div class="report-card" onclick="generateReport('cancellation')">
+        <div class="report-icon" style="background: rgba(239,68,68,0.1); color: var(--error);"><i class="fas fa-ban"></i></div>
+        <h3>İptal Raporu</h3>
+        <p>İptal oranları, nedenleri, iade tutarları analizi.</p>
+        <div class="report-meta"><span class="report-badge"><i class="far fa-clock"></i> Son 30 gün</span><i class="fas fa-arrow-right" style="color: var(--secondary);"></i></div>
+      </div>
+      <div class="report-card" onclick="generateReport('performance')">
+        <div class="report-icon" style="background: rgba(59,130,246,0.1); color: var(--secondary);"><i class="fas fa-trophy"></i></div>
+        <h3>Performans Raporu</h3>
+        <p>En çok satan oteller, en popüler destinasyonlar.</p>
+        <div class="report-meta"><span class="report-badge"><i class="far fa-clock"></i> Son 30 gün</span><i class="fas fa-arrow-right" style="color: var(--secondary);"></i></div>
+      </div>
+    </div>
+    
+    <!-- Custom Report Builder -->
+    <div class="report-builder">
+      <h3 class="builder-title"><i class="fas fa-sliders-h"></i> Hızlı Rapor Oluşturucu</h3>
+      <div class="builder-form">
+        <div class="form-group"><label>Rapor Tipi</label><select class="form-control"><option>Gelir Raporu</option><option>Doluluk Raporu</option><option>Kullanıcı Raporu</option><option>Komisyon Raporu</option></select></div>
+        <div class="form-group"><label>Tarih Aralığı</label><select class="form-control"><option>Son 7 Gün</option><option selected>Son 30 Gün</option><option>Son 90 Gün</option><option>Bu Yıl</option><option>Özel Aralık</option></select></div>
+        <div class="form-group"><label>Gruplandırma</label><select class="form-control"><option>Günlük</option><option selected>Haftalık</option><option>Aylık</option><option>Yıllık</option></select></div>
+        <div class="form-group"><label>Format</label><select class="form-control"><option>PDF</option><option selected>Excel (CSV)</option><option>JSON</option></select></div>
+        <button class="btn btn-primary" onclick="generateQuickReport()"><i class="fas fa-play"></i> Rapor Oluştur</button>
+      </div>
+    </div>
+    
+    <!-- Recent Reports -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3 class="section-title"><i class="fas fa-history"></i> Son Oluşturulan Raporlar</h3>
+        <button class="btn btn-outline btn-sm" onclick="viewAllReports()">Tümünü Gör →</button>
+      </div>
+      <table class="reports-table">
+        <thead><tr><th>Rapor Adı</th><th>Tipi</th><th>Tarih Aralığı</th><th>Oluşturma</th><th>Durum</th><th>İşlem</th></tr></thead>
+        <tbody>
+          <tr><td>Gelir_Raporu_Nisan2025</td><td>Gelir</td><td>01.04.2025 - 10.04.2025</td><td>10.04.2025 09:30</td><td><span class="status-badge status-ready">Hazır</span></td><td><button class="action-btn" onclick="downloadReport()"><i class="fas fa-download"></i></button><button class="action-btn" onclick="viewReport()"><i class="fas fa-eye"></i></button></td></tr>
+          <tr><td>Doluluk_Raporu_Mart2025</td><td>Doluluk</td><td>01.03.2025 - 31.03.2025</td><td>01.04.2025 10:15</td><td><span class="status-badge status-ready">Hazır</span></td><td><button class="action-btn"><i class="fas fa-download"></i></button><button class="action-btn"><i class="fas fa-eye"></i></button></td></tr>
+          <tr><td>Komisyon_Ozet_Q1_2025</td><td>Komisyon</td><td>01.01.2025 - 31.03.2025</td><td>01.04.2025 08:00</td><td><span class="status-badge status-ready">Hazır</span></td><td><button class="action-btn"><i class="fas fa-download"></i></button><button class="action-btn"><i class="fas fa-eye"></i></button></td></tr>
+          <tr><td>Kullanici_Analiz_Nisan</td><td>Kullanıcı</td><td>01.04.2025 - 10.04.2025</td><td>10.04.2025 14:20</td><td><span class="status-badge status-generating"><i class="fas fa-spinner fa-pulse"></i> Oluşturuluyor</span></td><td><button class="action-btn" disabled><i class="fas fa-download"></i></button></td></tr>
+          <tr><td>Iptal_Analizi_2025</td><td>İptal</td><td>01.01.2025 - 31.03.2025</td><td>05.04.2025 11:45</td><td><span class="status-badge status-ready">Hazır</span></td><td><button class="action-btn"><i class="fas fa-download"></i></button><button class="action-btn"><i class="fas fa-eye"></i></button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Scheduled Reports -->
+    <div class="section-card" style="margin-top: 32px;">
+      <div class="section-header">
+        <h3 class="section-title"><i class="fas fa-calendar-alt"></i> Zamanlanmış Raporlar</h3>
+        <button class="btn btn-outline btn-sm" onclick="scheduleReport()"><i class="fas fa-plus"></i> Yeni Zamanlama</button>
+      </div>
+      <table class="reports-table">
+        <thead><tr><th>Rapor Adı</th><th>Sıklık</th><th>Sonraki Çalışma</th><th>Alıcılar</th><th>Durum</th><th>İşlem</th></tr></thead>
+        <tbody>
+          <tr><td>Haftalık Gelir Özeti</td><td>Her Pazartesi 09:00</td><td>14.04.2025 09:00</td><td>finance@otelturizm.com</td><td><span class="status-badge status-ready">Aktif</span></td><td><button class="action-btn" onclick="editSchedule()"><i class="fas fa-edit"></i></button><button class="action-btn" onclick="toggleSchedule(this)"><i class="fas fa-pause"></i></button></td></tr>
+          <tr><td>Aylık Performans Raporu</td><td>Her ayın 1'i 08:00</td><td>01.05.2025 08:00</td><td>management@otelturizm.com</td><td><span class="status-badge status-ready">Aktif</span></td><td><button class="action-btn"><i class="fas fa-edit"></i></button><button class="action-btn"><i class="fas fa-pause"></i></button></td></tr>
+          <tr><td>Günlük Doluluk Raporu</td><td>Her gün 23:00</td><td>10.04.2025 23:00</td><td>ops@otelturizm.com</td><td><span class="status-badge status-ready">Aktif</span></td><td><button class="action-btn"><i class="fas fa-edit"></i></button><button class="action-btn"><i class="fas fa-pause"></i></button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+  </main>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-hotel"></i><span>Oteller</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-users"></i><span>Kullanıcılar</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-cog"></i><span>Ayarlar</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    window.generateReport = (type) => showToast(`📊 ${type} raporu oluşturuluyor...`, 'success');
+    window.generateCustomReport = () => showToast('📋 Özel rapor oluşturma sayfası açılacak', 'info');
+    window.generateQuickReport = () => showToast('📈 Hızlı rapor oluşturuluyor...', 'success');
+    window.viewAllReports = () => showToast('📁 Tüm raporlar görüntüleniyor', 'info');
+    window.downloadReport = () => showToast('📥 Rapor indiriliyor...', 'success');
+    window.viewReport = () => showToast('👁️ Rapor önizlemesi açılıyor', 'info');
+    window.scheduleReport = () => showToast('📅 Yeni rapor zamanlaması oluşturulacak', 'info');
+    window.editSchedule = () => showToast('✏️ Zamanlama düzenleniyor', 'info');
+    window.toggleSchedule = (btn) => {
+      const row = btn.closest('tr');
+      const status = row.querySelector('.status-badge');
+      if (status.textContent.includes('Aktif')) {
+        status.innerHTML = '<i class="fas fa-pause-circle"></i> Duraklatıldı';
+        status.style.background = 'rgba(245,158,11,0.1)'; status.style.color = 'var(--warning)';
+        btn.innerHTML = '<i class="fas fa-play"></i>';
+      } else {
+        status.innerHTML = '<i class="fas fa-check-circle"></i> Aktif';
+        status.style.background = 'rgba(16,185,129,0.1)'; status.style.color = 'var(--success)';
+        btn.innerHTML = '<i class="fas fa-pause"></i>';
+      }
+      showToast('✅ Zamanlama güncellendi.', 'success');
+    };
+    
+    function showToast(msg, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'info-circle'}"></i> ${msg}`;
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity='0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    
+    console.log('✅ Raporlar Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

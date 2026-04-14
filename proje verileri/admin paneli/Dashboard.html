@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Admin Panel · Dashboard · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0F172A; --primary-light: #1E293B; --primary-dark: #020617;
+      --secondary: #3B82F6; --success: #10B981; --warning: #F59E0B; --error: #EF4444;
+      --info: #8B5CF6; --bg-light: #F1F5F9; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-body: #1E293B; --text-gray: #64748B;
+      --text-light: #94A3B8; --border-light: #E2E8F0; --border-medium: #CBD5E1;
+      --sidebar-width: 280px; --sidebar-collapsed: 80px;
+      --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0,0,0,0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-body); line-height: 1.5; }
+    
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--primary);
+      color: white; position: fixed; height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header {
+      padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .sidebar-logo { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .sidebar-logo i { color: var(--secondary); }
+    .admin-badge {
+      background: var(--secondary); padding: 2px 8px; border-radius: 40px;
+      font-size: 10px; font-weight: 600; margin-left: 8px;
+    }
+    
+    .admin-profile {
+      padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .admin-avatar {
+      width: 44px; height: 44px; border-radius: 12px; background: var(--secondary);
+      display: flex; align-items: center; justify-content: center; font-weight: 600;
+    }
+    .admin-info h4 { font-size: 14px; margin-bottom: 2px; }
+    .admin-info p { font-size: 12px; opacity: 0.7; }
+    
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: rgba(255,255,255,0.4); margin-bottom: 12px; padding-left: 16px; font-weight: 600;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+      border-radius: 10px; color: rgba(255,255,255,0.7); text-decoration: none;
+      transition: all var(--transition-base); margin-bottom: 4px; font-weight: 500; font-size: 14px;
+    }
+    .nav-item i { width: 24px; font-size: 18px; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-item.active { background: var(--secondary); color: white; }
+    .nav-item .badge {
+      margin-left: auto; background: var(--error); color: white;
+      padding: 2px 6px; border-radius: 40px; font-size: 10px; font-weight: 700;
+    }
+    .nav-item .badge.warning { background: var(--warning); color: var(--text-dark); }
+    .nav-item .badge.success { background: var(--success); }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+    }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; color: var(--text-dark); }
+    .page-title p { color: var(--text-gray); font-size: 14px; }
+    
+    .header-actions { display: flex; align-items: center; gap: 16px; }
+    .search-bar {
+      display: flex; align-items: center; background: var(--card-bg);
+      border: 1px solid var(--border-light); border-radius: 40px;
+      padding: 8px 16px; min-width: 260px;
+    }
+    .search-bar i { color: var(--text-gray); margin-right: 10px; }
+    .search-bar input { border: none; outline: none; flex: 1; font-size: 14px; }
+    
+    .date-display {
+      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+      background: var(--card-bg); border-radius: 40px; border: 1px solid var(--border-light);
+    }
+    
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--secondary); color: white; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px;
+    }
+    .kpi-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); padding: 24px;
+      border: 1px solid var(--border-light); position: relative; overflow: hidden;
+    }
+    .kpi-card::before {
+      content: ''; position: absolute; top: 0; right: 0; width: 100px; height: 100px;
+      background: radial-gradient(circle, rgba(59,130,246,0.03) 0%, transparent 70%);
+    }
+    .kpi-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .kpi-icon {
+      width: 48px; height: 48px; border-radius: 14px; display: flex;
+      align-items: center; justify-content: center; font-size: 22px;
+    }
+    .kpi-value { font-size: 34px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; }
+    .kpi-label { color: var(--text-gray); font-size: 14px; }
+    .kpi-trend { display: flex; align-items: center; gap: 4px; font-size: 13px; margin-top: 8px; }
+    .trend-up { color: var(--success); }
+    .trend-down { color: var(--error); }
+    
+    /* Charts Row */
+    .charts-row {
+      display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px;
+    }
+    .chart-card {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light); padding: 24px;
+    }
+    .chart-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px;
+    }
+    .chart-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    
+    /* Bar Chart */
+    .bar-chart {
+      display: flex; align-items: flex-end; justify-content: space-around;
+      height: 220px; padding: 20px 0;
+    }
+    .bar-container { text-align: center; width: 60px; }
+    .bar {
+      width: 40px; background: linear-gradient(180deg, var(--secondary) 0%, #2563EB 100%);
+      border-radius: 8px 8px 0 0; margin: 0 auto; transition: height 0.5s ease;
+    }
+    .bar-label { margin-top: 12px; font-size: 13px; color: var(--text-gray); }
+    
+    /* Recent Activity */
+    .activity-list { }
+    .activity-item {
+      display: flex; align-items: center; gap: 16px; padding: 16px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon {
+      width: 40px; height: 40px; border-radius: 10px; display: flex;
+      align-items: center; justify-content: center; font-size: 18px;
+    }
+    .activity-content { flex: 1; }
+    .activity-title { font-weight: 600; margin-bottom: 2px; }
+    .activity-time { font-size: 12px; color: var(--text-gray); }
+    
+    /* Table */
+    .section-card {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light); overflow: hidden; margin-top: 32px;
+    }
+    .section-header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border-light);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .section-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th {
+      text-align: left; padding: 16px 24px; background: var(--bg-light);
+      font-weight: 600; font-size: 13px; color: var(--text-gray);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .admin-table td { padding: 16px 24px; border-bottom: 1px solid var(--border-light); }
+    
+    .status-badge {
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .status-success { background: rgba(16,185,129,0.1); color: var(--success); }
+    .status-warning { background: rgba(245,158,11,0.1); color: var(--warning); }
+    .status-error { background: rgba(239,68,68,0.1); color: var(--error); }
+    .status-info { background: rgba(59,130,246,0.1); color: var(--secondary); }
+    
+    /* Mobile */
+    @media (max-width: 1400px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1000px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+      .admin-table { display: block; overflow-x: auto; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--primary); border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--secondary); }
+    @media (max-width: 1000px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    /* Toast */
+    .toast-message {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--text-dark); color: white; padding: 14px 28px;
+      border-radius: 40px; box-shadow: var(--shadow-lg); z-index: 9999;
+      display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease;
+    }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <i class="fas fa-crown"></i> Otelturizm
+        <span class="admin-badge">ADMIN</span>
+      </div>
+    </div>
+    
+    <div class="admin-profile">
+      <div class="admin-avatar">AU</div>
+      <div class="admin-info">
+        <h4>Admin User</h4>
+        <p>admin@otelturizm.com</p>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item active"><i class="fas fa-chart-pie"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-chart-line"></i> Analitik</a>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-title">Yönetim</div>
+        <a href="#" class="nav-item"><i class="fas fa-hotel"></i> Oteller <span class="badge">48</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-users"></i> Kullanıcılar <span class="badge success">12.8K</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlar</a>
+        <a href="#" class="nav-item"><i class="fas fa-handshake"></i> Partner Başvuruları <span class="badge warning">7</span></a>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-title">Finans</div>
+        <a href="#" class="nav-item"><i class="fas fa-credit-card"></i> Ödemeler</a>
+        <a href="#" class="nav-item"><i class="fas fa-file-invoice"></i> Faturalar</a>
+        <a href="#" class="nav-item"><i class="fas fa-percent"></i> Komisyonlar</a>
+        <a href="#" class="nav-item"><i class="fas fa-file-alt"></i> Raporlar</a>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-title">İçerik</div>
+        <a href="#" class="nav-item"><i class="fas fa-star"></i> Değerlendirmeler</a>
+        <a href="#" class="nav-item"><i class="fas fa-flag"></i> Şikayetler</a>
+        <a href="#" class="nav-item"><i class="fas fa-tags"></i> Kampanyalar</a>
+        <a href="#" class="nav-item"><i class="fas fa-blog"></i> Blog</a>
+        <a href="#" class="nav-item"><i class="fas fa-question-circle"></i> SSS</a>
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-section-title">Sistem</div>
+        <a href="#" class="nav-item"><i class="fas fa-bell"></i> Bildirimler</a>
+        <a href="#" class="nav-item"><i class="fas fa-envelope"></i> E-posta Şablonları</a>
+        <a href="#" class="nav-item"><i class="fas fa-cog"></i> Ayarlar</a>
+        <a href="#" class="nav-item"><i class="fas fa-history"></i> Log Kayıtları</a>
+        <a href="#" class="nav-item"><i class="fas fa-user-shield"></i> Yöneticiler</a>
+        <a href="#" class="nav-item"><i class="fas fa-database"></i> Yedekleme</a>
+        <a href="#" class="nav-item"><i class="fas fa-shield-alt"></i> Güvenlik</a>
+      </div>
+      
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <a href="#" class="nav-item" style="color: var(--error);"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Dashboard</h1>
+        <p>Sistem genel durumu ve özet bilgiler</p>
+      </div>
+      <div class="header-actions">
+        <div class="search-bar">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Ara...">
+        </div>
+        <div class="date-display">
+          <i class="far fa-calendar-alt"></i> 10 Nisan 2025
+        </div>
+        <button class="btn btn-primary" onclick="exportReport()"><i class="fas fa-download"></i> Rapor</button>
+      </div>
+    </header>
+    
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon" style="background: rgba(59,130,246,0.1); color: var(--secondary);"><i class="fas fa-hotel"></i></div>
+        </div>
+        <div class="kpi-value">48</div>
+        <div class="kpi-label">Toplam Otel</div>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +3 bu ay</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon" style="background: rgba(16,185,129,0.1); color: var(--success);"><i class="fas fa-users"></i></div>
+        </div>
+        <div class="kpi-value">12,847</div>
+        <div class="kpi-label">Aktif Kullanıcı</div>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +18%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon" style="background: rgba(245,158,11,0.1); color: var(--warning);"><i class="fas fa-calendar-check"></i></div>
+        </div>
+        <div class="kpi-value">1,423</div>
+        <div class="kpi-label">Aylık Rezervasyon</div>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +12%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon" style="background: rgba(139,92,246,0.1); color: var(--info);"><i class="fas fa-turkish-lira-sign"></i></div>
+        </div>
+        <div class="kpi-value">₺8.2M</div>
+        <div class="kpi-label">Aylık Ciro</div>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +8%</div>
+      </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="charts-row">
+      
+      <!-- Rezervasyon Grafiği -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title"><i class="fas fa-chart-bar"></i> Rezervasyon Trendi (Son 6 Ay)</h3>
+          <select style="padding: 8px 16px; border: 1px solid var(--border-light); border-radius: 8px;">
+            <option>2025</option><option>2024</option>
+          </select>
+        </div>
+        <div class="bar-chart">
+          <div class="bar-container"><div class="bar" style="height: 100px;"></div><div class="bar-label">Kas</div><span style="font-size: 11px;">820</span></div>
+          <div class="bar-container"><div class="bar" style="height: 115px;"></div><div class="bar-label">Ara</div><span style="font-size: 11px;">950</span></div>
+          <div class="bar-container"><div class="bar" style="height: 130px;"></div><div class="bar-label">Oca</div><span style="font-size: 11px;">1,100</span></div>
+          <div class="bar-container"><div class="bar" style="height: 145px;"></div><div class="bar-label">Şub</div><span style="font-size: 11px;">1,250</span></div>
+          <div class="bar-container"><div class="bar" style="height: 160px;"></div><div class="bar-label">Mar</div><span style="font-size: 11px;">1,380</span></div>
+          <div class="bar-container"><div class="bar" style="height: 170px;"></div><div class="bar-label">Nis</div><span style="font-size: 11px;">1,423</span></div>
+        </div>
+      </div>
+      
+      <!-- Son Aktiviteler -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title"><i class="fas fa-clock"></i> Son Aktiviteler</h3>
+          <a href="#" style="color: var(--secondary); font-size: 14px;">Tümü →</a>
+        </div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-icon" style="background: rgba(16,185,129,0.1); color: var(--success);"><i class="fas fa-check-circle"></i></div>
+            <div class="activity-content"><div class="activity-title">Yeni otel onaylandı: Marmara Taksim</div><div class="activity-time">10 dakika önce</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon" style="background: rgba(59,130,246,0.1); color: var(--secondary);"><i class="fas fa-user-plus"></i></div>
+            <div class="activity-content"><div class="activity-title">Yeni kullanıcı kaydı: Zeynep Demir</div><div class="activity-time">25 dakika önce</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon" style="background: rgba(245,158,11,0.1); color: var(--warning);"><i class="fas fa-clock"></i></div>
+            <div class="activity-content"><div class="activity-title">Partner başvurusu bekliyor: Hilton İzmir</div><div class="activity-time">1 saat önce</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon" style="background: rgba(239,68,68,0.1); color: var(--error);"><i class="fas fa-flag"></i></div>
+            <div class="activity-content"><div class="activity-title">Yeni şikayet bildirimi: Rezervasyon iptali sorunu</div><div class="activity-time">2 saat önce</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon" style="background: rgba(139,92,246,0.1); color: var(--info);"><i class="fas fa-credit-card"></i></div>
+            <div class="activity-content"><div class="activity-title">Ödeme tamamlandı: ₺12.750 (Swissôtel)</div><div class="activity-time">3 saat önce</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Bekleyen Partner Başvuruları -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3 class="section-title"><i class="fas fa-handshake"></i> Bekleyen Partner Başvuruları <span class="badge warning" style="margin-left: 8px;">7</span></h3>
+        <a href="#" style="color: var(--secondary);">Tüm Başvurular →</a>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Otel Adı</th><th>Şehir</th><th>Yetkili</th><th>Başvuru Tarihi</th><th>Durum</th><th>İşlem</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Marmara Taksim</td><td>İstanbul</td><td>Ahmet Kaya</td><td>07.04.2025</td>
+            <td><span class="status-badge status-warning">Beklemede</span></td>
+            <td>
+              <button class="btn btn-outline btn-sm" style="padding: 6px 12px; margin-right: 6px;" onclick="approveHotel()"><i class="fas fa-check"></i></button>
+              <button class="btn btn-outline btn-sm" style="padding: 6px 12px; color: var(--error);" onclick="rejectHotel()"><i class="fas fa-times"></i></button>
+            </td>
+          </tr>
+          <tr>
+            <td>Hilton İzmir</td><td>İzmir</td><td>Mehmet Demir</td><td>06.04.2025</td>
+            <td><span class="status-badge status-warning">Beklemede</span></td>
+            <td>
+              <button class="btn btn-outline btn-sm" style="padding: 6px 12px; margin-right: 6px;"><i class="fas fa-check"></i></button>
+              <button class="btn btn-outline btn-sm" style="padding: 6px 12px; color: var(--error);"><i class="fas fa-times"></i></button>
+            </td>
+          </tr>
+          <tr>
+            <td>Limak Lara</td><td>Antalya</td><td>Ayşe Yıldız</td><td>05.04.2025</td>
+            <td><span class="status-badge status-warning">Beklemede</span></td>
+            <td>
+              <button class="btn btn-outline btn-sm" style="padding: 6px 12px; margin-right: 6px;"><i class="fas fa-check"></i></button>
+              <button class="btn btn-outline btn-sm" style="padding: 6px 12px; color: var(--error);"><i class="fas fa-times"></i></button>
+            </td>
+          </tr>
+          <tr>
+            <td>Divan Çukurhan</td><td>Ankara</td><td>Ali Öztürk</td><td>04.04.2025</td>
+            <td><span class="status-badge status-warning">Beklemede</span></td>
+            <td>
+              <button class="btn btn-outline btn-sm" style="padding: 6px 12px; margin-right: 6px;"><i class="fas fa-check"></i></button>
+              <button class="btn btn-outline btn-sm" style="padding: 6px 12px; color: var(--error);"><i class="fas fa-times"></i></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Son Rezervasyonlar -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3 class="section-title"><i class="fas fa-calendar-check"></i> Son Rezervasyonlar</h3>
+        <a href="#" style="color: var(--secondary);">Tüm Rezervasyonlar →</a>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Rez. No</th><th>Otel</th><th>Misafir</th><th>Tarih</th><th>Tutar</th><th>Komisyon</th><th>Durum</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>#OTL-0482</td><td>Swissôtel Bosphorus</td><td>Ahmet Yılmaz</td><td>15-18 Nis</td><td>₺12.750</td><td>₺1.530</td>
+            <td><span class="status-badge status-success">Onaylandı</span></td>
+          </tr>
+          <tr>
+            <td>#OTL-0471</td><td>Rixos Premium Belek</td><td>Mehmet Kaya</td><td>10-17 May</td><td>₺40.600</td><td>₺4.060</td>
+            <td><span class="status-badge status-warning">Onay Bekliyor</span></td>
+          </tr>
+          <tr>
+            <td>#OTL-0463</td><td>Four Seasons Bosphorus</td><td>John Smith</td><td>5-8 Nis</td><td>₺37.500</td><td>₺4.500</td>
+            <td><span class="status-badge status-info">Check-in Yapıldı</span></td>
+          </tr>
+          <tr>
+            <td>#OTL-0455</td><td>Cappadocia Cave</td><td>Elena Petrova</td><td>1-4 Nis</td><td>₺9.600</td><td>₺1.440</td>
+            <td><span class="status-badge status-success">Tamamlandı</span></td>
+          </tr>
+          <tr>
+            <td>#OTL-0448</td><td>D Maris Bay</td><td>Ali Öztürk</td><td>20-27 Nis</td><td>₺49.700</td><td>₺4.970</td>
+            <td><span class="status-badge status-error">İptal Edildi</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Son Kayıt Olan Kullanıcılar -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3 class="section-title"><i class="fas fa-user-plus"></i> Son Kayıt Olan Kullanıcılar</h3>
+        <a href="#" style="color: var(--secondary);">Tüm Kullanıcılar →</a>
+      </div>
+      <table class="admin-table">
+        <thead><tr><th>Ad Soyad</th><th>E-posta</th><th>Kayıt Tarihi</th><th>Durum</th><th>İşlem</th></tr></thead>
+        <tbody>
+          <tr><td>Zeynep Demir</td><td>zeynep@email.com</td><td>08.04.2025</td><td><span class="status-badge status-success">Aktif</span></td><td><i class="fas fa-eye" style="color: var(--text-gray); cursor: pointer;"></i></td></tr>
+          <tr><td>Can Yıldız</td><td>can@email.com</td><td>08.04.2025</td><td><span class="status-badge status-warning">E-posta Onaysız</span></td><td><i class="fas fa-eye" style="color: var(--text-gray); cursor: pointer;"></i></td></tr>
+          <tr><td>Merve Aksoy</td><td>merve@email.com</td><td>07.04.2025</td><td><span class="status-badge status-success">Aktif</span></td><td><i class="fas fa-eye" style="color: var(--text-gray); cursor: pointer;"></i></td></tr>
+          <tr><td>Burak Şahin</td><td>burak@email.com</td><td>07.04.2025</td><td><span class="status-badge status-success">Aktif</span></td><td><i class="fas fa-eye" style="color: var(--text-gray); cursor: pointer;"></i></td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+  </main>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-hotel"></i><span>Oteller</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-users"></i><span>Kullanıcılar</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-cog"></i><span>Ayarlar</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    window.exportReport = function() {
+      showToast('📥 Sistem raporu indiriliyor...', 'success');
+    };
+    
+    window.approveHotel = function() {
+      showToast('✅ Otel başvurusu onaylandı!', 'success');
+    };
+    
+    window.rejectHotel = function() {
+      showToast('❌ Otel başvurusu reddedildi.', 'error');
+    };
+    
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    
+    console.log('✅ Admin Dashboard Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

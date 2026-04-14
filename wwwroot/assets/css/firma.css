@@ -1,0 +1,866 @@
+:root {
+    --firma-primary: #003b95;
+    --firma-primary-dark: #002a6b;
+    --firma-secondary: #ff385c;
+    --firma-success: #00a86b;
+    --firma-warning: #ffb800;
+    --firma-text: #1a1f26;
+    --firma-muted: #64748b;
+    --firma-light: #94a3b8;
+    --firma-border: #e2e8f0;
+    --firma-bg: #f8fafc;
+    --firma-surface: #ffffff;
+    --firma-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --firma-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --firma-shadow-lg: 0 20px 40px -10px rgba(0, 59, 149, 0.12);
+    --firma-radius-xl: 32px;
+    --firma-radius-lg: 24px;
+    --firma-radius-md: 16px;
+    --firma-transition: .25s cubic-bezier(.4, 0, .2, 1);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body.firma-page {
+    margin: 0;
+    font-family: "Inter", sans-serif;
+    background: var(--firma-bg);
+    color: var(--firma-text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+body.firma-mobile-open {
+    overflow: hidden;
+}
+
+.site-shell {
+    width: min(1280px, calc(100% - 48px));
+    margin: 0 auto;
+}
+
+.site-header.firma-site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1200;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.top-utility-bar.firma-utility-bar {
+    background: linear-gradient(90deg, var(--firma-primary-dark) 0%, #1f5ea8 100%);
+    color: #fff;
+}
+
+.utility-container,
+.header-container {
+    width: min(1280px, calc(100% - 48px));
+    margin: 0 auto;
+}
+
+.utility-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    min-height: 46px;
+}
+
+.utility-left,
+.utility-right,
+.logo-area,
+.desktop-nav,
+.header-actions,
+.search-wrapper,
+.firma-hero-actions,
+.firma-cta-actions {
+    display: flex;
+    align-items: center;
+}
+
+.utility-left,
+.utility-right {
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.utility-left span,
+.utility-right div {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.header-container.firma-header-container {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 24px;
+    align-items: center;
+    min-height: 88px;
+}
+
+.logo-area {
+    gap: 24px;
+}
+
+.firma-logo-link img,
+.brand-logo-image {
+    height: 46px;
+    width: auto;
+    display: block;
+}
+
+.desktop-nav.firma-desktop-nav {
+    gap: 12px;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--firma-text);
+    font-weight: 700;
+    transition: var(--firma-transition);
+}
+
+.nav-link.active {
+    color: var(--firma-primary);
+    background: rgba(0, 59, 149, 0.08);
+}
+
+.search-wrapper {
+    justify-content: center;
+}
+
+.search-container.firma-search-container {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    align-items: center;
+    gap: 14px;
+    min-height: 58px;
+    padding: 0 14px 0 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
+}
+
+.search-container.firma-search-container > i,
+.search-date i,
+.search-guests i {
+    color: var(--firma-muted);
+}
+
+.search-input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--firma-text);
+    font-size: 15px;
+}
+
+.search-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--firma-border);
+}
+
+.search-date,
+.search-guests {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--firma-muted);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.search-btn.firma-search-btn {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--firma-primary);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 24px rgba(0, 59, 149, 0.18);
+}
+
+.header-actions.firma-header-actions {
+    gap: 12px;
+}
+
+.action-btn {
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    background: #fff;
+    color: var(--firma-text);
+    text-decoration: none;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--firma-transition);
+}
+
+.action-btn.primary {
+    color: #fff;
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--firma-primary), var(--firma-primary-dark));
+    box-shadow: 0 16px 28px rgba(0, 59, 149, 0.18);
+}
+
+.mobile-nav-toggle {
+    display: none;
+}
+
+.firma-main {
+    padding: 28px 0 72px;
+}
+
+.firma-hero-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    padding: 36px 0 54px;
+}
+
+.firma-hero-copy h1 {
+    margin: 0;
+    font-size: clamp(36px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.12;
+    color: var(--firma-text);
+}
+
+.firma-hero-copy h1 span {
+    color: var(--firma-primary);
+    position: relative;
+}
+
+.firma-hero-copy h1 span::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 6px;
+    height: 12px;
+    background: rgba(0, 59, 149, 0.12);
+    z-index: -1;
+}
+
+.firma-hero-lead {
+    margin: 24px 0 0;
+    font-size: 18px;
+    color: var(--firma-muted);
+    max-width: 620px;
+}
+
+.firma-hero-stats {
+    display: flex;
+    gap: 34px;
+    margin: 30px 0 34px;
+    flex-wrap: wrap;
+}
+
+.firma-hero-stat strong {
+    display: block;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--firma-primary);
+}
+
+.firma-hero-stat span {
+    display: block;
+    color: var(--firma-muted);
+    font-size: 14px;
+}
+
+.firma-btn {
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid transparent;
+    transition: var(--firma-transition);
+}
+
+.firma-btn-primary {
+    background: var(--firma-primary);
+    color: #fff;
+    box-shadow: 0 12px 26px rgba(0, 59, 149, 0.22);
+}
+
+.firma-btn-outline {
+    background: transparent;
+    color: var(--firma-primary);
+    border-color: rgba(0, 59, 149, 0.22);
+}
+
+.firma-btn-white {
+    background: #fff;
+    color: var(--firma-primary);
+}
+
+.firma-btn-outline-light {
+    background: transparent;
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.firma-hero-visual {
+    position: relative;
+    background: var(--firma-surface);
+    border-radius: var(--firma-radius-xl);
+    padding: 36px;
+    border: 1px solid var(--firma-border);
+    box-shadow: var(--firma-shadow-lg);
+}
+
+.firma-visual-badge {
+    position: absolute;
+    top: -14px;
+    right: 26px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--firma-warning);
+    color: var(--firma-text);
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+.firma-visual-title {
+    margin: 10px 0 22px;
+    font-weight: 700;
+    color: var(--firma-text);
+}
+
+.firma-price-comparison-mini {
+    margin-top: 12px;
+}
+
+.firma-price-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--firma-border);
+}
+
+.firma-price-row:last-child {
+    border-bottom: 0;
+}
+
+.firma-price-standard {
+    color: var(--firma-light);
+    text-decoration: line-through;
+}
+
+.firma-price-corporate {
+    color: var(--firma-success);
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.firma-price-savings {
+    color: var(--firma-success);
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.firma-savings-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(0, 168, 107, 0.12);
+    color: var(--firma-success);
+    font-size: 13px;
+}
+
+.firma-info-note {
+    margin-top: 22px;
+    padding: 18px 20px;
+    background: rgba(0, 59, 149, 0.04);
+    border-left: 4px solid var(--firma-primary);
+    border-radius: 18px;
+    color: var(--firma-muted);
+}
+
+.firma-trust-bar {
+    display: flex;
+    justify-content: space-around;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 28px 0;
+    border-top: 1px solid var(--firma-border);
+    border-bottom: 1px solid var(--firma-border);
+    margin: 10px auto 36px;
+}
+
+.firma-trust-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--firma-muted);
+    font-weight: 600;
+}
+
+.firma-trust-item i {
+    font-size: 24px;
+    color: var(--firma-primary);
+}
+
+.firma-section {
+    padding: 44px 0;
+}
+
+.firma-section-title {
+    text-align: center;
+    margin-bottom: 42px;
+}
+
+.firma-section-title h2 {
+    margin: 0;
+    font-size: 36px;
+    font-weight: 800;
+}
+
+.firma-section-title p {
+    margin: 14px auto 0;
+    max-width: 820px;
+    color: var(--firma-muted);
+    font-size: 18px;
+}
+
+.firma-steps-grid,
+.firma-tiers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.firma-step-card,
+.firma-tier-card,
+.firma-benefit-card {
+    position: relative;
+    background: var(--firma-surface);
+    border-radius: var(--firma-radius-lg);
+    border: 1px solid var(--firma-border);
+    padding: 32px 28px;
+    box-shadow: var(--firma-shadow-sm);
+}
+
+.firma-step-number {
+    position: absolute;
+    right: 18px;
+    bottom: 8px;
+    font-size: 58px;
+    font-weight: 800;
+    color: rgba(0, 59, 149, 0.05);
+}
+
+.firma-step-icon,
+.firma-benefit-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 59, 149, 0.06);
+    color: var(--firma-primary);
+    font-size: 28px;
+}
+
+.firma-step-card h3,
+.firma-benefit-content h4,
+.firma-tier-name {
+    margin: 18px 0 10px;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.firma-step-card p,
+.firma-benefit-content p,
+.firma-tier-card p {
+    margin: 0;
+    color: var(--firma-muted);
+}
+
+.firma-tier-card {
+    text-align: center;
+}
+
+.firma-tier-card.highlight {
+    border: 2px solid var(--firma-primary);
+    transform: translateY(-4px);
+}
+
+.firma-tier-icon {
+    font-size: 40px;
+    margin-bottom: 14px;
+}
+
+.firma-tier-range {
+    color: var(--firma-muted);
+    font-size: 14px;
+}
+
+.firma-tier-discount {
+    margin-top: 16px;
+    font-size: 34px;
+    font-weight: 800;
+    color: var(--firma-primary);
+}
+
+.firma-tier-discount small {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--firma-muted);
+}
+
+.firma-tier-example {
+    margin-top: 14px;
+    color: var(--firma-success);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.firma-tier-note {
+    margin: 24px 0 0;
+    text-align: center;
+    color: var(--firma-muted);
+}
+
+.firma-table-wrapper {
+    background: var(--firma-surface);
+    border-radius: var(--firma-radius-xl);
+    overflow: auto;
+    border: 1px solid var(--firma-border);
+    box-shadow: var(--firma-shadow-sm);
+}
+
+.firma-example-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.firma-example-table th {
+    text-align: left;
+    padding: 20px 24px;
+    background: #f8fafc;
+    color: var(--firma-muted);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.firma-example-table td {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--firma-border);
+}
+
+.firma-example-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.firma-room-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: #f8fafc;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.firma-table-savings {
+    color: var(--firma-success);
+    font-weight: 700;
+}
+
+.firma-benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.firma-benefit-card {
+    display: flex;
+    gap: 22px;
+    align-items: flex-start;
+}
+
+.firma-cta-section {
+    background: linear-gradient(135deg, var(--firma-primary) 0%, var(--firma-primary-dark) 100%);
+    border-radius: var(--firma-radius-xl);
+    padding: 64px 54px;
+    text-align: center;
+    color: #fff;
+    margin-top: 20px;
+}
+
+.firma-cta-section h2 {
+    margin: 0;
+    font-size: 36px;
+}
+
+.firma-cta-section p {
+    margin: 18px auto 0;
+    max-width: 760px;
+    font-size: 18px;
+    opacity: .94;
+}
+
+.firma-cta-actions {
+    justify-content: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+.firma-cta-section small {
+    display: block;
+    margin-top: 22px;
+    opacity: .82;
+}
+
+.firma-footer {
+    background: #0f172a;
+    color: #dbe5f4;
+    padding: 38px 0;
+}
+
+.firma-footer-shell {
+    display: grid;
+    grid-template-columns: 1.3fr .7fr .7fr;
+    gap: 24px;
+}
+
+.firma-footer-logo {
+    height: 42px;
+    width: auto;
+    margin-bottom: 14px;
+}
+
+.firma-footer-shell h4 {
+    margin: 0 0 14px;
+    color: #fff;
+}
+
+.firma-footer-shell a {
+    display: block;
+    margin-bottom: 8px;
+    color: #dbe5f4;
+    text-decoration: none;
+}
+
+.mobile-menu-overlay,
+.mobile-menu-drawer {
+    display: none;
+}
+
+@media (max-width: 1180px) {
+    .header-container.firma-header-container {
+        grid-template-columns: auto 1fr;
+    }
+
+    .search-wrapper {
+        grid-column: 1 / -1;
+        order: 3;
+    }
+}
+
+@media (max-width: 980px) {
+    .desktop-nav.firma-desktop-nav,
+    .header-actions.firma-header-actions .action-btn:not(.mobile-nav-toggle),
+    .utility-right {
+        display: none;
+    }
+
+    .mobile-nav-toggle {
+        display: inline-flex;
+    }
+
+    .firma-hero-section,
+    .firma-steps-grid,
+    .firma-tiers-grid,
+    .firma-benefits-grid,
+    .firma-footer-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .mobile-menu-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.46);
+        z-index: 1290;
+    }
+
+    .mobile-menu-overlay.is-visible {
+        display: block;
+    }
+
+    .mobile-menu-drawer.firma-menu-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: min(88vw, 360px);
+        height: 100vh;
+        background: #fff;
+        z-index: 1300;
+        box-shadow: -18px 0 42px rgba(15, 23, 42, 0.2);
+        padding: 22px 18px;
+        transform: translateX(100%);
+        transition: transform var(--firma-transition);
+        display: block;
+    }
+
+    .mobile-menu-drawer.firma-menu-drawer.is-visible {
+        transform: translateX(0);
+    }
+
+    .drawer-header,
+    .drawer-user,
+    .drawer-actions,
+    .drawer-actions-row {
+        display: flex;
+        align-items: center;
+    }
+
+    .drawer-header {
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .drawer-user {
+        gap: 14px;
+    }
+
+    .firma-avatar img {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+    }
+
+    .drawer-close {
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        border: 1px solid var(--firma-border);
+        background: #fff;
+    }
+
+    .drawer-actions-row {
+        gap: 12px;
+        margin: 24px 0;
+    }
+
+    .drawer-action {
+        flex: 1;
+        min-height: 46px;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .drawer-action.primary {
+        background: var(--firma-primary);
+        color: #fff;
+    }
+
+    .drawer-action.outline {
+        background: #fff;
+        border: 1px solid rgba(0, 59, 149, 0.2);
+        color: var(--firma-primary);
+    }
+
+    .drawer-section-title {
+        margin: 18px 0 10px;
+        color: var(--firma-light);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+    }
+
+    .drawer-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 0;
+        color: var(--firma-text);
+        text-decoration: none;
+        border-bottom: 1px solid #f1f5f9;
+    }
+}
+
+@media (max-width: 768px) {
+    .site-shell,
+    .utility-container,
+    .header-container {
+        width: min(100% - 28px, 1280px);
+    }
+
+    .utility-left {
+        gap: 14px;
+    }
+
+    .utility-left span {
+        font-size: 12px;
+    }
+
+    .search-container.firma-search-container {
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+    }
+
+    .search-date,
+    .search-divider,
+    .search-guests {
+        display: none;
+    }
+
+    .firma-hero-stats {
+        gap: 18px;
+    }
+
+    .firma-hero-visual,
+    .firma-cta-section {
+        padding: 28px 22px;
+    }
+
+    .firma-section-title h2,
+    .firma-cta-section h2 {
+        font-size: 30px;
+    }
+}

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Firma Paneli · Otelturizm Business</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444; --gold: #FFD700;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #1A1F26;
+      --text-gray: #64748B; --text-light: #94A3B8; --border-light: #E2E8F0;
+      --sidebar-width: 280px; --sidebar-collapsed: 80px;
+      --radius-xl: 24px; --radius-lg: 20px; --radius-md: 16px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 40px -10px rgba(0, 59, 149, 0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .dashboard { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border-light);
+      position: fixed; height: 100vh; overflow-y: auto; z-index: 100;
+      display: flex; flex-direction: column;
+    }
+    .sidebar-header { padding: 28px 24px; border-bottom: 1px solid var(--border-light); }
+    .company-profile { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .company-avatar {
+      width: 52px; height: 52px; border-radius: 16px; background: var(--primary);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px;
+    }
+    .company-info h4 { font-size: 16px; margin-bottom: 4px; }
+    .company-info p { font-size: 13px; color: var(--text-gray); }
+    .company-badge {
+      background: var(--success); color: white; padding: 4px 12px; border-radius: 40px;
+      font-size: 12px; font-weight: 600; display: inline-block; margin-top: 8px;
+    }
+    .sidebar-nav { flex: 1; padding: 24px 16px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-light); margin-bottom: 12px; padding-left: 12px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      border-radius: 12px; color: var(--text-gray); text-decoration: none;
+      transition: var(--transition-base); margin-bottom: 4px; font-size: 14px; font-weight: 500;
+    }
+    .nav-item i { width: 24px; font-size: 18px; }
+    .nav-item:hover { background: rgba(0, 59, 149, 0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .sidebar-footer { padding: 20px 16px; border-top: 1px solid var(--border-light); }
+
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 28px 32px; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .page-title p { color: var(--text-gray); }
+    .header-actions { display: flex; gap: 12px; align-items: center; }
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: var(--transition-base);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(0, 59, 149, 0.2); }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-success { background: var(--success); color: white; }
+
+    /* KPI Cards */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+    .kpi-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); padding: 24px;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+    }
+    .kpi-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .kpi-icon {
+      width: 48px; height: 48px; border-radius: 14px; display: flex;
+      align-items: center; justify-content: center; font-size: 22px;
+    }
+    .kpi-value { font-size: 32px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; }
+    .kpi-label { color: var(--text-gray); font-size: 14px; }
+    .kpi-trend { font-size: 13px; margin-top: 8px; }
+    .trend-up { color: var(--success); }
+
+    /* Tabs */
+    .tabs-container { display: flex; gap: 28px; border-bottom: 2px solid var(--border-light); margin-bottom: 24px; }
+    .tab {
+      padding: 14px 0; font-weight: 600; font-size: 15px; color: var(--text-gray);
+      cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
+      transition: var(--transition-base); display: flex; align-items: center; gap: 8px;
+    }
+    .tab:hover { color: var(--primary); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Section Card */
+    .section-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); border: 1px solid var(--border-light);
+      overflow: hidden; margin-bottom: 24px;
+    }
+    .section-header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border-light);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .section-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+
+    /* Tables */
+    .table-wrapper { overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      text-align: left; padding: 16px 20px; background: var(--bg-light);
+      font-weight: 600; font-size: 13px; color: var(--text-gray);
+    }
+    .data-table td { padding: 16px 20px; border-bottom: 1px solid var(--border-light); }
+    .status-badge {
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .status-active { background: rgba(0, 168, 107, 0.1); color: var(--success); }
+    .status-pending { background: rgba(255, 184, 0, 0.1); color: var(--warning); }
+
+    /* Employee Cards */
+    .employee-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .employee-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); padding: 20px;
+      border: 1px solid var(--border-light); display: flex; align-items: center; gap: 16px;
+    }
+    .employee-avatar {
+      width: 56px; height: 56px; border-radius: 50%; background: var(--primary);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px;
+    }
+    .employee-info h4 { font-size: 16px; margin-bottom: 2px; }
+    .employee-info p { color: var(--text-gray); font-size: 13px; }
+    .limit-badge {
+      background: var(--bg-light); padding: 4px 10px; border-radius: 40px;
+      font-size: 12px; margin-top: 6px; display: inline-block;
+    }
+
+    /* Fiyat Teklifleri Grid */
+    .deals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .deal-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); padding: 24px;
+      border: 1px solid var(--border-light); transition: var(--transition-base);
+    }
+    .deal-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); }
+    .deal-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .hotel-name { font-size: 18px; font-weight: 700; }
+    .price-comparison { margin: 16px 0; }
+    .price-standard { text-decoration: line-through; color: var(--text-light); }
+    .price-firm { font-size: 28px; font-weight: 800; color: var(--primary); }
+    .price-firm small { font-size: 14px; font-weight: 400; color: var(--text-gray); }
+    .min-room-badge {
+      background: rgba(0, 168, 107, 0.1); color: var(--success);
+      padding: 4px 12px; border-radius: 40px; font-size: 13px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal {
+      background: white; border-radius: var(--radius-xl); padding: 32px;
+      max-width: 550px; width: 90%; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; justify-content: space-between; margin-bottom: 24px; }
+    .modal-header h3 { font-size: 20px; }
+    .close-modal { cursor: pointer; font-size: 24px; color: var(--text-gray); }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 8px; }
+    .form-control {
+      width: 100%; padding: 14px 16px; border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-md); font-size: 15px;
+    }
+    .form-control:focus { outline: none; border-color: var(--primary); }
+
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-top: 1px solid var(--border-light);
+      padding: 12px 20px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      color: var(--text-gray); text-decoration: none; font-size: 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+
+    /* Mobile */
+    @media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 1100px) { .employee-grid, .deals-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    @media (max-width: 600px) { .kpi-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="company-profile">
+        <div class="company-avatar">AB</div>
+        <div class="company-info">
+          <h4>ABC Teknoloji A.Ş.</h4>
+          <p>Vergi No: 1234567890</p>
+          <span class="company-badge"><i class="fas fa-check-circle"></i> Aktif Firma</span>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item active"><i class="fas fa-chart-pie"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-hotel"></i> Firma Fiyatları</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlar</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Yönetim</div>
+        <a href="#" class="nav-item"><i class="fas fa-users"></i> Çalışanlar</a>
+        <a href="#" class="nav-item"><i class="fas fa-sliders-h"></i> Limitler & Onaylar</a>
+        <a href="#" class="nav-item"><i class="fas fa-file-invoice"></i> Faturalar</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Analiz</div>
+        <a href="#" class="nav-item"><i class="fas fa-chart-bar"></i> Harcama Raporları</a>
+        <a href="#" class="nav-item"><i class="fas fa-building"></i> Otel Bazlı Rapor</a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" class="nav-item" style="color: var(--error);"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="page-title">
+        <h1>Hoş Geldiniz, Ahmet Yılmaz</h1>
+        <p>ABC Teknoloji A.Ş. · Firma Yöneticisi</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="alert('📅 Tarih aralığı seçin')"><i class="far fa-calendar-alt"></i> Nisan 2025</button>
+        <button class="btn btn-primary" onclick="openNewReservationModal()"><i class="fas fa-plus"></i> Yeni Rezervasyon</button>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-header"><div class="kpi-icon" style="background:rgba(0,59,149,0.1); color:var(--primary);"><i class="fas fa-users"></i></div></div>
+        <div class="kpi-value">24</div><div class="kpi-label">Aktif Çalışan</div>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +3 bu ay</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header"><div class="kpi-icon" style="background:rgba(0,168,107,0.1); color:var(--success);"><i class="fas fa-hotel"></i></div></div>
+        <div class="kpi-value">156</div><div class="kpi-label">Firma Fiyatlı Otel</div>
+        <div class="kpi-trend">Görüntülenebilir</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header"><div class="kpi-icon" style="background:rgba(255,184,0,0.1); color:var(--warning);"><i class="fas fa-calendar-check"></i></div></div>
+        <div class="kpi-value">12</div><div class="kpi-label">Bu Ay Rezervasyon</div>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +4 geçen aya göre</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header"><div class="kpi-icon" style="background:rgba(239,68,68,0.1); color:var(--error);"><i class="fas fa-turkish-lira-sign"></i></div></div>
+        <div class="kpi-value">₺142.500</div><div class="kpi-label">Bu Ay Harcama</div>
+        <div class="kpi-trend">Bütçe: ₺200.000</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <div class="tab active" data-tab="deals">🏨 Firma Fiyatları</div>
+      <div class="tab" data-tab="employees">👥 Çalışanlarım</div>
+      <div class="tab" data-tab="reservations">📋 Son Rezervasyonlar</div>
+    </div>
+
+    <!-- Firma Fiyatları Panel -->
+    <div class="tab-panel active" id="deals-panel">
+      <div class="section-header" style="padding:0 0 16px 0; border-bottom: none;">
+        <h3 class="section-title"><i class="fas fa-tag"></i> Otellerin Firmalar İçin Belirlediği Özel Fiyatlar</h3>
+        <button class="btn btn-outline btn-sm" onclick="alert('🔍 Filtreleme paneli açılacak')"><i class="fas fa-filter"></i> Filtrele</button>
+      </div>
+      <div class="deals-grid">
+        <div class="deal-card">
+          <div class="deal-header"><span class="hotel-name">Swissôtel The Bosphorus</span><span class="min-room-badge"><i class="fas fa-door-open"></i> Min. 5 Oda</span></div>
+          <p style="color:var(--text-gray); font-size:14px; margin-bottom:12px;"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</p>
+          <div class="price-comparison">
+            <div><span class="price-standard">₺4.250</span> <span style="color:var(--text-gray);">Standart</span></div>
+            <div><span class="price-firm">₺3.400 <small>/ oda · gece</small></span></div>
+            <div style="color:var(--success); font-weight:600; margin-top:8px;"><i class="fas fa-piggy-bank"></i> Oda başı ₺850 tasarruf</div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:16px;">
+            <button class="btn btn-primary btn-sm" style="flex:1;" onclick="alert('✅ Rezervasyon sayfasına yönlendiriliyorsunuz.')">Rezervasyon Yap</button>
+            <button class="btn btn-outline btn-sm" onclick="alert('📋 Detaylar görüntüleniyor')"><i class="fas fa-info"></i></button>
+          </div>
+        </div>
+        <div class="deal-card">
+          <div class="deal-header"><span class="hotel-name">Rixos Premium Belek</span><span class="min-room-badge"><i class="fas fa-door-open"></i> Min. 3 Oda</span></div>
+          <p style="color:var(--text-gray); font-size:14px; margin-bottom:12px;"><i class="fas fa-map-pin"></i> Belek, Antalya</p>
+          <div class="price-comparison">
+            <div><span class="price-standard">₺5.800</span></div>
+            <div><span class="price-firm">₺4.930 <small>/ oda · gece</small></span></div>
+            <div style="color:var(--success); font-weight:600; margin-top:8px;">Oda başı ₺870 tasarruf</div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:16px;"><button class="btn btn-primary btn-sm" style="flex:1;">Rezervasyon Yap</button><button class="btn btn-outline btn-sm"><i class="fas fa-info"></i></button></div>
+        </div>
+        <div class="deal-card">
+          <div class="deal-header"><span class="hotel-name">Hilton İstanbul Bomonti</span><span class="min-room-badge"><i class="fas fa-door-open"></i> Min. 2 Oda</span></div>
+          <p style="color:var(--text-gray); font-size:14px; margin-bottom:12px;"><i class="fas fa-map-pin"></i> Şişli, İstanbul</p>
+          <div class="price-comparison">
+            <div><span class="price-standard">₺3.800</span></div>
+            <div><span class="price-firm">₺3.040 <small>/ oda · gece</small></span></div>
+            <div style="color:var(--success); font-weight:600; margin-top:8px;">Oda başı ₺760 tasarruf</div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:16px;"><button class="btn btn-primary btn-sm" style="flex:1;">Rezervasyon Yap</button><button class="btn btn-outline btn-sm"><i class="fas fa-info"></i></button></div>
+        </div>
+        <div class="deal-card">
+          <div class="deal-header"><span class="hotel-name">Four Seasons Bosphorus</span><span class="min-room-badge"><i class="fas fa-door-open"></i> Min. 5 Oda</span></div>
+          <p style="color:var(--text-gray); font-size:14px; margin-bottom:12px;"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</p>
+          <div class="price-comparison">
+            <div><span class="price-standard">₺12.500</span></div>
+            <div><span class="price-firm">₺10.000 <small>/ oda · gece</small></span></div>
+            <div style="color:var(--success); font-weight:600; margin-top:8px;">Oda başı ₺2.500 tasarruf</div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:16px;"><button class="btn btn-primary btn-sm" style="flex:1;">Rezervasyon Yap</button><button class="btn btn-outline btn-sm"><i class="fas fa-info"></i></button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Çalışanlarım Panel -->
+    <div class="tab-panel" id="employees-panel">
+      <div class="section-header" style="padding:0 0 16px 0; border-bottom: none;">
+        <h3 class="section-title"><i class="fas fa-users"></i> Çalışanlarım</h3>
+        <button class="btn btn-primary btn-sm" onclick="openAddEmployeeModal()"><i class="fas fa-plus"></i> Çalışan Ekle</button>
+      </div>
+      <div class="employee-grid">
+        <div class="employee-card"><div class="employee-avatar">AY</div><div class="employee-info"><h4>Ahmet Yılmaz</h4><p>ahmet.yilmaz@abc.com</p><span class="limit-badge"><i class="fas fa-coins"></i> Limit: ₺5.000/gece</span></div></div>
+        <div class="employee-card"><div class="employee-avatar">ZK</div><div class="employee-info"><h4>Zeynep Kaya</h4><p>zeynep.kaya@abc.com</p><span class="limit-badge"><i class="fas fa-coins"></i> Limit: ₺4.000/gece</span></div></div>
+        <div class="employee-card"><div class="employee-avatar">MD</div><div class="employee-info"><h4>Mehmet Demir</h4><p>mehmet.demir@abc.com</p><span class="limit-badge"><i class="fas fa-coins"></i> Limit: ₺3.500/gece</span></div></div>
+        <div class="employee-card"><div class="employee-avatar">EA</div><div class="employee-info"><h4>Elif Aksoy</h4><p>elif.aksoy@abc.com</p><span class="limit-badge"><i class="fas fa-coins"></i> Limit: ₺4.500/gece</span></div></div>
+        <div class="employee-card"><div class="employee-avatar">BK</div><div class="employee-info"><h4>Burak Koç</h4><p>burak.koc@abc.com</p><span class="limit-badge"><i class="fas fa-coins"></i> Limit: ₺3.000/gece</span></div></div>
+        <div class="employee-card"><div class="employee-avatar">SC</div><div class="employee-info"><h4>Selin Çelik</h4><p>selin.celik@abc.com</p><span class="limit-badge"><i class="fas fa-coins"></i> Limit: ₺5.500/gece</span></div></div>
+      </div>
+    </div>
+
+    <!-- Son Rezervasyonlar Panel -->
+    <div class="tab-panel" id="reservations-panel">
+      <div class="section-card">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>Rez. No</th><th>Otel</th><th>Çalışan</th><th>Tarih</th><th>Oda</th><th>Tutar</th><th>Durum</th></tr></thead>
+            <tbody>
+              <tr><td>#F-0482</td><td>Swissôtel Bosphorus</td><td>Ahmet Yılmaz</td><td>15-18 Nis</td><td>5</td><td>₺51.000</td><td><span class="status-badge status-active">Onaylandı</span></td></tr>
+              <tr><td>#F-0471</td><td>Rixos Premium</td><td>Zeynep Kaya</td><td>22-29 May</td><td>3</td><td>₺103.530</td><td><span class="status-badge status-pending">Onay Bekliyor</span></td></tr>
+              <tr><td>#F-0463</td><td>Hilton Bomonti</td><td>Mehmet Demir</td><td>5-8 Nis</td><td>2</td><td>₺18.240</td><td><span class="status-badge status-active">Tamamlandı</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Harcama Raporu Özeti -->
+    <div style="margin-top: 28px;">
+      <div class="section-header" style="padding:0 0 16px 0; border-bottom: none;">
+        <h3 class="section-title"><i class="fas fa-chart-bar"></i> Departman Bazlı Harcama (Bu Ay)</h3>
+        <a href="#" style="color:var(--primary);">Detaylı Rapor →</a>
+      </div>
+      <div class="section-card" style="padding:24px;">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div><span>Satış Departmanı</span><div style="height:8px; background:var(--border-light); border-radius:4px; margin-top:8px;"><div style="width:45%; height:8px; background:var(--primary); border-radius:4px;"></div></div><span style="font-size:13px; color:var(--text-gray);">₺64.125 / ₺142.500</span></div>
+          <div><span>Teknik Departman</span><div style="height:8px; background:var(--border-light); border-radius:4px; margin-top:8px;"><div style="width:30%; height:8px; background:var(--success); border-radius:4px;"></div></div><span style="font-size:13px; color:var(--text-gray);">₺42.750 / ₺142.500</span></div>
+          <div><span>Yönetim</span><div style="height:8px; background:var(--border-light); border-radius:4px; margin-top:8px;"><div style="width:15%; height:8px; background:var(--warning); border-radius:4px;"></div></div><span style="font-size:13px; color:var(--text-gray);">₺21.375 / ₺142.500</span></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Çalışan Ekleme Modal -->
+<div class="modal-overlay" id="addEmployeeModal">
+  <div class="modal">
+    <div class="modal-header"><h3><i class="fas fa-user-plus"></i> Çalışan Ekle</h3><span class="close-modal" onclick="closeAddEmployeeModal()">&times;</span></div>
+    <form onsubmit="event.preventDefault(); addEmployee();">
+      <div class="form-group"><label>Ad Soyad</label><input type="text" class="form-control" placeholder="Ad Soyad" required></div>
+      <div class="form-group"><label>E-posta</label><input type="email" class="form-control" placeholder="calisan@firma.com" required></div>
+      <div class="form-group"><label>Departman</label><select class="form-control"><option>Satış</option><option>Teknik</option><option>Yönetim</option></select></div>
+      <div class="form-group"><label>Gecelik Harcama Limiti (₺)</label><input type="number" class="form-control" placeholder="5000" value="5000"></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Çalışan Ekle</button>
+    </form>
+  </div>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-hotel"></i><span>Fiyatlar</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-users"></i><span>Çalışanlar</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-user"></i><span>Profil</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    // Tab switching
+    const tabs = document.querySelectorAll('.tab');
+    const panels = { deals: 'deals-panel', employees: 'employees-panel', reservations: 'reservations-panel' };
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.dataset.tab;
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(panels[tabId]).classList.add('active');
+      });
+    });
+
+    window.openNewReservationModal = () => alert('🏨 Yeni rezervasyon sayfası açılacak.');
+    window.openAddEmployeeModal = () => document.getElementById('addEmployeeModal').style.display = 'flex';
+    window.closeAddEmployeeModal = () => document.getElementById('addEmployeeModal').style.display = 'none';
+    window.addEmployee = () => { closeAddEmployeeModal(); alert('✅ Çalışan başarıyla eklendi!'); };
+
+    document.getElementById('addEmployeeModal').addEventListener('click', e => { if(e.target === e.currentTarget) closeAddEmployeeModal(); });
+    console.log('✅ Firma Paneli Yüklendi');
+  })();
+</script>
+</body>
+</html>

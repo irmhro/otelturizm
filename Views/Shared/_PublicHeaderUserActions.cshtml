@@ -1,0 +1,34 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@inject otelturizmnew.Services.Abstractions.IUserFavoriteService UserFavoriteService
+@{
+    var accountType = User.FindFirstValue(AuthClaimTypes.AccountType);
+    var rawUserId = User.FindFirstValue(AuthClaimTypes.UserId) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var currentUserId = 0L;
+    var hasResolvedUserId = long.TryParse(rawUserId, out currentUserId) && currentUserId > 0;
+    var isUserAccount = string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase) && hasResolvedUserId;
+    var favoriteCount = 0;
+
+    if (isUserAccount)
+    {
+        favoriteCount = await UserFavoriteService.GetFavoriteCountAsync(currentUserId);
+    }
+}
+
+@if (isUserAccount)
+{
+    <a href="/panel/user/favorilerim" class="action-btn action-btn-badge">
+        <i class="fas fa-heart"></i>
+        <span>Favorilerim</span>
+        @if (favoriteCount > 0)
+        {
+            <span class="action-badge">@favoriteCount</span>
+        }
+    </a>
+    <a href="/panel/user" class="action-btn">Hesabım</a>
+}
+else
+{
+    <a href="/kullanici-giris" class="action-btn">Kullanıcı Giriş</a>
+    <a href="/kullanici-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
+}

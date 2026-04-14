@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Hafta Sonu Fırsatları · Cuma-Pazar Özel İndirimler · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-dark: #002A6B; --secondary: #FF385C;
+      --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --bg-light: #F8FAFC; --card-bg: #FFFFFF; --text-dark: #0F172A;
+      --text-gray: #64748B; --text-light: #94A3B8; --border-light: #E2E8F0;
+      --radius-xl: 24px; --radius-lg: 20px; --radius-md: 16px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 40px -10px rgba(0, 59, 149, 0.15);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); -webkit-font-smoothing: antialiased; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+    /* Hero Weekend */
+    .weekend-hero {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      border-radius: var(--radius-xl); padding: 40px; margin-bottom: 32px;
+      color: white; position: relative; overflow: hidden;
+    }
+    .weekend-hero::before {
+      content: ''; position: absolute; top: -30%; right: -10%;
+      width: 400px; height: 400px; background: radial-gradient(circle, rgba(0,168,107,0.1) 0%, transparent 70%);
+    }
+    .hero-content { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; }
+    .hero-text h1 { font-size: clamp(28px, 5vw, 42px); font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+    .hero-text h1 i { color: var(--success); }
+    .hero-text p { font-size: 18px; opacity: 0.9; }
+    .weekend-dates { display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+    .date-chip {
+      background: rgba(255,255,255,0.12); backdrop-filter: blur(8px);
+      padding: 12px 24px; border-radius: 60px; border: 1px solid rgba(255,255,255,0.15);
+      font-weight: 600; display: flex; align-items: center; gap: 10px;
+    }
+    .date-chip i { color: var(--success); }
+    .date-chip.highlight { background: var(--success); border-color: var(--success); }
+    .hero-stats {
+      text-align: center; background: rgba(255,255,255,0.08); backdrop-filter: blur(8px);
+      padding: 24px 32px; border-radius: var(--radius-lg); border: 1px solid rgba(255,255,255,0.1);
+    }
+    .hero-stats .stat-value { font-size: 36px; font-weight: 800; color: var(--success); }
+    .hero-stats .stat-label { font-size: 14px; opacity: 0.8; }
+
+    /* Stats Bar */
+    .stats-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .stat-chip { background: var(--card-bg); padding: 10px 20px; border-radius: 40px; border: 1px solid var(--border-light); font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-sm); }
+    .stat-chip i { color: var(--secondary); }
+    .stat-chip strong { color: var(--text-dark); margin-left: 4px; }
+
+    /* Filter Bar */
+    .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+    .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-tab { padding: 10px 20px; border-radius: 40px; background: var(--card-bg); border: 1px solid var(--border-light); font-weight: 500; font-size: 14px; cursor: pointer; transition: var(--transition-base); }
+    .filter-tab:hover, .filter-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .sort-select { padding: 10px 16px; border-radius: 40px; border: 1px solid var(--border-light); background: var(--card-bg); font-size: 14px; cursor: pointer; }
+
+    /* Hotels Grid */
+    .hotels-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    
+    /* Hotel Card */
+    .hotel-card { background: var(--card-bg); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--border-light); transition: var(--transition-base); display: flex; flex-direction: column; }
+    .hotel-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); border-color: var(--secondary); }
+    .card-image { position: relative; height: 200px; }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; }
+    .weekend-badge { position: absolute; top: 16px; left: 16px; background: var(--success); color: white; padding: 6px 16px; border-radius: 40px; font-weight: 700; font-size: 14px; z-index: 2; box-shadow: 0 4px 12px rgba(0,168,107,0.3); }
+    .discount-badge { position: absolute; top: 16px; right: 16px; background: var(--secondary); color: white; padding: 6px 14px; border-radius: 40px; font-weight: 800; font-size: 16px; z-index: 2; }
+    .favorite-btn { position: absolute; bottom: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--secondary); z-index: 2; transition: var(--transition-base); }
+    .favorite-btn:hover { transform: scale(1.1); }
+    
+    .card-content { padding: 20px; flex: 1; }
+    .hotel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .hotel-name { font-size: 18px; font-weight: 700; }
+    .hotel-stars { color: var(--warning); letter-spacing: 2px; font-size: 11px; }
+    .hotel-location { color: var(--text-gray); font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    
+    .weekend-dates-card { background: rgba(0,168,107,0.05); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px; border: 1px dashed var(--success); }
+    .weekend-dates-card p { font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 8px; }
+    .weekend-dates-card i { color: var(--success); }
+    
+    .price-section { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+    .current-price { font-size: 24px; font-weight: 800; color: var(--primary); }
+    .current-price small { font-size: 13px; font-weight: 400; color: var(--text-gray); }
+    .old-price { text-decoration: line-through; color: var(--text-light); font-size: 15px; }
+    
+    .card-footer { display: flex; gap: 10px; }
+    .btn { flex: 1; padding: 14px 16px; border-radius: 40px; font-weight: 700; font-size: 14px; cursor: pointer; transition: var(--transition-base); text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: scale(1.02); }
+
+    /* Mobile */
+    @media (max-width: 1100px) { .hotels-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 700px) { .hotels-grid { grid-template-columns: 1fr; } .container { padding: 16px; } .weekend-hero { padding: 28px 20px; } .hero-content { flex-direction: column; text-align: center; } .hero-stats { width: 100%; } }
+    
+    /* Toast */
+    .toast-message { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--text-dark); color: white; padding: 14px 28px; border-radius: 60px; box-shadow: var(--shadow-lg); z-index: 9999; display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease; }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Hero Banner -->
+  <div class="weekend-hero">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1><i class="fas fa-calendar-week"></i> Hafta Sonu Fırsatları</h1>
+        <p>Önümüzdeki Cuma, Cumartesi ve Pazar günleri için özel olarak seçilmiş oteller.</p>
+        <div class="weekend-dates">
+          <span class="date-chip highlight"><i class="fas fa-calendar-check"></i> Bu Hafta Sonu</span>
+          <span class="date-chip"><i class="far fa-calendar-alt"></i> 12-14 Nisan 2025</span>
+          <span class="date-chip"><i class="fas fa-moon"></i> 2 Gece</span>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-value">47</div>
+        <div class="stat-label">Hafta Sonuna Özel Otel</div>
+        <p style="margin-top: 12px; font-size: 13px;"><i class="fas fa-tag"></i> Ortalama %30 indirim</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-chip"><i class="fas fa-hotel"></i> <strong>47</strong> otel mevcut</div>
+    <div class="stat-chip"><i class="fas fa-map-pin"></i> Popüler: <strong>İstanbul, Antalya, Muğla</strong></div>
+    <div class="stat-chip"><i class="fas fa-clock"></i> Son güncelleme: <strong>Bugün 14:30</strong></div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-tabs">
+      <span class="filter-tab active">Tümü (47)</span>
+      <span class="filter-tab">İstanbul (18)</span>
+      <span class="filter-tab">Antalya (12)</span>
+      <span class="filter-tab">Muğla (9)</span>
+      <span class="filter-tab">İzmir (5)</span>
+      <span class="filter-tab">Diğer (3)</span>
+    </div>
+    <select class="sort-select">
+      <option>Önerilen Sıralama</option>
+      <option>En Düşük Fiyat</option>
+      <option>En Yüksek Puan</option>
+    </select>
+  </div>
+
+  <!-- Hotels Grid -->
+  <div class="hotels-grid">
+    
+    <!-- Otel 1 -->
+    <div class="hotel-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Swissôtel">
+        <span class="weekend-badge"><i class="fas fa-calendar-check"></i> Hafta Sonu</span>
+        <span class="discount-badge">%25</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="far fa-heart"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-header"><h3 class="hotel-name">Swissôtel The Bosphorus</h3><span class="hotel-stars">★★★★★</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş, İstanbul</div>
+        <div class="weekend-dates-card"><p><i class="fas fa-calendar"></i> Giriş: 12 Nis Cuma · Çıkış: 14 Nis Pazar</p></div>
+        <div class="price-section">
+          <div><span class="current-price">₺3.188</span> <small>/ gece</small></div>
+          <div><span class="old-price">₺4.250</span></div>
+        </div>
+        <div class="card-footer"><a href="#" class="btn btn-primary">Hemen Rezerve Et</a></div>
+      </div>
+    </div>
+
+    <!-- Otel 2 -->
+    <div class="hotel-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Rixos">
+        <span class="weekend-badge"><i class="fas fa-calendar-check"></i> Hafta Sonu</span>
+        <span class="discount-badge">%30</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="fas fa-heart" style="color: var(--secondary);"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-header"><h3 class="hotel-name">Rixos Premium Belek</h3><span class="hotel-stars">★★★★★</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Belek, Antalya</div>
+        <div class="weekend-dates-card"><p><i class="fas fa-calendar"></i> Giriş: 12 Nis Cuma · Çıkış: 14 Nis Pazar</p></div>
+        <div class="price-section">
+          <div><span class="current-price">₺4.060</span> <small>/ gece</small></div>
+          <div><span class="old-price">₺5.800</span></div>
+        </div>
+        <div class="card-footer"><a href="#" class="btn btn-primary">Hemen Rezerve Et</a></div>
+      </div>
+    </div>
+
+    <!-- Otel 3 -->
+    <div class="hotel-card">
+      <div class="card-image">
+        <img src="https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=600" alt="D Maris">
+        <span class="weekend-badge"><i class="fas fa-calendar-check"></i> Hafta Sonu</span>
+        <span class="discount-badge">%20</span>
+        <span class="favorite-btn" onclick="toggleFavorite(this)"><i class="far fa-heart"></i></span>
+      </div>
+      <div class="card-content">
+        <div class="hotel-header"><h3 class="hotel-name">D Maris Bay</h3><span class="hotel-stars">★★★★★</span></div>
+        <div class="hotel-location"><i class="fas fa-map-pin"></i> Marmaris, Muğla</div>
+        <div class="weekend-dates-card"><p><i class="fas fa-calendar"></i> Giriş: 12 Nis Cuma · Çıkış: 14 Nis Pazar</p></div>
+        <div class="price-section">
+          <div><span class="current-price">₺5.680</span> <small>/ gece</small></div>
+          <div><span class="old-price">₺7.100</span></div>
+        </div>
+        <div class="card-footer"><a href="#" class="btn btn-primary">Hemen Rezerve Et</a></div>
+      </div>
+    </div>
+
+    <!-- Otel 4 -->
+    <div class="hotel-card">
+      <div class="card-image"><img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&w=600"><span class="weekend-badge">Hafta Sonu</span><span class="discount-badge">%15</span></div>
+      <div class="card-content"><h3>Four Seasons Bosphorus</h3><p>Beşiktaş, İstanbul</p><div class="price-section"><span class="current-price">₺10.625</span><span class="old-price">₺12.500</span></div><a href="#" class="btn btn-primary">Rezerve Et</a></div>
+    </div>
+    <!-- Otel 5 -->
+    <div class="hotel-card">
+      <div class="card-image"><img src="https://images.pexels.com/photos/672532/pexels-photo-672532.jpeg?auto=compress&w=600"><span class="weekend-badge">Hafta Sonu</span><span class="discount-badge">%20</span></div>
+      <div class="card-content"><h3>Cappadocia Cave Resort</h3><p>Göreme, Nevşehir</p><div class="price-section"><span class="current-price">₺2.560</span><span class="old-price">₺3.200</span></div><a href="#" class="btn btn-primary">Rezerve Et</a></div>
+    </div>
+    <!-- Otel 6 -->
+    <div class="hotel-card">
+      <div class="card-image"><img src="https://images.pexels.com/photos/189296/pexels-photo-189296.jpeg?auto=compress&w=600"><span class="weekend-badge">Hafta Sonu</span><span class="discount-badge">%20</span></div>
+      <div class="card-content"><h3>Hilton İstanbul Bomonti</h3><p>Şişli, İstanbul</p><div class="price-section"><span class="current-price">₺3.040</span><span class="old-price">₺3.800</span></div><a href="#" class="btn btn-primary">Rezerve Et</a></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function() {
+    window.toggleFavorite = function(btn) {
+      const icon = btn.querySelector('i');
+      if (icon.classList.contains('far')) { icon.classList.remove('far'); icon.classList.add('fas'); showToast('❤️ Favorilere eklendi!', 'success'); }
+      else { icon.classList.remove('fas'); icon.classList.add('far'); showToast('Favorilerden kaldırıldı.', 'info'); }
+    };
+    document.querySelectorAll('.filter-tab').forEach(t => { t.addEventListener('click', function() { document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active')); this.classList.add('active'); }); });
+    function showToast(msg, type) {
+      const toast = document.createElement('div'); toast.className = `toast-message ${type || 'info'}`;
+      toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'info-circle'}"></i> ${msg}`;
+      document.body.appendChild(toast); setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    console.log('✅ Hafta Sonu Fırsatları Sayfası Yüklendi');
+  })();
+</script>
+</body>
+</html>

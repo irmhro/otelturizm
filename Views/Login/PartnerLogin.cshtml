@@ -1,0 +1,164 @@
+@{
+    ViewData["Title"] = "Partner Giriş";
+}
+
+<section class="auth-shell partner-auth-shell">
+    <div class="auth-stage partner-stage">
+        <aside class="auth-sidebar partner-sidebar">
+            <div class="auth-sidebar-top">
+                <div class="auth-sidebar-logo"><i class="fas fa-building"></i> Otelturizm</div>
+                <span class="auth-sidebar-badge">Partner</span>
+            </div>
+
+            <div class="auth-sidebar-content">
+                <p class="auth-kicker">Extranet yönetimi</p>
+                <h1>Tesisinizi milyonlarca gezginle buluşturun</h1>
+                <p class="auth-lead">Partner paneline giris yapin veya yeni tesis başvurunuzu oluşturun. Rezervasyon, fiyat ve operasyon akisini tek panelden yönetin.</p>
+
+                <ul class="auth-feature-list">
+                    <li><i class="fas fa-chart-line"></i> Doluluk ve performans takibi</li>
+                    <li><i class="fas fa-calendar-check"></i> Anlık rezervasyon yönetimi</li>
+                    <li><i class="fas fa-wallet"></i> Komisyon ve odeme takibi</li>
+                    <li><i class="fas fa-headset"></i> 7/24 partner destek hattı</li>
+                </ul>
+
+                <div class="partner-stats">
+                    <div><strong>500K+</strong><span>Aktif kullanıcı</span></div>
+                    <div><strong>24s</strong><span>Onay süresi</span></div>
+                    <div><strong>%12</strong><span>Komisyon yapisi</span></div>
+                    <div><strong>0 TL</strong><span>Kayıt ücreti</span></div>
+                </div>
+            </div>
+
+            <div class="auth-sidebar-bottom">
+                <span><i class="fas fa-shield-alt"></i> TURSAB ve PCI DSS güvencesi</span>
+            </div>
+        </aside>
+
+        <div class="auth-panel-wrap partner-panel-wrap">
+            <div class="auth-tabs partner-tabs" data-auth-tabs>
+                <button type="button" class="auth-tab active" data-target="partnerLoginPanel">
+                    <i class="fas fa-sign-in-alt"></i> Extranet Girişi
+                </button>
+                <button type="button" class="auth-tab" data-target="partnerRegisterPanel">
+                    <i class="fas fa-hotel"></i> Partner Kaydı
+                </button>
+            </div>
+
+            <div class="auth-panel active" id="partnerLoginPanel">
+                <div class="info-banner">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Extranet uzerinden rezervasyon, fiyat, oda ve operasyon kayitlarini yönetebilirsiniz.</span>
+                </div>
+
+                @if (TempData["PartnerLoginError"] is string partnerLoginError)
+                {
+                    <div class="auth-alert">@partnerLoginError</div>
+                }
+
+                <form class="auth-form" id="partnerLoginForm" method="post" asp-controller="Auth" asp-action="PartnerLogin">
+                    @Html.AntiForgeryToken()
+                    <div class="form-group">
+                        <label for="partnerIdentity">Otel Kodu veya E-posta</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-hotel"></i>
+                            <input id="partnerIdentity" name="partnerIdentity" type="text" class="form-control" placeholder="Orn: OTLTRZM-IST-8EAFB748 veya email@otel.com" required />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="partnerPassword">Şifre</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-lock"></i>
+                            <input id="partnerPassword" name="partnerPassword" type="password" class="form-control" placeholder="••••••••" required />
+                            <button type="button" class="toggle-password" data-toggle-target="partnerPassword">
+                                <i class="far fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-row-meta">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" name="rememberMe" value="true" checked />
+                            <span>Beni hatırla</span>
+                        </label>
+                        <a href="#" class="text-link">Şifremi unuttum</a>
+                    </div>
+
+                    <button type="submit" class="auth-submit-btn partner-submit-btn">Extranet'e Giriş Yap <i class="fas fa-arrow-right"></i></button>
+                </form>
+
+                <p class="auth-helper">Henuz partner degil misiniz? <button type="button" class="text-button" data-switch-tab="partnerRegisterPanel">Hemen basvurun</button></p>
+            </div>
+
+            <div class="auth-panel" id="partnerRegisterPanel">
+                <partial name="~/Views/Register/_PartnerRegisterForm.cshtml" />
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            const scope = document.querySelector('.partner-auth-shell');
+            if (!scope) {
+                return;
+            }
+
+            const tabs = scope.querySelectorAll('[data-auth-tabs] .auth-tab');
+            const panels = scope.querySelectorAll('.auth-panel');
+
+            function switchPanel(id) {
+                tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.target === id));
+                panels.forEach(panel => panel.classList.toggle('active', panel.id === id));
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => switchPanel(tab.dataset.target));
+            });
+
+            scope.querySelectorAll('[data-switch-tab]').forEach(button => {
+                button.addEventListener('click', () => switchPanel(button.dataset.switchTab));
+            });
+
+            scope.querySelectorAll('[data-toggle-target]').forEach(button => {
+                button.addEventListener('click', function () {
+                    const input = document.getElementById(this.dataset.toggleTarget);
+                    const icon = this.querySelector('i');
+                    if (!input || !icon) {
+                        return;
+                    }
+
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
+                    icon.className = isPassword ? 'far fa-eye-slash' : 'far fa-eye';
+                });
+            });
+
+            const loginForm = document.getElementById('partnerLoginForm');
+            loginForm?.addEventListener('submit', function () {
+                const submitButton = this.querySelector('.auth-submit-btn');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = 'Giriş yapiliyor <i class="fas fa-spinner fa-spin"></i>';
+                }
+            });
+
+            const registerForm = document.getElementById('partnerRegisterForm');
+            registerForm?.addEventListener('submit', function () {
+                const submitButton = this.querySelector('.auth-submit-btn');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = 'Partner hesabi olusturuluyor <i class="fas fa-spinner fa-spin"></i>';
+                }
+            });
+
+            const shouldOpenRegister = '@(TempData["OpenPartnerRegisterTab"] as string ?? string.Empty)';
+            if (shouldOpenRegister === '1') {
+                switchPanel('partnerRegisterPanel');
+            }
+        })();
+    </script>
+}
+

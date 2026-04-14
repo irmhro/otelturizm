@@ -1,0 +1,64 @@
+@model otelturizmnew.Models.Destek.SssViewModel
+@{
+    ViewData["Title"] = "Sıkça Sorulan Sorular";
+}
+
+<section class="faq-page">
+    <div class="faq-container">
+        <div class="page-header">
+            <h1>Sıkça Sorulan Sorular</h1>
+            <p>Aklınıza takılan her şey için cevaplar burada.</p>
+        </div>
+
+        <form method="get" action="/sss" class="faq-search">
+            <div class="search-wrapper">
+                @if (Model.ActiveCategorySlug != "tumu")
+                {
+                    <input type="hidden" name="kategori" value="@Model.ActiveCategorySlug" />
+                }
+                <input type="text" name="ara" value="@Model.SearchTerm" placeholder="Sorunuzu yazın..." />
+                <button type="submit"><i class="fas fa-search"></i> Ara</button>
+            </div>
+        </form>
+
+        <div class="category-tabs">
+            @foreach (var category in Model.Categories)
+            {
+                <a href="@(category.Slug == "tumu" ? "/sss" : $"/sss?kategori={category.Slug}")" class="category-tab @(category.IsActive ? "active" : string.Empty)">@category.Name</a>
+            }
+        </div>
+
+        @foreach (var faqSection in Model.Sections)
+        {
+            <div class="faq-section" id="@faqSection.Slug">
+                <h2 class="faq-section-title"><i class="fas @faqSection.IconClass"></i> @faqSection.Name</h2>
+                @foreach (var item in faqSection.Questions)
+                {
+                    <div class="faq-item" id="soru-@item.Id">
+                        <div class="faq-question">@item.Question <i class="fas fa-chevron-down"></i></div>
+                        <div class="faq-answer">@item.Answer</div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (Model.CtaChannel is not null)
+        {
+            <div class="contact-cta">
+                <h3>Aradığınız cevabı bulamadınız mı?</h3>
+                <p>@Model.CtaChannel.Description</p>
+                <a href="@Model.CtaChannel.Url" class="btn-white">@Model.CtaChannel.ButtonText <i class="fas fa-arrow-right"></i></a>
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.faq-question').forEach(function (q) {
+            q.addEventListener('click', function () {
+                this.closest('.faq-item').classList.toggle('active');
+            });
+        });
+    </script>
+}

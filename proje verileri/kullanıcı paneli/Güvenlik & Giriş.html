@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Güvenlik & Giriş · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #003B95; --primary-light: #0055CC; --primary-dark: #002A6B;
+      --secondary: #506C9B; --success: #00A86B; --warning: #FFB800; --error: #EF4444;
+      --info: #3B82F6; --bg-light: #F8FAFC; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-body: #1E293B; --text-gray: #64748B;
+      --text-light: #94A3B8; --border-light: #E2E8F0; --border-medium: #CBD5E1;
+      --sidebar-width: 280px; --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0,59,149,0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-body); line-height: 1.5; }
+    
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--card-bg);
+      border-right: 1px solid var(--border-light); position: fixed;
+      height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid var(--border-light); }
+    .user-profile-card { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .user-avatar {
+      width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 22px;
+    }
+    .user-info h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .user-info p { font-size: 13px; color: var(--text-gray); }
+    .membership-badge { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .tier-badge {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: var(--text-dark);
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 700;
+    }
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-light); margin-bottom: 12px; padding-left: 16px; font-weight: 600;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      border-radius: 12px; color: var(--text-gray); text-decoration: none;
+      transition: all var(--transition-base); margin-bottom: 4px; font-weight: 500; font-size: 14px;
+    }
+    .nav-item i { width: 24px; font-size: 20px; }
+    .nav-item:hover { background: rgba(0,59,149,0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .nav-item .badge {
+      margin-left: auto; background: var(--secondary); color: white;
+      padding: 2px 8px; border-radius: 40px; font-size: 11px; font-weight: 700;
+    }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header { margin-bottom: 28px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: var(--text-dark); }
+    .page-title p { color: var(--text-gray); font-size: 15px; }
+    
+    /* Security Container */
+    .security-container { max-width: 800px; }
+    
+    /* Section */
+    .security-section {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      padding: 28px; border: 1px solid var(--border-light); margin-bottom: 24px;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light);
+    }
+    .section-title {
+      font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+    }
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-danger { background: transparent; border: 1.5px solid var(--error); color: var(--error); }
+    .btn-danger:hover { background: var(--error); color: white; }
+    .btn-warning { background: transparent; border: 1.5px solid var(--warning); color: var(--warning); }
+    
+    /* Security Item */
+    .security-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 0; border-bottom: 1px solid var(--border-light);
+    }
+    .security-item:last-child { border-bottom: none; }
+    .security-info { flex: 1; padding-right: 20px; }
+    .security-info h4 { font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .security-info p { color: var(--text-gray); font-size: 14px; }
+    
+    .status-badge {
+      padding: 4px 10px; border-radius: 40px; font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .status-enabled { background: rgba(0,168,107,0.1); color: var(--success); }
+    .status-disabled { background: rgba(239,68,68,0.1); color: var(--error); }
+    .status-warning { background: rgba(255,184,0,0.1); color: var(--warning); }
+    
+    /* Session List */
+    .session-list { margin-top: 16px; }
+    .session-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px; background: var(--bg-light); border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .session-device { display: flex; align-items: center; gap: 14px; }
+    .device-icon {
+      width: 44px; height: 44px; border-radius: 12px; background: white;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      border: 1px solid var(--border-light);
+    }
+    .session-info h5 { font-size: 15px; margin-bottom: 2px; }
+    .session-info p { color: var(--text-gray); font-size: 13px; }
+    .current-badge {
+      background: var(--success); color: white; padding: 2px 8px;
+      border-radius: 40px; font-size: 11px; margin-left: 8px;
+    }
+    
+    /* Form */
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 8px; }
+    .form-control {
+      width: 100%; padding: 14px 16px; border: 1.5px solid var(--border-light);
+      border-radius: 12px; font-size: 15px;
+    }
+    .form-control:focus { outline: none; border-color: var(--primary); }
+    .input-with-icon { position: relative; }
+    .input-with-icon i {
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+      color: var(--text-gray); font-size: 18px;
+    }
+    .input-with-icon input { padding-left: 46px; }
+    .toggle-password {
+      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+      cursor: pointer; color: var(--text-gray);
+    }
+    
+    /* Password Strength */
+    .password-strength { margin-top: 8px; }
+    .strength-bar { height: 4px; background: var(--border-light); border-radius: 2px; }
+    .strength-fill { height: 100%; width: 0%; border-radius: 2px; transition: all 0.3s; }
+    .strength-text { font-size: 12px; color: var(--text-gray); margin-top: 4px; }
+    
+    /* QR Code */
+    .qr-setup {
+      display: flex; align-items: center; gap: 24px; padding: 20px;
+      background: var(--bg-light); border-radius: 12px;
+    }
+    .qr-code {
+      width: 120px; height: 120px; background: white; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border-light);
+    }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal {
+      background: white; border-radius: var(--radius-xl); padding: 32px;
+      max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px;
+    }
+    .modal-header h3 { font-size: 20px; }
+    .close-modal { cursor: pointer; font-size: 24px; color: var(--text-gray); }
+    
+    /* Mobile */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+    }
+    @media (max-width: 600px) {
+      .security-item { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .qr-setup { flex-direction: column; text-align: center; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-top: 1px solid var(--border-light);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: var(--text-gray); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    @media (max-width: 900px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    /* Toast */
+    .toast-message {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--text-dark); color: white; padding: 14px 28px;
+      border-radius: 40px; box-shadow: var(--shadow-lg); z-index: 9999;
+      display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease;
+    }
+    .toast-message.success { background: var(--success); }
+    .toast-message.error { background: var(--error); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    
+    /* Recovery Codes */
+    .recovery-codes {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+      margin: 16px 0; font-family: monospace; font-size: 14px;
+    }
+    .recovery-code {
+      background: var(--bg-light); padding: 8px 12px;
+      border-radius: 8px; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="user-profile-card">
+        <div class="user-avatar">AY</div>
+        <div class="user-info">
+          <h4>Ahmet Yılmaz</h4>
+          <p>ahmet.yilmaz@email.com</p>
+          <div class="membership-badge">
+            <span class="tier-badge"><i class="fas fa-crown"></i> Gold Üye</span>
+          </div>
+        </div>
+      </div>
+      <a href="/" style="display: flex; align-items: center; gap: 8px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 14px;">
+        <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+      </a>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item"><i class="fas fa-columns"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlarım <span class="badge">3</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-heart"></i> Favorilerim <span class="badge" style="background: var(--success);">8</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-star"></i> Puanlarım</a>
+        <a href="#" class="nav-item"><i class="fas fa-envelope"></i> Mesajlarım</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Hesap Ayarları</div>
+        <a href="#" class="nav-item"><i class="fas fa-user-circle"></i> Profil Bilgilerim</a>
+        <a href="#" class="nav-item"><i class="fas fa-credit-card"></i> Ödeme Yöntemleri</a>
+        <a href="#" class="nav-item"><i class="fas fa-bell"></i> Bildirim Tercihleri</a>
+        <a href="#" class="nav-item active"><i class="fas fa-shield-alt"></i> Güvenlik & Giriş</a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- Header -->
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Güvenlik & Giriş</h1>
+        <p>Hesap güvenliğinizi yönetin, şifrenizi değiştirin ve oturumlarınızı kontrol edin.</p>
+      </div>
+    </header>
+    
+    <div class="security-container">
+      
+      <!-- Güvenlik Durumu Özeti -->
+      <div class="security-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-shield-alt"></i> Güvenlik Durumu</h3>
+        </div>
+        
+        <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(0,168,107,0.1); display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-shield-alt" style="font-size: 28px; color: var(--success);"></i>
+            </div>
+            <div>
+              <h3 style="font-size: 20px; color: var(--success);">Güçlü</h3>
+              <p style="color: var(--text-gray);">Hesabınız güvende</p>
+            </div>
+          </div>
+          <div style="flex: 1;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <span class="status-badge status-enabled"><i class="fas fa-check-circle"></i> 2FA Aktif</span>
+              <span class="status-badge status-enabled"><i class="fas fa-check-circle"></i> Güçlü Şifre</span>
+              <span class="status-badge status-enabled"><i class="fas fa-check-circle"></i> Kurtarma E-postası</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Şifre Değiştirme -->
+      <div class="security-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-lock"></i> Şifre</h3>
+          <button class="btn btn-outline btn-sm" onclick="openPasswordModal()"><i class="fas fa-edit"></i> Şifre Değiştir</button>
+        </div>
+        
+        <div class="security-item">
+          <div class="security-info">
+            <h4>Mevcut Şifre</h4>
+            <p>Son değiştirilme: 3 ay önce</p>
+          </div>
+          <span class="status-badge status-enabled">••••••••</span>
+        </div>
+        
+        <div class="security-item">
+          <div class="security-info">
+            <h4>Şifre Gücü</h4>
+            <p>Güçlü bir şifre kullanıyorsunuz.</p>
+          </div>
+          <span class="status-badge status-enabled"><i class="fas fa-check-circle"></i> Güçlü</span>
+        </div>
+      </div>
+      
+      <!-- İki Faktörlü Kimlik Doğrulama (2FA) -->
+      <div class="security-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-mobile-alt"></i> İki Faktörlü Kimlik Doğrulama (2FA)</h3>
+        </div>
+        
+        <div class="security-item">
+          <div class="security-info">
+            <h4>Authenticator Uygulaması</h4>
+            <p>Google Authenticator, Microsoft Authenticator veya benzeri.</p>
+          </div>
+          <span class="status-badge status-enabled"><i class="fas fa-check-circle"></i> Aktif</span>
+        </div>
+        
+        <div class="security-item">
+          <div class="security-info">
+            <h4>SMS ile Doğrulama</h4>
+            <p>Girişlerde telefonunuza SMS kodu gönderilsin.</p>
+          </div>
+          <span class="status-badge status-disabled"><i class="fas fa-times-circle"></i> Kapalı</span>
+        </div>
+        
+        <button class="btn btn-outline btn-sm" style="margin-top: 16px;" onclick="open2FAModal()">
+          <i class="fas fa-cog"></i> 2FA Ayarlarını Yönet
+        </button>
+      </div>
+      
+      <!-- Kurtarma Seçenekleri -->
+      <div class="security-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-envelope"></i> Kurtarma Seçenekleri</h3>
+        </div>
+        
+        <div class="security-item">
+          <div class="security-info">
+            <h4>Kurtarma E-postası</h4>
+            <p>ahmet.yedek@email.com</p>
+          </div>
+          <span class="status-badge status-enabled"><i class="fas fa-check-circle"></i> Doğrulandı</span>
+        </div>
+        
+        <div class="security-item">
+          <div class="security-info">
+            <h4>Kurtarma Telefonu</h4>
+            <p>Hesap kurtarma için alternatif telefon.</p>
+          </div>
+          <span class="status-badge status-warning"><i class="fas fa-exclamation-circle"></i> Eklenmedi</span>
+        </div>
+        
+        <button class="btn btn-outline btn-sm" style="margin-top: 16px;" onclick="alert('Kurtarma seçenekleri düzenleme')">
+          <i class="fas fa-plus"></i> Kurtarma Seçeneği Ekle
+        </button>
+      </div>
+      
+      <!-- Aktif Oturumlar -->
+      <div class="security-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-desktop"></i> Aktif Oturumlar</h3>
+        </div>
+        
+        <div class="session-list">
+          <div class="session-item">
+            <div class="session-device">
+              <div class="device-icon"><i class="fas fa-laptop"></i></div>
+              <div class="session-info">
+                <h5>MacBook Pro - Chrome <span class="current-badge">Mevcut Cihaz</span></h5>
+                <p>İstanbul, Türkiye · Son aktif: Şimdi</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="session-item">
+            <div class="session-device">
+              <div class="device-icon"><i class="fas fa-mobile-alt"></i></div>
+              <div class="session-info">
+                <h5>iPhone 15 Pro - Safari</h5>
+                <p>İstanbul, Türkiye · Son aktif: 2 saat önce</p>
+              </div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="this.closest('.session-item').remove(); showToast('Oturum sonlandırıldı.', 'success')">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
+          </div>
+          
+          <div class="session-item">
+            <div class="session-device">
+              <div class="device-icon"><i class="fas fa-tablet-alt"></i></div>
+              <div class="session-info">
+                <h5>iPad Air - Otelturizm App</h5>
+                <p>Ankara, Türkiye · Son aktif: 3 gün önce</p>
+              </div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="this.closest('.session-item').remove(); showToast('Oturum sonlandırıldı.', 'success')">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
+          </div>
+        </div>
+        
+        <button class="btn btn-danger btn-sm" style="margin-top: 16px;" onclick="if(confirm('Tüm diğer oturumlar sonlandırılacak. Emin misiniz?')) { document.querySelectorAll('.session-item:not(:first-child)').forEach(el => el.remove()); showToast('Tüm diğer oturumlar sonlandırıldı.', 'success'); }">
+          <i class="fas fa-sign-out-alt"></i> Tüm Diğer Oturumları Sonlandır
+        </button>
+      </div>
+      
+      <!-- Giriş Geçmişi -->
+      <div class="security-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-history"></i> Son Girişler</h3>
+        </div>
+        
+        <div class="session-list">
+          <div class="session-item" style="background: transparent; padding: 12px 0;">
+            <div class="session-device">
+              <div class="device-icon" style="background: transparent;"><i class="fas fa-check-circle" style="color: var(--success);"></i></div>
+              <div class="session-info">
+                <h5>Başarılı Giriş</h5>
+                <p>Chrome, Windows · İstanbul · Bugün 10:30</p>
+              </div>
+            </div>
+          </div>
+          <div class="session-item" style="background: transparent; padding: 12px 0;">
+            <div class="session-device">
+              <div class="device-icon" style="background: transparent;"><i class="fas fa-check-circle" style="color: var(--success);"></i></div>
+              <div class="session-info">
+                <h5>Başarılı Giriş</h5>
+                <p>Otelturizm iOS App · İstanbul · Dün 22:15</p>
+              </div>
+            </div>
+          </div>
+          <div class="session-item" style="background: transparent; padding: 12px 0;">
+            <div class="session-device">
+              <div class="device-icon" style="background: transparent;"><i class="fas fa-times-circle" style="color: var(--error);"></i></div>
+              <div class="session-info">
+                <h5>Başarısız Giriş Denemesi</h5>
+                <p>Firefox, Windows · Ankara · 2 gün önce</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <button class="btn btn-outline btn-sm" onclick="alert('Tüm giriş geçmişi görüntülenecek')">
+          <i class="fas fa-list"></i> Tüm Girişleri Görüntüle
+        </button>
+      </div>
+      
+      <!-- Hesap Silme -->
+      <div class="security-section" style="border-color: var(--error);">
+        <div class="section-header">
+          <h3 class="section-title" style="color: var(--error);"><i class="fas fa-exclamation-triangle"></i> Tehlike Bölgesi</h3>
+        </div>
+        
+        <p style="color: var(--text-gray); margin-bottom: 16px;">Hesabınızı silmek tüm verilerinizin kalıcı olarak silinmesine neden olur. Bu işlem geri alınamaz.</p>
+        
+        <button class="btn btn-danger" onclick="if(confirm('Hesabınızı silmek istediğinize emin misiniz? Bu işlem GERİ ALINAMAZ!')) { alert('Hesap silme talebi oluşturuldu. Destek ekibimiz sizinle iletişime geçecektir.'); }">
+          <i class="fas fa-trash-alt"></i> Hesabımı Sil
+        </button>
+      </div>
+      
+    </div>
+    
+  </main>
+</div>
+
+<!-- Şifre Değiştirme Modal -->
+<div class="modal-overlay" id="passwordModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-lock"></i> Şifre Değiştir</h3>
+      <span class="close-modal" onclick="closePasswordModal()">&times;</span>
+    </div>
+    <form onsubmit="event.preventDefault(); changePassword();">
+      <div class="form-group">
+        <label>Mevcut Şifre</label>
+        <div class="input-with-icon">
+          <i class="fas fa-lock"></i>
+          <input type="password" class="form-control" id="currentPassword" required>
+          <i class="fas fa-eye toggle-password" onclick="togglePassword(this)"></i>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Yeni Şifre</label>
+        <div class="input-with-icon">
+          <i class="fas fa-key"></i>
+          <input type="password" class="form-control" id="newPassword" required>
+          <i class="fas fa-eye toggle-password" onclick="togglePassword(this)"></i>
+        </div>
+        <div class="password-strength">
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+          <div class="strength-text" id="strengthText">Şifre gücü: Girilmedi</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Yeni Şifre (Tekrar)</label>
+        <div class="input-with-icon">
+          <i class="fas fa-key"></i>
+          <input type="password" class="form-control" id="confirmPassword" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Şifreyi Güncelle</button>
+    </form>
+  </div>
+</div>
+
+<!-- 2FA Modal -->
+<div class="modal-overlay" id="twoFAModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-shield-alt"></i> İki Faktörlü Kimlik Doğrulama</h3>
+      <span class="close-modal" onclick="close2FAModal()">&times;</span>
+    </div>
+    
+    <div class="qr-setup">
+      <div class="qr-code">
+        <svg viewBox="0 0 100 100" width="100" height="100">
+          <rect x="10" y="10" width="80" height="80" fill="white"/>
+          <rect x="20" y="20" width="10" height="10" fill="black"/>
+          <rect x="40" y="20" width="10" height="10" fill="black"/>
+          <rect x="60" y="20" width="10" height="10" fill="black"/>
+          <rect x="20" y="40" width="10" height="10" fill="black"/>
+          <rect x="60" y="40" width="10" height="10" fill="black"/>
+          <rect x="20" y="60" width="10" height="10" fill="black"/>
+          <rect x="40" y="60" width="10" height="10" fill="black"/>
+          <rect x="60" y="60" width="10" height="10" fill="black"/>
+        </svg>
+      </div>
+      <div>
+        <h4>QR Kodu Tara</h4>
+        <p style="color: var(--text-gray); margin: 8px 0;">Google Authenticator veya benzeri bir uygulama ile bu QR kodu tarayın.</p>
+        <p style="font-family: monospace; background: var(--bg-light); padding: 8px; border-radius: 8px;">OTELTURIZMAHMETYILMAZ</p>
+      </div>
+    </div>
+    
+    <div class="form-group" style="margin-top: 20px;">
+      <label>6 Haneli Doğrulama Kodu</label>
+      <input type="text" class="form-control" placeholder="000000" maxlength="6">
+    </div>
+    
+    <button class="btn btn-primary" style="width: 100%;" onclick="close2FAModal(); showToast('✅ İki faktörlü kimlik doğrulama aktifleştirildi!', 'success');">
+      Doğrula ve Aktifleştir
+    </button>
+  </div>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-heart"></i><span>Favoriler</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-star"></i><span>Puanlar</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-user"></i><span>Profil</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    // Password Modal
+    window.openPasswordModal = () => document.getElementById('passwordModal').style.display = 'flex';
+    window.closePasswordModal = () => document.getElementById('passwordModal').style.display = 'none';
+    
+    // 2FA Modal
+    window.open2FAModal = () => document.getElementById('twoFAModal').style.display = 'flex';
+    window.close2FAModal = () => document.getElementById('twoFAModal').style.display = 'none';
+    
+    // Toggle Password Visibility
+    window.togglePassword = function(btn) {
+      const input = btn.parentElement.querySelector('input');
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.classList.remove('fa-eye');
+        btn.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        btn.classList.remove('fa-eye-slash');
+        btn.classList.add('fa-eye');
+      }
+    };
+    
+    // Password Strength
+    const newPwd = document.getElementById('newPassword');
+    if (newPwd) {
+      newPwd.addEventListener('input', function() {
+        const val = this.value;
+        let strength = 0;
+        if (val.length >= 8) strength++;
+        if (val.match(/[a-z]+/)) strength++;
+        if (val.match(/[A-Z]+/)) strength++;
+        if (val.match(/[0-9]+/)) strength++;
+        if (val.match(/[$@#&!]+/)) strength++;
+        
+        const fill = document.getElementById('strengthFill');
+        const text = document.getElementById('strengthText');
+        const percent = (strength / 5) * 100;
+        fill.style.width = percent + '%';
+        fill.style.background = strength <= 2 ? 'var(--error)' : (strength <= 4 ? 'var(--warning)' : 'var(--success)');
+        text.textContent = 'Şifre gücü: ' + (strength <= 2 ? 'Zayıf' : (strength <= 4 ? 'Orta' : 'Güçlü'));
+      });
+    }
+    
+    window.changePassword = function() {
+      const current = document.getElementById('currentPassword').value;
+      const newPwd = document.getElementById('newPassword').value;
+      const confirm = document.getElementById('confirmPassword').value;
+      
+      if (!current || !newPwd || !confirm) {
+        showToast('Lütfen tüm alanları doldurun.', 'error');
+        return;
+      }
+      if (newPwd !== confirm) {
+        showToast('Şifreler eşleşmiyor.', 'error');
+        return;
+      }
+      if (newPwd.length < 8) {
+        showToast('Şifre en az 8 karakter olmalıdır.', 'error');
+        return;
+      }
+      
+      closePasswordModal();
+      showToast('✅ Şifreniz başarıyla değiştirildi!', 'success');
+    };
+    
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    // Modal dışına tıklayınca kapat
+    document.getElementById('passwordModal').addEventListener('click', function(e) {
+      if (e.target === this) closePasswordModal();
+    });
+    document.getElementById('twoFAModal').addEventListener('click', function(e) {
+      if (e.target === this) close2FAModal();
+    });
+    
+    console.log('✅ Güvenlik & Giriş Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

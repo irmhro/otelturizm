@@ -1,0 +1,57 @@
+@model otelturizmnew.Models.Paneller.User.UserFavoritesPageViewModel
+@{
+    Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
+    ViewData["Title"] = "Favorilerim";
+}
+
+<section class="panel-card">
+    <div class="section-head">
+        <div>
+            <p class="mini-label">KAYITLI LISTE</p>
+            <h2>Favori otellerin</h2>
+            <p class="favorites-subtitle">@Model.FavoriteCount otel kaydın var. Dilersen detay sayfasına gidip favorilerinden çıkarabilirsin.</p>
+        </div>
+        <button type="button" class="ghost-btn">Karsilastir</button>
+    </div>
+
+    @if (Model.Hotels.Count == 0)
+    {
+        <div class="favorites-empty-state">
+            <i class="far fa-heart"></i>
+            <strong>Henüz favori otelin yok</strong>
+            <p>Anasayfa veya otel detay sayfasındaki kalp butonlarını kullanarak favori listeni oluşturmaya başlayabilirsin.</p>
+            <a href="/" class="ghost-btn favorites-empty-link">Keşfete dön</a>
+        </div>
+    }
+    else
+    {
+        <div class="favorites-grid">
+            @foreach (var hotel in Model.Hotels)
+            {
+                <article class="favorite-card">
+                    <a href="/oteller/@hotel.Slug" class="favorite-card-image">
+                        @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
+                        {
+                            <img src="@hotel.ImageUrl" alt="@hotel.Name" />
+                        }
+                        else
+                        {
+                            <div class="favorite-card-image-fallback"></div>
+                        }
+                        <span class="favorite-code-chip">@hotel.HotelCode</span>
+                    </a>
+                    <div class="favorite-card-body">
+                        <h3>@hotel.Name</h3>
+                        <p>@hotel.District, @hotel.City</p>
+                        <small class="favorite-added-date">@hotel.AddedDateText</small>
+                        <div class="rating-row"><span>@(hotel.Rating > 0 ? hotel.Rating.ToString("0.0") : "-")</span> @hotel.RatingText</div>
+                        <div class="card-bottom">
+                            <strong>@hotel.PriceText</strong>
+                            <a href="/oteller/@hotel.Slug" class="ghost-btn">Rezervasyon</a>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

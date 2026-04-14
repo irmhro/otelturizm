@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>E-posta Onayı · Admin · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0F172A; --primary-light: #1E293B; --secondary: #3B82F6;
+      --success: #10B981; --warning: #F59E0B; --error: #EF4444;
+      --bg-dark: #020617; --card-bg: #FFFFFF; --text-dark: #0F172A;
+      --text-gray: #64748B; --text-light: #94A3B8; --border-light: #E2E8F0;
+      --radius-xl: 32px; --radius-lg: 24px; --shadow-xl: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Inter", sans-serif; background: var(--bg-dark);
+      background-image: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 30%);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 24px; -webkit-font-smoothing: antialiased;
+    }
+    .verify-container {
+      width: 100%; max-width: 500px; background: var(--card-bg);
+      border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); overflow: hidden;
+    }
+    .verify-header {
+      background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+      padding: 48px 32px; text-align: center; color: white;
+    }
+    .verify-header i { font-size: 64px; margin-bottom: 20px; }
+    .verify-header h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .verify-header p { opacity: 0.9; font-size: 15px; }
+    .verify-body { padding: 40px 32px; text-align: center; }
+    
+    .status-panel { }
+    .status-icon { font-size: 72px; margin-bottom: 24px; }
+    .status-title { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+    .status-text { color: var(--text-gray); margin-bottom: 32px; line-height: 1.6; }
+    
+    .email-badge {
+      background: var(--bg-dark); color: white; padding: 12px 24px;
+      border-radius: 60px; font-size: 18px; font-weight: 600; margin-bottom: 32px;
+      display: inline-block;
+    }
+    .email-badge i { margin-right: 10px; color: var(--success); }
+    
+    .btn {
+      display: inline-block; padding: 16px 36px; border-radius: 40px; font-weight: 700; font-size: 16px;
+      cursor: pointer; transition: var(--transition-base); text-decoration: none;
+    }
+    .btn-primary { background: var(--secondary); color: white; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25); }
+    .btn-primary:hover { background: #2563EB; transform: translateY(-2px); box-shadow: 0 12px 28px rgba(59, 130, 246, 0.35); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); margin-top: 16px; }
+
+    .error-panel .status-icon { color: var(--error); }
+    .success-panel .status-icon { color: var(--success); }
+    .warning-panel .status-icon { color: var(--warning); }
+
+    .help-links { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-light); }
+    .help-links a { color: var(--secondary); text-decoration: none; font-size: 14px; margin: 0 12px; }
+
+    @media (max-width: 500px) {
+      .verify-body { padding: 32px 20px; }
+      .verify-header { padding: 40px 24px; }
+      .email-badge { font-size: 15px; padding: 10px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="verify-container">
+  <div class="verify-header">
+    <i class="fas fa-envelope-open-text"></i>
+    <h2>E-posta Onayı</h2>
+    <p>Admin hesabı aktivasyonu</p>
+  </div>
+  <div class="verify-body">
+    
+    <!-- Başarılı Onay Paneli (Varsayılan) -->
+    <div class="status-panel success-panel" id="successPanel">
+      <div class="status-icon"><i class="fas fa-check-circle"></i></div>
+      <h3 class="status-title">E-posta Adresiniz Onaylandı!</h3>
+      <p class="status-text">Admin hesabınız başarıyla aktifleştirildi. Artık güvenli bir şekilde giriş yapabilirsiniz.</p>
+      <div class="email-badge"><i class="fas fa-check-circle"></i> admin@otelturizm.com</div><br>
+      <a href="admin-login.html" class="btn btn-primary"><i class="fas fa-arrow-right"></i> Giriş Yap</a>
+    </div>
+
+    <!-- Hata / Geçersiz Token Paneli (Başlangıçta gizli) -->
+    <div class="status-panel error-panel" id="errorPanel" style="display:none;">
+      <div class="status-icon"><i class="fas fa-times-circle"></i></div>
+      <h3 class="status-title">Geçersiz veya Süresi Dolmuş Bağlantı</h3>
+      <p class="status-text">Kullandığınız onay bağlantısı geçerli değil veya süresi dolmuş. Lütfen yeni bir onay e-postası talep edin.</p>
+      <a href="#" class="btn btn-primary" id="resendLink">Yeni Onay E-postası Gönder</a>
+    </div>
+
+    <!-- Zaten Onaylanmış Paneli -->
+    <div class="status-panel warning-panel" id="alreadyPanel" style="display:none;">
+      <div class="status-icon"><i class="fas fa-info-circle"></i></div>
+      <h3 class="status-title">E-posta Zaten Onaylanmış</h3>
+      <p class="status-text">Bu e-posta adresi daha önce onaylanmış. Giriş yaparak devam edebilirsiniz.</p>
+      <a href="admin-login.html" class="btn btn-primary">Giriş Yap</a>
+    </div>
+
+    <div class="help-links">
+      <a href="admin-login.html"><i class="fas fa-sign-in-alt"></i> Giriş Sayfası</a>
+      <a href="#"><i class="fas fa-headset"></i> Destek</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // URL'den token durumunu simüle et
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status') || 'success'; // 'success', 'error', 'already'
+    
+    const successPanel = document.getElementById('successPanel');
+    const errorPanel = document.getElementById('errorPanel');
+    const alreadyPanel = document.getElementById('alreadyPanel');
+    
+    successPanel.style.display = 'none';
+    errorPanel.style.display = 'none';
+    alreadyPanel.style.display = 'none';
+    
+    if (status === 'error') { errorPanel.style.display = 'block'; }
+    else if (status === 'already') { alreadyPanel.style.display = 'block'; }
+    else { successPanel.style.display = 'block'; }
+    
+    document.getElementById('resendLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      alert('📧 Yeni onay e-postası admin@otelturizm.com adresine gönderildi.');
+    });
+
+    console.log('✅ E-posta Onay Sayfası Yüklendi');
+  })();
+</script>
+</body>
+</html>

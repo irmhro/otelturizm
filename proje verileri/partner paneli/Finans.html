@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Finans · Extranet · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0F172A; --primary-light: #1E293B; --primary-dark: #020617;
+      --secondary: #00A86B; --success: #10B981; --warning: #F59E0B; --error: #EF4444;
+      --info: #3B82F6; --bg-light: #F1F5F9; --card-bg: #FFFFFF;
+      --text-dark: #0F172A; --text-body: #1E293B; --text-gray: #64748B;
+      --text-light: #94A3B8; --border-light: #E2E8F0; --border-medium: #CBD5E1;
+      --sidebar-width: 280px; --radius-lg: 16px; --radius-xl: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04); --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0,0,0,0.12);
+      --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-body); line-height: 1.5; }
+    
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--primary);
+      color: white; position: fixed; height: 100vh; overflow-y: auto; z-index: 100;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .hotel-profile { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .hotel-avatar {
+      width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, var(--secondary) 0%, #00994D 100%);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 22px;
+    }
+    .hotel-info h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .hotel-info p { font-size: 13px; opacity: 0.7; }
+    .hotel-status { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    
+    .hotel-selector {
+      background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px;
+      margin-top: 16px; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .hotel-selector select {
+      width: 100%; background: transparent; border: none; color: white;
+      font-weight: 500; padding: 4px 0; outline: none;
+    }
+    .hotel-selector select option { color: var(--text-dark); }
+    
+    .sidebar-nav { padding: 20px 12px; }
+    .nav-section { margin-bottom: 28px; }
+    .nav-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: rgba(255,255,255,0.4); margin-bottom: 12px; padding-left: 16px; font-weight: 600;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+      border-radius: 12px; color: rgba(255,255,255,0.7); text-decoration: none;
+      transition: all var(--transition-base); margin-bottom: 4px; font-weight: 500; font-size: 14px;
+    }
+    .nav-item i { width: 24px; font-size: 20px; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-item.active { background: var(--secondary); color: white; }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    
+    /* Header */
+    .content-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+    }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; color: var(--text-dark); }
+    .page-title p { color: var(--text-gray); font-size: 15px; }
+    
+    .btn {
+      padding: 10px 20px; border-radius: 40px; font-weight: 600; font-size: 14px;
+      cursor: pointer; border: none; transition: all var(--transition-base);
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--secondary); color: white; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border-light); color: var(--text-dark); }
+    
+    /* Date Range */
+    .date-range-selector {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+    }
+    .date-range-btn {
+      padding: 8px 16px; border-radius: 40px; background: var(--card-bg);
+      border: 1px solid var(--border-light); font-size: 14px; cursor: pointer;
+    }
+    .date-range-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+    
+    /* Financial Summary Cards */
+    .finance-summary {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px;
+    }
+    .summary-card {
+      background: var(--card-bg); border-radius: var(--radius-lg); padding: 24px;
+      border: 1px solid var(--border-light);
+    }
+    .summary-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .summary-icon {
+      width: 48px; height: 48px; border-radius: 14px; display: flex;
+      align-items: center; justify-content: center; font-size: 22px;
+    }
+    .summary-value { font-size: 34px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; }
+    .summary-label { color: var(--text-gray); font-size: 14px; }
+    .summary-trend { display: flex; align-items: center; gap: 4px; font-size: 13px; margin-top: 8px; }
+    .trend-up { color: var(--success); }
+    .trend-down { color: var(--error); }
+    
+    /* Two Column Layout */
+    .two-column {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;
+    }
+    .chart-card {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light); padding: 24px;
+    }
+    .chart-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px;
+    }
+    .chart-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    
+    /* Commission Box */
+    .commission-box {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      border-radius: var(--radius-lg); padding: 24px; color: white;
+    }
+    .commission-rate { font-size: 48px; font-weight: 700; margin-bottom: 8px; }
+    
+    /* Tabs */
+    .tabs-container {
+      display: flex; gap: 28px; border-bottom: 2px solid var(--border-light); margin-bottom: 24px;
+    }
+    .tab {
+      padding: 14px 0; font-weight: 600; font-size: 15px; color: var(--text-gray);
+      cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
+      transition: all var(--transition-base); display: flex; align-items: center; gap: 8px;
+    }
+    .tab:hover { color: var(--secondary); }
+    .tab.active { color: var(--secondary); border-bottom-color: var(--secondary); }
+    
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    
+    /* Table */
+    .table-container {
+      background: var(--card-bg); border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light); overflow: hidden;
+    }
+    .finance-table { width: 100%; border-collapse: collapse; }
+    .finance-table th {
+      text-align: left; padding: 16px 24px; background: var(--bg-light);
+      font-weight: 600; font-size: 13px; color: var(--text-gray);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .finance-table td { padding: 16px 24px; border-bottom: 1px solid var(--border-light); }
+    
+    .status-badge {
+      padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .status-paid { background: rgba(16,185,129,0.1); color: var(--success); }
+    .status-pending { background: rgba(245,158,11,0.1); color: var(--warning); }
+    .status-processing { background: rgba(59,130,246,0.1); color: var(--info); }
+    
+    /* Invoice Summary */
+    .invoice-summary {
+      display: flex; align-items: center; gap: 20px; padding: 20px;
+      background: var(--bg-light); border-radius: 12px; margin-bottom: 20px;
+    }
+    
+    /* Mobile */
+    @media (max-width: 1200px) {
+      .finance-summary { grid-template-columns: repeat(2, 1fr); }
+      .two-column { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .finance-summary { grid-template-columns: 1fr; }
+      .finance-table { display: block; overflow-x: auto; }
+    }
+    
+    /* Mobile Bottom Nav */
+    .mobile-bottom-nav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--primary); border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 16px; z-index: 99;
+    }
+    .bottom-nav-items { display: flex; justify-content: space-around; }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 8px 12px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 11px;
+    }
+    .bottom-nav-item i { font-size: 22px; }
+    .bottom-nav-item.active { color: var(--secondary); }
+    @media (max-width: 900px) {
+      .mobile-bottom-nav { display: block; }
+      body { padding-bottom: 80px; }
+    }
+    
+    /* Toast */
+    .toast-message {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: var(--text-dark); color: white; padding: 14px 28px;
+      border-radius: 40px; box-shadow: var(--shadow-lg); z-index: 9999;
+      display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease;
+    }
+    .toast-message.success { background: var(--success); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    
+    /* Pagination */
+    .pagination {
+      display: flex; justify-content: flex-end; gap: 8px; padding: 20px 24px;
+    }
+    .page-item {
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border-light); border-radius: 8px; cursor: pointer;
+    }
+    .page-item.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+  </style>
+</head>
+<body>
+
+<div class="dashboard">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="hotel-profile">
+        <div class="hotel-avatar">SW</div>
+        <div class="hotel-info">
+          <h4>Swissôtel The Bosphorus</h4>
+          <p>ID: PTR-12345</p>
+          <div class="hotel-status"><span class="status-dot"></span> Online</div>
+        </div>
+      </div>
+      <div class="hotel-selector">
+        <select><option>Swissôtel The Bosphorus</option></select>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Ana Menü</div>
+        <a href="#" class="nav-item"><i class="fas fa-columns"></i> Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Rezervasyonlar</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-alt"></i> Takvim & Fiyatlar</a>
+        <a href="#" class="nav-item"><i class="fas fa-bed"></i> Oda Yönetimi</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Analiz & Raporlar</div>
+        <a href="#" class="nav-item"><i class="fas fa-chart-line"></i> Performans</a>
+        <a href="#" class="nav-item"><i class="fas fa-star"></i> Değerlendirmeler</a>
+        <a href="#" class="nav-item active"><i class="fas fa-credit-card"></i> Finans</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">Ayarlar</div>
+        <a href="#" class="nav-item"><i class="fas fa-hotel"></i> Otel Bilgileri</a>
+        <a href="#" class="nav-item"><i class="fas fa-images"></i> Fotoğraflar</a>
+        <a href="#" class="nav-item"><i class="fas fa-cog"></i> Tercihler</a>
+      </div>
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <a href="#" class="nav-item"><i class="fas fa-headset"></i> 7/24 Destek</a>
+        <a href="#" class="nav-item" style="color: var(--error);"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+      </div>
+    </nav>
+  </aside>
+  
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <header class="content-header">
+      <div class="page-title">
+        <h1>Finans</h1>
+        <p>Gelir, komisyon ve ödeme geçmişinizi takip edin.</p>
+      </div>
+      <div>
+        <button class="btn btn-outline" onclick="exportFinanceReport()"><i class="fas fa-file-export"></i> Dışa Aktar</button>
+        <button class="btn btn-primary" onclick="downloadInvoice()"><i class="fas fa-file-invoice"></i> Fatura İndir</button>
+      </div>
+    </header>
+    
+    <!-- Date Range -->
+    <div class="date-range-selector">
+      <span class="date-range-btn active">Bu Ay</span>
+      <span class="date-range-btn">Geçen Ay</span>
+      <span class="date-range-btn">Son 3 Ay</span>
+      <span class="date-range-btn">2025</span>
+      <span class="date-range-btn">Özel Tarih</span>
+    </div>
+    
+    <!-- Financial Summary -->
+    <div class="finance-summary">
+      <div class="summary-card">
+        <div class="summary-header">
+          <div class="summary-icon" style="background: rgba(0,168,107,0.1); color: var(--secondary);"><i class="fas fa-turkish-lira-sign"></i></div>
+        </div>
+        <div class="summary-value">₺342.500</div>
+        <div class="summary-label">Brüt Gelir</div>
+        <div class="summary-trend trend-up"><i class="fas fa-arrow-up"></i> +%12 geçen aya göre</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <div class="summary-icon" style="background: rgba(239,68,68,0.1); color: var(--error);"><i class="fas fa-percent"></i></div>
+        </div>
+        <div class="summary-value">₺41.100</div>
+        <div class="summary-label">Komisyon (%12)</div>
+        <div class="summary-trend">₺342.500 x %12</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <div class="summary-icon" style="background: rgba(59,130,246,0.1); color: var(--info);"><i class="fas fa-calculator"></i></div>
+        </div>
+        <div class="summary-value">₺301.400</div>
+        <div class="summary-label">Net Gelir</div>
+        <div class="summary-trend trend-up"><i class="fas fa-arrow-up"></i> +%11 geçen aya göre</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <div class="summary-icon" style="background: rgba(245,158,11,0.1); color: var(--warning);"><i class="fas fa-clock"></i></div>
+        </div>
+        <div class="summary-value">₺156.800</div>
+        <div class="summary-label">Bekleyen Ödeme</div>
+        <div class="summary-trend">15 Nis 2025'te hesabınıza aktarılacak</div>
+      </div>
+    </div>
+    
+    <!-- Two Column -->
+    <div class="two-column">
+      
+      <!-- Gelir Grafiği -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title"><i class="fas fa-chart-line"></i> Aylık Gelir Trendi</h3>
+        </div>
+        <div style="height: 200px; display: flex; align-items: flex-end; justify-content: space-around; padding: 20px 0;">
+          <div style="text-align: center;"><div style="width: 40px; height: 100px; background: var(--secondary); border-radius: 8px 8px 0 0; opacity: 0.7;"></div><span style="margin-top: 8px; display: block; font-size: 12px;">Oca</span><span style="font-size: 11px;">₺245K</span></div>
+          <div style="text-align: center;"><div style="width: 40px; height: 115px; background: var(--secondary); border-radius: 8px 8px 0 0; opacity: 0.8;"></div><span style="margin-top: 8px; display: block; font-size: 12px;">Şub</span><span style="font-size: 11px;">₺268K</span></div>
+          <div style="text-align: center;"><div style="width: 40px; height: 140px; background: var(--secondary); border-radius: 8px 8px 0 0;"></div><span style="margin-top: 8px; display: block; font-size: 12px;">Mar</span><span style="font-size: 11px;">₺305K</span></div>
+          <div style="text-align: center;"><div style="width: 40px; height: 155px; background: var(--success); border-radius: 8px 8px 0 0;"></div><span style="margin-top: 8px; display: block; font-size: 12px;">Nis</span><span style="font-size: 11px;">₺342K</span></div>
+          <div style="text-align: center;"><div style="width: 40px; height: 120px; background: var(--info); border-radius: 8px 8px 0 0; opacity: 0.5;"></div><span style="margin-top: 8px; display: block; font-size: 12px;">May</span><span style="font-size: 11px;">₺280K*</span></div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-gray); margin-top: 8px;">*Mayıs ayı tahmini gelir</p>
+      </div>
+      
+      <!-- Komisyon Özeti -->
+      <div class="commission-box">
+        <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;"><i class="fas fa-handshake"></i> Komisyon Özeti</h3>
+        <div class="commission-rate">%12</div>
+        <p style="opacity: 0.9; margin-bottom: 24px;">Standart Partner Komisyonu</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div><p style="opacity: 0.7; font-size: 13px;">Bu Ay Komisyon</p><p style="font-size: 20px; font-weight: 700;">₺41.100</p></div>
+          <div><p style="opacity: 0.7; font-size: 13px;">Yılbaşından Beri</p><p style="font-size: 20px; font-weight: 700;">₺156.800</p></div>
+        </div>
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+          <p style="font-size: 13px; opacity: 0.8;"><i class="fas fa-info-circle"></i> Gold Partner seviyesine ulaşmak için 500 rezervasyon daha</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <div class="tab active" data-tab="transactions"><i class="fas fa-list"></i> İşlemler</div>
+      <div class="tab" data-tab="invoices"><i class="fas fa-file-invoice"></i> Faturalar</div>
+      <div class="tab" data-tab="payouts"><i class="fas fa-money-bill-wave"></i> Ödemeler</div>
+    </div>
+    
+    <!-- İşlemler Tab -->
+    <div class="tab-panel active" id="transactions-panel">
+      <div class="table-container">
+        <table class="finance-table">
+          <thead>
+            <tr><th>Tarih</th><th>Rez. No</th><th>Açıklama</th><th>Tutar</th><th>Komisyon</th><th>Net</th><th>Durum</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>08 Nis 2025</td><td>#OTL-0482</td><td>Ahmet Yılmaz · 3 Gece</td><td>₺12.750</td><td>₺1.530</td><td>₺11.220</td><td><span class="status-badge status-paid">Ödendi</span></td></tr>
+            <tr><td>07 Nis 2025</td><td>#OTL-0478</td><td>Zeynep Kaya · 2 Gece</td><td>₺8.500</td><td>₺1.020</td><td>₺7.480</td><td><span class="status-badge status-paid">Ödendi</span></td></tr>
+            <tr><td>05 Nis 2025</td><td>#OTL-0471</td><td>Mehmet Demir · 7 Gece</td><td>₺40.600</td><td>₺4.872</td><td>₺35.728</td><td><span class="status-badge status-pending">Beklemede</span></td></tr>
+            <tr><td>03 Nis 2025</td><td>#OTL-0463</td><td>John Smith · 3 Gece</td><td>₺12.750</td><td>₺1.530</td><td>₺11.220</td><td><span class="status-badge status-paid">Ödendi</span></td></tr>
+            <tr><td>01 Nis 2025</td><td>#OTL-0455</td><td>Elena Petrova · 2 Gece</td><td>₺8.500</td><td>₺1.020</td><td>₺7.480</td><td><span class="status-badge status-processing">İşlemde</span></td></tr>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span class="page-item"><i class="fas fa-chevron-left"></i></span>
+          <span class="page-item active">1</span>
+          <span class="page-item">2</span>
+          <span class="page-item">3</span>
+          <span class="page-item"><i class="fas fa-chevron-right"></i></span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Faturalar Tab -->
+    <div class="tab-panel" id="invoices-panel">
+      <div class="invoice-summary">
+        <div style="flex: 1;"><h4>Fatura Bilgileri</h4><p>Swissôtel The Bosphorus Turizm A.Ş. · Vergi No: 1234567890</p></div>
+        <button class="btn btn-outline" onclick="updateBillingInfo()"><i class="fas fa-edit"></i> Düzenle</button>
+      </div>
+      <div class="table-container">
+        <table class="finance-table">
+          <thead><tr><th>Fatura No</th><th>Tarih</th><th>Dönem</th><th>Tutar</th><th>KDV</th><th>Toplam</th><th>İşlem</th></tr></thead>
+          <tbody>
+            <tr><td>INV-2025-0042</td><td>01 Nis 2025</td><td>Mart 2025</td><td>₺258.400</td><td>₺51.680</td><td>₺310.080</td><td><button class="btn btn-outline btn-sm" onclick="downloadInvoice()"><i class="fas fa-download"></i> PDF</button></td></tr>
+            <tr><td>INV-2025-0028</td><td>01 Mar 2025</td><td>Şubat 2025</td><td>₺227.100</td><td>₺45.420</td><td>₺272.520</td><td><button class="btn btn-outline btn-sm"><i class="fas fa-download"></i> PDF</button></td></tr>
+            <tr><td>INV-2025-0014</td><td>01 Şub 2025</td><td>Ocak 2025</td><td>₺207.600</td><td>₺41.520</td><td>₺249.120</td><td><button class="btn btn-outline btn-sm"><i class="fas fa-download"></i> PDF</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Ödemeler Tab -->
+    <div class="tab-panel" id="payouts-panel">
+      <div class="table-container">
+        <table class="finance-table">
+          <thead><tr><th>Ödeme No</th><th>Tarih</th><th>Dönem</th><th>Tutar</th><th>IBAN</th><th>Durum</th></tr></thead>
+          <tbody>
+            <tr><td>PAY-2025-0315</td><td>15 Mar 2025</td><td>Şubat 2025</td><td>₺227.100</td><td>TR••••1234</td><td><span class="status-badge status-paid">Tamamlandı</span></td></tr>
+            <tr><td>PAY-2025-0215</td><td>15 Şub 2025</td><td>Ocak 2025</td><td>₺207.600</td><td>TR••••1234</td><td><span class="status-badge status-paid">Tamamlandı</span></td></tr>
+            <tr><td>PAY-2025-0115</td><td>15 Oca 2025</td><td>Aralık 2024</td><td>₺195.300</td><td>TR••••1234</td><td><span class="status-badge status-paid">Tamamlandı</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top: 20px; padding: 20px; background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light);">
+        <h4><i class="fas fa-credit-card"></i> Banka Hesap Bilgileri</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px;">
+          <div><label style="color: var(--text-gray); font-size: 13px;">Banka</label><p>Garanti BBVA</p></div>
+          <div><label style="color: var(--text-gray); font-size: 13px;">IBAN</label><p>TR12 3456 7890 1234 5678 9012 34</p></div>
+          <div><label style="color: var(--text-gray); font-size: 13px;">Hesap Sahibi</label><p>Swissôtel The Bosphorus Turizm A.Ş.</p></div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin-top: 16px;" onclick="updateBankInfo()"><i class="fas fa-edit"></i> Hesap Bilgilerini Güncelle</button>
+      </div>
+    </div>
+    
+  </main>
+</div>
+
+<!-- Mobil Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="#" class="bottom-nav-item"><i class="fas fa-columns"></i><span>Dashboard</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-calendar-alt"></i><span>Takvim</span></a>
+    <a href="#" class="bottom-nav-item active"><i class="fas fa-chart-line"></i><span>Raporlar</span></a>
+    <a href="#" class="bottom-nav-item"><i class="fas fa-cog"></i><span>Ayarlar</span></a>
+  </div>
+</nav>
+
+<script>
+  (function() {
+    // Tab Sistemi
+    const tabs = document.querySelectorAll('.tab');
+    const panels = {
+      transactions: document.getElementById('transactions-panel'),
+      invoices: document.getElementById('invoices-panel'),
+      payouts: document.getElementById('payouts-panel')
+    };
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.dataset.tab;
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        Object.entries(panels).forEach(([id, panel]) => {
+          if (panel) panel.classList.toggle('active', id === tabId);
+        });
+      });
+    });
+    
+    // Date range buttons
+    document.querySelectorAll('.date-range-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.date-range-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+    
+    window.exportFinanceReport = function() { showToast('📥 Finans raporu dışa aktarılıyor...', 'success'); };
+    window.downloadInvoice = function() { showToast('📄 Fatura PDF olarak indiriliyor...', 'success'); };
+    window.updateBillingInfo = function() { showToast('📝 Fatura bilgileri düzenleniyor', 'info'); };
+    window.updateBankInfo = function() { showToast('🏦 Banka hesap bilgileri düzenleniyor', 'info'); };
+    
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}`;
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    
+    console.log('✅ Finans Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

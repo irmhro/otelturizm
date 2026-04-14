@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Duygu Analizi · Partner Panel · Otelturizm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #0F172A; --primary-light: #1E293B; --secondary: #00A86B;
+      --success: #10B981; --warning: #F59E0B; --error: #EF4444; --info: #3B82F6;
+      --bg-light: #F1F5F9; --card-bg: #FFFFFF; --text-dark: #0F172A;
+      --text-gray: #64748B; --border-light: #E2E8F0; --sidebar-width: 280px;
+      --radius-xl: 24px; --radius-lg: 20px; --shadow-lg: 0 20px 40px -10px rgba(0,0,0,0.1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Inter", sans-serif; background: var(--bg-light); color: var(--text-dark); }
+    .dashboard { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width); background: var(--primary); color: white;
+      position: fixed; height: 100vh; overflow-y: auto;
+    }
+    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .logo { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .logo i { color: var(--secondary); }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.2s;
+    }
+    .nav-item i { width: 24px; }
+    .nav-item:hover, .nav-item.active { background: var(--secondary); color: white; }
+    
+    /* Main Content */
+    .main-content { flex: 1; margin-left: var(--sidebar-width); padding: 24px 32px; }
+    .page-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .page-title p { color: var(--text-gray); }
+    
+    /* Emotion Summary */
+    .emotion-summary {
+      display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px;
+    }
+    .emotion-card {
+      background: var(--card-bg); border-radius: var(--radius-xl); padding: 28px;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-lg);
+    }
+    .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .card-header i { font-size: 28px; color: var(--secondary); }
+    .card-header h2 { font-size: 20px; font-weight: 700; }
+    
+    .emotion-meter { margin-bottom: 24px; }
+    .meter-bar { height: 12px; background: var(--border-light); border-radius: 40px; overflow: hidden; margin: 12px 0; }
+    .meter-fill { height: 100%; width: 85%; background: linear-gradient(90deg, var(--success) 0%, var(--warning) 70%, var(--error) 100%); border-radius: 40px; }
+    .meter-labels { display: flex; justify-content: space-between; font-size: 13px; }
+    
+    .insight-box {
+      background: linear-gradient(135deg, rgba(0,168,107,0.05) 0%, transparent 100%);
+      border-left: 4px solid var(--secondary); padding: 20px; border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    }
+    .insight-box p { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+    
+    .word-cloud { display: flex; flex-wrap: wrap; gap: 10px; }
+    .word-tag {
+      padding: 8px 18px; border-radius: 40px; font-weight: 500;
+    }
+    .word-positive { background: rgba(16,185,129,0.1); color: var(--success); }
+    .word-negative { background: rgba(239,68,68,0.1); color: var(--error); }
+    .word-neutral { background: var(--bg-light); color: var(--text-gray); }
+    
+    .comment-list { margin-top: 24px; }
+    .comment-item {
+      padding: 20px; border-bottom: 1px solid var(--border-light);
+      display: flex; gap: 16px;
+    }
+    .comment-sentiment { width: 40px; text-align: center; }
+    .comment-content { flex: 1; }
+    .comment-text { margin-bottom: 8px; }
+    .comment-meta { color: var(--text-gray); font-size: 13px; }
+    
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 20px; }
+      .emotion-summary { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  <aside class="sidebar">
+    <div class="sidebar-header"><div class="logo"><i class="fas fa-building"></i> Swissôtel</div></div>
+    <nav style="padding:20px;">
+      <a href="#" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="#" class="nav-item active"><i class="fas fa-heart"></i> Duygu Analizi</a>
+      <a href="#" class="nav-item"><i class="fas fa-cog"></i> Ayarlar</a>
+    </nav>
+  </aside>
+  <main class="main-content">
+    <div class="page-title"><h1>🧠 Misafir Duygu Analizi</h1><p>1.847 yorumdan yapay zeka ile çıkarılan içgörüler.</p></div>
+    
+    <div class="emotion-summary">
+      <div class="emotion-card">
+        <div class="card-header"><i class="fas fa-smile"></i><h2>Genel Duygu Skoru</h2></div>
+        <div style="font-size:48px; font-weight:800; color:var(--success);">%85 <span style="font-size:16px; color:var(--text-gray);">Pozitif</span></div>
+        <div class="emotion-meter"><div class="meter-bar"><div class="meter-fill" style="width:85%"></div></div><div class="meter-labels"><span>😊 Pozitif</span><span>😐 Nötr (%10)</span><span>😞 Negatif (%5)</span></div></div>
+        <div class="insight-box"><p>💡 En Güçlü Yönünüz: "Personel" ve "Manzara"</p><p style="font-size:14px; color:var(--text-gray);">Misafirleriniz personelinizin güler yüzlü olmasından ve Boğaz manzarasından çok memnun.</p></div>
+        <div class="insight-box" style="border-left-color: var(--warning); margin-top:16px;"><p>⚠️ Geliştirilebilir Alan: "Kahvaltı Çeşitliliği" ve "Otopark"</p><p style="font-size:14px; color:var(--text-gray);">Bazı misafirler kahvaltıda daha fazla seçenek ve otopark ücretinin yüksek olduğunu belirtmiş.</p></div>
+      </div>
+      <div class="emotion-card">
+        <div class="card-header"><i class="fas fa-cloud"></i><h2>En Çok Geçen Kelimeler</h2></div>
+        <div class="word-cloud">
+          <span class="word-tag word-positive">Manzara (423)</span><span class="word-tag word-positive">Personel (387)</span><span class="word-tag word-positive">Temiz (312)</span>
+          <span class="word-tag word-neutral">Konum (256)</span><span class="word-tag word-positive">Kahvaltı (198)</span><span class="word-tag word-negative">Otopark (87)</span>
+          <span class="word-tag word-negative">Gürültü (34)</span><span class="word-tag word-positive">Spa (112)</span><span class="word-tag word-neutral">Fiyat (98)</span>
+        </div>
+        <div style="margin-top:24px;"><div class="card-header" style="margin-bottom:12px;"><i class="fas fa-chart-bar"></i><h3>Departman Bazlı Mutluluk</h3></div>
+        <div><span>Resepsiyon</span><div style="height:6px;background:var(--border-light);margin:8px 0;border-radius:4px;"><div style="width:94%;height:6px;background:var(--success);border-radius:4px;"></div></div></div>
+        <div><span>Kat Hizmetleri</span><div style="height:6px;background:var(--border-light);margin:8px 0;"><div style="width:89%;height:6px;background:var(--success);border-radius:4px;"></div></div></div>
+        <div><span>Restoran</span><div style="height:6px;background:var(--border-light);margin:8px 0;"><div style="width:72%;height:6px;background:var(--warning);border-radius:4px;"></div></div></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="emotion-card">
+      <div class="card-header"><i class="fas fa-comment-dots"></i><h2>Duygu Analizi Yapılmış Son Yorumlar</h2></div>
+      <div class="comment-list">
+        <div class="comment-item"><div class="comment-sentiment" style="color:var(--success);"><i class="fas fa-smile"></i> Pozitif</div><div class="comment-content"><div class="comment-text">"Boğaz manzarası muhteşem, personel çok ilgili. Özellikle resepsiyondaki Mehmet Bey harikaydı."</div><div class="comment-meta">Ahmet Y. · 2 gün önce</div></div></div>
+        <div class="comment-item"><div class="comment-sentiment" style="color:var(--warning);"><i class="fas fa-meh"></i> Nötr</div><div class="comment-content"><div class="comment-text">"Otel güzel ama kahvaltıda daha fazla peynir çeşidi olabilirdi. Onun dışında her şey iyiydi."</div><div class="comment-meta">Zeynep K. · 3 gün önce</div></div></div>
+        <div class="comment-item"><div class="comment-sentiment" style="color:var(--error);"><i class="fas fa-frown"></i> Negatif</div><div class="comment-content"><div class="comment-text">"Otopark için günlük 150 TL çok fazla. Bu fiyata otopark dahil olmalı."</div><div class="comment-meta">Michael B. · 5 gün önce</div></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
