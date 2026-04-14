@@ -1,1 +1,2 @@
-/* Musteri yonetimi ek stilleri shell icinde */
+.sales-customer-card small { color: var(--sales-muted); }
+.sales-customer-card span { color: #1d4ed8; font-weight: 700; }

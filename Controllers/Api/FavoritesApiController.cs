@@ -22,16 +22,12 @@ public class FavoritesApiController : Controller
     public async Task<IActionResult> Toggle([FromBody] HotelFavoriteToggleRequest request, CancellationToken cancellationToken)
     {
         var userId = GetUserId();
-        var accountType = User.FindFirstValue(AuthClaimTypes.AccountType);
-        if (userId <= 0 || !string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase))
+        if (userId <= 0)
         {
-            var isAuthenticated = userId > 0;
-            return StatusCode(isAuthenticated ? StatusCodes.Status403Forbidden : StatusCodes.Status401Unauthorized, new HotelFavoriteToggleResponse
+            return StatusCode(StatusCodes.Status401Unauthorized, new HotelFavoriteToggleResponse
             {
                 Success = false,
-                Message = isAuthenticated
-                    ? "Favoriler yalnızca kullanıcı hesabı ile kullanılabilir."
-                    : "Favori eklemek için lütfen giriş yapınız.",
+                Message = "Favori eklemek için lütfen giriş yapınız.",
                 LoginUrl = "/kullanici-giris",
                 RegisterUrl = "/kullanici-giris?sekme=kayit"
             });

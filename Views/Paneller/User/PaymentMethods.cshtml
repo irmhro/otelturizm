@@ -1,31 +1,64 @@
+@model otelturizmnew.Models.Paneller.User.UserPaymentMethodsPageViewModel
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
-    ViewData["Title"] = "Odeme Yontemleri";
+    ViewData["Title"] = "Ödeme Yöntemleri";
 }
 
 <section class="form-stack">
     <article class="panel-card">
-        <div class="section-head"><h2>Kayıtli Kartlar</h2><button type="button" class="ghost-btn">Yeni Kart Ekle</button></div>
+        <div class="section-head"><h2>Kayıtlı Kartlar</h2><span class="ghost-btn">@Model.Methods.Count kart</span></div>
         <div class="payment-card-list">
-            <div class="payment-method-row">
-                <div><h3>Visa •••• 4242</h3><p>Son kullanim 12/27 · Varsayilan kart</p></div>
-                <div class="action-row"><button type="button" class="ghost-btn">Duzenle</button><button type="button" class="ghost-btn danger">Sil</button></div>
-            </div>
-            <div class="payment-method-row">
-                <div><h3>Mastercard •••• 8844</h3><p>Son kullanim 09/28</p></div>
-                <div class="action-row"><button type="button" class="ghost-btn">Duzenle</button><button type="button" class="ghost-btn danger">Sil</button></div>
-            </div>
+            @if (Model.Methods.Count == 0)
+            {
+                <div class="payment-method-row">
+                    <div><h3>Henüz kayıtlı kart yok</h3><p>Aşağıdaki formdan yeni ödeme yöntemi ekleyebilirsin.</p></div>
+                </div>
+            }
+            else
+            {
+                foreach (var method in Model.Methods)
+                {
+                    <div class="payment-method-row">
+                        <div><h3>@method.Label</h3><p>@method.DetailText</p></div>
+                        <div class="action-row">
+                            @if (method.IsDefault)
+                            {
+                                <span class="ghost-btn">Varsayılan</span>
+                            }
+                            <form method="post" asp-action="DeletePaymentMethod">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="paymentMethodId" value="@method.PaymentMethodId" />
+                                <button type="submit" class="ghost-btn danger">Sil</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            }
         </div>
     </article>
+
+    <form method="post" asp-action="SavePaymentMethod" class="panel-card">
+        @Html.AntiForgeryToken()
+        <div class="section-head"><h2>Yeni Kart Ekle</h2><button type="submit" class="ghost-btn">Kaydet</button></div>
+        <div class="form-grid">
+            <label><span>Kart Etiketi</span><input asp-for="Form.CardLabel" type="text" placeholder="Kişisel Kart" /></label>
+            <label><span>Kart Sahibi</span><input asp-for="Form.CardHolder" type="text" /></label>
+            <label><span>Marka</span><input asp-for="Form.Brand" type="text" placeholder="Visa" /></label>
+            <label><span>Son 4 Hane</span><input asp-for="Form.LastFourDigits" type="text" maxlength="4" /></label>
+            <label><span>Son Kullanım Ay</span><input asp-for="Form.ExpiryMonth" type="number" min="1" max="12" /></label>
+            <label><span>Son Kullanım Yıl</span><input asp-for="Form.ExpiryYear" type="number" min="2026" max="2100" /></label>
+        </div>
+        <div class="save-row">
+            <label class="toggle-row no-border"><div><h3>Varsayılan kart yap</h3><p>Ödeme sırasında öncelikli kart olarak kullanılsın.</p></div><input asp-for="Form.SetAsDefault" type="checkbox" /></label>
+        </div>
+    </form>
 
     <article class="panel-card">
         <div class="section-head"><h2>Fatura Bilgileri</h2></div>
         <div class="info-list">
-            <div><span>Fatura Unvani</span><strong>Ahmet Yilmaz</strong></div>
-            <div><span>Adres</span><strong>Besiktas / Istanbul</strong></div>
-            <div><span>E-posta</span><strong>ahmet.yilmaz@email.com</strong></div>
+            <div><span>Fatura Ünvanı</span><strong>@Model.Billing.InvoiceName</strong></div>
+            <div><span>Adres</span><strong>@Model.Billing.Address</strong></div>
+            <div><span>E-posta</span><strong>@Model.Billing.Email</strong></div>
         </div>
     </article>
 </section>
-
-

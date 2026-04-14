@@ -1,4 +1,10 @@
 @model otelturizmnew.Models.Firma.FirmaLandingPageViewModel
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@{
+    var firmaAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
+    var firmaAuthenticated = User.Identity?.IsAuthenticated == true;
+}
 <header class="site-header firma-site-header" id="firmaHeader">
     <div class="top-utility-bar firma-utility-bar">
         <div class="utility-container">
@@ -19,30 +25,16 @@
             <a href="/" class="logo logo-image-only firma-logo-link" aria-label="Otelturizm Firma">
                 <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="brand-logo-image" />
             </a>
-
-            <nav class="desktop-nav firma-desktop-nav">
-                <a href="/" class="nav-link"><span>Keşfet</span></a>
-                <a href="/kurumsal" class="nav-link"><span>Kurumsal</span></a>
-                <a href="/firma" class="nav-link active"><span>Firma</span></a>
-            </nav>
-        </div>
-
-        <div class="search-wrapper">
-            <div class="search-container firma-search-container">
-                <i class="fas fa-search"></i>
-                <input type="text" class="search-input" placeholder="Firma fiyatı, otel veya şehir arayın">
-                <div class="search-divider"></div>
-                <div class="search-date"><i class="far fa-building"></i><span>Toplu Konaklama</span></div>
-                <div class="search-divider"></div>
-                <div class="search-guests"><i class="fas fa-user-tie"></i><span>Kurumsal</span></div>
-                <button class="search-btn firma-search-btn" type="button"><i class="fas fa-search"></i></button>
-            </div>
         </div>
 
         <div class="header-actions firma-header-actions">
             <a href="/oteller" class="action-btn">Oteller</a>
-            <a href="/firma-giris" class="action-btn">Firma Girişi</a>
-            <a href="/firma-giris?sekme=kayit" class="action-btn primary">Firma Hesabı Açın</a>
+            <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
+            @if (!firmaAuthenticated && !string.Equals(firmaAccountType, "firma", StringComparison.OrdinalIgnoreCase))
+            {
+                <a href="/firma-giris" class="action-btn">Firma Girişi</a>
+                <a href="/firma-giris?sekme=kayit" class="action-btn primary">Firma Hesabı Açın</a>
+            }
             <button class="action-btn mobile-nav-toggle" id="firmaMenuToggle" type="button"><i class="fas fa-bars"></i></button>
         </div>
     </div>

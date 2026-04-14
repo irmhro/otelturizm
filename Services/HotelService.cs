@@ -144,6 +144,16 @@ public class HotelService : IHotelService
             }
 
             var tags = BuildHomepageTags(isFeatured, isRecommended, rating, startingPrice);
+            var hasDiscount = startingPrice.HasValue && (isFeatured || isRecommended || rating >= 4.4m);
+            var discountPercent = hasDiscount
+                ? (isFeatured ? 18 : isRecommended ? 14 : 10)
+                : 0;
+            var discountedPrice = hasDiscount
+                ? decimal.Round(startingPrice!.Value, 0)
+                : (decimal?)null;
+            var originalPrice = hasDiscount
+                ? decimal.Round(startingPrice!.Value / (1 - (discountPercent / 100m)), 0)
+                : (decimal?)null;
 
             // determine a basic weather placeholder for hero/cards (can be replaced with real API later)
             var cityName = reader.GetString(reader.GetOrdinal("sehir"));
@@ -162,7 +172,13 @@ public class HotelService : IHotelService
                 RatingText = BuildRatingText(rating),
                 ReviewCount = reviewCount,
                 StartingPrice = startingPrice,
-                PriceText = startingPrice.HasValue ? $"TRY {startingPrice.Value:N0}" : "Teklif Al",
+                OriginalPrice = originalPrice,
+                DiscountedPrice = discountedPrice,
+                DiscountPercent = discountPercent,
+                HasDiscount = hasDiscount,
+                PriceText = hasDiscount && discountedPrice.HasValue
+                    ? $"TRY {discountedPrice.Value:N0}"
+                    : startingPrice.HasValue ? $"TRY {startingPrice.Value:N0}" : "Teklif Al",
                 PriceNote = startingPrice.HasValue ? "Gecelik, vergiler dahil" : "Fiyat icin detay sayfasina bakin",
                 ImageUrl = NormalizeImageUrl(imageUrl),
                 DetailSlug = BuildSlug(reader.GetString(reader.GetOrdinal("otel_adi")), reader.GetString(reader.GetOrdinal("otel_kodu"))),
@@ -258,11 +274,16 @@ public class HotelService : IHotelService
         return model;
     }
 
-    public async Task<HotelListingPageViewModel> GetHotelListingPageAsync(string city, string? campaignTag = null, CancellationToken cancellationToken = default)
+    public async Task<HotelListingPageViewModel> GetHotelListingPageAsync(string? searchTerm, string? campaignTag = null, CancellationToken cancellationToken = default)
     {
+        var normalizedSearchTerm = string.IsNullOrWhiteSpace(searchTerm) ? string.Empty : searchTerm.Trim();
+        var normalizedSearchKeyword = NormalizeSearchKeyword(normalizedSearchTerm);
+        var displayLabel = string.IsNullOrWhiteSpace(normalizedSearchTerm) ? "Tüm bölgeler" : normalizedSearchTerm;
         var model = new HotelListingPageViewModel
         {
-            City = city
+            City = displayLabel,
+            SearchTerm = normalizedSearchTerm,
+            SearchLabel = displayLabel
         };
 
         var connectionString = GetConnectionString();
@@ -274,7 +295,13 @@ public class HotelService : IHotelService
         await using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        const string sql = """
+        var normalizedCitySql = BuildSearchNormalizationSql("o.sehir");
+        var normalizedDistrictSql = BuildSearchNormalizationSql("o.ilce");
+        var normalizedNeighborhoodSql = BuildSearchNormalizationSql("COALESCE(o.mahalle, '')");
+        var normalizedHotelNameSql = BuildSearchNormalizationSql("o.otel_adi");
+        var normalizedCompositeSql = BuildSearchNormalizationSql("CONCAT_WS(' ', COALESCE(o.mahalle, ''), o.ilce, o.sehir)");
+
+        var sql = $"""
             SELECT
                 o.id,
                 o.otel_kodu,
@@ -324,8 +351,22 @@ public class HotelService : IHotelService
             ) oz ON oz.otel_id = o.id
             WHERE o.yayin_durumu = 'Yayında'
               AND o.onay_durumu = 'Onaylandı'
-              AND LOWER(o.sehir) = LOWER(@city)
+              AND (
+                    @searchTerm = ''
+                    OR {normalizedCitySql} = @searchTermNormalized
+                    OR {normalizedDistrictSql} = @searchTermNormalized
+                    OR {normalizedNeighborhoodSql} = @searchTermNormalized
+                    OR {normalizedHotelNameSql} LIKE CONCAT('%', @searchTermNormalized, '%')
+                    OR {normalizedCompositeSql} LIKE CONCAT('%', @searchTermNormalized, '%')
+                  )
             ORDER BY
+                CASE
+                    WHEN {normalizedHotelNameSql} = @searchTermNormalized THEN 0
+                    WHEN {normalizedDistrictSql} = @searchTermNormalized THEN 1
+                    WHEN {normalizedNeighborhoodSql} = @searchTermNormalized THEN 2
+                    WHEN {normalizedCitySql} = @searchTermNormalized THEN 3
+                    ELSE 4
+                END,
                 CASE WHEN o.one_cikan_otel = 1 THEN 0 ELSE 1 END,
                 CASE WHEN o.ortalama_puan > 0 THEN 0 ELSE 1 END,
                 o.ortalama_puan DESC,
@@ -335,7 +376,8 @@ public class HotelService : IHotelService
             """;
 
         await using var command = new MySqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@city", city);
+        command.Parameters.AddWithValue("@searchTerm", normalizedSearchTerm);
+        command.Parameters.AddWithValue("@searchTermNormalized", normalizedSearchKeyword);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -381,6 +423,7 @@ public class HotelService : IHotelService
             {
                 Id = id,
                 HotelCode = hotelCode,
+                PropertyType = hotelType,
                 Name = name,
                 Slug = BuildSlug(name, hotelCode),
                 City = hotelCity,
@@ -410,9 +453,133 @@ public class HotelService : IHotelService
         var campaignMeta = GetCampaignMeta(model.ActiveTag);
         model.CampaignTitle = campaignMeta.Title;
         model.CampaignDescription = campaignMeta.Description;
-        model.QuickLinks = BuildListingQuickLinks(city, model.ActiveTag);
+        model.QuickLinks = BuildListingQuickLinks(displayLabel, model.ActiveTag);
 
         return model;
+    }
+
+    public async Task<List<HotelSearchSuggestionViewModel>> GetSearchSuggestionsAsync(string query, CancellationToken cancellationToken = default)
+    {
+        var normalizedQuery = string.IsNullOrWhiteSpace(query) ? string.Empty : query.Trim();
+        var normalizedQueryKeyword = NormalizeSearchKeyword(normalizedQuery);
+        var result = new List<HotelSearchSuggestionViewModel>();
+        if (normalizedQuery.Length < 2)
+        {
+            return result;
+        }
+
+        var connectionString = GetConnectionString();
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return result;
+        }
+
+        await using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var normalizedCitySql = BuildSearchNormalizationSql("o.sehir");
+        var normalizedDistrictSql = BuildSearchNormalizationSql("o.ilce");
+        var normalizedNeighborhoodSql = BuildSearchNormalizationSql("o.mahalle");
+        var normalizedHotelNameSql = BuildSearchNormalizationSql("o.otel_adi");
+
+        var sql = $"""
+            SELECT suggestion_value, suggestion_label, suggestion_type
+            FROM (
+                SELECT DISTINCT o.sehir AS suggestion_value, o.sehir AS suggestion_label, 'Sehir' AS suggestion_type, 1 AS sort_order
+                FROM oteller o
+                WHERE o.yayin_durumu = 'Yayında'
+                  AND o.onay_durumu = 'Onaylandı'
+                  AND {normalizedCitySql} LIKE CONCAT(@queryNormalized, '%')
+
+                UNION
+
+                SELECT DISTINCT o.ilce AS suggestion_value, CONCAT(o.ilce, ' / ', o.sehir) AS suggestion_label, 'Ilce' AS suggestion_type, 2 AS sort_order
+                FROM oteller o
+                WHERE o.yayin_durumu = 'Yayında'
+                  AND o.onay_durumu = 'Onaylandı'
+                  AND {normalizedDistrictSql} LIKE CONCAT(@queryNormalized, '%')
+
+                UNION
+
+                SELECT DISTINCT o.mahalle AS suggestion_value, CONCAT(o.mahalle, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Mahalle' AS suggestion_type, 3 AS sort_order
+                FROM oteller o
+                WHERE o.yayin_durumu = 'Yayında'
+                  AND o.onay_durumu = 'Onaylandı'
+                  AND o.mahalle IS NOT NULL
+                  AND o.mahalle <> ''
+                  AND {normalizedNeighborhoodSql} LIKE CONCAT(@queryNormalized, '%')
+
+                UNION
+
+                SELECT DISTINCT o.otel_adi AS suggestion_value, CONCAT(o.otel_adi, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Otel' AS suggestion_type, 4 AS sort_order
+                FROM oteller o
+                WHERE o.yayin_durumu = 'Yayında'
+                  AND o.onay_durumu = 'Onaylandı'
+                  AND {normalizedHotelNameSql} LIKE CONCAT('%', @queryNormalized, '%')
+            ) suggestions
+            ORDER BY sort_order, suggestion_label
+            LIMIT 8;
+            """;
+
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@queryNormalized", normalizedQueryKeyword);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            result.Add(new HotelSearchSuggestionViewModel
+            {
+                Value = reader.GetString(0),
+                Label = reader.GetString(1),
+                Type = reader.GetString(2)
+            });
+        }
+
+        return result;
+    }
+
+    private static string NormalizeSearchKeyword(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = NormalizeRouteSegment(value)
+            .Replace('-', ' ')
+            .Trim();
+
+        while (normalized.Contains("  ", StringComparison.Ordinal))
+        {
+            normalized = normalized.Replace("  ", " ", StringComparison.Ordinal);
+        }
+
+        return normalized;
+    }
+
+    private static string BuildSearchNormalizationSql(string fieldExpression)
+    {
+        var expression = $"LOWER(COALESCE({fieldExpression}, ''))";
+        foreach (var replacement in new (string From, string To)[]
+                 {
+                     ("İ", "i"),
+                     ("I", "i"),
+                     ("ı", "i"),
+                     ("Ç", "c"),
+                     ("ç", "c"),
+                     ("Ğ", "g"),
+                     ("ğ", "g"),
+                     ("Ö", "o"),
+                     ("ö", "o"),
+                     ("Ş", "s"),
+                     ("ş", "s"),
+                     ("Ü", "u"),
+                     ("ü", "u")
+                 })
+        {
+            expression = $"REPLACE({expression}, '{replacement.From}', '{replacement.To}')";
+        }
+
+        return expression;
     }
 
     public async Task<HotelDetailPageViewModel?> GetHotelDetailPageAsync(string slug, CancellationToken cancellationToken = default)
@@ -809,6 +976,32 @@ public class HotelService : IHotelService
 
         return activeTag switch
         {
+            "havuzlu-oteller" => Filter(
+                    x => x.Amenities.Any(a => a.Contains("Havuz", StringComparison.OrdinalIgnoreCase))
+                      || x.Tags.Any(t => t.Contains("Havuz", StringComparison.OrdinalIgnoreCase))),
+            "evcil-hayvan-dostu" => Filter(
+                    x => x.Summary.Contains("evcil", StringComparison.OrdinalIgnoreCase)
+                      || x.Tags.Any(t => t.Contains("evcil", StringComparison.OrdinalIgnoreCase))
+                      || x.Amenities.Any(a => a.Contains("evcil", StringComparison.OrdinalIgnoreCase))),
+            "butik-oteller" => Filter(
+                    x => x.PropertyType.Contains("Butik", StringComparison.OrdinalIgnoreCase)
+                      || x.Name.Contains("Butik", StringComparison.OrdinalIgnoreCase)),
+            "bungalov" => Filter(
+                    x => x.PropertyType.Contains("Bungalov", StringComparison.OrdinalIgnoreCase)
+                      || x.Name.Contains("Bungalov", StringComparison.OrdinalIgnoreCase)),
+            "dag-evi" => Filter(
+                    x => x.PropertyType.Contains("Dağ", StringComparison.OrdinalIgnoreCase)
+                      || x.PropertyType.Contains("Dag", StringComparison.OrdinalIgnoreCase)
+                      || x.Name.Contains("Dağ", StringComparison.OrdinalIgnoreCase)
+                      || x.Name.Contains("Dag", StringComparison.OrdinalIgnoreCase)),
+            "aile-dostu" => Filter(
+                    x => x.Summary.Contains("aile", StringComparison.OrdinalIgnoreCase)
+                      || x.Tags.Any(t => t.Contains("aile", StringComparison.OrdinalIgnoreCase))
+                      || x.Amenities.Any(a => a.Contains("aile", StringComparison.OrdinalIgnoreCase))),
+            "spa-wellness" => Filter(
+                    x => x.Amenities.Any(a => a.Contains("Spa", StringComparison.OrdinalIgnoreCase))
+                      || x.Amenities.Any(a => a.Contains("Wellness", StringComparison.OrdinalIgnoreCase))
+                      || x.Tags.Any(t => t.Contains("Spa", StringComparison.OrdinalIgnoreCase))),
             "en-iyi-fiyat" => Filter(
                     _ => true,
                     items => items.OrderBy(x => x.StartingPrice ?? decimal.MaxValue).ThenByDescending(x => x.Rating))
@@ -849,21 +1042,28 @@ public class HotelService : IHotelService
     {
         if (string.IsNullOrWhiteSpace(campaignTag))
         {
-            return "en-iyi-fiyat";
+            return "havuzlu-oteller";
         }
 
         return campaignTag.Trim().ToLowerInvariant() switch
         {
+            "havuzlu-oteller" => "havuzlu-oteller",
+            "evcil-hayvan-dostu" => "evcil-hayvan-dostu",
+            "butik-oteller" => "butik-oteller",
+            "bungalov" => "bungalov",
+            "dag-evi" => "dag-evi",
+            "aile-dostu" => "aile-dostu",
+            "spa-wellness" => "spa-wellness",
+            "ultra-luks" => "ultra-luks",
             "en-iyi-fiyat" => "en-iyi-fiyat",
             "kampanyaya-dahil-oteller" => "kampanyaya-dahil-oteller",
             "hafta-sonu-firsatlari" => "hafta-sonu-firsatlari",
             "butceme-uygun-oteller" => "butceme-uygun-oteller",
-            "ultra-luks" => "ultra-luks",
             "ay-sonu-ozel" => "ay-sonu-ozel",
             "flash-indirim" => "flash-indirim",
             "erken-rezervasyon" => "erken-rezervasyon",
             "akilli-fiyat" => "akilli-fiyat",
-            _ => "en-iyi-fiyat"
+            _ => "havuzlu-oteller"
         };
     }
 
@@ -871,6 +1071,13 @@ public class HotelService : IHotelService
     {
         return activeTag switch
         {
+            "havuzlu-oteller" => ("Havuzlu Oteller", "Havuz keyfini öne çıkaran tesisleri filtrelenmiş şekilde keşfedin."),
+            "evcil-hayvan-dostu" => ("Evcil Hayvan Dostu", "Patili dostlarınızla rahat konaklama sunan seçenekler burada."),
+            "butik-oteller" => ("Butik Oteller", "Kompakt, karakterli ve deneyim odaklı butik tesis seçkisi."),
+            "bungalov" => ("Bungalov Oteller", "Doğaya yakın, sakin ve özel alan sunan bungalov konaklamalar."),
+            "dag-evi" => ("Dağ Evi Otelleri", "Yüksek lokasyonlarda manzara ve huzur odaklı dağ evi seçenekleri."),
+            "aile-dostu" => ("Aile Dostu Oteller", "Çocuklu ailelerin ihtiyaçlarına uygun, dengeli konaklama seçenekleri."),
+            "spa-wellness" => ("Spa & Wellness", "Dinlenme ve bakım odaklı spa/wellness deneyimi sunan oteller."),
             "kampanyaya-dahil-oteller" => ("Kampanyaya Dahil Oteller", "Yayınlanan kampanya ve görünürlük avantajı taşıyan otelleri tek ekranda görün."),
             "hafta-sonu-firsatlari" => ("Hafta Sonu Fırsatları", "Kısa kaçamaklar için rezervasyona hazır, kullanıcıların en çok baktığı hafta sonu otelleri."),
             "butceme-uygun-oteller" => ("Bütçeme Uygun Oteller", "Daha erişilebilir fiyat bandındaki otelleri hızlıca filtreleyin ve karşılaştırın."),
@@ -879,54 +1086,81 @@ public class HotelService : IHotelService
             "flash-indirim" => ("Flash İndirim", "Anlık indirimli, fiyat avantajı güçlü ve hızlı rezervasyona uygun oteller."),
             "erken-rezervasyon" => ("Erken Rezervasyon", "Ön planlama yapan kullanıcılar için güçlü fiyat dengesi sunan oteller."),
             "akilli-fiyat" => ("Akıllı Fiyat", "Fiyat-performans oranı güçlü otelleri algoritmik sıralama ile gösteriyoruz."),
-            _ => ("En İyi Fiyat / İndirimli Odalar", "Kullanıcılar için öne çıkan, fiyat avantajı ve yüksek dönüş potansiyeli sunan tesisler.")
+            _ => ("Otel Kategorileri", "Kurumsal ve stilistik kart yapısıyla kategori bazlı otel keşfi yapın.")
         };
     }
 
     private static List<HotelListingQuickLinkViewModel> BuildListingQuickLinks(string city, string activeTag)
     {
-        var baseUrl = $"/oteller/{NormalizeRouteSegment(city)}";
+        var baseUrl = string.IsNullOrWhiteSpace(city) || string.Equals(city, "Tüm bölgeler", StringComparison.OrdinalIgnoreCase)
+            ? "/oteller"
+            : $"/oteller?q={Uri.EscapeDataString(city)}";
+        var tagSeparator = baseUrl.Contains('?', StringComparison.Ordinal) ? "&" : "?";
 
         return new List<HotelListingQuickLinkViewModel>
         {
             new()
             {
-                Title = "En İyi Fiyat / İndirimli Odalar",
-                Subtitle = "Fiyat avantajı güçlü seçenekler",
-                IconClass = "fa-tags",
-                Url = $"{baseUrl}?etiket=en-iyi-fiyat",
-                IsActive = activeTag == "en-iyi-fiyat"
+                Title = "Havuzlu Oteller",
+                Subtitle = "Havuz keyfini yaşayın",
+                IconClass = "fa-water-ladder",
+                Url = $"{baseUrl}{tagSeparator}etiket=havuzlu-oteller",
+                IsActive = activeTag == "havuzlu-oteller"
             },
             new()
             {
-                Title = "Kampanyaya Dahil Oteller",
-                Subtitle = "Kampanya görünürlüğü olan tesisler",
-                IconClass = "fa-bolt",
-                Url = $"{baseUrl}?etiket=kampanyaya-dahil-oteller",
-                IsActive = activeTag == "kampanyaya-dahil-oteller"
+                Title = "Evcil Hayvan Dostu",
+                Subtitle = "Patili misafirlere uygun",
+                IconClass = "fa-paw",
+                Url = $"{baseUrl}{tagSeparator}etiket=evcil-hayvan-dostu",
+                IsActive = activeTag == "evcil-hayvan-dostu"
             },
             new()
             {
-                Title = "Hafta Sonu Fırsatları",
-                Subtitle = "Kısa kaçamaklar için hızlı seçim",
-                IconClass = "fa-calendar-week",
-                Url = $"{baseUrl}?etiket=hafta-sonu-firsatlari",
-                IsActive = activeTag == "hafta-sonu-firsatlari"
+                Title = "Butik",
+                Subtitle = "Özel ve karakterli konaklama",
+                IconClass = "fa-hotel",
+                Url = $"{baseUrl}{tagSeparator}etiket=butik-oteller",
+                IsActive = activeTag == "butik-oteller"
             },
             new()
             {
-                Title = "Bütçeme Uygun Oteller",
-                Subtitle = "Dengeli fiyat, güçlü lokasyon",
-                IconClass = "fa-wallet",
-                Url = $"{baseUrl}?etiket=butceme-uygun-oteller",
-                IsActive = activeTag == "butceme-uygun-oteller"
+                Title = "Bungalov",
+                Subtitle = "Doğayla iç içe deneyim",
+                IconClass = "fa-tree",
+                Url = $"{baseUrl}{tagSeparator}etiket=bungalov",
+                IsActive = activeTag == "bungalov"
+            },
+            new()
+            {
+                Title = "Dağ Evi",
+                Subtitle = "Manzara ve huzur odaklı",
+                IconClass = "fa-mountain",
+                Url = $"{baseUrl}{tagSeparator}etiket=dag-evi",
+                IsActive = activeTag == "dag-evi"
+            },
+            new()
+            {
+                Title = "Aile Dostu",
+                Subtitle = "Aile konforu öncelikli",
+                IconClass = "fa-people-roof",
+                Url = $"{baseUrl}{tagSeparator}etiket=aile-dostu",
+                IsActive = activeTag == "aile-dostu"
+            },
+            new()
+            {
+                Title = "Spa & Wellness",
+                Subtitle = "Dinlenme ve yenilenme",
+                IconClass = "fa-spa",
+                Url = $"{baseUrl}{tagSeparator}etiket=spa-wellness",
+                IsActive = activeTag == "spa-wellness"
             },
             new()
             {
                 Title = "Ultra Lüks",
                 Subtitle = "Premium segment seçkisi",
                 IconClass = "fa-gem",
-                Url = $"{baseUrl}?etiket=ultra-luks",
+                Url = $"{baseUrl}{tagSeparator}etiket=ultra-luks",
                 IsActive = activeTag == "ultra-luks"
             }
         };
@@ -1145,4 +1379,5 @@ public class HotelService : IHotelService
         return string.Concat(parts.Take(2).Select(x => char.ToUpperInvariant(x[0])));
     }
 }
+
 

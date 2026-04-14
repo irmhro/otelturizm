@@ -700,3 +700,10 @@ Bu sozlesme tum yeni ekranlar icin baglayicidir.
   - `Askıda`
 - Basvuru workflow migration'lari manuel calistirilsa bile `schema_migrations` tablosuna checksum ile kaydedilir.
 - Firma login kabul testi, en az bir onayli ve en az bir onaysiz hesapla servis veya HTTP seviyesinde dogrulanmadan tamamlanmis sayilmaz.
+- Public veya panel sayfalarında `href="#"` / `action="#"` placeholder bırakılmaz. Gerçek route bağlanır veya erişime kapalı bir aksiyon ise `button type="button" disabled` yaklaşımı kullanılır.
+
+## Panel DB Uyum Kuralı
+- Panel sayfaları yalnızca açılıyor olmakla kabul edilmiş sayılmaz; ekran içeriği mümkün olan her yerde gerçek veritabanı sorguları ile beslenmeli, statik örnek içerik geçici ise notlanmalıdır.
+- Geliştirme sırasında migration dosyaları hedef veritabanı motoru ile uyumlu hazırlanmalıdır. MariaDB/MySQL sürüm farkı olan projelerde IF NOT EXISTS gibi sözdizimleri körlemesine kullanılmayacak; gerekiyorsa INFORMATION_SCHEMA kontrollü idempotent migration yazılacaktır.
+- Kullanıcı, partner, firma ve admin panelindeki her POST aksiyonu build ve DB yazma testi ile doğrulanmadan tamamlanmış kabul edilmez.
+

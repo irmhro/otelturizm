@@ -45,7 +45,7 @@ public class KampanyalarController : Controller
     private async Task ApplyFavoriteStatesAsync(otelturizmnew.Models.Kampanyalar.CampaignDetailPageViewModel model, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId <= 0 || !string.Equals(User.FindFirstValue(AuthClaimTypes.AccountType), "user", StringComparison.OrdinalIgnoreCase))
+        if (userId <= 0)
         {
             return;
         }

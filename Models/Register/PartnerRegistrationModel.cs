@@ -12,6 +12,7 @@ public class PartnerRegistrationModel
     public string Address { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
+    public string? Neighborhood { get; set; }
     public int? RoomCount { get; set; }
     public string TaxOffice { get; set; } = string.Empty;
     public string TaxNumber { get; set; } = string.Empty;

@@ -1,3 +1,10 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@{
+    var corporateAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
+    var corporateAuthenticated = User.Identity?.IsAuthenticated == true;
+}
+
 <header class="site-header corporate-header" id="corporateHeader">
     <div class="top-utility-bar corporate-utility-bar">
         <div class="utility-container">
@@ -7,7 +14,19 @@
                 <span><i class="fas fa-chart-line"></i> Şeffaf Komisyon</span>
             </div>
             <div class="utility-right">
-                <div class="language-selector"><i class="fas fa-globe"></i> TR</div>
+                <div class="dropdown language-dropdown" id="corporateLanguageDropdown">
+                    <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+                        <span class="toggle-flag flag-icon flag-icon-tr" aria-hidden="true"></span>
+                        <span class="dropdown-label">TR</span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li class="dropdown-item" data-value="tr"><span class="flag-icon flag-icon-tr"></span> Türkçe</li>
+                        <li class="dropdown-item" data-value="en"><span class="flag-icon flag-icon-gb"></span> English</li>
+                        <li class="dropdown-item" data-value="fr"><span class="flag-icon flag-icon-fr"></span> Français</li>
+                        <li class="dropdown-item" data-value="ru"><span class="flag-icon flag-icon-ru"></span> Русский</li>
+                        <li class="dropdown-item" data-value="ar"><span class="flag-icon flag-icon-sa"></span> العربية</li>
+                    </ul>
+                </div>
                 <div class="currency-selector"><i class="fas fa-lira-sign"></i> TRY</div>
             </div>
         </div>
@@ -18,11 +37,6 @@
             <a href="/" class="logo logo-image-only corporate-logo-link" aria-label="Otelturizm Kurumsal">
                 <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="corporate-logo-image" />
             </a>
-
-            <nav class="desktop-nav">
-                <a href="/" class="nav-link"><span>Keşfet</span></a>
-                <a href="/kurumsal" class="nav-link active"><span>Kurumsal</span></a>
-            </nav>
         </div>
 
         <div class="search-wrapper">
@@ -38,8 +52,12 @@
         </div>
 
         <div class="header-actions corporate-header-actions">
-            <a href="/kullanici-giris" class="action-btn corporate-action-btn">Kullanıcı Girişi</a>
-            <a href="/partner-giris" class="action-btn corporate-action-btn primary">Partner Girişi</a>
+            <a href="/firma" class="action-btn corporate-action-btn corporate-firma-btn">Firma</a>
+            <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
+            @if (!corporateAuthenticated && !string.Equals(corporateAccountType, "partner", StringComparison.OrdinalIgnoreCase))
+            {
+                <a href="/partner-giris" class="action-btn corporate-action-btn primary">Partner Girişi</a>
+            }
             <button class="action-btn mobile-nav-toggle corporate-mobile-toggle" id="corporateMenuToggle" type="button"><i class="fas fa-bars"></i></button>
         </div>
     </div>
@@ -64,6 +82,7 @@
             <div class="drawer-section-title">Kurumsal Menü</div>
             <a href="/" class="drawer-link"><i class="fas fa-home"></i> Anasayfa</a>
             <a href="/kurumsal" class="drawer-link"><i class="fas fa-building"></i> Kurumsal</a>
+            <a href="/firma-giris" class="drawer-link"><i class="fas fa-building-user"></i> Firma Girişi</a>
             <a href="/partner-giris" class="drawer-link"><i class="fas fa-briefcase"></i> Partner Girişi</a>
             <a href="/kullanici-giris" class="drawer-link"><i class="fas fa-user"></i> Kullanıcı Girişi</a>
             <a href="/yardim-merkezi" class="drawer-link"><i class="fas fa-headset"></i> Destek</a>

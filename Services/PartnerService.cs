@@ -2028,7 +2028,14 @@ public class PartnerService : IPartnerService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            hotels.Add(new PartnerHotelContext(reader.GetInt64(0), reader.GetInt64(1), reader.GetString(2), reader.GetString(3), reader.GetString(4), reader.GetBoolean(5)));
+            hotels.Add(new PartnerHotelContext(
+                reader.GetInt64(0),
+                reader.GetInt64(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                "Otel",
+                reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                !reader.IsDBNull(5) && reader.GetBoolean(5)));
         }
 
         return hotels;

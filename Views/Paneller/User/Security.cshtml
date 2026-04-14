@@ -1,35 +1,46 @@
+@model otelturizmnew.Models.Paneller.User.UserSecurityPageViewModel
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Güvenlik ve Giriş";
 }
 
 <section class="form-stack">
-    <article class="panel-card">
-        <div class="section-head"><h2>Şifre Guncelle</h2></div>
+    <form method="post" asp-action="ChangePassword" class="panel-card">
+        @Html.AntiForgeryToken()
+        <div class="section-head"><h2>Şifre Güncelle</h2></div>
         <div class="form-grid">
-            <label><span>Mevcut Şifre</span><input type="password" value="12345678" /></label>
-            <label><span>Yeni Şifre</span><input type="password" value="12345678" /></label>
-            <label class="full"><span>Yeni Şifre Tekrar</span><input type="password" value="12345678" /></label>
+            <label><span>Mevcut Şifre</span><input name="CurrentPassword" type="password" autocomplete="current-password" /></label>
+            <label><span>Yeni Şifre</span><input name="NewPassword" type="password" autocomplete="new-password" /></label>
+            <label class="full"><span>Yeni Şifre Tekrar</span><input name="ConfirmPassword" type="password" autocomplete="new-password" /></label>
         </div>
-        <div class="save-row"><button type="button" class="primary-btn">Şifreyi Guncelle</button></div>
-    </article>
+        <div class="save-row"><button type="submit" class="primary-btn">Şifreyi Güncelle</button></div>
+    </form>
 
     <article class="panel-card">
         <div class="section-head"><h2>Aktif Oturumlar</h2></div>
         <div class="session-list">
-            <div><strong>Windows / Chrome</strong><span>Istanbul · Su an aktif</span></div>
-            <div><strong>iPhone / Safari</strong><span>Istanbul · 2 saat once</span></div>
-            <div><strong>MacBook / Edge</strong><span>Ankara · 3 gun once</span></div>
+            @if (Model.Sessions.Count == 0)
+            {
+                <div><strong>Aktif oturum kaydı yok</strong><span>Yeni cihaz girişleri burada görünecek.</span></div>
+            }
+            else
+            {
+                foreach (var session in Model.Sessions)
+                {
+                    <div><strong>@session.DeviceLabel</strong><span>@session.ActivityText · @session.RememberText</span></div>
+                }
+            }
         </div>
     </article>
 
-    <article class="panel-card">
-        <div class="section-head"><h2>Iki Asamali Dogrulama</h2></div>
-        <div class="toggle-row no-border">
-            <div><h3>2FA koruması</h3><p>Hesap guvenligini SMS veya uygulama kodu ile guclendir.</p></div>
-            <span class="fake-toggle"></span>
-        </div>
-    </article>
+    <form method="post" asp-action="SaveTwoFactor" class="panel-card">
+        @Html.AntiForgeryToken()
+        <div class="section-head"><h2>İki Aşamalı Doğrulama</h2></div>
+        <label class="toggle-row no-border">
+            <div><h3>2FA koruması</h3><p>Hesap güvenliğini ikinci doğrulama katmanı ile güçlendir.</p></div>
+            <input name="Enabled" type="checkbox" value="true" @(Model.TwoFactorEnabled ? "checked" : null) />
+        </label>
+        <input name="Enabled" type="hidden" value="false" />
+        <div class="save-row"><button type="submit" class="primary-btn">Güvenlik tercihini kaydet</button></div>
+    </form>
 </section>
-
-

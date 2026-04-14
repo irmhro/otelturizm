@@ -1,25 +1,47 @@
+@model otelturizmnew.Models.Paneller.User.UserNotificationsPageViewModel
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Bildirim Tercihleri";
 }
 
 <section class="form-stack">
-    <article class="panel-card">
-        <div class="section-head"><h2>Rezervasyon Bildirimleri</h2></div>
+    <form method="post" asp-action="SaveNotifications" class="panel-card">
+        @Html.AntiForgeryToken()
+        <div class="section-head"><h2>Bildirim Tercihleri</h2><button type="submit" class="ghost-btn">Kaydet</button></div>
         <div class="toggle-list">
-            <div class="toggle-row"><div><h3>Rezervasyon onayi</h3><p>E-posta ve uygulama ici bildirim al.</p></div><span class="fake-toggle active"></span></div>
-            <div class="toggle-row"><div><h3>Check-in hatırlatma</h3><p>Konaklama oncesi otomatik hatırlatici.</p></div><span class="fake-toggle active"></span></div>
-            <div class="toggle-row"><div><h3>İptal ve degisiklik</h3><p>Rezervasyon hareketleri aninda bilgilendirilsin.</p></div><span class="fake-toggle active"></span></div>
+            <label class="toggle-row"><div><h3>Rezervasyon e-postaları</h3><p>Onay ve önemli rezervasyon güncellemeleri e-posta ile gelsin.</p></div><input asp-for="Form.ReservationEmail" type="checkbox" /></label>
+            <label class="toggle-row"><div><h3>Rezervasyon push bildirimleri</h3><p>Uygulama içi hızlı uyarıları açık tut.</p></div><input asp-for="Form.ReservationPush" type="checkbox" /></label>
+            <label class="toggle-row"><div><h3>Check-in hatırlatma</h3><p>Konaklama öncesi otomatik hatırlatıcı gönderilsin.</p></div><input asp-for="Form.CheckInReminder" type="checkbox" /></label>
+            <label class="toggle-row"><div><h3>İptal ve değişiklikler</h3><p>Rezervasyon hareketlerinden anında haberdar ol.</p></div><input asp-for="Form.CancellationChanges" type="checkbox" /></label>
+            <label class="toggle-row"><div><h3>Fırsat e-postaları</h3><p>Özel kampanyalar ve kullanıcı fırsatları e-posta ile gelsin.</p></div><input asp-for="Form.CampaignEmail" type="checkbox" /></label>
+            <label class="toggle-row"><div><h3>SMS bilgilendirmeleri</h3><p>Kısa kampanya ve kupon duyurularını SMS ile al.</p></div><input asp-for="Form.CampaignSms" type="checkbox" /></label>
+            <label class="toggle-row no-border"><div><h3>Sistem bildirimleri</h3><p>Güvenlik ve hesap hareketleri için uygulama içi uyarılar açık olsun.</p></div><input asp-for="Form.SystemNotifications" type="checkbox" /></label>
         </div>
-    </article>
+    </form>
 
     <article class="panel-card">
-        <div class="section-head"><h2>Pazarlama ve Kampanya</h2></div>
+        <div class="section-head"><h2>Son bildirimler</h2></div>
         <div class="toggle-list">
-            <div class="toggle-row"><div><h3>Fırsat e-postalari</h3><p>Ozel fiyatlar ve uye kampanyalari.</p></div><span class="fake-toggle"></span></div>
-            <div class="toggle-row"><div><h3>SMS bilgilendirmeleri</h3><p>Kisa kampanya ve kupon duyurulari.</p></div><span class="fake-toggle"></span></div>
+            @if (Model.RecentNotifications.Count == 0)
+            {
+                <div class="toggle-row no-border"><div><h3>Henüz bildirim yok</h3><p>Aktif bildirim oluştuğunda burada listelenecek.</p></div></div>
+            }
+            else
+            {
+                foreach (var notification in Model.RecentNotifications)
+                {
+                    <div class="toggle-row">
+                        <div>
+                            <h3>@notification.Title</h3>
+                            <p>@notification.Message</p>
+                        </div>
+                        <div>
+                            <strong>@notification.TypeText</strong>
+                            <p>@notification.TimeText</p>
+                        </div>
+                    </div>
+                }
+            }
         </div>
     </article>
 </section>
-
-

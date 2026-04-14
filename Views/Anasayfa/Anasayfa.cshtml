@@ -13,11 +13,9 @@
     <title>@ViewData["Title"] - Otelturizm</title>
     <script type="importmap"></script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+            <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/vendor/swiper/swiper-bundle.min.css" asp-append-version="true" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
@@ -44,7 +42,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="~/assets/vendor/swiper/swiper-bundle.min.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
     (function(){
@@ -86,7 +84,7 @@
 
             if(document.querySelector('.weekend-swiper')){
                 new Swiper('.weekend-swiper', {
-                    slidesPerView: 1.1,
+                    slidesPerView: 1,
                     spaceBetween: 16,
                     breakpoints: {
                         640: { slidesPerView: 2.1 },
@@ -96,22 +94,136 @@
                     navigation: { nextEl: '.weekend-next', prevEl: '.weekend-prev' }
                 });
             }
+
+            if(document.querySelector('.popular-swiper')){
+                new Swiper('.popular-swiper', {
+                    slidesPerView: 1,
+                    spaceBetween: 16,
+                    breakpoints: {
+                        640: { slidesPerView: 2.1 },
+                        960: { slidesPerView: 3 },
+                        1280: { slidesPerView: 4 }
+                    },
+                    navigation: { nextEl: '.popular-next', prevEl: '.popular-prev' }
+                });
+            }
+
+            document.querySelectorAll('.home-category-swiper').forEach(function (swiperEl) {
+                const nextEl = swiperEl.querySelector('.home-category-next');
+                const prevEl = swiperEl.querySelector('.home-category-prev');
+                new Swiper(swiperEl, {
+                    slidesPerView: 1,
+                    spaceBetween: 16,
+                    breakpoints: {
+                        640: { slidesPerView: 2 },
+                        960: { slidesPerView: 3 },
+                        1280: { slidesPerView: 4 }
+                    },
+                    navigation: { nextEl: nextEl, prevEl: prevEl }
+                });
+            });
         }
 
-        document.addEventListener('click', function(e){
-            const favorite = e.target.closest('.favorite-btn');
-            if(!favorite){ return; }
+        const fancySearchCard = document.querySelector('.fancy-search-card');
+        const fancyInput = fancySearchCard?.querySelector('.fancy-input');
+        const fancyLiveStatusText = fancySearchCard?.querySelector('.fancy-live-status-text');
+        const fancySuggestions = document.getElementById('homeSearchSuggestions');
+        if (fancySearchCard && fancyInput) {
+            const searchingText = 'Otel fırsatları taranıyor...';
+            const typedText = 'Arama hazır, sonucu filtreleyebilirsin.';
+            const seededValue = (fancyInput.dataset.seededValue || '').trim();
+            let suggestionTimer = null;
+            const updateFancySearchState = function () {
+                const currentValue = fancyInput.value.trim();
+                const hasInput = currentValue.length > 0 && currentValue !== seededValue;
+                fancySearchCard.classList.toggle('has-user-input', hasInput);
+                fancySearchCard.classList.toggle('is-searching', !hasInput);
+                if (fancyLiveStatusText) {
+                    fancyLiveStatusText.textContent = hasInput ? typedText : searchingText;
+                }
+            };
+            const hideSuggestions = function () {
+                if (!fancySuggestions) {
+                    return;
+                }
 
-            e.preventDefault();
-            favorite.classList.toggle('active');
-            const icon = favorite.querySelector('i');
-            if(icon){
-                icon.classList.toggle('far');
-                icon.classList.toggle('fas');
-            }
-        });
+                fancySuggestions.hidden = true;
+                fancySuggestions.innerHTML = '';
+            };
+            const renderSuggestions = function (items) {
+                if (!fancySuggestions) {
+                    return;
+                }
+
+                if (!items || !items.length) {
+                    hideSuggestions();
+                    return;
+                }
+
+                fancySuggestions.innerHTML = items.map(function (item) {
+                    return '<button type="button" class="fancy-search-suggestion" data-value="' + item.value.replace(/"/g, '&quot;') + '">' +
+                        '<span>' + item.label + '</span>' +
+                        '<small>' + item.type + '</small>' +
+                        '</button>';
+                }).join('');
+                fancySuggestions.hidden = false;
+            };
+            const loadSuggestions = async function () {
+                const currentValue = fancyInput.value.trim();
+                if (currentValue.length < 2) {
+                    hideSuggestions();
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/oteller/arama-onerileri?q=' + encodeURIComponent(currentValue), {
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (!response.ok) {
+                        hideSuggestions();
+                        return;
+                    }
+
+                    const items = await response.json();
+                    renderSuggestions(items);
+                } catch (_error) {
+                    hideSuggestions();
+                }
+            };
+            fancyInput.addEventListener('input', updateFancySearchState);
+            fancyInput.addEventListener('input', function () {
+                window.clearTimeout(suggestionTimer);
+                suggestionTimer = window.setTimeout(loadSuggestions, 180);
+            });
+            fancyInput.addEventListener('focus', function () {
+                if (fancyInput.value.trim().length >= 2) {
+                    loadSuggestions();
+                }
+            });
+            fancySuggestions?.addEventListener('click', function (event) {
+                const button = event.target.closest('.fancy-search-suggestion[data-value]');
+                if (!button) {
+                    return;
+                }
+
+                fancyInput.value = button.dataset.value || '';
+                updateFancySearchState();
+                hideSuggestions();
+            });
+            document.addEventListener('click', function (event) {
+                if (!fancySearchCard.contains(event.target)) {
+                    hideSuggestions();
+                }
+            });
+            updateFancySearchState();
+        }
     })();
     </script>
+    <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />
 </body>
 </html>
+
 

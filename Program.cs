@@ -15,6 +15,7 @@ builder.Services.AddControllersWithViews(options =>
 });
 builder.Services.AddScoped<SqlMigrationRunner>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAddressLookupService, AddressLookupService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAdminHotelManagementService, AdminHotelManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
@@ -24,6 +25,7 @@ builder.Services.AddScoped<IImageStorageService, ImageStorageService>();
 builder.Services.AddScoped<IPartnerService, PartnerService>();
 builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<IUserFavoriteService, UserFavoriteService>();
+builder.Services.AddScoped<IUserPanelService, UserPanelService>();
 builder.Services.AddScoped<ISessionSecurityService, SessionSecurityService>();
 builder.Services.AddScoped<ISupportService, SupportService>();
 builder.Services.AddHttpContextAccessor();

@@ -1,6 +1,9 @@
 .auth-shell {
     /* pull the form area up so it's closer to header */
-    padding: 90px 20px 72px;
+    padding: 82px 20px 72px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
     background:
         radial-gradient(circle at top left, rgba(0, 85, 204, 0.04), transparent 30%),
         radial-gradient(circle at bottom right, rgba(255, 56, 92, 0.03), transparent 34%),
@@ -12,7 +15,7 @@
     margin: 0 auto;
     display: grid;
     grid-template-columns: minmax(320px, 460px) minmax(320px, 1fr);
-    align-items: start;
+    align-items: stretch;
     border-radius: 34px;
     overflow: hidden;
     background: #ffffff;
@@ -26,9 +29,10 @@
     padding: 36px 28px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 28px;
     position: relative;
+    min-height: 100%;
 }
 
 .auth-sidebar::after {
@@ -125,6 +129,7 @@
     gap: 10px;
     color: rgba(255, 255, 255, 0.82);
     font-size: 0.93rem;
+    margin-top: 18px;
 }
 
 .auth-sidebar-bottom span {
@@ -160,6 +165,7 @@
     justify-content: center;
     gap: 10px;
     transition: 0.25s ease;
+    touch-action: manipulation;
 }
 
 .auth-tab.active {
@@ -260,6 +266,7 @@
     color: #7d8da0;
     width: 32px;
     height: 32px;
+    touch-action: manipulation;
 }
 
 .form-row-meta {
@@ -301,6 +308,7 @@
     border: 0;
     background: transparent;
     padding: 0;
+    touch-action: manipulation;
 }
 
 .auth-submit-btn {
@@ -316,6 +324,12 @@
     justify-content: center;
     gap: 10px;
     box-shadow: 0 16px 30px rgba(0, 59, 149, 0.22);
+    touch-action: manipulation;
+}
+
+.auth-tab:active,
+.auth-submit-btn:active {
+    transform: none;
 }
 
 .auth-helper {
@@ -347,13 +361,25 @@
     }
 
     .auth-sidebar {
+        order: 2;
+    }
+
+    .auth-panel-wrap {
+        order: 1;
+    }
+
+    .auth-sidebar {
         padding: 34px 28px;
+    }
+
+    .auth-sidebar-content {
+        position: static;
     }
 }
 
 @media (max-width: 768px) {
     .auth-shell {
-        padding: 136px 14px 54px;
+        padding: 72px 12px 42px;
     }
 
     .auth-panel-wrap {
@@ -361,7 +387,15 @@
     }
 
     .auth-tabs {
-        flex-direction: column;
+        flex-direction: row;
+        gap: 8px;
+        margin-bottom: 18px;
+    }
+
+    .auth-tab {
+        padding: 14px 10px;
+        font-size: 0.95rem;
+        white-space: nowrap;
     }
 
     .double-field {

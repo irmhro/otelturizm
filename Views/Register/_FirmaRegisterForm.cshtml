@@ -170,22 +170,36 @@
     <div class="double-field">
         <div class="form-group">
             <label for="firmaCity">İl</label>
-            <div class="input-wrap">
+            <div class="input-wrap select-wrap">
                 <i class="fas fa-location-dot"></i>
-                <input id="firmaCity" name="City" type="text" class="form-control" placeholder="İstanbul" required />
+                <select id="firmaCity" name="City" class="form-control form-select" data-address-province required>
+                    <option value="">İl seçiniz</option>
+                </select>
             </div>
         </div>
 
         <div class="form-group">
             <label for="firmaDistrict">İlçe</label>
-            <div class="input-wrap">
+            <div class="input-wrap select-wrap">
                 <i class="fas fa-map-location-dot"></i>
-                <input id="firmaDistrict" name="District" type="text" class="form-control" placeholder="Kadıköy" required />
+                <select id="firmaDistrict" name="District" class="form-control form-select" data-address-district required disabled>
+                    <option value="">Önce il seçiniz</option>
+                </select>
             </div>
         </div>
     </div>
 
     <div class="double-field">
+        <div class="form-group">
+            <label for="firmaNeighborhood">Mahalle</label>
+            <div class="input-wrap select-wrap">
+                <i class="fas fa-map"></i>
+                <select id="firmaNeighborhood" name="Neighborhood" class="form-control form-select" data-address-neighborhood disabled>
+                    <option value="">Önce ilçe seçiniz</option>
+                </select>
+            </div>
+        </div>
+
         <div class="form-group">
             <label for="firmaPostalCode">Posta Kodu</label>
             <div class="input-wrap">
@@ -193,7 +207,6 @@
                 <input id="firmaPostalCode" name="PostalCode" type="text" class="form-control" placeholder="34000" />
             </div>
         </div>
-        <div></div>
     </div>
 
     <div class="form-group">
@@ -210,6 +223,9 @@
             <div class="input-wrap">
                 <i class="fas fa-lock"></i>
                 <input id="firmaPassword" name="Password" type="password" class="form-control" placeholder="••••••••" required />
+                <button type="button" class="toggle-password" data-toggle-target="firmaPassword">
+                    <i class="far fa-eye"></i>
+                </button>
             </div>
         </div>
 
@@ -218,6 +234,9 @@
             <div class="input-wrap">
                 <i class="fas fa-lock"></i>
                 <input id="firmaConfirmPassword" name="ConfirmPassword" type="password" class="form-control" placeholder="••••••••" required />
+                <button type="button" class="toggle-password" data-toggle-target="firmaConfirmPassword">
+                    <i class="far fa-eye"></i>
+                </button>
             </div>
         </div>
     </div>

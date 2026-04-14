@@ -1,30 +1,37 @@
+@model otelturizmnew.Models.Paneller.User.UserProfilePageViewModel
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Profil Bilgilerim";
 }
 
-<section class="form-stack">
+<form method="post" asp-action="SaveProfile" class="form-stack">
+    @Html.AntiForgeryToken()
     <article class="panel-card">
-        <div class="section-head"><h2>Kisisel Bilgiler</h2><button type="button" class="ghost-btn">Duzenle</button></div>
+        <div class="section-head"><h2>Kişisel Bilgiler</h2><button type="submit" class="ghost-btn">Kaydet</button></div>
         <div class="form-grid">
-            <label><span>Ad</span><input type="text" value="Ahmet" /></label>
-            <label><span>Soyad</span><input type="text" value="Yilmaz" /></label>
-            <label><span>Dogum Tarihi</span><input type="text" value="15/05/1990" /></label>
-            <label><span>Telefon</span><input type="text" value="+90 532 111 22 33" /></label>
-            <label class="full"><span>E-posta</span><input type="email" value="ahmet.yilmaz@email.com" /></label>
-            <label class="full"><span>Adres</span><textarea rows="3">Besiktas / Istanbul</textarea></label>
+            <label><span>Ad</span><input asp-for="Form.FirstName" type="text" /></label>
+            <label><span>Soyad</span><input asp-for="Form.LastName" type="text" /></label>
+            <label><span>Doğum Tarihi</span><input asp-for="Form.BirthDateText" type="date" /></label>
+            <label><span>Telefon</span><input asp-for="Form.Phone" type="text" /></label>
+            <label><span>TC Kimlik No</span><input asp-for="Form.IdentityNumber" type="text" maxlength="11" /></label>
+            <label><span>Cinsiyet</span><input asp-for="Form.Gender" type="text" placeholder="Erkek, Kadın, Belirtmek İstemiyorum" /></label>
+            <label><span>Uyruk</span><input asp-for="Form.Nationality" type="text" /></label>
+            <label><span>Posta Kodu</span><input asp-for="Form.PostalCode" type="text" /></label>
+            <label class="full"><span>E-posta</span><input asp-for="Form.Email" type="email" readonly /></label>
+            <label><span>Şehir</span><input asp-for="Form.City" type="text" /></label>
+            <label><span>İlçe</span><input asp-for="Form.District" type="text" /></label>
+            <label class="full"><span>Adres</span><textarea asp-for="Form.Address" rows="3"></textarea></label>
         </div>
     </article>
 
     <article class="panel-card">
-        <div class="section-head"><h2>Seyahat Tercihleri</h2></div>
+        <div class="section-head"><h2>Seyahat Tercihleri</h2><button type="submit" class="ghost-btn">Tercihleri Kaydet</button></div>
         <div class="form-grid">
-            <label><span>Oda Tercihi</span><input type="text" value="Sigara icilmeyen oda" /></label>
-            <label><span>Yatak Tercihi</span><input type="text" value="King yatak" /></label>
-            <label><span>Seyahat Amaci</span><input type="text" value="Tatil" /></label>
-            <label><span>Konusulan Diller</span><input type="text" value="Turkce, Ingilizce" /></label>
+            <label><span>Oda Tercihi</span><input asp-for="Form.RoomPreference" type="text" /></label>
+            <label><span>Yatak Tercihi</span><input asp-for="Form.BedPreference" type="text" /></label>
+            <label><span>Seyahat Amacı</span><input asp-for="Form.TravelPurpose" type="text" placeholder="İş, Tatil, Her İkisi" /></label>
+            <label><span>Konuşulan Diller</span><input asp-for="Form.SpokenLanguages" type="text" /></label>
+            <label class="full"><span>Özel İstekler</span><textarea asp-for="Form.SpecialRequests" rows="3"></textarea></label>
         </div>
     </article>
-</section>
-
-
+</form>

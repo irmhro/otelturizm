@@ -20,6 +20,7 @@ public class FirmaRegistrationModel
     public string ContactPhone { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
+    public string? Neighborhood { get; set; }
     public string? PostalCode { get; set; }
     public string Address { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;

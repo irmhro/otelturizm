@@ -1,1 +1,18 @@
-/* partner page: preferences */
+.partner-form-grid > label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid var(--partner-border);
+    border-radius: 14px;
+    background: #fbfdff;
+    color: #31455f;
+    font-weight: 600;
+}
+
+.partner-form-grid > label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #0b7a57;
+}

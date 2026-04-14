@@ -2,30 +2,77 @@
 @using otelturizmnew.Constants
 @inject otelturizmnew.Services.Abstractions.IUserFavoriteService UserFavoriteService
 @{
-    var accountType = User.FindFirstValue(AuthClaimTypes.AccountType);
+    var accountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
+    var fullName = User.FindFirstValue(AuthClaimTypes.FullName) ?? User.Identity?.Name ?? "Hesabım";
     var rawUserId = User.FindFirstValue(AuthClaimTypes.UserId) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
     var currentUserId = 0L;
     var hasResolvedUserId = long.TryParse(rawUserId, out currentUserId) && currentUserId > 0;
-    var isUserAccount = string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase) && hasResolvedUserId;
+    var isAuthenticated = User.Identity?.IsAuthenticated == true && hasResolvedUserId;
     var favoriteCount = 0;
 
-    if (isUserAccount)
+    if (string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase) && hasResolvedUserId)
     {
         favoriteCount = await UserFavoriteService.GetFavoriteCountAsync(currentUserId);
     }
+
+    string GetPanelUrl() => accountType.ToLowerInvariant() switch
+    {
+        "partner" => "/panel/partner",
+        "firma" => "/panel/firma",
+        "admin" => "/admin/dashboard",
+        "sales" => "/panel/satis",
+        _ => "/panel/user"
+    };
+
+    string GetPanelLabel() => accountType.ToLowerInvariant() switch
+    {
+        "partner" => "Partner Paneli",
+        "firma" => "Firma Paneli",
+        "admin" => "Admin Paneli",
+        "sales" => "Satış Paneli",
+        _ => "Hesabım"
+    };
+
+    string GetAccountBadge() => accountType.ToLowerInvariant() switch
+    {
+        "partner" => "Partner Aktif",
+        "firma" => "Firma Aktif",
+        "admin" => "Admin Aktif",
+        "sales" => "Satış Aktif",
+        _ => "Üyelik Aktif"
+    };
 }
 
-@if (isUserAccount)
+@if (isAuthenticated)
 {
-    <a href="/panel/user/favorilerim" class="action-btn action-btn-badge">
-        <i class="fas fa-heart"></i>
-        <span>Favorilerim</span>
-        @if (favoriteCount > 0)
-        {
-            <span class="action-badge">@favoriteCount</span>
-        }
-    </a>
-    <a href="/panel/user" class="action-btn">Hesabım</a>
+    if (string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase))
+    {
+        <a href="/panel/user/favorilerim" class="action-btn action-btn-badge">
+            <i class="fas fa-heart"></i>
+            <span>Favorilerim</span>
+            @if (favoriteCount > 0)
+            {
+                <span class="action-badge">@favoriteCount</span>
+            }
+        </a>
+    }
+
+    <div class="public-session-chip" title="@fullName">
+        <span class="public-session-chip__status"></span>
+        <div class="public-session-chip__body">
+            <strong>@GetAccountBadge()</strong>
+            <span>@fullName</span>
+        </div>
+    </div>
+
+    <a href="@GetPanelUrl()" class="action-btn action-btn-soft">@GetPanelLabel()</a>
+    <form method="post" action="/cikis-yap" class="public-logout-form">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="action-btn">
+            <i class="fas fa-right-from-bracket"></i>
+            <span>Çıkış</span>
+        </button>
+    </form>
 }
 else
 {

@@ -21,10 +21,11 @@ public class OtellerController : Controller
 
     [HttpGet("")]
     [HttpGet("istanbul")]
-    public async Task<IActionResult> OtelListeleme([FromQuery] string? etiket, CancellationToken cancellationToken)
+    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, CancellationToken cancellationToken)
     {
         ViewData["PageCss"] = "otel-listeleme";
-        var model = await _hotelService.GetHotelListingPageAsync("Istanbul", etiket, cancellationToken);
+        var searchTerm = !string.IsNullOrWhiteSpace(q) ? q : city;
+        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiket, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
         ViewData["Title"] = model.CampaignTitle;
         return View("~/Views/Oteller/OtelListeleme.cshtml", model);
@@ -50,7 +51,7 @@ public class OtellerController : Controller
     private async Task ApplyFavoriteStatesAsync(otelturizmnew.Models.Oteller.HotelListingPageViewModel model, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId <= 0 || !string.Equals(User.FindFirstValue(AuthClaimTypes.AccountType), "user", StringComparison.OrdinalIgnoreCase))
+        if (userId <= 0)
         {
             return;
         }
@@ -65,7 +66,7 @@ public class OtellerController : Controller
     private async Task ApplyFavoriteStateAsync(otelturizmnew.Models.Oteller.HotelDetailPageViewModel model, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId <= 0 || !string.Equals(User.FindFirstValue(AuthClaimTypes.AccountType), "user", StringComparison.OrdinalIgnoreCase))
+        if (userId <= 0)
         {
             return;
         }

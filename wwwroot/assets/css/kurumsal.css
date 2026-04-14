@@ -152,6 +152,61 @@
     border-bottom: 1px solid #e2e8f0;
 }
 
+/* Corporate page reverted to updated variant */
+.partner-subheader {
+    display: none;
+}
+
+.corporate-header .desktop-nav {
+    display: none;
+}
+
+.corporate-firma-btn {
+    background: linear-gradient(135deg, #1d4ed8, #003b95);
+    color: #fff;
+    border-color: transparent;
+}
+
+.corporate-firma-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(0, 59, 149, .24);
+}
+
+.btn-firma {
+    background: linear-gradient(135deg, #1d4ed8, #003b95);
+    color: #fff;
+    box-shadow: 0 8px 22px rgba(0, 59, 149, .24);
+}
+
+.btn-firma:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 26px rgba(0, 59, 149, .32);
+}
+
+.btn-firma-light {
+    background: rgba(255, 255, 255, .16);
+    border: 1px solid rgba(255, 255, 255, .34);
+    color: #fff;
+}
+
+.corporate-firma-access {
+    margin: 20px 0 28px;
+    padding: 16px 18px;
+    border: 1px solid #dbe7ff;
+    background: linear-gradient(180deg, #f8fbff, #f0f6ff);
+    border-radius: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: center;
+}
+
+.corporate-firma-access p {
+    margin: 0;
+    color: #324764;
+    font-weight: 600;
+}
+
 .partner-brand {
     display: flex;
     align-items: center;
@@ -262,7 +317,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 60px;
     align-items: center;
-    padding: 60px 0;
+    padding: 82px 0 60px;
 }
 
 .hero-content h1 {
@@ -706,6 +761,7 @@
 
     .hero-partner {
         grid-template-columns: 1fr;
+        padding-top: 68px;
     }
 
     .faq-grid {
@@ -728,12 +784,21 @@
         padding: 24px 0 56px;
     }
 
+    .hero-partner {
+        padding-top: 46px;
+    }
+
     .corporate-container {
         padding: 0 var(--space-5);
     }
 
     .partner-subheader,
     .partner-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .corporate-firma-access {
         flex-direction: column;
         align-items: flex-start;
     }

@@ -9,3 +9,23 @@
     background: linear-gradient(180deg, #f8fbff, #fefefe);
     color: var(--partner-muted);
 }
+
+.partner-finance-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.partner-inline-btn {
+    min-height: 38px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+@media (max-width: 700px) {
+    .partner-finance-toolbar {
+        align-items: flex-start;
+    }
+}

@@ -43,6 +43,10 @@ public class HomeHotelCardViewModel
     public string RatingText { get; set; } = "Yorum Bekleniyor";
     public int ReviewCount { get; set; }
     public decimal? StartingPrice { get; set; }
+    public decimal? OriginalPrice { get; set; }
+    public decimal? DiscountedPrice { get; set; }
+    public int DiscountPercent { get; set; }
+    public bool HasDiscount { get; set; }
     public string PriceText { get; set; } = "Fiyat icin detay sayfasina bakin";
     public string PriceNote { get; set; } = "Vergiler dahil";
     public string ImageUrl { get; set; } = string.Empty;

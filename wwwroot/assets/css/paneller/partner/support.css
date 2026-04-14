@@ -1,1 +1,28 @@
-/* partner page: support */
+.partner-inline-btn {
+    min-height: 40px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.partner-support-channel {
+    align-items: flex-start;
+}
+
+.partner-support-channel .partner-inline-btn {
+    margin-left: auto;
+}
+
+.partner-list-row.partner-inline-link {
+    transition: .18s ease;
+}
+
+.partner-list-row.partner-inline-link:hover {
+    border-color: rgba(37, 99, 235, .26);
+    background: #f8fbff;
+}
+
+.partner-list-row b {
+    color: #0f172a;
+    font-size: 12px;
+}

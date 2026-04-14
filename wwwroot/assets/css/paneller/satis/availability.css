@@ -1,1 +1,9 @@
-/* Musaitlik takvimi ek stilleri shell icinde */
+.compact-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+@media (max-width: 980px) {
+    .compact-grid {
+        grid-template-columns: 1fr;
+    }
+}

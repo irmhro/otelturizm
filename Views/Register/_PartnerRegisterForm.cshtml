@@ -93,24 +93,35 @@
             <label for="partnerCity">Sehir</label>
             <div class="input-wrap select-wrap">
                 <i class="fas fa-location-dot"></i>
-                <select id="partnerCity" name="city" class="form-control form-select" required>
-                    <option value="">Seciniz</option>
-                    <option>Istanbul</option>
-                    <option>Antalya</option>
-                    <option>Izmir</option>
-                    <option>Mugla</option>
-                    <option>Ankara</option>
+                <select id="partnerCity" name="city" class="form-control form-select" data-address-province required>
+                    <option value="">İl seçiniz</option>
                 </select>
             </div>
         </div>
 
         <div class="form-group">
             <label for="partnerDistrict">Ilce</label>
-            <div class="input-wrap">
+            <div class="input-wrap select-wrap">
                 <i class="fas fa-location-arrow"></i>
-                <input id="partnerDistrict" name="district" type="text" class="form-control" placeholder="Maltepe" required />
+                <select id="partnerDistrict" name="district" class="form-control form-select" data-address-district required disabled>
+                    <option value="">Önce il seçiniz</option>
+                </select>
             </div>
         </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="partnerNeighborhood">Mahalle</label>
+            <div class="input-wrap select-wrap">
+                <i class="fas fa-map"></i>
+                <select id="partnerNeighborhood" name="neighborhood" class="form-control form-select" data-address-neighborhood disabled>
+                    <option value="">Önce ilçe seçiniz</option>
+                </select>
+            </div>
+        </div>
+
+        <div></div>
     </div>
 
     <div class="double-field">

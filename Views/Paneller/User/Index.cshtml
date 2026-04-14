@@ -1,3 +1,4 @@
+@model otelturizmnew.Models.Paneller.User.UserDashboardPageViewModel
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Kullanıcı Paneli";
@@ -6,19 +7,19 @@
 <section class="quick-actions">
     <a asp-action="Reservations" class="quick-card">
         <div class="quick-icon blue"><i class="fas fa-calendar-plus"></i></div>
-        <div><h3>Rezervasyonlarim</h3><p>Yaklasan konaklamalari yonet</p></div>
+        <div><h3>Rezervasyonlarım</h3><p>Yaklaşan ve geçmiş konaklamalarını yönet</p></div>
     </a>
     <a asp-action="Favorites" class="quick-card">
         <div class="quick-icon rose"><i class="fas fa-heart"></i></div>
-        <div><h3>Favorilerim</h3><p>Kayıtli otelleri incele</p></div>
+        <div><h3>Favorilerim</h3><p>Kaydettiğin otelleri yeniden incele</p></div>
     </a>
     <a asp-action="Loyalty" class="quick-card">
         <div class="quick-icon gold"><i class="fas fa-gift"></i></div>
-        <div><h3>OtelPuan</h3><p>Odullerini gor</p></div>
+        <div><h3>OtelPuan</h3><p>Sadakat ayrıcalıklarını takip et</p></div>
     </a>
     <a asp-action="Messages" class="quick-card">
         <div class="quick-icon green"><i class="fas fa-headset"></i></div>
-        <div><h3>Mesajlarim</h3><p>Destek ve otel yazismalari</p></div>
+        <div><h3>Mesajlarım</h3><p>Otel ve destek konuşmalarını görüntüle</p></div>
     </a>
 </section>
 
@@ -26,32 +27,32 @@
     <article class="stats-card">
         <div class="stats-head">
             <div class="stats-icon blue"><i class="fas fa-calendar-alt"></i></div>
-            <span class="trend up"><i class="fas fa-arrow-up"></i> +2</span>
+            <span class="trend up"><i class="fas fa-list"></i> Toplam</span>
         </div>
-        <strong>12</strong>
-        <p>Toplam Rezervasyon</p>
+        <strong>@Model.TotalReservationCount</strong>
+        <p>Toplam rezervasyon</p>
     </article>
     <article class="stats-card">
         <div class="stats-head">
             <div class="stats-icon yellow"><i class="fas fa-clock"></i></div>
-            <span class="trend up"><i class="fas fa-arrow-up"></i> 1</span>
+            <span class="trend up"><i class="fas fa-suitcase"></i> Aktif</span>
         </div>
-        <strong>3</strong>
-        <p>Yaklasan Konaklama</p>
+        <strong>@Model.UpcomingReservationCount</strong>
+        <p>Yaklaşan konaklama</p>
     </article>
     <article class="stats-card">
         <div class="stats-head">
-            <div class="stats-icon gold"><i class="fas fa-star"></i></div>
+            <div class="stats-icon rose"><i class="fas fa-heart"></i></div>
         </div>
-        <strong>1.250</strong>
-        <p>OtelPuan Bakiyesi</p>
+        <strong>@Model.FavoriteCount</strong>
+        <p>Favori otel</p>
     </article>
     <article class="stats-card">
         <div class="stats-head">
             <div class="stats-icon green"><i class="fas fa-tag"></i></div>
         </div>
-        <strong>TRY 450</strong>
-        <p>Kullanilabilir Indirim</p>
+        <strong>@Model.DiscountText</strong>
+        <p>Toplam tasarruf</p>
     </article>
 </section>
 
@@ -59,110 +60,125 @@
     <div class="panel-card">
         <div class="section-head">
             <div>
-                <p class="mini-label">YAKLASAN REZERVASYONLAR</p>
-                <h2>Son konaklama planlarin</h2>
+                <p class="mini-label">YAKLAŞAN REZERVASYONLAR</p>
+                <h2>Son konaklama planların</h2>
             </div>
-            <a asp-action="Reservations">Tümünü Gor</a>
+            <a asp-action="Reservations">Tümünü Gör</a>
         </div>
 
         <div class="chip-row">
-            <button type="button" class="chip active">Tümu</button>
-            <button type="button" class="chip">Onaylandi</button>
-            <button type="button" class="chip">Onay Bekliyor</button>
-            <button type="button" class="chip">Check-in Yakin</button>
+            <button type="button" class="chip active">Tümü</button>
+            <button type="button" class="chip">Onaylı</button>
+            <button type="button" class="chip">Bekleyen</button>
         </div>
 
-        <article class="reservation-card">
-            <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Swissotel" />
-            <div class="reservation-body">
-                <div class="reservation-top">
-                    <div>
-                        <h3>Swissotel The Bosphorus</h3>
-                        <p>Besiktas, Istanbul</p>
+        @if (Model.RecentReservations.Count == 0)
+        {
+            <article class="reservation-card">
+                <div class="favorite-card-image-fallback"></div>
+                <div class="reservation-body">
+                    <div class="reservation-top">
+                        <div>
+                            <h3>Henüz rezervasyonun yok</h3>
+                            <p>Keşfet alanından sana uygun otelleri inceleyip ilk rezervasyonunu oluşturabilirsin.</p>
+                        </div>
+                        <span class="status info">Hazır</span>
                     </div>
-                    <span class="status ok">Onaylandi</span>
-                </div>
-                <div class="reservation-meta">
-                    <span><i class="far fa-calendar"></i> 15 Nis - 18 Nis 2025</span>
-                    <span><i class="far fa-user"></i> 2 Yetiskin, 1 Cocuk</span>
-                    <span><i class="far fa-moon"></i> Deluxe Oda</span>
-                </div>
-                <div class="reservation-footer">
-                    <strong>TRY 12.750</strong>
-                    <div class="action-row">
-                        <button type="button" class="ghost-btn">Detay</button>
-                        <button type="button" class="ghost-btn">Degistir</button>
+                    <div class="reservation-footer">
+                        <strong>Yeni plan oluştur</strong>
+                        <div class="action-row">
+                            <a href="/" class="ghost-btn">Keşfete dön</a>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </article>
-
-        <article class="reservation-card">
-            <img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Rixos" />
-            <div class="reservation-body">
-                <div class="reservation-top">
-                    <div>
-                        <h3>Rixos Premium Belek</h3>
-                        <p>Belek, Antalya</p>
+            </article>
+        }
+        else
+        {
+            foreach (var reservation in Model.RecentReservations)
+            {
+                <article class="reservation-card">
+                    @if (!string.IsNullOrWhiteSpace(reservation.ImageUrl))
+                    {
+                        <img src="@reservation.ImageUrl" alt="@reservation.HotelName" />
+                    }
+                    else
+                    {
+                        <div class="favorite-card-image-fallback"></div>
+                    }
+                    <div class="reservation-body">
+                        <div class="reservation-top">
+                            <div>
+                                <h3>@reservation.HotelName</h3>
+                                <p>@reservation.District, @reservation.City</p>
+                            </div>
+                            <span class="status @reservation.StatusTone">@reservation.StatusText</span>
+                        </div>
+                        <div class="reservation-meta">
+                            <span><i class="far fa-calendar"></i> @reservation.StayDateText</span>
+                            <span><i class="far fa-user"></i> @reservation.GuestText</span>
+                            <span><i class="far fa-moon"></i> @reservation.RoomName</span>
+                        </div>
+                        <p class="sub-note @reservation.SubNoteTone">@reservation.SubNote</p>
+                        <div class="reservation-footer">
+                            <strong>@reservation.TotalText</strong>
+                            <div class="action-row">
+                                <a href="/oteller/@reservation.HotelSlug" class="ghost-btn">Detay</a>
+                                <a asp-action="Messages" class="ghost-btn">Otelle iletişim</a>
+                            </div>
+                        </div>
                     </div>
-                    <span class="status wait">Onay Bekliyor</span>
-                </div>
-                <div class="reservation-meta">
-                    <span><i class="far fa-calendar"></i> 22 May - 29 May 2025</span>
-                    <span><i class="far fa-user"></i> 2 Yetiskin</span>
-                    <span><i class="fas fa-utensils"></i> Her Sey Dahil</span>
-                </div>
-                <div class="reservation-footer">
-                    <strong>TRY 40.600</strong>
-                    <div class="action-row">
-                        <button type="button" class="ghost-btn">Detay</button>
-                        <button type="button" class="ghost-btn danger">İptal</button>
-                    </div>
-                </div>
-            </div>
-        </article>
+                </article>
+            }
+        }
     </div>
 
     <div class="side-stack">
         <section class="panel-card">
             <div class="section-head compact">
-                <h2>Kayıtli Oteller</h2>
-                <a asp-action="Favorites">8 Otel</a>
+                <h2>Favori oteller</h2>
+                <a asp-action="Favorites">@Model.FavoriteCount kayıt</a>
             </div>
 
-            <div class="favorite-item">
-                <div class="favorite-thumb"></div>
-                <div>
-                    <h4>Four Seasons Bosphorus</h4>
-                    <p>Besiktas, Istanbul</p>
-                    <strong>9.7 Puan</strong>
+            @if (Model.FavoriteHotels.Count == 0)
+            {
+                <div class="favorite-item">
+                    <div class="favorite-thumb"></div>
+                    <div>
+                        <h4>Henüz favori otelin yok</h4>
+                        <p>Kalp butonunu kullanarak beğendiğin tesisleri burada toplayabilirsin.</p>
+                        <strong>Liste hazır</strong>
+                    </div>
                 </div>
-            </div>
-            <div class="favorite-item">
-                <div class="favorite-thumb second"></div>
-                <div>
-                    <h4>D Maris Bay</h4>
-                    <p>Marmaris, Mugla</p>
-                    <strong>9.3 Puan</strong>
-                </div>
-            </div>
-            <div class="favorite-item">
-                <div class="favorite-thumb third"></div>
-                <div>
-                    <h4>Hilton Istanbul Bomonti</h4>
-                    <p>Sisli, Istanbul</p>
-                    <strong>8.9 Puan</strong>
-                </div>
-            </div>
+            }
+            else
+            {
+                foreach (var hotel in Model.FavoriteHotels)
+                {
+                    <div class="favorite-item">
+                        @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
+                        {
+                            <img class="favorite-thumb" src="@hotel.ImageUrl" alt="@hotel.HotelName" />
+                        }
+                        else
+                        {
+                            <div class="favorite-thumb"></div>
+                        }
+                        <div>
+                            <h4>@hotel.HotelName</h4>
+                            <p>@hotel.District, @hotel.City</p>
+                            <strong>@hotel.RatingText</strong>
+                        </div>
+                    </div>
+                }
+            }
         </section>
 
         <section class="reward-panel">
-            <p class="mini-label light">OZEL FIRSAT</p>
-            <h2>Gold uye avantajlari aktif</h2>
-            <p>1.250 puanin var. 1.250 puan daha kazan, Platinum seviyeye gec ve daha güçlü indirimler ac.</p>
-            <a asp-action="Loyalty" class="reward-link">Fırsatları Keşfet</a>
+            <p class="mini-label light">ÖZEL FIRSAT</p>
+            <h2>Kişisel fırsatlarını takip et</h2>
+            <p>Favorilerin ve rezervasyon geçmişin arttıkça kişiselleştirilmiş kampanya ve kullanıcı avantajları burada öne çıkar.</p>
+            <a asp-action="Loyalty" class="reward-link">Fırsatları keşfet</a>
         </section>
     </div>
 </section>
-
-

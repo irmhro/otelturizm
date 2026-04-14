@@ -247,6 +247,7 @@ public class AuthService : IAuthService
         var address = model.Address.Trim();
         var city = model.City.Trim();
         var district = model.District.Trim();
+        var neighborhood = string.IsNullOrWhiteSpace(model.Neighborhood) ? null : model.Neighborhood.Trim();
         var taxOffice = model.TaxOffice.Trim();
         var taxNumber = model.TaxNumber.Trim();
         var contactTcNo = model.ContactTcNo.Trim();
@@ -269,6 +270,11 @@ public class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(address) || string.IsNullOrWhiteSpace(city) || string.IsNullOrWhiteSpace(district))
         {
             return (false, "Adres, sehir ve ilce bilgileri zorunludur.", null);
+        }
+
+        if (!string.IsNullOrWhiteSpace(neighborhood) && !address.StartsWith(neighborhood, StringComparison.OrdinalIgnoreCase))
+        {
+            address = $"{neighborhood}, {address}";
         }
 
         if (string.IsNullOrWhiteSpace(companyType) || string.IsNullOrWhiteSpace(taxOffice) || string.IsNullOrWhiteSpace(taxNumber))
@@ -595,6 +601,7 @@ public class AuthService : IAuthService
         var contactPhone = model.ContactPhone.Trim();
         var city = model.City.Trim();
         var district = model.District.Trim();
+        var neighborhood = string.IsNullOrWhiteSpace(model.Neighborhood) ? null : model.Neighborhood.Trim();
         var postalCode = string.IsNullOrWhiteSpace(model.PostalCode) ? null : model.PostalCode.Trim();
         var address = model.Address.Trim();
         var employeeCount = Math.Max(0, model.EmployeeCount ?? 0);
@@ -628,6 +635,11 @@ public class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(city) || string.IsNullOrWhiteSpace(district) || string.IsNullOrWhiteSpace(address))
         {
             return (false, "Şehir, ilçe ve açık adres zorunludur.", null);
+        }
+
+        if (!string.IsNullOrWhiteSpace(neighborhood) && !address.StartsWith(neighborhood, StringComparison.OrdinalIgnoreCase))
+        {
+            address = $"{neighborhood}, {address}";
         }
 
         if (!model.AcceptAgreement || !model.AcceptKvkk)

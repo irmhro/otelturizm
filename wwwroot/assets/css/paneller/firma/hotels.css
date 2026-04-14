@@ -1,1 +1,4 @@
-/* page specific firma styles */
+.firma-table td:nth-child(4),
+.firma-table td:nth-child(5) {
+    font-weight: 700;
+}

@@ -1,1 +1,3 @@
-/* page specific firma styles */
+.firma-chart-bars small {
+    color: var(--firma-panel-muted);
+}

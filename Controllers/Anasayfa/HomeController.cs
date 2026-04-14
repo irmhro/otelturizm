@@ -22,7 +22,6 @@ public class HomeController : Controller
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
         ViewData["PageCss"] = "home-index";
-        ViewData["PageCssMobile"] = "home-index.mobile";
         var model = await _hotelService.GetHomepageAsync(cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
 
@@ -48,7 +47,7 @@ public class HomeController : Controller
     private async Task ApplyFavoriteStatesAsync(AnasayfaViewModel model, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId <= 0 || !string.Equals(User.FindFirstValue(AuthClaimTypes.AccountType), "user", StringComparison.OrdinalIgnoreCase))
+        if (userId <= 0)
         {
             return;
         }

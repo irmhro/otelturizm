@@ -73,7 +73,7 @@
                             <input type="checkbox" name="rememberMe" value="true" checked />
                             <span>Beni hatırla</span>
                         </label>
-                        <a href="#" class="text-link">Şifremi unuttum</a>
+                        <a href="/yardim-merkezi#destek-kanallari" class="text-link">Şifremi unuttum</a>
                     </div>
 
                     <button type="submit" class="auth-submit-btn">Giriş Yap <i class="fas fa-arrow-right"></i></button>
@@ -98,6 +98,15 @@
 @section Scripts {
     <script>
         (function () {
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 280) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
+
             const tabs = document.querySelectorAll('[data-auth-tabs] .auth-tab');
             const panels = document.querySelectorAll('.user-auth-shell .auth-panel');
 

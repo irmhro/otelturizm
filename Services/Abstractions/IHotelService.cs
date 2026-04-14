@@ -6,7 +6,8 @@ namespace otelturizmnew.Services.Abstractions;
 public interface IHotelService
 {
     Task<AnasayfaViewModel> GetHomepageAsync(CancellationToken cancellationToken = default);
-    Task<HotelListingPageViewModel> GetHotelListingPageAsync(string city, string? campaignTag = null, CancellationToken cancellationToken = default);
+    Task<HotelListingPageViewModel> GetHotelListingPageAsync(string? searchTerm, string? campaignTag = null, CancellationToken cancellationToken = default);
     Task<HotelDetailPageViewModel?> GetHotelDetailPageAsync(string slug, CancellationToken cancellationToken = default);
+    Task<List<HotelSearchSuggestionViewModel>> GetSearchSuggestionsAsync(string query, CancellationToken cancellationToken = default);
 }
 

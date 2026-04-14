@@ -6,10 +6,8 @@
     <title>@ViewData["Title"] - Otelturizm</title>
     <script type="importmap"></script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+            <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
@@ -159,11 +157,10 @@
 
 <nav class="mobile-bottom-nav">
     <div class="bottom-nav-items">
-        <a asp-controller="Home" asp-action="Index" class="bottom-nav-item active"><i class="fas fa-home"></i><span>Keşfet</span></a>
-        <a href="/kullanici-giris" class="bottom-nav-item"><i class="fas fa-search"></i><span>Giriş</span></a>
-        <a href="/partner-giris" class="bottom-nav-item"><i class="fas fa-briefcase"></i><span>Partner</span></a>
-        <a asp-controller="Home" asp-action="Kurumsal" class="bottom-nav-item"><i class="fas fa-circle-info"></i><span>Kurumsal</span></a>
-        <a asp-controller="Home" asp-action="Privacy" class="bottom-nav-item"><i class="fas fa-shield-alt"></i><span>Güvenlik</span></a>
+        <a href="/" class="bottom-nav-item bottom-nav-home"><i class="fas fa-house"></i><span>Anasayfa</span></a>
+        <a href="/oteller/istanbul" class="bottom-nav-item bottom-nav-oteller active"><i class="fas fa-hotel"></i><span>Oteller</span></a>
+        <a href="/oteller/istanbul?filter=campaign" class="bottom-nav-item bottom-nav-kampanya"><i class="fas fa-badge-percent"></i><span>Kampanyalar</span></a>
+        <a href="/kullanici-giris" class="bottom-nav-item bottom-nav-giris"><i class="fas fa-right-to-bracket"></i><span>Giriş Yap</span></a>
     </div>
 </nav>
 
@@ -178,10 +175,10 @@
                 </a>
                 <p class="footer-description">Türkiye'nin güvenli ve ölçeklenebilir online otel rezervasyon platformu.</p>
                 <div class="footer-social">
-                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-x-twitter"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="Instagram iletişim"><i class="fab fa-instagram"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="Facebook iletişim"><i class="fab fa-facebook-f"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="X iletişim"><i class="fab fa-x-twitter"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="YouTube iletişim"><i class="fab fa-youtube"></i></a>
                 </div>
             </div>
 
@@ -190,8 +187,8 @@
                     <h4 class="footer-title">Keşfet</h4>
                     <ul class="footer-links">
                         <li><a asp-controller="Oteller" asp-action="OtelListeleme">Tüm Oteller</a></li>
-                        <li><a href="#">Son Dakika Fırsatları</a></li>
-                        <li><a href="#">Erken Rezervasyon</a></li>
+                        <li><a href="/kampanyalar">Son Dakika Fırsatları</a></li>
+                        <li><a href="/kampanyalar">Erken Rezervasyon</a></li>
                     </ul>
                 </div>
 
@@ -199,8 +196,8 @@
                     <h4 class="footer-title">Şirket</h4>
                     <ul class="footer-links">
                         <li><a asp-controller="Home" asp-action="Kurumsal">Hakkımızda</a></li>
-                        <li><a href="#">Kariyer</a></li>
-                        <li><a href="#">Blog</a></li>
+                        <li><a href="/yardim-merkezi#destek-kanallari">Kariyer</a></li>
+                        <li><a href="/yardim-merkezi#destek-kanallari">Blog</a></li>
                     </ul>
                 </div>
 
@@ -220,8 +217,8 @@
                 <small>&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</small>
                 <div class="footer-legal-links">
                     <a asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>
-                    <a href="#">Kullanım Koşulları</a>
-                    <a href="#">KVKK</a>
+                    <a href="/yardim-merkezi#destek-kanallari">Kullanım Koşulları</a>
+                    <a href="/yardim-merkezi#destek-kanallari">KVKK</a>
                 </div>
             </div>
         </div>
@@ -264,5 +261,7 @@
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+
 
 

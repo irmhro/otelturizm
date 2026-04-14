@@ -1,1 +1,2 @@
-/* Rezervasyon olusturma ek stilleri shell icinde */
+.sales-search-card .sales-card-head { margin-bottom: 14px; }
+.sales-hotel-card-side a { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; border-radius: 10px; background: #eef4ff; }

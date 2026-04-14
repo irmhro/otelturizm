@@ -43,9 +43,11 @@
 }
 
 .gallery-grid {
+    --detail-gallery-main-height: 322px;
     display: grid;
     grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
     gap: 10px;
+    align-items: stretch;
 }
 
 .gallery-main-image,
@@ -58,7 +60,7 @@
 }
 
 .gallery-main-image {
-    min-height: 460px;
+    height: var(--detail-gallery-main-height);
 }
 
 .gallery-main-image img,
@@ -67,6 +69,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    transform: none;
 }
 
 .gallery-side-grid {
@@ -76,7 +79,7 @@
 }
 
 .gallery-thumb {
-    min-height: 225px;
+    height: calc((var(--detail-gallery-main-height) - 10px) / 2);
     cursor: pointer;
 }
 
@@ -1120,7 +1123,8 @@
     }
 
     .gallery-main-image {
-        min-height: 280px;
+        --detail-gallery-main-height: 196px;
+        height: var(--detail-gallery-main-height);
     }
 
     .gallery-side-grid {
@@ -1150,11 +1154,19 @@
 }
 
 @media (max-width: 640px) {
+    .gallery-grid {
+        --detail-gallery-main-height: 196px;
+    }
+
     .detail-weather-cards,
     .similar-grid,
     .amenities-grid,
     .gallery-side-grid {
         grid-template-columns: 1fr;
+    }
+
+    .gallery-thumb {
+        height: 128px;
     }
 
     .weather-popup {

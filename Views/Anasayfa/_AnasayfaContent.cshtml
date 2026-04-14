@@ -1,100 +1,61 @@
 @model otelturizmnew.Models.Anasayfa.AnasayfaViewModel
 
+@{
+    var categoryShowcaseHotels = Model.PopularHotels.Count > 0 ? Model.PopularHotels : Model.WeekendHotels;
+    var homepageCategorySections = new[]
+    {
+        new { Key = "haftasonu-firsatlari", Title = "Hafta Sonu Fırsatları" },
+        new { Key = "butcene-uygun", Title = "Bütçene Uygun" },
+        new { Key = "evcil-hayvan-dostu", Title = "Evcil Hayvan Dostu" },
+        new { Key = "kampanyali-oteller", Title = "Kampanyalı Oteller" },
+        new { Key = "yildiz-yagmuru", Title = "Yıldız Yağmuru" }
+    };
+}
+
 <section class="hero-section">
     <div class="container-xl px-4">
         <div class="hero-layout">
 
             <div class="hero-copy" style="text-align:center;">
-                <h1 class="hero-title">Hayalindeki <span>Oteli</span> Keşfet</h1>
+                <h1 class="hero-title">Hayalindeki <span class="rose-gradient-text">Oteli</span> Keşfet</h1>
                 <p class="hero-text">@Model.HeroDescription</p>
 
-                <form class="fancy-search-card" asp-controller="Oteller" asp-action="OtelListeleme" method="get" aria-label="Gelişmiş arama">
+                <form class="fancy-search-card is-searching" asp-controller="Oteller" asp-action="OtelListeleme" method="get" aria-label="Gelişmiş arama">
                     <div class="fancy-main">
                         <label class="fancy-label">Nereye gidiyorsun?</label>
                         <div class="fancy-input-wrap">
                             <div class="fancy-pin"><i class="fas fa-location-dot"></i></div>
-                            <input class="fancy-input" type="text" name="city" value="İstanbul" placeholder="İstanbul, Kadıköy veya bir semt girin" autocomplete="off" />
+                            <input class="fancy-input" type="text" name="q" value="" data-seeded-value="" placeholder="Otel adı, il, ilçe, mahalle veya bölge ile ara" autocomplete="off" />
                         </div>
-                        <div class="fancy-suggestions" aria-hidden="true">Öneriler: Beşiktaş · Taksim · Kadıköy</div>
+                        <div class="fancy-search-suggestions" id="homeSearchSuggestions" hidden></div>
+                        <div class="fancy-live-status"><span class="pulse-dot"></span><span class="fancy-live-status-text">Otel fırsatları taranıyor...</span></div>
+                        <div class="fancy-suggestions" aria-hidden="true">Öneriler: Beşiktaş · Kadıköy · Tuzla · İstanbul</div>
                     </div>
 
                     <div class="fancy-controls">
-                        <div class="pill-row">
-                            <label class="pill">
-                                <i class="fa-regular fa-calendar"></i>
-                                <input type="date" name="checkIn" />
-                            </label>
+                        <label class="pill pill-checkin">
+                            <i class="fa-regular fa-calendar"></i>
+                            <input type="date" name="checkIn" />
+                        </label>
 
-                            <label class="pill">
-                                <i class="fa-regular fa-calendar"></i>
-                                <input type="date" name="checkOut" />
-                            </label>
+                        <label class="pill pill-checkout">
+                            <i class="fa-regular fa-calendar"></i>
+                            <input type="date" name="checkOut" />
+                        </label>
 
-                            <label class="pill">
-                                <i class="fas fa-user"></i>
-                                <select name="guests">
-                                    <option value="2">2 Yetişkin</option>
-                                    <option value="1">1 Yetişkin</option>
-                                    <option value="3">3 Yetişkin</option>
-                                    <option value="4">4 Yetişkin</option>
-                                </select>
-                            </label>
-                        </div>
+                        <label class="pill pill-guests">
+                            <i class="fas fa-user"></i>
+                            <select name="guests">
+                                <option value="2">2 Yetişkin</option>
+                                <option value="1">1 Yetişkin</option>
+                                <option value="3">3 Yetişkin</option>
+                                <option value="4">4 Yetişkin</option>
+                            </select>
+                        </label>
 
-                        <button type="submit" class="fancy-cta"><span>Ara</span> <i class="fas fa-search"></i></button>
+                        <button type="submit" class="fancy-cta"><span class="fancy-cta-text">Ara</span> <i class="fas fa-search"></i></button>
                     </div>
                 </form>
-
-                <!-- Feature hub: quick access to curated searches / tools -->
-                <div class="feature-hub" aria-label="Öne çıkan özellikler">
-                    <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="budget" class="feature-card" title="Bütçeye Uygun Oteller">
-                        <div class="feature-icon gradient-budget"><i class="fas fa-wallet"></i></div>
-                        <div class="feature-content">
-                            <div class="feature-title">Bütçeye Uygun</div>
-                            <div class="feature-sub">Ekonomik ve kaliteli seçenekler</div>
-                        </div>
-                    </a>
-
-                    <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="discount" class="feature-card" title="İndirimli Oteller">
-                        <div class="feature-icon gradient-discount"><i class="fas fa-tag"></i></div>
-                        <div class="feature-content">
-                            <div class="feature-title">İndirimli Oteller</div>
-                            <div class="feature-sub">Güncel kampanyalarla tasarruf edin</div>
-                        </div>
-                    </a>
-
-                    <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="weekend" class="feature-card" title="Hafta Sonu Fırsatları">
-                        <div class="feature-icon gradient-weekend"><i class="fas fa-calendar-week"></i></div>
-                        <div class="feature-content">
-                            <div class="feature-title">Hafta Sonu</div>
-                            <div class="feature-sub">Kısa tatil fırsatları</div>
-                        </div>
-                    </a>
-
-                    <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="pool" class="feature-card" title="Havuzlu Oteller">
-                        <div class="feature-icon gradient-pool"><i class="fas fa-swimming-pool"></i></div>
-                        <div class="feature-content">
-                            <div class="feature-title">Havuzlu Oteller</div>
-                            <div class="feature-sub">Havuz keyfini yaşayın</div>
-                        </div>
-                    </a>
-
-                    <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="campaign" class="feature-card" title="Kampanyalı Oteller">
-                        <div class="feature-icon gradient-campaign"><i class="fas fa-bolt"></i></div>
-                        <div class="feature-content">
-                            <div class="feature-title">Kampanyalı</div>
-                            <div class="feature-sub">Özel fırsatlar ve erken rezervasyon</div>
-                        </div>
-                    </a>
-
-                    <a asp-controller="Home" asp-action="Index" class="feature-card feature-cta" title="Seyahat Planlama">
-                        <div class="feature-icon gradient-plan"><i class="fas fa-route"></i></div>
-                        <div class="feature-content">
-                            <div class="feature-title">Seyahat Planlama</div>
-                            <div class="feature-sub">Kişiselleştirilmiş gezi planları</div>
-                        </div>
-                    </a>
-                </div>
             </div>
 
             <div class="hero-slider-shell">
@@ -134,6 +95,58 @@
                 }
             </div>
         </div>
+
+        <div class="page-feature-section" aria-label="Öne çıkan özellikler">
+            <div class="feature-hub">
+                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="budget" class="feature-card" title="Bütçeye Uygun Oteller">
+                    <div class="feature-icon gradient-budget"><i class="fas fa-wallet"></i></div>
+                    <div class="feature-content">
+                        <div class="feature-title">Bütçeye Uygun</div>
+                        <div class="feature-sub">Ekonomik ve kaliteli seçenekler</div>
+                    </div>
+                </a>
+
+                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="discount" class="feature-card" title="İndirimli Oteller">
+                    <div class="feature-icon gradient-discount"><i class="fas fa-tag"></i></div>
+                    <div class="feature-content">
+                        <div class="feature-title">İndirimli Oteller</div>
+                        <div class="feature-sub">Güncel kampanyalarla tasarruf edin</div>
+                    </div>
+                </a>
+
+                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="weekend" class="feature-card" title="Hafta Sonu Fırsatları">
+                    <div class="feature-icon gradient-weekend"><i class="fas fa-calendar-week"></i></div>
+                    <div class="feature-content">
+                        <div class="feature-title">Hafta Sonu</div>
+                        <div class="feature-sub">Kısa tatil fırsatları</div>
+                    </div>
+                </a>
+
+                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="pool" class="feature-card" title="Havuzlu Oteller">
+                    <div class="feature-icon gradient-pool"><i class="fas fa-swimming-pool"></i></div>
+                    <div class="feature-content">
+                        <div class="feature-title">Havuzlu Oteller</div>
+                        <div class="feature-sub">Havuz keyfini yaşayın</div>
+                    </div>
+                </a>
+
+                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-filter="campaign" class="feature-card" title="Kampanyalı Oteller">
+                    <div class="feature-icon gradient-campaign"><i class="fas fa-bolt"></i></div>
+                    <div class="feature-content">
+                        <div class="feature-title">Kampanyalı</div>
+                        <div class="feature-sub">Özel fırsatlar ve erken rezervasyon</div>
+                    </div>
+                </a>
+
+                <a asp-controller="Home" asp-action="Index" class="feature-card" title="Seyahat Planlama">
+                    <div class="feature-icon gradient-plan"><i class="fas fa-route"></i></div>
+                    <div class="feature-content">
+                        <div class="feature-title">Seyahat Planlama</div>
+                        <div class="feature-sub">Kişiselleştirilmiş gezi planları</div>
+                    </div>
+                </a>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -156,11 +169,17 @@
         }
         else
         {
-            <div class="hotel-grid">
-                @foreach (var hotel in Model.PopularHotels)
-                {
-                    <partial name="~/Views/Anasayfa/_HomeHotelCard.cshtml" model="hotel" />
-                }
+            <div class="swiper popular-swiper">
+                <div class="swiper-wrapper">
+                    @foreach (var hotel in Model.PopularHotels.Take(8))
+                    {
+                        <div class="swiper-slide">
+                            <partial name="~/Views/Anasayfa/_HomeHotelCard.cshtml" model="hotel" />
+                        </div>
+                    }
+                </div>
+                <div class="swiper-button-prev popular-prev"></div>
+                <div class="swiper-button-next popular-next"></div>
             </div>
         }
     </div>
@@ -197,4 +216,44 @@
         }
     </div>
 </section>
+
+@foreach (var categorySection in homepageCategorySections)
+{
+    <section class="home-section home-category-section">
+        <div class="container-xl px-4">
+            <div class="section-header">
+                <h2 class="section-title">@categorySection.Title</h2>
+                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-etiket="@categorySection.Key" class="section-link">Tümünü Gör <i class="fas fa-arrow-right"></i></a>
+            </div>
+
+            @if (categoryShowcaseHotels.Count == 0)
+            {
+                <div class="hotel-empty-state">
+                    <h3>Gösterilecek otel bulunamadı</h3>
+                    <p>Bu alanlar şimdilik mevcut oteller ile listelenir; kategori bazlı veri bağlantısı sonraki adımda yapılabilir.</p>
+                </div>
+            }
+            else
+            {
+                <div class="swiper home-category-swiper" data-swiper-key="@categorySection.Key">
+                    <div class="swiper-wrapper">
+                        @foreach (var hotel in categoryShowcaseHotels.Take(8))
+                        {
+                            <div class="swiper-slide">
+                                <partial name="~/Views/Anasayfa/_HomeHotelCard.cshtml" model="hotel" />
+                            </div>
+                        }
+                    </div>
+                    <div class="swiper-button-prev home-category-prev"></div>
+                    <div class="swiper-button-next home-category-next"></div>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+<button type="button" class="floating-live-support-btn" aria-label="Canlı destek">
+    <i class="fas fa-comments"></i>
+    <span>Canlı Destek</span>
+</button>
 

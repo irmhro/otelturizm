@@ -1,1 +1,36 @@
-/* partner page: hotel-info */
+.checkbox-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid var(--partner-border);
+    border-radius: 14px;
+    background: #fbfdff;
+    color: #324764;
+    font-weight: 600;
+}
+
+.checkbox-inline input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #0b7a57;
+}
+
+.partner-amenity-grid label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--partner-border);
+    border-radius: 12px;
+    background: #fff;
+    color: #425974;
+    font-size: 13px;
+}
+
+.partner-amenity-grid input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #0b7a57;
+}

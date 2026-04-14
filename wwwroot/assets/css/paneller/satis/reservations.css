@@ -1,1 +1,2 @@
-/* Rezervasyon listesi ek stilleri shell icinde */
+.sales-table td small { color: var(--sales-muted); }
+.sales-table tbody tr:hover { background: #f8fbff; }

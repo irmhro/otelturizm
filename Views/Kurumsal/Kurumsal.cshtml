@@ -10,10 +10,8 @@
     <title>@ViewData["Title"] - Otelturizm</title>
     <script type="importmap"></script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+            <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/kurumsal.css" asp-append-version="true" />
@@ -25,7 +23,7 @@
         <partial name="~/Views/Kurumsal/_KurumsalContent.cshtml" />
     </main>
 
-    <partial name="~/Views/Kurumsal/_KurumsalFooter.cshtml" />
+    <partial name="~/Views/Anasayfa/_AnasayfaFooter.cshtml" />
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -62,10 +60,61 @@
                 document.body.style.overflow = '';
             }
 
+            function setupDropdown(rootId, storageKey) {
+                const root = document.getElementById(rootId);
+                if (!root) return;
+                const toggle = root.querySelector('.dropdown-toggle');
+                const menu = root.querySelector('.dropdown-menu');
+                const items = root.querySelectorAll('.dropdown-item');
+                const label = root.querySelector('.dropdown-label');
+                const flag = root.querySelector('.toggle-flag');
+                if (!toggle || !menu || !items.length || !label || !flag) return;
+
+                const applyItem = (item, save) => {
+                    const value = item.dataset.value || 'tr';
+                    const itemFlag = item.querySelector('.flag-icon');
+                    label.textContent = value.toUpperCase();
+                    if (itemFlag) {
+                        flag.className = itemFlag.className.replace('flag-icon', 'toggle-flag flag-icon').trim();
+                    }
+                    if (save && storageKey) {
+                        localStorage.setItem(storageKey, value);
+                    }
+                };
+
+                const saved = storageKey ? localStorage.getItem(storageKey) : null;
+                if (saved) {
+                    const target = Array.from(items).find(x => x.dataset.value === saved);
+                    if (target) applyItem(target, false);
+                }
+
+                toggle.addEventListener('click', () => {
+                    root.classList.toggle('open');
+                    toggle.setAttribute('aria-expanded', root.classList.contains('open') ? 'true' : 'false');
+                });
+
+                items.forEach(item => {
+                    item.addEventListener('click', () => {
+                        applyItem(item, true);
+                        root.classList.remove('open');
+                        toggle.setAttribute('aria-expanded', 'false');
+                    });
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (!root.contains(event.target)) {
+                        root.classList.remove('open');
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+
             toggle?.addEventListener('click', openMenu);
             closeBtn?.addEventListener('click', closeMenu);
             overlay?.addEventListener('click', closeMenu);
+            setupDropdown('corporateLanguageDropdown', 'site:language');
         })();
     </script>
 </body>
 </html>
+

@@ -57,7 +57,6 @@
 <section class="detail-breadcrumb detail-breadcrumb-with-weather">
     <div class="detail-breadcrumb-left">
         <a asp-controller="Oteller" asp-action="OtelListeleme"><i class="fas fa-arrow-left"></i> Otellere Don</a>
-        <span class="detail-code-chip">@Model.HotelCode</span>
     </div>
 </section>
 
@@ -362,7 +361,7 @@
             </div>
 
             <div class="weather-popup-actions">
-                <a href="#" class="detail-weather-assistant-btn">Hava Durumu & Aktivite Asistanı</a>
+                <button type="button" class="detail-weather-assistant-btn" disabled aria-disabled="true">Hava Durumu & Aktivite Asistanı</button>
                 <button type="button" class="weather-popup-close" id="weatherPopupClose" aria-label="Hava durumunu kapat">
                     <i class="fas fa-times"></i>
                 </button>
@@ -515,4 +514,5 @@
     </script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />
 }
+
 

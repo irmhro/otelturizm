@@ -1,108 +1,93 @@
+@model otelturizmnew.Models.Paneller.User.UserReservationsPageViewModel
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
-    ViewData["Title"] = "Rezervasyonlarim";
+    ViewData["Title"] = "Rezervasyonlarım";
 }
 
 <section class="panel-card">
     <div class="stats-strip">
-        <article><strong>3</strong><span>Yaklasan Rezervasyon</span></article>
-        <article><strong>8</strong><span>Gecmis Rezervasyon</span></article>
-        <article><strong>1</strong><span>İptal Edilen</span></article>
+        <article><strong>@Model.UpcomingCount</strong><span>Yaklaşan Rezervasyon</span></article>
+        <article><strong>@Model.PastCount</strong><span>Geçmiş Rezervasyon</span></article>
+        <article><strong>@Model.CancelledCount</strong><span>İptal Edilen</span></article>
     </div>
 
     <div class="section-head">
         <div>
-            <p class="mini-label">YONETIM ALANI</p>
+            <p class="mini-label">YÖNETİM ALANI</p>
             <h2>Rezervasyon listesi</h2>
         </div>
     </div>
 
     <div class="chip-row">
-        <button type="button" class="chip active">Yaklasan</button>
-        <button type="button" class="chip">Gecmis</button>
-        <button type="button" class="chip">İptal Edilenler</button>
+        <button type="button" class="chip active">Tümü</button>
+        <button type="button" class="chip">Yaklaşan</button>
+        <button type="button" class="chip">Geçmiş</button>
+        <button type="button" class="chip">İptal Edilen</button>
     </div>
 
     <div class="reservation-list-stack">
-        <article class="reservation-card">
-            <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Swissotel" />
-            <div class="reservation-body">
-                <div class="reservation-top">
-                    <div>
-                        <h3>Swissotel The Bosphorus</h3>
-                        <p>Besiktas, Istanbul</p>
+        @if (Model.Reservations.Count == 0)
+        {
+            <article class="reservation-card">
+                <div class="favorite-card-image-fallback"></div>
+                <div class="reservation-body">
+                    <div class="reservation-top">
+                        <div>
+                            <h3>Rezervasyon kaydı bulunamadı</h3>
+                            <p>Kullanıcı hesabına bağlı herhangi bir konaklama görünmüyor.</p>
+                        </div>
+                        <span class="status info">Boş</span>
                     </div>
-                    <span class="status ok">Onaylandi</span>
-                </div>
-                <div class="reservation-meta">
-                    <span><i class="far fa-calendar"></i> 15 Nis - 18 Nis 2025</span>
-                    <span><i class="far fa-user"></i> 2 Yetiskin, 1 Cocuk</span>
-                    <span><i class="far fa-moon"></i> Deluxe Oda, Bogaz Manzarali</span>
-                </div>
-                <p class="sub-note success">Ucretsiz iptal 13 Nis 23:59'a kadar aktif.</p>
-                <div class="reservation-footer">
-                    <strong>TRY 12.750</strong>
-                    <div class="action-row">
-                        <button type="button" class="ghost-btn">Detaylar</button>
-                        <button type="button" class="ghost-btn">Otelle İletişim</button>
-                        <button type="button" class="ghost-btn danger">İptal</button>
+                    <div class="reservation-footer">
+                        <strong>Keşfet ile başlayın</strong>
+                        <div class="action-row">
+                            <a href="/" class="ghost-btn">Otel keşfet</a>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </article>
-
-        <article class="reservation-card">
-            <img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Rixos" />
-            <div class="reservation-body">
-                <div class="reservation-top">
-                    <div>
-                        <h3>Rixos Premium Belek</h3>
-                        <p>Belek, Antalya</p>
+            </article>
+        }
+        else
+        {
+            foreach (var reservation in Model.Reservations)
+            {
+                <article class="reservation-card">
+                    @if (!string.IsNullOrWhiteSpace(reservation.ImageUrl))
+                    {
+                        <img src="@reservation.ImageUrl" alt="@reservation.HotelName" />
+                    }
+                    else
+                    {
+                        <div class="favorite-card-image-fallback"></div>
+                    }
+                    <div class="reservation-body">
+                        <div class="reservation-top">
+                            <div>
+                                <h3>@reservation.HotelName</h3>
+                                <p>@reservation.District, @reservation.City</p>
+                            </div>
+                            <span class="status @reservation.StatusTone">@reservation.StatusText</span>
+                        </div>
+                        <div class="reservation-meta">
+                            <span><i class="far fa-calendar"></i> @reservation.StayDateText</span>
+                            <span><i class="far fa-user"></i> @reservation.GuestText</span>
+                            <span><i class="far fa-moon"></i> @reservation.RoomName</span>
+                        </div>
+                        <p class="sub-note @reservation.SubNoteTone">@reservation.SubNote</p>
+                        <div class="reservation-footer">
+                            <strong>@reservation.TotalText</strong>
+                            <div class="action-row">
+                                <a href="/oteller/@reservation.HotelSlug" class="ghost-btn">Detaylar</a>
+                                <a asp-action="Messages" class="ghost-btn">Otelle iletişim</a>
+                                @if (reservation.CanCancel)
+                                {
+                                    <button type="button" class="ghost-btn danger" disabled>İptal talebi yakında</button>
+                                }
+                            </div>
+                        </div>
                     </div>
-                    <span class="status wait">Onay Bekliyor</span>
-                </div>
-                <div class="reservation-meta">
-                    <span><i class="far fa-calendar"></i> 22 May - 29 May 2025</span>
-                    <span><i class="far fa-user"></i> 2 Yetiskin</span>
-                    <span><i class="fas fa-utensils"></i> Her Sey Dahil</span>
-                </div>
-                <p class="sub-note warning">Otel onayi bekleniyor, tahmini sure 24 saat.</p>
-                <div class="reservation-footer">
-                    <strong>TRY 40.600</strong>
-                    <div class="action-row">
-                        <button type="button" class="ghost-btn">Detaylar</button>
-                        <button type="button" class="ghost-btn">Degistir</button>
-                    </div>
-                </div>
-            </div>
-        </article>
-
-        <article class="reservation-card">
-            <img src="https://images.pexels.com/photos/672532/pexels-photo-672532.jpeg?auto=compress&cs=tinysrgb&w=400" alt="Cappadocia" />
-            <div class="reservation-body">
-                <div class="reservation-top">
-                    <div>
-                        <h3>Cappadocia Cave Resort</h3>
-                        <p>Goreme, Nevsehir</p>
-                    </div>
-                    <span class="status info">Check-in Yakin</span>
-                </div>
-                <div class="reservation-meta">
-                    <span><i class="far fa-calendar"></i> 12 Nis - 14 Nis 2025</span>
-                    <span><i class="far fa-user"></i> 2 Yetiskin</span>
-                    <span><i class="far fa-moon"></i> Magara Oda</span>
-                </div>
-                <p class="sub-note info">2 gun sonra check-in basliyor.</p>
-                <div class="reservation-footer">
-                    <strong>TRY 6.400</strong>
-                    <div class="action-row">
-                        <button type="button" class="ghost-btn">Check-in Kodu</button>
-                        <button type="button" class="ghost-btn">Detaylar</button>
-                    </div>
-                </div>
-            </div>
-        </article>
+                </article>
+            }
+        }
     </div>
 </section>
-
-

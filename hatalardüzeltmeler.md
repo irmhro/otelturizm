@@ -316,3 +316,25 @@
   - `bekleyen.firma.test@otelturizm.com / 1585` => engellendi
   - `reddedilen.firma.test@otelturizm.com / 1585` => engellendi
   - `askida.firma.test@otelturizm.com / 1585` => engellendi
+## 2026-04-14 - Sayfa ve build kurtarma
+- Partner panel 500 hatasının kökü `PartnerService.GetManagedHotelsAsync` içindeki kolon map uyumsuzluğuydu; bool alan string gibi okunuyordu, düzeltildi.
+- `HotelService` içinde yinelenen `ultra-luks` switch kolu build'i bozuyordu; kaldırıldı.
+- Public footer ve detay sayfalarında kullanıcıyı boşa düşüren `href="#"` placeholder'lar gerçek route veya güvenli pasif buton yapısına çevrildi.
+- Partner ve firma kayıt formları DB tabanlı `iller / ilceler / mahalleler` API akışına bağlandı.
+
+## 2026-04-14 - User Panel ve Migration Kurtarma
+- Kullanıcı panelinde dashboard ve rezervasyonlarım ekranları 500 veriyordu.
+- Kök nedenler: UserPanelService içinde canlı şemada olmayan oteller.seo_slug, otel_gorselleri.dosya_yolu ve oteller.puan kolonlarının kullanılmasıydı.
+- Çözüm: kullanıcı panel sorguları canlı veritabanı şemasına uyarlandı; slug üretimi sunucu tarafında otel_adi + otel_kodu üzerinden yeniden kuruldu; görsel alanı gorsel_url, puan alanı ortalama_puan olarak güncellendi.
+- 125_alter_users_add_user_profile_security_columns.sql migrationı MariaDB uyumsuzluğu nedeniyle ADD COLUMN IF NOT EXISTS yerine INFORMATION_SCHEMA kontrollü idempotent yapıya çevrildi ve başarıyla uygulandı.
+- Kullanıcı paneli ekranları Index, Reservations, Messages, Profile, Notifications, Security, PaymentMethods gerçek view model + DB bağlamına geçirildi.
+- Doğrulama: partner panel ana sayfalarının tamamı 200; kullanıcı panel ana sayfalarının tamamı 200; profil, bildirim tercihleri ve ödeme yöntemi kayıt akışları DB yazımı ile test edildi.
+
+## 2026-04-14 - Anasayfa arama ve /Oteller favori akışı düzeltildi
+- Anasayfa hero araması varsayılan Istanbul değeri olmadan çalışacak şekilde güncellendi.
+- Arama placeholder metni Otel adı, il, ilçe, mahalle veya bölge ile ara olarak değiştirildi.
+- Arama alanı sonundaki dönen otel ikonu kaldırıldı.
+- /api/oteller/arama-onerileri ve otel listeleme sorguları il, ilçe, mahalle ve otel adı için DB destekli hale getirildi.
+- Türkçe karakter toleranslı arama normalizasyonu eklendi; Postane gibi mahalle aramaları öneri ve listeleme tarafında doğrulandı.
+- /oteller sayfasındaki favori butonları kullanıcı oturumuyla tekrar test edildi; /api/favoriler/toggle başarılı çalıştı.
+- Arama sonrası kategori hızlı linklerinde ?/& birleşim hatası giderildi.

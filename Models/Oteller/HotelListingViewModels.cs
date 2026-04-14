@@ -3,6 +3,8 @@ namespace otelturizmnew.Models.Oteller;
 public class HotelListingPageViewModel
 {
     public string City { get; set; } = string.Empty;
+    public string SearchTerm { get; set; } = string.Empty;
+    public string SearchLabel { get; set; } = string.Empty;
     public string ActiveTag { get; set; } = string.Empty;
     public string CampaignTitle { get; set; } = string.Empty;
     public string CampaignDescription { get; set; } = string.Empty;
@@ -13,6 +15,13 @@ public class HotelListingPageViewModel
     public List<string> Districts { get; set; } = new();
     public List<int> StarOptions { get; set; } = new();
     public List<HotelListingQuickLinkViewModel> QuickLinks { get; set; } = new();
+}
+
+public class HotelSearchSuggestionViewModel
+{
+    public string Value { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
 }
 
 public class HotelListingQuickLinkViewModel
@@ -28,6 +37,7 @@ public class HotelListingCardViewModel
 {
     public long Id { get; set; }
     public string HotelCode { get; set; } = string.Empty;
+    public string PropertyType { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
@@ -107,4 +117,3 @@ public class HotelSimilarCardViewModel
     public string Slug { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
 }
-

@@ -5,6 +5,13 @@
         radial-gradient(circle at 12% 16%, rgba(16, 185, 129, 0.18), transparent 34%),
         radial-gradient(circle at 86% 84%, rgba(255, 255, 255, 0.08), transparent 42%),
         linear-gradient(160deg, #0b2b3a 0%, #0f3b57 50%, #0a1f31 100%);
+    justify-content: flex-start;
+    align-content: start;
+}
+
+.firma-auth-shell .auth-sidebar-content {
+    justify-content: flex-start;
+    align-content: start;
 }
 
 .firma-auth-shell .auth-tab.active,
