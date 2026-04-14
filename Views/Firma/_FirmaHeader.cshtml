@@ -45,12 +45,12 @@
 
         <div class="header-actions firma-header-actions">
             <a href="/oteller" class="action-btn">Oteller</a>
-            <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
             @if (!firmaAuthenticated && !string.Equals(firmaAccountType, "firma", StringComparison.OrdinalIgnoreCase))
             {
                 <a href="/firma-giris" class="action-btn">Firma Girişi</a>
                 <a href="/firma-giris?sekme=kayit" class="action-btn primary">Firma Hesabı Açın</a>
             }
+            <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
             <button class="action-btn mobile-nav-toggle" id="firmaMenuToggle" type="button"><i class="fas fa-bars"></i></button>
         </div>
     </div>

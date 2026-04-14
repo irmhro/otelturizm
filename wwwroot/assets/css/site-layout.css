@@ -457,7 +457,7 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
 }
 
@@ -518,30 +518,40 @@ body {
   border-color: var(--primary);
 }
 
-.public-logout-form {
-  margin: 0;
+.public-account-menu {
+  position: relative;
+  flex: 0 0 auto;
 }
 
-.public-logout-form .action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
+.public-account-menu summary {
+  list-style: none;
 }
 
-.public-session-chip {
+.public-account-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.public-account-toggle {
+  min-width: 156px;
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.94));
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  min-width: 180px;
-  padding: 9px 14px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92));
-  color: #fff;
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.public-session-chip__status {
+.public-account-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px rgba(15, 23, 42, 0.18);
+}
+
+.public-account-status-dot {
   width: 10px;
   height: 10px;
   border-radius: 999px;
@@ -550,26 +560,117 @@ body {
   flex: 0 0 auto;
 }
 
-.public-session-chip__body {
+.public-account-toggle-copy {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  align-items: flex-start;
+  gap: 1px;
+  flex: 1;
 }
 
-.public-session-chip__body strong {
+.public-account-toggle-copy strong {
   font-size: 12px;
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: 0.02em;
+  font-weight: 800;
+  line-height: 1.15;
 }
 
-.public-session-chip__body span {
-  font-size: 12px;
-  line-height: 1.2;
+.public-account-toggle-copy small {
+  max-width: 140px;
+  font-size: 11px;
   opacity: 0.82;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.public-account-toggle i {
+  font-size: 12px;
+  opacity: 0.88;
+  transition: transform var(--transition-fast);
+}
+
+.public-account-menu[open] .public-account-toggle i {
+  transform: rotate(180deg);
+}
+
+.public-account-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 240px;
+  padding: 10px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.16);
+  z-index: 1200;
+}
+
+.public-account-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);
+  border: 1px solid #e5edf8;
+  margin-bottom: 8px;
+}
+
+.public-account-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(0, 59, 149, 0.1);
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.public-account-summary strong {
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+.public-account-summary small {
+  font-size: 12px;
+  color: var(--text-gray);
+}
+
+.public-account-link {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-dark);
+  text-decoration: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.public-account-link:hover {
+  background: #f5f8fd;
+}
+
+.public-account-link-danger {
+  color: #b42318;
+}
+
+.public-account-link-danger:hover {
+  background: #fff2f0;
+}
+
+.public-account-form {
+  margin: 0;
 }
 
 .public-header-search-form {
@@ -958,8 +1059,7 @@ body {
   .top-utility-bar { display: none; }
   .site-main { padding-top: 82px; }
   .header-actions .action-btn:not(.mobile-nav-toggle),
-  .header-actions .public-session-chip,
-  .header-actions .public-logout-form { display: none; }
+  .header-actions .public-account-menu { display: none; }
   .mobile-nav-toggle {
     display: inline-flex;
     align-items: center;

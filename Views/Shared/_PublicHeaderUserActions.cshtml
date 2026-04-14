@@ -57,25 +57,79 @@
         </a>
     }
 
-    <div class="public-session-chip" title="@fullName">
-        <span class="public-session-chip__status"></span>
-        <div class="public-session-chip__body">
-            <strong>@GetAccountBadge()</strong>
-            <span>@fullName</span>
-        </div>
-    </div>
+    <details class="public-account-menu" data-public-account-menu>
+        <summary class="public-account-toggle" title="@fullName">
+            <span class="public-account-status-dot"></span>
+            <span class="public-account-toggle-copy">
+                <strong>Hesabım</strong>
+                <small>@fullName</small>
+            </span>
+            <i class="fas fa-chevron-down"></i>
+        </summary>
 
-    <a href="@GetPanelUrl()" class="action-btn action-btn-soft">@GetPanelLabel()</a>
-    <form method="post" action="/cikis-yap" class="public-logout-form">
-        @Html.AntiForgeryToken()
-        <button type="submit" class="action-btn">
-            <i class="fas fa-right-from-bracket"></i>
-            <span>Çıkış</span>
-        </button>
-    </form>
+        <div class="public-account-dropdown">
+            <div class="public-account-summary">
+                <span class="public-account-badge">@GetAccountBadge()</span>
+                <strong>@fullName</strong>
+                <small>Oturumunuz aktif durumda.</small>
+            </div>
+
+            <a href="@GetPanelUrl()" class="public-account-link">
+                <i class="fas fa-grid-2"></i>
+                <span>@GetPanelLabel()</span>
+            </a>
+
+            <form method="post" action="/cikis-yap" class="public-account-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="public-account-link public-account-link-danger">
+                    <i class="fas fa-right-from-bracket"></i>
+                    <span>Güvenli Çıkış</span>
+                </button>
+            </form>
+        </div>
+    </details>
 }
 else
 {
     <a href="/kullanici-giris" class="action-btn">Kullanıcı Giriş</a>
     <a href="/kullanici-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
 }
+
+<script>
+    (function () {
+        const menus = document.querySelectorAll('[data-public-account-menu]');
+        if (!menus.length) {
+            return;
+        }
+
+        function closeAll(exceptMenu) {
+            menus.forEach(function (menu) {
+                if (menu !== exceptMenu) {
+                    menu.removeAttribute('open');
+                }
+            });
+        }
+
+        menus.forEach(function (menu) {
+            menu.addEventListener('toggle', function () {
+                if (menu.open) {
+                    closeAll(menu);
+                }
+            });
+        });
+
+        document.addEventListener('click', function (event) {
+            menus.forEach(function (menu) {
+                if (!menu.contains(event.target)) {
+                    menu.removeAttribute('open');
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeAll(null);
+            }
+        });
+    })();
+</script>

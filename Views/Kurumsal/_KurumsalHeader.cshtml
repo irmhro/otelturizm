@@ -69,11 +69,11 @@
 
         <div class="header-actions corporate-header-actions">
             <a href="/firma" class="action-btn corporate-action-btn corporate-firma-btn">Firma</a>
-            <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
             @if (!corporateAuthenticated && !string.Equals(corporateAccountType, "partner", StringComparison.OrdinalIgnoreCase))
             {
                 <a href="/partner-giris" class="action-btn corporate-action-btn primary">Partner Girişi</a>
             }
+            <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
             <button class="action-btn mobile-nav-toggle corporate-mobile-toggle" id="corporateMenuToggle" type="button"><i class="fas fa-bars"></i></button>
         </div>
     </div>
