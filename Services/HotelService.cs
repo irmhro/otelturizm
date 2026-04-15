@@ -209,11 +209,10 @@ public class HotelService : IHotelService
         if (hotels.Count > 0)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var endDate = today.AddDays(120);
             var priceMap = await _hotelPricingReadService.GetHotelEffectivePriceMapAsync(
                 hotels.Select(static item => item.Id).ToList(),
                 today,
-                endDate,
+                today,
                 cancellationToken);
 
             foreach (var hotel in hotels)
@@ -505,11 +504,10 @@ public class HotelService : IHotelService
         if (model.Hotels.Count > 0)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var endDate = today.AddDays(120);
             var priceMap = await _hotelPricingReadService.GetHotelEffectivePriceMapAsync(
                 model.Hotels.Select(static item => item.Id).ToList(),
                 today,
-                endDate,
+                today,
                 cancellationToken);
 
             foreach (var hotel in model.Hotels)
@@ -939,7 +937,7 @@ public class HotelService : IHotelService
         var detailPrice = await _hotelPricingReadService.GetHotelEffectivePriceAsync(
             model.Id,
             todayForDetailPrice,
-            todayForDetailPrice.AddDays(120),
+            todayForDetailPrice,
             cancellationToken);
         if (detailPrice.HasValue && detailPrice.Value > 0m)
         {
@@ -1094,11 +1092,10 @@ public class HotelService : IHotelService
         if (model.Rooms.Count > 0)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var horizonEnd = today.AddDays(30);
             var roomPriceMap = await _hotelPricingReadService.GetRoomAverageNightlyPriceMapAsync(
                 model.Rooms.Select(static item => item.RoomTypeId).Where(static id => id > 0).ToList(),
                 today,
-                horizonEnd,
+                today.AddDays(1),
                 cancellationToken);
 
             foreach (var room in model.Rooms)
