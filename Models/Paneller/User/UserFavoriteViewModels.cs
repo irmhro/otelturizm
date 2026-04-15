@@ -21,4 +21,5 @@ public class UserFavoriteHotelCardViewModel
     public string PriceText { get; set; } = string.Empty;
     public string RatingText { get; set; } = string.Empty;
     public string AddedDateText { get; set; } = string.Empty;
+    public int PastStayCount { get; set; }
 }

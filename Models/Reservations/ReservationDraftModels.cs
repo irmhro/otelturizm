@@ -37,6 +37,8 @@ public class ReservationDraftSummaryViewModel
     public string HotelName { get; set; } = string.Empty;
     public string RoomName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public DateOnly CheckInDate { get; set; }
+    public DateOnly CheckOutDate { get; set; }
     public string CheckInText { get; set; } = string.Empty;
     public string CheckOutText { get; set; } = string.Empty;
     public int AdultCount { get; set; }
@@ -45,6 +47,8 @@ public class ReservationDraftSummaryViewModel
     public string TotalText { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public string ResumeUrl { get; set; } = string.Empty;
+    public string ProfileCompletionUrl { get; set; } = string.Empty;
+    public bool RequiresProfileCompletion { get; set; }
 }
 
 public class PublicHotelReservationForm
@@ -64,4 +68,13 @@ public class PublicReservationResult
     public string Message { get; set; } = string.Empty;
     public string RedirectUrl { get; set; } = string.Empty;
     public long? ReservationId { get; set; }
+}
+
+public class PublicReservationPriceQuoteViewModel
+{
+    public int NightCount { get; set; }
+    public decimal NightlyPrice { get; set; }
+    public decimal RoomTotal { get; set; }
+    public decimal TaxAmount { get; set; }
+    public decimal TotalAmount { get; set; }
 }

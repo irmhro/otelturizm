@@ -15,6 +15,9 @@ public class AuthController : Controller
     private const string FirmaLoginPath = "/firma-giris";
     private const string AdminLoginPath = "/admin-giris";
     private const string LogoutPath = "/cikis-yap";
+    private const string VerifyEmailPath = "/eposta-dogrula";
+    private const string ForgotPasswordPath = "/sifremi-unuttum";
+    private const string ResetPasswordPath = "/sifre-sifirla";
 
     private readonly IAuthService _authService;
 
@@ -80,6 +83,11 @@ public class AuthController : Controller
         {
             user = await _authService.AuthenticateUserAsync(loginEmail, loginPassword, cancellationToken);
         }
+        catch (AuthFlowException ex)
+        {
+            TempData["UserLoginError"] = ex.Message;
+            return Redirect(UserLoginPath);
+        }
         catch
         {
             TempData["UserLoginError"] = "Veritabani baglantisi veya giris dogrulama sirasinda hata olustu.";
@@ -110,6 +118,11 @@ public class AuthController : Controller
         try
         {
             user = await _authService.AuthenticateUserAsync(adminEmail, adminPassword, cancellationToken);
+        }
+        catch (AuthFlowException ex)
+        {
+            TempData["AdminLoginError"] = ex.Message;
+            return Redirect(AdminLoginPath);
         }
         catch (Exception ex)
         {
@@ -149,6 +162,11 @@ public class AuthController : Controller
         try
         {
             user = await _authService.AuthenticateFirmaAsync(firmaIdentity, firmaPassword, cancellationToken);
+        }
+        catch (AuthFlowException ex)
+        {
+            TempData["FirmaLoginError"] = ex.Message;
+            return Redirect(FirmaLoginPath);
         }
         catch
         {
@@ -193,6 +211,11 @@ public class AuthController : Controller
         {
             user = await _authService.AuthenticatePartnerAsync(partnerIdentity, partnerPassword, cancellationToken);
         }
+        catch (AuthFlowException ex)
+        {
+            TempData["PartnerLoginError"] = ex.Message;
+            return Redirect(PartnerLoginPath);
+        }
         catch
         {
             TempData["PartnerLoginError"] = "Veritabani baglantisi veya partner giris dogrulama sirasinda hata olustu.";
@@ -224,6 +247,108 @@ public class AuthController : Controller
         HttpContext.Response.Cookies.Delete("Otelturizm.SessionKey");
         HttpContext.Response.Cookies.Delete("Otelturizm.LastSeenUtc");
         return Redirect(redirectPath);
+    }
+
+    [HttpGet(VerifyEmailPath)]
+    public async Task<IActionResult> VerifyEmail(string? email, string? token, string? code, CancellationToken cancellationToken = default)
+    {
+        ViewData["PageCss"] = "user-login";
+
+        if (!string.IsNullOrWhiteSpace(email) && !string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(code))
+        {
+            var result = await _authService.VerifyEmailAsync(email, code, token, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
+            TempData[result.Success ? "UserLoginSuccess" : "UserLoginError"] = result.Message;
+            return Redirect(UserLoginPath);
+        }
+
+        return View("~/Views/Login/VerifyEmail.cshtml", new EmailVerificationViewModel
+        {
+            Email = email ?? string.Empty,
+            Token = token
+        });
+    }
+
+    [HttpPost(VerifyEmailPath)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyEmailPost(EmailVerificationViewModel model, CancellationToken cancellationToken = default)
+    {
+        ViewData["PageCss"] = "user-login";
+        if (!ModelState.IsValid)
+        {
+            return View("~/Views/Login/VerifyEmail.cshtml", model);
+        }
+
+        var result = await _authService.VerifyEmailAsync(model.Email, model.Code, model.Token, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
+        if (!result.Success)
+        {
+            ModelState.AddModelError(string.Empty, result.Message);
+            return View("~/Views/Login/VerifyEmail.cshtml", model);
+        }
+
+        TempData["UserLoginSuccess"] = result.Message;
+        return Redirect(UserLoginPath);
+    }
+
+    [HttpPost("/eposta-dogrula/tekrar-gonder")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendVerifyEmail(string email, CancellationToken cancellationToken = default)
+    {
+        var result = await _authService.ResendVerificationEmailAsync(email, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
+        TempData[result.Success ? "UserLoginSuccess" : "UserLoginError"] = result.Message;
+        return Redirect($"{VerifyEmailPath}?email={Uri.EscapeDataString(email ?? string.Empty)}");
+    }
+
+    [HttpGet(ForgotPasswordPath)]
+    public IActionResult ForgotPassword()
+    {
+        ViewData["PageCss"] = "user-login";
+        return View("~/Views/Login/ForgotPassword.cshtml", new ForgotPasswordViewModel());
+    }
+
+    [HttpPost(ForgotPasswordPath)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model, CancellationToken cancellationToken = default)
+    {
+        ViewData["PageCss"] = "user-login";
+        if (!ModelState.IsValid)
+        {
+            return View("~/Views/Login/ForgotPassword.cshtml", model);
+        }
+
+        var result = await _authService.SendPasswordResetAsync(model.Email, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
+        TempData[result.Success ? "UserLoginSuccess" : "UserLoginError"] = result.Message;
+        return Redirect(UserLoginPath);
+    }
+
+    [HttpGet(ResetPasswordPath)]
+    public IActionResult ResetPassword(string token)
+    {
+        ViewData["PageCss"] = "user-login";
+        return View("~/Views/Login/ResetPassword.cshtml", new ResetPasswordViewModel
+        {
+            Token = token ?? string.Empty
+        });
+    }
+
+    [HttpPost(ResetPasswordPath)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model, CancellationToken cancellationToken = default)
+    {
+        ViewData["PageCss"] = "user-login";
+        if (!ModelState.IsValid)
+        {
+            return View("~/Views/Login/ResetPassword.cshtml", model);
+        }
+
+        var result = await _authService.ResetPasswordAsync(model.Token, model.NewPassword, model.ConfirmPassword, cancellationToken);
+        if (!result.Success)
+        {
+            ModelState.AddModelError(string.Empty, result.Message);
+            return View("~/Views/Login/ResetPassword.cshtml", model);
+        }
+
+        TempData["UserLoginSuccess"] = result.Message;
+        return Redirect(UserLoginPath);
     }
 
     private async Task SignInAsync(UserSessionModel user, bool rememberMe)

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using otelturizmnew.Constants;
+using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.User;
 using otelturizmnew.Services.Abstractions;
 
@@ -52,6 +53,19 @@ public class UserPanelController : Controller
         return View("~/Views/Paneller/User/Reservations.cshtml", model);
     }
 
+    [HttpPost("rezervasyonlarim/iptal")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelReservation(long reservationId, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userPanelService.CancelReservationAsync(GetCurrentUserId(), reservationId, cancellationToken);
+            TempData[result.Success ? "UserReservationSuccess" : "UserReservationError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Reservations));
+    }
+
     [HttpGet("favorilerim")]
     public async Task<IActionResult> Favorites(CancellationToken cancellationToken)
     {
@@ -99,7 +113,7 @@ public class UserPanelController : Controller
     }
 
     [HttpGet("profil-bilgilerim")]
-    public async Task<IActionResult> Profile(CancellationToken cancellationToken)
+    public async Task<IActionResult> Profile([FromQuery] bool openCompletion = false, [FromQuery] string? returnUrl = null, CancellationToken cancellationToken = default)
     {
         if (!CanAccessUserPanel())
         {
@@ -107,6 +121,11 @@ public class UserPanelController : Controller
         }
 
         var model = await _userPanelService.GetProfileAsync(GetCurrentUserId(), cancellationToken);
+        model.OpenCompletionModal = openCompletion;
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            model.ReturnUrl = returnUrl;
+        }
         ViewData["PageCss"] = "panel-user-profile";
         ViewData["PanelTitle"] = "Profil Bilgilerim";
         ViewData["PanelSubtitle"] = "Kisisel bilgilerini, iletisim verilerini ve seyahat tercihlerini duzenle.";
@@ -163,20 +182,39 @@ public class UserPanelController : Controller
     {
         if (CanAccessUserPanel())
         {
-            await _userPanelService.SaveProfileAsync(GetCurrentUserId(), form, cancellationToken);
-            TempData["UserProfileSuccess"] = "Profil bilgileri güncellendi.";
+            var saved = await _userPanelService.SaveProfileAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[saved ? "UserProfileSuccess" : "UserProfileError"] = saved
+                ? "Profil bilgileri güncellendi."
+                : "Profil bilgileri güncellenemedi.";
+        }
+
+        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
+        {
+            return Redirect(form.ReturnUrl);
         }
 
         return RedirectToAction(nameof(Profile));
     }
 
     [HttpPost("mesajlarim/gonder")]
-    public async Task<IActionResult> SendMessage(UserMessageSendForm form, CancellationToken cancellationToken)
+    public async Task<IActionResult> SendMessage(MessageSendRequest form, List<IFormFile>? attachments, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
         {
-            var success = await _userPanelService.SendMessageAsync(GetCurrentUserId(), form, cancellationToken);
-            TempData["UserMessageStatus"] = success ? "Mesaj gönderildi." : "Mesaj gönderilemedi.";
+            var result = await _userPanelService.SendMessageAsync(GetCurrentUserId(), form, attachments, HttpContext, cancellationToken);
+            TempData[result.Success ? "UserMessageStatus" : "UserMessageError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Messages), new { conversationId = form.ConversationId });
+    }
+
+    [HttpPost("mesajlarim/sil")]
+    public async Task<IActionResult> DeleteMessage(MessageDeleteRequest form, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userPanelService.DeleteMessageAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[result.Success ? "UserMessageStatus" : "UserMessageError"] = result.Message;
         }
 
         return RedirectToAction(nameof(Messages), new { conversationId = form.ConversationId });

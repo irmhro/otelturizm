@@ -1,3 +1,5 @@
+using otelturizmnew.Models.Messages;
+
 namespace otelturizmnew.Models.Paneller.Firma;
 
 public class FirmaPanelShellViewModel
@@ -171,6 +173,16 @@ public class FirmaHotelReportsPageViewModel
 {
     public FirmaPanelShellViewModel Shell { get; set; } = new();
     public List<FirmaHotelReportRowViewModel> HotelReports { get; set; } = new();
+}
+
+public class FirmaMessagesPageViewModel
+{
+    public FirmaPanelShellViewModel Shell { get; set; } = new();
+    public List<MessageCenterThreadViewModel> Threads { get; set; } = new();
+    public long? SelectedConversationId { get; set; }
+    public string SelectedTitle { get; set; } = "Firma Mesajları";
+    public string SelectedSubtitle { get; set; } = "Kullanıcı yazışmaları";
+    public List<MessageCenterItemViewModel> Messages { get; set; } = new();
 }
 
 public class FirmaEmployeeCreateModel

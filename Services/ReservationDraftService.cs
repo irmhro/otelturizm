@@ -42,6 +42,7 @@ public class ReservationDraftService : IReservationDraftService
 
         if (userId.GetValueOrDefault() > 0 && !string.IsNullOrWhiteSpace(sessionKey))
         {
+            var resolvedUserId = userId.GetValueOrDefault();
             const string attachSql = @"
                 UPDATE rezervasyon_taslaklari
                 SET user_id = @userId
@@ -49,7 +50,7 @@ public class ReservationDraftService : IReservationDraftService
                   AND session_anahtari = @sessionKey
                   AND durum IN ('Taslak','Profil Eksik','Giris Bekliyor');";
             await using var attachCommand = new MySqlCommand(attachSql, connection);
-            attachCommand.Parameters.AddWithValue("@userId", userId.Value);
+            attachCommand.Parameters.AddWithValue("@userId", resolvedUserId);
             attachCommand.Parameters.AddWithValue("@sessionKey", sessionKey.Trim());
             await attachCommand.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -86,26 +87,71 @@ public class ReservationDraftService : IReservationDraftService
             return null;
         }
 
+        var draftId = reader.GetInt64(0);
+        var hotelId = reader.GetInt64(1);
+        long? roomTypeId = reader.IsDBNull(2) ? null : reader.GetInt64(2);
         var hotelName = reader.GetString(3);
         var hotelCode = reader.GetString(12);
+        var roomName = reader.GetString(4);
         var status = reader.GetString(5);
+        var checkInDate = DateOnly.FromDateTime(reader.GetDateTime(6));
+        var checkOutDate = DateOnly.FromDateTime(reader.GetDateTime(7));
+        var adultCount = reader.GetInt32(8);
+        var childCount = reader.GetInt32(9);
+        var roomCount = reader.GetInt32(10);
+        var totalAmount = ReadDecimal(reader, 11);
+        await reader.DisposeAsync();
+
+        var resolvedStatus = status;
+        if (userId.GetValueOrDefault() > 0)
+        {
+            var hasRequiredProfile = await HasRequiredReservationProfileAsync(connection, userId.GetValueOrDefault(), cancellationToken);
+            if (string.Equals(status, "Giris Bekliyor", StringComparison.OrdinalIgnoreCase))
+            {
+                resolvedStatus = hasRequiredProfile ? "Taslak" : "Profil Eksik";
+            }
+            else if (string.Equals(status, "Profil Eksik", StringComparison.OrdinalIgnoreCase) && hasRequiredProfile)
+            {
+                resolvedStatus = "Taslak";
+            }
+
+            if (!string.Equals(resolvedStatus, status, StringComparison.OrdinalIgnoreCase))
+            {
+                const string updateSql = @"
+                    UPDATE rezervasyon_taslaklari
+                    SET durum = @status,
+                        son_aktivite_tarihi = UTC_TIMESTAMP()
+                    WHERE id = @draftId;";
+                await using var updateCommand = new MySqlCommand(updateSql, connection);
+                updateCommand.Parameters.AddWithValue("@status", resolvedStatus);
+                updateCommand.Parameters.AddWithValue("@draftId", draftId);
+                await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+        }
+
+        var hotelSlug = BuildSlug(hotelName, hotelCode);
+        var requiresProfileCompletion = string.Equals(resolvedStatus, "Profil Eksik", StringComparison.OrdinalIgnoreCase);
 
         return new ReservationDraftSummaryViewModel
         {
-            DraftId = reader.GetInt64(0),
-            HotelId = reader.GetInt64(1),
-            RoomTypeId = reader.IsDBNull(2) ? null : reader.GetInt64(2),
+            DraftId = draftId,
+            HotelId = hotelId,
+            RoomTypeId = roomTypeId,
             HotelName = hotelName,
-            RoomName = reader.GetString(4),
-            Status = status,
-            CheckInText = reader.GetDateTime(6).ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
-            CheckOutText = reader.GetDateTime(7).ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
-            AdultCount = reader.GetInt32(8),
-            ChildCount = reader.GetInt32(9),
-            RoomCount = reader.GetInt32(10),
-            TotalText = FormatMoney(ReadDecimal(reader, 11)),
-            Message = BuildStatusMessage(status),
-            ResumeUrl = $"/oteller/{BuildSlug(hotelName, hotelCode)}"
+            RoomName = roomName,
+            Status = resolvedStatus,
+            CheckInDate = checkInDate,
+            CheckOutDate = checkOutDate,
+            CheckInText = checkInDate.ToDateTime(TimeOnly.MinValue).ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+            CheckOutText = checkOutDate.ToDateTime(TimeOnly.MinValue).ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+            AdultCount = adultCount,
+            ChildCount = childCount,
+            RoomCount = roomCount,
+            TotalText = FormatMoney(totalAmount),
+            Message = BuildStatusMessage(resolvedStatus),
+            RequiresProfileCompletion = requiresProfileCompletion,
+            ResumeUrl = $"/oteller/{hotelSlug}?continueDraft=1",
+            ProfileCompletionUrl = $"/oteller/{hotelSlug}?continueDraft=1&openProfile=1"
         };
     }
 
@@ -304,6 +350,34 @@ public class ReservationDraftService : IReservationDraftService
 
     private static string FormatMoney(decimal amount)
         => amount <= 0 ? "Tutar bekleniyor" : $"₺{amount:N0}";
+
+    private static async Task<bool> HasRequiredReservationProfileAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COALESCE(eposta, ''),
+                   dogum_tarihi,
+                   COALESCE(cinsiyet, ''),
+                   COALESCE(sehir, ''),
+                   COALESCE(ilce, ''),
+                   COALESCE(mahalle, '')
+            FROM users
+            WHERE id = @userId
+            LIMIT 1;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return false;
+        }
+
+        return !string.IsNullOrWhiteSpace(reader.GetString(0))
+               && !reader.IsDBNull(1)
+               && !string.IsNullOrWhiteSpace(reader.GetString(2))
+               && !string.IsNullOrWhiteSpace(reader.GetString(3))
+               && !string.IsNullOrWhiteSpace(reader.GetString(4))
+               && !string.IsNullOrWhiteSpace(reader.GetString(5));
+    }
 
     private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {

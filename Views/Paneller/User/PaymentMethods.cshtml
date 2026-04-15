@@ -39,7 +39,7 @@
 
     <form method="post" asp-action="SavePaymentMethod" class="panel-card">
         @Html.AntiForgeryToken()
-        <div class="section-head"><h2>Yeni Kart Ekle</h2><button type="submit" class="ghost-btn">Kaydet</button></div>
+        <div class="section-head"><h2>Yeni Kart Ekle</h2><button type="submit" class="primary-btn">Kaydet</button></div>
         <div class="form-grid">
             <label><span>Kart Etiketi</span><input asp-for="Form.CardLabel" type="text" placeholder="Kişisel Kart" /></label>
             <label><span>Kart Sahibi</span><input asp-for="Form.CardHolder" type="text" /></label>

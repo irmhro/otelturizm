@@ -2,6 +2,14 @@
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
     var welcomeEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "ahmet.yilmaz@email.com";
     var fullName = User.FindFirst("otelturizm:full_name")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
+    var displayName = System.Text.RegularExpressions.Regex.Replace(
+        (fullName ?? string.Empty).Trim(),
+        @"^\s*[\p{Lu}]{1,3}[\s\.\-_]+",
+        string.Empty).Trim();
+    if (string.IsNullOrWhiteSpace(displayName))
+    {
+        displayName = "Kullanıcı";
+    }
     var favoriteCount = ViewData["FavoriteCount"] is int count ? count : (int?)null;
 }
 <aside class="user-sidebar">
@@ -14,12 +22,8 @@
 
         <div class="profile-card">
             <div>
-                <h3>@fullName</h3>
+                <h3>@displayName</h3>
                 <p>@welcomeEmail</p>
-                <div class="member-badges">
-                    <span class="tier-badge"><i class="fas fa-crown"></i> Gold Üye</span>
-                    <span class="point-badge">1.250 Puan</span>
-                </div>
             </div>
         </div>
 

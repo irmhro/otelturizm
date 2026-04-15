@@ -36,15 +36,8 @@
         </div>
 
         <div class="admin-profile-card">
-            <div class="admin-avatar">@string.Concat(Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(static p => p[0]))</div>
-            <div>
-                <h3>@Model.FullName</h3>
-                <p>@Model.Email</p>
-                <div class="admin-mini-badges">
-                    <span class="role-badge">@Model.UserRole</span>
-                    <span class="alert-badge">@Model.CriticalLogs kritik</span>
-                </div>
-            </div>
+            <h3>@Model.FullName</h3>
+            <p>@Model.Email</p>
         </div>
 
         <nav class="admin-sidebar-nav">

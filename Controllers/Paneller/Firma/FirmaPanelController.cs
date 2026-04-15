@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using otelturizmnew.Constants;
+using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.Firma;
 using otelturizmnew.Services.Abstractions;
 
@@ -50,6 +51,17 @@ public class FirmaPanelController : Controller
         ViewData["Title"] = "Firma Rezervasyonları";
         ViewData["PageCssPath"] = "paneller/firma/reservations";
         return View("~/Views/Paneller/Firma/Reservations.cshtml", model);
+    }
+
+    [HttpGet("mesajlar")]
+    public async Task<IActionResult> Messages([FromQuery] long? conversationId, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        var model = await _firmaService.GetMessagesAsync(GetUserId(), conversationId, cancellationToken);
+        ApplyFeedback(model.Shell);
+        ViewData["Title"] = "Firma Mesajları";
+        ViewData["PageCssPath"] = "panel-user-messages";
+        return View("~/Views/Paneller/Firma/Messages.cshtml", model);
     }
 
     [HttpGet("calisanlar")]
@@ -115,6 +127,26 @@ public class FirmaPanelController : Controller
         var result = await _firmaService.CreateEmployeeAsync(GetUserId(), model, cancellationToken);
         SetFeedback(result.Success, result.Message);
         return Redirect("/panel/firma/calisanlar");
+    }
+
+    [HttpPost("mesajlar/gonder")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendMessage(MessageSendRequest form, List<IFormFile>? attachments, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        var result = await _firmaService.SendMessageAsync(GetUserId(), form, attachments, HttpContext, cancellationToken);
+        SetFeedback(result.Success, result.Message);
+        return Redirect($"/panel/firma/mesajlar?conversationId={form.ConversationId}");
+    }
+
+    [HttpPost("mesajlar/sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteMessage(MessageDeleteRequest form, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        var result = await _firmaService.DeleteMessageAsync(GetUserId(), form, cancellationToken);
+        SetFeedback(result.Success, result.Message);
+        return Redirect($"/panel/firma/mesajlar?conversationId={form.ConversationId}");
     }
 
     [HttpPost("limit-kaydet")]

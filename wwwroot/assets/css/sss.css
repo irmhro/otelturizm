@@ -1,6 +1,6 @@
 .faq-page {
     background: #f5f7fa;
-    padding: 2rem 0 4rem;
+    padding: 20px 0 4rem;
 }
 
 .faq-container {
@@ -29,7 +29,7 @@
     margin: 0 auto 2rem;
 }
 
-.search-wrapper {
+.faq-search .search-wrapper {
     display: flex;
     background: #fff;
     border-radius: 999px;
@@ -38,7 +38,7 @@
     gap: 0.5rem;
 }
 
-.search-wrapper input {
+.faq-search .search-wrapper input {
     flex: 1;
     border: 0;
     padding: 1rem 1.35rem;
@@ -46,7 +46,7 @@
     outline: none;
 }
 
-.search-wrapper button {
+.faq-search .search-wrapper button {
     border: 0;
     background: #003b95;
     color: #fff;
@@ -170,15 +170,15 @@
 }
 
 @media (max-width: 640px) {
-    .search-wrapper {
+    .faq-search .search-wrapper {
         flex-direction: column;
         background: transparent;
         border: 0;
         padding: 0;
     }
 
-    .search-wrapper input,
-    .search-wrapper button {
+    .faq-search .search-wrapper input,
+    .faq-search .search-wrapper button {
         width: 100%;
     }
 }

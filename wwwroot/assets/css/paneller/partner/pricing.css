@@ -151,6 +151,22 @@
     box-shadow: 0 8px 22px rgba(15, 23, 42, .04);
 }
 
+.partner-calendar-edit-btn {
+    margin-top: auto;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(15, 91, 215, .08);
+    color: var(--partner-info);
+    font-weight: 700;
+    font-size: 12px;
+    padding: 10px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    justify-self: start;
+}
+
 .partner-calendar-cell.is-other-month {
     background: #f9fbfd;
     opacity: .62;
@@ -370,6 +386,104 @@
     color: var(--partner-primary);
 }
 
+.partner-daily-editor-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .42);
+    backdrop-filter: blur(6px);
+    z-index: 90;
+    opacity: 0;
+    transition: opacity .18s ease;
+}
+
+.partner-daily-editor-backdrop.is-open {
+    opacity: 1;
+}
+
+.partner-daily-editor-modal {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: min(720px, calc(100vw - 32px));
+    max-height: calc(100vh - 40px);
+    overflow: auto;
+    transform: translate(-50%, -48%);
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, .28);
+    z-index: 91;
+    padding: 24px;
+    opacity: 0;
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+.partner-daily-editor-modal.is-open {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+}
+
+.partner-daily-editor-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.partner-daily-editor-head h3 {
+    margin: 6px 0 4px;
+}
+
+.partner-daily-editor-head p {
+    margin: 0;
+    color: var(--partner-muted);
+}
+
+.partner-daily-editor-kicker {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--partner-primary);
+}
+
+.partner-daily-editor-close {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--partner-border);
+    background: #fff;
+    cursor: pointer;
+}
+
+.partner-daily-editor-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.partner-daily-editor-form label {
+    display: grid;
+    gap: 8px;
+}
+
+.partner-daily-editor-form input,
+.partner-daily-editor-form select,
+.partner-daily-editor-form textarea {
+    width: 100%;
+    border: 1px solid var(--partner-border);
+    border-radius: 16px;
+    padding: 13px 15px;
+    background: #fff;
+    font: inherit;
+}
+
+.partner-daily-editor-form textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
 @media (max-width: 1280px) {
     .partner-pricing-layout {
         grid-template-columns: 1fr;
@@ -389,7 +503,8 @@
 
     .partner-pricing-form-grid,
     .partner-calendar-weekdays,
-    .partner-calendar-month-grid {
+    .partner-calendar-month-grid,
+    .partner-daily-editor-form {
         grid-template-columns: 1fr;
     }
 

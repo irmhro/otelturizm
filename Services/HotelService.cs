@@ -521,12 +521,90 @@ public class HotelService : IHotelService
             LIMIT 8;
             """;
 
+        await using (var command = new MySqlCommand(sql, connection))
+        {
+            command.Parameters.AddWithValue("@queryNormalized", normalizedQueryKeyword);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                result.Add(new HotelSearchSuggestionViewModel
+                {
+                    Value = reader.GetString(0),
+                    Label = reader.GetString(1),
+                    Type = reader.GetString(2)
+                });
+            }
+        }
+
+        if (result.Count < 8)
+        {
+            var fuzzyCandidates = await LoadFuzzySearchCandidatesAsync(connection, normalizedQueryKeyword, cancellationToken);
+            var existingKeys = new HashSet<string>(result.Select(x => $"{x.Type}:{x.Value}"), StringComparer.OrdinalIgnoreCase);
+            foreach (var item in fuzzyCandidates
+                         .OrderByDescending(x => x.Score)
+                         .ThenBy(x => x.Item.Label, StringComparer.CurrentCultureIgnoreCase)
+                         .Take(12))
+            {
+                var key = $"{item.Item.Type}:{item.Item.Value}";
+                if (existingKeys.Contains(key))
+                {
+                    continue;
+                }
+
+                result.Add(item.Item);
+                existingKeys.Add(key);
+                if (result.Count >= 8)
+                {
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private async Task<List<(HotelSearchSuggestionViewModel Item, int Score)>> LoadFuzzySearchCandidatesAsync(MySqlConnection connection, string normalizedQueryKeyword, CancellationToken cancellationToken)
+    {
+        var candidates = new List<HotelSearchSuggestionViewModel>();
+        if (string.IsNullOrWhiteSpace(normalizedQueryKeyword))
+        {
+            return new List<(HotelSearchSuggestionViewModel Item, int Score)>();
+        }
+
+        const string sql = """
+            SELECT DISTINCT o.sehir AS suggestion_value, o.sehir AS suggestion_label, 'Sehir' AS suggestion_type
+            FROM oteller o
+            WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı'
+
+            UNION
+
+            SELECT DISTINCT o.ilce AS suggestion_value, CONCAT(o.ilce, ' / ', o.sehir) AS suggestion_label, 'Ilce' AS suggestion_type
+            FROM oteller o
+            WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı'
+
+            UNION
+
+            SELECT DISTINCT o.mahalle AS suggestion_value, CONCAT(o.mahalle, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Mahalle' AS suggestion_type
+            FROM oteller o
+            WHERE o.yayin_durumu = 'Yayında'
+              AND o.onay_durumu = 'Onaylandı'
+              AND o.mahalle IS NOT NULL
+              AND o.mahalle <> ''
+
+            UNION
+
+            SELECT DISTINCT o.otel_adi AS suggestion_value, CONCAT(o.otel_adi, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Otel' AS suggestion_type
+            FROM oteller o
+            WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı'
+
+            LIMIT 150;
+            """;
+
         await using var command = new MySqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@queryNormalized", normalizedQueryKeyword);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            result.Add(new HotelSearchSuggestionViewModel
+            candidates.Add(new HotelSearchSuggestionViewModel
             {
                 Value = reader.GetString(0),
                 Label = reader.GetString(1),
@@ -534,7 +612,10 @@ public class HotelService : IHotelService
             });
         }
 
-        return result;
+        return candidates
+            .Select(item => (Item: item, Score: ComputeSuggestionScore(normalizedQueryKeyword, NormalizeSearchKeyword(item.Value))))
+            .Where(x => x.Score >= 55)
+            .ToList();
     }
 
     private static string NormalizeSearchKeyword(string value)
@@ -580,6 +661,72 @@ public class HotelService : IHotelService
         }
 
         return expression;
+    }
+
+    private static int ComputeSuggestionScore(string query, string candidate)
+    {
+        if (string.IsNullOrWhiteSpace(query) || string.IsNullOrWhiteSpace(candidate))
+        {
+            return 0;
+        }
+
+        if (string.Equals(query, candidate, StringComparison.OrdinalIgnoreCase))
+        {
+            return 100;
+        }
+
+        if (candidate.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+        {
+            return 94;
+        }
+
+        if (candidate.Contains(query, StringComparison.OrdinalIgnoreCase))
+        {
+            return 86;
+        }
+
+        if (candidate.Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(token => token.StartsWith(query, StringComparison.OrdinalIgnoreCase)))
+        {
+            return 82;
+        }
+
+        var distance = ComputeLevenshteinDistance(query, candidate);
+        var maxLength = Math.Max(query.Length, candidate.Length);
+        if (maxLength == 0)
+        {
+            return 0;
+        }
+
+        var similarity = 1d - (double)distance / maxLength;
+        return similarity >= 0.45d
+            ? (int)Math.Round(similarity * 100d)
+            : 0;
+    }
+
+    private static int ComputeLevenshteinDistance(string source, string target)
+    {
+        var costs = new int[target.Length + 1];
+        for (var j = 0; j <= target.Length; j++)
+        {
+            costs[j] = j;
+        }
+
+        for (var i = 1; i <= source.Length; i++)
+        {
+            var previousDiagonal = costs[0];
+            costs[0] = i;
+            for (var j = 1; j <= target.Length; j++)
+            {
+                var previousAbove = costs[j];
+                var substitutionCost = source[i - 1] == target[j - 1] ? 0 : 1;
+                costs[j] = Math.Min(
+                    Math.Min(costs[j] + 1, costs[j - 1] + 1),
+                    previousDiagonal + substitutionCost);
+                previousDiagonal = previousAbove;
+            }
+        }
+
+        return costs[target.Length];
     }
 
     public async Task<HotelDetailPageViewModel?> GetHotelDetailPageAsync(string slug, CancellationToken cancellationToken = default)
@@ -765,15 +912,40 @@ public class HotelService : IHotelService
 
         const string roomsSql = """
             SELECT
-                oda_adi,
-                maksimum_kisi_sayisi,
-                yatak_tipi,
-                oda_metrekare,
-                standart_gecelik_fiyat
-            FROM oda_tipleri
-            WHERE otel_id = @hotelId
-              AND aktif_mi = 1
-            ORDER BY siralama ASC, id ASC;
+                ot.id,
+                ot.oda_adi,
+                ot.maksimum_kisi_sayisi,
+                ot.yatak_tipi,
+                ot.oda_metrekare,
+                ot.standart_gecelik_fiyat,
+                COALESCE(NULLIF(ot.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
+                COALESCE(ofe.features, '') AS room_features
+            FROM oda_tipleri ot
+            LEFT JOIN (
+                SELECT
+                    g.oda_tip_id,
+                    SUBSTRING_INDEX(
+                        GROUP_CONCAT(g.gorsel_url ORDER BY g.kapak_fotografi_mi DESC, g.siralama ASC, g.id ASC SEPARATOR '||'),
+                        '||',
+                        1
+                    ) AS gorsel_url
+                FROM oda_gorselleri g
+                WHERE g.onay_durumu = 'Onaylandı'
+                GROUP BY g.oda_tip_id
+            ) og ON og.oda_tip_id = ot.id
+            LEFT JOIN (
+                SELECT
+                    oto.oda_tip_id,
+                    GROUP_CONCAT(CONCAT(oo.ozellik_adi, '::', IFNULL(oo.ozellik_ikon, 'fa-circle-check')) ORDER BY oo.siralama ASC, oo.id ASC SEPARATOR '||') AS features
+                FROM oda_tipi_ozellikleri oto
+                INNER JOIN oda_ozellikleri oo
+                    ON oo.id = oto.ozellik_id
+                   AND oo.aktif_mi = 1
+                GROUP BY oto.oda_tip_id
+            ) ofe ON ofe.oda_tip_id = ot.id
+            WHERE ot.otel_id = @hotelId
+              AND ot.aktif_mi = 1
+            ORDER BY ot.siralama ASC, ot.id ASC;
             """;
 
         await using (var roomsCommand = new MySqlCommand(roomsSql, connection))
@@ -782,18 +954,34 @@ public class HotelService : IHotelService
             await using var roomsReader = await roomsCommand.ExecuteReaderAsync(cancellationToken);
             while (await roomsReader.ReadAsync(cancellationToken))
             {
-                var roomName = roomsReader.GetString(0);
-                var maxGuests = roomsReader.GetByte(1);
-                var bedType = roomsReader.IsDBNull(2) ? "Yatak bilgisi yok" : roomsReader.GetString(2);
-                ushort? squareMeter = roomsReader.IsDBNull(3) ? null : roomsReader.GetUInt16(3);
-                var roomPrice = roomsReader.GetDecimal(4);
+                var roomId = roomsReader.GetInt64(0);
+                var roomName = roomsReader.GetString(1);
+                var maxGuests = roomsReader.GetByte(2);
+                var bedType = roomsReader.IsDBNull(3) ? "Yatak bilgisi yok" : roomsReader.GetString(3);
+                ushort? squareMeter = roomsReader.IsDBNull(4) ? null : roomsReader.GetUInt16(4);
+                var roomPrice = roomsReader.GetDecimal(5);
+                var roomImageUrl = roomsReader.IsDBNull(6) ? string.Empty : roomsReader.GetString(6);
+                var rawFeatures = roomsReader.IsDBNull(7) ? string.Empty : roomsReader.GetString(7);
+                var roomFeatures = rawFeatures
+                    .Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(ParseAmenity)
+                    .Select(x => new HotelRoomFeatureViewModel
+                    {
+                        Name = NormalizeAmenityLabel(x.Label),
+                        IconClass = NormalizeAmenityIcon(x.IconClass, x.Label)
+                    })
+                    .GroupBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                    .Select(x => x.First())
+                    .ToList();
 
                 model.Rooms.Add(new HotelRoomViewModel
                 {
-                    RoomTypeId = roomsReader.GetInt64(0),
+                    RoomTypeId = roomId,
                     Name = roomName,
                     Specs = $"{bedType} · {(squareMeter.HasValue ? $"{squareMeter.Value} m2" : "Metrekare bilgisi bekleniyor")} · Max {maxGuests} Kisi",
                     Price = roomPrice,
+                    ImageUrl = NormalizeImageUrl(roomImageUrl),
+                    Features = roomFeatures,
                     CancellationText = "Ucretsiz iptal"
                 });
             }
@@ -807,6 +995,12 @@ public class HotelService : IHotelService
                 Name = "Standart Oda",
                 Specs = "Cift kisilik yatak · 28 m2 · Max 2 Kisi",
                 Price = model.LowestRoomPrice,
+                Features = new List<HotelRoomFeatureViewModel>
+                {
+                    new() { Name = "Akıllı TV", IconClass = "fa-tv" },
+                    new() { Name = "Havlu", IconClass = "fa-person-dress-burst" },
+                    new() { Name = "Kettle", IconClass = "fa-mug-hot" }
+                },
                 CancellationText = "Ucretsiz iptal"
             });
         }

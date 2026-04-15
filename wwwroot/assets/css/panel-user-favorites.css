@@ -5,11 +5,14 @@
 
 .favorites-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 290px));
+    justify-content: flex-start;
     gap: 20px;
 }
 
 .favorite-card {
+    width: 100%;
+    max-width: 290px;
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 22px;
@@ -20,7 +23,7 @@
 .favorite-card-image {
     position: relative;
     display: block;
-    height: 220px;
+    aspect-ratio: 1 / 1;
     background: linear-gradient(135deg, #dbeafe, #bfdbfe);
     overflow: hidden;
 }
@@ -37,19 +40,36 @@
     background: linear-gradient(135deg, #dbeafe, #c7d2fe 52%, #d9f99d 100%);
 }
 
-.favorite-code-chip {
+.favorite-overlay-icon {
     position: absolute;
-    left: 16px;
-    top: 16px;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
     display: inline-flex;
     align-items: center;
-    padding: 8px 12px;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    color: #ff4d73;
+    font-size: 0.9rem;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.3);
+}
+
+.favorite-stay-chip {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
     border-radius: 999px;
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(0, 59, 149, 0.9);
     color: #fff;
     font-size: 0.74rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
+    font-weight: 700;
 }
 
 .favorite-card-body {
@@ -90,16 +110,77 @@
     margin-right: 0;
 }
 
+.favorite-alert-btn {
+    width: 100%;
+    margin-top: 12px;
+    justify-content: center;
+    min-height: 46px;
+    font-size: 0.88rem;
+    font-weight: 800;
+    border: 1px solid rgba(20, 42, 86, 0.22);
+    border-radius: 16px;
+    background: linear-gradient(135deg, #ffffff 0%, #f3f8ff 100%);
+    color: #0f2f69;
+    box-shadow: 0 10px 24px rgba(15, 47, 105, 0.12);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.favorite-alert-btn i {
+    color: #0b4db8;
+}
+
+.favorite-alert-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(11, 77, 184, 0.42);
+    box-shadow: 0 14px 28px rgba(11, 77, 184, 0.2);
+}
+
 .card-bottom {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.price-caption {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .card-bottom strong {
     color: #0f172a;
-    font-size: 1.05rem;
+    font-size: 1.45rem;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+}
+
+.favorite-reservation-btn {
+    display: inline-flex;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    border: 1px solid rgba(8, 47, 110, 0.16);
+    background: linear-gradient(135deg, #0b2f73 0%, #0f5bd7 52%, #2a86ff 100%);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    box-shadow: 0 14px 28px rgba(15, 91, 215, 0.28);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+    margin-bottom: 0;
+}
+
+.favorite-reservation-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.03);
+    box-shadow: 0 18px 34px rgba(15, 91, 215, 0.36);
 }
 
 .favorites-empty-state {
@@ -124,7 +205,7 @@
 
 @media (max-width: 1200px) {
     .favorites-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(230px, 260px));
     }
 }
 
@@ -133,12 +214,11 @@
         grid-template-columns: 1fr;
     }
 
-    .favorite-card-image {
-        height: 210px;
+    .favorite-card {
+        max-width: 100%;
     }
 
     .card-bottom {
-        flex-direction: column;
-        align-items: stretch;
+        margin-bottom: 10px;
     }
 }

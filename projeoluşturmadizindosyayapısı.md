@@ -707,3 +707,26 @@ Bu sozlesme tum yeni ekranlar icin baglayicidir.
 - Geliştirme sırasında migration dosyaları hedef veritabanı motoru ile uyumlu hazırlanmalıdır. MariaDB/MySQL sürüm farkı olan projelerde IF NOT EXISTS gibi sözdizimleri körlemesine kullanılmayacak; gerekiyorsa INFORMATION_SCHEMA kontrollü idempotent migration yazılacaktır.
 - Kullanıcı, partner, firma ve admin panelindeki her POST aksiyonu build ve DB yazma testi ile doğrulanmadan tamamlanmış kabul edilmez.
 
+## 8.13) Guvenli Mesaj ve Belge Kurali
+- `panel/user/mesajlarim` ve firma mesaj alanlari ortak bir mesaj merkezi mantigi ile calisir; ayni mesajlasma davranisi iki ayri sahte sorgu seti ile kopyalanmaz.
+- Mesajlasma akisi icin `mesaj_konusmalari` ve `mesajlar` tablolari firma baglami, okunmamis sayilari, soft delete, duzenleme ve dosya iliskileri ile genisletilmelidir.
+- Guvenli ek dosyalar `wwwroot` altina yazilmaz; `App_Data/secure-storage/...` gibi public olmayan dizinde tutulur.
+- Otel gorselleri disindaki kullanici/firma belgeleri dogrudan fiziksel URL ile yayinlanmaz; yalniz tokenli ve kullaniciya bagli `secure-files/{token}` rotasi ile servis edilir.
+- Tokenli belge erisimi su kurallarla calisir:
+  - token bir kullaniciya ve hesap tipine baglidir
+  - suresi vardir
+  - kullanim sayisi siniri destekler
+  - token gecersiz, suresi dolmus veya hesap uyumsuz ise dosya yaniti verilmez
+- Mesaj silme hard delete degildir; mesaj icerigi audit icin tabloda kalir, gorunumde `Bu mesaj silindi.` gibi bir placeholder ile blur/gri durum gosterilir.
+- Mesaj ekleri icin baglama tablolari ayri tutulur:
+  - `guvenli_dosya_varliklari`
+  - `guvenli_dosya_erisim_tokenlari`
+  - `mesaj_dosyalari`
+- Kullanici ve firma mesajlasma akislari HTTP seviyesinde dogrulanmadan tamamlanmis sayilmaz:
+  - sayfa acilisi
+  - mesaj gonderme
+  - ek dosya yukleme
+  - tokenli dosya indirme
+  - hesaplar arasi yetkisiz erisim engeli
+  - soft delete placeholder gorunumu
+

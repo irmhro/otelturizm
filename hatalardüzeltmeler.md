@@ -345,3 +345,31 @@
 - ücretsiz API kaynağı ile tüm Türkiye mahalle verisi idempotent şekilde import edildi.
 - ilceler tablosunda mahalle kaydı olmayan ilçe kalmadı.
 
+## 2026-04-15 - Kullanici/Firma guvenli mesajlasma ve belge erisimi
+- Sorun: `panel/user/mesajlarim` ile firma tarafi arasinda ortak, guvenli ve dosya ekli mesajlasma altyapisi yoktu. Belgeler icin public olmayan depolama, tokenli URL ve soft delete davranisi eksikti.
+- Kök neden:
+  - `mesaj_konusmalari` ve `mesajlar` tablolari firma baglami, soft delete ve belge akisi icin yetersizdi.
+  - Guvenli dosya tablolari migration olarak hazir olsa da veritabanina gercekten uygulanmamis durumdaydi.
+  - Guvenli dosya endpoint'i anonim istekte login redirect'i veriyordu; bu da belge varligini sessizce saklamak yerine yonlendirme davranisi uretiyordu.
+- Nihai duzeltme:
+  - `135`–`140` numarali migrationlar tek tek MySQL'e uygulanip `schema_migrations` tablosuna checksum ile kaydedildi.
+  - Yeni/gelistirilen tablolar:
+    - `guvenli_dosya_varliklari`
+    - `guvenli_dosya_erisim_tokenlari`
+    - `mesaj_dosyalari`
+    - `mesaj_konusmalari` firma ve okunma alanlari
+    - `mesajlar` soft delete, firma gonderen ve duzenleme alanlari
+  - `MessageCenterService` ile kullanici ve firma tarafi ortak mesaj merkezi servisine baglandi.
+  - Dosyalar `App_Data/secure-storage/message-attachments` altinda tutuldu; `wwwroot` altina yazilmadi.
+  - `SecureFilesController` anonim erisimde redirect yerine `404` donerek token varligini disariya sizdirmayacak sekilde sertlestirildi.
+- Canli dogrulama:
+  - kullanici login -> `/panel/user/mesajlarim` `200`
+  - firma login -> `/panel/firma/mesajlar` `200`
+  - kullanicidan dosyali mesaj gonderimi basarili
+  - firmadan dosyali cevap basarili
+  - tokenli dosya kullanici/firma oturumunda `200`
+  - anonim erisim `404`
+  - farkli hesap tipi ile ayni tokeni acma denemesi `404`
+  - mesaj silme sonrasi sayfada `Bu mesaj silindi` placeholder'i gorundu
+  - derleme temiz gecti: `0 hata`, `0 uyari`
+

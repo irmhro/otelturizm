@@ -1,5 +1,5 @@
 .auth-shell {
-    padding: 82px 20px 72px;
+    padding: 0 20px 72px;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     touch-action: manipulation;
@@ -435,7 +435,7 @@
 
 @media (max-width: 768px) {
     .auth-shell {
-        padding: 72px 12px 42px;
+        padding: 0 12px 42px;
     }
 
     .auth-panel-wrap {

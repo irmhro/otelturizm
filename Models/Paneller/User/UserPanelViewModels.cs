@@ -1,3 +1,6 @@
+using otelturizmnew.Models.Messages;
+using otelturizmnew.Services.Abstractions;
+
 namespace otelturizmnew.Models.Paneller.User;
 
 public class UserDashboardPageViewModel
@@ -53,43 +56,29 @@ public class UserFavoriteSummaryViewModel
 
 public class UserMessagesPageViewModel
 {
-    public List<UserMessageThreadViewModel> Threads { get; set; } = new();
+    public List<MessageCenterThreadViewModel> Threads { get; set; } = new();
     public long? SelectedConversationId { get; set; }
     public string SelectedTitle { get; set; } = "Mesajlarım";
     public string SelectedSubtitle { get; set; } = "Mesaj detayları";
-    public List<UserMessageItemViewModel> Messages { get; set; } = new();
-}
-
-public class UserMessageThreadViewModel
-{
-    public long ConversationId { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Preview { get; set; } = string.Empty;
-    public string AvatarText { get; set; } = "OT";
-    public string AvatarTone { get; set; } = string.Empty;
-    public bool IsActive { get; set; }
-}
-
-public class UserMessageItemViewModel
-{
-    public bool IsOutgoing { get; set; }
-    public string MessageText { get; set; } = string.Empty;
-    public string TimeText { get; set; } = string.Empty;
-}
-
-public class UserMessageSendForm
-{
-    public long ConversationId { get; set; }
-    public string Message { get; set; } = string.Empty;
+    public List<MessageCenterItemViewModel> Messages { get; set; } = new();
 }
 
 public class UserProfilePageViewModel
 {
     public UserProfileForm Form { get; set; } = new();
+    public List<AddressCountryOption> Countries { get; set; } = new();
+    public List<AddressProvinceOption> Provinces { get; set; } = new();
+    public long? SelectedCountryId { get; set; }
+    public long? SelectedProvinceId { get; set; }
+    public long? SelectedDistrictId { get; set; }
+    public long? SelectedNeighborhoodId { get; set; }
+    public bool OpenCompletionModal { get; set; }
+    public string ReturnUrl { get; set; } = string.Empty;
 }
 
 public class UserProfileForm
 {
+    public string? ReturnUrl { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

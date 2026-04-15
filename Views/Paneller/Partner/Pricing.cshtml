@@ -91,7 +91,16 @@
             <div class="partner-calendar-month-grid">
                 @foreach (var day in Model.CalendarDays)
                 {
-                    <article class="partner-calendar-cell @(day.IsCurrentMonth ? string.Empty : "is-other-month") @(day.IsToday ? "is-today" : string.Empty) @(day.IsHighlighted ? "is-highlighted" : string.Empty) @(day.IsClosed ? "is-closed" : string.Empty)">
+                    <article class="partner-calendar-cell @(day.IsCurrentMonth ? string.Empty : "is-other-month") @(day.IsToday ? "is-today" : string.Empty) @(day.IsHighlighted ? "is-highlighted" : string.Empty) @(day.IsClosed ? "is-closed" : string.Empty)"
+                             data-date="@day.Date.ToString("yyyy-MM-dd")"
+                             data-base-price="@day.BasePriceAmount.ToString(CultureInfo.InvariantCulture)"
+                             data-discount-price="@(day.DiscountPriceAmount?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)"
+                             data-total-rooms="@day.TotalRooms"
+                             data-min-stay="@day.MinStay"
+                             data-max-stay="@day.MaxStay"
+                             data-is-closed="@(day.IsClosed ? "true" : "false")"
+                             data-campaign-id="@(day.CampaignId?.ToString() ?? string.Empty)"
+                             data-price-note="@day.PriceNote">
                         <div class="partner-calendar-cell-head">
                             <div>
                                 <strong>@day.DayLabel</strong>
@@ -121,6 +130,15 @@
                         @if (!string.IsNullOrWhiteSpace(day.PriceNote))
                         {
                             <p class="partner-calendar-note">@day.PriceNote</p>
+                        }
+                        @if (Model.SelectedRoomId.HasValue && day.IsCurrentMonth)
+                        {
+                            <button type="button" class="partner-calendar-edit-btn"
+                                    data-open-daily-editor="true"
+                                    data-date="@day.Date.ToString("yyyy-MM-dd")">
+                                <i class="fas fa-pen"></i>
+                                Gunu Duzenle
+                            </button>
                         }
                     </article>
                 }
@@ -224,3 +242,164 @@
         </form>
     </aside>
 </section>
+
+@if (Model.SelectedRoomId.HasValue)
+{
+    <div class="partner-daily-editor-backdrop" id="partnerDailyEditorBackdrop" hidden></div>
+    <section class="partner-daily-editor-modal" id="partnerDailyEditorModal" hidden aria-hidden="true">
+        <div class="partner-daily-editor-head">
+            <div>
+                <span class="partner-daily-editor-kicker">Gunluk fiyat duzenleme</span>
+                <h3 id="partnerDailyEditorTitle">Secili gunu duzenle</h3>
+                <p>@Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId)?.RoomName</p>
+            </div>
+            <button type="button" class="partner-daily-editor-close" id="partnerDailyEditorClose" aria-label="Kapat">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form method="post" action="/panel/partner/takvim-fiyatlar/gun-guncelle" class="partner-daily-editor-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+            <input type="hidden" name="RoomId" value="@Model.SelectedRoomId" />
+            <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
+            <input type="hidden" name="Date" id="dailyEditorDateInput" value="@Model.DailyForm.Date.ToString("yyyy-MM-dd")" />
+
+            <label>
+                <span>Tarih</span>
+                <input type="text" id="dailyEditorDateDisplay" value="@Model.DailyForm.Date.ToString("dd.MM.yyyy")" readonly />
+            </label>
+            <label>
+                <span>Normal fiyat</span>
+                <input type="number" step="0.01" name="BasePrice" id="dailyEditorBasePrice" value="@(Model.DailyForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+            </label>
+            <label>
+                <span>Kampanyali fiyat</span>
+                <input type="number" step="0.01" name="DiscountPrice" id="dailyEditorDiscountPrice" value="@(Model.DailyForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+            </label>
+            <label class="partner-inline-toggle">
+                <input type="checkbox" name="ClearDiscountPrice" value="true" id="dailyEditorClearDiscount" />
+                <span>Kampanyali fiyati temizle</span>
+            </label>
+            <label>
+                <span>Satisa acik oda</span>
+                <input type="number" name="TotalRooms" min="0" id="dailyEditorTotalRooms" value="@(Model.DailyForm.TotalRooms?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+            </label>
+            <label>
+                <span>Minimum geceleme</span>
+                <input type="number" name="MinStay" min="1" id="dailyEditorMinStay" value="@(Model.DailyForm.MinStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+            </label>
+            <label>
+                <span>Maksimum geceleme</span>
+                <input type="number" name="MaxStay" min="1" id="dailyEditorMaxStay" value="@(Model.DailyForm.MaxStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+            </label>
+            <label>
+                <span>Satis durumu</span>
+                <select name="SaleStatusAction" id="dailyEditorSaleStatus">
+                    <option value="keep">Mevcut durum korunsun</option>
+                    <option value="open">Satisa ac</option>
+                    <option value="close">Satisa kapat</option>
+                </select>
+            </label>
+            <label>
+                <span>Kampanya secimi</span>
+                <select name="CampaignId" id="dailyEditorCampaignId">
+                    <option value="">Kampanya uygulanmayacak</option>
+                    @foreach (var campaign in Model.AvailableCampaigns)
+                    {
+                        <option value="@campaign.CampaignId">@campaign.CampaignName (@campaign.CampaignCode)</option>
+                    }
+                </select>
+            </label>
+            <label class="partner-form-span">
+                <span>Takvim notu</span>
+                <textarea name="PriceNote" id="dailyEditorPriceNote" placeholder="Bu gun icin not ekleyin.">@Model.DailyForm.PriceNote</textarea>
+            </label>
+            <button type="submit" class="partner-primary-btn partner-form-span">
+                <i class="fas fa-floppy-disk"></i>
+                Gunu Kaydet
+            </button>
+        </form>
+    </section>
+
+    <script>
+        (function () {
+            const modal = document.getElementById('partnerDailyEditorModal');
+            const backdrop = document.getElementById('partnerDailyEditorBackdrop');
+            const closeButton = document.getElementById('partnerDailyEditorClose');
+            const title = document.getElementById('partnerDailyEditorTitle');
+            const dateInput = document.getElementById('dailyEditorDateInput');
+            const dateDisplay = document.getElementById('dailyEditorDateDisplay');
+            const basePriceInput = document.getElementById('dailyEditorBasePrice');
+            const discountPriceInput = document.getElementById('dailyEditorDiscountPrice');
+            const clearDiscountInput = document.getElementById('dailyEditorClearDiscount');
+            const totalRoomsInput = document.getElementById('dailyEditorTotalRooms');
+            const minStayInput = document.getElementById('dailyEditorMinStay');
+            const maxStayInput = document.getElementById('dailyEditorMaxStay');
+            const saleStatusSelect = document.getElementById('dailyEditorSaleStatus');
+            const campaignSelect = document.getElementById('dailyEditorCampaignId');
+            const priceNoteInput = document.getElementById('dailyEditorPriceNote');
+
+            if (!modal || !backdrop) {
+                return;
+            }
+
+            const culture = new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+            function openEditor(cell) {
+                const date = cell.dataset.date || '';
+                const dateValue = date ? new Date(date + 'T00:00:00') : null;
+                dateInput.value = date;
+                dateDisplay.value = dateValue ? culture.format(dateValue) : '';
+                title.textContent = (dateValue ? culture.format(dateValue) : 'Secili gun') + ' gununu duzenle';
+                basePriceInput.value = cell.dataset.basePrice || '';
+                discountPriceInput.value = cell.dataset.discountPrice || '';
+                clearDiscountInput.checked = false;
+                totalRoomsInput.value = cell.dataset.totalRooms || '';
+                minStayInput.value = cell.dataset.minStay || '';
+                maxStayInput.value = cell.dataset.maxStay || '';
+                saleStatusSelect.value = cell.dataset.isClosed === 'true' ? 'close' : 'open';
+                campaignSelect.value = cell.dataset.campaignId || '';
+                priceNoteInput.value = cell.dataset.priceNote || '';
+                modal.hidden = false;
+                backdrop.hidden = false;
+                requestAnimationFrame(function () {
+                    modal.classList.add('is-open');
+                    backdrop.classList.add('is-open');
+                    modal.setAttribute('aria-hidden', 'false');
+                });
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeEditor() {
+                modal.classList.remove('is-open');
+                backdrop.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+                window.setTimeout(function () {
+                    modal.hidden = true;
+                    backdrop.hidden = true;
+                    document.body.style.overflow = '';
+                }, 180);
+            }
+
+            document.querySelectorAll('[data-open-daily-editor="true"]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const cell = button.closest('.partner-calendar-cell');
+                    if (!cell) {
+                        return;
+                    }
+
+                    openEditor(cell);
+                });
+            });
+
+            closeButton?.addEventListener('click', closeEditor);
+            backdrop.addEventListener('click', closeEditor);
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+                    closeEditor();
+                }
+            });
+        })();
+    </script>
+}

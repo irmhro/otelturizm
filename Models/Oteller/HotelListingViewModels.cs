@@ -1,6 +1,6 @@
-namespace otelturizmnew.Models.Oteller;
-
 using otelturizmnew.Models.Reservations;
+
+namespace otelturizmnew.Models.Oteller;
 
 public class HotelListingPageViewModel
 {
@@ -80,8 +80,13 @@ public class HotelDetailPageViewModel
     public decimal LowestRoomPrice { get; set; }
     public string MainImageUrl { get; set; } = string.Empty;
     public bool IsFavorite { get; set; }
+    public bool IsLoggedInUser { get; set; }
+    public bool HasCompletedReservationAtHotel { get; set; }
+    public string ConversationInfoMessage { get; set; } = string.Empty;
+    public bool ShouldResumeDraftOnLoad { get; set; }
     public PublicHotelReservationForm ReservationForm { get; set; } = new();
     public ReservationDraftSummaryViewModel? ActiveDraft { get; set; }
+    public HotelProfileCompletionPromptViewModel ProfilePrompt { get; set; } = new();
     public List<string> GalleryImages { get; set; } = new();
     public List<HotelAmenityViewModel> Amenities { get; set; } = new();
     public List<HotelRoomViewModel> Rooms { get; set; } = new();
@@ -102,7 +107,30 @@ public class HotelRoomViewModel
     public string Name { get; set; } = string.Empty;
     public string Specs { get; set; } = string.Empty;
     public decimal Price { get; set; }
+    public string? ImageUrl { get; set; }
+    public List<HotelRoomFeatureViewModel> Features { get; set; } = new();
     public string CancellationText { get; set; } = "Ucretsiz iptal";
+}
+
+public class HotelRoomFeatureViewModel
+{
+    public string Name { get; set; } = string.Empty;
+    public string IconClass { get; set; } = "fa-circle-check";
+}
+
+public class HotelProfileCompletionPromptViewModel
+{
+    public bool IsProfileIncomplete { get; set; }
+    public string ReturnUrl { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+    public string? BirthDateText { get; set; }
+    public string? Gender { get; set; }
+    public string? Nationality { get; set; }
+    public string? City { get; set; }
+    public string? District { get; set; }
+    public string? Neighborhood { get; set; }
+    public string? Address { get; set; }
 }
 
 public class HotelReviewViewModel

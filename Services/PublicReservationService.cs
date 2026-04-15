@@ -11,17 +11,33 @@ public class PublicReservationService : IPublicReservationService
     private readonly string _connectionString;
     private readonly IReservationDraftService _reservationDraftService;
     private readonly IEmailQueueService _emailQueueService;
+    private readonly ILogger<PublicReservationService> _logger;
 
-    public PublicReservationService(IConfiguration configuration, IReservationDraftService reservationDraftService, IEmailQueueService emailQueueService)
+    public PublicReservationService(IConfiguration configuration, IReservationDraftService reservationDraftService, IEmailQueueService emailQueueService, ILogger<PublicReservationService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _reservationDraftService = reservationDraftService;
         _emailQueueService = emailQueueService;
+        _logger = logger;
     }
 
     public Task<ReservationDraftSummaryViewModel?> GetActiveDraftAsync(long? userId, string? sessionKey, CancellationToken cancellationToken = default)
         => _reservationDraftService.GetActiveDraftAsync(userId, sessionKey, cancellationToken);
+
+    public async Task<PublicReservationPriceQuoteViewModel> GetPriceQuoteAsync(long roomTypeId, DateOnly checkInDate, DateOnly checkOutDate, int roomCount, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        var pricing = await BuildPriceSummaryAsync(connection, roomTypeId, checkInDate, checkOutDate, roomCount, cancellationToken);
+        return new PublicReservationPriceQuoteViewModel
+        {
+            NightCount = Math.Max(1, checkOutDate.DayNumber - checkInDate.DayNumber),
+            NightlyPrice = pricing.NightlyPrice,
+            RoomTotal = pricing.RoomTotal,
+            TaxAmount = pricing.TaxAmount,
+            TotalAmount = pricing.TotalAmount
+        };
+    }
 
     public async Task<PublicReservationResult> StartReservationAsync(long? userId, string? sessionKey, PublicHotelReservationForm form, CancellationToken cancellationToken = default)
     {
@@ -54,14 +70,16 @@ public class PublicReservationService : IPublicReservationService
             NightlyPrice = pricing.NightlyPrice,
             TaxAmount = pricing.TaxAmount,
             TotalAmount = pricing.TotalAmount,
-            ReturnUrl = $"/oteller/{hotel.Slug}",
-            ProfileCompletionUrl = "/panel/user/profil-bilgilerim",
+            ReturnUrl = $"/oteller/{hotel.Slug}?continueDraft=1",
+            ProfileCompletionUrl = $"/oteller/{hotel.Slug}?continueDraft=1&openProfile=1",
             Notes = "Public otel detay sayfasindan baslatildi."
         };
 
         if (userId.GetValueOrDefault() <= 0)
         {
-            await _reservationDraftService.SaveOrUpdateAsync(draftRequest with { Status = "Giris Bekliyor" }, cancellationToken);
+            var guestDraft = CloneDraftRequest(draftRequest);
+            guestDraft.Status = "Giris Bekliyor";
+            await _reservationDraftService.SaveOrUpdateAsync(guestDraft, cancellationToken);
             return new PublicReservationResult
             {
                 Message = "Rezervasyonunuz kaydedildi. Devam etmek icin once giris yapiniz.",
@@ -69,39 +87,38 @@ public class PublicReservationService : IPublicReservationService
             };
         }
 
-        var userProfile = await LoadUserProfileAsync(connection, userId.Value, cancellationToken);
+        var authenticatedUserId = userId.GetValueOrDefault();
+        var userProfile = await LoadUserProfileAsync(connection, authenticatedUserId, cancellationToken);
         if (!userProfile.IsProfileComplete)
         {
-            await _reservationDraftService.SaveOrUpdateAsync(draftRequest with
-            {
-                Status = "Profil Eksik",
-                GuestFullName = userProfile.FullName,
-                GuestEmail = userProfile.Email,
-                GuestPhone = userProfile.Phone,
-                GuestCity = userProfile.City,
-                GuestDistrict = userProfile.District,
-                GuestNeighborhood = userProfile.Neighborhood,
-                GuestAddress = userProfile.Address
-            }, cancellationToken);
+            var profileDraft = CloneDraftRequest(draftRequest);
+            profileDraft.Status = "Profil Eksik";
+            profileDraft.GuestFullName = userProfile.FullName;
+            profileDraft.GuestEmail = userProfile.Email;
+            profileDraft.GuestPhone = userProfile.Phone;
+            profileDraft.GuestCity = userProfile.City;
+            profileDraft.GuestDistrict = userProfile.District;
+            profileDraft.GuestNeighborhood = userProfile.Neighborhood;
+            profileDraft.GuestAddress = userProfile.Address;
+            await _reservationDraftService.SaveOrUpdateAsync(profileDraft, cancellationToken);
 
             return new PublicReservationResult
             {
                 Message = "Rezervasyon taslak olarak kaydedildi. Lutfen profil bilgilerinizi tamamlayin.",
-                RedirectUrl = "/panel/user/profil-bilgilerim"
+                RedirectUrl = $"/oteller/{hotel.Slug}?continueDraft=1&openProfile=1"
             };
         }
 
-        var draftId = await _reservationDraftService.SaveOrUpdateAsync(draftRequest with
-        {
-            Status = "Taslak",
-            GuestFullName = userProfile.FullName,
-            GuestEmail = userProfile.Email,
-            GuestPhone = userProfile.Phone,
-            GuestCity = userProfile.City,
-            GuestDistrict = userProfile.District,
-            GuestNeighborhood = userProfile.Neighborhood,
-            GuestAddress = userProfile.Address
-        }, cancellationToken);
+        var readyDraft = CloneDraftRequest(draftRequest);
+        readyDraft.Status = "Taslak";
+        readyDraft.GuestFullName = userProfile.FullName;
+        readyDraft.GuestEmail = userProfile.Email;
+        readyDraft.GuestPhone = userProfile.Phone;
+        readyDraft.GuestCity = userProfile.City;
+        readyDraft.GuestDistrict = userProfile.District;
+        readyDraft.GuestNeighborhood = userProfile.Neighborhood;
+        readyDraft.GuestAddress = userProfile.Address;
+        var draftId = await _reservationDraftService.SaveOrUpdateAsync(readyDraft, cancellationToken);
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
@@ -127,8 +144,7 @@ public class PublicReservationService : IPublicReservationService
                     @nightlyPrice, @roomTotal, @taxAmount, @totalAmount,
                     @commissionRate, 'Onay Bekliyor', 'Beklemede', 'Beklemede', 'Onay Gerekmiyor',
                     'Web', 'Web', @note, @draftId
-                );
-                SELECT LAST_INSERT_ID();";
+                );";
 
             long reservationId;
             await using (var insertCommand = new MySqlCommand(insertSql, connection, (MySqlTransaction)transaction))
@@ -136,7 +152,7 @@ public class PublicReservationService : IPublicReservationService
                 insertCommand.Parameters.AddWithValue("@reservationNo", reservationNo);
                 insertCommand.Parameters.AddWithValue("@hotelId", form.HotelId);
                 insertCommand.Parameters.AddWithValue("@roomTypeId", form.RoomTypeId);
-                insertCommand.Parameters.AddWithValue("@userId", userId.Value);
+                insertCommand.Parameters.AddWithValue("@userId", authenticatedUserId);
                 insertCommand.Parameters.AddWithValue("@fullName", userProfile.FullName);
                 insertCommand.Parameters.AddWithValue("@email", userProfile.Email);
                 insertCommand.Parameters.AddWithValue("@phone", userProfile.Phone);
@@ -156,12 +172,13 @@ public class PublicReservationService : IPublicReservationService
                 insertCommand.Parameters.AddWithValue("@totalAmount", pricing.TotalAmount);
                 insertCommand.Parameters.AddWithValue("@commissionRate", hotel.CommissionRate);
                 insertCommand.Parameters.AddWithValue("@draftId", draftId);
-                reservationId = Convert.ToInt64(await insertCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
+                await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+                reservationId = insertCommand.LastInsertedId;
             }
 
             await _emailQueueService.QueueTemplateAsync(connection, (MySqlTransaction)transaction, new QueuedEmailTemplateRequest
             {
-                UserId = userId.Value,
+                UserId = authenticatedUserId,
                 RecipientEmail = userProfile.Email,
                 TemplateCode = "reservation_received_customer",
                 RelatedTable = "rezervasyonlar",
@@ -180,7 +197,7 @@ public class PublicReservationService : IPublicReservationService
                 }
             }, cancellationToken);
 
-            var partnerRecipient = await ResolvePartnerRecipientAsync(connection, form.HotelId, cancellationToken);
+            var partnerRecipient = await ResolvePartnerRecipientAsync(connection, (MySqlTransaction)transaction, form.HotelId, cancellationToken);
             await _emailQueueService.QueueTemplateAsync(connection, (MySqlTransaction)transaction, new QueuedEmailTemplateRequest
             {
                 UserId = partnerRecipient.UserId,
@@ -217,7 +234,16 @@ public class PublicReservationService : IPublicReservationService
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync(cancellationToken);
+            try
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+            catch (Exception rollbackException)
+            {
+                _logger.LogWarning(rollbackException, "Public rezervasyon rollback asamasinda ikinci bir hata olustu. DraftId: {DraftId}", draftId);
+            }
+
+            _logger.LogError(ex, "Public rezervasyon finalize edilemedi. DraftId: {DraftId}, HotelId: {HotelId}, RoomTypeId: {RoomTypeId}, UserId: {UserId}", draftId, form.HotelId, form.RoomTypeId, authenticatedUserId);
             return new PublicReservationResult
             {
                 Message = $"Rezervasyon olusturulurken hata olustu: {ex.Message}",
@@ -229,7 +255,7 @@ public class PublicReservationService : IPublicReservationService
     private async Task<UserProfileSnapshot> LoadUserProfileAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT ad_soyad, eposta, COALESCE(telefon, ''), COALESCE(sehir, ''), COALESCE(ilce, ''), COALESCE(mahalle, ''), COALESCE(adres, '')
+            SELECT ad_soyad, eposta, COALESCE(telefon, ''), COALESCE(sehir, ''), COALESCE(ilce, ''), COALESCE(mahalle, ''), COALESCE(adres, ''), dogum_tarihi, COALESCE(cinsiyet, '')
             FROM users
             WHERE id = @userId
             LIMIT 1;";
@@ -251,7 +277,9 @@ public class PublicReservationService : IPublicReservationService
             City = reader.GetString(3),
             District = reader.GetString(4),
             Neighborhood = reader.GetString(5),
-            Address = reader.GetString(6)
+            Address = reader.GetString(6),
+            BirthDate = reader.IsDBNull(7) ? null : reader.GetDateTime(7),
+            Gender = reader.GetString(8)
         };
     }
 
@@ -285,7 +313,7 @@ public class PublicReservationService : IPublicReservationService
         };
     }
 
-    private async Task<(long UserId, string Email, string ManagerName)> ResolvePartnerRecipientAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private async Task<(long UserId, string Email, string ManagerName)> ResolvePartnerRecipientAsync(MySqlConnection connection, MySqlTransaction transaction, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT COALESCE(o.user_id, oks.user_id, 1),
@@ -297,7 +325,7 @@ public class PublicReservationService : IPublicReservationService
             WHERE o.id = @hotelId
             ORDER BY oks.ana_sorumlu_mu DESC, oks.id ASC
             LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new MySqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
@@ -369,6 +397,36 @@ public class PublicReservationService : IPublicReservationService
         return string.IsNullOrWhiteSpace(slug) ? hotelCode.ToLowerInvariant() : slug;
     }
 
+    private static ReservationDraftUpsertRequest CloneDraftRequest(ReservationDraftUpsertRequest source)
+        => new()
+        {
+            UserId = source.UserId,
+            SessionKey = source.SessionKey,
+            Source = source.Source,
+            Status = source.Status,
+            HotelId = source.HotelId,
+            RoomTypeId = source.RoomTypeId,
+            GuestFullName = source.GuestFullName,
+            GuestEmail = source.GuestEmail,
+            GuestPhone = source.GuestPhone,
+            GuestCity = source.GuestCity,
+            GuestDistrict = source.GuestDistrict,
+            GuestNeighborhood = source.GuestNeighborhood,
+            GuestAddress = source.GuestAddress,
+            CheckInDate = source.CheckInDate,
+            CheckOutDate = source.CheckOutDate,
+            AdultCount = source.AdultCount,
+            ChildCount = source.ChildCount,
+            RoomCount = source.RoomCount,
+            NightlyPrice = source.NightlyPrice,
+            TaxAmount = source.TaxAmount,
+            TotalAmount = source.TotalAmount,
+            Currency = source.Currency,
+            ReturnUrl = source.ReturnUrl,
+            ProfileCompletionUrl = source.ProfileCompletionUrl,
+            Notes = source.Notes
+        };
+
     private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
         var connection = new MySqlConnection(_connectionString);
@@ -386,7 +444,18 @@ public class PublicReservationService : IPublicReservationService
         public string District { get; set; } = string.Empty;
         public string Neighborhood { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
-        public bool IsProfileComplete => !string.IsNullOrWhiteSpace(FullName) && !string.IsNullOrWhiteSpace(Email) && !string.IsNullOrWhiteSpace(Phone) && !string.IsNullOrWhiteSpace(City) && !string.IsNullOrWhiteSpace(District) && !string.IsNullOrWhiteSpace(Neighborhood) && !string.IsNullOrWhiteSpace(Address);
+        public DateTime? BirthDate { get; set; }
+        public string Gender { get; set; } = string.Empty;
+        public bool IsProfileComplete =>
+            !string.IsNullOrWhiteSpace(FullName) &&
+            !string.IsNullOrWhiteSpace(Email) &&
+            !string.IsNullOrWhiteSpace(Phone) &&
+            !string.IsNullOrWhiteSpace(City) &&
+            !string.IsNullOrWhiteSpace(District) &&
+            !string.IsNullOrWhiteSpace(Neighborhood) &&
+            !string.IsNullOrWhiteSpace(Address) &&
+            BirthDate.HasValue &&
+            !string.IsNullOrWhiteSpace(Gender);
     }
 
     private sealed class HotelSnapshot

@@ -362,6 +362,27 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             return (true, "Yeni oda tipi eklendi.");
         }
 
+        public async Task<(bool Success, string Message)> DeactivateHotelAsync(long hotelId, long adminUserId, CancellationToken cancellationToken = default)
+        {
+            await using var connection = new MySqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+            await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
+
+            const string sql = @"
+                UPDATE oteller
+                SET yayin_durumu = 'Kapatıldı',
+                    onaylayan_admin_id = @adminUserId,
+                    guncellenme_tarihi = NOW()
+                WHERE id = @hotelId;";
+            await using var command = new MySqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@hotelId", hotelId);
+            command.Parameters.AddWithValue("@adminUserId", adminUserId);
+            var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+            return affectedRows > 0
+                ? (true, "Otel pasif duruma alindi.")
+                : (false, "Otel bulunamadi veya guncellenemedi.");
+        }
+
         public async Task<(bool Success, string Message)> DeactivateRoomAsync(long hotelId, long roomId, CancellationToken cancellationToken = default)
         {
             await using var connection = new MySqlConnection(_connectionString);

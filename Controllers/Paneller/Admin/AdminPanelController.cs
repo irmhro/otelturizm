@@ -123,6 +123,26 @@ public class AdminPanelController : Controller
         return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
     }
 
+    [HttpPost("oteller/pasife-al")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeactivateHotel(long hotelId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!CanPerformCriticalAdminActions())
+        {
+            TempData["AdminHotelError"] = "Bu islem yalnizca admin yetkisi ile yapilabilir.";
+            return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+        }
+
+        var result = await _adminHotelManagementService.DeactivateHotelAsync(hotelId, GetUserId(), cancellationToken);
+        TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+    }
+
     [HttpPost("oteller/otel-fotograf-yukle")]
     [ValidateAntiForgeryToken]
     [RequestFormLimits(MultipartBodyLengthLimit = 314572800)]
@@ -311,6 +331,15 @@ public class AdminPanelController : Controller
             || string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase)
             || User.IsInRole("superadmin")
             || User.IsInRole("admin");
+    }
+
+    private bool CanPerformCriticalAdminActions()
+    {
+        var userRole = User.FindFirstValue(AuthClaimTypes.UserRole);
+        return string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(userRole, "superadmin", StringComparison.OrdinalIgnoreCase)
+            || User.IsInRole("admin")
+            || User.IsInRole("superadmin");
     }
 
     private string GetFullName()

@@ -1,6 +1,7 @@
 using System.Globalization;
 using MySqlConnector;
 using otelturizmnew.Models.Firma;
+using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.Firma;
 using otelturizmnew.Services.Abstractions;
 
@@ -9,11 +10,13 @@ namespace otelturizmnew.Services;
 public class FirmaService : IFirmaService
 {
     private readonly string _connectionString;
+    private readonly IMessageCenterService _messageCenterService;
 
-    public FirmaService(IConfiguration configuration)
+    public FirmaService(IConfiguration configuration, IMessageCenterService messageCenterService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
+        _messageCenterService = messageCenterService;
     }
 
     public async Task<FirmaLandingPageViewModel> GetLandingPageAsync(CancellationToken cancellationToken = default)
@@ -152,6 +155,23 @@ public class FirmaService : IFirmaService
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Rezervasyonlar", "Firma adına oluşturulan tüm konaklama kayıtlarını görün.", "reservations", cancellationToken);
         return new FirmaReservationsPageViewModel { Shell = context.Shell, Reservations = await LoadReservationsAsync(connection, context.FirmaId, 200, cancellationToken) };
+    }
+
+    public async Task<FirmaMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var context = await BuildContextAsync(connection, userId, "Mesajlar", "Kullanıcılarla güvenli şekilde yazışın, ek ve belge paylaşın.", "messages", cancellationToken);
+        var inbox = await _messageCenterService.GetFirmaInboxAsync(userId, conversationId, cancellationToken);
+        return new FirmaMessagesPageViewModel
+        {
+            Shell = context.Shell,
+            Threads = inbox.Threads,
+            SelectedConversationId = inbox.SelectedConversationId,
+            SelectedTitle = inbox.SelectedTitle,
+            SelectedSubtitle = inbox.SelectedSubtitle,
+            Messages = inbox.Messages
+        };
     }
 
     public async Task<FirmaEmployeesPageViewModel> GetEmployeesAsync(long userId, CancellationToken cancellationToken = default)
@@ -408,6 +428,12 @@ public class FirmaService : IFirmaService
             return (false, $"Çalışan ekleme sırasında hata oluştu: {ex.Message}");
         }
     }
+
+    public Task<(bool Success, string Message)> SendMessageAsync(long userId, MessageSendRequest form, IReadOnlyList<IFormFile>? attachments, HttpContext httpContext, CancellationToken cancellationToken = default)
+        => _messageCenterService.SendFromFirmaAsync(userId, form, attachments, httpContext, cancellationToken);
+
+    public Task<(bool Success, string Message)> DeleteMessageAsync(long userId, MessageDeleteRequest form, CancellationToken cancellationToken = default)
+        => _messageCenterService.DeleteForFirmaAsync(userId, form, cancellationToken);
 
     public async Task<(bool Success, string Message)> UpsertLimitAsync(long userId, FirmaLimitUpsertModel model, CancellationToken cancellationToken = default)
     {

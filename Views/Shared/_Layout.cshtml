@@ -1,3 +1,6 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -73,6 +76,20 @@
         </div>
     </div>
 </header>
+
+@{
+    var publicDraftRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    long? publicDraftUserId = long.TryParse(publicDraftRaw, out var parsedPublicDraftUserId) ? parsedPublicDraftUserId : null;
+    var publicDraftSessionKey = Context.Request.Cookies.TryGetValue(otelturizmnew.Services.ReservationDraftService.DraftCookieName, out var publicDraftCookieValue)
+        ? publicDraftCookieValue
+        : null;
+    var publicActiveDraft = await ReservationDraftService.GetActiveDraftAsync(publicDraftUserId, publicDraftSessionKey, Context.RequestAborted);
+}
+
+@if (publicActiveDraft is not null)
+{
+    <partial name="~/Views/Shared/_ActiveReservationDraftBanner.cshtml" model="publicActiveDraft" />
+}
 
 <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 <div class="mobile-menu-drawer" id="mobileMenuDrawer">

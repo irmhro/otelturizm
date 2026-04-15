@@ -3,7 +3,12 @@
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
     var selectedHotelId = Model.SelectedHotelId;
     var hotelQuery = selectedHotelId.HasValue ? $"?otelId={selectedHotelId.Value}" : string.Empty;
-    var initials = string.Concat(Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(static x => x[0]));
+    var selectedHotel = Model.ManagedHotels.FirstOrDefault(x => x.IsSelected)
+        ?? (selectedHotelId.HasValue ? Model.ManagedHotels.FirstOrDefault(x => x.HotelId == selectedHotelId.Value) : null);
+    var selectedHotelName = !string.IsNullOrWhiteSpace(Model.SelectedHotelName)
+        ? Model.SelectedHotelName
+        : selectedHotel?.HotelName;
+    var selectedHotelCode = selectedHotel?.HotelCode;
     var items = new[]
     {
         new { Action = "Index", Label = "Dashboard", Icon = "fa-grid-2", Route = "/panel/partner/dashboard" },
@@ -25,13 +30,13 @@
         <a href="/panel/partner/dashboard@(hotelQuery)" class="partner-brand" aria-label="Otelturizm Partner">
             <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
         </a>
-        <div class="partner-profile-card">
-            <div class="partner-avatar">@initials</div>
-            <div>
-                <h3>@Model.FullName</h3>
-                <p>@Model.Email</p>
-                <small>@Model.UserRole</small>
-            </div>
+        <div class="partner-profile-info">
+            <h3>@(!string.IsNullOrWhiteSpace(selectedHotelName) ? selectedHotelName : "Partner Oteli")</h3>
+            <p>@Model.Email</p>
+            @if (!string.IsNullOrWhiteSpace(selectedHotelCode))
+            {
+                <small>Otel Kodu: @selectedHotelCode</small>
+            }
         </div>
 
         <div class="partner-hotel-switcher">

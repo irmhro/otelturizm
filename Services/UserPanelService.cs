@@ -1,5 +1,6 @@
 using System.Globalization;
 using MySqlConnector;
+using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.User;
 using otelturizmnew.Services.Abstractions;
 
@@ -8,11 +9,15 @@ namespace otelturizmnew.Services;
 public class UserPanelService : IUserPanelService
 {
     private readonly string _connectionString;
+    private readonly IMessageCenterService _messageCenterService;
+    private readonly IAddressLookupService _addressLookupService;
 
-    public UserPanelService(IConfiguration configuration)
+    public UserPanelService(IConfiguration configuration, IMessageCenterService messageCenterService, IAddressLookupService addressLookupService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
+        _messageCenterService = messageCenterService;
+        _addressLookupService = addressLookupService;
     }
 
     public async Task<UserDashboardPageViewModel> GetDashboardAsync(long userId, CancellationToken cancellationToken = default)
@@ -58,137 +63,82 @@ public class UserPanelService : IUserPanelService
         return model;
     }
 
-    public async Task<UserMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default)
+    public async Task<(bool Success, string Message)> CancelReservationAsync(long userId, long reservationId, CancellationToken cancellationToken = default)
     {
-        var model = new UserMessagesPageViewModel();
+        if (reservationId <= 0)
+        {
+            return (false, "Gecerli bir rezervasyon seciniz.");
+        }
+
         await using var connection = await OpenConnectionAsync(cancellationToken);
-
-        const string threadsSql = @"
-            SELECT mk.id, COALESCE(o.otel_adi, 'Otelturizm Destek') AS title_text,
-                   COALESCE(mk.son_mesaj_onizleme, 'Henüz mesaj yok') AS preview
-            FROM mesaj_konusmalari mk
-            LEFT JOIN oteller o ON o.id = mk.otel_id
-            WHERE mk.misafir_kullanici_id = @userId
-            ORDER BY COALESCE(mk.son_mesaj_tarihi, mk.olusturulma_tarihi) DESC, mk.id DESC;";
-
-        await using (var command = new MySqlCommand(threadsSql, connection))
-        {
-            command.Parameters.AddWithValue("@userId", userId);
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                var title = reader.GetString(1);
-                model.Threads.Add(new UserMessageThreadViewModel
-                {
-                    ConversationId = reader.GetInt64(0),
-                    Title = title,
-                    Preview = reader.GetString(2),
-                    AvatarText = BuildAvatar(title),
-                    AvatarTone = model.Threads.Count % 3 == 0 ? "blue" : model.Threads.Count % 3 == 1 ? "green" : string.Empty
-                });
-            }
-        }
-
-        var selectedId = conversationId ?? model.Threads.FirstOrDefault()?.ConversationId;
-        model.SelectedConversationId = selectedId;
-        foreach (var thread in model.Threads)
-        {
-            thread.IsActive = thread.ConversationId == selectedId;
-        }
-
-        if (!selectedId.HasValue)
-        {
-            model.SelectedTitle = "Henüz konuşman yok";
-            model.SelectedSubtitle = "Rezervasyon sonrası otel veya destek mesajları burada görünür.";
-            return model;
-        }
-
-        const string titleSql = @"
-            SELECT COALESCE(o.otel_adi, 'Otelturizm Destek') AS title_text,
-                   COALESCE(mk.konu_basligi, 'Mesaj detayı')
-            FROM mesaj_konusmalari mk
-            LEFT JOIN oteller o ON o.id = mk.otel_id
-            WHERE mk.id = @conversationId AND mk.misafir_kullanici_id = @userId
+        const string selectSql = @"
+            SELECT durum, giris_tarihi
+            FROM rezervasyonlar
+            WHERE id = @reservationId AND kullanici_id = @userId
             LIMIT 1;";
-        await using (var titleCommand = new MySqlCommand(titleSql, connection))
+
+        string? currentStatus = null;
+        DateTime? checkInDate = null;
+        await using (var selectCommand = new MySqlCommand(selectSql, connection))
         {
-            titleCommand.Parameters.AddWithValue("@conversationId", selectedId.Value);
-            titleCommand.Parameters.AddWithValue("@userId", userId);
-            await using var reader = await titleCommand.ExecuteReaderAsync(cancellationToken);
+            selectCommand.Parameters.AddWithValue("@reservationId", reservationId);
+            selectCommand.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await selectCommand.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
-                model.SelectedTitle = reader.GetString(0);
-                model.SelectedSubtitle = reader.GetString(1);
+                currentStatus = reader.GetString(0);
+                checkInDate = reader.GetDateTime(1);
             }
         }
 
-        const string messagesSql = @"
-            SELECT gonderen_turu, COALESCE(gonderen_kullanici_id, 0), mesaj_metni, gonderim_tarihi
-            FROM mesajlar
-            WHERE konusma_id = @conversationId
-            ORDER BY gonderim_tarihi ASC, id ASC;";
-        await using (var messageCommand = new MySqlCommand(messagesSql, connection))
+        if (string.IsNullOrWhiteSpace(currentStatus) || !checkInDate.HasValue)
         {
-            messageCommand.Parameters.AddWithValue("@conversationId", selectedId.Value);
-            await using var reader = await messageCommand.ExecuteReaderAsync(cancellationToken);
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                model.Messages.Add(new UserMessageItemViewModel
-                {
-                    IsOutgoing = string.Equals(reader.GetString(0), "Misafir", StringComparison.OrdinalIgnoreCase)
-                        && reader.GetInt64(1) == userId,
-                    MessageText = reader.GetString(2),
-                    TimeText = reader.GetDateTime(3).ToLocalTime().ToString("HH:mm", CultureInfo.GetCultureInfo("tr-TR"))
-                });
-            }
+            return (false, "Rezervasyon bulunamadi.");
         }
 
-        return model;
+        if (string.Equals(currentStatus, "İptal Edildi", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, "Bu rezervasyon zaten iptal edildi.");
+        }
+
+        if (checkInDate.Value.Date <= DateTime.Today)
+        {
+            return (false, "Check-in tarihi gelen veya gecen rezervasyonlar panelden iptal edilemez.");
+        }
+
+        const string updateSql = @"
+            UPDATE rezervasyonlar
+            SET durum = 'İptal Edildi',
+                otel_onay_durumu = 'Reddedildi',
+                iptal_nedeni = 'Kullanici panelinden iptal edildi.'
+            WHERE id = @reservationId AND kullanici_id = @userId;";
+        await using var updateCommand = new MySqlCommand(updateSql, connection);
+        updateCommand.Parameters.AddWithValue("@reservationId", reservationId);
+        updateCommand.Parameters.AddWithValue("@userId", userId);
+        var affected = await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+        return affected > 0
+            ? (true, "Rezervasyonunuz iptal edildi.")
+            : (false, "Rezervasyon iptal edilemedi.");
     }
 
-    public async Task<bool> SendMessageAsync(long userId, UserMessageSendForm form, CancellationToken cancellationToken = default)
+    public async Task<UserMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default)
     {
-        if (form.ConversationId <= 0 || string.IsNullOrWhiteSpace(form.Message))
+        var inbox = await _messageCenterService.GetUserInboxAsync(userId, conversationId, cancellationToken);
+        return new UserMessagesPageViewModel
         {
-            return false;
-        }
-
-        await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using (var authCommand = new MySqlCommand("SELECT COUNT(*) FROM mesaj_konusmalari WHERE id = @conversationId AND misafir_kullanici_id = @userId;", connection))
-        {
-            authCommand.Parameters.AddWithValue("@conversationId", form.ConversationId);
-            authCommand.Parameters.AddWithValue("@userId", userId);
-            var count = Convert.ToInt32(await authCommand.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
-            if (count == 0)
-            {
-                return false;
-            }
-        }
-
-        await using (var insertCommand = new MySqlCommand(@"
-            INSERT INTO mesajlar
-            (konusma_id, gonderen_turu, gonderen_kullanici_id, mesaj_metni, mesaj_tipi, okundu_mu, durum, gonderim_tarihi)
-            VALUES
-            (@conversationId, 'Misafir', @userId, @message, 'Metin', 0, 'Gönderildi', CURRENT_TIMESTAMP);", connection))
-        {
-            insertCommand.Parameters.AddWithValue("@conversationId", form.ConversationId);
-            insertCommand.Parameters.AddWithValue("@userId", userId);
-            insertCommand.Parameters.AddWithValue("@message", form.Message.Trim());
-            await insertCommand.ExecuteNonQueryAsync(cancellationToken);
-        }
-
-        await using var updateCommand = new MySqlCommand(@"
-            UPDATE mesaj_konusmalari
-            SET son_mesaj_tarihi = CURRENT_TIMESTAMP,
-                son_mesaj_gonderen = 'Misafir',
-                son_mesaj_onizleme = LEFT(@message, 100),
-                otel_okunmamis_sayisi = otel_okunmamis_sayisi + 1
-            WHERE id = @conversationId;", connection);
-        updateCommand.Parameters.AddWithValue("@conversationId", form.ConversationId);
-        updateCommand.Parameters.AddWithValue("@message", form.Message.Trim());
-        await updateCommand.ExecuteNonQueryAsync(cancellationToken);
-        return true;
+            Threads = inbox.Threads,
+            SelectedConversationId = inbox.SelectedConversationId,
+            SelectedTitle = inbox.SelectedTitle,
+            SelectedSubtitle = inbox.SelectedSubtitle,
+            Messages = inbox.Messages
+        };
     }
+
+    public Task<(bool Success, string Message)> SendMessageAsync(long userId, MessageSendRequest form, IReadOnlyList<IFormFile>? attachments, HttpContext httpContext, CancellationToken cancellationToken = default)
+        => _messageCenterService.SendFromUserAsync(userId, form, attachments, httpContext, cancellationToken);
+
+    public Task<(bool Success, string Message)> DeleteMessageAsync(long userId, MessageDeleteRequest form, CancellationToken cancellationToken = default)
+        => _messageCenterService.DeleteForUserAsync(userId, form, cancellationToken);
 
     public async Task<UserProfilePageViewModel> GetProfileAsync(long userId, CancellationToken cancellationToken = default)
     {
@@ -230,50 +180,87 @@ public class UserPanelService : IUserPanelService
             };
         }
 
+        model.Countries = (await _addressLookupService.GetCountriesAsync(cancellationToken)).ToList();
+        model.Provinces = (await _addressLookupService.GetProvincesAsync(cancellationToken)).ToList();
+        var selection = await _addressLookupService.ResolveSelectionAsync(model.Form.City, model.Form.District, model.Form.Neighborhood, model.Form.Nationality, cancellationToken);
+        if (selection is not null)
+        {
+            model.SelectedCountryId = selection.CountryId;
+            model.SelectedProvinceId = selection.ProvinceId;
+            model.SelectedDistrictId = selection.DistrictId;
+            model.SelectedNeighborhoodId = selection.NeighborhoodId;
+        }
+
         return model;
     }
 
     public async Task<bool> SaveProfileAsync(long userId, UserProfileForm form, CancellationToken cancellationToken = default)
     {
+        var email = form.Email?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return false;
+        }
+
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new MySqlCommand(@"
-            UPDATE users
-            SET ad_soyad = @fullName,
-                telefon = NULLIF(@phone, ''),
-                tc_kimlik_no = NULLIF(@identityNumber, ''),
-                dogum_tarihi = @birthDate,
-                cinsiyet = NULLIF(@gender, ''),
-                uyruk = NULLIF(@nationality, ''),
-                adres = NULLIF(@address, ''),
-                sehir = NULLIF(@city, ''),
-                ilce = NULLIF(@district, ''),
-                mahalle = NULLIF(@neighborhood, ''),
-                posta_kodu = NULLIF(@postalCode, ''),
-                tercih_edilen_oda_tipi = NULLIF(@roomPreference, ''),
-                yatak_tercihi = NULLIF(@bedPreference, ''),
-                konusulan_diller = NULLIF(@spokenLanguages, ''),
-                seyahat_amaci = NULLIF(@travelPurpose, ''),
-                ozel_istekler = NULLIF(@specialRequests, ''),
-                profil_tamamlanma_tarihi = CURRENT_TIMESTAMP
-            WHERE id = @userId;", connection);
-        command.Parameters.AddWithValue("@fullName", $"{form.FirstName} {form.LastName}".Trim());
-        command.Parameters.AddWithValue("@phone", form.Phone?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@identityNumber", form.IdentityNumber?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@birthDate", DateTime.TryParse(form.BirthDateText, out var birthDate) ? birthDate : DBNull.Value);
-        command.Parameters.AddWithValue("@gender", form.Gender?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@nationality", form.Nationality?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@address", form.Address?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@city", form.City?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@district", form.District?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@neighborhood", form.Neighborhood?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@postalCode", form.PostalCode?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@roomPreference", form.RoomPreference?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@bedPreference", form.BedPreference?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@spokenLanguages", form.SpokenLanguages?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@travelPurpose", form.TravelPurpose?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@specialRequests", form.SpecialRequests?.Trim() ?? string.Empty);
-        command.Parameters.AddWithValue("@userId", userId);
-        return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+        await using (var duplicateCheckCommand = new MySqlCommand("SELECT COUNT(*) FROM users WHERE eposta = @email AND id <> @userId;", connection))
+        {
+            duplicateCheckCommand.Parameters.AddWithValue("@email", email);
+            duplicateCheckCommand.Parameters.AddWithValue("@userId", userId);
+            var duplicateCount = Convert.ToInt32(await duplicateCheckCommand.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+            if (duplicateCount > 0)
+            {
+                return false;
+            }
+        }
+
+        try
+        {
+            await using var command = new MySqlCommand(@"
+                UPDATE users
+                SET ad_soyad = @fullName,
+                    eposta = @email,
+                    telefon = NULLIF(@phone, ''),
+                    tc_kimlik_no = NULLIF(@identityNumber, ''),
+                    dogum_tarihi = @birthDate,
+                    cinsiyet = NULLIF(@gender, ''),
+                    uyruk = NULLIF(@nationality, ''),
+                    adres = NULLIF(@address, ''),
+                    sehir = NULLIF(@city, ''),
+                    ilce = NULLIF(@district, ''),
+                    mahalle = NULLIF(@neighborhood, ''),
+                    posta_kodu = NULLIF(@postalCode, ''),
+                    tercih_edilen_oda_tipi = NULLIF(@roomPreference, ''),
+                    yatak_tercihi = NULLIF(@bedPreference, ''),
+                    konusulan_diller = NULLIF(@spokenLanguages, ''),
+                    seyahat_amaci = NULLIF(@travelPurpose, ''),
+                    ozel_istekler = NULLIF(@specialRequests, ''),
+                    profil_tamamlanma_tarihi = CURRENT_TIMESTAMP
+                WHERE id = @userId;", connection);
+            command.Parameters.AddWithValue("@fullName", $"{form.FirstName} {form.LastName}".Trim());
+            command.Parameters.AddWithValue("@email", email);
+            command.Parameters.AddWithValue("@phone", form.Phone?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@identityNumber", form.IdentityNumber?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@birthDate", DateTime.TryParse(form.BirthDateText, out var birthDate) ? birthDate : DBNull.Value);
+            command.Parameters.AddWithValue("@gender", form.Gender?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@nationality", form.Nationality?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@address", form.Address?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@city", form.City?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@district", form.District?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@neighborhood", form.Neighborhood?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@postalCode", form.PostalCode?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@roomPreference", form.RoomPreference?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@bedPreference", form.BedPreference?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@spokenLanguages", form.SpokenLanguages?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@travelPurpose", form.TravelPurpose?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@specialRequests", form.SpecialRequests?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@userId", userId);
+            return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+        }
+        catch (MySqlException)
+        {
+            return false;
+        }
     }
 
     public async Task<UserNotificationsPageViewModel> GetNotificationsAsync(long userId, CancellationToken cancellationToken = default)

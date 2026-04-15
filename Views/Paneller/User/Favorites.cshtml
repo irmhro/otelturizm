@@ -38,17 +38,37 @@
                         {
                             <div class="favorite-card-image-fallback"></div>
                         }
-                        <span class="favorite-code-chip">@hotel.HotelCode</span>
+                        <span class="favorite-overlay-icon" aria-label="Favori">
+                            <i class="fas fa-heart"></i>
+                        </span>
+                        @if (hotel.PastStayCount > 0)
+                        {
+                            <span class="favorite-stay-chip">
+                                <i class="fas fa-check-circle"></i>
+                                @hotel.PastStayCount kez konakladı
+                            </span>
+                        }
                     </a>
                     <div class="favorite-card-body">
                         <h3>@hotel.Name</h3>
                         <p>@hotel.District, @hotel.City</p>
                         <small class="favorite-added-date">@hotel.AddedDateText</small>
-                        <div class="rating-row"><span>@(hotel.Rating > 0 ? hotel.Rating.ToString("0.0") : "-")</span> @hotel.RatingText</div>
+                        @if (hotel.ReviewCount > 0)
+                        {
+                            <div class="rating-row">
+                                <span>@(hotel.Rating > 0 ? hotel.Rating.ToString("0.0") : "-")</span>
+                                @hotel.RatingText
+                            </div>
+                        }
                         <div class="card-bottom">
+                            <span class="price-caption">Guncel fiyat</span>
                             <strong>@hotel.PriceText</strong>
-                            <a href="/oteller/@hotel.Slug" class="ghost-btn">Rezervasyon</a>
                         </div>
+                        <a href="/oteller/@hotel.Slug" class="favorite-reservation-btn">Rezervasyon</a>
+                        <button type="button" class="ghost-btn favorite-alert-btn">
+                            <i class="fas fa-envelope-open-text"></i>
+                            İndirim olduğunda email ile haberdar et
+                        </button>
                     </div>
                 </article>
             }

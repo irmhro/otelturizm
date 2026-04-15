@@ -100,7 +100,15 @@ public class UserFavoriteService : IUserFavoriteService
                 IFNULL(o.ortalama_puan, 0) AS ortalama_puan,
                 IFNULL(o.toplam_yorum_sayisi, 0) AS toplam_yorum_sayisi,
                 COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
-                pf.baslangic_fiyat
+                pf.baslangic_fiyat,
+                (
+                    SELECT COUNT(*)
+                    FROM rezervasyonlar r
+                    WHERE r.kullanici_id = @userId
+                      AND r.otel_id = f.otel_id
+                      AND r.durum <> 'İptal Edildi'
+                      AND r.cikis_tarihi < CURDATE()
+                ) AS past_stay_count
             FROM user_favori_oteller f
             JOIN oteller o ON o.id = f.otel_id
             LEFT JOIN (
@@ -154,7 +162,8 @@ public class UserFavoriteService : IUserFavoriteService
                 StartingPrice = price,
                 PriceText = price.HasValue ? $"TRY {price.Value:N0}" : "Teklif Al",
                 RatingText = rating > 0 ? (rating >= 9 ? "Olağanüstü" : rating >= 8 ? "Çok İyi" : "İyi") : "Yorum Bekleniyor",
-                AddedDateText = $"{createdAt.ToString("dd MMMM yyyy", culture)} tarihinde kaydedildi"
+                AddedDateText = $"{createdAt.ToString("dd MMMM yyyy", culture)} tarihinde kaydedildi",
+                PastStayCount = reader.GetInt32(reader.GetOrdinal("past_stay_count"))
             });
         }
 

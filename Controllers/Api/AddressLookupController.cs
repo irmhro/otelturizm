@@ -14,6 +14,13 @@ public class AddressLookupController : ControllerBase
         _addressLookupService = addressLookupService;
     }
 
+    [HttpGet("ulkeler")]
+    public async Task<IActionResult> Countries(CancellationToken cancellationToken)
+    {
+        var items = await _addressLookupService.GetCountriesAsync(cancellationToken);
+        return Ok(items);
+    }
+
     [HttpGet("iller")]
     public async Task<IActionResult> Provinces(CancellationToken cancellationToken)
     {

@@ -32,15 +32,15 @@ public class RegisterController : Controller
         try
         {
             var result = await _authService.RegisterUserAsync(model, cancellationToken);
-            if (!result.Success || result.User is null)
+            if (!result.Success)
             {
                 TempData["UserRegisterError"] = result.Message;
                 TempData["OpenUserRegisterTab"] = "1";
                 return Redirect(UserLoginPath);
             }
 
-            await SignInAsync(result.User, true);
-            return Redirect(GetRedirectPath(result.User));
+            TempData["UserLoginSuccess"] = result.Message;
+            return Redirect($"/eposta-dogrula?email={Uri.EscapeDataString(model.Email.Trim().ToLowerInvariant())}");
         }
         catch
         {

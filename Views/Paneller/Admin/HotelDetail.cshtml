@@ -3,6 +3,11 @@
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
+    var currentUserRole = User.FindFirst("otelturizm:user_role")?.Value ?? string.Empty;
+    var canDeactivateHotel = string.Equals(currentUserRole, "admin", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(currentUserRole, "superadmin", StringComparison.OrdinalIgnoreCase)
+        || User.IsInRole("admin")
+        || User.IsInRole("superadmin");
     var hotelTypes = new[] { "Hotel", "Otel", "Butik Otel", "Apart Otel", "Villa", "Pansiyon", "Tatil Köyü", "Hostel", "Kamping", "Apartman Dairesi", "Resort Hotel", "City Hotel", "Business Hotel", "Airport Hotel", "Boutique Hotel", "Bungalow", "Glamping", "Residence", "Motel", "Thermal Hotel", "Ski Hotel", "Beach Hotel", "Luxury Hotel" };
     var tourismTypes = new[] { "Turizm İşletme Belgeli", "Turizm Yatırım Belgeli", "Belediye Belgeli", "Basit Konaklama Belgeli", "Belgesiz" };
     var publishStatuses = new[] { "Taslak", "Yayında", "Bakımda", "Sezon Dışı", "Kapatıldı", "Askıda" };
@@ -46,8 +51,37 @@
     <div class="admin-alert is-error"><i class="fas fa-triangle-exclamation"></i><span>@errorMessage</span></div>
 }
 
+<section class="admin-hotel-command-bar">
+    <div class="admin-hotel-command-copy">
+        <h2>@Model.HotelForm.HotelName</h2>
+        <p>Kod: @Model.HotelForm.HotelCode · Durum: @Model.HotelForm.PublishStatus · Onay: @Model.HotelForm.ApprovalStatus</p>
+    </div>
+    <div class="admin-hotel-command-actions">
+        @if (canDeactivateHotel)
+        {
+            <form method="post" action="/admin/oteller/pasife-al" onsubmit="return confirm('Oteli pasif duruma almak istediginize emin misiniz?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" />
+                <button type="submit" class="admin-action-btn danger"><i class="fas fa-ban"></i> Oteli Pasife Al</button>
+            </form>
+        }
+        else
+        {
+            <span class="admin-lock-note"><i class="fas fa-lock"></i> Pasife alma islemi sadece admin yetkisindedir</span>
+        }
+    </div>
+</section>
+
+<nav class="admin-section-pager" aria-label="Otel yonetim bolum gecisleri">
+    <a href="#section-temel-kayit" class="is-active">Temel Otel Kaydi</a>
+    <a href="#section-bagli-odalar">Bagli Odalar</a>
+    <a href="#section-yeni-oda">Yeni Oda Tipi Ekle</a>
+    <a href="#section-otel-galeri">Otel Galerisi</a>
+    <a href="#section-oda-gorselleri">Oda Gorselleri</a>
+</nav>
+
 <section class="admin-detail-grid">
-    <article class="admin-section-card admin-detail-main-card">
+    <article class="admin-section-card admin-detail-main-card admin-anchor-target" id="section-temel-kayit">
         <div class="admin-section-head">
             <div>
                 <p class="mini-caption">OTELLER TABLOSU</p>
@@ -128,7 +162,7 @@
         </form>
     </article>
 
-    <aside class="admin-section-card admin-side-card">
+    <aside class="admin-section-card admin-side-card admin-anchor-target" id="section-bagli-odalar">
         <div class="admin-section-head"><div><p class="mini-caption">ODA TIPLERI</p><h2>Bagli odalar</h2></div></div>
         <div class="admin-linked-list">
             @foreach (var room in Model.Rooms)
@@ -155,7 +189,7 @@
 </section>
 
 <section class="admin-detail-grid secondary">
-    <article class="admin-section-card">
+    <article class="admin-section-card admin-anchor-target" id="section-yeni-oda">
         <div class="admin-section-head"><div><p class="mini-caption">ODA TIPLERI TABLOSU</p><h2>@(Model.IsEditingRoom ? "Oda tipini duzenle" : "Yeni oda tipi ekle")</h2></div></div>
         <form method="post" action="/admin/oteller/oda-kaydet" class="admin-form-grid">
             @Html.AntiForgeryToken()
@@ -193,7 +227,7 @@
         </form>
     </article>
 
-    <article class="admin-section-card">
+    <article class="admin-section-card admin-anchor-target" id="section-otel-galeri">
         <div class="admin-section-head"><div><p class="mini-caption">OTEL GORSELLERI</p><h2>Otel galerisi</h2></div></div>
         <form method="post" action="/admin/oteller/otel-fotograf-yukle" enctype="multipart/form-data" class="admin-form-grid compact">
             @Html.AntiForgeryToken()
@@ -243,7 +277,7 @@
     </article>
 </section>
 
-<section class="admin-section-card">
+<section class="admin-section-card admin-anchor-target" id="section-oda-gorselleri">
     <div class="admin-section-head"><div><p class="mini-caption">ODA GORSELLERI</p><h2>@(string.IsNullOrWhiteSpace(Model.SelectedRoomName) ? "Oda secin" : Model.SelectedRoomName)</h2></div></div>
     @if (!Model.SelectedRoomId.HasValue)
     {
@@ -297,3 +331,51 @@
         </form>
     }
 </section>
+
+@section Scripts {
+    <script>
+        (function () {
+            const pager = document.querySelector('.admin-section-pager');
+            if (!pager) {
+                return;
+            }
+
+            const links = Array.from(pager.querySelectorAll('a[href^="#"]'));
+            const targets = links
+                .map(function (link) { return document.querySelector(link.getAttribute('href')); })
+                .filter(Boolean);
+
+            function setActiveById(id) {
+                links.forEach(function (link) {
+                    const isActive = link.getAttribute('href') === '#' + id;
+                    link.classList.toggle('is-active', isActive);
+                });
+            }
+
+            links.forEach(function (link) {
+                link.addEventListener('click', function () {
+                    const hash = link.getAttribute('href');
+                    if (hash) {
+                        const id = hash.replace('#', '');
+                        setActiveById(id);
+                    }
+                });
+            });
+
+            if ('IntersectionObserver' in window && targets.length > 0) {
+                const observer = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            setActiveById(entry.target.id);
+                        }
+                    });
+                }, {
+                    rootMargin: '-120px 0px -55% 0px',
+                    threshold: 0.08
+                });
+
+                targets.forEach(function (target) { observer.observe(target); });
+            }
+        })();
+    </script>
+}

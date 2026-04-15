@@ -1,5 +1,9 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Configuration;
 using MySqlConnector;
+using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Giris;
 using otelturizmnew.Models.Register;
 using otelturizmnew.Services.Abstractions;
@@ -9,20 +13,41 @@ namespace otelturizmnew.Services;
 public class AuthService : IAuthService
 {
     private readonly string _connectionString;
+    private readonly IEmailQueueService _emailQueueService;
+    private readonly string _publicBaseUrl;
 
-    public AuthService(IConfiguration configuration)
+    public AuthService(IConfiguration configuration, IEmailQueueService emailQueueService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
+        _emailQueueService = emailQueueService;
+        _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://localhost:7223").TrimEnd('/');
     }
 
     public async Task<UserSessionModel?> AuthenticateUserAsync(string identity, string password, CancellationToken cancellationToken = default)
     {
+        var candidate = await FindAuthCandidateAsync(identity, false, cancellationToken);
+        if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.UtcNow)
+        {
+            throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value.ToLocalTime():HH:mm} sonrasinda tekrar deneyin.");
+        }
+
         var user = await GetUserAsync(identity, password, false, cancellationToken);
         if (user is null)
         {
+            if (candidate is not null)
+            {
+                var lockoutEnd = await RegisterFailedLoginAttemptAsync(candidate.UserId, cancellationToken);
+                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.UtcNow)
+                {
+                    throw new AuthFlowException("Arka arkaya 5 hatali deneme algilandi. Hesap 10 dakika kilitlendi.");
+                }
+            }
+
             return null;
         }
+
+        await ResetFailedLoginAttemptAsync(user.UserId, cancellationToken);
 
         if (user.AccountType == "partner")
         {
@@ -49,30 +74,65 @@ public class AuthService : IAuthService
             return user;
         }
 
+        if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
+        {
+            throw new AuthFlowException("E-posta adresinizi onaylamadan giris yapamazsiniz. Lütfen gelen kutunuzu kontrol edin veya doğrulama kodunu yeniden isteyin.");
+        }
+
         user.AccountType = "user";
         return user;
     }
 
     public async Task<UserSessionModel?> AuthenticatePartnerAsync(string identity, string password, CancellationToken cancellationToken = default)
     {
+        var candidate = await FindAuthCandidateAsync(identity, true, cancellationToken);
+        if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.UtcNow)
+        {
+            throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value.ToLocalTime():HH:mm} sonrasinda tekrar deneyin.");
+        }
+
         var user = await GetUserAsync(identity, password, true, cancellationToken);
         if (user is null)
         {
+            if (candidate is not null)
+            {
+                var lockoutEnd = await RegisterFailedLoginAttemptAsync(candidate.UserId, cancellationToken);
+                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.UtcNow)
+                {
+                    throw new AuthFlowException("Arka arkaya 5 hatali deneme algilandi. Hesap 10 dakika kilitlendi.");
+                }
+            }
             return null;
         }
 
+        await ResetFailedLoginAttemptAsync(user.UserId, cancellationToken);
         user.AccountType = "partner";
         return user;
     }
 
     public async Task<UserSessionModel?> AuthenticateFirmaAsync(string identity, string password, CancellationToken cancellationToken = default)
     {
+        var candidate = await FindAuthCandidateAsync(identity, false, cancellationToken);
+        if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.UtcNow)
+        {
+            throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value.ToLocalTime():HH:mm} sonrasinda tekrar deneyin.");
+        }
+
         var user = await GetUserAsync(identity, password, false, cancellationToken);
         if (user is null || !string.Equals(user.AccountType, "firma", StringComparison.OrdinalIgnoreCase))
         {
+            if (candidate is not null)
+            {
+                var lockoutEnd = await RegisterFailedLoginAttemptAsync(candidate.UserId, cancellationToken);
+                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.UtcNow)
+                {
+                    throw new AuthFlowException("Arka arkaya 5 hatali deneme algilandi. Hesap 10 dakika kilitlendi.");
+                }
+            }
             return null;
         }
 
+        await ResetFailedLoginAttemptAsync(user.UserId, cancellationToken);
         if (!await CanFirmaUserAccessAsync(user.UserId, cancellationToken))
         {
             return null;
@@ -231,9 +291,22 @@ public class AuthService : IAuthService
         }
 
         var user = await GetUserByIdAsync(connection, newUserId, cancellationToken);
-        return user is null
-            ? (false, "Kayit olusturuldu ancak oturum bilgisi alinamadi.", null)
-            : (true, "Kayit basariyla tamamlandi.", user);
+        if (user is null)
+        {
+            return (false, "Kayit olusturuldu ancak oturum bilgisi alinamadi.", null);
+        }
+
+        await CreateAndQueueEmailVerificationAsync(
+            connection,
+            null,
+            newUserId,
+            email,
+            firstName,
+            null,
+            null,
+            cancellationToken);
+
+        return (true, "Kayit basariyla tamamlandi. Giris yapmadan once lütfen e-posta adresinizi onaylayin.", user);
     }
 
     public async Task<(bool Success, string Message, UserSessionModel? User)> RegisterPartnerAsync(PartnerRegistrationModel model, CancellationToken cancellationToken = default)
@@ -844,6 +917,314 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<(bool Success, string Message)> VerifyEmailAsync(string email, string code, string? token, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = (email ?? string.Empty).Trim().ToLowerInvariant();
+        var normalizedCode = (code ?? string.Empty).Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedEmail) || string.IsNullOrWhiteSpace(normalizedCode))
+        {
+            return (false, "E-posta ve doğrulama kodu zorunludur.");
+        }
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        const string sql = """
+            SELECT id, kullanici_id, gecerlilik_suresi, kullanildi_mi, deneme_sayisi, maksimum_deneme, token
+            FROM email_dogrulama_tokenlari
+            WHERE eposta = @email
+              AND dogrulama_kodu = @code
+            ORDER BY olusturulma_tarihi DESC
+            LIMIT 1;
+            """;
+
+        long tokenId;
+        long userId;
+        DateTime expiryUtc;
+        bool used;
+        int attemptCount;
+        int maxAttempt;
+        string storedToken;
+
+        await using (var command = new MySqlCommand(sql, connection, transaction))
+        {
+            command.Parameters.AddWithValue("@email", normalizedEmail);
+            command.Parameters.AddWithValue("@code", normalizedCode);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return (false, "Doğrulama kodu hatalı veya bulunamadı.");
+            }
+
+            tokenId = reader.GetInt64(0);
+            userId = reader.GetInt64(1);
+            expiryUtc = reader.GetDateTime(2);
+            used = !reader.IsDBNull(3) && reader.GetBoolean(3);
+            attemptCount = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
+            maxAttempt = reader.IsDBNull(5) ? 5 : reader.GetInt32(5);
+            storedToken = reader.IsDBNull(6) ? string.Empty : reader.GetString(6);
+        }
+
+        if (!string.IsNullOrWhiteSpace(token) && !string.Equals(token.Trim(), storedToken, StringComparison.Ordinal))
+        {
+            await IncrementVerificationAttemptAsync(connection, transaction, tokenId, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return (false, "Doğrulama bağlantısı geçersiz.");
+        }
+
+        if (used)
+        {
+            return (false, "Bu doğrulama bağlantısı daha önce kullanılmış.");
+        }
+
+        if (expiryUtc <= DateTime.UtcNow)
+        {
+            return (false, "Doğrulama kodunun süresi dolmuş. Lütfen yeni kod isteyin.");
+        }
+
+        if (attemptCount >= maxAttempt)
+        {
+            return (false, "Bu doğrulama kodu çok fazla denendiği için geçersiz hale geldi.");
+        }
+
+        await MarkVerificationTokenUsedAsync(connection, transaction, tokenId, cancellationToken);
+        await using (var verifyUserCommand = new MySqlCommand("""
+            UPDATE users
+            SET email_dogrulama_tarihi = COALESCE(email_dogrulama_tarihi, UTC_TIMESTAMP()),
+                email_dogrulama_son_gonderim_tarihi = UTC_TIMESTAMP()
+            WHERE id = @userId;
+            """, connection, transaction))
+        {
+            verifyUserCommand.Parameters.AddWithValue("@userId", userId);
+            await verifyUserCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return (true, "E-posta adresiniz başarıyla onaylandı. Artık giriş yapabilirsiniz.");
+    }
+
+    public async Task<(bool Success, string Message)> ResendVerificationEmailAsync(string email, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = (email ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            return (false, "E-posta adresi zorunludur.");
+        }
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string userSql = """
+            SELECT id, ad_soyad, email_dogrulama_tarihi, email_dogrulama_son_gonderim_tarihi
+            FROM users
+            WHERE eposta = @email
+              AND hesap_durumu = 1
+            LIMIT 1;
+            """;
+
+        long userId;
+        string fullName;
+        DateTime? verifiedAt;
+        DateTime? lastSentAt;
+        await using (var command = new MySqlCommand(userSql, connection))
+        {
+            command.Parameters.AddWithValue("@email", normalizedEmail);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return (true, "Eğer bu e-posta sistemimizde kayıtlıysa doğrulama kodu yeniden gönderilecektir.");
+            }
+
+            userId = reader.GetInt64(0);
+            fullName = reader.GetString(1);
+            verifiedAt = reader.IsDBNull(2) ? null : reader.GetDateTime(2);
+            lastSentAt = reader.IsDBNull(3) ? null : reader.GetDateTime(3);
+        }
+
+        if (verifiedAt.HasValue)
+        {
+            return (true, "Bu e-posta adresi zaten onaylanmış.");
+        }
+
+        if (lastSentAt.HasValue && lastSentAt.Value > DateTime.UtcNow.AddSeconds(-60))
+        {
+            return (false, "Yeni doğrulama kodu istemeden önce lütfen 1 dakika bekleyin.");
+        }
+
+        await CreateAndQueueEmailVerificationAsync(
+            connection,
+            null,
+            userId,
+            normalizedEmail,
+            FirstNameFromFullName(fullName),
+            ipAddress,
+            userAgent,
+            cancellationToken);
+
+        return (true, "Doğrulama kodu e-posta adresinize yeniden gönderildi.");
+    }
+
+    public async Task<(bool Success, string Message)> SendPasswordResetAsync(string email, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = (email ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            return (false, "E-posta adresi zorunludur.");
+        }
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string userSql = """
+            SELECT id, ad_soyad
+            FROM users
+            WHERE eposta = @email
+              AND hesap_durumu = 1
+            LIMIT 1;
+            """;
+
+        long userId;
+        string fullName;
+        await using (var command = new MySqlCommand(userSql, connection))
+        {
+            command.Parameters.AddWithValue("@email", normalizedEmail);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return (true, "Eğer e-posta adresi sistemimizde kayıtlıysa şifre sıfırlama bağlantısı gönderilecektir.");
+            }
+
+            userId = reader.GetInt64(0);
+            fullName = reader.GetString(1);
+        }
+
+        var token = CreateSecureToken(48);
+        var resetLink = $"{_publicBaseUrl}/sifre-sifirla?token={Uri.EscapeDataString(token)}";
+
+        await using (var insertCommand = new MySqlCommand("""
+            INSERT INTO sifre_sifirlama_tokenlari
+            (kullanici_id, eposta, token, ip_adresi, user_agent, kullanildi_mi, gecerlilik_suresi, olusturulma_tarihi)
+            VALUES
+            (@userId, @email, @token, @ipAddress, @userAgent, 0, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 HOUR), UTC_TIMESTAMP());
+            """, connection))
+        {
+            insertCommand.Parameters.AddWithValue("@userId", userId);
+            insertCommand.Parameters.AddWithValue("@email", normalizedEmail);
+            insertCommand.Parameters.AddWithValue("@token", token);
+            insertCommand.Parameters.AddWithValue("@ipAddress", (object?)ipAddress ?? DBNull.Value);
+            insertCommand.Parameters.AddWithValue("@userAgent", (object?)TrimOrNull(userAgent, 500) ?? DBNull.Value);
+            await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await _emailQueueService.QueueTemplateAsync(
+            connection,
+            null,
+            new QueuedEmailTemplateRequest
+            {
+                UserId = userId,
+                RecipientEmail = normalizedEmail,
+                TemplateCode = "password_reset",
+                RelatedTable = "users",
+                RelatedRecordId = userId,
+                Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["user_first_name"] = FirstNameFromFullName(fullName),
+                    ["user_email"] = normalizedEmail,
+                    ["reset_link"] = resetLink,
+                    ["request_ip"] = string.IsNullOrWhiteSpace(ipAddress) ? "-" : ipAddress
+                }
+            },
+            cancellationToken);
+
+        return (true, "Şifre sıfırlama bağlantısı uygunsa e-posta adresinize gönderildi.");
+    }
+
+    public async Task<(bool Success, string Message)> ResetPasswordAsync(string token, string newPassword, string confirmPassword, CancellationToken cancellationToken = default)
+    {
+        var normalizedToken = (token ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedToken))
+        {
+            return (false, "Şifre sıfırlama bağlantısı geçersiz.");
+        }
+
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+        {
+            return (false, "Yeni şifre en az 8 karakter olmalıdır.");
+        }
+
+        if (!string.Equals(newPassword, confirmPassword, StringComparison.Ordinal))
+        {
+            return (false, "Şifre tekrarı eşleşmiyor.");
+        }
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        long tokenId;
+        long userId;
+        bool used;
+        DateTime expiryUtc;
+        await using (var command = new MySqlCommand("""
+            SELECT id, kullanici_id, kullanildi_mi, gecerlilik_suresi
+            FROM sifre_sifirlama_tokenlari
+            WHERE token = @token
+            LIMIT 1;
+            """, connection, transaction))
+        {
+            command.Parameters.AddWithValue("@token", normalizedToken);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return (false, "Şifre sıfırlama bağlantısı geçersiz.");
+            }
+
+            tokenId = reader.GetInt64(0);
+            userId = reader.GetInt64(1);
+            used = !reader.IsDBNull(2) && reader.GetBoolean(2);
+            expiryUtc = reader.GetDateTime(3);
+        }
+
+        if (used)
+        {
+            return (false, "Bu şifre sıfırlama bağlantısı daha önce kullanılmış.");
+        }
+
+        if (expiryUtc <= DateTime.UtcNow)
+        {
+            return (false, "Şifre sıfırlama bağlantısının süresi dolmuş.");
+        }
+
+        await using (var updateUserCommand = new MySqlCommand("""
+            UPDATE users
+            SET sifre = SHA2(@password, 256),
+                basarisiz_giris_sayisi = 0,
+                son_basarisiz_giris_tarihi = NULL,
+                giris_kilit_bitis_tarihi = NULL
+            WHERE id = @userId;
+            """, connection, transaction))
+        {
+            updateUserCommand.Parameters.AddWithValue("@password", newPassword);
+            updateUserCommand.Parameters.AddWithValue("@userId", userId);
+            await updateUserCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using (var updateTokenCommand = new MySqlCommand("""
+            UPDATE sifre_sifirlama_tokenlari
+            SET kullanildi_mi = 1,
+                kullanilma_tarihi = UTC_TIMESTAMP()
+            WHERE id = @tokenId;
+            """, connection, transaction))
+        {
+            updateTokenCommand.Parameters.AddWithValue("@tokenId", tokenId);
+            await updateTokenCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return (true, "Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapabilirsiniz.");
+    }
+
     private async Task<UserSessionModel?> GetUserAsync(string identity, string password, bool requirePartner, CancellationToken cancellationToken)
     {
         await using var connection = new MySqlConnection(_connectionString);
@@ -994,7 +1375,7 @@ public class AuthService : IAuthService
             RoleCodes = roles
         };
 
-        if (string.Equals(session.UserRole, "admin", StringComparison.OrdinalIgnoreCase) || roles.Count > 0)
+        if (IsAdminAccount(session.UserRole, roles))
         {
             session.AccountType = "admin";
         }
@@ -1141,7 +1522,7 @@ public class AuthService : IAuthService
             UserRole = userRole,
             ManagedHotelIds = ParseManagedHotelIds(reader, managedHotelIdsOrdinal),
             RoleCodes = roles,
-            AccountType = string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase) || roles.Count > 0
+            AccountType = IsAdminAccount(userRole, roles)
                 ? "admin"
                 : (userRole.StartsWith("firma_", StringComparison.OrdinalIgnoreCase)
                     ? "firma"
@@ -1214,6 +1595,19 @@ public class AuthService : IAuthService
         return roleCodes.Count > 0 ? "admin" : "user";
     }
 
+    private static bool IsAdminAccount(string? userRole, IReadOnlyCollection<string> roleCodes)
+    {
+        if (string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return roleCodes.Any(static code =>
+            string.Equals(code, "admin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(code, "super_admin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(code, "superadmin", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static List<long> ParseManagedHotelIds(MySqlDataReader reader, int ordinal)
     {
         if (reader.IsDBNull(ordinal))
@@ -1280,6 +1674,263 @@ public class AuthService : IAuthService
         return Convert.ToInt32(result) > 0;
     }
 
+    private async Task<AuthCandidateInfo?> FindAuthCandidateAsync(string identity, bool requirePartner, CancellationToken cancellationToken)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var authSchema = await GetAuthSchemaAsync(connection, cancellationToken);
+        var roleSelect = authSchema.HasUserRoleColumn ? "u.rol" : "'user'";
+        var ownershipPartnerSelect = authSchema.HasOwnershipPartnerColumn ? "u.sahiplik_partner_id" : "NULL";
+        var partnerIdSelect = authSchema.HasOwnershipPartnerColumn ? "COALESCE(up.partner_id, u.sahiplik_partner_id)" : "up.partner_id";
+
+        var sql = $"""
+            SELECT
+                u.id,
+                u.eposta,
+                {roleSelect} AS user_role,
+                u.email_dogrulama_tarihi,
+                u.giris_kilit_bitis_tarihi,
+                {partnerIdSelect} AS partner_id,
+                {ownershipPartnerSelect} AS sahiplik_partner_id
+            FROM users u
+            LEFT JOIN users_partner up
+                ON up.user_id = u.id
+               AND up.aktif_mi = 1
+            WHERE u.hesap_durumu = 1
+              AND (
+                    u.eposta = @identity
+                 OR u.telefon = @identity
+                 OR (@partnerIdentity IS NOT NULL AND {partnerIdSelect} = @partnerIdentity)
+                 OR (
+                        @hotelCode IS NOT NULL
+                    AND EXISTS
+                    (
+                        SELECT 1
+                        FROM otel_kullanici_sahiplikleri oku
+                        INNER JOIN oteller o ON o.id = oku.otel_id
+                        WHERE oku.user_id = u.id
+                          AND oku.aktif_mi = 1
+                          AND UPPER(o.otel_kodu) = @hotelCode
+                    )
+                 )
+                 OR (
+                        @hotelCode IS NOT NULL
+                    AND EXISTS
+                    (
+                        SELECT 1
+                        FROM oteller o
+                        WHERE o.user_id = u.id
+                          AND UPPER(o.otel_kodu) = @hotelCode
+                    )
+                 )
+              )
+              AND (@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL)
+            ORDER BY u.id ASC
+            LIMIT 1;
+            """;
+
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@identity", identity.Trim());
+        command.Parameters.AddWithValue("@requirePartner", requirePartner ? 1 : 0);
+
+        var numericPartnerIdentity = ParsePartnerIdentity(identity);
+        command.Parameters.AddWithValue("@partnerIdentity", numericPartnerIdentity.HasValue ? numericPartnerIdentity.Value : DBNull.Value);
+
+        var hotelCode = ParseHotelCode(identity);
+        command.Parameters.AddWithValue("@hotelCode", !string.IsNullOrWhiteSpace(hotelCode) ? hotelCode : DBNull.Value);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new AuthCandidateInfo
+        {
+            UserId = reader.GetInt64(0),
+            Email = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+            UserRole = reader.IsDBNull(2) ? "user" : reader.GetString(2),
+            EmailVerified = !reader.IsDBNull(3),
+            LockoutEndUtc = reader.IsDBNull(4) ? null : reader.GetDateTime(4)
+        };
+    }
+
+    private async Task<DateTime?> RegisterFailedLoginAttemptAsync(long userId, CancellationToken cancellationToken)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = """
+            UPDATE users
+            SET basarisiz_giris_sayisi = COALESCE(basarisiz_giris_sayisi, 0) + 1,
+                son_basarisiz_giris_tarihi = UTC_TIMESTAMP(),
+                giris_kilit_bitis_tarihi = CASE
+                    WHEN COALESCE(basarisiz_giris_sayisi, 0) + 1 >= 5 THEN DATE_ADD(UTC_TIMESTAMP(), INTERVAL 10 MINUTE)
+                    ELSE giris_kilit_bitis_tarihi
+                END
+            WHERE id = @userId;
+            """;
+
+        await using (var command = new MySqlCommand(sql, connection))
+        {
+            command.Parameters.AddWithValue("@userId", userId);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using var readCommand = new MySqlCommand("SELECT giris_kilit_bitis_tarihi FROM users WHERE id = @userId LIMIT 1;", connection);
+        readCommand.Parameters.AddWithValue("@userId", userId);
+        var result = await readCommand.ExecuteScalarAsync(cancellationToken);
+        return result is DBNull or null ? null : Convert.ToDateTime(result, CultureInfo.InvariantCulture);
+    }
+
+    private async Task ResetFailedLoginAttemptAsync(long userId, CancellationToken cancellationToken)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = new MySqlCommand("""
+            UPDATE users
+            SET basarisiz_giris_sayisi = 0,
+                son_basarisiz_giris_tarihi = NULL,
+                giris_kilit_bitis_tarihi = NULL,
+                son_giris_tarihi = UTC_TIMESTAMP()
+            WHERE id = @userId;
+            """, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private async Task<bool> IsEmailVerifiedAsync(long userId, CancellationToken cancellationToken)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = new MySqlCommand("SELECT email_dogrulama_tarihi FROM users WHERE id = @userId LIMIT 1;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return result is not null && result is not DBNull;
+    }
+
+    private async Task CreateAndQueueEmailVerificationAsync(
+        MySqlConnection connection,
+        MySqlTransaction? transaction,
+        long userId,
+        string email,
+        string firstName,
+        string? ipAddress,
+        string? userAgent,
+        CancellationToken cancellationToken)
+    {
+        var token = CreateSecureToken(48);
+        var code = CreateNumericCode(6);
+        var verificationLink = $"{_publicBaseUrl}/eposta-dogrula?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}&code={Uri.EscapeDataString(code)}";
+
+        await using (var insertCommand = new MySqlCommand("""
+            INSERT INTO email_dogrulama_tokenlari
+            (kullanici_id, eposta, token, dogrulama_kodu, kullanildi_mi, deneme_sayisi, maksimum_deneme, ip_adresi, user_agent, gecerlilik_suresi, olusturulma_tarihi)
+            VALUES
+            (@userId, @email, @token, @code, 0, 0, 5, @ipAddress, @userAgent, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 24 HOUR), UTC_TIMESTAMP());
+            """, connection, transaction))
+        {
+            insertCommand.Parameters.AddWithValue("@userId", userId);
+            insertCommand.Parameters.AddWithValue("@email", email);
+            insertCommand.Parameters.AddWithValue("@token", token);
+            insertCommand.Parameters.AddWithValue("@code", code);
+            insertCommand.Parameters.AddWithValue("@ipAddress", (object?)ipAddress ?? DBNull.Value);
+            insertCommand.Parameters.AddWithValue("@userAgent", (object?)TrimOrNull(userAgent, 500) ?? DBNull.Value);
+            await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using (var updateUserCommand = new MySqlCommand("""
+            UPDATE users
+            SET email_dogrulama_son_gonderim_tarihi = UTC_TIMESTAMP()
+            WHERE id = @userId;
+            """, connection, transaction))
+        {
+            updateUserCommand.Parameters.AddWithValue("@userId", userId);
+            await updateUserCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await _emailQueueService.QueueTemplateAsync(
+            connection,
+            transaction,
+            new QueuedEmailTemplateRequest
+            {
+                UserId = userId,
+                RecipientEmail = email,
+                TemplateCode = "email_verify",
+                RelatedTable = "users",
+                RelatedRecordId = userId,
+                Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["user_first_name"] = firstName,
+                    ["user_email"] = email,
+                    ["registration_date"] = DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                    ["verification_link"] = verificationLink,
+                    ["verification_code"] = code
+                }
+            },
+            cancellationToken);
+    }
+
+    private static async Task MarkVerificationTokenUsedAsync(MySqlConnection connection, MySqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
+    {
+        await using var command = new MySqlCommand("""
+            UPDATE email_dogrulama_tokenlari
+            SET kullanildi_mi = 1,
+                kullanilma_tarihi = UTC_TIMESTAMP()
+            WHERE id = @tokenId;
+            """, connection, transaction);
+        command.Parameters.AddWithValue("@tokenId", tokenId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task IncrementVerificationAttemptAsync(MySqlConnection connection, MySqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
+    {
+        await using var command = new MySqlCommand("""
+            UPDATE email_dogrulama_tokenlari
+            SET deneme_sayisi = COALESCE(deneme_sayisi, 0) + 1
+            WHERE id = @tokenId;
+            """, connection, transaction);
+        command.Parameters.AddWithValue("@tokenId", tokenId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static string CreateSecureToken(int byteLength)
+    {
+        var buffer = RandomNumberGenerator.GetBytes(byteLength);
+        return Convert.ToHexString(buffer).ToLowerInvariant();
+    }
+
+    private static string CreateNumericCode(int length)
+    {
+        var max = (int)Math.Pow(10, length);
+        var min = (int)Math.Pow(10, length - 1);
+        return RandomNumberGenerator.GetInt32(min, max).ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static string FirstNameFromFullName(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return "Misafir";
+        }
+
+        return fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? fullName;
+    }
+
+    private static string? TrimOrNull(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+    }
+
     private static async Task<string> GenerateFirmaCodeAsync(MySqlConnection connection, MySqlTransaction transaction, CancellationToken cancellationToken)
     {
         const string sql = """
@@ -1298,6 +1949,15 @@ public class AuthService : IAuthService
         public bool HasUserRoleColumn { get; init; }
         public bool HasOwnershipPartnerColumn { get; init; }
         public bool HasHotelOwnershipTable { get; init; }
+    }
+
+    private sealed class AuthCandidateInfo
+    {
+        public long UserId { get; init; }
+        public string Email { get; init; } = string.Empty;
+        public string UserRole { get; init; } = "user";
+        public bool EmailVerified { get; init; }
+        public DateTime? LockoutEndUtc { get; init; }
     }
 }
 

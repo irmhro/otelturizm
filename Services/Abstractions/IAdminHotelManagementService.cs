@@ -8,6 +8,7 @@ public interface IAdminHotelManagementService
     Task<AdminHotelManagementPageViewModel> GetHotelManagementPageAsync(long hotelId, string fullName, string email, string userRole, long? roomId = null, long? hotelPhotoId = null, long? roomPhotoId = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveHotelAsync(long adminUserId, AdminHotelEditForm request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveRoomAsync(AdminRoomEditForm request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> DeactivateHotelAsync(long hotelId, long adminUserId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> DeactivateRoomAsync(long hotelId, long roomId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> UploadHotelPhotosAsync(long adminUserId, AdminHotelPhotoUploadForm request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> UpdateHotelPhotoAsync(AdminHotelPhotoEditForm request, CancellationToken cancellationToken = default);

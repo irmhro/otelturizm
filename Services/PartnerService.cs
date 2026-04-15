@@ -146,6 +146,17 @@ public class PartnerService : IPartnerService
             "pending" => "Onay Bekliyor",
             _ => "Onay Bekliyor"
         };
+        var hotelApprovalStatus = normalizedAction switch
+        {
+            "approve" => "Onaylandı",
+            "reject" => "Reddedildi",
+            _ => "Beklemede"
+        };
+        var reason = string.IsNullOrWhiteSpace(request.Reason)
+            ? normalizedAction == "reject"
+                ? "Partner panelinden reddedildi."
+                : null
+            : request.Reason.Trim();
 
         await using var connection = new MySqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -153,12 +164,35 @@ public class PartnerService : IPartnerService
 
         const string sql = @"
             UPDATE rezervasyonlar
-            SET durum = @status
+            SET durum = @status,
+                otel_onay_durumu = @hotelApprovalStatus,
+                otel_onay_tarihi = CASE
+                    WHEN @hotelApprovalStatus = 'Onaylandı' THEN NOW()
+                    ELSE NULL
+                END,
+                otel_red_nedeni = CASE
+                    WHEN @hotelApprovalStatus = 'Reddedildi' THEN @reason
+                    ELSE NULL
+                END,
+                iptal_tarihi = CASE
+                    WHEN @status = 'İptal Edildi' THEN NOW()
+                    ELSE NULL
+                END,
+                iptal_nedeni = CASE
+                    WHEN @status = 'İptal Edildi' THEN @reason
+                    ELSE NULL
+                END,
+                iptal_eden = CASE
+                    WHEN @status = 'İptal Edildi' THEN 'Otel'
+                    ELSE NULL
+                END
             WHERE id = @reservationId
               AND otel_id = @hotelId;";
 
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@status", status);
+        command.Parameters.AddWithValue("@hotelApprovalStatus", hotelApprovalStatus);
+        command.Parameters.AddWithValue("@reason", (object?)reason ?? DBNull.Value);
         command.Parameters.AddWithValue("@reservationId", request.ReservationId);
         command.Parameters.AddWithValue("@hotelId", request.HotelId);
         var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
@@ -2483,7 +2517,7 @@ public class PartnerService : IPartnerService
         DateTime dateTo,
         CancellationToken cancellationToken)
     {
-        if (!await TableExistsAsync(connection, "kampanya_oteller", cancellationToken))
+        if (!await TableExistsAsync(connection, "kampanya_oteller", transaction, cancellationToken))
         {
             return;
         }
@@ -2512,6 +2546,9 @@ public class PartnerService : IPartnerService
     }
 
     private static async Task<bool> TableExistsAsync(MySqlConnection connection, string tableName, CancellationToken cancellationToken)
+        => await TableExistsAsync(connection, tableName, null, cancellationToken);
+
+    private static async Task<bool> TableExistsAsync(MySqlConnection connection, string tableName, MySqlTransaction? transaction, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT COUNT(*)
@@ -2519,7 +2556,7 @@ public class PartnerService : IPartnerService
             WHERE TABLE_SCHEMA = DATABASE()
               AND TABLE_NAME = @tableName;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new MySqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("@tableName", tableName);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;
@@ -2819,10 +2856,32 @@ public class PartnerService : IPartnerService
     private async Task<List<PartnerReservationRowViewModel>> LoadReservationsAsync(MySqlConnection connection, long hotelId, string hotelName, int take, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, rezervasyon_no, misafir_ad_soyad, giris_tarihi, cikis_tarihi, durum, odeme_durumu, toplam_tutar, olusturulma_tarihi
-            FROM rezervasyonlar
-            WHERE otel_id = @hotelId
-            ORDER BY olusturulma_tarihi DESC, id DESC
+            SELECT
+                r.id,
+                r.rezervasyon_no,
+                COALESCE(NULLIF(r.misafir_ad_soyad, ''), 'Misafir') AS misafir_ad_soyad,
+                COALESCE(NULLIF(r.misafir_eposta, ''), '') AS misafir_eposta,
+                COALESCE(NULLIF(r.misafir_telefon, ''), '') AS misafir_telefon,
+                r.giris_tarihi,
+                r.cikis_tarihi,
+                r.durum,
+                r.odeme_durumu,
+                r.toplam_tutar,
+                r.olusturulma_tarihi,
+                COALESCE(ot.oda_adi, '') AS oda_adi,
+                COALESCE(r.odeme_yontemi, '') AS odeme_yontemi,
+                COALESCE(r.kaynak, COALESCE(r.rezervasyon_kanali, 'Web')) AS kaynak,
+                COALESCE(NULLIF(r.misafir_notu, ''), '') AS misafir_notu,
+                COALESCE(NULLIF(r.musteri_talep_notu, ''), '') AS musteri_talep_notu,
+                COALESCE(r.yetiskin_sayisi, 0) AS yetiskin_sayisi,
+                COALESCE(r.cocuk_sayisi, 0) AS cocuk_sayisi,
+                DATEDIFF(r.cikis_tarihi, r.giris_tarihi) AS gece_sayisi,
+                COALESCE(r.otel_onay_durumu, 'Beklemede') AS otel_onay_durumu,
+                r.kullanici_id
+            FROM rezervasyonlar r
+            LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
+            WHERE r.otel_id = @hotelId
+            ORDER BY r.olusturulma_tarihi DESC, r.id DESC
             LIMIT @take;";
 
         var items = new List<PartnerReservationRowViewModel>();
@@ -2832,17 +2891,42 @@ public class PartnerService : IPartnerService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var reservationStatus = reader.IsDBNull(7) ? "Onay Bekliyor" : reader.GetString(7);
+            var hotelApprovalStatus = reader.IsDBNull(19) ? "Beklemede" : reader.GetString(19);
+            var canApprove = (string.Equals(reservationStatus, "Onay Bekliyor", StringComparison.OrdinalIgnoreCase)
+                              || string.Equals(reservationStatus, "Değişiklik Bekliyor", StringComparison.OrdinalIgnoreCase)
+                              || string.Equals(hotelApprovalStatus, "Beklemede", StringComparison.OrdinalIgnoreCase))
+                             && !string.Equals(reservationStatus, "İptal Edildi", StringComparison.OrdinalIgnoreCase)
+                             && !string.Equals(reservationStatus, "Tamamlandı", StringComparison.OrdinalIgnoreCase);
+
+            var canReject = !string.Equals(reservationStatus, "İptal Edildi", StringComparison.OrdinalIgnoreCase)
+                            && !string.Equals(reservationStatus, "Tamamlandı", StringComparison.OrdinalIgnoreCase)
+                            && !string.Equals(hotelApprovalStatus, "Reddedildi", StringComparison.OrdinalIgnoreCase);
+
             items.Add(new PartnerReservationRowViewModel
             {
                 ReservationId = reader.GetInt64(0),
                 ReservationNo = reader.GetString(1),
                 HotelName = hotelName,
                 GuestName = reader.GetString(2),
-                StayText = FormatStay(reader.GetDateTime(3), reader.GetDateTime(4)),
-                StatusLabel = reader.GetString(5),
-                PaymentStatusLabel = reader.GetString(6),
-                TotalText = FormatMoney(SafeDecimal(reader, 7)),
-                CreatedText = FormatDateTime(reader.IsDBNull(8) ? null : reader.GetDateTime(8))
+                GuestEmail = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                GuestPhone = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                StayText = FormatStay(reader.GetDateTime(5), reader.GetDateTime(6)),
+                StatusLabel = reservationStatus,
+                PaymentStatusLabel = reader.IsDBNull(8) ? "Beklemede" : reader.GetString(8),
+                TotalText = FormatMoney(SafeDecimal(reader, 9)),
+                CreatedText = FormatDateTime(reader.IsDBNull(10) ? null : reader.GetDateTime(10)),
+                RoomName = reader.IsDBNull(11) ? null : reader.GetString(11),
+                PaymentMethodLabel = reader.IsDBNull(12) || string.IsNullOrWhiteSpace(reader.GetString(12)) ? null : reader.GetString(12),
+                SourceLabel = reader.IsDBNull(13) || string.IsNullOrWhiteSpace(reader.GetString(13)) ? null : reader.GetString(13),
+                GuestNote = reader.IsDBNull(14) ? null : reader.GetString(14),
+                RequestNote = reader.IsDBNull(15) ? null : reader.GetString(15),
+                AdultCount = reader.IsDBNull(16) ? (byte)0 : reader.GetByte(16),
+                ChildCount = reader.IsDBNull(17) ? (byte)0 : reader.GetByte(17),
+                NightCount = reader.IsDBNull(18) ? (short)0 : Convert.ToInt16(reader.GetValue(18), CultureInfo.InvariantCulture),
+                CanApprove = canApprove,
+                CanReject = canReject,
+                CanMessageGuest = !reader.IsDBNull(20) && Convert.ToInt64(reader.GetValue(20), CultureInfo.InvariantCulture) > 0
             });
         }
 

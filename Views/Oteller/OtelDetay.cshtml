@@ -8,17 +8,27 @@
     {
         new()
         {
+            RoomTypeId = 0,
             Name = "Standart Oda",
             Specs = "2 Kisi",
             Price = Model.LowestRoomPrice,
             CancellationText = "Ucretsiz iptal"
         }
     };
+    var reservationForm = Model.ReservationForm ?? new otelturizmnew.Models.Reservations.PublicHotelReservationForm { HotelId = Model.Id, RoomTypeId = roomSelectOptions.FirstOrDefault()?.RoomTypeId ?? 0 };
+    var selectedRoomSeed = roomSelectOptions.FirstOrDefault(x => x.RoomTypeId == reservationForm.RoomTypeId) ?? roomSelectOptions.First();
+    var roomPriceSeed = selectedRoomSeed.Price;
+    var checkInDefault = reservationForm.CheckInDate.ToString("yyyy-MM-dd");
+    var checkOutDefault = reservationForm.CheckOutDate.ToString("yyyy-MM-dd");
     var locationText = $"{Model.District}, {Model.City}";
     var longDescription = string.IsNullOrWhiteSpace(Model.LongDescription) ? Model.ShortDescription : Model.LongDescription;
     var overallBarWidth = Math.Min(100m, Model.Rating * 20m).ToString(System.Globalization.CultureInfo.InvariantCulture);
     var locationBarWidth = Math.Min(100m, Model.Rating > 0 ? Model.Rating * 20m + 4m : 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
     var comfortBarWidth = Math.Min(100m, Model.Rating > 0 ? Model.Rating * 20m - 2m : 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var initialNightCount = Math.Max(1, reservationForm.CheckOutDate.DayNumber - reservationForm.CheckInDate.DayNumber);
+    var initialSubtotal = roomPriceSeed * initialNightCount * Math.Max(1, reservationForm.RoomCount);
+    var initialTax = Math.Round(initialSubtotal * 0.08m, 0);
+    var initialTotal = initialSubtotal + initialTax;
     var todayWeather = Model.Weather?.Days.FirstOrDefault();
     var weatherThemeClass = "weather-theme-cloudy";
     var weatherThemeTitle = "Ilce bazli hava durumu";
@@ -109,7 +119,51 @@
         }
     </div>
     <div class="detail-actions">
-        <button type="button"><i class="far fa-share-square"></i> Paylas</button>
+        <button type="button"
+                id="startConversationBtn"
+                class="conversation-btn"
+                data-hotel-slug="@Model.Slug"
+                data-authenticated="@(Model.IsLoggedInUser ? "true" : "false")"
+                data-can-start="@(Model.HasCompletedReservationAtHotel ? "true" : "false")"
+                data-info-message="@Model.ConversationInfoMessage">
+            <i class="far fa-comments"></i> Görüşme Başlat
+        </button>
+        <button type="button" id="shareHotelBtn" aria-haspopup="true" aria-expanded="false" aria-controls="shareMenu">
+            <i class="far fa-share-square"></i> Paylas
+        </button>
+        <div class="share-menu" id="shareMenu" hidden>
+            <p class="share-menu-title">Bu oteli paylas</p>
+            <div class="share-menu-grid">
+                <a href="#" data-share-platform="whatsapp" target="_blank" rel="noopener">
+                    <i class="fab fa-whatsapp"></i>
+                    <span>WhatsApp</span>
+                </a>
+                <a href="#" data-share-platform="facebook" target="_blank" rel="noopener">
+                    <i class="fab fa-facebook-f"></i>
+                    <span>Facebook</span>
+                </a>
+                <a href="#" data-share-platform="x" target="_blank" rel="noopener">
+                    <i class="fab fa-x-twitter"></i>
+                    <span>X</span>
+                </a>
+                <a href="#" data-share-platform="instagram" target="_blank" rel="noopener">
+                    <i class="fab fa-instagram"></i>
+                    <span>Instagram</span>
+                </a>
+                <a href="#" data-share-platform="telegram" target="_blank" rel="noopener">
+                    <i class="fab fa-telegram-plane"></i>
+                    <span>Telegram</span>
+                </a>
+                <button type="button" data-share-platform="copy">
+                    <i class="fas fa-link"></i>
+                    <span>Link Kopyala</span>
+                </button>
+            </div>
+            <button type="button" class="share-more-btn" data-share-platform="more">
+                <i class="fas fa-share-nodes"></i>
+                Diger Platformlar
+            </button>
+        </div>
         <button type="button" id="saveHotelBtn" class="favorite-btn @(Model.IsFavorite ? "active" : string.Empty)" data-hotel-id="@Model.Id" data-source-page="OtelDetay">
             <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart"></i>
             <span data-favorite-label>@(Model.IsFavorite ? "Kaydedildi" : "Kaydet")</span>
@@ -117,17 +171,44 @@
     </div>
 </section>
 
+@if (TempData["PublicReservationSuccess"] is string successMessage)
+{
+    <div class="detail-inline-feedback success">@successMessage</div>
+}
+
+@if (TempData["PublicReservationInfo"] is string infoMessage)
+{
+    <div class="detail-inline-feedback info">@infoMessage</div>
+}
+
+@if (Model.ActiveDraft is not null)
+{
+    <section class="content-card active-draft-banner">
+        <div>
+            <strong>Tamamlanmamis rezervasyonunuz var</strong>
+            <p>@Model.ActiveDraft.HotelName · @Model.ActiveDraft.CheckInText - @Model.ActiveDraft.CheckOutText · @Model.ActiveDraft.Message</p>
+        </div>
+        <div class="active-draft-actions">
+            <a href="@Model.ActiveDraft.ResumeUrl" class="active-draft-link">Devam Et</a>
+            @if (Model.ActiveDraft.RequiresProfileCompletion && Model.IsLoggedInUser)
+            {
+                <button type="button" class="active-draft-secondary" id="openProfileCompletionFromBanner">Bilgileri Güncelle</button>
+            }
+        </div>
+    </section>
+}
+
 <section class="detail-grid">
     <div class="detail-content">
-        <article class="content-card">
+        <article class="content-card featured-amenities-card">
             <div class="section-head">
                 <h2>One Cikan Ozellikler</h2>
                 <p>@(string.IsNullOrWhiteSpace(Model.ShortDescription) ? "Tesisin veritabanindaki one cikan olanaklari." : Model.ShortDescription)</p>
             </div>
-            <div class="amenities-grid">
+            <div class="amenities-grid amenities-grid-lux">
                 @foreach (var item in Model.Amenities)
                 {
-                    <div class="amenity-item"><i class="fas @item.IconClass"></i> @item.Name</div>
+                    <div class="amenity-item amenity-item-lux"><i class="fas @item.IconClass"></i> @item.Name</div>
                 }
             </div>
         </article>
@@ -153,15 +234,53 @@
                 @foreach (var room in Model.Rooms)
                 {
                     <div class="room-card">
-                        <div>
-                            <h3>@room.Name</h3>
-                            <p>@room.Specs</p>
-                            <span class="cancellation-badge"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
+                        <div class="room-card-main">
+                            <div class="room-card-media">
+                                @if (!string.IsNullOrWhiteSpace(room.ImageUrl))
+                                {
+                                    <img src="@room.ImageUrl" alt="@room.Name" />
+                                }
+                                else
+                                {
+                                    <div class="room-card-media-placeholder"><i class="fas fa-bed"></i></div>
+                                }
+                            </div>
+                            <div class="room-card-copy">
+                                <h3>@room.Name</h3>
+                                <p>@room.Specs</p>
+                                <span class="cancellation-badge"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
+                                @if (room.Features.Count > 0)
+                                {
+                                    <div class="room-feature-preview">
+                                        @foreach (var feature in room.Features.Take(5))
+                                        {
+                                            <span class="room-feature-chip"><i class="fas @feature.IconClass"></i> @feature.Name</span>
+                                        }
+                                    </div>
+                                    @if (room.Features.Count > 5)
+                                    {
+                                        <details class="room-feature-more">
+                                            <summary>Tümünü gör</summary>
+                                            <div class="room-feature-preview room-feature-preview-all">
+                                                @foreach (var feature in room.Features.Skip(5))
+                                                {
+                                                    <span class="room-feature-chip"><i class="fas @feature.IconClass"></i> @feature.Name</span>
+                                                }
+                                            </div>
+                                        </details>
+                                    }
+                                }
+                            </div>
                         </div>
                         <div class="room-price-box">
                             <strong>₺@room.Price.ToString("N0")</strong>
                             <span>Gecelik, vergiler dahil</span>
-                            <button type="button" class="select-room-btn" data-price="@room.Price.ToString("0")">Odayi Sec</button>
+                            <button type="button"
+                                    class="select-room-btn"
+                                    data-room-id="@room.RoomTypeId"
+                                    data-price="@room.Price.ToString("0", System.Globalization.CultureInfo.InvariantCulture)">
+                                Odayi Sec
+                            </button>
                         </div>
                     </div>
                 }
@@ -276,41 +395,53 @@
                 <span class="discount-pill">Akilli fiyat</span>
             </div>
 
-            <form class="booking-form" id="bookingForm">
+            <form class="booking-form" id="bookingForm" method="post" action="/oteller/@Model.Slug/rezervasyon">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="HotelId" value="@Model.Id" />
+                <input type="hidden" id="profileCompletionRequired" value="@(Model.ProfilePrompt.IsProfileIncomplete && Model.IsLoggedInUser ? "true" : "false")" />
                 <label>
                     <span>Giriş Tarihi</span>
-                    <input type="text" value="15 Nis 2026" readonly />
+                    <input type="date" id="checkInDateInput" name="CheckInDate" value="@checkInDefault" />
                 </label>
 
                 <label>
                     <span>Cikis Tarihi</span>
-                    <input type="text" value="18 Nis 2026" readonly />
+                    <input type="date" id="checkOutDateInput" name="CheckOutDate" value="@checkOutDefault" />
                 </label>
 
                 <div class="guest-row">
                     <span>Yetiskin</span>
                     <div class="guest-controls">
                         <button type="button" class="guest-btn" data-target="adult" data-action="minus">-</button>
-                        <strong id="adultCount">2</strong>
+                        <strong id="adultCount">@reservationForm.AdultCount</strong>
                         <button type="button" class="guest-btn" data-target="adult" data-action="plus">+</button>
                     </div>
+                    <input type="hidden" name="AdultCount" id="adultCountInput" value="@reservationForm.AdultCount" />
                 </div>
 
                 <div class="guest-row">
                     <span>Cocuk</span>
                     <div class="guest-controls">
                         <button type="button" class="guest-btn" data-target="child" data-action="minus">-</button>
-                        <strong id="childCount">0</strong>
+                        <strong id="childCount">@reservationForm.ChildCount</strong>
                         <button type="button" class="guest-btn" data-target="child" data-action="plus">+</button>
                     </div>
+                    <input type="hidden" name="ChildCount" id="childCountInput" value="@reservationForm.ChildCount" />
                 </div>
+
+                <input type="hidden" name="RoomCount" value="@reservationForm.RoomCount" />
 
                 <label>
                     <span>Oda Tipi</span>
-                    <select id="roomTypeSelect">
+                    <select id="roomTypeSelect" name="RoomTypeId">
                         @foreach (var room in roomSelectOptions)
                         {
-                            <option value="@room.Price.ToString("0")">@room.Name</option>
+                            <option value="@room.RoomTypeId"
+                                    data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
+                                    data-room-name="@room.Name"
+                                    selected="@(room.RoomTypeId == reservationForm.RoomTypeId)">
+                                @room.Name
+                            </option>
                         }
                     </select>
                 </label>
@@ -324,13 +455,111 @@
             </form>
 
             <div class="price-breakdown" id="priceBreakdown">
-                <div><span>₺@Model.LowestRoomPrice.ToString("N0") x 3 gece</span><strong>₺@((Model.LowestRoomPrice * 3).ToString("N0"))</strong></div>
-                <div><span>Vergi ve Harclar</span><strong>₺@Math.Round(Model.LowestRoomPrice * 3 * 0.08m, 0).ToString("N0")</strong></div>
-                <div class="total"><span>Toplam</span><strong>₺@Math.Round(Model.LowestRoomPrice * 3 * 1.08m, 0).ToString("N0")</strong></div>
+                <div><span>₺@roomPriceSeed.ToString("N0") x @initialNightCount gece</span><strong>₺@initialSubtotal.ToString("N0")</strong></div>
+                <div><span>Vergi ve Harclar</span><strong>₺@initialTax.ToString("N0")</strong></div>
+                <div class="total"><span>Toplam</span><strong>₺@initialTotal.ToString("N0")</strong></div>
             </div>
         </div>
     </aside>
 </section>
+
+<div class="detail-modal-backdrop" id="detailActionBackdrop" hidden></div>
+
+<section class="detail-modal" id="detailInfoModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="detailInfoModalTitle">
+    <div class="detail-modal-head">
+        <div>
+            <span class="detail-modal-kicker">Bilgilendirme</span>
+            <h3 id="detailInfoModalTitle">Önce bir adımı tamamlayalım</h3>
+        </div>
+        <button type="button" class="detail-modal-close" data-close-modal="detailInfoModal"><i class="fas fa-times"></i></button>
+    </div>
+    <p id="detailInfoModalText">Bu işlem için önce uygun koşulların sağlanması gerekiyor.</p>
+    <div class="detail-modal-actions" id="detailInfoModalActions">
+        <a href="/kullanici-giris" class="detail-modal-primary">Giriş Yap</a>
+        <a href="/kullanici-giris?sekme=kayit" class="detail-modal-secondary">Kayıt Ol</a>
+    </div>
+</section>
+
+@if (Model.IsLoggedInUser)
+{
+    <section class="detail-modal detail-profile-modal" id="profileCompletionModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="profileCompletionModalTitle">
+        <div class="detail-modal-head">
+            <div>
+                <span class="detail-modal-kicker">Rezervasyon İçin Zorunlu</span>
+                <h3 id="profileCompletionModalTitle">Eksik profil bilgilerini tamamla</h3>
+            </div>
+            <button type="button" class="detail-modal-close" data-close-modal="profileCompletionModal"><i class="fas fa-times"></i></button>
+        </div>
+        <p class="detail-modal-copy">Rezervasyonu tamamlayabilmemiz için e-posta, doğum tarihi, cinsiyet ve adres alanlarının eksiksiz olması gerekiyor.</p>
+
+        <form id="profileCompletionForm" class="detail-profile-form" method="post" action="/oteller/@Model.Slug/profil-bilgilerini-tamamla">
+            @Html.AntiForgeryToken()
+            <label>
+                <span>E-posta</span>
+                <input type="email" name="Email" value="@Model.ProfilePrompt.Email" readonly />
+            </label>
+            <label>
+                <span>Telefon</span>
+                <input type="text" name="Phone" value="@Model.ProfilePrompt.Phone" />
+            </label>
+            <label>
+                <span>Doğum Tarihi</span>
+                <input type="date" name="BirthDateText" value="@Model.ProfilePrompt.BirthDateText" required />
+            </label>
+            <label>
+                <span>Cinsiyet</span>
+                <select name="Gender" required>
+                    <option value="">Seçiniz</option>
+                    <option value="Erkek" selected="@(Model.ProfilePrompt.Gender == "Erkek")">Erkek</option>
+                    <option value="Kadın" selected="@(Model.ProfilePrompt.Gender == "Kadın")">Kadın</option>
+                    <option value="Belirtmek İstemiyorum" selected="@(Model.ProfilePrompt.Gender == "Belirtmek İstemiyorum")">Belirtmek İstemiyorum</option>
+                </select>
+            </label>
+            <label>
+                <span>Uyruk</span>
+                <select name="Nationality" id="detailCountrySelect">
+                    <option value="">Yükleniyor...</option>
+                </select>
+            </label>
+            <label>
+                <span>İl</span>
+                <select name="City" id="detailProvinceSelect" required>
+                    <option value="">Yükleniyor...</option>
+                </select>
+            </label>
+            <label>
+                <span>İlçe</span>
+                <select name="District" id="detailDistrictSelect" required data-selected-text="@Model.ProfilePrompt.District">
+                    <option value="">Önce il seçiniz</option>
+                </select>
+            </label>
+            <label>
+                <span>Mahalle</span>
+                <select name="Neighborhood" id="detailNeighborhoodSelect" required data-selected-text="@Model.ProfilePrompt.Neighborhood">
+                    <option value="">Önce ilçe seçiniz</option>
+                </select>
+            </label>
+            <label class="detail-profile-form-span">
+                <span>Açık Adres</span>
+                <textarea name="Address" rows="3">@Model.ProfilePrompt.Address</textarea>
+            </label>
+            <input type="hidden" name="FirstName" value="" />
+            <input type="hidden" name="LastName" value="" />
+            <input type="hidden" name="IdentityNumber" value="" />
+            <input type="hidden" name="PostalCode" value="" />
+            <input type="hidden" name="RoomPreference" value="" />
+            <input type="hidden" name="BedPreference" value="" />
+            <input type="hidden" name="SpokenLanguages" value="" />
+            <input type="hidden" name="TravelPurpose" value="" />
+            <input type="hidden" name="SpecialRequests" value="" />
+            <div class="detail-modal-actions">
+                <button type="button" class="detail-modal-secondary" data-close-modal="profileCompletionModal">Şimdilik Vazgeç</button>
+                <button type="submit" class="detail-modal-primary">Bilgileri Kaydet ve Devam Et</button>
+            </div>
+            <p class="detail-modal-feedback" id="profileCompletionFeedback" hidden></p>
+        </form>
+    </section>
+}
 
 @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
 {
@@ -410,15 +639,31 @@
         (function () {
             const mainImage = document.getElementById('mainGalleryImage');
             const saveButton = document.getElementById('saveHotelBtn');
+            const bookingForm = document.getElementById('bookingForm');
             const roomTypeSelect = document.getElementById('roomTypeSelect');
+            const checkInInput = document.getElementById('checkInDateInput');
+            const checkOutInput = document.getElementById('checkOutDateInput');
             const bookingPrice = document.getElementById('bookingPrice');
             const breakdown = document.getElementById('priceBreakdown');
+            const profileCompletionRequired = document.getElementById('profileCompletionRequired')?.value === 'true';
+            const actionBackdrop = document.getElementById('detailActionBackdrop');
+            const profileModal = document.getElementById('profileCompletionModal');
+            const infoModal = document.getElementById('detailInfoModal');
+            const infoModalText = document.getElementById('detailInfoModalText');
+            const infoModalActions = document.getElementById('detailInfoModalActions');
+            const profileFeedback = document.getElementById('profileCompletionFeedback');
+            const profileCompletionForm = document.getElementById('profileCompletionForm');
+            const startConversationBtn = document.getElementById('startConversationBtn');
             const weatherPopup = document.getElementById('weatherPopup');
             const weatherPopupBackdrop = document.getElementById('weatherPopupBackdrop');
             const weatherPopupOpen = document.getElementById('weatherPopupOpen');
             const weatherPopupClose = document.getElementById('weatherPopupClose');
-            let adults = 2;
-            let children = 0;
+            const shareButton = document.getElementById('shareHotelBtn');
+            const shareMenu = document.getElementById('shareMenu');
+            const activeDraftResumeLink = document.querySelector('.active-draft-link');
+            let adults = parseInt(document.getElementById('adultCountInput')?.value || '2', 10);
+            let children = parseInt(document.getElementById('childCountInput')?.value || '0', 10);
+            let latestQuoteRequest = null;
 
             document.querySelectorAll('.gallery-thumb').forEach(function (button) {
                 button.addEventListener('click', function () {
@@ -428,9 +673,9 @@
 
             document.querySelectorAll('.select-room-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
-                    const price = button.getAttribute('data-price');
-                    roomTypeSelect.value = price;
-                    updatePrice(price);
+                    const roomId = button.getAttribute('data-room-id');
+                    roomTypeSelect.value = roomId;
+                    refreshPriceQuote();
                     document.querySelector('.booking-sidebar').scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
             });
@@ -443,16 +688,124 @@
                     if (target === 'adult') {
                         adults = action === 'plus' ? Math.min(adults + 1, 6) : Math.max(adults - 1, 1);
                         document.getElementById('adultCount').textContent = adults;
+                        document.getElementById('adultCountInput').value = adults;
                     } else {
                         children = action === 'plus' ? Math.min(children + 1, 4) : Math.max(children - 1, 0);
                         document.getElementById('childCount').textContent = children;
+                        document.getElementById('childCountInput').value = children;
                     }
                 });
             });
 
             roomTypeSelect.addEventListener('change', function () {
-                updatePrice(roomTypeSelect.value);
+                refreshPriceQuote();
             });
+
+            checkInInput?.addEventListener('change', refreshPriceQuote);
+            checkOutInput?.addEventListener('change', refreshPriceQuote);
+
+            function closeShareMenu() {
+                if (!shareMenu || !shareButton) {
+                    return;
+                }
+
+                shareMenu.hidden = true;
+                shareButton.setAttribute('aria-expanded', 'false');
+            }
+
+            function openShareMenu() {
+                if (!shareMenu || !shareButton) {
+                    return;
+                }
+
+                shareMenu.hidden = false;
+                shareButton.setAttribute('aria-expanded', 'true');
+            }
+
+            function bindShareActions() {
+                if (!shareMenu) {
+                    return;
+                }
+
+                const shareUrl = window.location.href;
+                const hotelTitle = (document.querySelector('.detail-header h1')?.textContent || 'Otelturizm').trim();
+                const encodedUrl = encodeURIComponent(shareUrl);
+                const encodedText = encodeURIComponent(hotelTitle + ' - ' + shareUrl);
+
+                const targets = {
+                    whatsapp: 'https://api.whatsapp.com/send?text=' + encodedText,
+                    facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl,
+                    x: 'https://twitter.com/intent/tweet?url=' + encodedUrl + '&text=' + encodeURIComponent(hotelTitle),
+                    telegram: 'https://t.me/share/url?url=' + encodedUrl + '&text=' + encodeURIComponent(hotelTitle),
+                    instagram: 'https://www.instagram.com/'
+                };
+
+                shareMenu.querySelectorAll('[data-share-platform]').forEach(function (element) {
+                    const platform = element.getAttribute('data-share-platform');
+
+                    if (element.tagName === 'A' && platform && targets[platform]) {
+                        element.setAttribute('href', targets[platform]);
+                    }
+
+                    element.addEventListener('click', async function (event) {
+                        if (platform === 'copy') {
+                            event.preventDefault();
+                            try {
+                                await navigator.clipboard.writeText(shareUrl);
+                                alert('Otel linki kopyalandi.');
+                            } catch (_) {
+                                alert('Link kopyalanamadi. Tarayici izinlerini kontrol edin.');
+                            }
+                            return;
+                        }
+
+                        if (platform === 'instagram') {
+                            try {
+                                await navigator.clipboard.writeText(shareUrl);
+                            } catch (_) {
+                                // ignore clipboard errors for unsupported browsers
+                            }
+                            alert('Instagram web tarafinda dogrudan baglanti paylasimi sinirlidir. Link kopyalandi, Instagram uygulamasinda yapistirabilirsiniz.');
+                            return;
+                        }
+
+                        if (platform === 'more') {
+                            event.preventDefault();
+                            if (navigator.share) {
+                                try {
+                                    await navigator.share({ title: hotelTitle, text: hotelTitle, url: shareUrl });
+                                } catch (_) {
+                                    // ignore cancelled share
+                                }
+                            } else {
+                                try {
+                                    await navigator.clipboard.writeText(shareUrl);
+                                    alert('Bu cihazda gelismis paylasim menusu desteklenmiyor. Link kopyalandi.');
+                                } catch (_) {
+                                    alert('Paylasim menusu kullanilamadi.');
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+
+            if (shareButton && shareMenu) {
+                bindShareActions();
+                shareButton.addEventListener('click', function () {
+                    if (shareMenu.hidden) {
+                        openShareMenu();
+                    } else {
+                        closeShareMenu();
+                    }
+                });
+
+                document.addEventListener('click', function (event) {
+                    if (!shareMenu.hidden && !shareMenu.contains(event.target) && !shareButton.contains(event.target)) {
+                        closeShareMenu();
+                    }
+                });
+            }
 
             function openWeatherPopup() {
                 if (!weatherPopup || !weatherPopupBackdrop) {
@@ -491,28 +844,301 @@
                 if (event.key === 'Escape' && weatherPopup && !weatherPopup.hidden) {
                     closeWeatherPopup();
                 }
+
+                if (event.key === 'Escape' && shareMenu && !shareMenu.hidden) {
+                    closeShareMenu();
+                }
             });
 
-            document.getElementById('bookingForm').addEventListener('submit', function (event) {
-                event.preventDefault();
-                alert('Rezervasyon akisi veritabani baglantisi icin hazirlandi.');
-            });
-
-            function updatePrice(priceValue) {
-                const nightly = parseInt(priceValue, 10);
-                const subtotal = nightly * 3;
-                const tax = Math.round(subtotal * 0.08);
-                const total = subtotal + tax;
-
-                bookingPrice.textContent = '₺' + nightly.toLocaleString('tr-TR');
-                breakdown.innerHTML =
-                    '<div><span>₺' + nightly.toLocaleString('tr-TR') + ' x 3 gece</span><strong>₺' + subtotal.toLocaleString('tr-TR') + '</strong></div>' +
-                    '<div><span>Vergi ve Harclar</span><strong>₺' + tax.toLocaleString('tr-TR') + '</strong></div>' +
-                    '<div class=\"total\"><span>Toplam</span><strong>₺' + total.toLocaleString('tr-TR') + '</strong></div>';
+            function formatMoney(value) {
+                return '₺' + Number(value || 0).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
             }
+
+            function openModal(modal) {
+                if (!modal || !actionBackdrop) {
+                    return;
+                }
+
+                modal.hidden = false;
+                actionBackdrop.hidden = false;
+                requestAnimationFrame(function () {
+                    modal.classList.add('is-open');
+                    actionBackdrop.classList.add('is-open');
+                    modal.setAttribute('aria-hidden', 'false');
+                });
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeModal(modal) {
+                if (!modal || !actionBackdrop) {
+                    return;
+                }
+
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+                actionBackdrop.classList.remove('is-open');
+                window.setTimeout(function () {
+                    modal.hidden = true;
+                    if (!document.querySelector('.detail-modal.is-open')) {
+                        actionBackdrop.hidden = true;
+                        document.body.style.overflow = '';
+                    }
+                }, 180);
+            }
+
+            document.querySelectorAll('[data-close-modal]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const modal = document.getElementById(button.getAttribute('data-close-modal'));
+                    closeModal(modal);
+                });
+            });
+
+            actionBackdrop?.addEventListener('click', function () {
+                closeModal(profileModal);
+                closeModal(infoModal);
+            });
+
+            function showInfoModal(message, isGuest) {
+                if (!infoModal || !infoModalText || !infoModalActions) {
+                    return;
+                }
+
+                infoModalText.textContent = message;
+                infoModalActions.innerHTML = isGuest
+                    ? '<a href="/kullanici-giris" class="detail-modal-primary">Giriş Yap</a><a href="/kullanici-giris?sekme=kayit" class="detail-modal-secondary">Kayıt Ol</a>'
+                    : '<button type="button" class="detail-modal-primary" data-close-modal="detailInfoModal">Tamam</button>';
+                openModal(infoModal);
+                infoModalActions.querySelectorAll('[data-close-modal]').forEach(function (button) {
+                    button.addEventListener('click', function () { closeModal(infoModal); });
+                });
+            }
+
+            function resumeDraftFlow() {
+                if (@(Model.ActiveDraft?.RequiresProfileCompletion == true && Model.IsLoggedInUser ? "true" : "false")) {
+                    hydrateProfileAddressSelectors();
+                    openModal(profileModal);
+                    return;
+                }
+
+                document.querySelector('.booking-sidebar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            async function refreshPriceQuote() {
+                if (!roomTypeSelect || !checkInInput || !checkOutInput || !bookingPrice || !breakdown) {
+                    return;
+                }
+
+                const selectedOption = roomTypeSelect.options[roomTypeSelect.selectedIndex];
+                const roomId = selectedOption?.value;
+                const checkIn = checkInInput.value;
+                const checkOut = checkOutInput.value;
+                const roomCount = parseInt(document.querySelector('input[name="RoomCount"]')?.value || '1', 10);
+
+                if (!roomId || !checkIn || !checkOut) {
+                    return;
+                }
+
+                latestQuoteRequest = roomId + '|' + checkIn + '|' + checkOut + '|' + roomCount;
+                const requestKey = latestQuoteRequest;
+
+                try {
+                    const response = await fetch('/oteller/@Model.Slug/fiyat-teklifi?roomTypeId=' + encodeURIComponent(roomId) + '&checkInDate=' + encodeURIComponent(checkIn) + '&checkOutDate=' + encodeURIComponent(checkOut) + '&roomCount=' + encodeURIComponent(roomCount), {
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (!response.ok) {
+                        throw new Error('Fiyat özeti alınamadı');
+                    }
+
+                    const quote = await response.json();
+                    if (!quote.success || latestQuoteRequest !== requestKey) {
+                        return;
+                    }
+
+                    bookingPrice.textContent = formatMoney(quote.nightlyPrice);
+                    breakdown.innerHTML =
+                        '<div><span>' + formatMoney(quote.nightlyPrice) + ' x ' + quote.nightCount + ' gece</span><strong>' + formatMoney(quote.roomTotal) + '</strong></div>' +
+                        '<div><span>Vergi ve Harçlar</span><strong>' + formatMoney(quote.taxAmount) + '</strong></div>' +
+                        '<div class="total"><span>Toplam</span><strong>' + formatMoney(quote.totalAmount) + '</strong></div>';
+                } catch (_error) {
+                    const fallbackNightly = parseFloat(selectedOption?.dataset.price || '0');
+                    const diffMs = new Date(checkOut).getTime() - new Date(checkIn).getTime();
+                    const nights = Math.max(1, Math.round(diffMs / 86400000));
+                    const subtotal = fallbackNightly * nights * roomCount;
+                    const tax = Math.round(subtotal * 0.08);
+                    const total = subtotal + tax;
+                    bookingPrice.textContent = formatMoney(fallbackNightly);
+                    breakdown.innerHTML =
+                        '<div><span>' + formatMoney(fallbackNightly) + ' x ' + nights + ' gece</span><strong>' + formatMoney(subtotal) + '</strong></div>' +
+                        '<div><span>Vergi ve Harçlar</span><strong>' + formatMoney(tax) + '</strong></div>' +
+                        '<div class="total"><span>Toplam</span><strong>' + formatMoney(total) + '</strong></div>';
+                }
+            }
+
+            async function loadSelectOptions(url, select, placeholder, selectedText) {
+                if (!select) {
+                    return [];
+                }
+
+                select.innerHTML = '<option value="">' + placeholder + '</option>';
+                const response = await fetch(url, { credentials: 'same-origin' });
+                const items = response.ok ? await response.json() : [];
+                items.forEach(function (item) {
+                    const option = document.createElement('option');
+                    option.value = item.name;
+                    option.textContent = item.name;
+                    if (item.id) {
+                        option.dataset.id = item.id;
+                    }
+                    if (item.provinceId) {
+                        option.dataset.provinceId = item.provinceId;
+                    }
+                    if (item.postalCode) {
+                        option.dataset.postalCode = item.postalCode;
+                    }
+                    if (selectedText && item.name === selectedText) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+                return items;
+            }
+
+            const countrySelect = document.getElementById('detailCountrySelect');
+            const provinceSelect = document.getElementById('detailProvinceSelect');
+            const districtSelect = document.getElementById('detailDistrictSelect');
+            const neighborhoodSelect = document.getElementById('detailNeighborhoodSelect');
+            const profileAddressSeed = {
+                country: '@(Model.ProfilePrompt.Nationality ?? string.Empty)',
+                city: '@(Model.ProfilePrompt.City ?? string.Empty)',
+                district: '@(Model.ProfilePrompt.District ?? string.Empty)',
+                neighborhood: '@(Model.ProfilePrompt.Neighborhood ?? string.Empty)'
+            };
+
+            async function hydrateProfileAddressSelectors() {
+                await loadSelectOptions('/api/adres/ulkeler', countrySelect, 'Uyruk seçiniz', profileAddressSeed.country);
+                await loadSelectOptions('/api/adres/iller', provinceSelect, 'İl seçiniz', profileAddressSeed.city);
+                const provinceId = provinceSelect?.selectedOptions[0]?.dataset.id || provinceSelect?.selectedOptions[0]?.dataset.provinceId;
+                if (provinceId) {
+                    await loadSelectOptions('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), districtSelect, 'İlçe seçiniz', profileAddressSeed.district);
+                    const districtId = districtSelect?.selectedOptions[0]?.dataset.id;
+                    if (districtId) {
+                        await loadSelectOptions('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), neighborhoodSelect, 'Mahalle seçiniz', profileAddressSeed.neighborhood);
+                    }
+                }
+            }
+
+            provinceSelect?.addEventListener('change', async function () {
+                const provinceId = provinceSelect.selectedOptions[0]?.dataset.id || provinceSelect.selectedOptions[0]?.dataset.provinceId || '';
+                await loadSelectOptions('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), districtSelect, 'İlçe seçiniz', '');
+                neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+            });
+
+            districtSelect?.addEventListener('change', async function () {
+                const districtId = districtSelect.selectedOptions[0]?.dataset.id || '';
+                await loadSelectOptions('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), neighborhoodSelect, 'Mahalle seçiniz', '');
+            });
+
+            document.getElementById('openProfileCompletionFromBanner')?.addEventListener('click', function () {
+                hydrateProfileAddressSelectors();
+                openModal(profileModal);
+            });
+
+            activeDraftResumeLink?.addEventListener('click', function (event) {
+                event.preventDefault();
+                resumeDraftFlow();
+            });
+
+            bookingForm?.addEventListener('submit', function (event) {
+                if (profileCompletionRequired) {
+                    event.preventDefault();
+                    hydrateProfileAddressSelectors();
+                    openModal(profileModal);
+                }
+            });
+
+            profileCompletionForm?.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                profileFeedback.hidden = true;
+                const formData = new FormData(profileCompletionForm);
+
+                try {
+                    const response = await fetch(profileCompletionForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || !payload.success) {
+                        throw new Error(payload.message || 'Bilgiler kaydedilemedi.');
+                    }
+
+                    profileFeedback.hidden = false;
+                    profileFeedback.className = 'detail-modal-feedback success';
+                    profileFeedback.textContent = payload.message;
+                    window.setTimeout(function () {
+                        closeModal(profileModal);
+                        window.location.href = '/oteller/@Model.Slug?continueDraft=1';
+                    }, 700);
+                } catch (error) {
+                    profileFeedback.hidden = false;
+                    profileFeedback.className = 'detail-modal-feedback error';
+                    profileFeedback.textContent = error.message || 'Bilgiler kaydedilemedi.';
+                }
+            });
+
+            startConversationBtn?.addEventListener('click', async function () {
+                const authenticated = startConversationBtn.dataset.authenticated === 'true';
+                const canStart = startConversationBtn.dataset.canStart === 'true';
+                const infoMessage = startConversationBtn.dataset.infoMessage || 'Görüşme başlatılamıyor.';
+
+                if (!authenticated) {
+                    showInfoModal('Otel ile görüşme başlatmak için önce kullanıcı hesabınızla giriş yapmalısınız.', true);
+                    return;
+                }
+
+                if (!canStart) {
+                    showInfoModal(infoMessage, false);
+                    return;
+                }
+
+                try {
+                    const token = bookingForm?.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                    const response = await fetch('/oteller/@Model.Slug/gorusme-baslat', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || !payload.success) {
+                        throw new Error(payload.message || 'Görüşme başlatılamadı.');
+                    }
+
+                    window.location.href = payload.redirectUrl;
+                } catch (error) {
+                    showInfoModal(error.message || 'Görüşme başlatılamadı.', false);
+                }
+            });
+
+            const locationQuery = new URLSearchParams(window.location.search);
+            const shouldOpenProfileFromQuery = locationQuery.get('openProfile') === '1';
+
+            if (shouldOpenProfileFromQuery && @((Model.ActiveDraft is not null && Model.IsLoggedInUser) ? "true" : "false")) {
+                hydrateProfileAddressSelectors();
+                openModal(profileModal);
+            } else if (@(Model.ShouldResumeDraftOnLoad && Model.ActiveDraft?.RequiresProfileCompletion == true && Model.IsLoggedInUser ? "true" : "false")) {
+                hydrateProfileAddressSelectors();
+                openModal(profileModal);
+            } else if (@(Model.ShouldResumeDraftOnLoad && Model.ActiveDraft is not null && Model.ActiveDraft.RequiresProfileCompletion == false ? "true" : "false")) {
+                resumeDraftFlow();
+            }
+
+            refreshPriceQuote();
         })();
     </script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />
 }
-
-

@@ -7,7 +7,7 @@
 <section class="form-stack">
     <form method="post" asp-action="SaveNotifications" class="panel-card">
         @Html.AntiForgeryToken()
-        <div class="section-head"><h2>Bildirim Tercihleri</h2><button type="submit" class="ghost-btn">Kaydet</button></div>
+        <div class="section-head"><h2>Bildirim Tercihleri</h2><button type="submit" class="primary-btn">Kaydet</button></div>
         <div class="toggle-list">
             <label class="toggle-row"><div><h3>Rezervasyon e-postaları</h3><p>Onay ve önemli rezervasyon güncellemeleri e-posta ile gelsin.</p></div><input asp-for="Form.ReservationEmail" type="checkbox" /></label>
             <label class="toggle-row"><div><h3>Rezervasyon push bildirimleri</h3><p>Uygulama içi hızlı uyarıları açık tut.</p></div><input asp-for="Form.ReservationPush" type="checkbox" /></label>

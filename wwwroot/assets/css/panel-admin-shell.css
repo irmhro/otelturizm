@@ -36,11 +36,8 @@ body {
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 72px;
-    padding: 14px 18px;
-    border-radius: 22px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.08);
+    min-height: 56px;
+    padding: 8px 6px;
     text-decoration: none;
 }
 
@@ -52,62 +49,20 @@ body {
 }
 
 .admin-profile-card {
-    margin-top: 10px;
-    display: flex;
-    gap: 14px;
-    align-items: center;
-    padding: 14px;
-    border-radius: 20px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.06);
+    margin-top: 8px;
+    display: block;
+    padding: 0 8px;
 }
 
-.admin-avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #2563eb 0%, #14b8a6 100%);
-    font-weight: 800;
-    color: #fff;
-}
-
-.admin-profile-card h3,
-.admin-profile-card p {
+.admin-profile-card h3 {
     margin: 0;
 }
 
 .admin-profile-card p {
+    margin: 4px 0 0;
     color: rgba(255,255,255,0.68);
     font-size: 0.82rem;
-    margin-top: 4px;
-}
-
-.admin-mini-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.role-badge,
-.alert-badge {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    padding: 5px 10px;
-    font-size: 0.72rem;
-    font-weight: 700;
-}
-
-.role-badge {
-    background: rgba(37,99,235,0.22);
-}
-
-.alert-badge {
-    background: rgba(239,68,68,0.22);
+    word-break: break-word;
 }
 
 .admin-sidebar-nav {

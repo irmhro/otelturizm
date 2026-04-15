@@ -1,6 +1,6 @@
 .auth-shell {
-    /* pull the form area up so it's closer to header */
-    padding: 82px 20px 72px;
+    /* align directly under fixed header without extra top gap */
+    padding: 0 20px 72px;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     touch-action: manipulation;
@@ -191,6 +191,35 @@
     font-weight: 700;
 }
 
+.auth-alert-success {
+    background: rgba(34, 197, 94, 0.12);
+    color: #166534;
+}
+
+.auth-standalone-panel {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 30px 34px;
+    border-radius: 30px;
+    background: #ffffff;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+    border: 1px solid #e4edf6;
+}
+
+.auth-standalone-panel .auth-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.auth-inline-hint {
+    color: #66768a;
+    font-size: 0.94rem;
+    line-height: 1.6;
+}
+
 .divider-line {
     display: flex;
     align-items: center;
@@ -379,7 +408,7 @@
 
 @media (max-width: 768px) {
     .auth-shell {
-        padding: 72px 12px 42px;
+        padding: 0 12px 42px;
     }
 
     .auth-panel-wrap {

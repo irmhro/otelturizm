@@ -6,27 +6,67 @@
 
 <form method="post" asp-action="SaveProfile" class="form-stack">
     @Html.AntiForgeryToken()
+    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
     <article class="panel-card">
-        <div class="section-head"><h2>Kişisel Bilgiler</h2><button type="submit" class="ghost-btn">Kaydet</button></div>
+        <div class="section-head"><h2>Kişisel Bilgiler</h2><button type="submit" class="primary-btn">Kaydet</button></div>
         <div class="form-grid">
             <label><span>Ad</span><input asp-for="Form.FirstName" type="text" /></label>
             <label><span>Soyad</span><input asp-for="Form.LastName" type="text" /></label>
-            <label><span>Doğum Tarihi</span><input asp-for="Form.BirthDateText" type="date" /></label>
+            <label><span>Doğum Tarihi</span><input asp-for="Form.BirthDateText" type="date" required /></label>
             <label><span>Telefon</span><input asp-for="Form.Phone" type="text" /></label>
             <label><span>TC Kimlik No</span><input asp-for="Form.IdentityNumber" type="text" maxlength="11" /></label>
-            <label><span>Cinsiyet</span><input asp-for="Form.Gender" type="text" placeholder="Erkek, Kadın, Belirtmek İstemiyorum" /></label>
-            <label><span>Uyruk</span><input asp-for="Form.Nationality" type="text" /></label>
+            <label>
+                <span>Cinsiyet</span>
+                <select asp-for="Form.Gender" required>
+                    <option value="">Seçiniz</option>
+                    <option value="Erkek">Erkek</option>
+                    <option value="Kadın">Kadın</option>
+                    <option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
+                </select>
+            </label>
+            <label>
+                <span>Uyruk</span>
+                <select asp-for="Form.Nationality" id="userCountrySelect">
+                    <option value="">Seçiniz</option>
+                    @foreach (var country in Model.Countries)
+                    {
+                        <option value="@country.Name" data-country-id="@country.Id" selected="@(string.Equals(Model.Form.Nationality, country.Name, StringComparison.OrdinalIgnoreCase))">@country.Name</option>
+                    }
+                </select>
+            </label>
             <label><span>Posta Kodu</span><input asp-for="Form.PostalCode" type="text" /></label>
-            <label class="full"><span>E-posta</span><input asp-for="Form.Email" type="email" readonly /></label>
-            <label><span>Şehir</span><input asp-for="Form.City" type="text" /></label>
-            <label><span>İlçe</span><input asp-for="Form.District" type="text" /></label>
-            <label><span>Mahalle</span><input asp-for="Form.Neighborhood" type="text" /></label>
+            <label class="full"><span>E-posta</span><input asp-for="Form.Email" type="email" required /></label>
+            <input type="hidden" id="userSelectedProvinceId" value="@(Model.SelectedProvinceId?.ToString() ?? string.Empty)" />
+            <input type="hidden" id="userSelectedDistrictId" value="@(Model.SelectedDistrictId?.ToString() ?? string.Empty)" />
+            <input type="hidden" id="userSelectedNeighborhoodId" value="@(Model.SelectedNeighborhoodId?.ToString() ?? string.Empty)" />
+            <label>
+                <span>İl</span>
+                <select asp-for="Form.City" id="userProvinceSelect" required>
+                    <option value="">Seçiniz</option>
+                    @foreach (var province in Model.Provinces)
+                    {
+                        <option value="@province.Name" data-province-id="@province.Id" selected="@(string.Equals(Model.Form.City, province.Name, StringComparison.OrdinalIgnoreCase))">@province.Name</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>İlçe</span>
+                <select asp-for="Form.District" id="userDistrictSelect" data-selected-text="@Model.Form.District" required>
+                    <option value="">Önce il seçiniz</option>
+                </select>
+            </label>
+            <label>
+                <span>Mahalle</span>
+                <select asp-for="Form.Neighborhood" id="userNeighborhoodSelect" data-selected-text="@Model.Form.Neighborhood" required>
+                    <option value="">Önce ilçe seçiniz</option>
+                </select>
+            </label>
             <label class="full"><span>Adres</span><textarea asp-for="Form.Address" rows="3"></textarea></label>
         </div>
     </article>
 
     <article class="panel-card">
-        <div class="section-head"><h2>Seyahat Tercihleri</h2><button type="submit" class="ghost-btn">Tercihleri Kaydet</button></div>
+        <div class="section-head"><h2>Seyahat Tercihleri</h2><button type="submit" class="primary-btn">Tercihleri Kaydet</button></div>
         <div class="form-grid">
             <label><span>Oda Tercihi</span><input asp-for="Form.RoomPreference" type="text" /></label>
             <label><span>Yatak Tercihi</span><input asp-for="Form.BedPreference" type="text" /></label>
@@ -36,3 +76,75 @@
         </div>
     </article>
 </form>
+
+<script>
+    (function () {
+        const provinceSelect = document.getElementById('userProvinceSelect');
+        const districtSelect = document.getElementById('userDistrictSelect');
+        const neighborhoodSelect = document.getElementById('userNeighborhoodSelect');
+        const selectedProvinceId = document.getElementById('userSelectedProvinceId')?.value || '';
+        const selectedDistrictId = document.getElementById('userSelectedDistrictId')?.value || '';
+        const selectedNeighborhoodId = document.getElementById('userSelectedNeighborhoodId')?.value || '';
+
+        if (!provinceSelect || !districtSelect || !neighborhoodSelect) {
+            return;
+        }
+
+        const buildOptions = function (items, placeholder, selectedValue, idField, nameField) {
+            const options = ['<option value="">' + placeholder + '</option>'];
+            items.forEach(function (item) {
+                const value = item[nameField] || '';
+                const selected = selectedValue && value === selectedValue ? ' selected' : '';
+                options.push('<option value="' + value.replace(/"/g, '&quot;') + '" data-id="' + item[idField] + '"' + selected + '>' + value + '</option>');
+            });
+            return options.join('');
+        };
+
+        const loadDistricts = async function (provinceId, selectedText) {
+            districtSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+            neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+            if (!provinceId) {
+                districtSelect.innerHTML = '<option value="">Önce il seçiniz</option>';
+                return;
+            }
+
+            const response = await fetch('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), { credentials: 'same-origin' });
+            const items = response.ok ? await response.json() : [];
+            districtSelect.innerHTML = buildOptions(items, 'İlçe seçiniz', selectedText || districtSelect.dataset.selectedText || '', 'id', 'name');
+            const currentDistrictId = selectedDistrictId || districtSelect.selectedOptions[0]?.dataset.id || '';
+            if (currentDistrictId) {
+                await loadNeighborhoods(currentDistrictId, neighborhoodSelect.dataset.selectedText || '');
+            }
+        };
+
+        const loadNeighborhoods = async function (districtId, selectedText) {
+            neighborhoodSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+            if (!districtId) {
+                neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+                return;
+            }
+
+            const response = await fetch('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), { credentials: 'same-origin' });
+            const items = response.ok ? await response.json() : [];
+            neighborhoodSelect.innerHTML = buildOptions(items, 'Mahalle seçiniz', selectedText || neighborhoodSelect.dataset.selectedText || '', 'id', 'name');
+        };
+
+        provinceSelect.addEventListener('change', async function () {
+            const provinceId = provinceSelect.selectedOptions[0]?.dataset.provinceId || '';
+            districtSelect.dataset.selectedText = '';
+            neighborhoodSelect.dataset.selectedText = '';
+            await loadDistricts(provinceId, '');
+        });
+
+        districtSelect.addEventListener('change', async function () {
+            const districtId = districtSelect.selectedOptions[0]?.dataset.id || '';
+            neighborhoodSelect.dataset.selectedText = '';
+            await loadNeighborhoods(districtId, '');
+        });
+
+        const initialProvinceId = selectedProvinceId || provinceSelect.selectedOptions[0]?.dataset.provinceId || '';
+        if (initialProvinceId) {
+            loadDistricts(initialProvinceId, districtSelect.dataset.selectedText || '');
+        }
+    })();
+</script>

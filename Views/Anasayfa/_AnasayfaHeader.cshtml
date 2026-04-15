@@ -70,10 +70,11 @@
 
         <div class="search-wrapper">
             <form class="search-container public-header-search-form" method="get" action="/oteller" autocomplete="off">
-                <input type="text" class="search-input" name="q" placeholder="Otel adı, il, ilçe, mahalle veya bölge ara">
+                <input type="text" class="search-input" id="publicHeaderSearchInput" name="q" placeholder="Otel adı, il, ilçe, mahalle veya bölge ara">
                 <button type="submit" class="search-btn header-search-btn" aria-label="Ara">
                     <i class="fas fa-search"></i>
                 </button>
+                <div class="header-search-suggestions" id="publicHeaderSearchSuggestions" hidden></div>
             </form>
         </div>
 
@@ -184,6 +185,95 @@
 
         document.addEventListener('DOMContentLoaded', function(){
             setupDropdown('languageDropdown', 'site:language');
+
+            const searchForm = document.querySelector('.public-header-search-form');
+            const searchInput = document.getElementById('publicHeaderSearchInput');
+            const searchSuggestions = document.getElementById('publicHeaderSearchSuggestions');
+            let suggestionTimer = null;
+
+            function hideHeaderSuggestions() {
+                if (!searchSuggestions) {
+                    return;
+                }
+
+                searchSuggestions.hidden = true;
+                searchSuggestions.innerHTML = '';
+            }
+
+            function renderHeaderSuggestions(items) {
+                if (!searchSuggestions) {
+                    return;
+                }
+
+                if (!items || !items.length) {
+                    hideHeaderSuggestions();
+                    return;
+                }
+
+                searchSuggestions.innerHTML = items.map(function (item) {
+                    return '<button type="button" class="header-search-suggestion" data-value="' + item.value.replace(/"/g, '&quot;') + '">' +
+                        '<span>' + item.label + '</span>' +
+                        '<small>' + item.type + '</small>' +
+                        '</button>';
+                }).join('');
+                searchSuggestions.hidden = false;
+            }
+
+            async function loadHeaderSuggestions() {
+                if (!searchInput) {
+                    return;
+                }
+
+                const currentValue = searchInput.value.trim();
+                if (currentValue.length < 2) {
+                    hideHeaderSuggestions();
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/oteller/arama-onerileri?q=' + encodeURIComponent(currentValue), {
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (!response.ok) {
+                        hideHeaderSuggestions();
+                        return;
+                    }
+
+                    const items = await response.json();
+                    renderHeaderSuggestions(items);
+                } catch (_error) {
+                    hideHeaderSuggestions();
+                }
+            }
+
+            searchInput?.addEventListener('input', function () {
+                window.clearTimeout(suggestionTimer);
+                suggestionTimer = window.setTimeout(loadHeaderSuggestions, 180);
+            });
+
+            searchInput?.addEventListener('focus', function () {
+                if ((searchInput.value || '').trim().length >= 2) {
+                    loadHeaderSuggestions();
+                }
+            });
+
+            searchSuggestions?.addEventListener('click', function (event) {
+                const button = event.target.closest('.header-search-suggestion[data-value]');
+                if (!button || !searchInput) {
+                    return;
+                }
+
+                searchInput.value = button.dataset.value || '';
+                hideHeaderSuggestions();
+                searchForm?.requestSubmit();
+            });
+
+            document.addEventListener('click', function (event) {
+                if (searchForm && !searchForm.contains(event.target)) {
+                    hideHeaderSuggestions();
+                }
+            });
         });
     })();
 </script>

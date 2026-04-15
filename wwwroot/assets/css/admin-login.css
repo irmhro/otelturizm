@@ -27,9 +27,9 @@ body.admin-login-page {
     margin: 0;
     min-height: 100vh;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 24px;
+    padding: 0 24px 24px;
     font-family: "Inter", sans-serif;
     background: var(--admin-bg-dark);
     background-image:
@@ -356,7 +356,7 @@ body.admin-login-page {
 
 @media (max-width: 800px) {
     body.admin-login-page {
-        padding: 16px;
+        padding: 0 16px 16px;
     }
 
     .admin-login-page .admin-login-container {
