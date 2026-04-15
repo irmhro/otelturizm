@@ -264,7 +264,14 @@ public class PublicReservationService : IPublicReservationService
             }, cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
-            await _reservationDraftService.MarkCompletedAsync(draftId, reservationId, cancellationToken);
+            try
+            {
+                await _reservationDraftService.MarkCompletedAsync(draftId, reservationId, cancellationToken);
+            }
+            catch (Exception draftCleanupException)
+            {
+                _logger.LogWarning(draftCleanupException, "Rezervasyon tamamlandi ancak taslak temizlenemedi. DraftId: {DraftId}, ReservationId: {ReservationId}", draftId, reservationId);
+            }
 
             return new PublicReservationResult
             {

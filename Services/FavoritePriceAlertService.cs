@@ -215,7 +215,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
             INNER JOIN users u ON u.id = a.user_id
             INNER JOIN oteller o ON o.id = a.otel_id
             INNER JOIN oda_tipleri ot ON ot.otel_id = a.otel_id AND ot.aktif_mi = 1
-            INNER JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
+            INNER JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id AND ofm.otel_id = a.otel_id
             WHERE a.otel_id = @hotelId
               AND COALESCE(a.aktif_mi, 1) = 1
               AND a.id > @cursor

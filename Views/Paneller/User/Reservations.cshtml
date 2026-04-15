@@ -28,11 +28,36 @@
     </div>
 
     <div class="chip-row">
-        <button type="button" class="chip active">Tümü</button>
-        <button type="button" class="chip">Yaklaşan</button>
-        <button type="button" class="chip">Geçmiş</button>
-        <button type="button" class="chip">İptal Edilen</button>
+        <a asp-action="Reservations" asp-route-status="all" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-page="1" class="chip @(Model.StatusFilter == "all" ? "active" : string.Empty)">Tümü</a>
+        <a asp-action="Reservations" asp-route-status="upcoming" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-page="1" class="chip @(Model.StatusFilter == "upcoming" ? "active" : string.Empty)">Yaklaşan</a>
+        <a asp-action="Reservations" asp-route-status="past" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-page="1" class="chip @(Model.StatusFilter == "past" ? "active" : string.Empty)">Geçmiş</a>
+        <a asp-action="Reservations" asp-route-status="cancelled" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-page="1" class="chip @(Model.StatusFilter == "cancelled" ? "active" : string.Empty)">İptal Edilen</a>
     </div>
+    <form method="get" asp-action="Reservations" class="user-reservation-filter-form">
+        <input type="hidden" name="status" value="@Model.StatusFilter" />
+        <input type="hidden" name="page" value="1" />
+        <label>
+            <span>Giriş başlangıç</span>
+            <input type="date" name="startDate" value="@Model.StartDateText" />
+        </label>
+        <label>
+            <span>Giriş bitiş</span>
+            <input type="date" name="endDate" value="@Model.EndDateText" />
+        </label>
+        <label>
+            <span>Sayfa başı</span>
+            <select name="pageSize">
+                @foreach (var option in new[] { 5, 10, 15 })
+                {
+                    <option value="@option" selected="@(Model.PageSize == option)">@option</option>
+                }
+            </select>
+        </label>
+        <div class="user-reservation-filter-actions">
+            <button type="submit" class="ghost-btn">Filtrele</button>
+            <a asp-action="Reservations" class="ghost-btn">Temizle</a>
+        </div>
+    </form>
 
     <div class="reservation-list-stack">
         @if (Model.Reservations.Count == 0)
@@ -119,6 +144,26 @@
             }
         }
     </div>
+    @if (Model.TotalPages > 1)
+    {
+        <div class="user-reservation-pager">
+            <a asp-action="Reservations"
+               asp-route-status="@Model.StatusFilter"
+               asp-route-startDate="@Model.StartDateText"
+               asp-route-endDate="@Model.EndDateText"
+               asp-route-pageSize="@Model.PageSize"
+               asp-route-page="@(Math.Max(1, Model.Page - 1))"
+               class="pager-link @(Model.Page <= 1 ? "disabled" : string.Empty)">Önceki</a>
+            <span>Sayfa @Model.Page / @Model.TotalPages · @Model.FilteredCount kayıt</span>
+            <a asp-action="Reservations"
+               asp-route-status="@Model.StatusFilter"
+               asp-route-startDate="@Model.StartDateText"
+               asp-route-endDate="@Model.EndDateText"
+               asp-route-pageSize="@Model.PageSize"
+               asp-route-page="@(Math.Min(Model.TotalPages, Model.Page + 1))"
+               class="pager-link @(Model.Page >= Model.TotalPages ? "disabled" : string.Empty)">Sonraki</a>
+        </div>
+    }
 </section>
 
 <dialog id="user-reservation-detail-dialog" class="user-reservation-dialog">

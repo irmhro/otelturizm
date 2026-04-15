@@ -33,6 +33,37 @@ public class HeaderBildiriController : ControllerBase
         return Ok(new { success = true });
     }
 
+    [HttpGet("ozet")]
+    public async Task<IActionResult> GetSummary([FromQuery] string? panelKey, CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId <= 0)
+        {
+            return Unauthorized();
+        }
+
+        var model = await _headerBildiriService.GetForPanelAsync(panelKey ?? PanelHeaderAudience.User, userId, cancellationToken);
+        return Ok(new
+        {
+            panelKey = model.PanelKey,
+            panelLabel = model.PanelLabel,
+            unreadCount = model.UnreadCount,
+            totalCount = model.TotalCount,
+            items = model.Items.Select(item => new
+            {
+                itemKey = item.ItemKey,
+                title = item.Title,
+                description = item.Description,
+                tone = item.Tone,
+                timeLabel = item.TimeLabel,
+                absoluteTimeLabel = item.AbsoluteTimeLabel,
+                url = item.Url,
+                isRead = item.IsRead,
+                isPlaceholder = item.IsPlaceholder
+            })
+        });
+    }
+
     private long GetCurrentUserId()
     {
         var raw = User.FindFirstValue(AuthClaimTypes.UserId) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);

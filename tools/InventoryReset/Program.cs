@@ -66,7 +66,7 @@ try
         foreach (var hotelId in hotelIds)
         {
             var roomId = await InsertDefaultRoomAsync(connection, transaction, hotelId);
-            await InsertDefaultRoomPricesAsync(connection, transaction, roomId, 30, 3500m, 5);
+            await InsertDefaultRoomPricesAsync(connection, transaction, hotelId, roomId, 30, 3500m, 5);
             await LinkRoomFeaturesAsync(connection, transaction, existingTables, roomId, featureIds);
         }
 
@@ -317,18 +317,18 @@ static async Task<long> InsertDefaultRoomAsync(MySqlConnection connection, MySql
     return Convert.ToInt64(inserted, CultureInfo.InvariantCulture);
 }
 
-static async Task InsertDefaultRoomPricesAsync(MySqlConnection connection, MySqlTransaction transaction, long roomId, int dayCount, decimal nightlyPrice, short totalRooms)
+static async Task InsertDefaultRoomPricesAsync(MySqlConnection connection, MySqlTransaction transaction, long hotelId, long roomId, int dayCount, decimal nightlyPrice, short totalRooms)
 {
     const string sql = """
         INSERT INTO oda_fiyat_musaitlik
         (
-            oda_tip_id, tarih, gecelik_fiyat, indirimli_fiyat, kampanya_id,
+            otel_id, oda_tip_id, tarih, gecelik_fiyat, indirimli_fiyat, kampanya_id,
             toplam_oda_sayisi, satilan_oda_sayisi, bloke_oda_sayisi,
             minimum_geceleme, maksimum_geceleme, kapali_satis, sadece_gunubirlik, iptal_politikasi_override
         )
         VALUES
         (
-            @roomId, @date, @nightlyPrice, NULL, NULL,
+            @hotelId, @roomId, @date, @nightlyPrice, NULL, NULL,
             @totalRooms, 0, 0,
             1, 30, 0, 0, NULL
         );
@@ -337,6 +337,7 @@ static async Task InsertDefaultRoomPricesAsync(MySqlConnection connection, MySql
     for (var i = 0; i < dayCount; i++)
     {
         await using var command = new MySqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
         command.Parameters.AddWithValue("@roomId", roomId);
         command.Parameters.AddWithValue("@date", DateTime.Today.AddDays(i));
         command.Parameters.AddWithValue("@nightlyPrice", nightlyPrice);

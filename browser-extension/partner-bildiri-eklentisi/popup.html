@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Partner Bildirimleri</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; width: 340px; background: #f8fbff; color: #0f172a; }
+    .wrap { padding: 12px; display: grid; gap: 10px; }
+    .head { display: flex; justify-content: space-between; align-items: center; }
+    .pill { background: #eaf1ff; color: #0f5bd7; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
+    .meta { font-size: 12px; color: #64748b; }
+    .list { display: grid; gap: 8px; max-height: 300px; overflow-y: auto; }
+    .item { background: #fff; border: 1px solid #dbe5f0; border-radius: 10px; padding: 9px; }
+    .item strong { display: block; font-size: 13px; margin-bottom: 4px; }
+    .item p { margin: 0; color: #475569; font-size: 12px; line-height: 1.4; }
+    .item small { display: block; margin-top: 6px; color: #64748b; font-size: 11px; }
+    .actions { display: flex; gap: 8px; }
+    button, a { flex: 1; min-height: 34px; border-radius: 8px; border: 0; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; cursor: pointer; }
+    #refreshBtn { background: #0f5bd7; color: #fff; }
+    #openPanelBtn { background: #eaf1ff; color: #0f5bd7; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <strong id="panelLabel">Partner</strong>
+      <span class="pill" id="unreadPill">0 okunmamis</span>
+    </div>
+    <div class="meta" id="lastSync">Son kontrol: -</div>
+    <div class="list" id="list"></div>
+    <div class="actions">
+      <button id="refreshBtn" type="button">Yenile</button>
+      <a id="openPanelBtn" href="https://localhost:7223/panel/partner/rezervasyonlar" target="_blank" rel="noreferrer">Panele Git</a>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

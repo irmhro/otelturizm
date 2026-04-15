@@ -25,6 +25,7 @@ public sealed class HeaderBildiriItemViewModel
     public string Description { get; set; } = string.Empty;
     public string Tone { get; set; } = "info";
     public string TimeLabel { get; set; } = "Simdi";
+    public string AbsoluteTimeLabel { get; set; } = "Zaman bilgisi yok";
     public string Url { get; set; } = "#";
     public bool IsRead { get; set; }
     public bool IsPlaceholder { get; set; }

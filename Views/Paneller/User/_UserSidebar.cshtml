@@ -11,6 +11,7 @@
         displayName = "Kullanıcı";
     }
     var favoriteCount = ViewData["FavoriteCount"] is int count ? count : (int?)null;
+    var reservationCount = ViewData["ReservationCount"] is int reservationBadge ? reservationBadge : (int?)null;
 }
 <aside class="user-sidebar">
     <div>
@@ -30,10 +31,10 @@
         <nav class="sidebar-nav">
             <p class="nav-caption">Ana Menu</p>
             <a asp-action="Index" class="@(currentAction == "Index" ? "active" : "")"><i class="fas fa-columns"></i> Dashboard</a>
-            <a asp-action="Reservations" class="@(currentAction == "Reservations" ? "active" : "")"><i class="fas fa-calendar-check"></i> Rezervasyonlarim <span>3</span></a>
+            <a asp-action="Reservations" class="@(currentAction == "Reservations" ? "active" : "")"><i class="fas fa-calendar-check"></i> Rezervasyonlarim @if (reservationCount.HasValue && reservationCount.Value > 0) { <span>@reservationCount.Value</span> }</a>
             <a asp-action="Favorites" class="@(currentAction == "Favorites" ? "active" : "")"><i class="fas fa-heart"></i> Favorilerim @if (favoriteCount.HasValue) { <span class="success">@favoriteCount.Value</span> }</a>
             <a asp-action="Loyalty" class="@(currentAction == "Loyalty" ? "active" : "")"><i class="fas fa-star"></i> Puanlarim</a>
-            <a asp-action="Messages" class="@(currentAction == "Messages" ? "active" : "")"><i class="fas fa-envelope"></i> Mesajlarim <span class="warning">2</span></a>
+            <a asp-action="Messages" class="@(currentAction == "Messages" ? "active" : "")"><i class="fas fa-envelope"></i> Mesajlarim</a>
 
             <p class="nav-caption second">Hesap Ayarlari</p>
             <a asp-action="Profile" class="@(currentAction == "Profile" ? "active" : "")"><i class="fas fa-user-circle"></i> Profil Bilgilerim</a>

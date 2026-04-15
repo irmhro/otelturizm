@@ -13,18 +13,21 @@ public class UserPanelService : IUserPanelService
     private readonly IMessageCenterService _messageCenterService;
     private readonly IAddressLookupService _addressLookupService;
     private readonly IEmailQueueService _emailQueueService;
+    private readonly IHotelPricingReadService _hotelPricingReadService;
 
     public UserPanelService(
         IConfiguration configuration,
         IMessageCenterService messageCenterService,
         IAddressLookupService addressLookupService,
-        IEmailQueueService emailQueueService)
+        IEmailQueueService emailQueueService,
+        IHotelPricingReadService hotelPricingReadService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _messageCenterService = messageCenterService;
         _addressLookupService = addressLookupService;
         _emailQueueService = emailQueueService;
+        _hotelPricingReadService = hotelPricingReadService;
     }
 
     public async Task<UserDashboardPageViewModel> GetDashboardAsync(
@@ -89,14 +92,60 @@ public class UserPanelService : IUserPanelService
         return model;
     }
 
-    public async Task<UserReservationsPageViewModel> GetReservationsAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<UserReservationsPageViewModel> GetReservationsAsync(
+        long userId,
+        string? statusFilter = null,
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        int page = 1,
+        int pageSize = 5,
+        CancellationToken cancellationToken = default)
     {
         var model = new UserReservationsPageViewModel();
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        model.Reservations = await LoadReservationsAsync(connection, userId, 100, cancellationToken);
-        model.UpcomingCount = model.Reservations.Count(x => x.IsUpcoming && !x.IsCancelled);
-        model.PastCount = model.Reservations.Count(x => !x.IsUpcoming && !x.IsCancelled);
-        model.CancelledCount = model.Reservations.Count(x => x.IsCancelled);
+        var allReservations = await LoadReservationsAsync(connection, userId, 500, cancellationToken);
+        model.TotalCount = allReservations.Count;
+        model.UpcomingCount = allReservations.Count(x => x.IsUpcoming && !x.IsCancelled);
+        model.PastCount = allReservations.Count(x => !x.IsUpcoming && !x.IsCancelled);
+        model.CancelledCount = allReservations.Count(x => x.IsCancelled);
+
+        var normalizedStatus = NormalizeReservationStatusFilter(statusFilter);
+        var safePageSize = pageSize is 5 or 10 or 15 ? pageSize : 5;
+        var safePage = page <= 0 ? 1 : page;
+        if (startDate.HasValue && endDate.HasValue && endDate.Value < startDate.Value)
+        {
+            (startDate, endDate) = (endDate, startDate);
+        }
+
+        IEnumerable<UserReservationCardViewModel> filtered = allReservations;
+        filtered = normalizedStatus switch
+        {
+            "upcoming" => filtered.Where(x => x.IsUpcoming && !x.IsCancelled),
+            "past" => filtered.Where(x => !x.IsUpcoming && !x.IsCancelled),
+            "cancelled" => filtered.Where(x => x.IsCancelled),
+            _ => filtered
+        };
+
+        if (startDate.HasValue)
+        {
+            filtered = filtered.Where(x => x.CheckInDate >= startDate.Value);
+        }
+        if (endDate.HasValue)
+        {
+            filtered = filtered.Where(x => x.CheckInDate <= endDate.Value);
+        }
+
+        var filteredList = filtered.ToList();
+        model.StatusFilter = normalizedStatus;
+        model.StartDateText = startDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        model.EndDateText = endDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        model.PageSize = safePageSize;
+        model.FilteredCount = filteredList.Count;
+        model.Page = Math.Min(safePage, Math.Max(1, model.TotalPages));
+        model.Reservations = filteredList
+            .Skip((model.Page - 1) * model.PageSize)
+            .Take(model.PageSize)
+            .ToList();
         return model;
     }
 
@@ -585,11 +634,635 @@ public class UserPanelService : IUserPanelService
         return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
     }
 
+    public async Task<UserLoyaltyPageViewModel> GetLoyaltyAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        var model = new UserLoyaltyPageViewModel();
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+
+        await EnsureLoyaltyAccountAsync(connection, userId, cancellationToken);
+
+        var alertHotelIds = new List<long>();
+
+        await using (var summaryCommand = new MySqlCommand(@"
+            SELECT
+                COALESCE(u.ad_soyad, 'Misafir') AS ad_soyad,
+                COALESCE(h.toplam_puan, 0) AS toplam_puan,
+                COALESCE(h.kullanilabilir_puan, 0) AS kullanilabilir_puan,
+                COALESCE(h.bu_yil_kazanilan_puan, 0) AS bu_yil_kazanilan_puan,
+                COALESCE(h.bu_yil_kullanilan_puan, 0) AS bu_yil_kullanilan_puan,
+                COALESCE(h.puan_gecerlilik_tarihi, DATE_ADD(CURDATE(), INTERVAL 365 DAY)) AS puan_gecerlilik_tarihi,
+                COALESCE(ct.ad, 'Bronz') AS mevcut_seviye_adi,
+                COALESCE(ct.kod, 'B') AS mevcut_seviye_kodu,
+                COALESCE(ct.avantajlar_metin, 'Yuzde 5 indirim|Hos geldin puani') AS avantajlar_metin,
+                COALESCE(nt.ad, '') AS sonraki_seviye_adi,
+                GREATEST(COALESCE(nt.minimum_puan, COALESCE(h.kullanilabilir_puan, 0)) - COALESCE(h.kullanilabilir_puan, 0), 0) AS kalan_puan,
+                CASE
+                    WHEN COALESCE(nt.minimum_puan, 0) <= 0 THEN 100
+                    ELSE LEAST(100, ROUND((COALESCE(h.kullanilabilir_puan, 0) / nt.minimum_puan) * 100))
+                END AS ilerleme_yuzdesi
+            FROM users u
+            LEFT JOIN kullanici_sadakat_hesaplari h ON h.kullanici_id = u.id
+            LEFT JOIN sadakat_seviyeleri ct ON ct.id = h.mevcut_seviye_id
+            LEFT JOIN sadakat_seviyeleri nt ON nt.id = h.sonraki_seviye_id
+            WHERE u.id = @userId
+            LIMIT 1;", connection))
+        {
+            summaryCommand.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await summaryCommand.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                model.UserDisplayName = reader.GetString(0);
+                model.TotalPoints = SafeInt(reader, 1);
+                model.AvailablePoints = SafeInt(reader, 2);
+                model.CurrentYearEarnedPoints = SafeInt(reader, 3);
+                model.CurrentYearSpentPoints = SafeInt(reader, 4);
+                model.PointsExpiryText = reader.GetDateTime(5).ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR"));
+                model.CurrentTierName = reader.GetString(6);
+                model.CurrentTierCode = reader.GetString(7);
+                model.CurrentTierSummary = $"Avantajlar aktif. {model.CurrentTierName} seviyesindesiniz.";
+                model.NextTierName = reader.IsDBNull(9) || string.IsNullOrWhiteSpace(reader.GetString(9)) ? null : reader.GetString(9);
+                model.PointsToNextTier = SafeInt(reader, 10);
+                model.ProgressPercent = SafeInt(reader, 11);
+                model.CurrentTierCssClass = ResolveTierCssClass(model.CurrentTierCode);
+                model.CurrentTierIconClass = ResolveTierIcon(model.CurrentTierCode);
+                model.Benefits = ParseBenefits(reader.GetString(8), model.CurrentTierName);
+            }
+        }
+
+        model.Tiers = await LoadLoyaltyTiersAsync(connection, model.CurrentTierCode, cancellationToken);
+        model.PointTransactions = await LoadLoyaltyTransactionsAsync(connection, userId, cancellationToken);
+        model.Rewards = await LoadLoyaltyRewardsAsync(connection, model.AvailablePoints, cancellationToken);
+        model.Badges = await LoadUserBadgesAsync(connection, userId, cancellationToken);
+        model.PassportCities = await LoadPassportCitiesAsync(connection, userId, cancellationToken);
+        model.TravelPlans = await LoadTravelPlansAsync(connection, userId, cancellationToken);
+        model.Offers = await LoadOffersAsync(connection, userId, cancellationToken);
+        model.BudgetPlans = await LoadBudgetPlansAsync(connection, userId, cancellationToken);
+        model.PriceAlerts = await LoadPriceAlertsAsync(connection, userId, alertHotelIds, cancellationToken);
+
+        if (alertHotelIds.Count > 0)
+        {
+            var start = DateOnly.FromDateTime(DateTime.Today);
+            var priceMap = await _hotelPricingReadService.GetHotelEffectivePriceMapAsync(alertHotelIds.Distinct().ToList(), start, start.AddDays(60), cancellationToken);
+            foreach (var alert in model.PriceAlerts)
+            {
+                if (priceMap.TryGetValue(alert.HotelId, out var amount) && amount > 0)
+                {
+                    alert.CurrentPriceText = FormatMoney(amount);
+                    alert.IsTriggered = TryParseCurrency(alert.TargetPriceText, out var targetPrice) && amount <= targetPrice;
+                }
+            }
+        }
+
+        model.Recommendations = await LoadRecommendationsAsync(connection, cancellationToken);
+        model.BudgetPlanForm.DestinationCity = model.BudgetPlans.FirstOrDefault()?.DestinationText ?? string.Empty;
+        model.BudgetPlanForm.TargetBudget = model.BudgetPlans.FirstOrDefault() is { } budget
+            && TryParseCurrency(budget.BudgetText, out var budgetValue)
+            ? budgetValue
+            : null;
+        model.TravelPlanForm.DestinationCity = model.PassportCities.FirstOrDefault(static item => !item.IsVisited)?.CityName ?? string.Empty;
+
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> SaveBudgetPlanAsync(long userId, UserLoyaltyBudgetPlanForm form, CancellationToken cancellationToken = default)
+    {
+        var destination = (form.DestinationCity ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(destination))
+        {
+            return (false, "Butce planlayici icin hedef sehir zorunludur.");
+        }
+
+        if (!form.TargetBudget.HasValue || form.TargetBudget.Value <= 0)
+        {
+            return (false, "Hedef butce alanina gecerli bir tutar giriniz.");
+        }
+
+        var nightCount = form.NightCount <= 0 ? 2 : form.NightCount;
+        var travelerCount = form.TravelerCount <= 0 ? 2 : form.TravelerCount;
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await using var command = new MySqlCommand(@"
+            INSERT INTO kullanici_butce_planlari
+            (kullanici_id, hedef_sehir, hedef_butce, gece_sayisi, kisi_sayisi, para_birimi, notlar, olusturulma_tarihi, guncellenme_tarihi)
+            VALUES
+            (@userId, @city, @budget, @nightCount, @travelerCount, 'TRY', @note, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@city", destination);
+        command.Parameters.AddWithValue("@budget", form.TargetBudget.Value);
+        command.Parameters.AddWithValue("@nightCount", nightCount);
+        command.Parameters.AddWithValue("@travelerCount", travelerCount);
+        command.Parameters.AddWithValue("@note", $"Web panelden olusturuldu · {DateTime.Now:dd.MM.yyyy HH:mm}");
+        await command.ExecuteNonQueryAsync(cancellationToken);
+
+        return (true, "Butce planiniz kaydedildi. Size uygun oteller aninda listelenecek.");
+    }
+
+    public async Task<(bool Success, string Message)> SaveTravelPlanAsync(long userId, UserLoyaltyTravelPlanForm form, CancellationToken cancellationToken = default)
+    {
+        var planName = (form.PlanName ?? string.Empty).Trim();
+        var destination = (form.DestinationCity ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(planName) || string.IsNullOrWhiteSpace(destination))
+        {
+            return (false, "Plan adi ve hedef sehir zorunludur.");
+        }
+
+        if (!DateOnly.TryParseExact(form.StartDateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var startDate))
+        {
+            return (false, "Seyahat planinin baslangic tarihi zorunludur.");
+        }
+
+        if (!DateOnly.TryParseExact(form.EndDateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var endDate))
+        {
+            return (false, "Seyahat planinin bitis tarihi zorunludur.");
+        }
+
+        if (endDate < startDate)
+        {
+            return (false, "Bitis tarihi baslangic tarihinden once olamaz.");
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        var planCode = $"PLAN-{userId:D4}-{DateTime.UtcNow:ddHHmmss}";
+        var inviteCode = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+        await using var command = new MySqlCommand(@"
+            INSERT INTO kullanici_seyahat_planlari
+            (olusturan_kullanici_id, plan_kodu, plan_adi, hedef_sehir, baslangic_tarihi, bitis_tarihi, butce_tutari, para_birimi, davet_kodu, durum, olusturulma_tarihi, guncellenme_tarihi)
+            VALUES
+            (@userId, @planCode, @planName, @city, @startDate, @endDate, @budget, 'TRY', @inviteCode, 'Taslak', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@planCode", planCode);
+        command.Parameters.AddWithValue("@planName", planName);
+        command.Parameters.AddWithValue("@city", destination);
+        command.Parameters.AddWithValue("@startDate", startDate.ToDateTime(TimeOnly.MinValue));
+        command.Parameters.AddWithValue("@endDate", endDate.ToDateTime(TimeOnly.MinValue));
+        command.Parameters.AddWithValue("@budget", form.BudgetAmount ?? 0m);
+        command.Parameters.AddWithValue("@inviteCode", inviteCode);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+
+        return (true, "Seyahat planiniz kaydedildi. Artik otelleri ortak plana ekleyebilirsiniz.");
+    }
+
     private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
         var connection = new MySqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         return connection;
+    }
+
+    private async Task EnsureLoyaltyAccountAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        const string existsSql = "SELECT COUNT(*) FROM kullanici_sadakat_hesaplari WHERE kullanici_id = @userId;";
+        await using (var existsCommand = new MySqlCommand(existsSql, connection))
+        {
+            existsCommand.Parameters.AddWithValue("@userId", userId);
+            var exists = Convert.ToInt32(await existsCommand.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+            if (exists == 0)
+            {
+                var bronzeTierId = await ResolveTierIdAsync(connection, "BRONZE", cancellationToken);
+                var silverTierId = await ResolveTierIdAsync(connection, "SILVER", cancellationToken);
+                await using var insertCommand = new MySqlCommand(@"
+                    INSERT INTO kullanici_sadakat_hesaplari
+                    (kullanici_id, toplam_puan, kullanilabilir_puan, bu_yil_kazanilan_puan, bu_yil_kullanilan_puan, mevcut_seviye_id, sonraki_seviye_id, puan_gecerlilik_tarihi, olusturulma_tarihi, guncellenme_tarihi)
+                    VALUES
+                    (@userId, 0, 0, 0, 0, @currentTierId, @nextTierId, DATE_ADD(CURDATE(), INTERVAL 365 DAY), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);", connection);
+                insertCommand.Parameters.AddWithValue("@userId", userId);
+                insertCommand.Parameters.AddWithValue("@currentTierId", bronzeTierId);
+                insertCommand.Parameters.AddWithValue("@nextTierId", silverTierId);
+                await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+        }
+
+        await using var syncCommand = new MySqlCommand(@"
+            UPDATE kullanici_sadakat_hesaplari h
+            JOIN (
+                SELECT
+                    @userId AS kullanici_id,
+                    COALESCE(SUM(CASE WHEN puan_degisim > 0 THEN puan_degisim ELSE 0 END), 0) AS kazanilan,
+                    COALESCE(ABS(SUM(CASE WHEN puan_degisim < 0 THEN puan_degisim ELSE 0 END)), 0) AS kullanilan
+                FROM kullanici_puan_hareketleri
+                WHERE kullanici_id = @userId
+                  AND COALESCE(durum, 'Tamamlandi') <> 'Iptal'
+            ) agg ON agg.kullanici_id = h.kullanici_id
+            LEFT JOIN sadakat_seviyeleri current_tier
+                ON current_tier.id = (
+                    SELECT s.id
+                    FROM sadakat_seviyeleri s
+                    WHERE agg.kazanilan - agg.kullanilan >= s.minimum_puan
+                      AND (s.maximum_puan IS NULL OR agg.kazanilan - agg.kullanilan <= s.maximum_puan)
+                    ORDER BY s.minimum_puan DESC
+                    LIMIT 1
+                )
+            LEFT JOIN sadakat_seviyeleri next_tier
+                ON next_tier.minimum_puan = (
+                    SELECT MIN(s2.minimum_puan)
+                    FROM sadakat_seviyeleri s2
+                    WHERE s2.minimum_puan > agg.kazanilan - agg.kullanilan
+                )
+            SET h.toplam_puan = agg.kazanilan,
+                h.kullanilabilir_puan = GREATEST(agg.kazanilan - agg.kullanilan, 0),
+                h.bu_yil_kazanilan_puan = (
+                    SELECT COALESCE(SUM(CASE WHEN puan_degisim > 0 THEN puan_degisim ELSE 0 END), 0)
+                    FROM kullanici_puan_hareketleri y
+                    WHERE y.kullanici_id = @userId
+                      AND YEAR(COALESCE(y.islem_tarihi, CURRENT_TIMESTAMP)) = YEAR(CURDATE())
+                ),
+                h.bu_yil_kullanilan_puan = (
+                    SELECT COALESCE(ABS(SUM(CASE WHEN puan_degisim < 0 THEN puan_degisim ELSE 0 END)), 0)
+                    FROM kullanici_puan_hareketleri y
+                    WHERE y.kullanici_id = @userId
+                      AND YEAR(COALESCE(y.islem_tarihi, CURRENT_TIMESTAMP)) = YEAR(CURDATE())
+                ),
+                h.mevcut_seviye_id = COALESCE(current_tier.id, h.mevcut_seviye_id),
+                h.sonraki_seviye_id = next_tier.id,
+                h.son_seviye_guncelleme_tarihi = CURRENT_TIMESTAMP,
+                h.guncellenme_tarihi = CURRENT_TIMESTAMP
+            WHERE h.kullanici_id = @userId;", connection);
+        syncCommand.Parameters.AddWithValue("@userId", userId);
+        await syncCommand.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private async Task<long> ResolveTierIdAsync(MySqlConnection connection, string code, CancellationToken cancellationToken)
+    {
+        await using var command = new MySqlCommand("SELECT id FROM sadakat_seviyeleri WHERE kod = @code LIMIT 1;", connection);
+        command.Parameters.AddWithValue("@code", code);
+        var value = await command.ExecuteScalarAsync(cancellationToken);
+        return value is null ? 0L : Convert.ToInt64(value, CultureInfo.InvariantCulture);
+    }
+
+    private static List<UserLoyaltyBenefitViewModel> ParseBenefits(string rawText, string tierName)
+    {
+        var items = (rawText ?? string.Empty)
+            .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select((item, index) => new UserLoyaltyBenefitViewModel
+            {
+                Title = item,
+                Description = $"{tierName} uyelik avantajiniz aktif.",
+                IsUnlocked = true,
+                IconClass = index switch
+                {
+                    0 => "fas fa-percent",
+                    1 => "fas fa-clock",
+                    2 => "fas fa-gift",
+                    3 => "fas fa-headset",
+                    _ => "fas fa-check-circle"
+                },
+                Tone = index switch
+                {
+                    0 => "primary",
+                    1 => "warning",
+                    2 => "success",
+                    3 => "info",
+                    _ => "primary"
+                }
+            })
+            .ToList();
+
+        return items.Count > 0
+            ? items
+            : new List<UserLoyaltyBenefitViewModel>
+            {
+                new()
+                {
+                    Title = "Hos geldin puani",
+                    Description = "Sadakat hesabiniz hazir. Ilk rezervasyonunuz ile puan kazanmaya baslayin.",
+                    IsUnlocked = true,
+                    IconClass = "fas fa-star",
+                    Tone = "primary"
+                }
+            };
+    }
+
+    private async Task<List<UserLoyaltyTierViewModel>> LoadLoyaltyTiersAsync(MySqlConnection connection, string currentTierCode, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyTierViewModel>();
+        await using var command = new MySqlCommand(@"
+            SELECT id, kod, ad, minimum_puan, maximum_puan, COALESCE(avantajlar_metin, '')
+            FROM sadakat_seviyeleri
+            WHERE aktif_mi = 1
+            ORDER BY sira_no ASC, minimum_puan ASC;", connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var min = SafeInt(reader, 3);
+            var max = reader.IsDBNull(4) ? (int?)null : SafeInt(reader, 4);
+            var code = reader.GetString(1);
+            list.Add(new UserLoyaltyTierViewModel
+            {
+                TierId = reader.GetInt64(0),
+                Code = code,
+                Name = reader.GetString(2),
+                MinimumPoints = min,
+                MaximumPoints = max,
+                RangeText = max.HasValue ? $"{min:N0} - {max.Value:N0} Puan" : $"{min:N0}+ Puan",
+                BenefitSummary = reader.GetString(5),
+                CssClass = ResolveTierCssClass(code),
+                IsCurrent = string.Equals(code, currentTierCode, StringComparison.OrdinalIgnoreCase)
+            });
+        }
+
+        return list;
+    }
+
+    private async Task<List<UserLoyaltyPointTransactionViewModel>> LoadLoyaltyTransactionsAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyPointTransactionViewModel>();
+        await using var command = new MySqlCommand(@"
+            SELECT DATE_FORMAT(COALESCE(islem_tarihi, olusturulma_tarihi), '%d.%m.%Y') AS tarih,
+                   COALESCE(hareket_tipi, 'Bilgi'),
+                   COALESCE(baslik, 'Puan hareketi'),
+                   COALESCE(aciklama, ''),
+                   COALESCE(puan_degisim, 0),
+                   COALESCE(durum, 'Tamamlandi')
+            FROM kullanici_puan_hareketleri
+            WHERE kullanici_id = @userId
+            ORDER BY COALESCE(islem_tarihi, olusturulma_tarihi) DESC, id DESC
+            LIMIT 10;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var delta = SafeInt(reader, 4);
+            var status = reader.GetString(5);
+            list.Add(new UserLoyaltyPointTransactionViewModel
+            {
+                DateText = reader.GetString(0),
+                TypeText = reader.GetString(1),
+                Title = reader.GetString(2),
+                Description = reader.GetString(3),
+                PointChange = delta,
+                PointChangeText = delta >= 0 ? $"+{delta:N0}" : delta.ToString("N0", CultureInfo.GetCultureInfo("tr-TR")),
+                StatusText = status,
+                StatusTone = string.Equals(status, "Beklemede", StringComparison.OrdinalIgnoreCase) ? "pending" : "completed"
+            });
+        }
+
+        return list;
+    }
+
+    private async Task<List<UserLoyaltyRewardViewModel>> LoadLoyaltyRewardsAsync(MySqlConnection connection, int availablePoints, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyRewardViewModel>();
+        await using var command = new MySqlCommand(@"
+            SELECT id, ad, aciklama, gerekli_puan, COALESCE(ikon, 'fas fa-gift'), COALESCE(ton, 'primary')
+            FROM sadakat_odulleri
+            WHERE aktif_mi = 1
+            ORDER BY gerekli_puan ASC, id ASC
+            LIMIT 8;", connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var required = SafeInt(reader, 3);
+            list.Add(new UserLoyaltyRewardViewModel
+            {
+                RewardId = reader.GetInt64(0),
+                Title = reader.GetString(1),
+                Description = reader.GetString(2),
+                RequiredPoints = required,
+                IsAvailable = availablePoints >= required,
+                IconClass = reader.GetString(4),
+                Tone = reader.GetString(5)
+            });
+        }
+
+        return list;
+    }
+
+    private async Task<List<UserLoyaltyBadgeViewModel>> LoadUserBadgesAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyBadgeViewModel>();
+        await using var command = new MySqlCommand(@"
+            SELECT r.ad, COALESCE(r.ikon, 'fas fa-award'), COALESCE(kr.durum, 'Kilitli'), COALESCE(kr.ilerleme_degeri, 0), COALESCE(r.hedef_deger, 1)
+            FROM rozet_tanimlari r
+            LEFT JOIN kullanici_rozetleri kr ON kr.rozet_id = r.id AND kr.kullanici_id = @userId
+            WHERE r.aktif_mi = 1
+            ORDER BY r.siralama ASC, r.id ASC
+            LIMIT 8;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var progress = SafeInt(reader, 3);
+            var target = Math.Max(1, SafeInt(reader, 4));
+            var earned = string.Equals(reader.GetString(2), "Kazanildi", StringComparison.OrdinalIgnoreCase);
+            list.Add(new UserLoyaltyBadgeViewModel
+            {
+                Title = reader.GetString(0),
+                IconClass = reader.GetString(1),
+                IsEarned = earned,
+                ProgressText = earned ? "Kazanildi" : $"{progress}/{target}"
+            });
+        }
+
+        return list;
+    }
+
+    private async Task<List<UserLoyaltyPassportCityViewModel>> LoadPassportCitiesAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyPassportCityViewModel>();
+        await using var command = new MySqlCommand(@"
+            SELECT sehir, COALESCE(ulke, 'Türkiye'), toplam_konaklama_sayisi, ilk_konaklama_tarihi, son_konaklama_tarihi
+            FROM kullanici_dijital_pasaportlari
+            WHERE kullanici_id = @userId
+            ORDER BY son_konaklama_tarihi DESC, toplam_konaklama_sayisi DESC
+            LIMIT 8;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var firstVisit = reader.IsDBNull(3) ? (DateTime?)null : reader.GetDateTime(3);
+            var lastVisit = reader.IsDBNull(4) ? (DateTime?)null : reader.GetDateTime(4);
+            list.Add(new UserLoyaltyPassportCityViewModel
+            {
+                CityName = reader.GetString(0),
+                CountryName = reader.GetString(1),
+                IsVisited = true,
+                VisitText = firstVisit.HasValue && lastVisit.HasValue
+                    ? $"{firstVisit.Value:dd.MM.yyyy} · {lastVisit.Value:dd.MM.yyyy}"
+                    : $"{SafeInt(reader, 2)} konaklama"
+            });
+        }
+
+        return list;
+    }
+
+    private async Task<List<UserLoyaltyTravelPlanViewModel>> LoadTravelPlansAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyTravelPlanViewModel>();
+        await using var command = new MySqlCommand(@"
+            SELECT p.id, p.plan_adi, p.hedef_sehir, p.baslangic_tarihi, p.bitis_tarihi, COALESCE(p.butce_tutari, 0), COALESCE(p.durum, 'Taslak'),
+                   COALESCE(COUNT(ps.id), 0) AS secim_sayisi
+            FROM kullanici_seyahat_planlari p
+            LEFT JOIN kullanici_seyahat_plan_otel_secimleri ps ON ps.plan_id = p.id
+            WHERE p.olusturan_kullanici_id = @userId
+            GROUP BY p.id, p.plan_adi, p.hedef_sehir, p.baslangic_tarihi, p.bitis_tarihi, p.butce_tutari, p.durum
+            ORDER BY p.guncellenme_tarihi DESC, p.id DESC
+            LIMIT 5;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var startDate = reader.IsDBNull(3) ? (DateTime?)null : reader.GetDateTime(3);
+            var endDate = reader.IsDBNull(4) ? (DateTime?)null : reader.GetDateTime(4);
+            list.Add(new UserLoyaltyTravelPlanViewModel
+            {
+                PlanId = reader.GetInt64(0),
+                PlanName = reader.GetString(1),
+                DestinationText = reader.GetString(2),
+                DateText = startDate.HasValue && endDate.HasValue ? $"{startDate.Value:dd MMM} - {endDate.Value:dd MMM yyyy}" : "Tarih secimi bekleniyor",
+                BudgetText = FormatMoney(SafeDecimal(reader, 5)),
+                StatusText = reader.GetString(6),
+                VoteSummary = $"{SafeInt(reader, 7)} otel secenegi"
+            });
+        }
+
+        return list;
+    }
+
+    private async Task<List<UserLoyaltyOfferViewModel>> LoadOffersAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyOfferViewModel>();
+        await using var command = new MySqlCommand(@"
+            SELECT baslik, aciklama, kampanya_kodu, COALESCE(buton_url, '/oteller'), gecerlilik_bitis
+            FROM kullanici_ozel_teklifleri
+            WHERE aktif_mi = 1
+              AND (kullanici_id = @userId OR kullanici_id IS NULL)
+              AND CURDATE() BETWEEN gecerlilik_baslangic AND gecerlilik_bitis
+            ORDER BY CASE WHEN kullanici_id = @userId THEN 0 ELSE 1 END, gecerlilik_bitis ASC, id DESC
+            LIMIT 4;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            list.Add(new UserLoyaltyOfferViewModel
+            {
+                Title = reader.GetString(0),
+                Description = reader.GetString(1),
+                Code = reader.GetString(2),
+                ActionUrl = reader.GetString(3),
+                ValidityText = $"Son gun {reader.GetDateTime(4):dd MMM yyyy}"
+            });
+        }
+
+        return list;
+    }
+
+    private async Task<List<UserLoyaltyBudgetPlanViewModel>> LoadBudgetPlansAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyBudgetPlanViewModel>();
+        await using var command = new MySqlCommand(@"
+            SELECT hedef_sehir, hedef_butce, gece_sayisi, kisi_sayisi
+            FROM kullanici_butce_planlari
+            WHERE kullanici_id = @userId
+            ORDER BY guncellenme_tarihi DESC, id DESC
+            LIMIT 4;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var nightCount = SafeInt(reader, 2);
+            var travelerCount = SafeInt(reader, 3);
+            list.Add(new UserLoyaltyBudgetPlanViewModel
+            {
+                DestinationText = reader.GetString(0),
+                BudgetText = FormatMoney(SafeDecimal(reader, 1)),
+                TravelerText = $"{nightCount} gece · {travelerCount} kisi",
+                SuggestionText = travelerCount > 2 ? "Aile dostu ve baglantili odalari filtreleyin." : "Sehir otelleri ve hafta sonu firsatlari uygun gorunuyor."
+            });
+        }
+
+        return list;
+    }
+
+    private async Task<List<UserLoyaltyPriceAlertViewModel>> LoadPriceAlertsAsync(MySqlConnection connection, long userId, List<long> alertHotelIds, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyPriceAlertViewModel>();
+        await using var command = new MySqlCommand(@"
+            SELECT a.otel_id, o.otel_adi, a.hedef_maksimum_fiyat
+            FROM user_favorite_price_alerts a
+            INNER JOIN oteller o ON o.id = a.otel_id
+            WHERE a.user_id = @userId
+              AND COALESCE(a.aktif_mi, 1) = 1
+            ORDER BY a.guncellenme_tarihi DESC, a.id DESC
+            LIMIT 4;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var hotelId = reader.GetInt64(0);
+            alertHotelIds.Add(hotelId);
+            list.Add(new UserLoyaltyPriceAlertViewModel
+            {
+                HotelId = hotelId,
+                HotelName = reader.GetString(1),
+                CurrentPriceText = "Hesaplaniyor",
+                TargetPriceText = FormatMoney(SafeDecimal(reader, 2))
+            });
+        }
+
+        return list;
+    }
+
+    private async Task<List<UserLoyaltyRecommendationViewModel>> LoadRecommendationsAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyRecommendationViewModel>();
+        await using var command = new MySqlCommand(@"
+            SELECT o.otel_adi, o.otel_kodu, COALESCE(o.ilce, ''), COALESCE(o.sehir, ''), COALESCE(o.ortalama_puan, 0), COALESCE(og.gorsel_url, '')
+            FROM oteller o
+            LEFT JOIN otel_gorselleri og ON og.otel_id = o.id AND (og.kapak_fotografi_mi = 1 OR og.siralama = 1)
+            WHERE o.yayin_durumu = 'Yayında'
+              AND o.onay_durumu = 'Onaylandı'
+            ORDER BY COALESCE(o.ortalama_puan, 0) DESC, COALESCE(o.toplam_yorum_sayisi, 0) DESC, o.id DESC
+            LIMIT 4;", connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var hotelName = reader.GetString(0);
+            var hotelCode = reader.GetString(1);
+            list.Add(new UserLoyaltyRecommendationViewModel
+            {
+                HotelName = hotelName,
+                DistrictText = $"{reader.GetString(2)} / {reader.GetString(3)}",
+                ImageUrl = string.IsNullOrWhiteSpace(reader.GetString(5)) ? "/uploads/logo/logo.png" : reader.GetString(5),
+                RatingText = SafeDecimal(reader, 4) > 0 ? $"{SafeDecimal(reader, 4):0.0} puan" : "Yeni liste",
+                Url = $"/oteller/{BuildSlug(hotelName, hotelCode)}"
+            });
+        }
+
+        return list;
+    }
+
+    private static string ResolveTierCssClass(string tierCode)
+        => tierCode.ToUpperInvariant() switch
+        {
+            "S" or "SILVER" => "silver",
+            "G" or "GOLD" => "gold",
+            "P" or "PLATINUM" => "platinum",
+            _ => "bronze"
+        };
+
+    private static string ResolveTierIcon(string tierCode)
+        => tierCode.ToUpperInvariant() switch
+        {
+            "S" or "SILVER" => "fas fa-medal",
+            "G" or "GOLD" => "fas fa-crown",
+            "P" or "PLATINUM" => "fas fa-gem",
+            _ => "fas fa-star"
+        };
+
+    private static bool TryParseCurrency(string? value, out decimal amount)
+    {
+        amount = 0m;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var normalized = value.Replace("₺", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("TRY", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Trim();
+
+        return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.GetCultureInfo("tr-TR"), out amount)
+               || decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out amount);
     }
 
     private async Task<List<UserReservationCardViewModel>> LoadReservationsAsync(MySqlConnection connection, long userId, int take, CancellationToken cancellationToken)
@@ -604,7 +1277,18 @@ public class UserPanelService : IUserPanelService
             FROM rezervasyonlar r
             INNER JOIN oteller o ON o.id = r.otel_id
             LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
-            LEFT JOIN otel_gorselleri og ON og.otel_id = o.id AND (og.kapak_fotografi_mi = 1 OR og.siralama = 1)
+            LEFT JOIN (
+                SELECT
+                    g.otel_id,
+                    SUBSTRING_INDEX(
+                        GROUP_CONCAT(g.gorsel_url ORDER BY g.kapak_fotografi_mi DESC, g.siralama ASC, g.id ASC SEPARATOR '||'),
+                        '||',
+                        1
+                    ) AS gorsel_url
+                FROM otel_gorselleri g
+                WHERE COALESCE(g.gorsel_url, '') <> ''
+                GROUP BY g.otel_id
+            ) og ON og.otel_id = o.id
             WHERE r.kullanici_id = @userId
             ORDER BY r.giris_tarihi DESC, r.id DESC
             LIMIT @take;";
@@ -629,6 +1313,8 @@ public class UserPanelService : IUserPanelService
                 City = reader.GetString(5),
                 RoomName = reader.GetString(6),
                 StayDateText = $"{checkIn:dd MMM} - {checkOut:dd MMM yyyy}",
+                CheckInDate = DateOnly.FromDateTime(checkIn),
+                CheckOutDate = DateOnly.FromDateTime(checkOut),
                 GuestText = $"{reader.GetInt32(9)} Yetiskin" + (reader.GetInt32(10) > 0 ? $", {reader.GetInt32(10)} Cocuk" : string.Empty),
                 MealOrRoomText = reader.GetString(6),
                 StatusText = status,
@@ -667,7 +1353,18 @@ public class UserPanelService : IUserPanelService
             FROM rezervasyonlar r
             INNER JOIN oteller o ON o.id = r.otel_id
             LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
-            LEFT JOIN otel_gorselleri og ON og.otel_id = o.id AND (og.kapak_fotografi_mi = 1 OR og.siralama = 1)
+            LEFT JOIN (
+                SELECT
+                    g.otel_id,
+                    SUBSTRING_INDEX(
+                        GROUP_CONCAT(g.gorsel_url ORDER BY g.kapak_fotografi_mi DESC, g.siralama ASC, g.id ASC SEPARATOR '||'),
+                        '||',
+                        1
+                    ) AS gorsel_url
+                FROM otel_gorselleri g
+                WHERE COALESCE(g.gorsel_url, '') <> ''
+                GROUP BY g.otel_id
+            ) og ON og.otel_id = o.id
             WHERE r.kullanici_id = @userId
               AND (@statusFilter = 'all'
                    OR (@statusFilter = 'approved' AND r.durum = 'Onaylandı')
@@ -702,6 +1399,8 @@ public class UserPanelService : IUserPanelService
                 City = reader.GetString(5),
                 RoomName = reader.GetString(6),
                 StayDateText = $"{checkIn:dd MMM} - {checkOut:dd MMM yyyy}",
+                CheckInDate = DateOnly.FromDateTime(checkIn),
+                CheckOutDate = DateOnly.FromDateTime(checkOut),
                 GuestText = $"{reader.GetInt32(9)} Yetiskin" + (reader.GetInt32(10) > 0 ? $", {reader.GetInt32(10)} Cocuk" : string.Empty),
                 MealOrRoomText = reader.GetString(6),
                 StatusText = status,
@@ -854,6 +1553,12 @@ public class UserPanelService : IUserPanelService
         if (string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase) && checkIn <= DateTime.Today.AddDays(2) && checkOut >= DateTime.Today) return "Check-in tarihi yaklaşıyor.";
         if (string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase)) return "Rezervasyon onaylı ve konaklama planı hazır.";
         return "Rezervasyon otel onay sürecinde.";
+    }
+
+    private static string NormalizeReservationStatusFilter(string? statusFilter)
+    {
+        var value = (statusFilter ?? string.Empty).Trim().ToLowerInvariant();
+        return value is "upcoming" or "past" or "cancelled" ? value : "all";
     }
 
     private async Task<ReservationCancellationSnapshot?> LoadReservationCancellationSnapshotAsync(MySqlConnection connection, long userId, long reservationId, CancellationToken cancellationToken)

@@ -48,11 +48,18 @@ public class UserPanelController : Controller
         ViewData["PanelTitle"] = "Kullanici Paneli";
         ViewData["PanelSubtitle"] = "Hesabini yonet, rezervasyonlarini takip et ve ozel firsatlari kesfet.";
         ViewData["FavoriteCount"] = model.FavoriteCount;
+        ViewData["ReservationCount"] = model.TotalReservationCount;
         return View("~/Views/Paneller/User/Index.cshtml", model);
     }
 
     [HttpGet("rezervasyonlarim")]
-    public async Task<IActionResult> Reservations(CancellationToken cancellationToken)
+    public async Task<IActionResult> Reservations(
+        string? status = null,
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        int page = 1,
+        int pageSize = 5,
+        CancellationToken cancellationToken = default)
     {
         if (!CanAccessUserPanel())
         {
@@ -60,8 +67,9 @@ public class UserPanelController : Controller
         }
 
         var userId = GetCurrentUserId();
-        var model = await _userPanelService.GetReservationsAsync(userId, cancellationToken);
+        var model = await _userPanelService.GetReservationsAsync(userId, status, startDate, endDate, page, pageSize, cancellationToken);
         ViewData["FavoriteCount"] = await _userFavoriteService.GetFavoriteCountAsync(userId, cancellationToken);
+        ViewData["ReservationCount"] = model.TotalCount;
         ViewData["PageCss"] = "panel-user-reservations";
         ViewData["PanelTitle"] = "Rezervasyonlarim";
         ViewData["PanelSubtitle"] = "Tum yaklasan, gecmis ve iptal edilen rezervasyonlarini yonet.";
@@ -135,17 +143,42 @@ public class UserPanelController : Controller
 
     [HttpGet("otelpuan-programi")]
     [HttpGet("puanlarim")]
-    public IActionResult Loyalty()
+    public async Task<IActionResult> Loyalty(CancellationToken cancellationToken = default)
     {
         if (!CanAccessUserPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        var model = await _userPanelService.GetLoyaltyAsync(GetCurrentUserId(), cancellationToken);
         ViewData["PageCss"] = "panel-user-loyalty";
         ViewData["PanelTitle"] = "Puanlarim";
         ViewData["PanelSubtitle"] = "OtelPuan bakiyeni, uye seviyeni ve kullanabilecegin odulleri tek ekranda yonet.";
-        return View("~/Views/Paneller/User/Loyalty.cshtml");
+        return View("~/Views/Paneller/User/Loyalty.cshtml", model);
+    }
+
+    [HttpPost("otelpuan-programi/butce-planlayici")]
+    public async Task<IActionResult> SaveBudgetPlan(UserLoyaltyBudgetPlanForm form, CancellationToken cancellationToken = default)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userPanelService.SaveBudgetPlanAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[result.Success ? "UserLoyaltySuccess" : "UserLoyaltyError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Loyalty));
+    }
+
+    [HttpPost("otelpuan-programi/seyahat-plani")]
+    public async Task<IActionResult> SaveTravelPlan(UserLoyaltyTravelPlanForm form, CancellationToken cancellationToken = default)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userPanelService.SaveTravelPlanAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[result.Success ? "UserLoyaltySuccess" : "UserLoyaltyError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Loyalty));
     }
 
     [HttpGet("mesajlarim")]
@@ -344,6 +377,5 @@ public class UserPanelController : Controller
         return long.TryParse(raw, out var userId) ? userId : 0;
     }
 }
-
 
 

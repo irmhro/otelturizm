@@ -1,0 +1,27 @@
+Kodlamasi tamamlanan referans sayfalar
+===================================
+
+1. kullanıcı Şifre sıfırlama.html
+- Projedeki karşılığı: /sifremi-unuttum ve /sifre-sifirla
+- Dosyalar: Views\Login\ForgotPassword.cshtml, Views\Login\ResetPassword.cshtml
+- Durum: canli, DB bagli, token kontrollu.
+
+2. E-posta Adresiniz Onaylandı!.html
+- Projedeki karşılığı: /eposta-dogrula
+- Dosyalar: Views\Login\VerifyEmail.cshtml, Views\Email\E-posta Adresini Onayla.cshtml
+- Durum: canli, DB bagli, email_dogrulama_tokenlari ile calisiyor.
+
+3. Kampanyalı Oteller.html
+- Projedeki karşılığı: /kampanyalar ve /kampanyalar/{slug}
+- Dosyalar: Views\Kampanyalar\Index.cshtml, Views\Kampanyalar\Detail.cshtml
+- Durum: canli, kampanyalar ve kampanya_oteller tablolarina bagli.
+
+4. SEYAHAT PLANLAMA & SADAKAT MERKEZİ (7'si 1 Arada Ultra Lüks Sayfa).html
+- Projedeki karşılığı: /panel/user/otelpuan-programi
+- Dosyalar: Views\Paneller\User\Loyalty.cshtml, Services\UserPanelService.cs, Models\Paneller\User\UserPanelViewModels.cs
+- Yeni migration: 156_create_loyalty_center_tables.sql
+- Durum: canli, DB bagli.
+- Aktif moduller: puan hesabi, uyelik seviyeleri, rozetler, fiyat alarmlari, dijital pasaport, seyahat planlari, butce planlayici, ozel teklifler.
+
+Bu klasördeki sayfalar referans olarak projeye entegre edilmiş durumdadir.
+Gorsel ince ayar veya yeni is kurallari gerekiyorsa kaynak sayfa ismi korunarak ek not dusulmelidir.

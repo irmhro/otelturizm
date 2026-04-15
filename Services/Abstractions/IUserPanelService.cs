@@ -13,9 +13,19 @@ public interface IUserPanelService
         int reservationPage = 1,
         int reservationPageSize = 5,
         CancellationToken cancellationToken = default);
-    Task<UserReservationsPageViewModel> GetReservationsAsync(long userId, CancellationToken cancellationToken = default);
+    Task<UserReservationsPageViewModel> GetReservationsAsync(
+        long userId,
+        string? statusFilter = null,
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        int page = 1,
+        int pageSize = 5,
+        CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> CancelReservationAsync(long userId, long reservationId, string cancellationReason, CancellationToken cancellationToken = default);
     Task<UserMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default);
+    Task<UserLoyaltyPageViewModel> GetLoyaltyAsync(long userId, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SaveBudgetPlanAsync(long userId, UserLoyaltyBudgetPlanForm form, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SaveTravelPlanAsync(long userId, UserLoyaltyTravelPlanForm form, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SendMessageAsync(long userId, MessageSendRequest form, IReadOnlyList<IFormFile>? attachments, HttpContext httpContext, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> DeleteMessageAsync(long userId, MessageDeleteRequest form, CancellationToken cancellationToken = default);
     Task<UserProfilePageViewModel> GetProfileAsync(long userId, CancellationToken cancellationToken = default);

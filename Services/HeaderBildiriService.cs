@@ -1,6 +1,7 @@
 using MySqlConnector;
 using otelturizmnew.Models.Paneller.Common;
 using otelturizmnew.Services.Abstractions;
+using System.Globalization;
 
 namespace otelturizmnew.Services;
 
@@ -55,6 +56,7 @@ public class HeaderBildiriService : IHeaderBildiriService
                 Description = "Yeni bildirim olustugunda bu alanda otomatik gosterilir.",
                 Tone = "info",
                 TimeLabel = "Bugun",
+                AbsoluteTimeLabel = "Bugun",
                 Url = "#",
                 IsPlaceholder = true,
                 IsRead = true
@@ -150,7 +152,28 @@ public class HeaderBildiriService : IHeaderBildiriService
         return $"{(int)diff.TotalDays} gun once";
     }
 
-    private static void Add(HeaderBildiriViewModel model, string key, string icon, string title, string description, string tone, string timeLabel, string url)
+    private static string ResolveAbsoluteTimeLabel(DateTime? valueUtc, string fallback)
+    {
+        if (!valueUtc.HasValue)
+        {
+            return string.IsNullOrWhiteSpace(fallback) ? "Zaman bilgisi yok" : fallback;
+        }
+
+        var value = valueUtc.Value;
+        var local = value.Kind == DateTimeKind.Utc ? value.ToLocalTime() : value;
+        return local.ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"));
+    }
+
+    private static void Add(
+        HeaderBildiriViewModel model,
+        string key,
+        string icon,
+        string title,
+        string description,
+        string tone,
+        string timeLabel,
+        string url,
+        DateTime? eventTimeUtc = null)
     {
         model.Items.Add(new HeaderBildiriItemViewModel
         {
@@ -160,6 +183,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             Description = description,
             Tone = tone,
             TimeLabel = timeLabel,
+            AbsoluteTimeLabel = ResolveAbsoluteTimeLabel(eventTimeUtc, timeLabel),
             Url = string.IsNullOrWhiteSpace(url) ? "#" : url
         });
     }
@@ -267,7 +291,8 @@ public class HeaderBildiriService : IHeaderBildiriService
     private async Task FillPartnerItemsAsync(MySqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
     {
         const string pendingSql = @"
-            SELECT COUNT(*)
+            SELECT COUNT(*),
+                   MAX(COALESCE(r.guncellenme_tarihi, r.olusturulma_tarihi))
             FROM rezervasyonlar r
             INNER JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = r.otel_id
             WHERE oks.user_id = @userId
@@ -276,18 +301,24 @@ public class HeaderBildiriService : IHeaderBildiriService
         await using (var command = new MySqlCommand(pendingSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
-            var pendingCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
-            if (pendingCount > 0)
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
             {
-                Add(
-                    model,
-                    BuildItemKey("partner-pending-count", pendingCount.ToString()),
-                    "fa-hourglass-half",
-                    "Yeni rezervasyon talebi",
-                    $"{pendingCount} rezervasyon talebi onay bekliyor.",
-                    "warning",
-                    "Bugun",
-                    "/panel/partner/rezervasyonlar");
+                var pendingCount = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                if (pendingCount > 0)
+                {
+                    DateTime? timeUtc = reader.IsDBNull(1) ? null : reader.GetDateTime(1);
+                    Add(
+                        model,
+                        BuildItemKey("partner-pending-count", pendingCount.ToString()),
+                        "fa-hourglass-half",
+                        "Yeni rezervasyon talebi",
+                        $"{pendingCount} rezervasyon talebi onay bekliyor.",
+                        "warning",
+                        RelativeTime(timeUtc),
+                        "/panel/partner/rezervasyonlar",
+                        timeUtc);
+                }
             }
         }
 
@@ -318,12 +349,14 @@ public class HeaderBildiriService : IHeaderBildiriService
                     $"{hotelName} icin {reservationNo} rezervasyonunu onayla veya reddet.",
                     "info",
                     RelativeTime(timeUtc),
-                    "/panel/partner/rezervasyonlar");
+                    "/panel/partner/rezervasyonlar",
+                    timeUtc);
             }
         }
 
         const string unreadSql = @"
-            SELECT COALESCE(SUM(mk.otel_okunmamis_sayisi), 0)
+            SELECT COALESCE(SUM(mk.otel_okunmamis_sayisi), 0),
+                   MAX(mk.guncellenme_tarihi)
             FROM mesaj_konusmalari mk
             INNER JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = mk.otel_id
             WHERE oks.user_id = @userId
@@ -332,18 +365,24 @@ public class HeaderBildiriService : IHeaderBildiriService
         await using (var command = new MySqlCommand(unreadSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
-            var unreadCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
-            if (unreadCount > 0)
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
             {
-                Add(
-                    model,
-                    BuildItemKey("partner-unread-messages", unreadCount.ToString()),
-                    "fa-comments",
-                    "Misafir mesaji bekliyor",
-                    $"{unreadCount} okunmamis misafir mesaji mevcut.",
-                    "danger",
-                    "Simdi",
-                    "/panel/partner/rezervasyonlar#partner-reservation-chat");
+                var unreadCount = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                if (unreadCount > 0)
+                {
+                    DateTime? timeUtc = reader.IsDBNull(1) ? null : reader.GetDateTime(1);
+                    Add(
+                        model,
+                        BuildItemKey("partner-unread-messages", unreadCount.ToString()),
+                        "fa-comments",
+                        "Misafir mesaji bekliyor",
+                        $"{unreadCount} okunmamis misafir mesaji mevcut.",
+                        "danger",
+                        RelativeTime(timeUtc),
+                        "/panel/partner/rezervasyonlar#partner-reservation-chat",
+                        timeUtc);
+                }
             }
         }
 
@@ -379,7 +418,8 @@ public class HeaderBildiriService : IHeaderBildiriService
                     $"{hotelName} icin {reservationNo} rezervasyonu iptal edildi. Sebep: {cancelReason}",
                     "danger",
                     RelativeTime(timeUtc),
-                    "/panel/partner/rezervasyonlar");
+                    "/panel/partner/rezervasyonlar",
+                    timeUtc);
             }
         }
     }

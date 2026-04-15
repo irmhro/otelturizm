@@ -59,6 +59,7 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
             FROM oda_tipleri ot
             LEFT JOIN oda_fiyat_musaitlik ofm
                 ON ofm.oda_tip_id = ot.id
+               AND ofm.otel_id = ot.otel_id
                AND ofm.tarih BETWEEN @startDate AND @endDate
             WHERE ot.aktif_mi = 1
               AND ot.otel_id IN ({parameters})
@@ -146,6 +147,7 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
             FROM oda_tipleri ot
             LEFT JOIN oda_fiyat_musaitlik ofm
                 ON ofm.oda_tip_id = ot.id
+               AND ofm.otel_id = ot.otel_id
                AND ofm.tarih BETWEEN @startDate AND @endDate
             WHERE ot.id IN ({parameters})
             GROUP BY ot.id, ot.standart_gecelik_fiyat;";
@@ -192,11 +194,12 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
         await connection.OpenAsync(cancellationToken);
 
         const string roomSql = @"
-            SELECT standart_gecelik_fiyat, toplam_oda_sayisi
+            SELECT otel_id, standart_gecelik_fiyat, toplam_oda_sayisi
             FROM oda_tipleri
             WHERE id = @roomTypeId
             LIMIT 1;";
 
+        long roomHotelId;
         decimal defaultBasePrice;
         short defaultTotalRooms;
         await using (var roomCommand = new MySqlCommand(roomSql, connection))
@@ -208,12 +211,13 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
                 return Array.Empty<RoomNightlyPricePoint>();
             }
 
-            defaultBasePrice = roomReader.IsDBNull(0)
+            roomHotelId = roomReader.GetInt64(0);
+            defaultBasePrice = roomReader.IsDBNull(1)
                 ? 0m
-                : Convert.ToDecimal(roomReader.GetValue(0), CultureInfo.InvariantCulture);
-            defaultTotalRooms = roomReader.IsDBNull(1)
+                : Convert.ToDecimal(roomReader.GetValue(1), CultureInfo.InvariantCulture);
+            defaultTotalRooms = roomReader.IsDBNull(2)
                 ? (short)0
-                : Convert.ToInt16(roomReader.GetValue(1), CultureInfo.InvariantCulture);
+                : Convert.ToInt16(roomReader.GetValue(2), CultureInfo.InvariantCulture);
         }
 
         const string pricingSql = @"
@@ -226,6 +230,7 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
                    kapali_satis
             FROM oda_fiyat_musaitlik
             WHERE oda_tip_id = @roomTypeId
+              AND otel_id = @hotelId
               AND tarih BETWEEN @startDate AND @endDate
             ORDER BY tarih ASC;";
 
@@ -233,6 +238,7 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
         await using (var pricingCommand = new MySqlCommand(pricingSql, connection))
         {
             pricingCommand.Parameters.AddWithValue("@roomTypeId", roomTypeId);
+            pricingCommand.Parameters.AddWithValue("@hotelId", roomHotelId);
             pricingCommand.Parameters.AddWithValue("@startDate", checkInDate.ToDateTime(TimeOnly.MinValue));
             pricingCommand.Parameters.AddWithValue("@endDate", checkOutDate.AddDays(-1).ToDateTime(TimeOnly.MinValue));
             await using var pricingReader = await pricingCommand.ExecuteReaderAsync(cancellationToken);

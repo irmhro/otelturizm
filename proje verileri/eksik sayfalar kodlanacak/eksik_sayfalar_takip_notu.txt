@@ -1,0 +1,39 @@
+Eksik sayfalar kodlanacak takip notu
+===================================
+
+Bu klasörde kalan sayfalar proje ile birebir eşleştirilip tamamlanacaktır.
+
+Kalan oncelikler
+1. Hava Durumu & Aktivite Asistanı.html
+- Otel detay sayfasında hava durumu bölümü var.
+- Ayrı tam sayfa ve aktivite öneri modeli eksik.
+- Gerekli yapı: hava durumu, aktivite kategorileri, otel bölgesi bazlı öneriler.
+
+2. Bütçene Uygun Lüks Oteller.html
+3. En İyi fiyatlı odalar otellerin indrimli odalarını listeler otel adı ile.html
+4. Hafta Sonu Fırsatları.html
+5. HAVUZLU OTELLER.html
+6. EVCİL HAYVAN DOSTU OTELLER .html
+7. YILDIZ YAĞMURU SAYFASI.html
+8. İKNA MERKEZİ.html
+- Cogu public listeleme ve landing varyanti.
+- Gerekli yapı: filtreli otel listeleme route'lari, kart baglantilari, ozellik bazli sorgular ve anasayfa/oteller yonlendirmeleri.
+
+9. ADMIN PANELİ - KAYIP HAZİNE RAPORU SAYFASI.html
+- Admin rapor modülü eksik.
+
+10. KURUMSAL PANEL - MİSAFİR DUYGU ANALİZİ SAYFASI.html
+- Duygu analizi sutunlari mevcut, panel ekrani eksik.
+
+11. KURUMSAL PARTNER PANELİ ek özellikler.html
+- Partner paneli ek moduller tek tek eslestirilecek.
+
+12. Partner Şifre Sıfırlama.html
+- Genel reset akisi calisiyor.
+- Partner markali ayri UX gerekiyorsa ayri ekrana ayrilacak.
+
+Canli olmayan / DB baglantisi eksik temel alanlar
+- Public ozellik bazli otel landing sayfalarinin ayri route ve filtre mantiklari
+- Admin kayip hazine raporu
+- Kurumsal duygu analizi ekrani
+- Partner ek ozellik modullerinin tamamlari

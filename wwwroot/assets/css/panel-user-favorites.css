@@ -174,17 +174,17 @@
 }
 
 .favorite-alert-delete-form {
-    margin: 4px 0 0;
+    margin: 8px 0 0;
 }
 
 .favorite-alert-delete-btn {
     width: 100%;
-    min-height: 34px;
+    min-height: 40px;
     border: 1px solid rgba(185, 28, 28, 0.22);
-    border-radius: 10px;
+    border-radius: 12px;
     background: #fff5f5;
     color: #991b1b;
-    font-size: 0.76rem;
+    font-size: 0.82rem;
     font-weight: 800;
     display: inline-flex;
     align-items: center;

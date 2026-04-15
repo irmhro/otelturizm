@@ -30,34 +30,36 @@
             </article>
         </div>
 
-        @if (Model.Threads.Count == 0)
-        {
-            <div class="message-item active">
-                <div class="message-avatar blue">OT</div>
-                <div>
-                    <h3>Henüz konuşma yok</h3>
-                    <p>Firma ve otel yazışmaların burada listelenir.</p>
-                </div>
-            </div>
-        }
-        else
-        {
-            foreach (var thread in Model.Threads)
+        <div class="message-list-scroll">
+            @if (Model.Threads.Count == 0)
             {
-                <a class="message-item @(thread.IsActive ? "active" : string.Empty)" href="@thread.RouteUrl">
-                    <div class="message-avatar @thread.AvatarTone">@thread.AvatarText</div>
-                    <div class="message-thread-copy">
-                        <h3>@thread.Title</h3>
-                        <strong>@thread.Subtitle</strong>
-                        <p>@thread.Preview</p>
+                <div class="message-item active">
+                    <div class="message-avatar blue">OT</div>
+                    <div>
+                        <h3>Henüz konuşma yok</h3>
+                        <p>Firma ve otel yazışmaların burada listelenir.</p>
                     </div>
-                    @if (thread.UnreadCount > 0)
-                    {
-                        <span class="thread-unread-badge">@thread.UnreadCount</span>
-                    }
-                </a>
+                </div>
             }
-        }
+            else
+            {
+                foreach (var thread in Model.Threads)
+                {
+                    <a class="message-item @(thread.IsActive ? "active" : string.Empty)" href="@thread.RouteUrl">
+                        <div class="message-avatar @thread.AvatarTone">@thread.AvatarText</div>
+                        <div class="message-thread-copy">
+                            <h3>@thread.Title</h3>
+                            <strong>@thread.Subtitle</strong>
+                            <p>@thread.Preview</p>
+                        </div>
+                        @if (thread.UnreadCount > 0)
+                        {
+                            <span class="thread-unread-badge">@thread.UnreadCount</span>
+                        }
+                    </a>
+                }
+            }
+        </div>
     </aside>
 
     <div class="chat-panel">

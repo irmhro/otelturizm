@@ -140,6 +140,7 @@ public class UserFavoriteService : IUserFavoriteService
                        ) AS baslangic_fiyat
                 FROM oda_tipleri ot
                 LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
+                    AND ofm.otel_id = ot.otel_id
                     AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 120 DAY)
                 WHERE ot.aktif_mi = 1
                 GROUP BY ot.otel_id

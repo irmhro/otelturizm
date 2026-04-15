@@ -43,7 +43,7 @@
 }
 
 .gallery-grid {
-    --detail-gallery-main-height: 380px;
+    --detail-gallery-main-height: 418px;
     display: grid;
     grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
     gap: 10px;
@@ -1341,7 +1341,7 @@
     }
 
     .gallery-main-image {
-        --detail-gallery-main-height: 230px;
+        --detail-gallery-main-height: 253px;
         height: var(--detail-gallery-main-height);
     }
 
@@ -1383,7 +1383,7 @@
 
 @media (max-width: 640px) {
     .gallery-grid {
-        --detail-gallery-main-height: 230px;
+        --detail-gallery-main-height: 253px;
     }
 
     .detail-weather-cards,

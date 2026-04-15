@@ -124,6 +124,20 @@
     color: #6b7280;
 }
 
+.header-bildiri-time {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.header-bildiri-time span:first-child {
+    font-weight: 700;
+}
+
+.header-bildiri-time span:last-child {
+    color: #94a3b8;
+}
+
 .header-bildiri-item.tone-success a { background: #ecfdf5; }
 .header-bildiri-item.tone-warning a { background: #fffbeb; }
 .header-bildiri-item.tone-danger a { background: #fef2f2; }

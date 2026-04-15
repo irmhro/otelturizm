@@ -646,7 +646,10 @@ public class SalesService : ISalesService
                    COALESCE(MAX(ofm.toplam_oda_sayisi - ofm.satilan_oda_sayisi - ofm.bloke_oda_sayisi), o.toplam_oda_sayisi) AS stok,
                    COALESCE(GROUP_CONCAT(DISTINCT oo.ozellik_adi ORDER BY oo.siralama ASC SEPARATOR ', '), '')
             FROM oda_tipleri o
-            LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = o.id AND ofm.tarih >= @checkIn AND ofm.tarih < @checkOut
+            LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = o.id
+                AND ofm.otel_id = o.otel_id
+                AND ofm.tarih >= @checkIn
+                AND ofm.tarih < @checkOut
             LEFT JOIN oda_tipi_ozellikleri oto ON oto.oda_tip_id = o.id
             LEFT JOIN oda_ozellikleri oo ON oo.id = oto.ozellik_id AND oo.aktif_mi = 1
             WHERE o.otel_id = @hotelId AND o.aktif_mi = 1
@@ -682,7 +685,10 @@ public class SalesService : ISalesService
         const string sql = @"
             SELECT COALESCE(AVG(COALESCE(ofm.indirimli_fiyat, ofm.gecelik_fiyat)), ot.standart_gecelik_fiyat)
             FROM oda_tipleri ot
-            LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id AND ofm.tarih >= @checkIn AND ofm.tarih < @checkOut
+            LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
+                AND ofm.otel_id = ot.otel_id
+                AND ofm.tarih >= @checkIn
+                AND ofm.tarih < @checkOut
             WHERE ot.id = @roomTypeId;";
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@checkIn", checkIn.ToDateTime(TimeOnly.MinValue));
@@ -817,12 +823,14 @@ public class SalesService : ISalesService
     private async Task<List<SalesAvailabilityDayViewModel>> LoadAvailabilityDaysAsync(MySqlConnection connection, long roomTypeId, DateOnly monthStart, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT tarih, gecelik_fiyat, indirimli_fiyat, toplam_oda_sayisi, satilan_oda_sayisi, bloke_oda_sayisi
-            FROM oda_fiyat_musaitlik
-            WHERE oda_tip_id = @roomTypeId
-              AND tarih >= @monthStart
-              AND tarih < DATE_ADD(@monthStart, INTERVAL 1 MONTH)
-            ORDER BY tarih;";
+            SELECT ofm.tarih, ofm.gecelik_fiyat, ofm.indirimli_fiyat, ofm.toplam_oda_sayisi, ofm.satilan_oda_sayisi, ofm.bloke_oda_sayisi
+            FROM oda_fiyat_musaitlik ofm
+            INNER JOIN oda_tipleri ot ON ot.id = ofm.oda_tip_id
+            WHERE ofm.oda_tip_id = @roomTypeId
+              AND ofm.otel_id = ot.otel_id
+              AND ofm.tarih >= @monthStart
+              AND ofm.tarih < DATE_ADD(@monthStart, INTERVAL 1 MONTH)
+            ORDER BY ofm.tarih;";
         var items = new List<SalesAvailabilityDayViewModel>();
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@roomTypeId", roomTypeId);

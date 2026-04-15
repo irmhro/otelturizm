@@ -829,6 +829,7 @@ public class PartnerService : IPartnerService
 
         var existingEntries = await LoadPricingEntriesForRangeAsync(
             connection,
+            hotel.HotelId,
             rooms.Select(static item => item.RoomId).ToList(),
             DateOnly.FromDateTime(request.DateFrom.Date),
             DateOnly.FromDateTime(request.DateTo.Date),
@@ -867,9 +868,9 @@ public class PartnerService : IPartnerService
 
                     const string upsertSql = @"
                         INSERT INTO oda_fiyat_musaitlik
-                        (oda_tip_id, tarih, gecelik_fiyat, indirimli_fiyat, kampanya_id, toplam_oda_sayisi, satilan_oda_sayisi, bloke_oda_sayisi, minimum_geceleme, maksimum_geceleme, kapali_satis, sadece_gunubirlik, kampanya_etiketi, fiyat_notu, guncelleyen_kullanici_id)
+                        (otel_id, oda_tip_id, tarih, gecelik_fiyat, indirimli_fiyat, kampanya_id, toplam_oda_sayisi, satilan_oda_sayisi, bloke_oda_sayisi, minimum_geceleme, maksimum_geceleme, kapali_satis, sadece_gunubirlik, kampanya_etiketi, fiyat_notu, guncelleyen_kullanici_id)
                         VALUES
-                        (@roomId, @date, @basePrice, @discountPrice, @campaignId, @stock, 0, 0, @minStay, @maxStay, @closeSale, 0, @campaignLabel, @priceNote, @updatedBy)
+                        (@hotelId, @roomId, @date, @basePrice, @discountPrice, @campaignId, @stock, 0, 0, @minStay, @maxStay, @closeSale, 0, @campaignLabel, @priceNote, @updatedBy)
                         ON DUPLICATE KEY UPDATE
                             gecelik_fiyat = VALUES(gecelik_fiyat),
                             indirimli_fiyat = VALUES(indirimli_fiyat),
@@ -884,6 +885,7 @@ public class PartnerService : IPartnerService
                             guncellenme_tarihi = CURRENT_TIMESTAMP;";
 
                     await using var upsertCommand = new MySqlCommand(upsertSql, connection, (MySqlTransaction)transaction);
+                    upsertCommand.Parameters.AddWithValue("@hotelId", hotel.HotelId);
                     upsertCommand.Parameters.AddWithValue("@roomId", room.RoomId);
                     upsertCommand.Parameters.AddWithValue("@date", date);
                     upsertCommand.Parameters.AddWithValue("@basePrice", basePrice);
@@ -2655,6 +2657,7 @@ public class PartnerService : IPartnerService
                  FROM oda_fiyat_musaitlik ofm
                  INNER JOIN oda_tipleri ot ON ot.id = ofm.oda_tip_id
                  WHERE ot.otel_id = @hotelId
+                   AND ofm.otel_id = @hotelId
                    AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 14 DAY)
                    AND ((ofm.toplam_oda_sayisi - ofm.satilan_oda_sayisi - ofm.bloke_oda_sayisi) <= 2 OR ofm.kapali_satis = 1)) AS low_stock_alerts,
                 (SELECT COUNT(*) FROM yorumlar y WHERE y.otel_id = @hotelId AND COALESCE(y.otel_yaniti, '') = '') AS unanswered_reviews;";
@@ -2801,6 +2804,7 @@ public class PartnerService : IPartnerService
                    MIN(ofm.indirimli_fiyat) AS min_discount_price
             FROM oda_tipleri ot
             LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
+                AND ofm.otel_id = ot.otel_id
                 AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY)
                 AND ofm.indirimli_fiyat IS NOT NULL
             WHERE ot.otel_id = @hotelId
@@ -2850,6 +2854,7 @@ public class PartnerService : IPartnerService
             FROM oda_fiyat_musaitlik ofm
             INNER JOIN oda_tipleri ot ON ot.id = ofm.oda_tip_id
             WHERE ot.otel_id = @hotelId
+              AND ofm.otel_id = @hotelId
               AND ofm.tarih BETWEEN @startDate AND @endDate;";
 
         var entries = new Dictionary<(long RoomId, DateOnly Date), PricingCalendarEntry>();
@@ -2880,7 +2885,7 @@ public class PartnerService : IPartnerService
         return entries;
     }
 
-    private async Task<Dictionary<(long RoomId, DateOnly Date), PricingCalendarEntry>> LoadPricingEntriesForRangeAsync(MySqlConnection connection, IReadOnlyCollection<long> roomIds, DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken)
+    private async Task<Dictionary<(long RoomId, DateOnly Date), PricingCalendarEntry>> LoadPricingEntriesForRangeAsync(MySqlConnection connection, long hotelId, IReadOnlyCollection<long> roomIds, DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken)
     {
         if (roomIds.Count == 0)
         {
@@ -2903,10 +2908,12 @@ public class PartnerService : IPartnerService
                    fiyat_notu
             FROM oda_fiyat_musaitlik
             WHERE oda_tip_id IN ({string.Join(",", roomIds)})
+              AND otel_id = @hotelId
               AND tarih BETWEEN @startDate AND @endDate;";
 
         var entries = new Dictionary<(long RoomId, DateOnly Date), PricingCalendarEntry>();
         await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
         command.Parameters.AddWithValue("@startDate", startDate.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@endDate", endDate.ToDateTime(TimeOnly.MinValue));
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -3416,6 +3423,7 @@ public class PartnerService : IPartnerService
             FROM oda_tipleri ot
             LEFT JOIN oda_fiyat_musaitlik ofm
                 ON ofm.oda_tip_id = ot.id
+               AND ofm.otel_id = ot.otel_id
                AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
             WHERE ot.otel_id = @hotelId
             GROUP BY ot.id, ot.oda_adi, ot.toplam_oda_sayisi, ot.standart_gecelik_fiyat, ot.aktif_mi
@@ -4039,6 +4047,7 @@ public class PartnerService : IPartnerService
             FROM oda_fiyat_musaitlik ofm
             INNER JOIN oda_tipleri ot ON ot.id = ofm.oda_tip_id
             WHERE ot.otel_id = @hotelId
+              AND ofm.otel_id = @hotelId
               AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 14 DAY)
               AND ((ofm.toplam_oda_sayisi - ofm.satilan_oda_sayisi - ofm.bloke_oda_sayisi) <= 2 OR ofm.kapali_satis = 1)
             ORDER BY ofm.kapali_satis DESC, kalan ASC, ofm.tarih ASC

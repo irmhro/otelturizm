@@ -264,17 +264,13 @@ public class ReservationDraftService : IReservationDraftService
 
     public async Task MarkCompletedAsync(long draftId, long reservationId, CancellationToken cancellationToken = default)
     {
+        _ = reservationId;
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = @"
-            UPDATE rezervasyon_taslaklari
-            SET durum = 'Tamamlandi',
-                tamamlanan_rezervasyon_id = @reservationId,
-                son_aktivite_tarihi = UTC_TIMESTAMP(),
-                son_bildirim_tarihi = UTC_TIMESTAMP()
+            DELETE FROM rezervasyon_taslaklari
             WHERE id = @draftId;";
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@draftId", draftId);
-        command.Parameters.AddWithValue("@reservationId", reservationId);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 

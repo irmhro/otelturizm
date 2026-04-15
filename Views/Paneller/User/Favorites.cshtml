@@ -103,15 +103,15 @@
                                 {
                                     <span>Son bildirim: @hotel.PriceAlertLastTriggeredText</span>
                                 }
-                                <form method="post" action="/panel/user/favorilerim/fiyat-alarmi/sil" class="favorite-alert-delete-form">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="hotelId" value="@hotel.HotelId" />
-                                    <button type="submit" class="favorite-alert-delete-btn">
-                                        <i class="fas fa-trash-can"></i>
-                                        Fiyat alarmini sil
-                                    </button>
-                                </form>
                             </div>
+                            <form method="post" action="/panel/user/favorilerim/fiyat-alarmi/sil" class="favorite-alert-delete-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="hotelId" value="@hotel.HotelId" />
+                                <button type="submit" class="favorite-alert-delete-btn">
+                                    <i class="fas fa-trash-can"></i>
+                                    Fiyat alarmini kaldir
+                                </button>
+                            </form>
                         }
                     </div>
                 </article>
