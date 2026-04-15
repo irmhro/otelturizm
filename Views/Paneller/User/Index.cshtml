@@ -142,20 +142,21 @@
 
             @if (Model.FavoriteHotels.Count == 0)
             {
-                <div class="favorite-item">
+                <div class="favorite-empty">
                     <div class="favorite-thumb"></div>
-                    <div>
+                    <div class="favorite-empty-copy">
                         <h4>Henüz favori otelin yok</h4>
                         <p>Kalp butonunu kullanarak beğendiğin tesisleri burada toplayabilirsin.</p>
-                        <strong>Liste hazır</strong>
+                        <a asp-controller="Oteller" asp-action="OtelListeleme" class="ghost-btn">Otel keşfet</a>
                     </div>
                 </div>
             }
             else
             {
-                foreach (var hotel in Model.FavoriteHotels)
+                <div class="favorite-hotel-list">
+                @foreach (var hotel in Model.FavoriteHotels.Take(3))
                 {
-                    <div class="favorite-item">
+                    <article class="favorite-hotel-row">
                         @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
                         {
                             <img class="favorite-thumb" src="@hotel.ImageUrl" alt="@hotel.HotelName" />
@@ -164,21 +165,44 @@
                         {
                             <div class="favorite-thumb"></div>
                         }
-                        <div>
+                        <div class="favorite-row-copy">
                             <h4>@hotel.HotelName</h4>
                             <p>@hotel.District, @hotel.City</p>
-                            <strong>@hotel.RatingText</strong>
+                            <div class="favorite-meta-row">
+                                <strong>@hotel.RatingText</strong>
+                                <a asp-action="Favorites">Detayı aç</a>
+                            </div>
                         </div>
-                    </div>
+                    </article>
                 }
+                </div>
             }
         </section>
 
         <section class="reward-panel">
             <p class="mini-label light">ÖZEL FIRSAT</p>
-            <h2>Kişisel fırsatlarını takip et</h2>
-            <p>Favorilerin ve rezervasyon geçmişin arttıkça kişiselleştirilmiş kampanya ve kullanıcı avantajları burada öne çıkar.</p>
-            <a asp-action="Loyalty" class="reward-link">Fırsatları keşfet</a>
+            <h2>Kişisel fırsatlarını akıllı şekilde takip et</h2>
+            <p>Favorilerin, rezervasyon davranışın ve puan seviyene göre şekillenen kampanya önerilerini tek panelde topla.</p>
+            <div class="reward-highlights">
+                <article>
+                    <i class="fas fa-bolt"></i>
+                    <div>
+                        <strong>Hafta sonu hızlı fırsat</strong>
+                        <span>Son 48 saat içinde biten seçili kampanyalar</span>
+                    </div>
+                </article>
+                <article>
+                    <i class="fas fa-gem"></i>
+                    <div>
+                        <strong>Puanla ekstra indirim</strong>
+                        <span>Sadakat puanı ile aktive edilen özel kuponlar</span>
+                    </div>
+                </article>
+            </div>
+            <div class="reward-actions">
+                <a asp-action="Loyalty" class="reward-link">Fırsatları keşfet</a>
+                <a asp-action="Favorites" class="reward-link secondary">Favorilerden devam et</a>
+            </div>
         </section>
     </div>
 </section>

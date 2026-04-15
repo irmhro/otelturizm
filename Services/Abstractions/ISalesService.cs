@@ -9,10 +9,14 @@ public interface ISalesService
         long userId,
         long? hotelId = null,
         long? roomTypeId = null,
+        string? searchTerm = null,
         string? city = null,
         string? district = null,
+        string? neighborhood = null,
         decimal? minPrice = null,
         decimal? maxPrice = null,
+        decimal? minimumRating = null,
+        int? minimumReviewCount = null,
         string? feature = null,
         CancellationToken cancellationToken = default);
     Task<(bool Success, string Message, long? ReservationId)> CreateReservationAsync(long userId, SalesReservationCreateModel model, CancellationToken cancellationToken = default);

@@ -1,5 +1,7 @@
 namespace otelturizmnew.Models.Oteller;
 
+using otelturizmnew.Models.Reservations;
+
 public class HotelListingPageViewModel
 {
     public string City { get; set; } = string.Empty;
@@ -78,6 +80,8 @@ public class HotelDetailPageViewModel
     public decimal LowestRoomPrice { get; set; }
     public string MainImageUrl { get; set; } = string.Empty;
     public bool IsFavorite { get; set; }
+    public PublicHotelReservationForm ReservationForm { get; set; } = new();
+    public ReservationDraftSummaryViewModel? ActiveDraft { get; set; }
     public List<string> GalleryImages { get; set; } = new();
     public List<HotelAmenityViewModel> Amenities { get; set; } = new();
     public List<HotelRoomViewModel> Rooms { get; set; } = new();
@@ -94,6 +98,7 @@ public class HotelAmenityViewModel
 
 public class HotelRoomViewModel
 {
+    public long RoomTypeId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Specs { get; set; } = string.Empty;
     public decimal Price { get; set; }

@@ -194,7 +194,7 @@ public class UserPanelService : IUserPanelService
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = @"
-            SELECT ad_soyad, eposta, COALESCE(telefon, ''), tc_kimlik_no, dogum_tarihi, cinsiyet, uyruk, adres, sehir, ilce, posta_kodu,
+            SELECT ad_soyad, eposta, COALESCE(telefon, ''), tc_kimlik_no, dogum_tarihi, cinsiyet, uyruk, adres, sehir, ilce, mahalle, posta_kodu,
                    tercih_edilen_oda_tipi, yatak_tercihi, konusulan_diller, seyahat_amaci, ozel_istekler
             FROM users
             WHERE id = @userId
@@ -220,12 +220,13 @@ public class UserPanelService : IUserPanelService
                 Address = reader.IsDBNull(7) ? null : reader.GetString(7),
                 City = reader.IsDBNull(8) ? null : reader.GetString(8),
                 District = reader.IsDBNull(9) ? null : reader.GetString(9),
-                PostalCode = reader.IsDBNull(10) ? null : reader.GetString(10),
-                RoomPreference = reader.IsDBNull(11) ? null : reader.GetString(11),
-                BedPreference = reader.IsDBNull(12) ? null : reader.GetString(12),
-                SpokenLanguages = reader.IsDBNull(13) ? null : reader.GetString(13),
-                TravelPurpose = reader.IsDBNull(14) ? null : reader.GetString(14),
-                SpecialRequests = reader.IsDBNull(15) ? null : reader.GetString(15)
+                Neighborhood = reader.IsDBNull(10) ? null : reader.GetString(10),
+                PostalCode = reader.IsDBNull(11) ? null : reader.GetString(11),
+                RoomPreference = reader.IsDBNull(12) ? null : reader.GetString(12),
+                BedPreference = reader.IsDBNull(13) ? null : reader.GetString(13),
+                SpokenLanguages = reader.IsDBNull(14) ? null : reader.GetString(14),
+                TravelPurpose = reader.IsDBNull(15) ? null : reader.GetString(15),
+                SpecialRequests = reader.IsDBNull(16) ? null : reader.GetString(16)
             };
         }
 
@@ -246,6 +247,7 @@ public class UserPanelService : IUserPanelService
                 adres = NULLIF(@address, ''),
                 sehir = NULLIF(@city, ''),
                 ilce = NULLIF(@district, ''),
+                mahalle = NULLIF(@neighborhood, ''),
                 posta_kodu = NULLIF(@postalCode, ''),
                 tercih_edilen_oda_tipi = NULLIF(@roomPreference, ''),
                 yatak_tercihi = NULLIF(@bedPreference, ''),
@@ -263,6 +265,7 @@ public class UserPanelService : IUserPanelService
         command.Parameters.AddWithValue("@address", form.Address?.Trim() ?? string.Empty);
         command.Parameters.AddWithValue("@city", form.City?.Trim() ?? string.Empty);
         command.Parameters.AddWithValue("@district", form.District?.Trim() ?? string.Empty);
+        command.Parameters.AddWithValue("@neighborhood", form.Neighborhood?.Trim() ?? string.Empty);
         command.Parameters.AddWithValue("@postalCode", form.PostalCode?.Trim() ?? string.Empty);
         command.Parameters.AddWithValue("@roomPreference", form.RoomPreference?.Trim() ?? string.Empty);
         command.Parameters.AddWithValue("@bedPreference", form.BedPreference?.Trim() ?? string.Empty);

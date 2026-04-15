@@ -93,6 +93,116 @@
 
 .side-stack { display: grid; gap: 18px; }
 
+.favorite-empty {
+    display: grid;
+    grid-template-columns: 78px 1fr;
+    gap: 14px;
+    align-items: center;
+}
+
+.favorite-empty-copy h4 {
+    margin: 0 0 6px;
+}
+
+.favorite-empty-copy p {
+    margin: 0 0 10px;
+}
+
+.favorite-hotel-list {
+    display: grid;
+    gap: 12px;
+}
+
+.favorite-hotel-row {
+    display: grid;
+    grid-template-columns: 86px 1fr;
+    gap: 12px;
+    align-items: center;
+    border: 1px solid #e6edf6;
+    border-radius: 14px;
+    padding: 8px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.favorite-row-copy h4 {
+    margin: 0 0 4px;
+    font-size: 1rem;
+}
+
+.favorite-row-copy p {
+    margin: 0 0 8px;
+    font-size: 0.9rem;
+}
+
+.favorite-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.favorite-meta-row strong {
+    color: #003b95;
+}
+
+.favorite-meta-row a {
+    color: #0055cc;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.84rem;
+}
+
+.reward-highlights {
+    margin-top: 14px;
+    display: grid;
+    gap: 10px;
+}
+
+.reward-highlights article {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 10px;
+    align-items: start;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.reward-highlights i {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.reward-highlights strong {
+    display: block;
+    margin-bottom: 3px;
+    color: #fff;
+}
+
+.reward-highlights span {
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 0.86rem;
+}
+
+.reward-actions {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.reward-link.secondary {
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: transparent;
+}
+
 @media (max-width: 1200px) {
     .quick-actions,
     .stats-grid {
@@ -108,5 +218,22 @@
     .quick-actions,
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+
+    .favorite-empty,
+    .favorite-hotel-row {
+        grid-template-columns: 1fr;
+    }
+
+    .favorite-thumb {
+        width: 100%;
+    }
+
+    .reward-actions {
+        flex-direction: column;
+    }
+
+    .reward-actions .reward-link {
+        justify-content: center;
     }
 }

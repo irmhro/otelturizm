@@ -148,12 +148,19 @@ public class SalesReservationCreateModel
     public string CustomerEmail { get; set; } = string.Empty;
     public string CustomerPhone { get; set; } = string.Empty;
     public string? CustomerCity { get; set; }
+    public string? CustomerDistrict { get; set; }
+    public string? CustomerNeighborhood { get; set; }
+    public string? CustomerAddress { get; set; }
     public long HotelId { get; set; }
     public long RoomTypeId { get; set; }
+    public string? SearchTerm { get; set; }
     public string? SearchCity { get; set; }
     public string? SearchDistrict { get; set; }
+    public string? SearchNeighborhood { get; set; }
     public decimal? SearchMinPrice { get; set; }
     public decimal? SearchMaxPrice { get; set; }
+    public decimal? SearchMinimumRating { get; set; }
+    public int? SearchMinimumReviewCount { get; set; }
     public string? SearchFeature { get; set; }
     public DateOnly CheckInDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(2));
     public DateOnly CheckOutDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(4));

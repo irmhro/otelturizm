@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using otelturizmnew.Constants;
+using otelturizmnew.Models.Reservations;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Controllers.Oteller;
@@ -9,12 +10,14 @@ namespace otelturizmnew.Controllers.Oteller;
 public class OtellerController : Controller
 {
     private readonly IHotelService _hotelService;
+    private readonly IPublicReservationService _publicReservationService;
     private readonly IWeatherService _weatherService;
     private readonly IUserFavoriteService _userFavoriteService;
 
-    public OtellerController(IHotelService hotelService, IWeatherService weatherService, IUserFavoriteService userFavoriteService)
+    public OtellerController(IHotelService hotelService, IPublicReservationService publicReservationService, IWeatherService weatherService, IUserFavoriteService userFavoriteService)
     {
         _hotelService = hotelService;
+        _publicReservationService = publicReservationService;
         _weatherService = weatherService;
         _userFavoriteService = userFavoriteService;
     }
@@ -42,10 +45,30 @@ public class OtellerController : Controller
 
         model.Weather = await _weatherService.GetForecastAsync(model.District, model.City, model.Latitude, model.Longitude, cancellationToken);
         await ApplyFavoriteStateAsync(model, cancellationToken);
+        model.ReservationForm = new PublicHotelReservationForm
+        {
+            HotelId = model.Id,
+            RoomTypeId = model.Rooms.FirstOrDefault()?.RoomTypeId ?? 0
+        };
+        model.ActiveDraft = await _publicReservationService.GetActiveDraftAsync(GetCurrentUserIdOrNull(), GetCurrentReservationSessionKey(), cancellationToken);
 
         ViewData["Title"] = "Otel Detay";
         ViewData["PageCss"] = "otel-detay";
         return View("~/Views/Oteller/OtelDetay.cshtml", model);
+    }
+
+    [HttpPost("{slug}/rezervasyon")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> StartReservation(string slug, PublicHotelReservationForm form, CancellationToken cancellationToken)
+    {
+        var result = await _publicReservationService.StartReservationAsync(GetCurrentUserIdOrNull(), EnsureReservationSessionKey(), form, cancellationToken);
+        TempData[result.Success ? "PublicReservationSuccess" : "PublicReservationInfo"] = result.Message;
+        if (!string.IsNullOrWhiteSpace(result.RedirectUrl))
+        {
+            return Redirect(result.RedirectUrl);
+        }
+
+        return Redirect($"/oteller/{slug}");
     }
 
     private async Task ApplyFavoriteStatesAsync(otelturizmnew.Models.Oteller.HotelListingPageViewModel model, CancellationToken cancellationToken)
@@ -80,6 +103,33 @@ public class OtellerController : Controller
         var raw = User.FindFirstValue(AuthClaimTypes.UserId) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
         return long.TryParse(raw, out var userId) ? userId : 0;
     }
-}
 
+    private long? GetCurrentUserIdOrNull()
+    {
+        var userId = GetCurrentUserId();
+        return userId > 0 ? userId : null;
+    }
+
+    private string? GetCurrentReservationSessionKey()
+        => Request.Cookies.TryGetValue(ReservationDraftService.DraftCookieName, out var key) ? key : null;
+
+    private string EnsureReservationSessionKey()
+    {
+        if (Request.Cookies.TryGetValue(ReservationDraftService.DraftCookieName, out var existing) && !string.IsNullOrWhiteSpace(existing))
+        {
+            return existing;
+        }
+
+        var key = Guid.NewGuid().ToString("N");
+        Response.Cookies.Append(ReservationDraftService.DraftCookieName, key, new CookieOptions
+        {
+            HttpOnly = true,
+            IsEssential = true,
+            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            Expires = DateTimeOffset.UtcNow.AddDays(90)
+        });
+        return key;
+    }
+}
 

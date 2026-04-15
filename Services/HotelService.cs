@@ -790,6 +790,7 @@ public class HotelService : IHotelService
 
                 model.Rooms.Add(new HotelRoomViewModel
                 {
+                    RoomTypeId = roomsReader.GetInt64(0),
                     Name = roomName,
                     Specs = $"{bedType} · {(squareMeter.HasValue ? $"{squareMeter.Value} m2" : "Metrekare bilgisi bekleniyor")} · Max {maxGuests} Kisi",
                     Price = roomPrice,
@@ -802,6 +803,7 @@ public class HotelService : IHotelService
         {
             model.Rooms.Add(new HotelRoomViewModel
             {
+                RoomTypeId = 0,
                 Name = "Standart Oda",
                 Specs = "Cift kisilik yatak · 28 m2 · Max 2 Kisi",
                 Price = model.LowestRoomPrice,

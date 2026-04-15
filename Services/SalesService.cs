@@ -1,5 +1,6 @@
 using System.Globalization;
 using MySqlConnector;
+using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Paneller.Satis;
 using otelturizmnew.Services.Abstractions;
 
@@ -8,11 +9,13 @@ namespace otelturizmnew.Services;
 public class SalesService : ISalesService
 {
     private readonly string _connectionString;
+    private readonly IEmailQueueService _emailQueueService;
 
-    public SalesService(IConfiguration configuration)
+    public SalesService(IConfiguration configuration, IEmailQueueService emailQueueService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
+        _emailQueueService = emailQueueService;
     }
 
     public async Task<SalesDashboardPageViewModel> GetDashboardAsync(long userId, CancellationToken cancellationToken = default)
@@ -50,7 +53,7 @@ public class SalesService : ISalesService
         return model;
     }
 
-    public async Task<SalesCreateReservationPageViewModel> GetCreateReservationAsync(long userId, long? hotelId = null, long? roomTypeId = null, string? city = null, string? district = null, decimal? minPrice = null, decimal? maxPrice = null, string? feature = null, CancellationToken cancellationToken = default)
+    public async Task<SalesCreateReservationPageViewModel> GetCreateReservationAsync(long userId, long? hotelId = null, long? roomTypeId = null, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, decimal? minPrice = null, decimal? maxPrice = null, decimal? minimumRating = null, int? minimumReviewCount = null, string? feature = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
         var shell = await BuildShellAsync(connection, userId, "create", "Yeni Rezervasyon Oluştur", "İl, ilçe, fiyat ve özellik filtreleriyle oteli hızlıca bulun; müşteriye en uygun rezervasyonu aynı ekrandan tamamlayın.", cancellationToken);
@@ -66,10 +69,14 @@ public class SalesService : ISalesService
             {
                 HotelId = selectedHotelId,
                 RoomTypeId = selectedRoomTypeId,
+                SearchTerm = searchTerm,
                 SearchCity = city,
                 SearchDistrict = district,
+                SearchNeighborhood = neighborhood,
                 SearchMinPrice = minPrice,
                 SearchMaxPrice = maxPrice,
+                SearchMinimumRating = minimumRating,
+                SearchMinimumReviewCount = minimumReviewCount,
                 SearchFeature = feature
             },
             Hotels = hotels,
@@ -77,7 +84,7 @@ public class SalesService : ISalesService
             Districts = await LoadDistrictsAsync(connection, city, cancellationToken),
             RoomTypes = roomTypes,
             Customers = await LoadCustomersAsync(connection, null, 8, cancellationToken),
-            HotelSearchResults = await LoadHotelSearchResultsAsync(connection, city, district, minPrice, maxPrice, feature, cancellationToken),
+            HotelSearchResults = await LoadHotelSearchResultsAsync(connection, searchTerm, city, district, neighborhood, minPrice, maxPrice, minimumRating, minimumReviewCount, feature, cancellationToken),
             AvailableRooms = selectedHotelId > 0 ? await LoadRoomOptionsAsync(connection, selectedHotelId, DateOnly.FromDateTime(DateTime.Today.AddDays(2)), DateOnly.FromDateTime(DateTime.Today.AddDays(4)), cancellationToken) : new List<SalesRoomOptionViewModel>()
         };
 
@@ -201,7 +208,7 @@ public class SalesService : ISalesService
                 INSERT INTO rezervasyonlar
                 (
                     rezervasyon_no, otel_id, oda_tip_id, kullanici_id, satis_temsilcisi_id, satis_musteri_id,
-                    misafir_ad_soyad, misafir_eposta, misafir_telefon, misafir_notu,
+                    misafir_ad_soyad, misafir_eposta, misafir_telefon, misafir_notu, misafir_sehir, misafir_ilce, misafir_mahalle, misafir_adres,
                     giris_tarihi, cikis_tarihi, yetiskin_sayisi, cocuk_sayisi, oda_sayisi,
                     gecelik_fiyat, toplam_oda_tutari, vergi_tutari, toplam_tutar,
                     komisyon_orani, durum, odeme_durumu, otel_onay_durumu, firma_onay_durumu,
@@ -210,7 +217,7 @@ public class SalesService : ISalesService
                 VALUES
                 (
                     @reservationNo, @hotelId, @roomTypeId, @userId, @salesUserId, @salesCustomerId,
-                    @fullName, @email, @phone, @note,
+                    @fullName, @email, @phone, @note, @city, @district, @neighborhood, @address,
                     @checkIn, @checkOut, @adultCount, @childCount, @roomCount,
                     @nightlyPrice, @roomTotal, @taxAmount, @totalAmount,
                     @commissionRate, 'Onay Bekliyor', 'Beklemede', 'Beklemede', 'Onay Gerekmiyor',
@@ -230,6 +237,10 @@ public class SalesService : ISalesService
                 command.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
                 command.Parameters.AddWithValue("@phone", model.CustomerPhone.Trim());
                 command.Parameters.AddWithValue("@note", model.DemandNote ?? string.Empty);
+                command.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(model.CustomerCity) ? DBNull.Value : model.CustomerCity.Trim());
+                command.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(model.CustomerDistrict) ? DBNull.Value : model.CustomerDistrict.Trim());
+                command.Parameters.AddWithValue("@neighborhood", string.IsNullOrWhiteSpace(model.CustomerNeighborhood) ? DBNull.Value : model.CustomerNeighborhood.Trim());
+                command.Parameters.AddWithValue("@address", string.IsNullOrWhiteSpace(model.CustomerAddress) ? DBNull.Value : model.CustomerAddress.Trim());
                 command.Parameters.AddWithValue("@checkIn", model.CheckInDate.ToDateTime(TimeOnly.MinValue));
                 command.Parameters.AddWithValue("@checkOut", model.CheckOutDate.ToDateTime(TimeOnly.MinValue));
                 command.Parameters.AddWithValue("@adultCount", model.AdultCount);
@@ -259,8 +270,48 @@ public class SalesService : ISalesService
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
 
-            await QueueEmailAsync(connection, transaction, publicUserId, model.CustomerEmail.Trim(), "Rezervasyonunuz alındı", $"Rezervasyon numaranız: {reservationNo}. Otel: {hotelInfo.HotelName}. Oda: {roomName}. Tarih: {model.CheckInDate:dd.MM.yyyy} - {model.CheckOutDate:dd.MM.yyyy}. Toplam: {FormatMoney(summary.TotalAmount)}.", reservationId, cancellationToken);
-            await QueueEmailAsync(connection, transaction, partnerRecipient.UserId, partnerRecipient.Email, "Yeni satış paneli rezervasyonu", $"Yeni rezervasyon oluşturuldu. No: {reservationNo}. Misafir: {model.CustomerFullName}. Otel: {hotelInfo.HotelName}. Tarih: {model.CheckInDate:dd.MM.yyyy} - {model.CheckOutDate:dd.MM.yyyy}. Tutar: {FormatMoney(summary.TotalAmount)}.", reservationId, cancellationToken);
+            await _emailQueueService.QueueTemplateAsync(connection, (MySqlTransaction)transaction, new QueuedEmailTemplateRequest
+            {
+                UserId = publicUserId,
+                RecipientEmail = model.CustomerEmail.Trim(),
+                TemplateCode = "reservation_received_customer",
+                RelatedTable = "rezervasyonlar",
+                RelatedRecordId = reservationId,
+                Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["user_first_name"] = SplitFirstName(model.CustomerFullName),
+                    ["booking_reference"] = reservationNo,
+                    ["hotel_name"] = hotelInfo.HotelName,
+                    ["check_in_date"] = model.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                    ["check_out_date"] = model.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                    ["total_price"] = summary.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
+                    ["room_type_name"] = roomName,
+                    ["booking_details_link"] = "/panel/user/rezervasyonlarim",
+                    ["hotel_address"] = hotelInfo.HotelName
+                }
+            }, cancellationToken);
+            await _emailQueueService.QueueTemplateAsync(connection, (MySqlTransaction)transaction, new QueuedEmailTemplateRequest
+            {
+                UserId = partnerRecipient.UserId,
+                RecipientEmail = partnerRecipient.Email,
+                TemplateCode = "reservation_new_partner",
+                RelatedTable = "rezervasyonlar",
+                RelatedRecordId = reservationId,
+                Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["hotel_manager_name"] = "Partner Yetkilisi",
+                    ["hotel_name"] = hotelInfo.HotelName,
+                    ["booking_reference"] = reservationNo,
+                    ["guest_full_name"] = model.CustomerFullName.Trim(),
+                    ["guest_email"] = model.CustomerEmail.Trim(),
+                    ["guest_phone"] = model.CustomerPhone.Trim(),
+                    ["total_price"] = summary.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
+                    ["check_in_date"] = model.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                    ["check_out_date"] = model.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                    ["room_type_name"] = roomName,
+                    ["room_count"] = model.RoomCount.ToString(CultureInfo.InvariantCulture)
+                }
+            }, cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
             return (true, $"Rezervasyon başarıyla oluşturuldu: {reservationNo}", reservationId);
@@ -523,7 +574,7 @@ public class SalesService : ISalesService
         };
     }
 
-    private async Task<List<SalesHotelSearchCardViewModel>> LoadHotelSearchResultsAsync(MySqlConnection connection, string? city, string? district, decimal? minPrice, decimal? maxPrice, string? feature, CancellationToken cancellationToken)
+    private async Task<List<SalesHotelSearchCardViewModel>> LoadHotelSearchResultsAsync(MySqlConnection connection, string? searchTerm, string? city, string? district, string? neighborhood, decimal? minPrice, decimal? maxPrice, decimal? minimumRating, int? minimumReviewCount, string? feature, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT o.id, o.otel_adi, o.sehir, o.ilce, o.tam_adres, COALESCE(o.rezervasyon_telefonu, o.telefon_1, ''),
@@ -534,15 +585,23 @@ public class SalesService : ISalesService
             FROM oteller o
             WHERE o.yayin_durumu IN ('Yayında','Bakımda')
               AND o.onay_durumu = 'Onaylandı'
+              AND (@searchTerm IS NULL OR o.otel_adi LIKE CONCAT('%', @searchTerm, '%') OR o.sehir LIKE CONCAT('%', @searchTerm, '%') OR o.ilce LIKE CONCAT('%', @searchTerm, '%') OR o.tam_adres LIKE CONCAT('%', @searchTerm, '%'))
               AND (@city IS NULL OR o.sehir = @city)
               AND (@district IS NULL OR o.ilce = @district)
+              AND (@neighborhood IS NULL OR o.tam_adres LIKE CONCAT('%', @neighborhood, '%'))
+              AND (@minimumRating IS NULL OR o.ortalama_puan >= @minimumRating)
+              AND (@minimumReviewCount IS NULL OR o.toplam_yorum_sayisi >= @minimumReviewCount)
               AND (@feature IS NULL OR EXISTS (SELECT 1 FROM otel_ozellik_iliskileri il INNER JOIN otel_ozellikleri oo ON oo.id = il.ozellik_id WHERE il.otel_id = o.id AND oo.ozellik_adi LIKE CONCAT('%', @feature, '%')))
             ORDER BY o.one_cikan_otel DESC, o.ortalama_puan DESC, o.toplam_yorum_sayisi DESC
             LIMIT 12;";
         var items = new List<SalesHotelSearchCardViewModel>();
         await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@searchTerm", string.IsNullOrWhiteSpace(searchTerm) ? DBNull.Value : searchTerm.Trim());
         command.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? DBNull.Value : city.Trim());
         command.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(district) ? DBNull.Value : district.Trim());
+        command.Parameters.AddWithValue("@neighborhood", string.IsNullOrWhiteSpace(neighborhood) ? DBNull.Value : neighborhood.Trim());
+        command.Parameters.AddWithValue("@minimumRating", minimumRating.HasValue ? minimumRating.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@minimumReviewCount", minimumReviewCount.HasValue ? minimumReviewCount.Value : DBNull.Value);
         command.Parameters.AddWithValue("@feature", string.IsNullOrWhiteSpace(feature) ? DBNull.Value : feature.Trim());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -646,9 +705,9 @@ public class SalesService : ISalesService
         var code = $"SATMUST-{seq:0000}";
         const string insertSql = @"
             INSERT INTO satis_musterileri
-            (musteri_kodu, ad_soyad, eposta, telefon, sehir, uyelik_seviyesi, son_talep_ozeti, notlar, olusturan_sales_user_id)
+            (musteri_kodu, ad_soyad, eposta, telefon, sehir, ilce, mahalle, adres, uyelik_seviyesi, son_talep_ozeti, notlar, olusturan_sales_user_id)
             VALUES
-            (@code, @fullName, @email, @phone, @city, @membership, @summary, @notes, @userId);
+            (@code, @fullName, @email, @phone, @city, @district, @neighborhood, @address, @membership, @summary, @notes, @userId);
             SELECT LAST_INSERT_ID();";
         await using var insertCommand = new MySqlCommand(insertSql, connection, transaction);
         insertCommand.Parameters.AddWithValue("@code", code);
@@ -656,6 +715,9 @@ public class SalesService : ISalesService
         insertCommand.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
         insertCommand.Parameters.AddWithValue("@phone", model.CustomerPhone.Trim());
         insertCommand.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(model.CustomerCity) ? DBNull.Value : model.CustomerCity.Trim());
+        insertCommand.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(model.CustomerDistrict) ? DBNull.Value : model.CustomerDistrict.Trim());
+        insertCommand.Parameters.AddWithValue("@neighborhood", string.IsNullOrWhiteSpace(model.CustomerNeighborhood) ? DBNull.Value : model.CustomerNeighborhood.Trim());
+        insertCommand.Parameters.AddWithValue("@address", string.IsNullOrWhiteSpace(model.CustomerAddress) ? DBNull.Value : model.CustomerAddress.Trim());
         insertCommand.Parameters.AddWithValue("@membership", string.IsNullOrWhiteSpace(membershipLevel) ? "Standart" : membershipLevel);
         insertCommand.Parameters.AddWithValue("@summary", model.DemandNote ?? string.Empty);
         insertCommand.Parameters.AddWithValue("@notes", model.DemandNote ?? string.Empty);
@@ -676,14 +738,18 @@ public class SalesService : ISalesService
 
         const string insertSql = @"
             INSERT INTO users
-            (ad_soyad, eposta, telefon, sifre, rol, hesap_durumu, dil_tercihi, para_birimi, ulke)
+            (ad_soyad, eposta, telefon, sehir, ilce, mahalle, adres, sifre, rol, hesap_durumu, dil_tercihi, para_birimi, ulke)
             VALUES
-            (@fullName, @email, @phone, SHA2('1585', 256), 'user', 1, 'tr', 'TRY', 'Türkiye');
+            (@fullName, @email, @phone, @city, @district, @neighborhood, @address, SHA2('1585', 256), 'user', 1, 'tr', 'TRY', 'Türkiye');
             SELECT LAST_INSERT_ID();";
         await using var insertCommand = new MySqlCommand(insertSql, connection, transaction);
         insertCommand.Parameters.AddWithValue("@fullName", model.CustomerFullName.Trim());
         insertCommand.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
         insertCommand.Parameters.AddWithValue("@phone", model.CustomerPhone.Trim());
+        insertCommand.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(model.CustomerCity) ? DBNull.Value : model.CustomerCity.Trim());
+        insertCommand.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(model.CustomerDistrict) ? DBNull.Value : model.CustomerDistrict.Trim());
+        insertCommand.Parameters.AddWithValue("@neighborhood", string.IsNullOrWhiteSpace(model.CustomerNeighborhood) ? DBNull.Value : model.CustomerNeighborhood.Trim());
+        insertCommand.Parameters.AddWithValue("@address", string.IsNullOrWhiteSpace(model.CustomerAddress) ? DBNull.Value : model.CustomerAddress.Trim());
         return Convert.ToInt64(await insertCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
     }
 
@@ -730,22 +796,6 @@ public class SalesService : ISalesService
         return (1, "partner@otelturizm.com");
     }
 
-    private async Task QueueEmailAsync(MySqlConnection connection, MySqlTransaction transaction, long userId, string email, string subject, string body, long reservationId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            INSERT INTO bildirim_loglari
-            (kullanici_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, ilgili_tablo, ilgili_kayit_id)
-            VALUES
-            (@userId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', 'rezervasyonlar', @reservationId);";
-        await using var command = new MySqlCommand(sql, connection, transaction);
-        command.Parameters.AddWithValue("@userId", userId);
-        command.Parameters.AddWithValue("@email", email);
-        command.Parameters.AddWithValue("@subject", subject);
-        command.Parameters.AddWithValue("@body", body);
-        command.Parameters.AddWithValue("@reservationId", reservationId);
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
     private static async Task<List<SalesSelectOption>> LoadOptionsAsync(MySqlConnection connection, string sql, Action<MySqlCommand>? configure, CancellationToken cancellationToken)
     {
         var items = new List<SalesSelectOption>();
@@ -760,6 +810,7 @@ public class SalesService : ISalesService
     private static int ReadInt(MySqlDataReader reader, int index) => reader.IsDBNull(index) ? 0 : Convert.ToInt32(reader.GetValue(index), CultureInfo.InvariantCulture);
     private static string FormatMoney(decimal value) => value.ToString("'₺'#,##0.##", CultureInfo.GetCultureInfo("tr-TR"));
     private static List<string> SplitFeatures(string raw) => string.IsNullOrWhiteSpace(raw) ? new List<string>() : raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(3).ToList();
+    private static string SplitFirstName(string fullName) => string.IsNullOrWhiteSpace(fullName) ? "Misafir" : fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Misafir";
 
     private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {

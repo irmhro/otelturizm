@@ -21,8 +21,12 @@ builder.Services.AddScoped<IAdminHotelManagementService, AdminHotelManagementSer
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IFirmaService, FirmaService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
+builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
 builder.Services.AddScoped<IImageStorageService, ImageStorageService>();
 builder.Services.AddScoped<IPartnerService, PartnerService>();
+builder.Services.AddScoped<IPublicReservationService, PublicReservationService>();
+builder.Services.AddScoped<IReservationDraftService, ReservationDraftService>();
 builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<IUserFavoriteService, UserFavoriteService>();
 builder.Services.AddScoped<IUserPanelService, UserPanelService>();
