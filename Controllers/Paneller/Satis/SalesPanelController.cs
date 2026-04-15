@@ -31,10 +31,10 @@ public class SalesPanelController : Controller
     }
 
     [HttpGet("yeni-rezervasyon")]
-    public async Task<IActionResult> CreateReservation(long? hotelId = null, long? roomTypeId = null, string? city = null, string? district = null, decimal? minPrice = null, decimal? maxPrice = null, string? feature = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateReservation(long? hotelId = null, long? roomTypeId = null, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, decimal? minPrice = null, decimal? maxPrice = null, decimal? minimumRating = null, int? minimumReviewCount = null, string? feature = null, CancellationToken cancellationToken = default)
     {
         if (!IsSalesUser()) return Redirect("/kullanici-giris");
-        var model = await _salesService.GetCreateReservationAsync(GetUserId(), hotelId, roomTypeId, city, district, minPrice, maxPrice, feature, cancellationToken);
+        var model = await _salesService.GetCreateReservationAsync(GetUserId(), hotelId, roomTypeId, searchTerm, city, district, neighborhood, minPrice, maxPrice, minimumRating, minimumReviewCount, feature, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Yeni Rezervasyon Oluştur";
         ViewData["PageCssPath"] = "paneller/satis/create-reservation";
