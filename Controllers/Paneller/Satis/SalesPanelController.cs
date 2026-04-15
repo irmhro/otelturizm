@@ -31,10 +31,10 @@ public class SalesPanelController : Controller
     }
 
     [HttpGet("yeni-rezervasyon")]
-    public async Task<IActionResult> CreateReservation(long? hotelId = null, long? roomTypeId = null, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, decimal? minPrice = null, decimal? maxPrice = null, decimal? minimumRating = null, int? minimumReviewCount = null, string? feature = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateReservation(long? hotelId = null, long? roomTypeId = null, long? customerId = null, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, decimal? minPrice = null, decimal? maxPrice = null, decimal? minimumRating = null, int? minimumReviewCount = null, string? feature = null, CancellationToken cancellationToken = default)
     {
         if (!IsSalesUser()) return Redirect("/kullanici-giris");
-        var model = await _salesService.GetCreateReservationAsync(GetUserId(), hotelId, roomTypeId, searchTerm, city, district, neighborhood, minPrice, maxPrice, minimumRating, minimumReviewCount, feature, cancellationToken);
+        var model = await _salesService.GetCreateReservationAsync(GetUserId(), hotelId, roomTypeId, customerId, searchTerm, city, district, neighborhood, minPrice, maxPrice, minimumRating, minimumReviewCount, feature, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Yeni Rezervasyon Oluştur";
         ViewData["PageCssPath"] = "paneller/satis/create-reservation";
@@ -51,13 +51,65 @@ public class SalesPanelController : Controller
         return Redirect("/panel/satis/yeni-rezervasyon");
     }
 
+    [HttpGet("yeni-rezervasyon/otel-asistani")]
+    public async Task<IActionResult> SearchHotelsAssistant(
+        string? q = null,
+        string? city = null,
+        string? district = null,
+        string? neighborhood = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        decimal? minimumRating = null,
+        int? minimumReviewCount = null,
+        string? feature = null,
+        int take = 8,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsSalesUser()) return Unauthorized();
+
+        var hotels = await _salesService.SearchHotelsForAssistantAsync(
+            GetUserId(),
+            q,
+            city,
+            district,
+            neighborhood,
+            minPrice,
+            maxPrice,
+            minimumRating,
+            minimumReviewCount,
+            feature,
+            take,
+            cancellationToken);
+
+        return Ok(new
+        {
+            success = true,
+            count = hotels.Count,
+            hotels = hotels.Select(item => new
+            {
+                item.HotelId,
+                item.HotelName,
+                item.City,
+                item.District,
+                item.Address,
+                item.Phone,
+                item.RatingText,
+                item.ReviewCountText,
+                item.PriceText,
+                item.TodayDemandText,
+                item.LocationText,
+                item.FeatureBadges
+            })
+        });
+    }
+
     [HttpGet("musaitlik-takvimi")]
-    public async Task<IActionResult> Availability(long? hotelId = null, long? roomTypeId = null, int? year = null, int? month = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Availability(long? hotelId = null, long? roomTypeId = null, string? search = null, int? year = null, int? month = null, CancellationToken cancellationToken = default)
     {
         if (!IsSalesUser()) return Redirect("/kullanici-giris");
         DateOnly? targetMonth = null;
         if (year.HasValue && month.HasValue) targetMonth = new DateOnly(year.Value, month.Value, 1);
-        var model = await _salesService.GetAvailabilityAsync(GetUserId(), hotelId, roomTypeId, targetMonth, cancellationToken);
+        var model = await _salesService.GetAvailabilityAsync(GetUserId(), hotelId, roomTypeId, search, targetMonth, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Müsaitlik Takvimi";
         ViewData["PageCssPath"] = "paneller/satis/availability";
@@ -65,10 +117,20 @@ public class SalesPanelController : Controller
     }
 
     [HttpGet("rezervasyonlarim")]
-    public async Task<IActionResult> Reservations(CancellationToken cancellationToken)
+    public async Task<IActionResult> Reservations(string? search = null, string? status = null, string? approval = null, DateOnly? startDate = null, DateOnly? endDate = null, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
         if (!IsSalesUser()) return Redirect("/kullanici-giris");
-        var model = await _salesService.GetReservationsAsync(GetUserId(), cancellationToken);
+        var filters = new SalesReservationsFilterViewModel
+        {
+            Search = search,
+            Status = status,
+            Approval = approval,
+            StartDate = startDate,
+            EndDate = endDate,
+            Page = page,
+            PageSize = pageSize
+        };
+        var model = await _salesService.GetReservationsAsync(GetUserId(), filters, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Rezervasyonlarım";
         ViewData["PageCssPath"] = "paneller/satis/reservations";
@@ -97,10 +159,11 @@ public class SalesPanelController : Controller
     }
 
     [HttpGet("raporlar")]
-    public async Task<IActionResult> Reports(CancellationToken cancellationToken)
+    public async Task<IActionResult> Reports(int year = 0, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
         if (!IsSalesUser()) return Redirect("/kullanici-giris");
-        var model = await _salesService.GetReportsAsync(GetUserId(), cancellationToken);
+        var targetYear = year <= 0 ? DateTime.Today.Year : year;
+        var model = await _salesService.GetReportsAsync(GetUserId(), targetYear, page, pageSize, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Raporlar";
         ViewData["PageCssPath"] = "paneller/satis/reports";

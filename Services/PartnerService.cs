@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using MySqlConnector;
+using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Paneller.Partner;
 using otelturizmnew.Services.Abstractions;
 
@@ -13,13 +14,22 @@ public class PartnerService : IPartnerService
     private readonly string _connectionString;
     private readonly IWebHostEnvironment _environment;
     private readonly IImageStorageService _imageStorageService;
+    private readonly IEmailQueueService _emailQueueService;
+    private readonly IFavoritePriceAlertService _favoritePriceAlertService;
 
-    public PartnerService(IConfiguration configuration, IWebHostEnvironment environment, IImageStorageService imageStorageService)
+    public PartnerService(
+        IConfiguration configuration,
+        IWebHostEnvironment environment,
+        IImageStorageService imageStorageService,
+        IEmailQueueService emailQueueService,
+        IFavoritePriceAlertService favoritePriceAlertService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _environment = environment;
         _imageStorageService = imageStorageService;
+        _emailQueueService = emailQueueService;
+        _favoritePriceAlertService = favoritePriceAlertService;
     }
 
     public async Task<PartnerDashboardViewModel> GetDashboardAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
@@ -52,56 +62,129 @@ public class PartnerService : IPartnerService
         }
 
         const string trendSql = @"
-            SELECT DATE_FORMAT(r.olusturulma_tarihi, '%b') AS ay, COUNT(*) AS rezervasyon_adedi, COALESCE(SUM(r.toplam_tutar), 0) AS gelir
+            SELECT YEAR(r.olusturulma_tarihi) AS yil,
+                   MONTH(r.olusturulma_tarihi) AS ay,
+                   COUNT(*) AS rezervasyon_adedi,
+                   COALESCE(SUM(r.toplam_tutar), 0) AS gelir
             FROM rezervasyonlar r
             WHERE r.otel_id = @hotelId
-              AND r.olusturulma_tarihi >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
-            GROUP BY YEAR(r.olusturulma_tarihi), MONTH(r.olusturulma_tarihi), DATE_FORMAT(r.olusturulma_tarihi, '%b')
+              AND r.olusturulma_tarihi >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 5 MONTH)
+            GROUP BY YEAR(r.olusturulma_tarihi), MONTH(r.olusturulma_tarihi)
             ORDER BY YEAR(r.olusturulma_tarihi), MONTH(r.olusturulma_tarihi);";
 
-        var trendRows = new List<PartnerRevenuePointViewModel>();
+        var trendMap = new Dictionary<(int Year, int Month), (int ReservationCount, decimal RevenueAmount)>();
         await using (var trendCommand = new MySqlCommand(trendSql, connection))
         {
             trendCommand.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
             await using var trendReader = await trendCommand.ExecuteReaderAsync(cancellationToken);
             while (await trendReader.ReadAsync(cancellationToken))
             {
-                trendRows.Add(new PartnerRevenuePointViewModel
-                {
-                    Label = trendReader.GetString(0),
-                    ReservationCount = SafeInt(trendReader, 1),
-                    RevenueAmount = SafeDecimal(trendReader, 2)
-                });
+                var year = SafeInt(trendReader, 0);
+                var monthNumber = SafeInt(trendReader, 1);
+                trendMap[(year, monthNumber)] = (SafeInt(trendReader, 2), SafeDecimal(trendReader, 3));
             }
         }
 
-        var maxRevenue = Math.Max(1m, trendRows.Count == 0 ? 0m : trendRows.Max(static row => row.RevenueAmount));
+        var trendRows = new List<PartnerRevenuePointViewModel>();
+        var monthCulture = CultureInfo.GetCultureInfo("tr-TR");
+        var currentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        for (var i = 5; i >= 0; i--)
+        {
+            var monthDate = currentMonth.AddMonths(-i);
+            var key = (monthDate.Year, monthDate.Month);
+            var hasValue = trendMap.TryGetValue(key, out var value);
+            trendRows.Add(new PartnerRevenuePointViewModel
+            {
+                Label = monthDate.ToString("MMM", monthCulture),
+                ReservationCount = hasValue ? value.ReservationCount : 0,
+                RevenueAmount = hasValue ? value.RevenueAmount : 0m
+            });
+        }
+
+        var maxRevenue = trendRows.Max(static row => row.RevenueAmount);
+        var maxReservation = trendRows.Max(static row => row.ReservationCount);
         foreach (var item in trendRows)
         {
-            item.HeightPercent = Math.Max(16, (int)Math.Round(item.RevenueAmount * 100m / maxRevenue));
+            if (maxRevenue > 0m)
+            {
+                item.HeightPercent = item.RevenueAmount <= 0m
+                    ? 6
+                    : Math.Max(16, (int)Math.Round(item.RevenueAmount * 100m / maxRevenue));
+            }
+            else if (maxReservation > 0)
+            {
+                item.HeightPercent = item.ReservationCount <= 0
+                    ? 6
+                    : Math.Max(16, (int)Math.Round(item.ReservationCount * 100d / maxReservation));
+            }
+            else
+            {
+                item.HeightPercent = 6;
+            }
+
             model.RevenueTrend.Add(item);
         }
 
-        model.UpcomingReservations = await LoadReservationsAsync(connection, context.SelectedHotel.HotelId, context.SelectedHotel.HotelName, 8, cancellationToken);
+        var upcomingReservations = await LoadReservationsAsync(
+            connection,
+            context.SelectedHotel.HotelId,
+            context.SelectedHotel.HotelName,
+            null,
+            null,
+            "all",
+            "all",
+            1,
+            8,
+            cancellationToken);
+        model.UpcomingReservations = upcomingReservations.Items;
         model.InventoryAlerts = await LoadInventoryAlertsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
         model.RecentReviews = await LoadReviewsAsync(connection, context.SelectedHotel.HotelId, 4, cancellationToken);
         model.QuickActions = new List<PartnerQuickActionViewModel>
         {
             new() { Title = "Yeni fiyat guncelle", Description = "Takvim uzerinden gunluk veya toplu fiyat aksiyonu acin.", IconClass = "fa-calendar-days", Url = $"/panel/partner/takvim-fiyatlar?otelId={context.SelectedHotel.HotelId}", ToneClass = "info" },
-            new() { Title = "Oda tiplerini yonet", Description = "Oda ekle, duzenle veya pasife al.", IconClass = "fa-bed", Url = $"/panel/partner/oda-yonetimi?otelId={context.SelectedHotel.HotelId}", ToneClass = "success" },
+            new() { Title = "Oda tiplerini yonet", Description = "Oda ekle, duzenle veya bagli verilerle birlikte sil.", IconClass = "fa-bed", Url = $"/panel/partner/oda-yonetimi?otelId={context.SelectedHotel.HotelId}", ToneClass = "success" },
             new() { Title = "Galeri guncelle", Description = "Yeni gorsel yukle veya kapak secimini degistir.", IconClass = "fa-images", Url = $"/panel/partner/fotograflar?otelId={context.SelectedHotel.HotelId}#fotograf-yukle", ToneClass = "warning" },
             new() { Title = "Destek talebi ac", Description = "Operasyon, odeme veya teknik sorunlar icin aninda talep olustur.", IconClass = "fa-headset", Url = $"/panel/partner/724-destek?otelId={context.SelectedHotel.HotelId}", ToneClass = "danger" }
         };
         return model;
     }
 
-    public async Task<PartnerReservationsPageViewModel> GetReservationsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
+    public async Task<PartnerReservationsPageViewModel> GetReservationsAsync(
+        long userId,
+        long? hotelId = null,
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null,
+        string? status = null,
+        string? paymentMethod = null,
+        int page = 1,
+        int pageSize = 10,
+        long? conversationId = null,
+        CancellationToken cancellationToken = default)
     {
         await using var connection = new MySqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
+        var normalizedStatus = NormalizeReservationStatusFilter(status);
+        var normalizedPaymentMethod = NormalizeReservationPaymentFilter(paymentMethod);
+        var normalizedPageSize = pageSize is 20 or 30 ? pageSize : 10;
+        var normalizedPage = page < 1 ? 1 : page;
+
         var context = await BuildContextAsync(connection, userId, hotelId, "Rezervasyonlar", "Rezervasyon akislarini, durum gecislerini ve odeme hareketlerini canli verilerle izleyin.", "reservations", cancellationToken);
-        var model = new PartnerReservationsPageViewModel { Shell = context.Shell };
+        var model = new PartnerReservationsPageViewModel
+        {
+            Shell = context.Shell,
+            Filters = new PartnerReservationFilterViewModel
+            {
+                DateFrom = dateFrom?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                DateTo = dateTo?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                Status = normalizedStatus,
+                PaymentMethod = normalizedPaymentMethod,
+                Page = normalizedPage,
+                PageSize = normalizedPageSize
+            },
+            CurrentPage = normalizedPage,
+            PageSize = normalizedPageSize
+        };
 
         const string summarySql = @"
             SELECT
@@ -125,9 +208,83 @@ public class PartnerService : IPartnerService
             }
         }
 
-        model.Reservations = await LoadReservationsAsync(connection, context.SelectedHotel.HotelId, context.SelectedHotel.HotelName, 100, cancellationToken);
+        var reservationResult = await LoadReservationsAsync(
+            connection,
+            context.SelectedHotel.HotelId,
+            context.SelectedHotel.HotelName,
+            dateFrom?.Date,
+            dateTo?.Date,
+            normalizedStatus,
+            normalizedPaymentMethod,
+            normalizedPage,
+            normalizedPageSize,
+            cancellationToken);
+        model.Reservations = reservationResult.Items;
+        model.TotalCount = reservationResult.TotalCount;
+        model.TotalPages = Math.Max(1, (int)Math.Ceiling(reservationResult.TotalCount / (double)normalizedPageSize));
+        if (model.CurrentPage > model.TotalPages)
+        {
+            model.CurrentPage = model.TotalPages;
+            model.Filters.Page = model.TotalPages;
+        }
+        await EnsurePartnerPenaltyColumnAsync(connection, cancellationToken);
+
+        const string policySql = @"
+            SELECT
+                (
+                    SELECT COUNT(*)
+                    FROM rezervasyonlar r
+                    WHERE r.otel_id = @hotelId
+                      AND COALESCE(r.otel_onay_durumu, '') = 'Reddedildi'
+                      AND COALESCE(r.otel_onay_tarihi, r.guncellenme_tarihi, r.olusturulma_tarihi) >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                ) AS reject_count_30,
+                CASE
+                    WHEN o.partner_ceza_bitis_tarihi IS NOT NULL AND o.partner_ceza_bitis_tarihi > NOW() THEN 1
+                    ELSE 0
+                END AS ceza_aktif,
+                o.partner_ceza_bitis_tarihi
+            FROM oteller o
+            WHERE o.id = @hotelId
+            LIMIT 1;";
+        await using (var policyCommand = new MySqlCommand(policySql, connection))
+        {
+            policyCommand.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
+            await using var policyReader = await policyCommand.ExecuteReaderAsync(cancellationToken);
+            if (await policyReader.ReadAsync(cancellationToken))
+            {
+                model.RejectCountLast30Days = SafeInt(policyReader, 0);
+                model.PenaltyActive = !policyReader.IsDBNull(1) && policyReader.GetBoolean(1);
+                if (!policyReader.IsDBNull(2))
+                {
+                    model.PenaltyEndText = policyReader.GetDateTime(2).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"));
+                }
+            }
+        }
+
+        var conversations = await LoadReservationConversationsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
+        if (conversations.Count > 0)
+        {
+            var selectedConversationId = conversationId.HasValue && conversations.Any(item => item.ConversationId == conversationId.Value)
+                ? conversationId.Value
+                : conversations.First().ConversationId;
+            model.SelectedConversationId = selectedConversationId;
+            foreach (var item in conversations)
+            {
+                item.IsSelected = item.ConversationId == selectedConversationId;
+            }
+
+            model.Conversations = conversations;
+            model.ConversationMessages = await LoadConversationMessagesAsync(connection, context.SelectedHotel.HotelId, selectedConversationId, cancellationToken);
+            await MarkConversationAsReadAsync(connection, context.SelectedHotel.HotelId, selectedConversationId, cancellationToken);
+        }
+
         model.StatusForm = new PartnerReservationStatusRequest { HotelId = context.SelectedHotel.HotelId };
-        model.MessageForm = new PartnerGuestMessageRequest { HotelId = context.SelectedHotel.HotelId };
+        model.MessageForm = new PartnerGuestMessageRequest
+        {
+            HotelId = context.SelectedHotel.HotelId,
+            ConversationId = model.SelectedConversationId,
+            ReservationId = model.Conversations.FirstOrDefault(static item => item.IsSelected)?.ReservationId ?? 0
+        };
         return model;
     }
 
@@ -157,49 +314,172 @@ public class PartnerService : IPartnerService
                 ? "Partner panelinden reddedildi."
                 : null
             : request.Reason.Trim();
+        if (normalizedAction == "reject" && (reason?.Length ?? 0) < 15)
+        {
+            return (false, "Red sebebi en az 15 karakter olmalidir. Lutfen misafir icin aciklayici bir sebep yazin.");
+        }
 
         await using var connection = new MySqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
+        await EnsurePartnerPenaltyColumnAsync(connection, cancellationToken);
         await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            const string reservationInfoSql = @"
+                SELECT r.kullanici_id,
+                       r.rezervasyon_no,
+                       COALESCE(NULLIF(r.misafir_ad_soyad, ''), 'Misafir') AS misafir_ad_soyad,
+                       COALESCE(NULLIF(r.misafir_eposta, ''), '') AS misafir_eposta,
+                       r.giris_tarihi,
+                       r.cikis_tarihi,
+                       COALESCE(r.toplam_tutar, 0) AS toplam_tutar,
+                       COALESCE(ot.oda_adi, '') AS oda_adi,
+                       COALESCE(o.otel_adi, 'Otel') AS otel_adi
+                FROM rezervasyonlar r
+                LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
+                LEFT JOIN oteller o ON o.id = r.otel_id
+                WHERE r.id = @reservationId
+                  AND r.otel_id = @hotelId
+                LIMIT 1;";
+            ReservationEmailSnapshot? reservationSnapshot = null;
+            await using (var snapshotCommand = new MySqlCommand(reservationInfoSql, connection, (MySqlTransaction)transaction))
+            {
+                snapshotCommand.Parameters.AddWithValue("@reservationId", request.ReservationId);
+                snapshotCommand.Parameters.AddWithValue("@hotelId", request.HotelId);
+                await using var snapshotReader = await snapshotCommand.ExecuteReaderAsync(cancellationToken);
+                if (await snapshotReader.ReadAsync(cancellationToken))
+                {
+                    reservationSnapshot = new ReservationEmailSnapshot(
+                        snapshotReader.IsDBNull(0) ? 0 : snapshotReader.GetInt64(0),
+                        snapshotReader.GetString(1),
+                        snapshotReader.GetString(2),
+                        snapshotReader.GetString(3),
+                        snapshotReader.GetDateTime(4),
+                        snapshotReader.GetDateTime(5),
+                        SafeDecimal(snapshotReader, 6),
+                        snapshotReader.IsDBNull(7) ? string.Empty : snapshotReader.GetString(7),
+                        snapshotReader.IsDBNull(8) ? "Otel" : snapshotReader.GetString(8));
+                }
+            }
 
-        const string sql = @"
-            UPDATE rezervasyonlar
-            SET durum = @status,
-                otel_onay_durumu = @hotelApprovalStatus,
-                otel_onay_tarihi = CASE
-                    WHEN @hotelApprovalStatus = 'Onaylandı' THEN NOW()
-                    ELSE NULL
-                END,
-                otel_red_nedeni = CASE
-                    WHEN @hotelApprovalStatus = 'Reddedildi' THEN @reason
-                    ELSE NULL
-                END,
-                iptal_tarihi = CASE
-                    WHEN @status = 'İptal Edildi' THEN NOW()
-                    ELSE NULL
-                END,
-                iptal_nedeni = CASE
-                    WHEN @status = 'İptal Edildi' THEN @reason
-                    ELSE NULL
-                END,
-                iptal_eden = CASE
-                    WHEN @status = 'İptal Edildi' THEN 'Otel'
-                    ELSE NULL
-                END
-            WHERE id = @reservationId
-              AND otel_id = @hotelId;";
+            if (reservationSnapshot is null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return (false, "Rezervasyon bulunamadi veya guncellenemedi.");
+            }
 
-        await using var command = new MySqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@status", status);
-        command.Parameters.AddWithValue("@hotelApprovalStatus", hotelApprovalStatus);
-        command.Parameters.AddWithValue("@reason", (object?)reason ?? DBNull.Value);
-        command.Parameters.AddWithValue("@reservationId", request.ReservationId);
-        command.Parameters.AddWithValue("@hotelId", request.HotelId);
-        var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+            const string sql = @"
+                UPDATE rezervasyonlar
+                SET durum = @status,
+                    otel_onay_durumu = @hotelApprovalStatus,
+                    otel_onay_tarihi = CASE
+                        WHEN @hotelApprovalStatus IN ('Onaylandı', 'Reddedildi') THEN NOW()
+                        ELSE NULL
+                    END,
+                    otel_red_nedeni = CASE
+                        WHEN @hotelApprovalStatus = 'Reddedildi' THEN @reason
+                        ELSE NULL
+                    END,
+                    iptal_tarihi = CASE
+                        WHEN @status = 'İptal Edildi' THEN NOW()
+                        ELSE NULL
+                    END,
+                    iptal_nedeni = CASE
+                        WHEN @status = 'İptal Edildi' THEN @reason
+                        ELSE NULL
+                    END,
+                    iptal_eden = CASE
+                        WHEN @status = 'İptal Edildi' THEN 'Otel'
+                        ELSE NULL
+                    END
+                WHERE id = @reservationId
+                  AND otel_id = @hotelId;";
 
-        return affectedRows > 0
-            ? (true, $"Rezervasyon durumu '{status}' olarak guncellendi.")
-            : (false, "Rezervasyon bulunamadi veya guncellenemedi.");
+            await using var command = new MySqlCommand(sql, connection, (MySqlTransaction)transaction);
+            command.Parameters.AddWithValue("@status", status);
+            command.Parameters.AddWithValue("@hotelApprovalStatus", hotelApprovalStatus);
+            command.Parameters.AddWithValue("@reason", (object?)reason ?? DBNull.Value);
+            command.Parameters.AddWithValue("@reservationId", request.ReservationId);
+            command.Parameters.AddWithValue("@hotelId", request.HotelId);
+            var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+            if (affectedRows <= 0)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return (false, "Rezervasyon bulunamadi veya guncellenemedi.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(reservationSnapshot.GuestEmail))
+            {
+                var tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["user_first_name"] = SplitFirstName(reservationSnapshot.GuestName),
+                    ["booking_reference"] = reservationSnapshot.ReservationNo,
+                    ["hotel_name"] = reservationSnapshot.HotelName,
+                    ["check_in_date"] = reservationSnapshot.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                    ["check_out_date"] = reservationSnapshot.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                    ["total_price"] = reservationSnapshot.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
+                    ["room_type_name"] = string.IsNullOrWhiteSpace(reservationSnapshot.RoomName) ? "Oda bilgisi" : reservationSnapshot.RoomName,
+                    ["rejection_reason"] = string.IsNullOrWhiteSpace(reason) ? "Belirtilmedi." : reason
+                };
+                var templateCode = normalizedAction == "approve" ? "reservation_confirmed_customer" : normalizedAction == "reject" ? "reservation_rejected_customer" : string.Empty;
+                if (!string.IsNullOrWhiteSpace(templateCode))
+                {
+                    await _emailQueueService.QueueTemplateAsync(connection, (MySqlTransaction)transaction, new QueuedEmailTemplateRequest
+                    {
+                        UserId = reservationSnapshot.GuestUserId,
+                        RecipientEmail = reservationSnapshot.GuestEmail,
+                        TemplateCode = templateCode,
+                        RelatedTable = "rezervasyonlar",
+                        RelatedRecordId = request.ReservationId,
+                        Tokens = tokens
+                    }, cancellationToken);
+                }
+            }
+
+            var appendedPolicyMessage = string.Empty;
+            if (normalizedAction == "reject")
+            {
+                const string rejectCountSql = @"
+                    SELECT COUNT(*)
+                    FROM rezervasyonlar
+                    WHERE otel_id = @hotelId
+                      AND COALESCE(otel_onay_durumu, '') = 'Reddedildi'
+                      AND COALESCE(otel_onay_tarihi, guncellenme_tarihi, olusturulma_tarihi) >= DATE_SUB(NOW(), INTERVAL 30 DAY);";
+                int rejectCount;
+                await using (var rejectCountCommand = new MySqlCommand(rejectCountSql, connection, (MySqlTransaction)transaction))
+                {
+                    rejectCountCommand.Parameters.AddWithValue("@hotelId", request.HotelId);
+                    var rejectScalar = await rejectCountCommand.ExecuteScalarAsync(cancellationToken);
+                    rejectCount = Convert.ToInt32(rejectScalar ?? 0, CultureInfo.InvariantCulture);
+                }
+
+                if (rejectCount > 5)
+                {
+                    appendedPolicyMessage = " Son 30 gunde 5+ red goruldu; kontenjan ve operasyon sureclerini yeniden yapilandirmaniz onerilir.";
+                }
+                if (rejectCount >= 3)
+                {
+                    const string lockHotelSql = @"
+                        UPDATE oteller
+                        SET yayin_durumu = 'Kapatıldı',
+                            partner_ceza_bitis_tarihi = DATE_ADD(NOW(), INTERVAL 3 DAY)
+                        WHERE id = @hotelId;";
+                    await using var lockHotelCommand = new MySqlCommand(lockHotelSql, connection, (MySqlTransaction)transaction);
+                    lockHotelCommand.Parameters.AddWithValue("@hotelId", request.HotelId);
+                    await lockHotelCommand.ExecuteNonQueryAsync(cancellationToken);
+                    appendedPolicyMessage += " Son 30 gunde 3 red esigi asildigi icin tesis 3 gun sureyle listeden otomatik kapatildi.";
+                }
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return (true, $"Rezervasyon durumu '{status}' olarak guncellendi.{appendedPolicyMessage}");
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return (false, $"Rezervasyon guncellenemedi: {ex.Message}");
+        }
     }
 
     public async Task<(bool Success, string Message)> SendGuestMessageAsync(long userId, PartnerGuestMessageRequest request, CancellationToken cancellationToken = default)
@@ -217,13 +497,15 @@ public class PartnerService : IPartnerService
         try
         {
             const string reservationSql = @"
-                SELECT user_id, rezervasyon_no
+                SELECT kullanici_id, rezervasyon_no, COALESCE(NULLIF(misafir_eposta, ''), ''), COALESCE(NULLIF(misafir_ad_soyad, ''), 'Misafir')
                 FROM rezervasyonlar
                 WHERE id = @reservationId AND otel_id = @hotelId
                 LIMIT 1;";
 
             long guestUserId;
             string reservationNo;
+            string guestEmail;
+            string guestName;
             await using (var reservationCommand = new MySqlCommand(reservationSql, connection, (MySqlTransaction)transaction))
             {
                 reservationCommand.Parameters.AddWithValue("@reservationId", request.ReservationId);
@@ -236,24 +518,48 @@ public class PartnerService : IPartnerService
 
                 guestUserId = reservationReader.IsDBNull(0) ? 0 : reservationReader.GetInt64(0);
                 reservationNo = reservationReader.IsDBNull(1) ? "-" : reservationReader.GetString(1);
+                guestEmail = reservationReader.IsDBNull(2) ? string.Empty : reservationReader.GetString(2);
+                guestName = reservationReader.IsDBNull(3) ? "Misafir" : reservationReader.GetString(3);
             }
 
-            const string createConversationSql = @"
-                INSERT INTO mesaj_konusmalari
-                (konusma_kodu, rezervasyon_id, otel_id, misafir_kullanici_id, otel_yetkilisi_kullanici_id, konu_basligi, konu_kategorisi, durum, oncelik, son_mesaj_tarihi, son_mesaj_gonderen, son_mesaj_onizleme, otel_okunmamis_sayisi, misafir_okunmamis_sayisi)
-                VALUES
-                (@conversationCode, @reservationId, @hotelId, @guestUserId, @userId, @subject, 'Rezervasyon', 'Açık', 'Normal', NOW(), 'Otel', @messagePreview, 0, 1);
-                SELECT LAST_INSERT_ID();";
+            long conversationId = 0;
+            const string conversationLookupSql = @"
+                SELECT id
+                FROM mesaj_konusmalari
+                WHERE rezervasyon_id = @reservationId
+                  AND otel_id = @hotelId
+                ORDER BY id DESC
+                LIMIT 1;";
+            await using (var conversationLookupCommand = new MySqlCommand(conversationLookupSql, connection, (MySqlTransaction)transaction))
+            {
+                conversationLookupCommand.Parameters.AddWithValue("@reservationId", request.ReservationId);
+                conversationLookupCommand.Parameters.AddWithValue("@hotelId", request.HotelId);
+                var existingConversation = await conversationLookupCommand.ExecuteScalarAsync(cancellationToken);
+                if (existingConversation is not null && existingConversation != DBNull.Value)
+                {
+                    conversationId = Convert.ToInt64(existingConversation, CultureInfo.InvariantCulture);
+                }
+            }
 
-            await using var createConversationCommand = new MySqlCommand(createConversationSql, connection, (MySqlTransaction)transaction);
-            createConversationCommand.Parameters.AddWithValue("@conversationCode", $"KNM-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}");
-            createConversationCommand.Parameters.AddWithValue("@reservationId", request.ReservationId);
-            createConversationCommand.Parameters.AddWithValue("@hotelId", request.HotelId);
-            createConversationCommand.Parameters.AddWithValue("@guestUserId", guestUserId);
-            createConversationCommand.Parameters.AddWithValue("@userId", userId);
-            createConversationCommand.Parameters.AddWithValue("@subject", string.IsNullOrWhiteSpace(request.Subject) ? $"Rezervasyon {reservationNo}" : request.Subject.Trim());
-            createConversationCommand.Parameters.AddWithValue("@messagePreview", TruncateText(request.Message.Trim(), 100));
-            var conversationId = Convert.ToInt64(await createConversationCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
+            if (conversationId <= 0)
+            {
+                const string createConversationSql = @"
+                    INSERT INTO mesaj_konusmalari
+                    (konusma_kodu, rezervasyon_id, otel_id, misafir_kullanici_id, otel_yetkilisi_kullanici_id, konu_basligi, konu_kategorisi, durum, oncelik, son_mesaj_tarihi, son_mesaj_gonderen, son_mesaj_onizleme, otel_okunmamis_sayisi, misafir_okunmamis_sayisi)
+                    VALUES
+                    (@conversationCode, @reservationId, @hotelId, @guestUserId, @userId, @subject, 'Rezervasyon', 'Açık', 'Normal', NOW(), 'Otel', @messagePreview, 0, 1);";
+
+                await using var createConversationCommand = new MySqlCommand(createConversationSql, connection, (MySqlTransaction)transaction);
+                createConversationCommand.Parameters.AddWithValue("@conversationCode", $"KNM-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 999)}");
+                createConversationCommand.Parameters.AddWithValue("@reservationId", request.ReservationId);
+                createConversationCommand.Parameters.AddWithValue("@hotelId", request.HotelId);
+                createConversationCommand.Parameters.AddWithValue("@guestUserId", guestUserId > 0 ? guestUserId : DBNull.Value);
+                createConversationCommand.Parameters.AddWithValue("@userId", userId);
+                createConversationCommand.Parameters.AddWithValue("@subject", string.IsNullOrWhiteSpace(request.Subject) ? $"Rezervasyon {reservationNo}" : request.Subject.Trim());
+                createConversationCommand.Parameters.AddWithValue("@messagePreview", TruncateText(request.Message.Trim(), 100));
+                await createConversationCommand.ExecuteNonQueryAsync(cancellationToken);
+                conversationId = createConversationCommand.LastInsertedId;
+            }
 
             const string insertMessageSql = @"
                 INSERT INTO mesajlar
@@ -270,8 +576,43 @@ public class PartnerService : IPartnerService
                 await insertMessageCommand.ExecuteNonQueryAsync(cancellationToken);
             }
 
+            const string updateConversationSql = @"
+                UPDATE mesaj_konusmalari
+                SET son_mesaj_tarihi = NOW(),
+                    son_mesaj_gonderen = 'Otel',
+                    son_mesaj_onizleme = @messagePreview,
+                    misafir_okunmamis_sayisi = misafir_okunmamis_sayisi + 1,
+                    otel_okunmamis_sayisi = 0,
+                    durum = 'Açık'
+                WHERE id = @conversationId;";
+            await using (var updateConversationCommand = new MySqlCommand(updateConversationSql, connection, (MySqlTransaction)transaction))
+            {
+                updateConversationCommand.Parameters.AddWithValue("@conversationId", conversationId);
+                updateConversationCommand.Parameters.AddWithValue("@messagePreview", TruncateText(request.Message.Trim(), 100));
+                await updateConversationCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            if (!string.IsNullOrWhiteSpace(guestEmail))
+            {
+                await _emailQueueService.QueueTemplateAsync(connection, (MySqlTransaction)transaction, new QueuedEmailTemplateRequest
+                {
+                    UserId = guestUserId,
+                    RecipientEmail = guestEmail,
+                    TemplateCode = "reservation_guest_message",
+                    RelatedTable = "rezervasyonlar",
+                    RelatedRecordId = request.ReservationId,
+                    Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["user_first_name"] = SplitFirstName(guestName),
+                        ["booking_reference"] = reservationNo,
+                        ["message_subject"] = string.IsNullOrWhiteSpace(request.Subject) ? $"Rezervasyon {reservationNo}" : request.Subject.Trim(),
+                        ["message_text"] = request.Message.Trim()
+                    }
+                }, cancellationToken);
+            }
+
             await transaction.CommitAsync(cancellationToken);
-            return (true, "Misafire mesaj gonderildi.");
+            return (true, "Misafire mesaj gonderildi ve e-posta bildirimi kuyruga alindi.");
         }
         catch (Exception ex)
         {
@@ -282,7 +623,7 @@ public class PartnerService : IPartnerService
 
     public async Task<string> ExportReservationsCsvAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
     {
-        var model = await GetReservationsAsync(userId, hotelId, cancellationToken);
+        var model = await GetReservationsAsync(userId, hotelId, cancellationToken: cancellationToken);
         var csv = new StringBuilder();
         csv.AppendLine("Rezervasyon No,Misafir,E-posta,Telefon,Oda,Konaklama,Durum,Odeme Durumu,Tutar,Olusturma Tarihi");
 
@@ -340,6 +681,7 @@ public class PartnerService : IPartnerService
             MonthLabel = monthStart.ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
             PreviousMonthKey = monthStart.AddMonths(-1).ToString("yyyy-MM", CultureInfo.InvariantCulture),
             NextMonthKey = monthStart.AddMonths(1).ToString("yyyy-MM", CultureInfo.InvariantCulture),
+            MonthOptions = BuildMonthOptions(monthStart),
             Rooms = rooms,
             SummaryCards = BuildPricingSummaryCards(rooms, pricingEntries, selectedRoomId),
             CalendarDays = selectedRoomId.HasValue
@@ -571,6 +913,15 @@ public class PartnerService : IPartnerService
                     cancellationToken);
             }
 
+            await _favoritePriceAlertService.QueuePriceRecheckJobAsync(
+                connection,
+                (MySqlTransaction)transaction,
+                hotel.HotelId,
+                request.DateFrom.Date,
+                request.DateTo.Date,
+                userId,
+                cancellationToken);
+
             await transaction.CommitAsync(cancellationToken);
             return (true, $"{rooms.Count} oda tipi icin takvim ve fiyat kurallari guncellendi.");
         }
@@ -721,15 +1072,29 @@ public class PartnerService : IPartnerService
         await connection.OpenAsync(cancellationToken);
 
         var context = await BuildContextAsync(connection, userId, hotelId, "Oda Yonetimi", "Oda tiplerini, kapasiteyi, gorselleri ve baz fiyatlari yonetin.", "rooms", cancellationToken);
+        var rooms = await GetRoomSummariesAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
+        var selectedRoomId = roomId.HasValue && rooms.Any(item => item.RoomId == roomId.Value)
+            ? roomId.Value
+            : rooms.FirstOrDefault()?.RoomId;
+
         return new PartnerRoomManagementPageViewModel
         {
             Shell = context.Shell,
             SelectedHotelId = context.SelectedHotel.HotelId,
-            Rooms = await GetRoomSummariesAsync(connection, context.SelectedHotel.HotelId, cancellationToken),
+            SelectedRoomId = selectedRoomId,
+            Rooms = rooms,
             InventoryRows = await LoadRoomInventoryRowsAsync(connection, context.SelectedHotel.HotelId, cancellationToken),
-            Form = roomId.HasValue
-                ? await LoadRoomFormAsync(connection, context.SelectedHotel.HotelId, roomId.Value, cancellationToken)
-                : new PartnerRoomUpsertRequest { HotelId = context.SelectedHotel.HotelId }
+            SelectedRoomPhotos = selectedRoomId.HasValue
+                ? await LoadRoomPhotosAsync(connection, context.SelectedHotel.HotelId, selectedRoomId.Value, cancellationToken)
+                : new List<PartnerRoomPhotoCardViewModel>(),
+            Form = selectedRoomId.HasValue && roomId.HasValue
+                ? await LoadRoomFormAsync(connection, context.SelectedHotel.HotelId, selectedRoomId.Value, cancellationToken)
+                : new PartnerRoomUpsertRequest { HotelId = context.SelectedHotel.HotelId },
+            PhotoUploadForm = new PartnerRoomPhotoUploadRequest
+            {
+                HotelId = context.SelectedHotel.HotelId,
+                RoomId = selectedRoomId ?? 0
+            }
         };
     }
 
@@ -771,6 +1136,8 @@ public class PartnerService : IPartnerService
             BindRoomCommand(updateCommand, request, hotel, featuresJson);
             updateCommand.Parameters.AddWithValue("@roomId", request.RoomId.Value);
             await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+            await SyncRoomFeatureRelationsAsync(connection, request.RoomId.Value, request.RoomFeaturesText, cancellationToken);
+            await SyncHotelRoomCountAsync(connection, hotel.HotelId, cancellationToken);
             return (true, "Oda tipi guncellendi.");
         }
 
@@ -784,27 +1151,315 @@ public class PartnerService : IPartnerService
         BindRoomCommand(insertCommand, request, hotel, featuresJson);
         insertCommand.Parameters.AddWithValue("@roomCode", BuildRoomCode(hotel.HotelId));
         await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+        var createdRoomId = insertCommand.LastInsertedId;
+        if (createdRoomId > 0)
+        {
+            await SyncRoomFeatureRelationsAsync(connection, createdRoomId, request.RoomFeaturesText, cancellationToken);
+        }
+
+        await SyncHotelRoomCountAsync(connection, hotel.HotelId, cancellationToken);
         return (true, "Yeni oda tipi eklendi.");
     }
 
     public async Task<(bool Success, string Message)> DeleteRoomAsync(long userId, long hotelId, long roomId, CancellationToken cancellationToken = default)
     {
+        if (roomId <= 0)
+        {
+            return (false, "Silinecek oda tipi secimi gecersiz.");
+        }
+
         await using var connection = new MySqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var hotel = await EnsureHotelAccessAsync(connection, userId, hotelId, cancellationToken);
 
-        const string sql = @"
-            UPDATE oda_tipleri
-            SET aktif_mi = 0
-            WHERE id = @roomId AND otel_id = @hotelId;";
+        const string roomSql = @"
+            SELECT id
+            FROM oda_tipleri
+            WHERE id = @roomId
+              AND otel_id = @hotelId
+            LIMIT 1;";
+        await using (var roomCommand = new MySqlCommand(roomSql, connection))
+        {
+            roomCommand.Parameters.AddWithValue("@roomId", roomId);
+            roomCommand.Parameters.AddWithValue("@hotelId", hotel.HotelId);
+            var exists = await roomCommand.ExecuteScalarAsync(cancellationToken);
+            if (exists is null)
+            {
+                return (false, "Silinecek oda tipi bulunamadi.");
+            }
+        }
 
-        await using var command = new MySqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@roomId", roomId);
-        command.Parameters.AddWithValue("@hotelId", hotel.HotelId);
-        var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
-        return affectedRows > 0
-            ? (true, "Oda tipi pasife alindi.")
-            : (false, "Silinecek oda tipi bulunamadi.");
+        var photoPaths = new List<string>();
+        if (await TableExistsAsync(connection, "oda_gorselleri", cancellationToken))
+        {
+            const string photoSql = @"
+                SELECT gorsel_url
+                FROM oda_gorselleri
+                WHERE oda_tip_id = @roomId;";
+            await using var photoCommand = new MySqlCommand(photoSql, connection);
+            photoCommand.Parameters.AddWithValue("@roomId", roomId);
+            await using var reader = await photoCommand.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                if (reader.IsDBNull(0))
+                {
+                    continue;
+                }
+
+                var relativePath = reader.GetString(0).TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                photoPaths.Add(Path.Combine(_environment.WebRootPath, relativePath));
+            }
+        }
+
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            async Task DeleteByRoomAsync(string tableName)
+            {
+                var deleteSql = $@"
+                    DELETE FROM {tableName}
+                    WHERE oda_tip_id = @roomId;";
+                await using var deleteCommand = new MySqlCommand(deleteSql, connection, (MySqlTransaction)transaction);
+                deleteCommand.Parameters.AddWithValue("@roomId", roomId);
+                await deleteCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            if (await TableExistsAsync(connection, "oda_fiyat_musaitlik", (MySqlTransaction)transaction, cancellationToken))
+            {
+                await DeleteByRoomAsync("oda_fiyat_musaitlik");
+            }
+
+            if (await TableExistsAsync(connection, "oda_tipi_ozellikleri", (MySqlTransaction)transaction, cancellationToken))
+            {
+                await DeleteByRoomAsync("oda_tipi_ozellikleri");
+            }
+
+            if (await TableExistsAsync(connection, "oda_gorselleri", (MySqlTransaction)transaction, cancellationToken))
+            {
+                await DeleteByRoomAsync("oda_gorselleri");
+            }
+
+            if (await TableExistsAsync(connection, "sepet_blokajlari", (MySqlTransaction)transaction, cancellationToken))
+            {
+                await DeleteByRoomAsync("sepet_blokajlari");
+            }
+
+            if (await TableExistsAsync(connection, "rezervasyon_taslaklari", (MySqlTransaction)transaction, cancellationToken))
+            {
+                const string clearDraftRoomSql = @"
+                    UPDATE rezervasyon_taslaklari
+                    SET oda_tip_id = NULL
+                    WHERE oda_tip_id = @roomId;";
+                await using var clearDraftRoomCommand = new MySqlCommand(clearDraftRoomSql, connection, (MySqlTransaction)transaction);
+                clearDraftRoomCommand.Parameters.AddWithValue("@roomId", roomId);
+                await clearDraftRoomCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            const string deleteRoomSql = @"
+                DELETE FROM oda_tipleri
+                WHERE id = @roomId
+                  AND otel_id = @hotelId;";
+            await using var deleteRoomCommand = new MySqlCommand(deleteRoomSql, connection, (MySqlTransaction)transaction);
+            deleteRoomCommand.Parameters.AddWithValue("@roomId", roomId);
+            deleteRoomCommand.Parameters.AddWithValue("@hotelId", hotel.HotelId);
+            var deletedRoomCount = await deleteRoomCommand.ExecuteNonQueryAsync(cancellationToken);
+            if (deletedRoomCount <= 0)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return (false, "Silinecek oda tipi bulunamadi.");
+            }
+
+            const string syncTotalRoomSql = @"
+                UPDATE oteller o
+                SET o.toplam_oda_sayisi = COALESCE(
+                    (
+                        SELECT SUM(CASE WHEN COALESCE(ot.aktif_mi, 1) = 1 THEN COALESCE(ot.toplam_oda_sayisi, 0) ELSE 0 END)
+                        FROM oda_tipleri ot
+                        WHERE ot.otel_id = o.id
+                    ),
+                    0
+                )
+                WHERE o.id = @hotelId;";
+            await using var syncRoomCountCommand = new MySqlCommand(syncTotalRoomSql, connection, (MySqlTransaction)transaction);
+            syncRoomCountCommand.Parameters.AddWithValue("@hotelId", hotel.HotelId);
+            await syncRoomCountCommand.ExecuteNonQueryAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (MySqlException ex) when (ex.Number == 1451)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return (false, "Bu oda tipine bagli aktif rezervasyon kayitlari oldugu icin silinemedi. Once rezervasyon baglantilarini temizleyin.");
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return (false, $"Oda tipi silinirken hata olustu: {ex.Message}");
+        }
+
+        foreach (var physicalPath in photoPaths.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            await _imageStorageService.DeleteAsync(physicalPath, cancellationToken);
+        }
+
+        return (true, "Oda tipi ve bagli fiyat/gorsel/kural verileri temizlenerek silindi.");
+    }
+
+    public async Task<(bool Success, string Message)> UploadRoomPhotosAsync(long userId, PartnerRoomPhotoUploadRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.RoomId <= 0)
+        {
+            return (false, "Önce görsel yüklenecek oda tipini seçiniz.");
+        }
+
+        if (request.Files is null || request.Files.Count == 0)
+        {
+            return (false, "En az bir oda görseli seçmelisiniz.");
+        }
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+        var room = await EnsureRoomBelongsToHotelAsync(connection, hotel.HotelId, request.RoomId, cancellationToken);
+        var targetDirectory = Path.Combine(
+            _environment.WebRootPath,
+            "uploads",
+            "hotels",
+            "partner",
+            request.HotelId.ToString(CultureInfo.InvariantCulture),
+            "rooms",
+            request.RoomId.ToString(CultureInfo.InvariantCulture));
+        Directory.CreateDirectory(targetDirectory);
+
+        var savedPhysicalPaths = new List<string>();
+        var displayOrder = request.DisplayOrder;
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var shouldMakeCover = request.MakeCover;
+            foreach (var file in request.Files.Where(static item => item.Length > 0))
+            {
+                var storedImage = await _imageStorageService.SaveAsWebpAsync(file, targetDirectory, $"partner-oda-{room.RoomId}", cancellationToken);
+                var relativePath = $"/uploads/hotels/partner/{request.HotelId}/rooms/{request.RoomId}/{storedImage.FileName}";
+                savedPhysicalPaths.Add(Path.Combine(targetDirectory, storedImage.FileName));
+
+                const string insertSql = @"
+                    INSERT INTO oda_gorselleri
+                    (oda_tip_id, gorsel_url, baslik, aciklama, kapak_fotografi_mi, siralama, boyut_kb, onay_durumu, yukleyen_kullanici_id, olusturulma_tarihi)
+                    VALUES
+                    (@roomId, @url, @title, @description, @isCover, @sortOrder, @sizeKb, 'Onaylandı', @userId, CURRENT_TIMESTAMP);";
+                await using var insertCommand = new MySqlCommand(insertSql, connection, (MySqlTransaction)transaction);
+                insertCommand.Parameters.AddWithValue("@roomId", request.RoomId);
+                insertCommand.Parameters.AddWithValue("@url", relativePath);
+                insertCommand.Parameters.AddWithValue("@title", string.IsNullOrWhiteSpace(request.Title) ? room.RoomName : request.Title.Trim());
+                insertCommand.Parameters.AddWithValue("@description", DbValue(request.Description));
+                insertCommand.Parameters.AddWithValue("@isCover", shouldMakeCover ? 1 : 0);
+                insertCommand.Parameters.AddWithValue("@sortOrder", displayOrder);
+                insertCommand.Parameters.AddWithValue("@sizeKb", Math.Max(1, (int)Math.Round(storedImage.FileSizeBytes / 1024m)));
+                insertCommand.Parameters.AddWithValue("@userId", userId);
+                await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+
+                if (shouldMakeCover)
+                {
+                    await UpdateRoomCoverSelectionAsync(connection, (MySqlTransaction)transaction, request.RoomId, relativePath, cancellationToken);
+                    shouldMakeCover = false;
+                }
+
+                displayOrder++;
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return (true, $"{savedPhysicalPaths.Count} oda görseli yüklendi.");
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            foreach (var path in savedPhysicalPaths)
+            {
+                await _imageStorageService.DeleteAsync(path, cancellationToken);
+            }
+
+            return (false, $"Oda görselleri yüklenirken hata oluştu: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> SetRoomCoverAsync(long userId, long hotelId, long roomId, long photoId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await EnsureHotelAccessAsync(connection, userId, hotelId, cancellationToken);
+        await EnsureRoomBelongsToHotelAsync(connection, hotelId, roomId, cancellationToken);
+
+        const string selectSql = @"
+            SELECT gorsel_url
+            FROM oda_gorselleri
+            WHERE id = @photoId
+              AND oda_tip_id = @roomId
+            LIMIT 1;";
+        await using var selectCommand = new MySqlCommand(selectSql, connection);
+        selectCommand.Parameters.AddWithValue("@photoId", photoId);
+        selectCommand.Parameters.AddWithValue("@roomId", roomId);
+        var url = await selectCommand.ExecuteScalarAsync(cancellationToken) as string;
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return (false, "Kapak yapılacak oda görseli bulunamadı.");
+        }
+
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await UpdateRoomCoverSelectionAsync(connection, (MySqlTransaction)transaction, roomId, url, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return (true, "Oda vitrin görseli güncellendi.");
+    }
+
+    public async Task<(bool Success, string Message)> DeleteRoomPhotoAsync(long userId, long hotelId, long roomId, long photoId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await EnsureHotelAccessAsync(connection, userId, hotelId, cancellationToken);
+        await EnsureRoomBelongsToHotelAsync(connection, hotelId, roomId, cancellationToken);
+
+        string? relativePath = null;
+        var wasCover = false;
+        const string selectSql = @"
+            SELECT gorsel_url, kapak_fotografi_mi
+            FROM oda_gorselleri
+            WHERE id = @photoId
+              AND oda_tip_id = @roomId
+            LIMIT 1;";
+        await using (var selectCommand = new MySqlCommand(selectSql, connection))
+        {
+            selectCommand.Parameters.AddWithValue("@photoId", photoId);
+            selectCommand.Parameters.AddWithValue("@roomId", roomId);
+            await using var reader = await selectCommand.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                relativePath = reader.IsDBNull(0) ? null : reader.GetString(0);
+                wasCover = !reader.IsDBNull(1) && reader.GetBoolean(1);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            return (false, "Silinecek oda görseli bulunamadı.");
+        }
+
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using (var deleteCommand = new MySqlCommand("DELETE FROM oda_gorselleri WHERE id = @photoId AND oda_tip_id = @roomId;", connection, (MySqlTransaction)transaction))
+        {
+            deleteCommand.Parameters.AddWithValue("@photoId", photoId);
+            deleteCommand.Parameters.AddWithValue("@roomId", roomId);
+            await deleteCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        if (wasCover)
+        {
+            await PromoteNextRoomCoverAsync(connection, (MySqlTransaction)transaction, roomId, cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        var physicalPath = Path.Combine(_environment.WebRootPath, relativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+        await _imageStorageService.DeleteAsync(physicalPath, cancellationToken);
+        return (true, "Oda görseli silindi.");
     }
 
     public async Task<PartnerHotelInfoPageViewModel> GetHotelInfoAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
@@ -1953,6 +2608,7 @@ public class PartnerService : IPartnerService
 
     private async Task<PartnerContext> BuildContextAsync(MySqlConnection connection, long userId, long? hotelId, string title, string subtitle, string activeSectionKey, CancellationToken cancellationToken)
     {
+        await ReopenExpiredPenaltyHotelsAsync(connection, cancellationToken);
         var hotels = await GetManagedHotelsAsync(connection, userId, cancellationToken);
         if (hotels.Count == 0)
         {
@@ -2045,6 +2701,49 @@ public class PartnerService : IPartnerService
         };
 
         return shell;
+    }
+
+    private static async Task ReopenExpiredPenaltyHotelsAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            UPDATE oteller
+            SET yayin_durumu = 'Yayında',
+                partner_ceza_bitis_tarihi = NULL
+            WHERE partner_ceza_bitis_tarihi IS NOT NULL
+              AND partner_ceza_bitis_tarihi <= NOW()
+              AND yayin_durumu = 'Kapatıldı';";
+        try
+        {
+            await using var command = new MySqlCommand(sql, connection);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (MySqlException ex) when (IsUnknownColumnError(ex, "partner_ceza_bitis_tarihi"))
+        {
+            await EnsurePartnerPenaltyColumnAsync(connection, cancellationToken);
+            await using var retryCommand = new MySqlCommand(sql, connection);
+            await retryCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+    }
+
+    private static bool IsUnknownColumnError(MySqlException ex, string columnName)
+        => ex.Number == 1054 && ex.Message.Contains(columnName, StringComparison.OrdinalIgnoreCase);
+
+    private static async Task EnsurePartnerPenaltyColumnAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string existsSql = @"
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'oteller'
+              AND COLUMN_NAME = 'partner_ceza_bitis_tarihi';";
+        await using var existsCommand = new MySqlCommand(existsSql, connection);
+        var exists = Convert.ToInt32(await existsCommand.ExecuteScalarAsync(cancellationToken) ?? 0) > 0;
+        if (!exists)
+        {
+            const string alterSql = "ALTER TABLE oteller ADD COLUMN partner_ceza_bitis_tarihi DATETIME NULL;";
+            await using var alterCommand = new MySqlCommand(alterSql, connection);
+            await alterCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     private async Task<List<PartnerHotelContext>> GetManagedHotelsAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
@@ -2545,6 +3244,21 @@ public class PartnerService : IPartnerService
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    private static async Task ExecuteDeleteByRoomAsync(
+        MySqlConnection connection,
+        MySqlTransaction transaction,
+        string tableName,
+        long roomId,
+        CancellationToken cancellationToken)
+    {
+        var sql = $@"
+            DELETE FROM {tableName}
+            WHERE oda_tip_id = @roomId;";
+        await using var command = new MySqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("@roomId", roomId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private static async Task<bool> TableExistsAsync(MySqlConnection connection, string tableName, CancellationToken cancellationToken)
         => await TableExistsAsync(connection, tableName, null, cancellationToken);
 
@@ -2572,6 +3286,26 @@ public class PartnerService : IPartnerService
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         return new DateOnly(today.Year, today.Month, 1);
+    }
+
+    private static List<PartnerMonthOptionViewModel> BuildMonthOptions(DateOnly selectedMonth)
+    {
+        var culture = CultureInfo.GetCultureInfo("tr-TR");
+        var currentMonth = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
+        var start = currentMonth.AddMonths(-12);
+        var end = currentMonth.AddMonths(18);
+        var items = new List<PartnerMonthOptionViewModel>();
+        for (var month = start; month <= end; month = month.AddMonths(1))
+        {
+            items.Add(new PartnerMonthOptionViewModel
+            {
+                MonthKey = month.ToString("yyyy-MM", CultureInfo.InvariantCulture),
+                Label = month.ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", culture),
+                IsCurrent = month.Year == selectedMonth.Year && month.Month == selectedMonth.Month
+            });
+        }
+
+        return items;
     }
 
     private static int GetMondayBasedIndex(DayOfWeek dayOfWeek)
@@ -2783,6 +3517,209 @@ public class PartnerService : IPartnerService
         return model;
     }
 
+    private async Task<List<PartnerRoomPhotoCardViewModel>> LoadRoomPhotosAsync(MySqlConnection connection, long hotelId, long roomId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT og.id,
+                   og.gorsel_url,
+                   COALESCE(NULLIF(og.baslik, ''), ot.oda_adi) AS baslik,
+                   og.aciklama,
+                   og.siralama,
+                   og.kapak_fotografi_mi,
+                   og.onay_durumu
+            FROM oda_gorselleri og
+            INNER JOIN oda_tipleri ot ON ot.id = og.oda_tip_id
+            WHERE og.oda_tip_id = @roomId
+              AND ot.otel_id = @hotelId
+            ORDER BY og.kapak_fotografi_mi DESC, og.siralama ASC, og.id ASC;";
+
+        var items = new List<PartnerRoomPhotoCardViewModel>();
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@roomId", roomId);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(new PartnerRoomPhotoCardViewModel
+            {
+                PhotoId = reader.GetInt64(0),
+                Url = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                Title = reader.IsDBNull(2) ? "Oda Görseli" : reader.GetString(2),
+                Description = reader.IsDBNull(3) ? null : reader.GetString(3),
+                DisplayOrder = Convert.ToUInt16(reader.GetValue(4), CultureInfo.InvariantCulture),
+                IsCover = !reader.IsDBNull(5) && reader.GetBoolean(5),
+                IsApproved = string.Equals(reader.IsDBNull(6) ? "Beklemede" : reader.GetString(6), "Onaylandı", StringComparison.OrdinalIgnoreCase)
+            });
+        }
+
+        return items;
+    }
+
+    private async Task<(long RoomId, string RoomName)> EnsureRoomBelongsToHotelAsync(MySqlConnection connection, long hotelId, long roomId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT id, oda_adi
+            FROM oda_tipleri
+            WHERE id = @roomId
+              AND otel_id = @hotelId
+            LIMIT 1;";
+
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@roomId", roomId);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            throw new InvalidOperationException("Seçilen oda tipi bu otele ait değil veya bulunamadı.");
+        }
+
+        return (reader.GetInt64(0), reader.GetString(1));
+    }
+
+    private static async Task SyncHotelRoomCountAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            UPDATE oteller o
+            SET o.toplam_oda_sayisi = COALESCE(
+                (
+                    SELECT SUM(CASE WHEN COALESCE(ot.aktif_mi, 1) = 1 THEN COALESCE(ot.toplam_oda_sayisi, 0) ELSE 0 END)
+                    FROM oda_tipleri ot
+                    WHERE ot.otel_id = o.id
+                ),
+                0
+            )
+            WHERE o.id = @hotelId;";
+
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private async Task SyncRoomFeatureRelationsAsync(MySqlConnection connection, long roomId, string? roomFeaturesText, CancellationToken cancellationToken)
+    {
+        if (!await TableExistsAsync(connection, "oda_tipi_ozellikleri", cancellationToken)
+            || !await TableExistsAsync(connection, "oda_ozellikleri", cancellationToken))
+        {
+            return;
+        }
+
+        var featureNames = (roomFeaturesText ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using (var clearCommand = new MySqlCommand("DELETE FROM oda_tipi_ozellikleri WHERE oda_tip_id = @roomId;", connection, (MySqlTransaction)transaction))
+        {
+            clearCommand.Parameters.AddWithValue("@roomId", roomId);
+            await clearCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        foreach (var featureName in featureNames)
+        {
+            long featureId;
+            const string selectSql = @"
+                SELECT id
+                FROM oda_ozellikleri
+                WHERE LOWER(ozellik_adi) = LOWER(@featureName)
+                LIMIT 1;";
+            await using (var selectCommand = new MySqlCommand(selectSql, connection, (MySqlTransaction)transaction))
+            {
+                selectCommand.Parameters.AddWithValue("@featureName", featureName);
+                var existingId = await selectCommand.ExecuteScalarAsync(cancellationToken);
+                if (existingId is not null)
+                {
+                    featureId = Convert.ToInt64(existingId, CultureInfo.InvariantCulture);
+                }
+                else
+                {
+                    const string insertFeatureSql = @"
+                        INSERT INTO oda_ozellikleri
+                        (kategori, ozellik_adi, ozellik_ikon, siralama, aktif_mi)
+                        VALUES
+                        ('Genel', @featureName, @iconClass, 999, 1);";
+                    await using var insertFeatureCommand = new MySqlCommand(insertFeatureSql, connection, (MySqlTransaction)transaction);
+                    insertFeatureCommand.Parameters.AddWithValue("@featureName", featureName);
+                    insertFeatureCommand.Parameters.AddWithValue("@iconClass", GuessRoomFeatureIcon(featureName));
+                    await insertFeatureCommand.ExecuteNonQueryAsync(cancellationToken);
+                    featureId = insertFeatureCommand.LastInsertedId;
+                }
+            }
+
+            const string relationSql = @"
+                INSERT INTO oda_tipi_ozellikleri (oda_tip_id, ozellik_id, miktar)
+                VALUES (@roomId, @featureId, 1)
+                ON DUPLICATE KEY UPDATE miktar = VALUES(miktar);";
+            await using var relationCommand = new MySqlCommand(relationSql, connection, (MySqlTransaction)transaction);
+            relationCommand.Parameters.AddWithValue("@roomId", roomId);
+            relationCommand.Parameters.AddWithValue("@featureId", featureId);
+            await relationCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    private static async Task UpdateRoomCoverSelectionAsync(MySqlConnection connection, MySqlTransaction transaction, long roomId, string coverUrl, CancellationToken cancellationToken)
+    {
+        await using (var updatePhotos = new MySqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN gorsel_url = @coverUrl THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, transaction))
+        {
+            updatePhotos.Parameters.AddWithValue("@coverUrl", coverUrl);
+            updatePhotos.Parameters.AddWithValue("@roomId", roomId);
+            await updatePhotos.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using (var updateRoom = new MySqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, transaction))
+        {
+            updateRoom.Parameters.AddWithValue("@coverUrl", coverUrl);
+            updateRoom.Parameters.AddWithValue("@roomId", roomId);
+            await updateRoom.ExecuteNonQueryAsync(cancellationToken);
+        }
+    }
+
+    private static async Task PromoteNextRoomCoverAsync(MySqlConnection connection, MySqlTransaction transaction, long roomId, CancellationToken cancellationToken)
+    {
+        const string selectNextSql = "SELECT id, gorsel_url FROM oda_gorselleri WHERE oda_tip_id = @roomId ORDER BY siralama, id LIMIT 1;";
+        await using var selectCommand = new MySqlCommand(selectNextSql, connection, transaction);
+        selectCommand.Parameters.AddWithValue("@roomId", roomId);
+        await using var reader = await selectCommand.ExecuteReaderAsync(cancellationToken);
+
+        long? nextPhotoId = null;
+        string? nextUrl = null;
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            nextPhotoId = reader.GetInt64(0);
+            nextUrl = reader.IsDBNull(1) ? null : reader.GetString(1);
+        }
+
+        await reader.CloseAsync();
+
+        if (!nextPhotoId.HasValue || string.IsNullOrWhiteSpace(nextUrl))
+        {
+            await using var clearRoom = new MySqlCommand("UPDATE oda_tipleri SET kapak_fotografi = NULL WHERE id = @roomId;", connection, transaction);
+            clearRoom.Parameters.AddWithValue("@roomId", roomId);
+            await clearRoom.ExecuteNonQueryAsync(cancellationToken);
+            return;
+        }
+
+        await using (var updatePhotos = new MySqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, transaction))
+        {
+            updatePhotos.Parameters.AddWithValue("@photoId", nextPhotoId.Value);
+            updatePhotos.Parameters.AddWithValue("@roomId", roomId);
+            await updatePhotos.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using (var updateRoom = new MySqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, transaction))
+        {
+            updateRoom.Parameters.AddWithValue("@coverUrl", nextUrl);
+            updateRoom.Parameters.AddWithValue("@roomId", roomId);
+            await updateRoom.ExecuteNonQueryAsync(cancellationToken);
+        }
+    }
+
+    private static object DbValue(string? value)
+        => string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();
+
     private async Task<List<PartnerCompetitorRowViewModel>> LoadCompetitorsAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
@@ -2853,8 +3790,52 @@ public class PartnerService : IPartnerService
         command.Parameters.AddWithValue("@notes", string.IsNullOrWhiteSpace(request.Notes) ? DBNull.Value : request.Notes.Trim());
     }
 
-    private async Task<List<PartnerReservationRowViewModel>> LoadReservationsAsync(MySqlConnection connection, long hotelId, string hotelName, int take, CancellationToken cancellationToken)
+    private async Task<(List<PartnerReservationRowViewModel> Items, int TotalCount)> LoadReservationsAsync(
+        MySqlConnection connection,
+        long hotelId,
+        string hotelName,
+        DateTime? dateFrom,
+        DateTime? dateTo,
+        string statusFilter,
+        string paymentMethodFilter,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
     {
+        const string countSql = @"
+            SELECT COUNT(*)
+            FROM rezervasyonlar r
+            WHERE r.otel_id = @hotelId
+              AND (@dateFrom IS NULL OR DATE(r.giris_tarihi) >= DATE(@dateFrom))
+              AND (@dateTo IS NULL OR DATE(r.cikis_tarihi) <= DATE(@dateTo))
+              AND (
+                    @statusFilter = 'all'
+                    OR (@statusFilter = 'pending' AND r.durum IN ('Onay Bekliyor','Değişiklik Bekliyor'))
+                    OR (@statusFilter = 'approved' AND r.durum = 'Onaylandı')
+                    OR (@statusFilter = 'rejected' AND (r.durum = 'İptal Edildi' OR COALESCE(r.otel_onay_durumu, '') = 'Reddedildi'))
+                  )
+              AND (
+                    @paymentMethodFilter = 'all'
+                    OR (@paymentMethodFilter = 'card' AND COALESCE(r.odeme_yontemi, '') IN ('Kredi Kartı','Sanal POS'))
+                    OR (@paymentMethodFilter = 'cash' AND COALESCE(r.odeme_yontemi, '') IN ('Kapıda Ödeme','Nakit'))
+                  );";
+        var totalCount = 0;
+        await using (var countCommand = new MySqlCommand(countSql, connection))
+        {
+            countCommand.Parameters.AddWithValue("@hotelId", hotelId);
+            countCommand.Parameters.AddWithValue("@dateFrom", dateFrom.HasValue ? dateFrom.Value : DBNull.Value);
+            countCommand.Parameters.AddWithValue("@dateTo", dateTo.HasValue ? dateTo.Value : DBNull.Value);
+            countCommand.Parameters.AddWithValue("@statusFilter", statusFilter);
+            countCommand.Parameters.AddWithValue("@paymentMethodFilter", paymentMethodFilter);
+            var scalar = await countCommand.ExecuteScalarAsync(cancellationToken);
+            totalCount = Convert.ToInt32(scalar ?? 0, CultureInfo.InvariantCulture);
+        }
+
+        if (totalCount <= 0)
+        {
+            return (new List<PartnerReservationRowViewModel>(), 0);
+        }
+
         const string sql = @"
             SELECT
                 r.id,
@@ -2873,6 +3854,8 @@ public class PartnerService : IPartnerService
                 COALESCE(r.kaynak, COALESCE(r.rezervasyon_kanali, 'Web')) AS kaynak,
                 COALESCE(NULLIF(r.misafir_notu, ''), '') AS misafir_notu,
                 COALESCE(NULLIF(r.musteri_talep_notu, ''), '') AS musteri_talep_notu,
+                COALESCE(NULLIF(r.iptal_nedeni, ''), '') AS iptal_nedeni,
+                r.iptal_tarihi,
                 COALESCE(r.yetiskin_sayisi, 0) AS yetiskin_sayisi,
                 COALESCE(r.cocuk_sayisi, 0) AS cocuk_sayisi,
                 DATEDIFF(r.cikis_tarihi, r.giris_tarihi) AS gece_sayisi,
@@ -2881,18 +3864,36 @@ public class PartnerService : IPartnerService
             FROM rezervasyonlar r
             LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
             WHERE r.otel_id = @hotelId
+              AND (@dateFrom IS NULL OR DATE(r.giris_tarihi) >= DATE(@dateFrom))
+              AND (@dateTo IS NULL OR DATE(r.cikis_tarihi) <= DATE(@dateTo))
+              AND (
+                    @statusFilter = 'all'
+                    OR (@statusFilter = 'pending' AND r.durum IN ('Onay Bekliyor','Değişiklik Bekliyor'))
+                    OR (@statusFilter = 'approved' AND r.durum = 'Onaylandı')
+                    OR (@statusFilter = 'rejected' AND (r.durum = 'İptal Edildi' OR COALESCE(r.otel_onay_durumu, '') = 'Reddedildi'))
+                  )
+              AND (
+                    @paymentMethodFilter = 'all'
+                    OR (@paymentMethodFilter = 'card' AND COALESCE(r.odeme_yontemi, '') IN ('Kredi Kartı','Sanal POS'))
+                    OR (@paymentMethodFilter = 'cash' AND COALESCE(r.odeme_yontemi, '') IN ('Kapıda Ödeme','Nakit'))
+                  )
             ORDER BY r.olusturulma_tarihi DESC, r.id DESC
-            LIMIT @take;";
+            LIMIT @limit OFFSET @offset;";
 
         var items = new List<PartnerReservationRowViewModel>();
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
-        command.Parameters.AddWithValue("@take", take);
+        command.Parameters.AddWithValue("@dateFrom", dateFrom.HasValue ? dateFrom.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@dateTo", dateTo.HasValue ? dateTo.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@statusFilter", statusFilter);
+        command.Parameters.AddWithValue("@paymentMethodFilter", paymentMethodFilter);
+        command.Parameters.AddWithValue("@limit", pageSize);
+        command.Parameters.AddWithValue("@offset", (page - 1) * pageSize);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             var reservationStatus = reader.IsDBNull(7) ? "Onay Bekliyor" : reader.GetString(7);
-            var hotelApprovalStatus = reader.IsDBNull(19) ? "Beklemede" : reader.GetString(19);
+            var hotelApprovalStatus = reader.IsDBNull(21) ? "Beklemede" : reader.GetString(21);
             var canApprove = (string.Equals(reservationStatus, "Onay Bekliyor", StringComparison.OrdinalIgnoreCase)
                               || string.Equals(reservationStatus, "Değişiklik Bekliyor", StringComparison.OrdinalIgnoreCase)
                               || string.Equals(hotelApprovalStatus, "Beklemede", StringComparison.OrdinalIgnoreCase))
@@ -2921,16 +3922,112 @@ public class PartnerService : IPartnerService
                 SourceLabel = reader.IsDBNull(13) || string.IsNullOrWhiteSpace(reader.GetString(13)) ? null : reader.GetString(13),
                 GuestNote = reader.IsDBNull(14) ? null : reader.GetString(14),
                 RequestNote = reader.IsDBNull(15) ? null : reader.GetString(15),
-                AdultCount = reader.IsDBNull(16) ? (byte)0 : reader.GetByte(16),
-                ChildCount = reader.IsDBNull(17) ? (byte)0 : reader.GetByte(17),
-                NightCount = reader.IsDBNull(18) ? (short)0 : Convert.ToInt16(reader.GetValue(18), CultureInfo.InvariantCulture),
+                CancellationReason = reader.IsDBNull(16) || string.IsNullOrWhiteSpace(reader.GetString(16)) ? null : reader.GetString(16),
+                CancellationTimeText = reader.IsDBNull(17) ? null : reader.GetDateTime(17).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                AdultCount = reader.IsDBNull(18) ? (byte)0 : reader.GetByte(18),
+                ChildCount = reader.IsDBNull(19) ? (byte)0 : reader.GetByte(19),
+                NightCount = reader.IsDBNull(20) ? (short)0 : Convert.ToInt16(reader.GetValue(20), CultureInfo.InvariantCulture),
                 CanApprove = canApprove,
                 CanReject = canReject,
-                CanMessageGuest = !reader.IsDBNull(20) && Convert.ToInt64(reader.GetValue(20), CultureInfo.InvariantCulture) > 0
+                CanMessageGuest = !reader.IsDBNull(22) && Convert.ToInt64(reader.GetValue(22), CultureInfo.InvariantCulture) > 0
+            });
+        }
+
+        return (items, totalCount);
+    }
+
+    private static async Task<List<PartnerConversationSummaryViewModel>> LoadReservationConversationsAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                mk.id,
+                COALESCE(mk.rezervasyon_id, 0) AS rezervasyon_id,
+                COALESCE(NULLIF(r.rezervasyon_no, ''), '-') AS rezervasyon_no,
+                COALESCE(NULLIF(r.misafir_ad_soyad, ''), 'Misafir') AS misafir_ad_soyad,
+                COALESCE(NULLIF(mk.konu_basligi, ''), 'Rezervasyon mesaji') AS konu_basligi,
+                COALESCE(NULLIF(mk.son_mesaj_onizleme, ''), 'Mesaj bulunmuyor') AS son_mesaj_onizleme,
+                COALESCE(mk.son_mesaj_tarihi, mk.olusturulma_tarihi) AS son_mesaj_tarihi,
+                COALESCE(mk.otel_okunmamis_sayisi, 0) AS otel_okunmamis_sayisi
+            FROM mesaj_konusmalari mk
+            LEFT JOIN rezervasyonlar r ON r.id = mk.rezervasyon_id
+            WHERE mk.otel_id = @hotelId
+              AND mk.durum <> 'Arşivlendi'
+            ORDER BY COALESCE(mk.otel_okunmamis_sayisi, 0) DESC, COALESCE(mk.son_mesaj_tarihi, mk.olusturulma_tarihi) DESC
+            LIMIT 40;";
+
+        var items = new List<PartnerConversationSummaryViewModel>();
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(new PartnerConversationSummaryViewModel
+            {
+                ConversationId = reader.GetInt64(0),
+                ReservationId = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture),
+                ReservationNo = reader.GetString(2),
+                GuestName = reader.GetString(3),
+                Subject = reader.GetString(4),
+                LastMessagePreview = reader.GetString(5),
+                LastMessageTimeText = FormatDateTime(reader.GetDateTime(6)),
+                UnreadCount = SafeInt(reader, 7)
             });
         }
 
         return items;
+    }
+
+    private static async Task<List<PartnerConversationMessageViewModel>> LoadConversationMessagesAsync(MySqlConnection connection, long hotelId, long conversationId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                m.id,
+                m.gonderen_turu,
+                COALESCE(NULLIF(m.mesaj_metni, ''), '-') AS mesaj_metni,
+                COALESCE(m.gonderim_tarihi, m.duzenlenme_tarihi) AS mesaj_tarihi
+            FROM mesajlar m
+            INNER JOIN mesaj_konusmalari mk ON mk.id = m.konusma_id
+            WHERE m.konusma_id = @conversationId
+              AND mk.otel_id = @hotelId
+              AND COALESCE(m.durum, '') <> 'Silindi'
+            ORDER BY m.gonderim_tarihi ASC, m.id ASC
+            LIMIT 250;";
+
+        var items = new List<PartnerConversationMessageViewModel>();
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@conversationId", conversationId);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var senderType = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+            var isFromHotel = string.Equals(senderType, "Otel", StringComparison.OrdinalIgnoreCase);
+            items.Add(new PartnerConversationMessageViewModel
+            {
+                MessageId = reader.GetInt64(0),
+                SenderLabel = isFromHotel ? "Partner" : string.Equals(senderType, "Misafir", StringComparison.OrdinalIgnoreCase) ? "Misafir" : senderType,
+                Body = reader.GetString(2),
+                TimeText = FormatDateTime(reader.GetDateTime(3)),
+                IsFromHotel = isFromHotel
+            });
+        }
+
+        return items;
+    }
+
+    private static async Task MarkConversationAsReadAsync(MySqlConnection connection, long hotelId, long conversationId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            UPDATE mesaj_konusmalari
+            SET otel_okunmamis_sayisi = 0,
+                otel_son_okuma_tarihi = UTC_TIMESTAMP(),
+                guncellenme_tarihi = CURRENT_TIMESTAMP
+            WHERE id = @conversationId
+              AND otel_id = @hotelId;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@conversationId", conversationId);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private async Task<List<PartnerInventoryAlertViewModel>> LoadInventoryAlertsAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
@@ -3016,6 +4113,39 @@ public class PartnerService : IPartnerService
     private static string FormatDateTime(DateTime? value)
         => value.HasValue ? value.Value.ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")) : "-";
 
+    private static string SplitFirstName(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return "Misafir";
+        }
+
+        return fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Misafir";
+    }
+
+    private static string NormalizeReservationStatusFilter(string? status)
+    {
+        var normalized = (status ?? string.Empty).Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "pending" => "pending",
+            "approved" => "approved",
+            "rejected" => "rejected",
+            _ => "all"
+        };
+    }
+
+    private static string NormalizeReservationPaymentFilter(string? paymentMethod)
+    {
+        var normalized = (paymentMethod ?? string.Empty).Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "card" => "card",
+            "cash" => "cash",
+            _ => "all"
+        };
+    }
+
     private static decimal ParseMoney(string value)
     {
         var cleaned = value
@@ -3031,6 +4161,58 @@ public class PartnerService : IPartnerService
     {
         var digits = new string(value.Where(char.IsDigit).ToArray());
         return int.TryParse(digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out var stock) ? stock : 0;
+    }
+
+    private static string GuessRoomFeatureIcon(string featureName)
+    {
+        var normalized = (featureName ?? string.Empty).ToLowerInvariant();
+
+        if (normalized.Contains("smart", StringComparison.Ordinal) || normalized.Contains("tv", StringComparison.Ordinal))
+        {
+            return "fa-tv";
+        }
+
+        if (normalized.Contains("jakuzi", StringComparison.Ordinal) || normalized.Contains("spa", StringComparison.Ordinal))
+        {
+            return "fa-hot-tub-person";
+        }
+
+        if (normalized.Contains("kettle", StringComparison.Ordinal) || normalized.Contains("kahve", StringComparison.Ordinal) || normalized.Contains("çay", StringComparison.Ordinal) || normalized.Contains("cay", StringComparison.Ordinal))
+        {
+            return "fa-mug-hot";
+        }
+
+        if (normalized.Contains("havlu", StringComparison.Ordinal) || normalized.Contains("banyo", StringComparison.Ordinal))
+        {
+            return "fa-bath";
+        }
+
+        if (normalized.Contains("wifi", StringComparison.Ordinal) || normalized.Contains("internet", StringComparison.Ordinal))
+        {
+            return "fa-wifi";
+        }
+
+        if (normalized.Contains("balkon", StringComparison.Ordinal) || normalized.Contains("teras", StringComparison.Ordinal))
+        {
+            return "fa-door-open";
+        }
+
+        if (normalized.Contains("manzara", StringComparison.Ordinal) || normalized.Contains("deniz", StringComparison.Ordinal) || normalized.Contains("sehir", StringComparison.Ordinal) || normalized.Contains("şehir", StringComparison.Ordinal))
+        {
+            return "fa-water";
+        }
+
+        if (normalized.Contains("mini bar", StringComparison.Ordinal) || normalized.Contains("buzdolabi", StringComparison.Ordinal) || normalized.Contains("buzdolabı", StringComparison.Ordinal))
+        {
+            return "fa-champagne-glasses";
+        }
+
+        if (normalized.Contains("klima", StringComparison.Ordinal))
+        {
+            return "fa-wind";
+        }
+
+        return "fa-circle-check";
     }
 
     private static string BuildRoomCode(long hotelId)
@@ -3147,4 +4329,5 @@ public class PartnerService : IPartnerService
     private sealed record CampaignSelection(long CampaignId, string CampaignName, string CampaignCode, string DisplayLabel, DateTime StartDate, DateTime EndDate);
     private sealed record PartnerContext(PartnerHotelContext SelectedHotel, PartnerShellViewModel Shell);
     private sealed record PartnerHotelContext(long HotelId, long PartnerId, string HotelCode, string HotelName, string HotelType, string CityLabel, bool IsPrimary);
+    private sealed record ReservationEmailSnapshot(long GuestUserId, string ReservationNo, string GuestName, string GuestEmail, DateTime CheckInDate, DateTime CheckOutDate, decimal TotalAmount, string RoomName, string HotelName);
 }

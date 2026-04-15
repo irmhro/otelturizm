@@ -49,15 +49,27 @@ public class SalesService : ISalesService
         model.MonthlyRemainingRevenue = Math.Max(0m, shell.MonthlyTarget - model.MonthlyAchievedRevenue);
         model.MonthlyProgressPercent = shell.MonthlyTarget <= 0 ? 0 : (int)Math.Min(100m, Math.Round(model.MonthlyAchievedRevenue * 100m / shell.MonthlyTarget, MidpointRounding.AwayFromZero));
         model.RemainingReservationCount = Math.Max(0, 10 - model.MonthlyReservationCount);
-        model.RecentReservations = await LoadReservationsAsync(connection, userId, 6, cancellationToken);
+        model.RecentReservations = await LoadReservationsAsync(connection, userId, new SalesReservationsFilterViewModel { Page = 1, PageSize = 6 }, cancellationToken);
         return model;
     }
 
-    public async Task<SalesCreateReservationPageViewModel> GetCreateReservationAsync(long userId, long? hotelId = null, long? roomTypeId = null, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, decimal? minPrice = null, decimal? maxPrice = null, decimal? minimumRating = null, int? minimumReviewCount = null, string? feature = null, CancellationToken cancellationToken = default)
+    public async Task<SalesCreateReservationPageViewModel> GetCreateReservationAsync(long userId, long? hotelId = null, long? roomTypeId = null, long? customerId = null, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, decimal? minPrice = null, decimal? maxPrice = null, decimal? minimumRating = null, int? minimumReviewCount = null, string? feature = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
         var shell = await BuildShellAsync(connection, userId, "create", "Yeni Rezervasyon Oluştur", "İl, ilçe, fiyat ve özellik filtreleriyle oteli hızlıca bulun; müşteriye en uygun rezervasyonu aynı ekrandan tamamlayın.", cancellationToken);
-        var hotels = await LoadHotelOptionsAsync(connection, cancellationToken);
+        var customerPrefill = customerId.HasValue ? await LoadCustomerPrefillAsync(connection, customerId.Value, cancellationToken) : null;
+        var hasAssistantSearch = HasHotelAssistantSearch(searchTerm, city, district, neighborhood, minPrice, maxPrice, minimumRating, minimumReviewCount, feature);
+        var hotels = hasAssistantSearch || hotelId.HasValue
+            ? await LoadHotelOptionsAsync(connection, searchTerm, city, district, neighborhood, cancellationToken)
+            : new List<SalesSelectOption>();
+        if (hotelId.HasValue && hotelId.Value > 0 && hotels.All(x => x.Value != hotelId.Value))
+        {
+            var selectedHotelOption = await LoadHotelOptionByIdAsync(connection, hotelId.Value, cancellationToken);
+            if (selectedHotelOption is not null)
+            {
+                hotels.Insert(0, selectedHotelOption);
+            }
+        }
         var selectedHotelId = hotelId ?? hotels.FirstOrDefault()?.Value ?? 0;
         var roomTypes = selectedHotelId > 0 ? await LoadRoomTypeOptionsAsync(connection, selectedHotelId, cancellationToken) : new List<SalesSelectOption>();
         var selectedRoomTypeId = roomTypeId ?? roomTypes.FirstOrDefault()?.Value ?? 0;
@@ -67,6 +79,14 @@ public class SalesService : ISalesService
             Shell = shell,
             Form = new SalesReservationCreateModel
             {
+                CustomerId = customerPrefill?.CustomerId,
+                CustomerFullName = customerPrefill?.FullName ?? string.Empty,
+                CustomerEmail = customerPrefill?.Email ?? string.Empty,
+                CustomerPhone = customerPrefill?.Phone ?? string.Empty,
+                CustomerCity = customerPrefill?.City,
+                CustomerDistrict = customerPrefill?.District,
+                CustomerNeighborhood = customerPrefill?.Neighborhood,
+                CustomerAddress = customerPrefill?.Address,
                 HotelId = selectedHotelId,
                 RoomTypeId = selectedRoomTypeId,
                 SearchTerm = searchTerm,
@@ -84,8 +104,12 @@ public class SalesService : ISalesService
             Districts = await LoadDistrictsAsync(connection, city, cancellationToken),
             RoomTypes = roomTypes,
             Customers = await LoadCustomersAsync(connection, null, 8, cancellationToken),
-            HotelSearchResults = await LoadHotelSearchResultsAsync(connection, searchTerm, city, district, neighborhood, minPrice, maxPrice, minimumRating, minimumReviewCount, feature, cancellationToken),
-            AvailableRooms = selectedHotelId > 0 ? await LoadRoomOptionsAsync(connection, selectedHotelId, DateOnly.FromDateTime(DateTime.Today.AddDays(2)), DateOnly.FromDateTime(DateTime.Today.AddDays(4)), cancellationToken) : new List<SalesRoomOptionViewModel>()
+            HotelSearchResults = hasAssistantSearch
+                ? await LoadHotelSearchResultsAsync(connection, searchTerm, city, district, neighborhood, minPrice, maxPrice, minimumRating, minimumReviewCount, feature, 12, cancellationToken)
+                : new List<SalesHotelSearchCardViewModel>(),
+            AvailableRooms = selectedHotelId > 0 ? await LoadRoomOptionsAsync(connection, selectedHotelId, DateOnly.FromDateTime(DateTime.Today.AddDays(2)), DateOnly.FromDateTime(DateTime.Today.AddDays(4)), cancellationToken) : new List<SalesRoomOptionViewModel>(),
+            SelectedHotelSummary = await BuildSelectedHotelSummaryAsync(connection, selectedHotelId, cancellationToken),
+            HasAssistantSearch = hasAssistantSearch
         };
 
         if (selectedRoomTypeId > 0)
@@ -94,6 +118,26 @@ public class SalesService : ISalesService
         }
 
         return model;
+    }
+
+    public async Task<IReadOnlyList<SalesHotelSearchCardViewModel>> SearchHotelsForAssistantAsync(
+        long userId,
+        string? searchTerm = null,
+        string? city = null,
+        string? district = null,
+        string? neighborhood = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        decimal? minimumRating = null,
+        int? minimumReviewCount = null,
+        string? feature = null,
+        int resultLimit = 8,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await EnsureSalesUserAsync(connection, userId, cancellationToken);
+        var safeLimit = Math.Clamp(resultLimit, 1, 20);
+        return await LoadHotelSearchResultsAsync(connection, searchTerm, city, district, neighborhood, minPrice, maxPrice, minimumRating, minimumReviewCount, feature, safeLimit, cancellationToken);
     }
 
     public async Task<SalesCustomersPageViewModel> GetCustomersAsync(long userId, string? search = null, CancellationToken cancellationToken = default)
@@ -107,61 +151,87 @@ public class SalesService : ISalesService
         };
     }
 
-    public async Task<SalesAvailabilityPageViewModel> GetAvailabilityAsync(long userId, long? hotelId = null, long? roomTypeId = null, DateOnly? month = null, CancellationToken cancellationToken = default)
+    public async Task<SalesAvailabilityPageViewModel> GetAvailabilityAsync(long userId, long? hotelId = null, long? roomTypeId = null, string? search = null, DateOnly? month = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        var shell = await BuildShellAsync(connection, userId, "availability", "Müsaitlik Takvimi", "Otel ve oda seçerek günlük fiyat ile müsaitliği anlık görün.", cancellationToken);
-        var hotels = await LoadHotelOptionsAsync(connection, cancellationToken);
+        var shell = await BuildShellAsync(connection, userId, "availability", "Müsaitlik Takvimi", "Telefon görüşmesinde oteli ada veya bölgeye göre bulup aylık fiyatı ve müsaitliği tek ekranda görün.", cancellationToken);
+        var hotels = await LoadHotelOptionsAsync(connection, search, null, null, null, cancellationToken);
         var selectedHotelId = hotelId ?? hotels.FirstOrDefault()?.Value ?? 0;
         var roomTypes = selectedHotelId > 0 ? await LoadRoomTypeOptionsAsync(connection, selectedHotelId, cancellationToken) : new List<SalesSelectOption>();
         var selectedRoomTypeId = roomTypeId ?? roomTypes.FirstOrDefault()?.Value ?? 0;
         var targetMonth = month ?? DateOnly.FromDateTime(DateTime.Today);
+        var monthAnchor = new DateOnly(targetMonth.Year, targetMonth.Month, 1);
 
         return new SalesAvailabilityPageViewModel
         {
             Shell = shell,
+            Search = search,
             SelectedHotelId = selectedHotelId,
             SelectedRoomTypeId = selectedRoomTypeId,
-            SelectedMonth = new DateOnly(targetMonth.Year, targetMonth.Month, 1),
+            SelectedMonth = monthAnchor,
             Hotels = hotels,
             RoomTypes = roomTypes,
-            Days = selectedRoomTypeId > 0 ? await LoadAvailabilityDaysAsync(connection, selectedRoomTypeId, new DateOnly(targetMonth.Year, targetMonth.Month, 1), cancellationToken) : new List<SalesAvailabilityDayViewModel>()
+            Days = selectedRoomTypeId > 0 ? await LoadAvailabilityDaysAsync(connection, selectedRoomTypeId, monthAnchor, cancellationToken) : new List<SalesAvailabilityDayViewModel>(),
+            SelectedHotelLabel = hotels.FirstOrDefault(x => x.Value == selectedHotelId)?.Label ?? "Otel seçin",
+            SelectedRoomLabel = roomTypes.FirstOrDefault(x => x.Value == selectedRoomTypeId)?.Label ?? "Oda seçin",
+            PreviousMonthQuery = BuildMonthQuery(selectedHotelId, selectedRoomTypeId, search, monthAnchor.AddMonths(-1)),
+            NextMonthQuery = BuildMonthQuery(selectedHotelId, selectedRoomTypeId, search, monthAnchor.AddMonths(1))
         };
     }
 
-    public async Task<SalesReservationsPageViewModel> GetReservationsAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<SalesReservationsPageViewModel> GetReservationsAsync(long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        return new SalesReservationsPageViewModel
+        NormalizeReservationFilters(filters);
+
+        var model = new SalesReservationsPageViewModel
         {
-            Shell = await BuildShellAsync(connection, userId, "reservations", "Rezervasyonlarım", "Satış panelinden açtığınız rezervasyonları durum ve komisyon bilgileriyle takip edin.", cancellationToken),
-            Reservations = await LoadReservationsAsync(connection, userId, 150, cancellationToken)
+            Shell = await BuildShellAsync(connection, userId, "reservations", "Rezervasyonlarım", "Durum, tarih ve müşteri bazlı filtreleyin; görüşme sırasında kayıtları anında bulun.", cancellationToken),
+            Filters = filters,
+            Reservations = await LoadReservationsAsync(connection, userId, filters, cancellationToken),
+            Pagination = await LoadReservationsPaginationAsync(connection, userId, filters, cancellationToken),
+            Summary = await LoadReservationSummaryAsync(connection, userId, filters, cancellationToken)
         };
+
+        return model;
     }
 
-    public async Task<SalesReportsPageViewModel> GetReportsAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<SalesReportsPageViewModel> GetReportsAsync(long userId, int year, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
+        var safePage = page <= 0 ? 1 : page;
+        var safePageSize = pageSize is 10 or 20 or 30 ? pageSize : 10;
         var model = new SalesReportsPageViewModel
         {
-            Shell = await BuildShellAsync(connection, userId, "reports", "Raporlar", "Aylık rezervasyon hacmi, ciro ve komisyon verisini satış performansı olarak görün.", cancellationToken)
+            Shell = await BuildShellAsync(connection, userId, "reports", "Raporlar", "Aylık rezervasyon performansınızı, onay/iptal oranınızı ve kazandırdığınız ciroyu görün.", cancellationToken),
+            SelectedYear = year,
+            Pagination = new SalesPaginationViewModel { Page = safePage, PageSize = safePageSize }
         };
 
         const string sql = @"
-            SELECT COALESCE(SUM(toplam_tutar),0), COALESCE(SUM(komisyon_tutari),0), COUNT(*)
+            SELECT COALESCE(SUM(toplam_tutar),0), COALESCE(SUM(komisyon_tutari),0), COUNT(*),
+                   SUM(CASE WHEN durum = 'Onaylandı' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN durum = 'İptal Edildi' THEN 1 ELSE 0 END)
             FROM rezervasyonlar
             WHERE satis_temsilcisi_id = @userId
-              AND olusturulma_tarihi >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
-              AND olusturulma_tarihi < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH);";
-        await using var command = new MySqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@userId", userId);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (await reader.ReadAsync(cancellationToken))
+              AND YEAR(olusturulma_tarihi) = @year;";
+        await using (var command = new MySqlCommand(sql, connection))
         {
-            model.MonthlyRevenue = ReadDecimal(reader, 0);
-            model.MonthlyCommission = ReadDecimal(reader, 1);
-            model.MonthlyReservationCount = ReadInt(reader, 2);
+            command.Parameters.AddWithValue("@userId", userId);
+            command.Parameters.AddWithValue("@year", year);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                model.MonthlyRevenue = ReadDecimal(reader, 0);
+                model.MonthlyCommission = ReadDecimal(reader, 1);
+                model.MonthlyReservationCount = ReadInt(reader, 2);
+                model.MonthlyApprovedCount = ReadInt(reader, 3);
+                model.MonthlyCancelledCount = ReadInt(reader, 4);
+            }
         }
+
+        model.MonthlyBreakdown = await LoadMonthlyPerformanceAsync(connection, userId, year, safePage, safePageSize, cancellationToken);
+        model.Pagination.TotalCount = await CountMonthlyPerformanceRowsAsync(connection, userId, year, cancellationToken);
         return model;
     }
 
@@ -431,22 +501,34 @@ public class SalesService : ISalesService
         return result is null or DBNull ? 0 : Convert.ToInt32(result, CultureInfo.InvariantCulture);
     }
 
-    private async Task<List<SalesReservationListItemViewModel>> LoadReservationsAsync(MySqlConnection connection, long userId, int limit, CancellationToken cancellationToken)
+    private async Task<List<SalesReservationListItemViewModel>> LoadReservationsAsync(MySqlConnection connection, long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT r.id, r.rezervasyon_no, o.otel_adi, r.misafir_ad_soyad,
+            SELECT r.id, r.rezervasyon_no, o.otel_adi, r.misafir_ad_soyad, COALESCE(r.misafir_eposta,''), COALESCE(r.misafir_telefon,''),
                    DATE_FORMAT(r.giris_tarihi, '%d.%m.%Y'), DATE_FORMAT(r.cikis_tarihi, '%d.%m.%Y'),
-                   r.gece_sayisi, ot.oda_adi, r.durum, r.otel_onay_durumu, r.toplam_tutar, r.komisyon_tutari
+                   r.gece_sayisi, ot.oda_adi, r.durum, r.otel_onay_durumu, r.toplam_tutar, r.komisyon_tutari,
+                   DATE_FORMAT(r.olusturulma_tarihi, '%d.%m.%Y %H:%i'), COALESCE(r.rezervasyon_kanali,''), COALESCE(r.musteri_talep_notu,'')
             FROM rezervasyonlar r
             INNER JOIN oteller o ON o.id = r.otel_id
             INNER JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
             WHERE r.satis_temsilcisi_id = @userId
+              AND (@search IS NULL OR r.rezervasyon_no LIKE CONCAT('%', @search, '%') OR o.otel_adi LIKE CONCAT('%', @search, '%') OR r.misafir_ad_soyad LIKE CONCAT('%', @search, '%') OR r.misafir_telefon LIKE CONCAT('%', @search, '%') OR r.misafir_eposta LIKE CONCAT('%', @search, '%'))
+              AND (@status IS NULL OR r.durum = @status)
+              AND (@approval IS NULL OR r.otel_onay_durumu = @approval)
+              AND (@startDate IS NULL OR r.giris_tarihi >= @startDate)
+              AND (@endDate IS NULL OR r.cikis_tarihi <= @endDate)
             ORDER BY r.olusturulma_tarihi DESC
-            LIMIT @limit;";
+            LIMIT @offset, @limit;";
         var items = new List<SalesReservationListItemViewModel>();
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
-        command.Parameters.AddWithValue("@limit", limit);
+        command.Parameters.AddWithValue("@search", string.IsNullOrWhiteSpace(filters.Search) ? DBNull.Value : filters.Search.Trim());
+        command.Parameters.AddWithValue("@status", string.IsNullOrWhiteSpace(filters.Status) ? DBNull.Value : filters.Status.Trim());
+        command.Parameters.AddWithValue("@approval", string.IsNullOrWhiteSpace(filters.Approval) ? DBNull.Value : filters.Approval.Trim());
+        command.Parameters.AddWithValue("@startDate", filters.StartDate.HasValue ? filters.StartDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+        command.Parameters.AddWithValue("@endDate", filters.EndDate.HasValue ? filters.EndDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+        command.Parameters.AddWithValue("@offset", (filters.Page - 1) * filters.PageSize);
+        command.Parameters.AddWithValue("@limit", filters.PageSize);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -456,12 +538,17 @@ public class SalesService : ISalesService
                 ReservationNo = reader.GetString(1),
                 HotelName = reader.GetString(2),
                 CustomerName = reader.GetString(3),
-                StayText = $"{reader.GetString(4)} - {reader.GetString(5)} · {ReadInt(reader, 6)} gece",
-                RoomName = reader.GetString(7),
-                StatusText = reader.GetString(8),
-                ApprovalText = reader.GetString(9),
-                TotalText = FormatMoney(ReadDecimal(reader, 10)),
-                CommissionText = FormatMoney(ReadDecimal(reader, 11))
+                CustomerEmail = reader.GetString(4),
+                CustomerPhone = reader.GetString(5),
+                StayText = $"{reader.GetString(6)} - {reader.GetString(7)} · {ReadInt(reader, 8)} gece",
+                RoomName = reader.GetString(9),
+                StatusText = reader.GetString(10),
+                ApprovalText = reader.GetString(11),
+                TotalText = FormatMoney(ReadDecimal(reader, 12)),
+                CommissionText = FormatMoney(ReadDecimal(reader, 13)),
+                CreatedAtText = reader.GetString(14),
+                ChannelText = reader.GetString(15),
+                DemandNote = reader.GetString(16)
             });
         }
         return items;
@@ -471,10 +558,12 @@ public class SalesService : ISalesService
     {
         const string sql = @"
             SELECT id, musteri_kodu, ad_soyad, COALESCE(eposta,''), COALESCE(telefon,''), uyelik_seviyesi,
-                   toplam_rezervasyon_sayisi, son_rezervasyon_tarihi, COALESCE(son_talep_ozeti,'')
+                   toplam_rezervasyon_sayisi, son_rezervasyon_tarihi, COALESCE(son_talep_ozeti,''), toplam_harcama,
+                   CONCAT_WS(', ', NULLIF(mahalle,''), NULLIF(ilce,''), NULLIF(sehir,'')),
+                   COALESCE(sehir,''), COALESCE(ilce,''), COALESCE(mahalle,''), COALESCE(adres,'')
             FROM satis_musterileri
             WHERE (@search IS NULL OR ad_soyad LIKE CONCAT('%', @search, '%') OR eposta LIKE CONCAT('%', @search, '%') OR telefon LIKE CONCAT('%', @search, '%'))
-            ORDER BY guncellenme_tarihi DESC, olusturulma_tarihi DESC
+            ORDER BY toplam_rezervasyon_sayisi DESC, guncellenme_tarihi DESC, olusturulma_tarihi DESC
             LIMIT @limit;";
         var items = new List<SalesCustomerCardViewModel>();
         await using var command = new MySqlCommand(sql, connection);
@@ -493,14 +582,52 @@ public class SalesService : ISalesService
                 MembershipLevel = reader.GetString(5),
                 ReservationCountText = $"{ReadInt(reader, 6)} rezervasyon",
                 LastStayText = reader.IsDBNull(7) ? "Henüz rezervasyon yok" : reader.GetDateTime(7).ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
-                LastRequestSummary = reader.GetString(8)
+                LastRequestSummary = reader.GetString(8),
+                TotalSpendText = FormatMoney(ReadDecimal(reader, 9)),
+                LocationText = reader.IsDBNull(10) ? "Konum bilgisi yok" : reader.GetString(10),
+                City = reader.GetString(11),
+                District = reader.GetString(12),
+                Neighborhood = reader.GetString(13),
+                Address = reader.GetString(14)
             });
         }
         return items;
     }
 
-    private async Task<List<SalesSelectOption>> LoadHotelOptionsAsync(MySqlConnection connection, CancellationToken cancellationToken)
-        => await LoadOptionsAsync(connection, "SELECT id, otel_adi FROM oteller WHERE yayin_durumu IN ('Yayında','Bakımda') AND onay_durumu = 'Onaylandı' ORDER BY one_cikan_otel DESC, populerlik_sirasi DESC, otel_adi;", null, cancellationToken);
+    private async Task<List<SalesSelectOption>> LoadHotelOptionsAsync(MySqlConnection connection, string? search, string? city, string? district, string? neighborhood, CancellationToken cancellationToken)
+        => await LoadOptionsAsync(connection, @"
+            SELECT
+                id,
+                CONCAT(
+                    otel_adi,
+                    CASE
+                        WHEN NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF(sehir,''))), '') IS NULL THEN ''
+                        ELSE CONCAT(' · ', TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF(sehir,''))))
+                    END
+                ) AS etiket
+            FROM oteller
+            WHERE yayin_durumu IN ('Yayında','Bakımda')
+              AND onay_durumu = 'Onaylandı'
+              AND (@search IS NULL OR otel_adi LIKE CONCAT('%', @search, '%') OR sehir LIKE CONCAT('%', @search, '%') OR ilce LIKE CONCAT('%', @search, '%') OR tam_adres LIKE CONCAT('%', @search, '%'))
+              AND (@city IS NULL OR sehir = @city)
+              AND (@district IS NULL OR ilce = @district)
+              AND (@neighborhood IS NULL OR tam_adres LIKE CONCAT('%', @neighborhood, '%'))
+            ORDER BY
+                CASE WHEN @search IS NOT NULL AND otel_adi LIKE CONCAT(@search, '%') THEN 0 ELSE 1 END,
+                one_cikan_otel DESC,
+                populerlik_sirasi DESC,
+                ortalama_puan DESC,
+                toplam_yorum_sayisi DESC,
+                otel_adi
+            LIMIT 250;",
+            cmd =>
+            {
+                cmd.Parameters.AddWithValue("@search", string.IsNullOrWhiteSpace(search) ? DBNull.Value : search.Trim());
+                cmd.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? DBNull.Value : city.Trim());
+                cmd.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(district) ? DBNull.Value : district.Trim());
+                cmd.Parameters.AddWithValue("@neighborhood", string.IsNullOrWhiteSpace(neighborhood) ? DBNull.Value : neighborhood.Trim());
+            },
+            cancellationToken);
 
     private async Task<List<SalesSelectOption>> LoadCitiesAsync(MySqlConnection connection, CancellationToken cancellationToken)
         => await LoadOptionsAsync(connection, "SELECT MIN(id), sehir FROM oteller GROUP BY sehir ORDER BY sehir;", null, cancellationToken);
@@ -516,9 +643,12 @@ public class SalesService : ISalesService
         const string sql = @"
             SELECT o.id, o.oda_adi, o.maksimum_kisi_sayisi, o.toplam_oda_sayisi,
                    COALESCE(AVG(COALESCE(ofm.indirimli_fiyat, ofm.gecelik_fiyat)), o.standart_gecelik_fiyat) AS fiyat,
-                   COALESCE(MAX(ofm.toplam_oda_sayisi - ofm.satilan_oda_sayisi - ofm.bloke_oda_sayisi), o.toplam_oda_sayisi) AS stok
+                   COALESCE(MAX(ofm.toplam_oda_sayisi - ofm.satilan_oda_sayisi - ofm.bloke_oda_sayisi), o.toplam_oda_sayisi) AS stok,
+                   COALESCE(GROUP_CONCAT(DISTINCT oo.ozellik_adi ORDER BY oo.siralama ASC SEPARATOR ', '), '')
             FROM oda_tipleri o
             LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = o.id AND ofm.tarih >= @checkIn AND ofm.tarih < @checkOut
+            LEFT JOIN oda_tipi_ozellikleri oto ON oto.oda_tip_id = o.id
+            LEFT JOIN oda_ozellikleri oo ON oo.id = oto.ozellik_id AND oo.aktif_mi = 1
             WHERE o.otel_id = @hotelId AND o.aktif_mi = 1
             GROUP BY o.id, o.oda_adi, o.maksimum_kisi_sayisi, o.toplam_oda_sayisi, o.standart_gecelik_fiyat
             ORDER BY fiyat ASC;";
@@ -539,7 +669,9 @@ public class SalesService : ISalesService
                 StockText = stock > 0 ? $"{stock} oda müsait" : "Müsaitlik sınırlı",
                 PriceText = $"{FormatMoney(ReadDecimal(reader, 4))} / gece",
                 IsAvailable = stock > 0,
-                FeaturesText = "Hızlı rezervasyon için uygun"
+                FeaturesText = reader.IsDBNull(6) || string.IsNullOrWhiteSpace(reader.GetString(6))
+                    ? "Hızlı rezervasyon için uygun"
+                    : string.Join(" · ", SplitFeatures(reader.GetString(6)).Take(4))
             });
         }
         return items;
@@ -574,7 +706,7 @@ public class SalesService : ISalesService
         };
     }
 
-    private async Task<List<SalesHotelSearchCardViewModel>> LoadHotelSearchResultsAsync(MySqlConnection connection, string? searchTerm, string? city, string? district, string? neighborhood, decimal? minPrice, decimal? maxPrice, decimal? minimumRating, int? minimumReviewCount, string? feature, CancellationToken cancellationToken)
+    private async Task<List<SalesHotelSearchCardViewModel>> LoadHotelSearchResultsAsync(MySqlConnection connection, string? searchTerm, string? city, string? district, string? neighborhood, decimal? minPrice, decimal? maxPrice, decimal? minimumRating, int? minimumReviewCount, string? feature, int resultLimit, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT o.id, o.otel_adi, o.sehir, o.ilce, o.tam_adres, COALESCE(o.rezervasyon_telefonu, o.telefon_1, ''),
@@ -592,8 +724,12 @@ public class SalesService : ISalesService
               AND (@minimumRating IS NULL OR o.ortalama_puan >= @minimumRating)
               AND (@minimumReviewCount IS NULL OR o.toplam_yorum_sayisi >= @minimumReviewCount)
               AND (@feature IS NULL OR EXISTS (SELECT 1 FROM otel_ozellik_iliskileri il INNER JOIN otel_ozellikleri oo ON oo.id = il.ozellik_id WHERE il.otel_id = o.id AND oo.ozellik_adi LIKE CONCAT('%', @feature, '%')))
-            ORDER BY o.one_cikan_otel DESC, o.ortalama_puan DESC, o.toplam_yorum_sayisi DESC
-            LIMIT 12;";
+            ORDER BY
+                CASE WHEN @searchTerm IS NOT NULL AND o.otel_adi LIKE CONCAT(@searchTerm, '%') THEN 0 ELSE 1 END,
+                CASE WHEN @district IS NOT NULL AND o.ilce = @district THEN 0 ELSE 1 END,
+                CASE WHEN @city IS NOT NULL AND o.sehir = @city THEN 0 ELSE 1 END,
+                o.one_cikan_otel DESC, o.ortalama_puan DESC, o.toplam_yorum_sayisi DESC
+            LIMIT @resultLimit;";
         var items = new List<SalesHotelSearchCardViewModel>();
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@searchTerm", string.IsNullOrWhiteSpace(searchTerm) ? DBNull.Value : searchTerm.Trim());
@@ -603,6 +739,7 @@ public class SalesService : ISalesService
         command.Parameters.AddWithValue("@minimumRating", minimumRating.HasValue ? minimumRating.Value : DBNull.Value);
         command.Parameters.AddWithValue("@minimumReviewCount", minimumReviewCount.HasValue ? minimumReviewCount.Value : DBNull.Value);
         command.Parameters.AddWithValue("@feature", string.IsNullOrWhiteSpace(feature) ? DBNull.Value : feature.Trim());
+        command.Parameters.AddWithValue("@resultLimit", Math.Clamp(resultLimit, 1, 50));
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -621,16 +758,66 @@ public class SalesService : ISalesService
                 ReviewCountText = $"{ReadInt(reader, 7)} yorum",
                 PriceText = price > 0 ? $"{FormatMoney(price)} / gece" : "Fiyat bekleniyor",
                 TodayDemandText = $"{ReadInt(reader, 9)} kişi bugün tercih etti",
+                LocationText = string.Join(" · ", new[] { reader.GetString(3), reader.GetString(2) }.Where(static x => !string.IsNullOrWhiteSpace(x))),
                 FeatureBadges = SplitFeatures(reader.GetString(10))
             });
         }
         return items;
     }
 
+    private static bool HasHotelAssistantSearch(
+        string? searchTerm,
+        string? city,
+        string? district,
+        string? neighborhood,
+        decimal? minPrice,
+        decimal? maxPrice,
+        decimal? minimumRating,
+        int? minimumReviewCount,
+        string? feature)
+        => !string.IsNullOrWhiteSpace(searchTerm)
+           || !string.IsNullOrWhiteSpace(city)
+           || !string.IsNullOrWhiteSpace(district)
+           || !string.IsNullOrWhiteSpace(neighborhood)
+           || !string.IsNullOrWhiteSpace(feature)
+           || minPrice.HasValue
+           || maxPrice.HasValue
+           || minimumRating.HasValue
+           || minimumReviewCount.HasValue;
+
+    private static async Task<SalesSelectOption?> LoadHotelOptionByIdAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT id,
+                   CONCAT(
+                       otel_adi,
+                       CASE
+                           WHEN NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF(sehir,''))), '') IS NULL THEN ''
+                           ELSE CONCAT(' · ', TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF(sehir,''))))
+                       END
+                   ) AS etiket
+            FROM oteller
+            WHERE id = @hotelId
+            LIMIT 1;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new SalesSelectOption
+        {
+            Value = reader.GetInt64(0),
+            Label = reader.GetString(1)
+        };
+    }
+
     private async Task<List<SalesAvailabilityDayViewModel>> LoadAvailabilityDaysAsync(MySqlConnection connection, long roomTypeId, DateOnly monthStart, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT tarih, COALESCE(indirimli_fiyat, gecelik_fiyat), toplam_oda_sayisi, satilan_oda_sayisi, bloke_oda_sayisi
+            SELECT tarih, gecelik_fiyat, indirimli_fiyat, toplam_oda_sayisi, satilan_oda_sayisi, bloke_oda_sayisi
             FROM oda_fiyat_musaitlik
             WHERE oda_tip_id = @roomTypeId
               AND tarih >= @monthStart
@@ -643,13 +830,18 @@ public class SalesService : ISalesService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            var total = ReadInt(reader, 2);
-            var available = total - ReadInt(reader, 3) - ReadInt(reader, 4);
+            var total = ReadInt(reader, 3);
+            var available = total - ReadInt(reader, 4) - ReadInt(reader, 5);
+            var basePrice = ReadDecimal(reader, 1);
+            var campaignPrice = ReadDecimal(reader, 2);
             items.Add(new SalesAvailabilityDayViewModel
             {
                 Date = DateOnly.FromDateTime(reader.GetDateTime(0)),
                 IsAvailable = available > 0,
-                PriceText = FormatMoney(ReadDecimal(reader, 1))
+                PriceText = FormatMoney(basePrice),
+                CampaignPriceText = campaignPrice > 0 && campaignPrice != basePrice ? FormatMoney(campaignPrice) : string.Empty,
+                StockText = $"{Math.Max(0, available)} oda",
+                SoldOutText = available > 0 ? "Müsait" : "Kapalı / Dolu"
             });
         }
         return items;
@@ -804,6 +996,213 @@ public class SalesService : ISalesService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken)) items.Add(new SalesSelectOption { Value = reader.GetInt64(0), Label = reader.GetString(1) });
         return items;
+    }
+
+    private async Task<SalesCustomerCardViewModel?> LoadCustomerPrefillAsync(MySqlConnection connection, long customerId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT id, musteri_kodu, ad_soyad, COALESCE(eposta,''), COALESCE(telefon,''), COALESCE(uyelik_seviyesi,'Standart'),
+                   toplam_rezervasyon_sayisi, son_rezervasyon_tarihi, COALESCE(son_talep_ozeti,''), toplam_harcama,
+                   COALESCE(sehir,''), COALESCE(ilce,''), COALESCE(mahalle,''), COALESCE(adres,'')
+            FROM satis_musterileri
+            WHERE id = @customerId
+            LIMIT 1;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@customerId", customerId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new SalesCustomerCardViewModel
+        {
+            CustomerId = reader.GetInt64(0),
+            CustomerCode = reader.GetString(1),
+            FullName = reader.GetString(2),
+            Email = reader.GetString(3),
+            Phone = reader.GetString(4),
+            MembershipLevel = reader.GetString(5),
+            ReservationCountText = $"{ReadInt(reader, 6)} rezervasyon",
+            LastStayText = reader.IsDBNull(7) ? "Henüz rezervasyon yok" : reader.GetDateTime(7).ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
+            LastRequestSummary = reader.GetString(8),
+            TotalSpendText = FormatMoney(ReadDecimal(reader, 9)),
+            LocationText = string.Join(", ", new[] { reader.GetString(12), reader.GetString(11), reader.GetString(10) }.Where(static x => !string.IsNullOrWhiteSpace(x))),
+            City = reader.GetString(10),
+            District = reader.GetString(11),
+            Neighborhood = reader.GetString(12),
+            Address = reader.GetString(13)
+        };
+    }
+
+    private async Task<string> BuildSelectedHotelSummaryAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        if (hotelId <= 0)
+        {
+            return "Henüz otel seçilmedi. Operatörler otel adı, il, ilçe veya mahalle ile hızlı arama yapabilir.";
+        }
+
+        const string sql = @"
+            SELECT otel_adi, COALESCE(ilce,''), COALESCE(sehir,''), COALESCE(ortalama_puan,0), COALESCE(toplam_yorum_sayisi,0),
+                   COALESCE(rezervasyon_telefonu, telefon_1, '')
+            FROM oteller
+            WHERE id = @hotelId
+            LIMIT 1;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return "Otel bilgisi bulunamadı.";
+        }
+
+        var location = string.Join(", ", new[] { reader.GetString(1), reader.GetString(2) }.Where(static x => !string.IsNullOrWhiteSpace(x)));
+        return $"{reader.GetString(0)} · {location} · {ReadDecimal(reader, 3):0.0} puan · {ReadInt(reader, 4)} yorum · {reader.GetString(5)}";
+    }
+
+    private static string BuildMonthQuery(long? hotelId, long? roomTypeId, string? search, DateOnly monthAnchor)
+    {
+        var queryParts = new List<string>
+        {
+            $"year={monthAnchor.Year}",
+            $"month={monthAnchor.Month}"
+        };
+        if (hotelId.HasValue && hotelId.Value > 0) queryParts.Add($"hotelId={hotelId.Value}");
+        if (roomTypeId.HasValue && roomTypeId.Value > 0) queryParts.Add($"roomTypeId={roomTypeId.Value}");
+        if (!string.IsNullOrWhiteSpace(search)) queryParts.Add($"search={Uri.EscapeDataString(search.Trim())}");
+        return string.Join("&", queryParts);
+    }
+
+    private static void NormalizeReservationFilters(SalesReservationsFilterViewModel filters)
+    {
+        filters.Page = filters.Page <= 0 ? 1 : filters.Page;
+        filters.PageSize = filters.PageSize is 10 or 20 or 30 ? filters.PageSize : 10;
+        filters.Search = string.IsNullOrWhiteSpace(filters.Search) ? null : filters.Search.Trim();
+        filters.Status = string.IsNullOrWhiteSpace(filters.Status) ? null : filters.Status.Trim();
+        filters.Approval = string.IsNullOrWhiteSpace(filters.Approval) ? null : filters.Approval.Trim();
+
+        if (filters.StartDate.HasValue && filters.EndDate.HasValue && filters.EndDate < filters.StartDate)
+        {
+            (filters.StartDate, filters.EndDate) = (filters.EndDate, filters.StartDate);
+        }
+    }
+
+    private async Task<SalesPaginationViewModel> LoadReservationsPaginationAsync(MySqlConnection connection, long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COUNT(*)
+            FROM rezervasyonlar r
+            INNER JOIN oteller o ON o.id = r.otel_id
+            WHERE r.satis_temsilcisi_id = @userId
+              AND (@search IS NULL OR r.rezervasyon_no LIKE CONCAT('%', @search, '%') OR o.otel_adi LIKE CONCAT('%', @search, '%') OR r.misafir_ad_soyad LIKE CONCAT('%', @search, '%') OR r.misafir_telefon LIKE CONCAT('%', @search, '%') OR r.misafir_eposta LIKE CONCAT('%', @search, '%'))
+              AND (@status IS NULL OR r.durum = @status)
+              AND (@approval IS NULL OR r.otel_onay_durumu = @approval)
+              AND (@startDate IS NULL OR r.giris_tarihi >= @startDate)
+              AND (@endDate IS NULL OR r.cikis_tarihi <= @endDate);";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@search", filters.Search is null ? DBNull.Value : filters.Search);
+        command.Parameters.AddWithValue("@status", filters.Status is null ? DBNull.Value : filters.Status);
+        command.Parameters.AddWithValue("@approval", filters.Approval is null ? DBNull.Value : filters.Approval);
+        command.Parameters.AddWithValue("@startDate", filters.StartDate.HasValue ? filters.StartDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+        command.Parameters.AddWithValue("@endDate", filters.EndDate.HasValue ? filters.EndDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+
+        return new SalesPaginationViewModel
+        {
+            Page = filters.Page,
+            PageSize = filters.PageSize,
+            TotalCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture)
+        };
+    }
+
+    private async Task<SalesReservationSummaryViewModel> LoadReservationSummaryAsync(MySqlConnection connection, long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COUNT(*),
+                   SUM(CASE WHEN r.otel_onay_durumu = 'Onaylandı' OR r.durum = 'Onaylandı' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN r.durum = 'İptal Edildi' THEN 1 ELSE 0 END),
+                   COALESCE(SUM(r.toplam_tutar), 0)
+            FROM rezervasyonlar r
+            INNER JOIN oteller o ON o.id = r.otel_id
+            WHERE r.satis_temsilcisi_id = @userId
+              AND (@search IS NULL OR r.rezervasyon_no LIKE CONCAT('%', @search, '%') OR o.otel_adi LIKE CONCAT('%', @search, '%') OR r.misafir_ad_soyad LIKE CONCAT('%', @search, '%') OR r.misafir_telefon LIKE CONCAT('%', @search, '%') OR r.misafir_eposta LIKE CONCAT('%', @search, '%'))
+              AND (@status IS NULL OR r.durum = @status)
+              AND (@approval IS NULL OR r.otel_onay_durumu = @approval)
+              AND (@startDate IS NULL OR r.giris_tarihi >= @startDate)
+              AND (@endDate IS NULL OR r.cikis_tarihi <= @endDate);";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@search", filters.Search is null ? DBNull.Value : filters.Search);
+        command.Parameters.AddWithValue("@status", filters.Status is null ? DBNull.Value : filters.Status);
+        command.Parameters.AddWithValue("@approval", filters.Approval is null ? DBNull.Value : filters.Approval);
+        command.Parameters.AddWithValue("@startDate", filters.StartDate.HasValue ? filters.StartDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+        command.Parameters.AddWithValue("@endDate", filters.EndDate.HasValue ? filters.EndDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return new SalesReservationSummaryViewModel();
+        }
+
+        return new SalesReservationSummaryViewModel
+        {
+            TotalCount = ReadInt(reader, 0),
+            ApprovedCount = ReadInt(reader, 1),
+            CancelledCount = ReadInt(reader, 2),
+            TotalRevenueText = FormatMoney(ReadDecimal(reader, 3))
+        };
+    }
+
+    private async Task<List<SalesMonthlyPerformanceItemViewModel>> LoadMonthlyPerformanceAsync(MySqlConnection connection, long userId, int year, int page, int pageSize, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT MONTH(olusturulma_tarihi) AS ay,
+                   COUNT(*) AS rezervasyon_sayisi,
+                   SUM(CASE WHEN durum = 'Onaylandı' OR otel_onay_durumu = 'Onaylandı' THEN 1 ELSE 0 END) AS onaylanan,
+                   SUM(CASE WHEN durum = 'İptal Edildi' THEN 1 ELSE 0 END) AS iptal_edilen,
+                   COALESCE(SUM(toplam_tutar), 0) AS toplam_tutar
+            FROM rezervasyonlar
+            WHERE satis_temsilcisi_id = @userId
+              AND YEAR(olusturulma_tarihi) = @year
+            GROUP BY MONTH(olusturulma_tarihi)
+            ORDER BY ay DESC
+            LIMIT @offset, @limit;";
+        var items = new List<SalesMonthlyPerformanceItemViewModel>();
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@year", year);
+        command.Parameters.AddWithValue("@offset", (page - 1) * pageSize);
+        command.Parameters.AddWithValue("@limit", pageSize);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var month = ReadInt(reader, 0);
+            items.Add(new SalesMonthlyPerformanceItemViewModel
+            {
+                PeriodLabel = new DateTime(year, Math.Max(1, month), 1).ToString("MMMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                ReservationCount = ReadInt(reader, 1),
+                ApprovedCount = ReadInt(reader, 2),
+                CancelledCount = ReadInt(reader, 3),
+                RevenueText = FormatMoney(ReadDecimal(reader, 4))
+            });
+        }
+        return items;
+    }
+
+    private async Task<int> CountMonthlyPerformanceRowsAsync(MySqlConnection connection, long userId, int year, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COUNT(*)
+            FROM (
+                SELECT MONTH(olusturulma_tarihi) AS ay
+                FROM rezervasyonlar
+                WHERE satis_temsilcisi_id = @userId
+                  AND YEAR(olusturulma_tarihi) = @year
+                GROUP BY MONTH(olusturulma_tarihi)
+            ) aylik;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@year", year);
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
     }
 
     private static decimal ReadDecimal(MySqlDataReader reader, int index) => reader.IsDBNull(index) ? 0m : Convert.ToDecimal(reader.GetValue(index), CultureInfo.InvariantCulture);

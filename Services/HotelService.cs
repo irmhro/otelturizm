@@ -10,10 +10,12 @@ namespace otelturizmnew.Services;
 public class HotelService : IHotelService
 {
     private readonly IConfiguration _configuration;
+    private readonly IHotelPricingReadService _hotelPricingReadService;
 
-    public HotelService(IConfiguration configuration)
+    public HotelService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService)
     {
         _configuration = configuration;
+        _hotelPricingReadService = hotelPricingReadService;
     }
 
     // Simple local weather placeholder — replace with real API integration (OpenWeatherMap, etc.)
@@ -38,6 +40,7 @@ public class HotelService : IHotelService
 
         await using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
+        await ReopenExpiredPenaltyHotelsAsync(connection, cancellationToken);
 
         const string hotelSql = """
             SELECT
@@ -61,8 +64,19 @@ public class HotelService : IHotelService
             LEFT JOIN (
                 SELECT
                     ot.otel_id,
-                    MIN(ot.standart_gecelik_fiyat) AS baslangic_fiyat
+                    MIN(
+                        COALESCE(
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                ELSE COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))
+                            END,
+                            NULLIF(ot.standart_gecelik_fiyat, 0)
+                        )
+                    ) AS baslangic_fiyat
                 FROM oda_tipleri ot
+                LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
+                    AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 120 DAY)
                 WHERE ot.aktif_mi = 1
                 GROUP BY ot.otel_id
             ) pf ON pf.otel_id = o.id
@@ -191,6 +205,37 @@ public class HotelService : IHotelService
 
         await reader.CloseAsync();
 
+        if (hotels.Count > 0)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var endDate = today.AddDays(120);
+            var priceMap = await _hotelPricingReadService.GetHotelEffectivePriceMapAsync(
+                hotels.Select(static item => item.Id).ToList(),
+                today,
+                endDate,
+                cancellationToken);
+
+            foreach (var hotel in hotels)
+            {
+                if (!priceMap.TryGetValue(hotel.Id, out var effectivePrice) || effectivePrice <= 0m)
+                {
+                    continue;
+                }
+
+                hotel.StartingPrice = effectivePrice;
+                if (hotel.HasDiscount && hotel.DiscountPercent > 0)
+                {
+                    hotel.DiscountedPrice = decimal.Round(effectivePrice, 0);
+                    hotel.OriginalPrice = decimal.Round(effectivePrice / (1 - (hotel.DiscountPercent / 100m)), 0);
+                    hotel.PriceText = $"TRY {hotel.DiscountedPrice.Value:N0}";
+                }
+                else
+                {
+                    hotel.PriceText = $"TRY {effectivePrice:N0}";
+                }
+            }
+        }
+
         const string destinationSql = """
             SELECT
                 sehir,
@@ -294,6 +339,7 @@ public class HotelService : IHotelService
 
         await using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
+        await ReopenExpiredPenaltyHotelsAsync(connection, cancellationToken);
 
         var normalizedCitySql = BuildSearchNormalizationSql("o.sehir");
         var normalizedDistrictSql = BuildSearchNormalizationSql("o.ilce");
@@ -321,8 +367,19 @@ public class HotelService : IHotelService
             LEFT JOIN (
                 SELECT
                     ot.otel_id,
-                    MIN(ot.standart_gecelik_fiyat) AS baslangic_fiyat
+                    MIN(
+                        COALESCE(
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                ELSE COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))
+                            END,
+                            NULLIF(ot.standart_gecelik_fiyat, 0)
+                        )
+                    ) AS baslangic_fiyat
                 FROM oda_tipleri ot
+                LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
+                    AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 120 DAY)
                 WHERE ot.aktif_mi = 1
                 GROUP BY ot.otel_id
             ) pf ON pf.otel_id = o.id
@@ -443,6 +500,27 @@ public class HotelService : IHotelService
             });
         }
 
+        if (model.Hotels.Count > 0)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var endDate = today.AddDays(120);
+            var priceMap = await _hotelPricingReadService.GetHotelEffectivePriceMapAsync(
+                model.Hotels.Select(static item => item.Id).ToList(),
+                today,
+                endDate,
+                cancellationToken);
+
+            foreach (var hotel in model.Hotels)
+            {
+                if (!priceMap.TryGetValue(hotel.Id, out var effectivePrice) || effectivePrice <= 0m)
+                {
+                    continue;
+                }
+
+                hotel.StartingPrice = effectivePrice;
+            }
+        }
+
         model.ActiveTag = NormalizeCampaignTag(campaignTag);
         model.Hotels = ApplyCampaignFilter(model.Hotels, model.ActiveTag).ToList();
         model.TotalCount = model.Hotels.Count;
@@ -476,6 +554,7 @@ public class HotelService : IHotelService
 
         await using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
+        await ReopenExpiredPenaltyHotelsAsync(connection, cancellationToken);
 
         var normalizedCitySql = BuildSearchNormalizationSql("o.sehir");
         var normalizedDistrictSql = BuildSearchNormalizationSql("o.ilce");
@@ -771,8 +850,19 @@ public class HotelService : IHotelService
             LEFT JOIN (
                 SELECT
                     ot.otel_id,
-                    MIN(ot.standart_gecelik_fiyat) AS baslangic_fiyat
+                    MIN(
+                        COALESCE(
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                ELSE COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))
+                            END,
+                            NULLIF(ot.standart_gecelik_fiyat, 0)
+                        )
+                    ) AS baslangic_fiyat
                 FROM oda_tipleri ot
+                LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
+                    AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 120 DAY)
                 WHERE ot.aktif_mi = 1
                 GROUP BY ot.otel_id
             ) pf ON pf.otel_id = o.id
@@ -840,6 +930,17 @@ public class HotelService : IHotelService
                 LowestRoomPrice = lowestPrice,
                 MainImageUrl = NormalizeImageUrl(reader.IsDBNull(reader.GetOrdinal("gorsel_url")) ? string.Empty : reader.GetString(reader.GetOrdinal("gorsel_url")))
             };
+        }
+
+        var todayForDetailPrice = DateOnly.FromDateTime(DateTime.Today);
+        var detailPrice = await _hotelPricingReadService.GetHotelEffectivePriceAsync(
+            model.Id,
+            todayForDetailPrice,
+            todayForDetailPrice.AddDays(120),
+            cancellationToken);
+        if (detailPrice.HasValue && detailPrice.Value > 0m)
+        {
+            model.LowestRoomPrice = detailPrice.Value;
         }
 
         const string gallerySql = """
@@ -987,6 +1088,35 @@ public class HotelService : IHotelService
             }
         }
 
+        if (model.Rooms.Count > 0)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var horizonEnd = today.AddDays(30);
+            var roomPriceMap = await _hotelPricingReadService.GetRoomAverageNightlyPriceMapAsync(
+                model.Rooms.Select(static item => item.RoomTypeId).Where(static id => id > 0).ToList(),
+                today,
+                horizonEnd,
+                cancellationToken);
+
+            foreach (var room in model.Rooms)
+            {
+                if (roomPriceMap.TryGetValue(room.RoomTypeId, out var effectivePrice) && effectivePrice > 0m)
+                {
+                    room.Price = effectivePrice;
+                }
+            }
+
+            var lowestRoomPrice = model.Rooms
+                .Where(static item => item.Price > 0m)
+                .Select(static item => item.Price)
+                .DefaultIfEmpty(model.LowestRoomPrice)
+                .Min();
+            if (lowestRoomPrice > 0m)
+            {
+                model.LowestRoomPrice = lowestRoomPrice;
+            }
+        }
+
         if (model.Rooms.Count == 0)
         {
             model.Rooms.Add(new HotelRoomViewModel
@@ -1051,8 +1181,19 @@ public class HotelService : IHotelService
             LEFT JOIN (
                 SELECT
                     ot.otel_id,
-                    MIN(ot.standart_gecelik_fiyat) AS baslangic_fiyat
+                    MIN(
+                        COALESCE(
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                ELSE COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))
+                            END,
+                            NULLIF(ot.standart_gecelik_fiyat, 0)
+                        )
+                    ) AS baslangic_fiyat
                 FROM oda_tipleri ot
+                LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
+                    AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 120 DAY)
                 WHERE ot.aktif_mi = 1
                 GROUP BY ot.otel_id
             ) pf ON pf.otel_id = o.id
@@ -1153,6 +1294,49 @@ public class HotelService : IHotelService
         }
 
         return tags.Take(3).ToList();
+    }
+
+    private static async Task ReopenExpiredPenaltyHotelsAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            UPDATE oteller
+            SET yayin_durumu = 'Yayında',
+                partner_ceza_bitis_tarihi = NULL
+            WHERE partner_ceza_bitis_tarihi IS NOT NULL
+              AND partner_ceza_bitis_tarihi <= NOW()
+              AND yayin_durumu = 'Kapatıldı';";
+        try
+        {
+            await using var command = new MySqlCommand(sql, connection);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (MySqlException ex) when (IsUnknownColumnError(ex, "partner_ceza_bitis_tarihi"))
+        {
+            await EnsurePartnerPenaltyColumnAsync(connection, cancellationToken);
+            await using var retryCommand = new MySqlCommand(sql, connection);
+            await retryCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+    }
+
+    private static bool IsUnknownColumnError(MySqlException ex, string columnName)
+        => ex.Number == 1054 && ex.Message.Contains(columnName, StringComparison.OrdinalIgnoreCase);
+
+    private static async Task EnsurePartnerPenaltyColumnAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string existsSql = @"
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'oteller'
+              AND COLUMN_NAME = 'partner_ceza_bitis_tarihi';";
+        await using var existsCommand = new MySqlCommand(existsSql, connection);
+        var exists = Convert.ToInt32(await existsCommand.ExecuteScalarAsync(cancellationToken) ?? 0) > 0;
+        if (!exists)
+        {
+            const string alterSql = "ALTER TABLE oteller ADD COLUMN partner_ceza_bitis_tarihi DATETIME NULL;";
+            await using var alterCommand = new MySqlCommand(alterSql, connection);
+            await alterCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     private static IEnumerable<HotelListingCardViewModel> ApplyCampaignFilter(IEnumerable<HotelListingCardViewModel> hotels, string activeTag)

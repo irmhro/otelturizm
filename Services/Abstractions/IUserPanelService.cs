@@ -5,9 +5,16 @@ namespace otelturizmnew.Services.Abstractions;
 
 public interface IUserPanelService
 {
-    Task<UserDashboardPageViewModel> GetDashboardAsync(long userId, CancellationToken cancellationToken = default);
+    Task<UserDashboardPageViewModel> GetDashboardAsync(
+        long userId,
+        string? reservationStatus = null,
+        DateOnly? reservationStartDate = null,
+        DateOnly? reservationEndDate = null,
+        int reservationPage = 1,
+        int reservationPageSize = 5,
+        CancellationToken cancellationToken = default);
     Task<UserReservationsPageViewModel> GetReservationsAsync(long userId, CancellationToken cancellationToken = default);
-    Task<(bool Success, string Message)> CancelReservationAsync(long userId, long reservationId, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> CancelReservationAsync(long userId, long reservationId, string cancellationReason, CancellationToken cancellationToken = default);
     Task<UserMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SendMessageAsync(long userId, MessageSendRequest form, IReadOnlyList<IFormFile>? attachments, HttpContext httpContext, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> DeleteMessageAsync(long userId, MessageDeleteRequest form, CancellationToken cancellationToken = default);

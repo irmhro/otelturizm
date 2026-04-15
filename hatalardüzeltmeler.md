@@ -373,3 +373,25 @@
   - mesaj silme sonrasi sayfada `Bu mesaj silindi` placeholder'i gorundu
   - derleme temiz gecti: `0 hata`, `0 uyari`
 
+## 2026-04-15 - E-posta Doğrulama, Şifre Sıfırlama ve SMTP Canlı Ayarları
+
+- `email_services` tablosu canlı SMTP ayarları ile güncellendi.
+- Gönderen hesap: `info@otelturizm.com`
+- Host: `mail.otelturizm.com`
+- SMTP port: `465`
+- Güvenlik: `SSL/TLS`
+- E-posta doğrulaması tamamlanmadan `user` hesabı giriş yapamaz.
+- Kayıt sonrası kullanıcı `/eposta-dogrula` akışına yönlendirilir.
+- `email_dogrulama_tokenlari` tablosuna kod + token yazılır ve e-posta kuyruğuna düşer.
+- `sifre_sifirlama_tokenlari` tablosundaki reset linkleri 1 saat geçerlidir.
+- Süresi geçen veya kullanılmış reset tokenları geçersizdir.
+- Aynı e-posta için 5 hatalı giriş denemesi sonrası 10 dakika geçici kilit uygulanır.
+- SMTP teslimat servisi `System.Net.Mail` yerine `MailKit` ile güçlendirildi.
+- Geçerli posta kutularına gönderim başarılı, sistemde olmayan alıcılarda sunucu `No Such User Here` döndürür ve kayıt `Başarısız` olur.
+
+## 2026-04-15 - Rezervasyon mesajlasma ve e-posta sozlesmesi
+
+- Zorunlu kural: Rezervasyon operasyonu ile ilgili onay, red ve partner-misafir mesajlari mutlaka e-posta bilgilendirmesi ile birlikte calisir.
+- Partner panelinde red islemi detayli gerekce olmadan kaydedilmez; aciklayici red nedeni zorunludur.
+- Misafire partner mesaji gonderildiginde hem panel mesajlasma kaydi olusur hem de misafir e-posta adresine bildirim kuyruga yazilir.
+- Rezervasyon onaylandiginda misafire onay e-postasi, reddedildiginde red nedeni iceren durum e-postasi otomatik gonderilir.

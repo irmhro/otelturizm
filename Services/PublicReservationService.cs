@@ -9,14 +9,21 @@ namespace otelturizmnew.Services;
 public class PublicReservationService : IPublicReservationService
 {
     private readonly string _connectionString;
+    private readonly IHotelPricingReadService _hotelPricingReadService;
     private readonly IReservationDraftService _reservationDraftService;
     private readonly IEmailQueueService _emailQueueService;
     private readonly ILogger<PublicReservationService> _logger;
 
-    public PublicReservationService(IConfiguration configuration, IReservationDraftService reservationDraftService, IEmailQueueService emailQueueService, ILogger<PublicReservationService> logger)
+    public PublicReservationService(
+        IConfiguration configuration,
+        IHotelPricingReadService hotelPricingReadService,
+        IReservationDraftService reservationDraftService,
+        IEmailQueueService emailQueueService,
+        ILogger<PublicReservationService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
+        _hotelPricingReadService = hotelPricingReadService;
         _reservationDraftService = reservationDraftService;
         _emailQueueService = emailQueueService;
         _logger = logger;
@@ -35,7 +42,21 @@ public class PublicReservationService : IPublicReservationService
             NightlyPrice = pricing.NightlyPrice,
             RoomTotal = pricing.RoomTotal,
             TaxAmount = pricing.TaxAmount,
-            TotalAmount = pricing.TotalAmount
+            TotalAmount = pricing.TotalAmount,
+            IsAvailable = pricing.IsAvailable,
+            AvailabilityMessage = pricing.AvailabilityMessage,
+            NightlyBreakdown = pricing.NightlyBreakdown
+                .Select(static item => new PublicReservationNightlyBreakdownItemViewModel
+                {
+                    Date = item.Date,
+                    DateText = item.Date.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                    Price = item.EffectivePrice,
+                    PriceText = item.EffectivePrice.ToString("N0", CultureInfo.GetCultureInfo("tr-TR")),
+                    IsDiscounted = item.DiscountPrice.HasValue && item.DiscountPrice.Value > 0m && item.DiscountPrice.Value < item.BasePrice,
+                    IsClosed = item.IsClosed,
+                    RemainingRooms = item.RemainingRooms
+                })
+                .ToList()
         };
     }
 
@@ -51,9 +72,29 @@ public class PublicReservationService : IPublicReservationService
             return new PublicReservationResult { Message = "Cikis tarihi giris tarihinden sonra olmalidir." };
         }
 
+        if (IsOnlinePaymentPendingFeature(form.PaymentMethod))
+        {
+            return new PublicReservationResult
+            {
+                Message = "Online ödeme altyapısı şu anda geliştirme aşamasında. Şimdilik kapıda ödeme / nakit ile devam edebilirsiniz."
+            };
+        }
+
+        var paymentMethod = NormalizePaymentMethod(form.PaymentMethod);
+
         await using var connection = await OpenConnectionAsync(cancellationToken);
         var hotel = await LoadHotelAsync(connection, form.HotelId, form.RoomTypeId, cancellationToken);
         var pricing = await BuildPriceSummaryAsync(connection, form.RoomTypeId, form.CheckInDate, form.CheckOutDate, form.RoomCount, cancellationToken);
+        if (!pricing.IsAvailable)
+        {
+            return new PublicReservationResult
+            {
+                Message = string.IsNullOrWhiteSpace(pricing.AvailabilityMessage)
+                    ? "Secilen tarih araliginda uygun oda veya fiyat bulunamadi."
+                    : pricing.AvailabilityMessage,
+                RedirectUrl = $"/oteller/{hotel.Slug}"
+            };
+        }
 
         var draftRequest = new ReservationDraftUpsertRequest
         {
@@ -132,7 +173,7 @@ public class PublicReservationService : IPublicReservationService
                     misafir_sehir, misafir_ilce, misafir_mahalle, misafir_adres,
                     giris_tarihi, cikis_tarihi, yetiskin_sayisi, cocuk_sayisi, oda_sayisi,
                     gecelik_fiyat, toplam_oda_tutari, vergi_tutari, toplam_tutar,
-                    komisyon_orani, durum, odeme_durumu, otel_onay_durumu, firma_onay_durumu,
+                    komisyon_orani, durum, odeme_durumu, odeme_yontemi, otel_onay_durumu, firma_onay_durumu,
                     kaynak, rezervasyon_kanali, ozel_istekler, rezervasyon_taslagi_id
                 )
                 VALUES
@@ -142,7 +183,7 @@ public class PublicReservationService : IPublicReservationService
                     @city, @district, @neighborhood, @address,
                     @checkIn, @checkOut, @adultCount, @childCount, @roomCount,
                     @nightlyPrice, @roomTotal, @taxAmount, @totalAmount,
-                    @commissionRate, 'Onay Bekliyor', 'Beklemede', 'Beklemede', 'Onay Gerekmiyor',
+                    @commissionRate, 'Onay Bekliyor', 'Beklemede', @paymentMethod, 'Beklemede', 'Onay Gerekmiyor',
                     'Web', 'Web', @note, @draftId
                 );";
 
@@ -171,6 +212,7 @@ public class PublicReservationService : IPublicReservationService
                 insertCommand.Parameters.AddWithValue("@taxAmount", pricing.TaxAmount);
                 insertCommand.Parameters.AddWithValue("@totalAmount", pricing.TotalAmount);
                 insertCommand.Parameters.AddWithValue("@commissionRate", hotel.CommissionRate);
+                insertCommand.Parameters.AddWithValue("@paymentMethod", paymentMethod);
                 insertCommand.Parameters.AddWithValue("@draftId", draftId);
                 await insertCommand.ExecuteNonQueryAsync(cancellationToken);
                 reservationId = insertCommand.LastInsertedId;
@@ -317,7 +359,7 @@ public class PublicReservationService : IPublicReservationService
     {
         const string sql = @"
             SELECT COALESCE(o.user_id, oks.user_id, 1),
-                   COALESCE(o.satis_kontak_eposta, u.eposta, o.eposta, 'partner@otelturizm.com'),
+                   COALESCE(u.eposta, o.satis_kontak_eposta, o.eposta, 'partner@otelturizm.com'),
                    COALESCE(u.ad_soyad, o.satis_kontak_adi, 'Partner Yetkilisi')
             FROM oteller o
             LEFT JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = o.id AND oks.aktif_mi = 1
@@ -338,22 +380,36 @@ public class PublicReservationService : IPublicReservationService
 
     private async Task<PriceSummary> BuildPriceSummaryAsync(MySqlConnection connection, long roomTypeId, DateOnly checkIn, DateOnly checkOut, int roomCount, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT COALESCE(AVG(COALESCE(ofm.indirimli_fiyat, ofm.gecelik_fiyat)), ot.standart_gecelik_fiyat)
-            FROM oda_tipleri ot
-            LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id AND ofm.tarih >= @checkIn AND ofm.tarih < @checkOut
-            WHERE ot.id = @roomTypeId;";
-        await using var command = new MySqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@checkIn", checkIn.ToDateTime(TimeOnly.MinValue));
-        command.Parameters.AddWithValue("@checkOut", checkOut.ToDateTime(TimeOnly.MinValue));
-        command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
-        var nightly = Convert.ToDecimal(await command.ExecuteScalarAsync(cancellationToken) ?? 0m, CultureInfo.InvariantCulture);
-        if (nightly <= 0) nightly = 1000m;
+        var nightlyBreakdown = await _hotelPricingReadService.GetRoomNightlyBreakdownAsync(roomTypeId, checkIn, checkOut, cancellationToken);
+        if (nightlyBreakdown.Count == 0)
+        {
+            return new PriceSummary
+            {
+                IsAvailable = false,
+                AvailabilityMessage = "Seçilen tarihler için fiyat üretilemedi."
+            };
+        }
 
-        var nights = Math.Max(1, checkOut.DayNumber - checkIn.DayNumber);
-        var roomTotal = nightly * nights * Math.Max(1, roomCount);
+        var unavailableDays = nightlyBreakdown.Where(static item => !item.IsAvailable).ToList();
+        var isAvailable = unavailableDays.Count == 0;
+        var effectiveRoomCount = Math.Max(1, roomCount);
+        var averageNightly = nightlyBreakdown.Average(static item => item.EffectivePrice);
+        var roomTotal = nightlyBreakdown.Sum(static item => item.EffectivePrice) * effectiveRoomCount;
         var tax = Math.Round(roomTotal * 0.08m, 2, MidpointRounding.AwayFromZero);
-        return new PriceSummary { NightlyPrice = nightly, RoomTotal = roomTotal, TaxAmount = tax, TotalAmount = roomTotal + tax };
+        return new PriceSummary
+        {
+            NightlyPrice = averageNightly,
+            RoomTotal = roomTotal,
+            TaxAmount = tax,
+            TotalAmount = roomTotal + tax,
+            IsAvailable = isAvailable,
+            AvailabilityMessage = isAvailable
+                ? null
+                : unavailableDays.Any(static item => item.IsClosed)
+                    ? "Seçilen tarih aralığında satışa kapalı günler bulunuyor."
+                    : "Seçilen tarih aralığında yeterli oda bulunmuyor.",
+            NightlyBreakdown = nightlyBreakdown.ToList()
+        };
     }
 
     private async Task<string> GenerateReservationNoAsync(MySqlConnection connection, MySqlTransaction transaction, CancellationToken cancellationToken)
@@ -367,6 +423,37 @@ public class PublicReservationService : IPublicReservationService
     {
         if (string.IsNullOrWhiteSpace(fullName)) return "Misafir";
         return fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Misafir";
+    }
+
+    private static string NormalizePaymentMethod(string? paymentMethod)
+    {
+        var normalized = (paymentMethod ?? string.Empty).Trim();
+        if (normalized.Equals("Sanal POS", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("Online Ödeme", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("Online Odeme", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("Kart ile Öde", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("Kart ile Ode", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Sanal POS";
+        }
+
+        if (normalized.Equals("Kredi Kartı", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("Kredi Karti", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Kredi Kartı";
+        }
+
+        return "Kapıda Ödeme";
+    }
+
+    private static bool IsOnlinePaymentPendingFeature(string? paymentMethod)
+    {
+        var normalized = (paymentMethod ?? string.Empty).Trim();
+        return normalized.Equals("Online Ödeme", StringComparison.OrdinalIgnoreCase)
+               || normalized.Equals("Online Odeme", StringComparison.OrdinalIgnoreCase)
+               || normalized.Equals("Sanal POS", StringComparison.OrdinalIgnoreCase)
+               || normalized.Equals("Kart ile Öde", StringComparison.OrdinalIgnoreCase)
+               || normalized.Equals("Kart ile Ode", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildSlug(string hotelName, string hotelCode)
@@ -474,5 +561,8 @@ public class PublicReservationService : IPublicReservationService
         public decimal RoomTotal { get; set; }
         public decimal TaxAmount { get; set; }
         public decimal TotalAmount { get; set; }
+        public bool IsAvailable { get; set; }
+        public string? AvailabilityMessage { get; set; }
+        public List<RoomNightlyPricePoint> NightlyBreakdown { get; set; } = new();
     }
 }

@@ -9,10 +9,13 @@ namespace otelturizmnew.Services;
 public class UserFavoriteService : IUserFavoriteService
 {
     private readonly IConfiguration _configuration;
+    private readonly IHotelPricingReadService _hotelPricingReadService;
+    private static readonly CultureInfo TrCulture = CultureInfo.GetCultureInfo("tr-TR");
 
-    public UserFavoriteService(IConfiguration configuration)
+    public UserFavoriteService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService)
     {
         _configuration = configuration;
+        _hotelPricingReadService = hotelPricingReadService;
     }
 
     public async Task<HashSet<long>> GetFavoriteHotelIdsAsync(long userId, IEnumerable<long> hotelIds, CancellationToken cancellationToken = default)
@@ -101,6 +104,11 @@ public class UserFavoriteService : IUserFavoriteService
                 IFNULL(o.toplam_yorum_sayisi, 0) AS toplam_yorum_sayisi,
                 COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
                 pf.baslangic_fiyat,
+                a.hedef_maksimum_fiyat,
+                a.baslangic_tarihi AS alert_baslangic_tarihi,
+                a.bitis_tarihi AS alert_bitis_tarihi,
+                a.son_tetiklenen_tarih AS alert_son_tetiklenen_tarih,
+                COALESCE(a.aktif_mi, 0) AS alert_aktif_mi,
                 (
                     SELECT COUNT(*)
                     FROM rezervasyonlar r
@@ -119,11 +127,27 @@ public class UserFavoriteService : IUserFavoriteService
                 GROUP BY g.otel_id
             ) og ON og.otel_id = o.id
             LEFT JOIN (
-                SELECT ot.otel_id, MIN(ot.standart_gecelik_fiyat) AS baslangic_fiyat
+                SELECT ot.otel_id,
+                       MIN(
+                           COALESCE(
+                               CASE
+                                   WHEN ofm.kapali_satis = 1 THEN NULL
+                                   WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                   ELSE COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))
+                               END,
+                               NULLIF(ot.standart_gecelik_fiyat, 0)
+                           )
+                       ) AS baslangic_fiyat
                 FROM oda_tipleri ot
+                LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
+                    AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 120 DAY)
                 WHERE ot.aktif_mi = 1
                 GROUP BY ot.otel_id
             ) pf ON pf.otel_id = o.id
+            LEFT JOIN user_favorite_price_alerts a
+                ON a.user_id = f.user_id
+               AND a.otel_id = f.otel_id
+               AND COALESCE(a.aktif_mi, 1) = 1
             WHERE f.user_id = @userId
               AND COALESCE(f.aktif_mi, 1) = 1
               AND o.yayin_durumu = 'Yayında'
@@ -147,6 +171,15 @@ public class UserFavoriteService : IUserFavoriteService
             var createdAt = reader.GetDateTime(reader.GetOrdinal("olusturulma_tarihi"));
             var hotelCode = reader.GetString(reader.GetOrdinal("otel_kodu"));
             var hotelName = reader.GetString(reader.GetOrdinal("otel_adi"));
+            var alertActive = !reader.IsDBNull(reader.GetOrdinal("alert_aktif_mi")) && reader.GetBoolean(reader.GetOrdinal("alert_aktif_mi"));
+            decimal? alertTarget = null;
+            if (!reader.IsDBNull(reader.GetOrdinal("hedef_maksimum_fiyat")))
+            {
+                alertTarget = reader.GetDecimal(reader.GetOrdinal("hedef_maksimum_fiyat"));
+            }
+            DateTime? alertStart = reader.IsDBNull(reader.GetOrdinal("alert_baslangic_tarihi")) ? null : reader.GetDateTime(reader.GetOrdinal("alert_baslangic_tarihi"));
+            DateTime? alertEnd = reader.IsDBNull(reader.GetOrdinal("alert_bitis_tarihi")) ? null : reader.GetDateTime(reader.GetOrdinal("alert_bitis_tarihi"));
+            DateTime? lastTriggered = reader.IsDBNull(reader.GetOrdinal("alert_son_tetiklenen_tarih")) ? null : reader.GetDateTime(reader.GetOrdinal("alert_son_tetiklenen_tarih"));
 
             model.Hotels.Add(new UserFavoriteHotelCardViewModel
             {
@@ -163,8 +196,37 @@ public class UserFavoriteService : IUserFavoriteService
                 PriceText = price.HasValue ? $"TRY {price.Value:N0}" : "Teklif Al",
                 RatingText = rating > 0 ? (rating >= 9 ? "Olağanüstü" : rating >= 8 ? "Çok İyi" : "İyi") : "Yorum Bekleniyor",
                 AddedDateText = $"{createdAt.ToString("dd MMMM yyyy", culture)} tarihinde kaydedildi",
-                PastStayCount = reader.GetInt32(reader.GetOrdinal("past_stay_count"))
+                PastStayCount = reader.GetInt32(reader.GetOrdinal("past_stay_count")),
+                PriceAlertEnabled = alertActive,
+                PriceAlertTargetAmount = alertTarget,
+                PriceAlertTargetText = alertTarget.HasValue ? $"TRY {alertTarget.Value:N0}" : null,
+                PriceAlertDateRangeText = alertStart.HasValue && alertEnd.HasValue ? $"{alertStart.Value:dd.MM.yyyy} - {alertEnd.Value:dd.MM.yyyy}" : null,
+                PriceAlertLastTriggeredText = lastTriggered.HasValue ? $"{lastTriggered.Value:dd.MM.yyyy HH:mm}" : null,
+                PriceAlertStartDateValue = alertStart?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                PriceAlertEndDateValue = alertEnd?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
             });
+        }
+
+        if (model.Hotels.Count > 0)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var endDate = today.AddDays(120);
+            var priceMap = await _hotelPricingReadService.GetHotelEffectivePriceMapAsync(
+                model.Hotels.Select(static item => item.HotelId).ToList(),
+                today,
+                endDate,
+                cancellationToken);
+
+            foreach (var hotel in model.Hotels)
+            {
+                if (!priceMap.TryGetValue(hotel.HotelId, out var effectivePrice) || effectivePrice <= 0m)
+                {
+                    continue;
+                }
+
+                hotel.StartingPrice = effectivePrice;
+                hotel.PriceText = $"TRY {effectivePrice:N0}";
+            }
         }
 
         model.FavoriteCount = model.Hotels.Count;
@@ -253,12 +315,156 @@ public class UserFavoriteService : IUserFavoriteService
         updateCommand.Parameters.AddWithValue("@isFavorite", isActive ? 0 : 1);
         await updateCommand.ExecuteNonQueryAsync(cancellationToken);
 
+        if (isActive)
+        {
+            const string disableAlertSql = @"
+                UPDATE user_favorite_price_alerts
+                SET aktif_mi = 0,
+                    guncellenme_tarihi = CURRENT_TIMESTAMP
+                WHERE user_id = @userId
+                  AND otel_id = @hotelId;";
+            await using var disableAlertCommand = new MySqlCommand(disableAlertSql, connection);
+            disableAlertCommand.Parameters.AddWithValue("@userId", userId);
+            disableAlertCommand.Parameters.AddWithValue("@hotelId", hotelId);
+            await disableAlertCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
         return new HotelFavoriteToggleResponse
         {
             Success = true,
             IsFavorite = !isActive,
             Message = isActive ? "Otel favorilerinizden çıkarıldı." : "Otel favorilerinize yeniden eklendi."
         };
+    }
+
+    public async Task<(bool Success, string Message)> SavePriceAlertAsync(long userId, UserFavoritePriceAlertForm form, CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0 || form.HotelId <= 0)
+        {
+            return (false, "Fiyat alarmi icin gecersiz kullanici veya otel secimi.");
+        }
+
+        var connectionString = _configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return (false, "Veritabani baglantisi bulunamadi.");
+        }
+
+        await using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string favoriteCheckSql = @"
+            SELECT COUNT(*)
+            FROM user_favori_oteller
+            WHERE user_id = @userId
+              AND otel_id = @hotelId
+              AND COALESCE(aktif_mi, 1) = 1;";
+        await using (var favoriteCommand = new MySqlCommand(favoriteCheckSql, connection))
+        {
+            favoriteCommand.Parameters.AddWithValue("@userId", userId);
+            favoriteCommand.Parameters.AddWithValue("@hotelId", form.HotelId);
+            var favoriteCount = Convert.ToInt32(await favoriteCommand.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+            if (favoriteCount == 0)
+            {
+                return (false, "Fiyat alarmi sadece favorilere eklenmis oteller icin acilabilir.");
+            }
+        }
+
+        if (!form.Enabled)
+        {
+            const string disableSql = @"
+                UPDATE user_favorite_price_alerts
+                SET aktif_mi = 0,
+                    guncellenme_tarihi = CURRENT_TIMESTAMP
+                WHERE user_id = @userId
+                  AND otel_id = @hotelId;";
+            await using var disableCommand = new MySqlCommand(disableSql, connection);
+            disableCommand.Parameters.AddWithValue("@userId", userId);
+            disableCommand.Parameters.AddWithValue("@hotelId", form.HotelId);
+            await disableCommand.ExecuteNonQueryAsync(cancellationToken);
+            return (true, "Fiyat alarmi kapatildi.");
+        }
+
+        if (!TryParsePrice(form.TargetPriceText, out var targetPrice) || targetPrice <= 0)
+        {
+            return (false, "Hedef fiyat alanina gecerli bir tutar giriniz.");
+        }
+
+        if (!DateOnly.TryParseExact(form.StartDateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var startDate))
+        {
+            return (false, "Baslangic tarihi zorunludur.");
+        }
+
+        if (!DateOnly.TryParseExact(form.EndDateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var endDate))
+        {
+            return (false, "Bitis tarihi zorunludur.");
+        }
+
+        if (endDate < startDate)
+        {
+            return (false, "Bitis tarihi baslangic tarihinden once olamaz.");
+        }
+
+        if (startDate < DateOnly.FromDateTime(DateTime.Today))
+        {
+            return (false, "Baslangic tarihi bugunden once olamaz.");
+        }
+
+        if (endDate.DayNumber - startDate.DayNumber > 365)
+        {
+            return (false, "Fiyat alarmi icin maksimum 365 gunluk tarih araligi secilebilir.");
+        }
+
+        const string upsertSql = @"
+            INSERT INTO user_favorite_price_alerts
+            (user_id, otel_id, hedef_maksimum_fiyat, baslangic_tarihi, bitis_tarihi, aktif_mi, olusturulma_tarihi, guncellenme_tarihi)
+            VALUES
+            (@userId, @hotelId, @targetPrice, @startDate, @endDate, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON DUPLICATE KEY UPDATE
+                hedef_maksimum_fiyat = VALUES(hedef_maksimum_fiyat),
+                baslangic_tarihi = VALUES(baslangic_tarihi),
+                bitis_tarihi = VALUES(bitis_tarihi),
+                aktif_mi = VALUES(aktif_mi),
+                guncellenme_tarihi = CURRENT_TIMESTAMP;";
+        await using var command = new MySqlCommand(upsertSql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@hotelId", form.HotelId);
+        command.Parameters.AddWithValue("@targetPrice", targetPrice);
+        command.Parameters.AddWithValue("@startDate", startDate.ToDateTime(TimeOnly.MinValue));
+        command.Parameters.AddWithValue("@endDate", endDate.ToDateTime(TimeOnly.MinValue));
+        await command.ExecuteNonQueryAsync(cancellationToken);
+
+        return (true, "Fiyat alarmi aktif edildi. Belirlediginiz aralikta fiyat uygunsa e-posta ile bilgilendirileceksiniz.");
+    }
+
+    public async Task<(bool Success, string Message)> DeletePriceAlertAsync(long userId, long hotelId, CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0 || hotelId <= 0)
+        {
+            return (false, "Fiyat alarmi silme icin gecersiz kullanici veya otel secimi.");
+        }
+
+        var connectionString = _configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return (false, "Veritabani baglantisi bulunamadi.");
+        }
+
+        await using var connection = new MySqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string deleteSql = @"
+            DELETE FROM user_favorite_price_alerts
+            WHERE user_id = @userId
+              AND otel_id = @hotelId;";
+        await using var command = new MySqlCommand(deleteSql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+
+        return affectedRows > 0
+            ? (true, "Fiyat alarmi veritabanindan silindi.")
+            : (false, "Silinecek aktif fiyat alarmi bulunamadi.");
     }
 
     private static async Task<bool> HotelExistsAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
@@ -281,6 +487,19 @@ public class UserFavoriteService : IUserFavoriteService
 
         var trimmed = value.Trim();
         return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+    }
+
+    private static bool TryParsePrice(string? value, out decimal price)
+    {
+        price = 0m;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var normalized = value.Trim().Replace("TRY", string.Empty, StringComparison.OrdinalIgnoreCase).Replace("₺", string.Empty).Trim();
+        return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out price)
+               || decimal.TryParse(normalized, NumberStyles.Number, TrCulture, out price);
     }
 
     private static string NormalizeImageUrl(string? imageUrl)

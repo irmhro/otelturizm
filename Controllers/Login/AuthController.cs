@@ -86,6 +86,7 @@ public class AuthController : Controller
         catch (AuthFlowException ex)
         {
             TempData["UserLoginError"] = ex.Message;
+            SetResendVerifyTempData(ex, loginEmail);
             return Redirect(UserLoginPath);
         }
         catch
@@ -166,6 +167,7 @@ public class AuthController : Controller
         catch (AuthFlowException ex)
         {
             TempData["FirmaLoginError"] = ex.Message;
+            SetResendVerifyTempData(ex, firmaIdentity);
             return Redirect(FirmaLoginPath);
         }
         catch
@@ -214,6 +216,7 @@ public class AuthController : Controller
         catch (AuthFlowException ex)
         {
             TempData["PartnerLoginError"] = ex.Message;
+            SetResendVerifyTempData(ex, partnerIdentity);
             return Redirect(PartnerLoginPath);
         }
         catch
@@ -258,7 +261,8 @@ public class AuthController : Controller
         {
             var result = await _authService.VerifyEmailAsync(email, code, token, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
             TempData[result.Success ? "UserLoginSuccess" : "UserLoginError"] = result.Message;
-            return Redirect(UserLoginPath);
+            var redirectPath = await _authService.ResolveLoginPathByEmailAsync(email, cancellationToken);
+            return Redirect(redirectPath);
         }
 
         return View("~/Views/Login/VerifyEmail.cshtml", new EmailVerificationViewModel
@@ -286,7 +290,8 @@ public class AuthController : Controller
         }
 
         TempData["UserLoginSuccess"] = result.Message;
-        return Redirect(UserLoginPath);
+        var verifyRedirectPath = await _authService.ResolveLoginPathByEmailAsync(model.Email, cancellationToken);
+        return Redirect(verifyRedirectPath);
     }
 
     [HttpPost("/eposta-dogrula/tekrar-gonder")]
@@ -317,7 +322,8 @@ public class AuthController : Controller
 
         var result = await _authService.SendPasswordResetAsync(model.Email, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
         TempData[result.Success ? "UserLoginSuccess" : "UserLoginError"] = result.Message;
-        return Redirect(UserLoginPath);
+        var forgotRedirectPath = await _authService.ResolveLoginPathByEmailAsync(model.Email, cancellationToken);
+        return Redirect(forgotRedirectPath);
     }
 
     [HttpGet(ResetPasswordPath)]
@@ -348,7 +354,8 @@ public class AuthController : Controller
         }
 
         TempData["UserLoginSuccess"] = result.Message;
-        return Redirect(UserLoginPath);
+        var resetRedirectPath = await _authService.ResolveLoginPathByResetTokenAsync(model.Token, cancellationToken);
+        return Redirect(resetRedirectPath);
     }
 
     private async Task SignInAsync(UserSessionModel user, bool rememberMe)
@@ -440,6 +447,23 @@ public class AuthController : Controller
             "firma" => FirmaLoginPath,
             _ => UserLoginPath
         };
+    }
+
+    private void SetResendVerifyTempData(AuthFlowException ex, string? fallbackIdentity)
+    {
+        if (!string.Equals(ex.ErrorCode, AuthFlowErrorCodes.EmailNotVerified, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var normalizedFallback = (fallbackIdentity ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedFallback) || !normalizedFallback.Contains('@', StringComparison.Ordinal))
+        {
+            normalizedFallback = string.Empty;
+        }
+
+        TempData["ShowResendVerifyButton"] = "1";
+        TempData["ResendVerifyEmail"] = ex.RelatedEmail ?? normalizedFallback;
     }
 }
 

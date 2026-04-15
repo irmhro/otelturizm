@@ -222,7 +222,7 @@
             <label for="firmaPassword">Şifre</label>
             <div class="input-wrap">
                 <i class="fas fa-lock"></i>
-                <input id="firmaPassword" name="Password" type="password" class="form-control" placeholder="••••••••" required />
+                <input id="firmaPassword" name="Password" type="password" class="form-control" placeholder="En az 6 karakter (harf + rakam)" minlength="6" pattern="(?=.*[A-Za-z])(?=.*\d).{6,}" title="En az 6 karakter, en az 1 harf ve 1 rakam girin." required />
                 <button type="button" class="toggle-password" data-toggle-target="firmaPassword">
                     <i class="far fa-eye"></i>
                 </button>
@@ -233,7 +233,7 @@
             <label for="firmaConfirmPassword">Şifre Tekrar</label>
             <div class="input-wrap">
                 <i class="fas fa-lock"></i>
-                <input id="firmaConfirmPassword" name="ConfirmPassword" type="password" class="form-control" placeholder="••••••••" required />
+                <input id="firmaConfirmPassword" name="ConfirmPassword" type="password" class="form-control" placeholder="Şifrenizi tekrar girin" minlength="6" pattern="(?=.*[A-Za-z])(?=.*\d).{6,}" title="En az 6 karakter, en az 1 harf ve 1 rakam girin." required />
                 <button type="button" class="toggle-password" data-toggle-target="firmaConfirmPassword">
                     <i class="far fa-eye"></i>
                 </button>

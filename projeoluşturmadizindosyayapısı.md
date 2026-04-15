@@ -730,3 +730,19 @@ Bu sozlesme tum yeni ekranlar icin baglayicidir.
   - hesaplar arasi yetkisiz erisim engeli
   - soft delete placeholder gorunumu
 
+## E-posta Güvenliği ve Kimlik Akışları
+
+- Kullanıcı kaydı sonrası otomatik giriş yapılmaz; önce e-posta doğrulama zorunludur.
+- E-posta doğrulama ekranı: `/eposta-dogrula`
+- Şifre sıfırlama ekranları: `/sifremi-unuttum`, `/sifre-sifirla`
+- SMTP ayarları `email_services` tablosundan okunur.
+- Mail teslimatı `EmailDeliveryBackgroundService` ile kuyruktan asenkron işlenir.
+- Kuyruk tablosu: `bildirim_loglari`
+- E-posta doğrulama token tablosu: `email_dogrulama_tokenlari`
+- Şifre sıfırlama token tablosu: `sifre_sifirlama_tokenlari`
+- Giriş güvenliği için `users` tablosunda şu alanlar kullanılır:
+  - `basarisiz_giris_sayisi`
+  - `son_basarisiz_giris_tarihi`
+  - `giris_kilit_bitis_tarihi`
+  - `email_dogrulama_son_gonderim_tarihi`
+- 5 hatalı giriş sonrası 10 dakika kilit mantığı zorunludur.

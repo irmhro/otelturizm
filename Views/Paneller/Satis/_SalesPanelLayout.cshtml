@@ -1,9 +1,16 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@using otelturizmnew.Models.Paneller.Common
 @using otelturizmnew.Models.Paneller.Satis
+@inject otelturizmnew.Services.Abstractions.IHeaderBildiriService HeaderBildiriService
 @{
     Layout = null;
     var shell = ViewData["SalesShell"] as SalesPanelShellViewModel ?? Model as SalesPanelShellViewModel;
     var pageCssPath = ViewData["PageCssPath"] as string;
     var title = ViewData["Title"] as string ?? shell?.PanelTitle ?? "Satış Paneli";
+    var salesUserRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var salesUserId = long.TryParse(salesUserRaw, out var parsedSalesUserId) ? parsedSalesUserId : 0;
+    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.Sales, salesUserId, Context.RequestAborted);
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -16,6 +23,7 @@
     <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
     <link rel="stylesheet" href="~/assets/css/paneller/satis/shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.css" asp-append-version="true" />
     @if (!string.IsNullOrWhiteSpace(pageCssPath))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
@@ -40,6 +48,7 @@
                         <span><i class="fas fa-check-circle"></i> @shell.TodayReservationCount bugün</span>
                         <span><i class="fas fa-money-bill-wave"></i> @shell.TodayRevenue.ToString("N0") TL</span>
                         <span><i class="fas fa-trophy"></i> @(shell.Ranking <= 0 ? "-" : $"#{shell.Ranking}") sıra</span>
+                        <partial name="~/Views/Shared/_HeaderBildiri.cshtml" model="headerBildiri" />
                         <form method="post" action="/cikis-yap" class="panel-header-logout-form">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="panel-header-logout-btn">
@@ -69,6 +78,7 @@
     {
         <partial name="~/Views/Paneller/Satis/_SalesMobileNav.cshtml" model="shell" />
     }
+    <script src="~/assets/js/panel-header-bildiri.js" asp-append-version="true"></script>
 </body>
 </html>
 

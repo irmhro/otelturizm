@@ -28,18 +28,29 @@ public class ResetPasswordViewModel
     public string Token { get; set; } = string.Empty;
 
     [Required]
-    [MinLength(8)]
+    [MinLength(6)]
+    [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d).+$", ErrorMessage = "Şifre en az 1 harf ve 1 rakam içermelidir.")]
     public string NewPassword { get; set; } = string.Empty;
 
     [Required]
-    [MinLength(8)]
+    [MinLength(6)]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
 public sealed class AuthFlowException : Exception
 {
-    public AuthFlowException(string message)
+    public string? ErrorCode { get; }
+    public string? RelatedEmail { get; }
+
+    public AuthFlowException(string message, string? errorCode = null, string? relatedEmail = null)
         : base(message)
     {
+        ErrorCode = errorCode;
+        RelatedEmail = relatedEmail;
     }
+}
+
+public static class AuthFlowErrorCodes
+{
+    public const string EmailNotVerified = "EMAIL_NOT_VERIFIED";
 }

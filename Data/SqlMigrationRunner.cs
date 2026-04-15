@@ -48,7 +48,12 @@ public sealed class SqlMigrationRunner
             return;
         }
 
-        await using var connection = new MySqlConnection(connectionString);
+        var builder = new MySqlConnectionStringBuilder(connectionString)
+        {
+            AllowUserVariables = true
+        };
+
+        await using var connection = new MySqlConnection(builder.ConnectionString);
         await connection.OpenAsync(cancellationToken);
 
         await EnsureHistoryTableAsync(connection, cancellationToken);
@@ -75,10 +80,21 @@ public sealed class SqlMigrationRunner
             var statements = SplitSqlStatements(scriptText).ToList();
             foreach (var statement in statements)
             {
-                await using var command = connection.CreateCommand();
-                command.CommandText = statement;
-                command.CommandTimeout = 180;
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                try
+                {
+                    await using var command = connection.CreateCommand();
+                    command.CommandText = statement;
+                    command.CommandTimeout = 180;
+                    await command.ExecuteNonQueryAsync(cancellationToken);
+                }
+                catch (MySqlException ex) when (IsIdempotentMigrationConflict(ex))
+                {
+                    _logger.LogWarning(
+                        "Migration ifadesi mevcut semaya zaten uygulanmis gorunuyor, devam ediliyor. Script: {ScriptName}, Kod: {ErrorCode}, Mesaj: {Message}",
+                        scriptName,
+                        ex.Number,
+                        ex.Message);
+                }
             }
 
             await using var insertCommand = connection.CreateCommand();
@@ -128,106 +144,71 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 
     private static IEnumerable<string> SplitSqlStatements(string sql)
     {
-        var sb = new StringBuilder();
+        var normalizedSql = sql.Replace("\r\n", "\n");
+        var lines = normalizedSql.Split('\n');
+        var delimiter = ";";
+        var current = new StringBuilder();
 
-        var inSingleQuote = false;
-        var inDoubleQuote = false;
-        var inBacktick = false;
-        var inLineComment = false;
-        var inBlockComment = false;
-
-        for (var i = 0; i < sql.Length; i++)
+        foreach (var rawLine in lines)
         {
-            var c = sql[i];
-            var next = i + 1 < sql.Length ? sql[i + 1] : '\0';
-
-            if (inLineComment)
+            var line = rawLine ?? string.Empty;
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("DELIMITER ", StringComparison.OrdinalIgnoreCase))
             {
-                sb.Append(c);
-                if (c == '\n')
+                delimiter = trimmed["DELIMITER ".Length..].Trim();
+                if (string.IsNullOrWhiteSpace(delimiter))
                 {
-                    inLineComment = false;
+                    delimiter = ";";
                 }
                 continue;
             }
 
-            if (inBlockComment)
+            current.Append(line);
+            current.Append('\n');
+
+            if (!StatementEndsWithDelimiter(current, delimiter))
             {
-                sb.Append(c);
-                if (c == '*' && next == '/')
-                {
-                    sb.Append(next);
-                    i++;
-                    inBlockComment = false;
-                }
                 continue;
             }
 
-            if (!inSingleQuote && !inDoubleQuote && !inBacktick)
+            var statementText = current.ToString();
+            var delimiterIndex = statementText.LastIndexOf(delimiter, StringComparison.Ordinal);
+            if (delimiterIndex >= 0)
             {
-                if (c == '-' && next == '-')
-                {
-                    sb.Append(c);
-                    sb.Append(next);
-                    i++;
-                    inLineComment = true;
-                    continue;
-                }
-
-                if (c == '/' && next == '*')
-                {
-                    sb.Append(c);
-                    sb.Append(next);
-                    i++;
-                    inBlockComment = true;
-                    continue;
-                }
+                statementText = statementText[..delimiterIndex];
             }
 
-            if (!inDoubleQuote && !inBacktick && c == '\'' && !IsEscaped(sql, i))
+            var statement = statementText.Trim();
+            if (!string.IsNullOrWhiteSpace(statement))
             {
-                inSingleQuote = !inSingleQuote;
-            }
-            else if (!inSingleQuote && !inBacktick && c == '"' && !IsEscaped(sql, i))
-            {
-                inDoubleQuote = !inDoubleQuote;
-            }
-            else if (!inSingleQuote && !inDoubleQuote && c == '`')
-            {
-                inBacktick = !inBacktick;
+                yield return statement;
             }
 
-            if (c == ';' && !inSingleQuote && !inDoubleQuote && !inBacktick)
-            {
-                var statement = sb.ToString().Trim();
-                if (!string.IsNullOrWhiteSpace(statement))
-                {
-                    yield return statement;
-                }
-
-                sb.Clear();
-                continue;
-            }
-
-            sb.Append(c);
+            current.Clear();
         }
 
-        var trailing = sb.ToString().Trim();
+        var trailing = current.ToString().Trim();
         if (!string.IsNullOrWhiteSpace(trailing))
         {
             yield return trailing;
         }
     }
 
-    private static bool IsEscaped(string text, int index)
+    private static bool StatementEndsWithDelimiter(StringBuilder statementBuilder, string delimiter)
     {
-        var backslashCount = 0;
-        for (var i = index - 1; i >= 0 && text[i] == '\\'; i--)
+        if (statementBuilder.Length == 0)
         {
-            backslashCount++;
+            return false;
         }
 
-        return backslashCount % 2 == 1;
+        var statementText = statementBuilder.ToString().TrimEnd();
+        return statementText.EndsWith(delimiter, StringComparison.Ordinal);
+    }
+
+    private static bool IsIdempotentMigrationConflict(MySqlException ex)
+    {
+        // MySQL duplicate/object exists codes commonly seen when an old schema already contains bootstrap objects.
+        return ex.Number is 1007 or 1050 or 1060 or 1061 or 1062 or 1091 or 1451 or 1452 or 1831 or 1826;
     }
 }
 

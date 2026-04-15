@@ -12,6 +12,11 @@ namespace otelturizmnew.Services;
 
 public class AuthService : IAuthService
 {
+    private const string UserLoginPath = "/kullanici-giris";
+    private const string PartnerLoginPath = "/partner-giris";
+    private const string FirmaLoginPath = "/firma-giris";
+    private const string AdminLoginPath = "/admin-giris";
+
     private readonly string _connectionString;
     private readonly IEmailQueueService _emailQueueService;
     private readonly string _publicBaseUrl;
@@ -71,12 +76,23 @@ public class AuthService : IAuthService
 
         if (user.AccountType == "sales")
         {
+            if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
+            {
+                throw new AuthFlowException(
+                    "E-posta adresinizi onaylamadan giris yapamazsiniz. Lütfen gelen kutunuzu kontrol edin veya doğrulama kodunu yeniden isteyin.",
+                    AuthFlowErrorCodes.EmailNotVerified,
+                    user.Email);
+            }
+
             return user;
         }
 
         if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
         {
-            throw new AuthFlowException("E-posta adresinizi onaylamadan giris yapamazsiniz. Lütfen gelen kutunuzu kontrol edin veya doğrulama kodunu yeniden isteyin.");
+            throw new AuthFlowException(
+                "E-posta adresinizi onaylamadan giris yapamazsiniz. Lütfen gelen kutunuzu kontrol edin veya doğrulama kodunu yeniden isteyin.",
+                AuthFlowErrorCodes.EmailNotVerified,
+                user.Email);
         }
 
         user.AccountType = "user";
@@ -106,6 +122,14 @@ public class AuthService : IAuthService
         }
 
         await ResetFailedLoginAttemptAsync(user.UserId, cancellationToken);
+        if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
+        {
+            throw new AuthFlowException(
+                "E-posta adresinizi onaylamadan giris yapamazsiniz. Lütfen gelen kutunuzu kontrol edin veya doğrulama kodunu yeniden isteyin.",
+                AuthFlowErrorCodes.EmailNotVerified,
+                user.Email);
+        }
+
         user.AccountType = "partner";
         return user;
     }
@@ -133,6 +157,14 @@ public class AuthService : IAuthService
         }
 
         await ResetFailedLoginAttemptAsync(user.UserId, cancellationToken);
+        if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
+        {
+            throw new AuthFlowException(
+                "E-posta adresinizi onaylamadan giris yapamazsiniz. Lütfen gelen kutunuzu kontrol edin veya doğrulama kodunu yeniden isteyin.",
+                AuthFlowErrorCodes.EmailNotVerified,
+                user.Email);
+        }
+
         if (!await CanFirmaUserAccessAsync(user.UserId, cancellationToken))
         {
             return null;
@@ -164,9 +196,9 @@ public class AuthService : IAuthService
             return (false, "Kayit icin kullanim kosullari ve gizlilik onayi zorunludur.", null);
         }
 
-        if (string.IsNullOrWhiteSpace(model.Password) || model.Password.Length < 4)
+        if (!IsPasswordPolicyValid(model.Password))
         {
-            return (false, "Sifre en az 4 karakter olmalidir.", null);
+            return (false, "Sifre en az 6 karakter olmali ve en az 1 harf ile 1 rakam icermelidir.", null);
         }
 
         if (!string.Equals(model.Password, model.ConfirmPassword, StringComparison.Ordinal))
@@ -365,9 +397,9 @@ public class AuthService : IAuthService
             return (false, "Partner kaydi icin sozlesme ve beyan onaylari zorunludur.", null);
         }
 
-        if (string.IsNullOrWhiteSpace(model.Password) || model.Password.Length < 4)
+        if (!IsPasswordPolicyValid(model.Password))
         {
-            return (false, "Sifre en az 4 karakter olmalidir.", null);
+            return (false, "Sifre en az 6 karakter olmali ve en az 1 harf ile 1 rakam icermelidir.", null);
         }
 
         if (!string.Equals(model.Password, model.ConfirmPassword, StringComparison.Ordinal))
@@ -638,11 +670,20 @@ public class AuthService : IAuthService
             }
 
             await transaction.CommitAsync(cancellationToken);
+            await CreateAndQueueEmailVerificationAsync(
+                connection,
+                null,
+                userId,
+                email,
+                FirstNameFromFullName(contactName),
+                null,
+                null,
+                cancellationToken);
 
             var user = await GetUserByIdAsync(connection, userId, cancellationToken);
             return user is null
                 ? (false, "Partner hesabi olusturuldu ancak oturum bilgisi hazirlanamadi.", null)
-                : (true, "Partner kaydi tamamlandi.", user);
+                : (true, "Partner kaydi tamamlandi. Giris yapmadan once lütfen e-posta adresinizi onaylayin.", user);
         }
         catch (MySqlException ex)
         {
@@ -720,9 +761,9 @@ public class AuthService : IAuthService
             return (false, "Firma başvurusu için sözleşme ve KVKK onayı zorunludur.", null);
         }
 
-        if (string.IsNullOrWhiteSpace(model.Password) || model.Password.Length < 4)
+        if (!IsPasswordPolicyValid(model.Password))
         {
-            return (false, "Şifre en az 4 karakter olmalıdır.", null);
+            return (false, "Sifre en az 6 karakter olmali ve en az 1 harf ile 1 rakam icermelidir.", null);
         }
 
         if (!string.Equals(model.Password, model.ConfirmPassword, StringComparison.Ordinal))
@@ -890,7 +931,8 @@ public class AuthService : IAuthService
                 );
                 """;
 
-            await using (var insertUserCommand = new MySqlCommand(insertUserSql, connection, transaction))
+            long userId;
+            await using (var insertUserCommand = new MySqlCommand(insertUserSql + "\nSELECT LAST_INSERT_ID();", connection, transaction))
             {
                 insertUserCommand.Parameters.AddWithValue("@fullName", contactName);
                 insertUserCommand.Parameters.AddWithValue("@contactEmail", contactEmail);
@@ -899,11 +941,21 @@ public class AuthService : IAuthService
                 insertUserCommand.Parameters.AddWithValue("@firmaId", firmaId);
                 insertUserCommand.Parameters.AddWithValue("@contactTitle", contactTitle);
                 insertUserCommand.Parameters.AddWithValue("@personelCode", $"{firmaCode}-ADM");
-                await insertUserCommand.ExecuteNonQueryAsync(cancellationToken);
+                var userIdResult = await insertUserCommand.ExecuteScalarAsync(cancellationToken);
+                userId = Convert.ToInt64(userIdResult);
             }
 
             await transaction.CommitAsync(cancellationToken);
-            return (true, "Firma başvurunuz alındı. Yönetici onayı tamamlanınca giriş yapabilirsiniz.", null);
+            await CreateAndQueueEmailVerificationAsync(
+                connection,
+                null,
+                userId,
+                contactEmail,
+                FirstNameFromFullName(contactName),
+                null,
+                null,
+                cancellationToken);
+            return (true, "Firma basvurunuz alindi. Giris yapmadan once e-posta adresinizi onaylayin.", null);
         }
         catch (MySqlException ex)
         {
@@ -1148,9 +1200,9 @@ public class AuthService : IAuthService
             return (false, "Şifre sıfırlama bağlantısı geçersiz.");
         }
 
-        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+        if (!IsPasswordPolicyValid(newPassword))
         {
-            return (false, "Yeni şifre en az 8 karakter olmalıdır.");
+            return (false, "Yeni sifre en az 6 karakter olmali ve en az 1 harf ile 1 rakam icermelidir.");
         }
 
         if (!string.Equals(newPassword, confirmPassword, StringComparison.Ordinal))
@@ -1223,6 +1275,78 @@ public class AuthService : IAuthService
 
         await transaction.CommitAsync(cancellationToken);
         return (true, "Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapabilirsiniz.");
+    }
+
+    public async Task<string> ResolveLoginPathByEmailAsync(string? email, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = (email ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            return UserLoginPath;
+        }
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = """
+            SELECT id
+            FROM users
+            WHERE eposta = @email
+            ORDER BY id DESC
+            LIMIT 1;
+            """;
+
+        long userId;
+        await using (var command = new MySqlCommand(sql, connection))
+        {
+            command.Parameters.AddWithValue("@email", normalizedEmail);
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            if (result is null || result is DBNull)
+            {
+                return UserLoginPath;
+            }
+
+            userId = Convert.ToInt64(result, CultureInfo.InvariantCulture);
+        }
+
+        var user = await GetUserByIdAsync(connection, userId, cancellationToken);
+        return MapLoginPathByAccountType(user?.AccountType);
+    }
+
+    public async Task<string> ResolveLoginPathByResetTokenAsync(string? token, CancellationToken cancellationToken = default)
+    {
+        var normalizedToken = (token ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedToken))
+        {
+            return UserLoginPath;
+        }
+
+        await using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = """
+            SELECT kullanici_id
+            FROM sifre_sifirlama_tokenlari
+            WHERE token = @token
+            ORDER BY id DESC
+            LIMIT 1;
+            """;
+
+        long userId;
+        await using (var command = new MySqlCommand(sql, connection))
+        {
+            command.Parameters.AddWithValue("@token", normalizedToken);
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            if (result is null || result is DBNull)
+            {
+                return UserLoginPath;
+            }
+
+            userId = Convert.ToInt64(result, CultureInfo.InvariantCulture);
+        }
+
+        var user = await GetUserByIdAsync(connection, userId, cancellationToken);
+        return MapLoginPathByAccountType(user?.AccountType);
     }
 
     private async Task<UserSessionModel?> GetUserAsync(string identity, string password, bool requirePartner, CancellationToken cancellationToken)
@@ -1606,6 +1730,29 @@ public class AuthService : IAuthService
             string.Equals(code, "admin", StringComparison.OrdinalIgnoreCase)
             || string.Equals(code, "super_admin", StringComparison.OrdinalIgnoreCase)
             || string.Equals(code, "superadmin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string MapLoginPathByAccountType(string? accountType)
+    {
+        return accountType?.ToLowerInvariant() switch
+        {
+            "admin" => AdminLoginPath,
+            "partner" => PartnerLoginPath,
+            "firma" => FirmaLoginPath,
+            _ => UserLoginPath
+        };
+    }
+
+    private static bool IsPasswordPolicyValid(string? password)
+    {
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
+        {
+            return false;
+        }
+
+        var hasLetter = password.Any(char.IsLetter);
+        var hasDigit = password.Any(char.IsDigit);
+        return hasLetter && hasDigit;
     }
 
     private static List<long> ParseManagedHotelIds(MySqlDataReader reader, int ordinal)

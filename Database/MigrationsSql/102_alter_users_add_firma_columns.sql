@@ -1,5 +1,5 @@
 ALTER TABLE `users`
-    MODIFY COLUMN `rol` enum('user','admin','partner_owner','partner_manager','partner_staff','firma_admin','firma_manager','firma_staff') NOT NULL DEFAULT 'user';
+    MODIFY COLUMN `rol` varchar(64) NOT NULL DEFAULT 'user';
 
 ALTER TABLE `users`
     ADD COLUMN `firma_id` bigint unsigned NULL AFTER `sahiplik_partner_id`,

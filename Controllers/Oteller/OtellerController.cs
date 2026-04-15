@@ -187,11 +187,23 @@ public class OtellerController : Controller
         return Json(new
         {
             success = true,
+            isAvailable = quote.IsAvailable,
+            availabilityMessage = quote.AvailabilityMessage,
             nightCount = quote.NightCount,
             nightlyPrice = quote.NightlyPrice,
             roomTotal = quote.RoomTotal,
             taxAmount = quote.TaxAmount,
-            totalAmount = quote.TotalAmount
+            totalAmount = quote.TotalAmount,
+            nightlyBreakdown = quote.NightlyBreakdown.Select(item => new
+            {
+                date = item.Date.ToString("yyyy-MM-dd"),
+                dateText = item.DateText,
+                price = item.Price,
+                priceText = item.PriceText,
+                isDiscounted = item.IsDiscounted,
+                isClosed = item.IsClosed,
+                remainingRooms = item.RemainingRooms
+            })
         });
     }
 

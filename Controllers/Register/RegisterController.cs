@@ -56,16 +56,17 @@ public class RegisterController : Controller
     {
         try
         {
+            var normalizedEmail = model.Email?.Trim().ToLowerInvariant() ?? string.Empty;
             var result = await _authService.RegisterPartnerAsync(model, cancellationToken);
-            if (!result.Success || result.User is null)
+            if (!result.Success)
             {
                 TempData["PartnerRegisterError"] = result.Message;
                 TempData["OpenPartnerRegisterTab"] = "1";
                 return Redirect(PartnerLoginPath);
             }
 
-            await SignInAsync(result.User, true);
-            return Redirect(GetRedirectPath(result.User));
+            TempData["UserLoginSuccess"] = result.Message;
+            return Redirect($"/eposta-dogrula?email={Uri.EscapeDataString(normalizedEmail)}");
         }
         catch
         {
@@ -81,6 +82,7 @@ public class RegisterController : Controller
     {
         try
         {
+            var normalizedEmail = model.ContactEmail?.Trim().ToLowerInvariant() ?? string.Empty;
             var result = await _authService.RegisterFirmaAsync(model, cancellationToken);
             if (!result.Success)
             {
@@ -89,14 +91,8 @@ public class RegisterController : Controller
                 return Redirect(FirmaLoginPath);
             }
 
-            if (result.User is not null)
-            {
-                await SignInAsync(result.User, true);
-                return Redirect(GetRedirectPath(result.User));
-            }
-
-            TempData["FirmaRegisterSuccess"] = result.Message;
-            return Redirect(FirmaLoginPath);
+            TempData["UserLoginSuccess"] = result.Message;
+            return Redirect($"/eposta-dogrula?email={Uri.EscapeDataString(normalizedEmail)}");
         }
         catch
         {

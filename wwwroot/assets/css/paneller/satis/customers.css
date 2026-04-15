@@ -1,2 +1,14 @@
+.sales-customers-grid {
+    align-items: start;
+}
+
 .sales-customer-card small { color: var(--sales-muted); }
 .sales-customer-card span { color: #1d4ed8; font-weight: 700; }
+
+.sales-customer-card-rich {
+    align-items: start;
+}
+
+.sales-customer-card-rich .sales-badges {
+    margin-top: 14px;
+}

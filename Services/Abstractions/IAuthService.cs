@@ -15,5 +15,7 @@ public interface IAuthService
     Task<(bool Success, string Message)> ResendVerificationEmailAsync(string email, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SendPasswordResetAsync(string email, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ResetPasswordAsync(string token, string newPassword, string confirmPassword, CancellationToken cancellationToken = default);
+    Task<string> ResolveLoginPathByEmailAsync(string? email, CancellationToken cancellationToken = default);
+    Task<string> ResolveLoginPathByResetTokenAsync(string? token, CancellationToken cancellationToken = default);
 }
 

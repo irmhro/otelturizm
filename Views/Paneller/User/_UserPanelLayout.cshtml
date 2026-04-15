@@ -1,6 +1,8 @@
 @using System.Security.Claims
 @using otelturizmnew.Constants
+@using otelturizmnew.Models.Paneller.Common
 @inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
+@inject otelturizmnew.Services.Abstractions.IHeaderBildiriService HeaderBildiriService
 @{
     Layout = null;
     var pageCss = ViewData["PageCss"] as string;
@@ -11,6 +13,7 @@
         ? userDraftCookieValue
         : null;
     var userActiveDraft = await ReservationDraftService.GetActiveDraftAsync(userDraftUserId, userDraftSessionKey, Context.RequestAborted);
+    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.User, userDraftUserId ?? 0, Context.RequestAborted);
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -23,6 +26,7 @@
     <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
     <link rel="stylesheet" href="~/assets/css/panel-user-shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.css" asp-append-version="true" />
     @if (!string.IsNullOrWhiteSpace(pageCss))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
@@ -45,10 +49,7 @@
                         <i class="fas fa-search"></i>
                         <input type="text" placeholder="Panel icinde ara..." />
                     </div>
-                    <button type="button" class="notify-btn">
-                        <i class="far fa-bell"></i>
-                        <span>3</span>
-                    </button>
+                    <partial name="~/Views/Shared/_HeaderBildiri.cshtml" model="headerBildiri" />
                     <form method="post" action="/cikis-yap" class="panel-header-logout-form">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="panel-header-logout-btn">
@@ -71,6 +72,7 @@
     </div>
 
     <partial name="~/Views/Paneller/User/_UserMobileNav.cshtml" />
+    <script src="~/assets/js/panel-header-bildiri.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

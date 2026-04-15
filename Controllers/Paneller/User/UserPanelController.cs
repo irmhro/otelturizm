@@ -23,14 +23,27 @@ public class UserPanelController : Controller
 
     [HttpGet("")]
     [HttpGet("index")]
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(
+        string? reservationStatus = null,
+        DateOnly? reservationStartDate = null,
+        DateOnly? reservationEndDate = null,
+        int reservationPage = 1,
+        int reservationPageSize = 5,
+        CancellationToken cancellationToken = default)
     {
         if (!CanAccessUserPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
         }
 
-        var model = await _userPanelService.GetDashboardAsync(GetCurrentUserId(), cancellationToken);
+        var model = await _userPanelService.GetDashboardAsync(
+            GetCurrentUserId(),
+            reservationStatus,
+            reservationStartDate,
+            reservationEndDate,
+            reservationPage,
+            reservationPageSize,
+            cancellationToken);
         ViewData["PageCss"] = "panel-user-dashboard";
         ViewData["PanelTitle"] = "Kullanici Paneli";
         ViewData["PanelSubtitle"] = "Hesabini yonet, rezervasyonlarini takip et ve ozel firsatlari kesfet.";
@@ -46,7 +59,9 @@ public class UserPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
-        var model = await _userPanelService.GetReservationsAsync(GetCurrentUserId(), cancellationToken);
+        var userId = GetCurrentUserId();
+        var model = await _userPanelService.GetReservationsAsync(userId, cancellationToken);
+        ViewData["FavoriteCount"] = await _userFavoriteService.GetFavoriteCountAsync(userId, cancellationToken);
         ViewData["PageCss"] = "panel-user-reservations";
         ViewData["PanelTitle"] = "Rezervasyonlarim";
         ViewData["PanelSubtitle"] = "Tum yaklasan, gecmis ve iptal edilen rezervasyonlarini yonet.";
@@ -55,11 +70,22 @@ public class UserPanelController : Controller
 
     [HttpPost("rezervasyonlarim/iptal")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CancelReservation(long reservationId, CancellationToken cancellationToken)
+    public async Task<IActionResult> CancelReservation(long reservationId, string? cancellationReason, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
         {
-            var result = await _userPanelService.CancelReservationAsync(GetCurrentUserId(), reservationId, cancellationToken);
+            var result = await _userPanelService.CancelReservationAsync(
+                GetCurrentUserId(),
+                reservationId,
+                cancellationReason ?? string.Empty,
+                cancellationToken);
+            if (!result.Success
+                && result.Message.Contains("Check-in tarihi gelen veya gecen rezervasyonlar panelden iptal edilemez", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["UserMessageError"] = result.Message;
+                return RedirectToAction(nameof(Messages));
+            }
+
             TempData[result.Success ? "UserReservationSuccess" : "UserReservationError"] = result.Message;
         }
 
@@ -80,6 +106,31 @@ public class UserPanelController : Controller
         ViewData["PanelSubtitle"] = "Kaydettigin otelleri karsilastir, duzenle ve rezervasyona donustur.";
         ViewData["FavoriteCount"] = model.FavoriteCount;
         return View("~/Views/Paneller/User/Favorites.cshtml", model);
+    }
+
+    [HttpPost("favorilerim/fiyat-alarmi")]
+    public async Task<IActionResult> SaveFavoritePriceAlert(UserFavoritePriceAlertForm form, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userFavoriteService.SavePriceAlertAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[result.Success ? "UserFavoriteAlertSuccess" : "UserFavoriteAlertError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Favorites));
+    }
+
+    [HttpPost("favorilerim/fiyat-alarmi/sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteFavoritePriceAlert(long hotelId, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userFavoriteService.DeletePriceAlertAsync(GetCurrentUserId(), hotelId, cancellationToken);
+            TempData[result.Success ? "UserFavoriteAlertSuccess" : "UserFavoriteAlertError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Favorites));
     }
 
     [HttpGet("otelpuan-programi")]
@@ -213,8 +264,7 @@ public class UserPanelController : Controller
     {
         if (CanAccessUserPanel())
         {
-            var result = await _userPanelService.DeleteMessageAsync(GetCurrentUserId(), form, cancellationToken);
-            TempData[result.Success ? "UserMessageStatus" : "UserMessageError"] = result.Message;
+            TempData["UserMessageError"] = "Mesaj silme islemi devre disi. Sadece mesaj duzenleme ve yanitlama yapabilirsiniz.";
         }
 
         return RedirectToAction(nameof(Messages), new { conversationId = form.ConversationId });

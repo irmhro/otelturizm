@@ -2,9 +2,25 @@
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Favorilerim";
+    var minDate = DateTime.Today.ToString("yyyy-MM-dd");
 }
 
 <section class="panel-card">
+    @if (TempData["UserFavoriteAlertSuccess"] is string favoriteAlertSuccess && !string.IsNullOrWhiteSpace(favoriteAlertSuccess))
+    {
+        <div class="user-favorite-alert-banner success">
+            <i class="fas fa-circle-check"></i>
+            <span>@favoriteAlertSuccess</span>
+        </div>
+    }
+    @if (TempData["UserFavoriteAlertError"] is string favoriteAlertError && !string.IsNullOrWhiteSpace(favoriteAlertError))
+    {
+        <div class="user-favorite-alert-banner error">
+            <i class="fas fa-circle-exclamation"></i>
+            <span>@favoriteAlertError</span>
+        </div>
+    }
+
     <div class="section-head">
         <div>
             <p class="mini-label">KAYITLI LISTE</p>
@@ -61,17 +77,149 @@
                             </div>
                         }
                         <div class="card-bottom">
-                            <span class="price-caption">Guncel fiyat</span>
+                            <span class="price-caption">Takvim bazli guncel fiyat</span>
                             <strong>@hotel.PriceText</strong>
                         </div>
                         <a href="/oteller/@hotel.Slug" class="favorite-reservation-btn">Rezervasyon</a>
-                        <button type="button" class="ghost-btn favorite-alert-btn">
+                        <button type="button"
+                                class="ghost-btn favorite-alert-btn"
+                                data-alert-config
+                                data-hotel-id="@hotel.HotelId"
+                                data-hotel-name="@hotel.Name"
+                                data-target-price="@(hotel.PriceAlertTargetAmount?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? "")"
+                                data-start-date="@hotel.PriceAlertStartDateValue"
+                                data-end-date="@hotel.PriceAlertEndDateValue"
+                                data-enabled="@(hotel.PriceAlertEnabled ? "1" : "0")">
                             <i class="fas fa-envelope-open-text"></i>
                             İndirim olduğunda email ile haberdar et
                         </button>
+                        @if (hotel.PriceAlertEnabled)
+                        {
+                            <div class="favorite-alert-meta">
+                                <strong>Fiyat alarmi aktif</strong>
+                                <span>Hedef: @(hotel.PriceAlertTargetText ?? "-")</span>
+                                <span>Tarih: @(hotel.PriceAlertDateRangeText ?? "-")</span>
+                                @if (!string.IsNullOrWhiteSpace(hotel.PriceAlertLastTriggeredText))
+                                {
+                                    <span>Son bildirim: @hotel.PriceAlertLastTriggeredText</span>
+                                }
+                                <form method="post" action="/panel/user/favorilerim/fiyat-alarmi/sil" class="favorite-alert-delete-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="hotelId" value="@hotel.HotelId" />
+                                    <button type="submit" class="favorite-alert-delete-btn">
+                                        <i class="fas fa-trash-can"></i>
+                                        Fiyat alarmini sil
+                                    </button>
+                                </form>
+                            </div>
+                        }
                     </div>
                 </article>
             }
         </div>
     }
 </section>
+
+<dialog class="favorite-alert-dialog" id="favoriteAlertDialog">
+    <form method="post" action="/panel/user/favorilerim/fiyat-alarmi" class="favorite-alert-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="HotelId" id="favoriteAlertHotelId" />
+
+        <div class="favorite-alert-form-head">
+            <h3 id="favoriteAlertHotelName">Fiyat alarmi ayari</h3>
+            <button type="button" class="favorite-alert-close" data-close-alert-dialog aria-label="Kapat">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+
+        <label class="favorite-alert-checkbox">
+            <input type="checkbox" name="Enabled" id="favoriteAlertEnabled" value="true" />
+            <span>Bu otel icin fiyat alarmi aktif olsun</span>
+        </label>
+        <input type="hidden" name="Enabled" value="false" />
+
+        <label>
+            <span>Bekledigin maksimum gece fiyatı (TRY)</span>
+            <input type="number" name="TargetPriceText" id="favoriteAlertTargetPrice" min="1" step="0.01" required />
+        </label>
+
+        <div class="favorite-alert-date-grid">
+            <label>
+                <span>Baslangic tarihi</span>
+                <input type="date" name="StartDateText" id="favoriteAlertStartDate" min="@minDate" required />
+            </label>
+            <label>
+                <span>Bitis tarihi</span>
+                <input type="date" name="EndDateText" id="favoriteAlertEndDate" min="@minDate" required />
+            </label>
+        </div>
+
+        <div class="favorite-alert-actions">
+            <button type="button" class="ghost-btn" data-close-alert-dialog>Vazgec</button>
+            <button type="submit" class="favorite-reservation-btn">Kaydet</button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    (function () {
+        const dialog = document.getElementById('favoriteAlertDialog');
+        if (!dialog) return;
+
+        const hotelIdInput = document.getElementById('favoriteAlertHotelId');
+        const hotelName = document.getElementById('favoriteAlertHotelName');
+        const enabledInput = document.getElementById('favoriteAlertEnabled');
+        const targetPriceInput = document.getElementById('favoriteAlertTargetPrice');
+        const startDateInput = document.getElementById('favoriteAlertStartDate');
+        const endDateInput = document.getElementById('favoriteAlertEndDate');
+        const syncRequirement = () => {
+            const active = enabledInput.checked;
+            targetPriceInput.required = active;
+            startDateInput.required = active;
+            endDateInput.required = active;
+            targetPriceInput.disabled = !active;
+            startDateInput.disabled = !active;
+            endDateInput.disabled = !active;
+        };
+
+        document.querySelectorAll('[data-alert-config]').forEach((button) => {
+            button.addEventListener('click', () => {
+                hotelIdInput.value = button.getAttribute('data-hotel-id') || '';
+                hotelName.textContent = (button.getAttribute('data-hotel-name') || 'Otel') + ' - fiyat alarmi';
+                enabledInput.checked = button.getAttribute('data-enabled') === '1';
+                targetPriceInput.value = button.getAttribute('data-target-price') || '';
+                startDateInput.value = button.getAttribute('data-start-date') || '';
+                endDateInput.value = button.getAttribute('data-end-date') || '';
+                syncRequirement();
+                if (typeof dialog.showModal === 'function') {
+                    dialog.showModal();
+                }
+            });
+        });
+
+        const closeDialog = () => {
+            if (dialog.open) {
+                dialog.close();
+            }
+        };
+
+        dialog.querySelectorAll('[data-close-alert-dialog]').forEach((button) => {
+            button.addEventListener('click', closeDialog);
+        });
+
+        dialog.addEventListener('click', (event) => {
+            if (event.target === dialog) {
+                closeDialog();
+            }
+        });
+
+        startDateInput.addEventListener('change', () => {
+            endDateInput.min = startDateInput.value || '@minDate';
+            if (endDateInput.value && startDateInput.value && endDateInput.value < startDateInput.value) {
+                endDateInput.value = startDateInput.value;
+            }
+        });
+
+        enabledInput.addEventListener('change', syncRequirement);
+    })();
+</script>

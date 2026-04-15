@@ -1,1 +1,63 @@
-<!DOCTYPE html><html lang="tr"><body style="font-family:Inter,Arial,sans-serif;background:#f5f7fb;padding:24px;color:#152238;"><div style="max-width:640px;margin:0 auto;background:#fff;border-radius:24px;overflow:hidden;border:1px solid #e6edf6;"><div style="padding:32px;background:#1d2433;color:#fff;"><h1 style="margin:0;font-size:28px;">Şifre Sıfırlama Talebi</h1><p style="margin:10px 0 0;opacity:.9;">Hesabına yeniden erişim sağla.</p></div><div style="padding:32px;"><p>Merhaba <strong>{{user_first_name}}</strong>,</p><p>{{user_email}} için şifre sıfırlama talebi aldık. Aşağıdaki bağlantı yalnızca <strong>1 saat</strong> boyunca geçerlidir.</p><p style="margin:24px 0;"><a href="{{reset_link}}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#0f5bd7;color:#fff;text-decoration:none;font-weight:700;">Yeni Şifre Oluştur</a></p><p style="color:#61748b;">Talep IP: {{request_ip}}</p></div></div></body></html>
+<!DOCTYPE html>
+<html lang="tr">
+<body style="margin:0;padding:0;background:#eef2f8;font-family:Inter,Arial,sans-serif;color:#162136;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#eef2f8;padding:28px 12px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="640" style="max-width:640px;background:#ffffff;border:1px solid #dce5f3;border-radius:24px;overflow:hidden;">
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#141d2e 0%,#22314d 100%);padding:36px 34px;color:#ffffff;">
+                            <p style="margin:0 0 8px;font-size:13px;letter-spacing:.16em;text-transform:uppercase;opacity:.82;">Otelturizm Guvenlik</p>
+                            <h1 style="margin:0;font-size:30px;line-height:1.2;">Sifre sifirlama talebi</h1>
+                            <p style="margin:12px 0 0;font-size:16px;line-height:1.55;opacity:.92;">Hesabiniza yeniden guvenli erisim saglayin.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:34px;">
+                            <p style="margin:0 0 16px;font-size:17px;">Merhaba <strong>{{user_first_name}}</strong>,</p>
+                            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#425571;">
+                                <strong>{{user_email}}</strong> icin sifre sifirlama talebi alindi. Baglanti sadece <strong>1 saat</strong> boyunca gecerlidir.
+                            </p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 18px;background:#f6f8fc;border:1px solid #e1e8f4;border-radius:16px;">
+                                <tr>
+                                    <td style="padding:14px 16px;font-size:13px;line-height:1.65;color:#536987;">
+                                        Bu islemi siz yapmadiysaniz sifreniz degistirilmez. Hesabiniz guvende kalir.
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;">
+                                <tr>
+                                    <td style="border-radius:999px;background:linear-gradient(135deg,#003b95 0%,#0f5bd7 100%);">
+                                        <a href="{{reset_link}}" style="display:inline-block;padding:14px 26px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;border-radius:999px;">Yeni Sifre Olustur</a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin:0 0 14px;font-size:13px;color:#5f7492;">Talep IP: {{request_ip}}</p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fff3f3;border:1px solid #ffd7d7;border-radius:14px;margin:0 0 16px;">
+                                <tr>
+                                    <td style="padding:14px 16px;font-size:13px;line-height:1.65;color:#8a1d1d;">
+                                        Baglanti suresi dolarsa yeni bir sifre sifirlama talebi olusturabilirsiniz.
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin:0 0 6px;font-size:12px;color:#6c7f99;">Buton calismazsa baglantiyi tarayiciniza yapistirin:</p>
+                            <p style="margin:0;font-size:12px;line-height:1.55;word-break:break-all;color:#3b4f6d;">{{reset_link}}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:22px 34px;background:#f6f9ff;border-top:1px solid #e3ebf7;">
+                            <p style="margin:0;font-size:12px;line-height:1.65;color:#6d7f96;">Bu e-posta guvenlik nedeniyle otomatik gonderilmistir. Yanitlamayiniz.</p>
+                            <p style="margin:8px 0 0;font-size:12px;color:#6d7f96;">© 2026 Otelturizm · Tum haklari saklidir.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

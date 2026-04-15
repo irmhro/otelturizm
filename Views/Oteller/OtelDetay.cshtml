@@ -20,6 +20,7 @@
     var roomPriceSeed = selectedRoomSeed.Price;
     var checkInDefault = reservationForm.CheckInDate.ToString("yyyy-MM-dd");
     var checkOutDefault = reservationForm.CheckOutDate.ToString("yyyy-MM-dd");
+    var todayDate = DateTime.Today.ToString("yyyy-MM-dd");
     var locationText = $"{Model.District}, {Model.City}";
     var longDescription = string.IsNullOrWhiteSpace(Model.LongDescription) ? Model.ShortDescription : Model.LongDescription;
     var overallBarWidth = Math.Min(100m, Model.Rating * 20m).ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -186,13 +187,13 @@
     <section class="content-card active-draft-banner">
         <div>
             <strong>Tamamlanmamis rezervasyonunuz var</strong>
-            <p>@Model.ActiveDraft.HotelName · @Model.ActiveDraft.CheckInText - @Model.ActiveDraft.CheckOutText · @Model.ActiveDraft.Message</p>
+            <p class="active-draft-message">@Model.ActiveDraft.HotelName · @Model.ActiveDraft.CheckInText - @Model.ActiveDraft.CheckOutText · @Model.ActiveDraft.Message</p>
         </div>
         <div class="active-draft-actions">
             <a href="@Model.ActiveDraft.ResumeUrl" class="active-draft-link">Devam Et</a>
-            @if (Model.ActiveDraft.RequiresProfileCompletion && Model.IsLoggedInUser)
+            @if ((Model.ActiveDraft.RequiresProfileCompletion || Model.ProfilePrompt.IsProfileIncomplete) && Model.IsLoggedInUser)
             {
-                <button type="button" class="active-draft-secondary" id="openProfileCompletionFromBanner">Bilgileri Güncelle</button>
+                <button type="button" class="active-draft-secondary" id="openProfileCompletionFromBanner">Bilgileri Tamamla</button>
             }
         </div>
     </section>
@@ -401,12 +402,12 @@
                 <input type="hidden" id="profileCompletionRequired" value="@(Model.ProfilePrompt.IsProfileIncomplete && Model.IsLoggedInUser ? "true" : "false")" />
                 <label>
                     <span>Giriş Tarihi</span>
-                    <input type="date" id="checkInDateInput" name="CheckInDate" value="@checkInDefault" />
+                    <input type="date" id="checkInDateInput" name="CheckInDate" value="@checkInDefault" min="@todayDate" />
                 </label>
 
                 <label>
                     <span>Cikis Tarihi</span>
-                    <input type="date" id="checkOutDateInput" name="CheckOutDate" value="@checkOutDefault" />
+                    <input type="date" id="checkOutDateInput" name="CheckOutDate" value="@checkOutDefault" min="@todayDate" />
                 </label>
 
                 <div class="guest-row">
@@ -436,15 +437,37 @@
                     <select id="roomTypeSelect" name="RoomTypeId">
                         @foreach (var room in roomSelectOptions)
                         {
-                            <option value="@room.RoomTypeId"
-                                    data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
-                                    data-room-name="@room.Name"
-                                    selected="@(room.RoomTypeId == reservationForm.RoomTypeId)">
-                                @room.Name
-                            </option>
+                            if (room.RoomTypeId == reservationForm.RoomTypeId)
+                            {
+                                <option value="@room.RoomTypeId"
+                                        data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
+                                        data-room-name="@room.Name"
+                                        selected="selected">
+                                    @room.Name
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="@room.RoomTypeId"
+                                        data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
+                                        data-room-name="@room.Name">
+                                    @room.Name
+                                </option>
+                            }
                         }
                     </select>
                 </label>
+
+                <label>
+                    <span>Odeme Tipi</span>
+                    <select name="PaymentMethod" id="paymentMethodSelect">
+                        <option value="Kapıda Ödeme" selected="@(reservationForm.PaymentMethod == "Kapıda Ödeme")">Kapida Odeme / Nakit</option>
+                        <option value="Online Ödeme" selected="@(reservationForm.PaymentMethod == "Online Ödeme" || reservationForm.PaymentMethod == "Sanal POS")">Online Odeme (Gelistiriliyor)</option>
+                    </select>
+                </label>
+                <div class="booking-payment-note" id="bookingPaymentNote" hidden>
+                    Online ödeme altyapısı geliştiriliyor. Şimdilik rezervasyonlar kapıda ödeme ile tamamlanabiliyor.
+                </div>
 
                 <label>
                     <span>Check-in / Check-out</span>
@@ -454,6 +477,7 @@
                 <button type="submit" class="reserve-btn">Rezervasyon Yap</button>
             </form>
 
+            <div class="booking-quote-notice" id="bookingQuoteNotice" hidden></div>
             <div class="price-breakdown" id="priceBreakdown">
                 <div><span>₺@roomPriceSeed.ToString("N0") x @initialNightCount gece</span><strong>₺@initialSubtotal.ToString("N0")</strong></div>
                 <div><span>Vergi ve Harclar</span><strong>₺@initialTax.ToString("N0")</strong></div>
@@ -496,7 +520,7 @@
             @Html.AntiForgeryToken()
             <label>
                 <span>E-posta</span>
-                <input type="email" name="Email" value="@Model.ProfilePrompt.Email" readonly />
+                <input type="email" name="Email" value="@Model.ProfilePrompt.Email" />
             </label>
             <label>
                 <span>Telefon</span>
@@ -641,11 +665,14 @@
             const saveButton = document.getElementById('saveHotelBtn');
             const bookingForm = document.getElementById('bookingForm');
             const roomTypeSelect = document.getElementById('roomTypeSelect');
+            const paymentMethodSelect = document.getElementById('paymentMethodSelect');
             const checkInInput = document.getElementById('checkInDateInput');
             const checkOutInput = document.getElementById('checkOutDateInput');
             const bookingPrice = document.getElementById('bookingPrice');
             const breakdown = document.getElementById('priceBreakdown');
-            const profileCompletionRequired = document.getElementById('profileCompletionRequired')?.value === 'true';
+            const bookingQuoteNotice = document.getElementById('bookingQuoteNotice');
+            const bookingPaymentNote = document.getElementById('bookingPaymentNote');
+            let profileCompletionRequired = document.getElementById('profileCompletionRequired')?.value === 'true';
             const actionBackdrop = document.getElementById('detailActionBackdrop');
             const profileModal = document.getElementById('profileCompletionModal');
             const infoModal = document.getElementById('detailInfoModal');
@@ -661,6 +688,8 @@
             const shareButton = document.getElementById('shareHotelBtn');
             const shareMenu = document.getElementById('shareMenu');
             const activeDraftResumeLink = document.querySelector('.active-draft-link');
+            const activeDraftMessage = document.querySelector('.active-draft-message');
+            const openProfileCompletionFromBanner = document.getElementById('openProfileCompletionFromBanner');
             let adults = parseInt(document.getElementById('adultCountInput')?.value || '2', 10);
             let children = parseInt(document.getElementById('childCountInput')?.value || '0', 10);
             let latestQuoteRequest = null;
@@ -701,7 +730,36 @@
                 refreshPriceQuote();
             });
 
-            checkInInput?.addEventListener('change', refreshPriceQuote);
+            function normalizeBookingDates() {
+                if (!checkInInput || !checkOutInput) {
+                    return;
+                }
+
+                const todayText = '@todayDate';
+                const currentCheckIn = checkInInput.value;
+                if (!currentCheckIn || currentCheckIn < todayText) {
+                    checkInInput.value = todayText;
+                }
+
+                const checkInDate = new Date(checkInInput.value + 'T00:00:00');
+                if (Number.isNaN(checkInDate.getTime())) {
+                    return;
+                }
+
+                const minCheckOutDate = new Date(checkInDate);
+                minCheckOutDate.setDate(minCheckOutDate.getDate() + 1);
+                const minCheckOutText = minCheckOutDate.toISOString().slice(0, 10);
+                checkOutInput.min = minCheckOutText;
+
+                if (!checkOutInput.value || checkOutInput.value <= checkInInput.value) {
+                    checkOutInput.value = minCheckOutText;
+                }
+            }
+
+            checkInInput?.addEventListener('change', function () {
+                normalizeBookingDates();
+                refreshPriceQuote();
+            });
             checkOutInput?.addEventListener('change', refreshPriceQuote);
 
             function closeShareMenu() {
@@ -914,13 +972,77 @@
             }
 
             function resumeDraftFlow() {
-                if (@(Model.ActiveDraft?.RequiresProfileCompletion == true && Model.IsLoggedInUser ? "true" : "false")) {
+                if (profileCompletionRequired) {
                     hydrateProfileAddressSelectors();
                     openModal(profileModal);
                     return;
                 }
 
                 document.querySelector('.booking-sidebar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            function isOnlinePaymentSelected() {
+                const selectedPaymentMethod = (paymentMethodSelect?.value || '').trim();
+                return selectedPaymentMethod === 'Online Ödeme' || selectedPaymentMethod === 'Sanal POS';
+            }
+
+            function syncPaymentMethodState() {
+                if (!paymentMethodSelect || !bookingPaymentNote) {
+                    return;
+                }
+
+                if (isOnlinePaymentSelected()) {
+                    bookingPaymentNote.hidden = false;
+                } else {
+                    bookingPaymentNote.hidden = true;
+                }
+            }
+
+            function markProfileCompletionResolved() {
+                profileCompletionRequired = false;
+                const profileCompletionRequiredInput = document.getElementById('profileCompletionRequired');
+                if (profileCompletionRequiredInput) {
+                    profileCompletionRequiredInput.value = 'false';
+                }
+
+                if (activeDraftMessage) {
+                    activeDraftMessage.textContent = '@Model.ActiveDraft?.HotelName · @Model.ActiveDraft?.CheckInText - @Model.ActiveDraft?.CheckOutText · Rezervasyonunuza kaldığınız yerden devam edebilirsiniz.';
+                }
+
+                if (openProfileCompletionFromBanner) {
+                    openProfileCompletionFromBanner.hidden = true;
+                }
+            }
+
+            function renderNightlyBreakdown(items) {
+                if (!Array.isArray(items) || items.length === 0) {
+                    return '';
+                }
+
+                const rows = items.map(function (item) {
+                    const label = item.dateText || item.dateLabel || item.date || '';
+                    const nightlyPrice = Number(item.price ?? item.effectivePrice ?? 0);
+                    return '<div class="price-breakdown-item"><span>' + label + '</span><strong>' + formatMoney(nightlyPrice) + '</strong></div>';
+                }).join('');
+
+                return '<div class="price-breakdown-nightly"><p>Günlük fiyat dökümü</p>' + rows + '</div>';
+            }
+
+            function setQuoteNotice(message, tone) {
+                if (!bookingQuoteNotice) {
+                    return;
+                }
+
+                if (!message) {
+                    bookingQuoteNotice.hidden = true;
+                    bookingQuoteNotice.className = 'booking-quote-notice';
+                    bookingQuoteNotice.textContent = '';
+                    return;
+                }
+
+                bookingQuoteNotice.hidden = false;
+                bookingQuoteNotice.className = 'booking-quote-notice ' + (tone || 'info');
+                bookingQuoteNotice.textContent = message;
             }
 
             async function refreshPriceQuote() {
@@ -956,10 +1078,21 @@
                     }
 
                     bookingPrice.textContent = formatMoney(quote.nightlyPrice);
+                    const nightlyHtml = renderNightlyBreakdown(quote.nightlyBreakdown);
                     breakdown.innerHTML =
+                        nightlyHtml +
                         '<div><span>' + formatMoney(quote.nightlyPrice) + ' x ' + quote.nightCount + ' gece</span><strong>' + formatMoney(quote.roomTotal) + '</strong></div>' +
                         '<div><span>Vergi ve Harçlar</span><strong>' + formatMoney(quote.taxAmount) + '</strong></div>' +
                         '<div class="total"><span>Toplam</span><strong>' + formatMoney(quote.totalAmount) + '</strong></div>';
+
+                    const reserveButton = bookingForm?.querySelector('.reserve-btn');
+                    if (quote.isAvailable === false) {
+                        setQuoteNotice(quote.availabilityMessage || 'Seçili tarihler için uygun stok veya satış bulunamadı.', 'warning');
+                        reserveButton?.setAttribute('disabled', 'disabled');
+                    } else {
+                        setQuoteNotice(quote.availabilityMessage || '', 'info');
+                        reserveButton?.removeAttribute('disabled');
+                    }
                 } catch (_error) {
                     const fallbackNightly = parseFloat(selectedOption?.dataset.price || '0');
                     const diffMs = new Date(checkOut).getTime() - new Date(checkIn).getTime();
@@ -968,6 +1101,8 @@
                     const tax = Math.round(subtotal * 0.08);
                     const total = subtotal + tax;
                     bookingPrice.textContent = formatMoney(fallbackNightly);
+                    setQuoteNotice('Günlük fiyat dökümü alınamadı, varsayılan oda fiyatı gösteriliyor.', 'info');
+                    bookingForm?.querySelector('.reserve-btn')?.removeAttribute('disabled');
                     breakdown.innerHTML =
                         '<div><span>' + formatMoney(fallbackNightly) + ' x ' + nights + ' gece</span><strong>' + formatMoney(subtotal) + '</strong></div>' +
                         '<div><span>Vergi ve Harçlar</span><strong>' + formatMoney(tax) + '</strong></div>' +
@@ -1039,7 +1174,7 @@
                 await loadSelectOptions('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), neighborhoodSelect, 'Mahalle seçiniz', '');
             });
 
-            document.getElementById('openProfileCompletionFromBanner')?.addEventListener('click', function () {
+            openProfileCompletionFromBanner?.addEventListener('click', function () {
                 hydrateProfileAddressSelectors();
                 openModal(profileModal);
             });
@@ -1050,6 +1185,12 @@
             });
 
             bookingForm?.addEventListener('submit', function (event) {
+                if (isOnlinePaymentSelected()) {
+                    event.preventDefault();
+                    showInfoModal('Online ödeme altyapısı şu anda geliştirme aşamasında. Şimdilik kapıda ödeme / nakit seçeneği ile rezervasyon tamamlayabilirsiniz.', false);
+                    return;
+                }
+
                 if (profileCompletionRequired) {
                     event.preventDefault();
                     hydrateProfileAddressSelectors();
@@ -1078,8 +1219,9 @@
                     profileFeedback.className = 'detail-modal-feedback success';
                     profileFeedback.textContent = payload.message;
                     window.setTimeout(function () {
+                        markProfileCompletionResolved();
                         closeModal(profileModal);
-                        window.location.href = '/oteller/@Model.Slug?continueDraft=1';
+                        resumeDraftFlow();
                     }, 700);
                 } catch (error) {
                     profileFeedback.hidden = false;
@@ -1137,7 +1279,10 @@
                 resumeDraftFlow();
             }
 
+            normalizeBookingDates();
+            syncPaymentMethodState();
             refreshPriceQuote();
+            paymentMethodSelect?.addEventListener('change', syncPaymentMethodState);
         })();
     </script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />

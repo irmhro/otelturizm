@@ -25,6 +25,20 @@
             Sonraki ay
             <i class="fas fa-chevron-right"></i>
         </a>
+        <form method="get" action="/panel/partner/takvim-fiyatlar" class="partner-month-picker-form">
+            <input type="hidden" name="otelId" value="@Model.SelectedHotelId" />
+            @if (Model.SelectedRoomId.HasValue)
+            {
+                <input type="hidden" name="roomId" value="@Model.SelectedRoomId" />
+            }
+            <label for="partnerMonthPicker">Ayi sec</label>
+            <select id="partnerMonthPicker" name="month" onchange="this.form.submit()">
+                @foreach (var monthOption in Model.MonthOptions)
+                {
+                    <option value="@monthOption.MonthKey" selected="@(monthOption.IsCurrent ? "selected" : null)">@monthOption.Label</option>
+                }
+            </select>
+        </form>
     </div>
 </section>
 
@@ -71,6 +85,10 @@
                 <span><i class="fas fa-circle legend-warning"></i> Son odalar</span>
                 <span><i class="fas fa-circle legend-closed"></i> Satisa kapali</span>
             </div>
+        </div>
+        <div class="partner-calendar-insight">
+            <i class="fas fa-circle-info"></i>
+            <p>Anasayfa, favoriler ve detay fiyatlari bu takvimdeki acik satis gunlerinin en dusuk efektif fiyatina gore hesaplanir (kampanyali fiyat varsa once o kullanilir).</p>
         </div>
 
         @if (Model.CalendarDays.Count == 0)

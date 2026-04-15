@@ -12,6 +12,13 @@ public class UserDashboardPageViewModel
     public string DiscountText { get; set; } = "₺0";
     public List<UserReservationCardViewModel> RecentReservations { get; set; } = new();
     public List<UserFavoriteSummaryViewModel> FavoriteHotels { get; set; } = new();
+    public string ReservationStatusFilter { get; set; } = "all";
+    public string? ReservationStartDateText { get; set; }
+    public string? ReservationEndDateText { get; set; }
+    public int ReservationPage { get; set; } = 1;
+    public int ReservationPageSize { get; set; } = 5;
+    public int ReservationTotalCount { get; set; }
+    public int ReservationTotalPages => ReservationPageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(ReservationTotalCount / (double)ReservationPageSize));
 }
 
 public class UserReservationsPageViewModel
@@ -43,6 +50,14 @@ public class UserReservationCardViewModel
     public bool CanCancel { get; set; }
     public bool IsUpcoming { get; set; }
     public bool IsCancelled { get; set; }
+    public string? CancellationReason { get; set; }
+    public string? CancellationTimeText { get; set; }
+}
+
+public class UserReservationCancelForm
+{
+    public long ReservationId { get; set; }
+    public string CancellationReason { get; set; } = string.Empty;
 }
 
 public class UserFavoriteSummaryViewModel

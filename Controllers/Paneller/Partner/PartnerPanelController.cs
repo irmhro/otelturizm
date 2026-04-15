@@ -30,10 +30,10 @@ public class PartnerPanelController : Controller
     }
 
     [HttpGet("rezervasyonlar")]
-    public async Task<IActionResult> Reservations(long? otelId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Reservations(long? otelId, DateTime? dateFrom, DateTime? dateTo, string? status, string? paymentMethod, int page = 1, int pageSize = 10, long? conversationId = null, CancellationToken cancellationToken = default)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetReservationsAsync(GetUserId(), otelId, cancellationToken);
+        var model = await _partnerService.GetReservationsAsync(GetUserId(), otelId, dateFrom, dateTo, status, paymentMethod, page, pageSize, conversationId, cancellationToken);
         ViewData["Title"] = "Partner Rezervasyonlar";
         ViewData["PageCssPath"] = "paneller/partner/reservations";
         return View("~/Views/Paneller/Partner/Reservations.cshtml", model);
@@ -54,7 +54,10 @@ public class PartnerPanelController : Controller
     {
         var result = await _partnerService.SendGuestMessageAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
-        return Redirect($"/panel/partner/rezervasyonlar?otelId={request.HotelId}");
+        var conversationQuery = request.ConversationId.HasValue && request.ConversationId.Value > 0
+            ? $"&conversationId={request.ConversationId.Value}"
+            : string.Empty;
+        return Redirect($"/panel/partner/rezervasyonlar?otelId={request.HotelId}{conversationQuery}");
     }
 
     [HttpGet("rezervasyonlar/disa-aktar")]
@@ -142,7 +145,12 @@ public class PartnerPanelController : Controller
     {
         var result = await _partnerService.UpsertRoomAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
-        return Redirect($"/panel/partner/oda-yonetimi?otelId={request.HotelId}");
+        if (request.RoomId.HasValue && request.RoomId.Value > 0)
+        {
+            return Redirect($"/panel/partner/oda-yonetimi?otelId={request.HotelId}&roomId={request.RoomId.Value}#room-form");
+        }
+
+        return Redirect($"/panel/partner/oda-yonetimi?otelId={request.HotelId}#room-form");
     }
 
     [HttpPost("oda-yonetimi/sil")]
@@ -152,6 +160,35 @@ public class PartnerPanelController : Controller
         var result = await _partnerService.DeleteRoomAsync(GetUserId(), hotelId, roomId, cancellationToken);
         TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
         return Redirect($"/panel/partner/oda-yonetimi?otelId={hotelId}");
+    }
+
+    [HttpPost("oda-yonetimi/gorsel-yukle")]
+    [ValidateAntiForgeryToken]
+    [RequestFormLimits(MultipartBodyLengthLimit = 157286400)]
+    [RequestSizeLimit(157286400)]
+    public async Task<IActionResult> UploadRoomPhotos(PartnerRoomPhotoUploadRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _partnerService.UploadRoomPhotosAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        return Redirect($"/panel/partner/oda-yonetimi?otelId={request.HotelId}&roomId={request.RoomId}#room-gallery");
+    }
+
+    [HttpPost("oda-yonetimi/gorsel-kapak-yap")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetRoomCover(long hotelId, long roomId, long photoId, CancellationToken cancellationToken)
+    {
+        var result = await _partnerService.SetRoomCoverAsync(GetUserId(), hotelId, roomId, photoId, cancellationToken);
+        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        return Redirect($"/panel/partner/oda-yonetimi?otelId={hotelId}&roomId={roomId}#room-gallery");
+    }
+
+    [HttpPost("oda-yonetimi/gorsel-sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteRoomPhoto(long hotelId, long roomId, long photoId, CancellationToken cancellationToken)
+    {
+        var result = await _partnerService.DeleteRoomPhotoAsync(GetUserId(), hotelId, roomId, photoId, cancellationToken);
+        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        return Redirect($"/panel/partner/oda-yonetimi?otelId={hotelId}&roomId={roomId}#room-gallery");
     }
 
     [HttpGet("otel-bilgileri")]

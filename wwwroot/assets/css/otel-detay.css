@@ -1179,13 +1179,25 @@
     justify-content: space-between;
     align-items: center;
     gap: 14px;
-    padding: 12px 0;
+    padding: 8px 0;
+    min-height: 44px;
 }
 
 .guest-controls {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
+}
+
+.guest-row > span {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.guest-controls strong {
+    min-width: 18px;
+    text-align: center;
+    color: #0f172a;
 }
 
 .guest-btn {
@@ -1222,6 +1234,63 @@
 .price-breakdown .total {
     font-weight: 800;
     color: #0f172a;
+}
+
+.price-breakdown-nightly {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 18px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.price-breakdown-nightly p {
+    margin: 0;
+    font-size: .82rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #1d4ed8;
+}
+
+.price-breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: #334155;
+    font-size: .95rem;
+}
+
+.booking-quote-notice {
+    display: block;
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    font-size: .92rem;
+    font-weight: 700;
+}
+
+.booking-quote-notice.info {
+    background: rgba(37, 99, 235, .10);
+    color: #1d4ed8;
+}
+
+.booking-quote-notice.warning {
+    background: rgba(245, 158, 11, .12);
+    color: #b45309;
+}
+
+.booking-payment-note {
+    display: block;
+    margin-top: -4px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(245, 158, 11, .12);
+    color: #b45309;
+    font-size: .88rem;
+    font-weight: 700;
+    line-height: 1.5;
 }
 
 @media (max-width: 1180px) {

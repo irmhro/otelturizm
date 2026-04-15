@@ -55,11 +55,12 @@ public class PublicHotelReservationForm
 {
     public long HotelId { get; set; }
     public long RoomTypeId { get; set; }
-    public DateOnly CheckInDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
-    public DateOnly CheckOutDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(3));
+    public DateOnly CheckInDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public DateOnly CheckOutDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
     public int AdultCount { get; set; } = 2;
     public int ChildCount { get; set; }
     public int RoomCount { get; set; } = 1;
+    public string PaymentMethod { get; set; } = "Kapıda Ödeme";
 }
 
 public class PublicReservationResult
@@ -77,4 +78,18 @@ public class PublicReservationPriceQuoteViewModel
     public decimal RoomTotal { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal TotalAmount { get; set; }
+    public bool IsAvailable { get; set; } = true;
+    public string? AvailabilityMessage { get; set; }
+    public List<PublicReservationNightlyBreakdownItemViewModel> NightlyBreakdown { get; set; } = new();
+}
+
+public class PublicReservationNightlyBreakdownItemViewModel
+{
+    public DateOnly Date { get; set; }
+    public string DateText { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public string PriceText { get; set; } = string.Empty;
+    public bool IsDiscounted { get; set; }
+    public bool IsClosed { get; set; }
+    public short RemainingRooms { get; set; }
 }

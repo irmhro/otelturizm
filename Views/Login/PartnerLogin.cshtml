@@ -1,5 +1,7 @@
 @{
     ViewData["Title"] = "Partner Giriş";
+    var showResendVerifyButton = string.Equals(TempData["ShowResendVerifyButton"] as string, "1", StringComparison.Ordinal);
+    var resendVerifyEmail = TempData["ResendVerifyEmail"] as string ?? string.Empty;
 }
 
 <section class="auth-shell partner-auth-shell">
@@ -54,6 +56,16 @@
                 @if (TempData["PartnerLoginError"] is string partnerLoginError)
                 {
                     <div class="auth-alert">@partnerLoginError</div>
+                    @if (showResendVerifyButton && !string.IsNullOrWhiteSpace(resendVerifyEmail))
+                    {
+                        <form method="post" action="/eposta-dogrula/tekrar-gonder" class="auth-resend-verify-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="email" value="@resendVerifyEmail" />
+                            <button type="submit" class="auth-resend-verify-btn">
+                                <i class="fas fa-paper-plane"></i> Onaylama E-postası Gönder
+                            </button>
+                        </form>
+                    }
                 }
 
                 <form class="auth-form" id="partnerLoginForm" method="post" asp-controller="Auth" asp-action="PartnerLogin">
@@ -62,7 +74,7 @@
                         <label for="partnerIdentity">Otel Kodu veya E-posta</label>
                         <div class="input-wrap">
                             <i class="fas fa-hotel"></i>
-                            <input id="partnerIdentity" name="partnerIdentity" type="text" class="form-control" placeholder="Orn: OTLTRZM-IST-8EAFB748 veya email@otel.com" required />
+                            <input id="partnerIdentity" name="partnerIdentity" type="text" class="form-control" placeholder="Orn: OTLTRZM-IST-8EAF0101 veya email@otel.com" value="@resendVerifyEmail" required />
                         </div>
                     </div>
 
@@ -82,7 +94,7 @@
                             <input type="checkbox" name="rememberMe" value="true" checked />
                             <span>Beni hatırla</span>
                         </label>
-                        <a href="/yardim-merkezi#destek-kanallari" class="text-link">Şifremi unuttum</a>
+                        <a href="/sifremi-unuttum" class="text-link">Şifremi unuttum</a>
                     </div>
 
                     <button type="submit" class="auth-submit-btn partner-submit-btn">Extranet'e Giriş Yap <i class="fas fa-arrow-right"></i></button>

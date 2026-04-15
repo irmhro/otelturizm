@@ -1,3 +1,4 @@
+@using System.Globalization
 @model otelturizmnew.Models.Paneller.Partner.PartnerDashboardViewModel
 @{ Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml"; ViewData["PartnerShell"] = Model.Shell; }
 <section class="partner-grid partner-dashboard-grid">
@@ -24,7 +25,7 @@
     }
 </section>
 <section class="partner-two-column">
-    <article class="partner-section-card">
+    <article class="partner-section-card partner-revenue-card">
         <h2>Gelir Trendi</h2>
         @if (Model.RevenueTrend.Count == 0)
         {
@@ -38,7 +39,12 @@
             <div class="partner-chart-bars">
                 @foreach (var point in Model.RevenueTrend)
                 {
-                    <div class="chart-col"><span style="height:@(point.HeightPercent)%"></span><strong>@point.Label</strong><small>@point.ReservationCount rezervasyon</small></div>
+                    <div class="chart-col">
+                        <span class="chart-bar" style="height:@(point.HeightPercent)%"></span>
+                        <strong>@point.Label</strong>
+                        <small>@point.ReservationCount rezervasyon</small>
+                        <em>@point.RevenueAmount.ToString("C0", CultureInfo.GetCultureInfo("tr-TR"))</em>
+                    </div>
                 }
             </div>
         }
@@ -67,23 +73,29 @@
                             <b>@item.TotalText</b>
                             @if (item.CanApprove)
                             {
-                                <form method="post" action="/panel/partner/rezervasyonlar/durum">
+                                <form method="post" action="/panel/partner/rezervasyonlar/durum" class="partner-quick-action-form">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
                                     <input type="hidden" name="ReservationId" value="@item.ReservationId" />
                                     <input type="hidden" name="ActionType" value="approve" />
-                                    <button type="submit" class="partner-inline-btn is-success">Onayla</button>
+                                    <button type="submit" class="partner-dashboard-action-btn is-success">
+                                        <i class="fas fa-circle-check"></i>
+                                        Onayla
+                                    </button>
                                 </form>
                             }
                             @if (item.CanReject)
                             {
-                                <form method="post" action="/panel/partner/rezervasyonlar/durum">
+                                <form method="post" action="/panel/partner/rezervasyonlar/durum" class="partner-quick-action-form">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
                                     <input type="hidden" name="ReservationId" value="@item.ReservationId" />
                                     <input type="hidden" name="ActionType" value="reject" />
                                     <input type="hidden" name="Reason" value="Dashboard hizli aksiyonundan reddedildi." />
-                                    <button type="submit" class="partner-inline-btn is-danger">Reddet</button>
+                                    <button type="submit" class="partner-dashboard-action-btn is-danger">
+                                        <i class="fas fa-circle-xmark"></i>
+                                        Reddet
+                                    </button>
                                 </form>
                             }
                         </div>

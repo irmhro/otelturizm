@@ -134,15 +134,6 @@
                             </div>
                         }
 
-                        @if (message.CanDelete && !message.IsDeleted)
-                        {
-                            <form method="post" asp-action="DeleteMessage" class="message-delete-form">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="ConversationId" value="@Model.SelectedConversationId" />
-                                <input type="hidden" name="MessageId" value="@message.MessageId" />
-                                <button type="submit" class="message-delete-btn">Sil</button>
-                            </form>
-                        }
                     </div>
                 }
             }

@@ -14,7 +14,7 @@
         <label for="hotelName">Tesis / Otel Adi</label>
         <div class="input-wrap">
             <i class="fas fa-hotel"></i>
-            <input id="hotelName" name="hotelName" type="text" class="form-control" placeholder="Orn: 216 Prestige Hotel" autocomplete="organization" required />
+            <input id="hotelName" name="hotelName" type="text" class="form-control" placeholder="Orn: OTELTURİZM OTEL" autocomplete="organization" required />
         </div>
     </div>
 
@@ -200,7 +200,7 @@
         <label for="partnerRegisterPassword">Şifre</label>
         <div class="input-wrap">
             <i class="fas fa-lock"></i>
-            <input id="partnerRegisterPassword" name="password" type="password" class="form-control" placeholder="En az 8 karakter" required />
+            <input id="partnerRegisterPassword" name="password" type="password" class="form-control" placeholder="En az 6 karakter (harf + rakam)" minlength="6" pattern="(?=.*[A-Za-z])(?=.*\d).{6,}" title="En az 6 karakter, en az 1 harf ve 1 rakam girin." required />
             <button type="button" class="toggle-password" data-toggle-target="partnerRegisterPassword">
                 <i class="far fa-eye"></i>
             </button>
@@ -211,7 +211,7 @@
         <label for="partnerConfirmPassword">Şifre Tekrar</label>
         <div class="input-wrap">
             <i class="fas fa-lock"></i>
-            <input id="partnerConfirmPassword" name="confirmPassword" type="password" class="form-control" placeholder="Şifrenizi tekrar girin" required />
+            <input id="partnerConfirmPassword" name="confirmPassword" type="password" class="form-control" placeholder="Şifrenizi tekrar girin" minlength="6" pattern="(?=.*[A-Za-z])(?=.*\d).{6,}" title="En az 6 karakter, en az 1 harf ve 1 rakam girin." required />
             <button type="button" class="toggle-password" data-toggle-target="partnerConfirmPassword">
                 <i class="far fa-eye"></i>
             </button>

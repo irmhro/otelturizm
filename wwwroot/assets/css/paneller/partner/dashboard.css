@@ -52,6 +52,87 @@
     margin-top: 4px;
 }
 
+.partner-revenue-card .partner-chart-bars {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+    align-items: end;
+    min-height: 260px;
+}
+
+.partner-revenue-card .chart-col {
+    display: grid;
+    gap: 6px;
+    justify-items: center;
+}
+
+.partner-revenue-card .chart-bar {
+    width: 100%;
+    border-radius: 14px 14px 10px 10px;
+    background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%);
+    box-shadow: 0 12px 22px rgba(15, 118, 110, .28);
+    min-height: 12px;
+}
+
+.partner-revenue-card .chart-col strong {
+    font-size: 13px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.partner-revenue-card .chart-col small {
+    font-size: 12px;
+    color: var(--partner-muted);
+}
+
+.partner-revenue-card .chart-col em {
+    font-style: normal;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f766e;
+}
+
+.partner-list-actions {
+    display: grid;
+    gap: 8px;
+    justify-items: end;
+}
+
+.partner-quick-action-form {
+    margin: 0;
+}
+
+.partner-dashboard-action-btn {
+    border: 1px solid var(--partner-border);
+    background: #fff;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: .16s ease;
+}
+
+.partner-dashboard-action-btn.is-success {
+    border-color: rgba(16, 185, 129, .38);
+    color: #047857;
+    background: linear-gradient(180deg, #ffffff, #ecfdf5);
+}
+
+.partner-dashboard-action-btn.is-danger {
+    border-color: rgba(239, 68, 68, .38);
+    color: #b91c1c;
+    background: linear-gradient(180deg, #ffffff, #fef2f2);
+}
+
+.partner-dashboard-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 18px rgba(15, 23, 42, .12);
+}
+
 @media (max-width: 1200px) {
     .partner-dashboard-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -65,5 +146,19 @@
 
     .partner-list-row-rich {
         flex-direction: column;
+    }
+
+    .partner-revenue-card .partner-chart-bars {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .partner-list-actions {
+        width: 100%;
+        justify-items: stretch;
+    }
+
+    .partner-dashboard-action-btn {
+        width: 100%;
+        justify-content: center;
     }
 }

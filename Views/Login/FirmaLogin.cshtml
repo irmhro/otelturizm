@@ -1,5 +1,7 @@
 @{
     ViewData["Title"] = "Firma Giriş";
+    var showResendVerifyButton = string.Equals(TempData["ShowResendVerifyButton"] as string, "1", StringComparison.Ordinal);
+    var resendVerifyEmail = TempData["ResendVerifyEmail"] as string ?? string.Empty;
 }
 
 <section class="auth-shell user-auth-shell firma-auth-shell">
@@ -47,6 +49,16 @@
                 @if (TempData["FirmaLoginError"] is string loginError)
                 {
                     <div class="auth-alert">@loginError</div>
+                    @if (showResendVerifyButton && !string.IsNullOrWhiteSpace(resendVerifyEmail))
+                    {
+                        <form method="post" action="/eposta-dogrula/tekrar-gonder" class="auth-resend-verify-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="email" value="@resendVerifyEmail" />
+                            <button type="submit" class="auth-resend-verify-btn">
+                                <i class="fas fa-paper-plane"></i> Onaylama E-postası Gönder
+                            </button>
+                        </form>
+                    }
                 }
 
                 <div class="divider-line"><span>onaylı firma hesabı ile giriş yapın</span></div>
@@ -57,7 +69,7 @@
                         <label for="firmaIdentity">Yetkili E-posta</label>
                         <div class="input-wrap">
                             <i class="far fa-envelope"></i>
-                            <input id="firmaIdentity" name="firmaIdentity" type="email" class="form-control" placeholder="yetkili@firma.com" required />
+                            <input id="firmaIdentity" name="firmaIdentity" type="email" class="form-control" placeholder="yetkili@firma.com" value="@resendVerifyEmail" required />
                         </div>
                     </div>
 
@@ -77,7 +89,7 @@
                             <input type="checkbox" name="rememberMe" value="true" checked />
                             <span>Beni hatırla</span>
                         </label>
-                        <a href="/yardim-merkezi#destek-kanallari" class="text-link">Başvuru durumunu sor</a>
+                        <a href="/sifremi-unuttum" class="text-link">Şifremi unuttum</a>
                     </div>
 
                     <button type="submit" class="auth-submit-btn firma-submit-btn">Firma Paneline Giriş Yap <i class="fas fa-arrow-right"></i></button>

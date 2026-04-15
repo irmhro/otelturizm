@@ -51,6 +51,76 @@
     padding: 10px 14px;
 }
 
+.partner-reservation-filters {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0 0 14px;
+}
+
+.partner-reservation-filters label {
+    display: grid;
+    gap: 6px;
+}
+
+.partner-reservation-filters label > span {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--partner-muted);
+}
+
+.partner-reservation-filters input,
+.partner-reservation-filters select {
+    width: 100%;
+    border: 1px solid var(--partner-border);
+    border-radius: 12px;
+    background: #fff;
+    padding: 10px 12px;
+    font: inherit;
+}
+
+.partner-policy-alert {
+    margin: 0 0 14px;
+    border: 1px solid #dbe5f4;
+    border-radius: 14px;
+    background: #f8fbff;
+    padding: 14px 16px;
+    color: #243b53;
+}
+
+.partner-policy-alert h4 {
+    margin: 0 0 8px;
+    font-size: 15px;
+}
+
+.partner-policy-alert p {
+    margin: 0 0 8px;
+    line-height: 1.45;
+}
+
+.partner-policy-alert ul {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+    color: #415a77;
+}
+
+.partner-policy-alert.is-warning {
+    border-color: rgba(245, 158, 11, .45);
+    background: #fff9eb;
+}
+
+.partner-policy-alert.is-critical {
+    border-color: rgba(239, 68, 68, .38);
+    background: #fff3f3;
+}
+
+.partner-policy-meta {
+    margin-top: 10px !important;
+    font-weight: 700;
+}
+
 .partner-reservation-table th {
     font-size: 12px;
     color: var(--partner-muted);
@@ -87,6 +157,30 @@
     display: inline-flex;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.partner-pagination {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.partner-pagination-meta {
+    color: var(--partner-muted);
+    font-size: 13px;
+}
+
+.partner-pagination-actions {
+    display: inline-flex;
+    gap: 8px;
+}
+
+.partner-secondary-btn.is-disabled {
+    opacity: .55;
+    pointer-events: none;
 }
 
 .partner-icon-btn {
@@ -201,13 +295,150 @@
     grid-column: 1 / -1;
 }
 
+.partner-chat-shell {
+    margin-top: 14px;
+}
+
+.partner-chat-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 14px;
+}
+
+.partner-chat-thread-list {
+    border: 1px solid var(--partner-border);
+    border-radius: 16px;
+    background: #fff;
+    padding: 8px;
+    display: grid;
+    gap: 8px;
+    max-height: 560px;
+    overflow: auto;
+}
+
+.partner-chat-thread {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    text-decoration: none;
+    color: inherit;
+    display: grid;
+    gap: 4px;
+    background: #f8fafc;
+}
+
+.partner-chat-thread > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.partner-chat-thread strong {
+    color: var(--partner-text);
+}
+
+.partner-chat-thread small {
+    color: var(--partner-muted);
+}
+
+.partner-chat-thread p {
+    margin: 0;
+    color: #334155;
+    font-size: 13px;
+}
+
+.partner-chat-thread.is-selected {
+    border-color: rgba(37, 99, 235, .44);
+    background: #eff6ff;
+}
+
+.partner-chat-unread {
+    min-width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #dc2626;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.partner-chat-panel {
+    border: 1px solid var(--partner-border);
+    border-radius: 16px;
+    background: #fff;
+    padding: 12px;
+    display: grid;
+    gap: 12px;
+}
+
+.partner-chat-messages {
+    min-height: 220px;
+    max-height: 500px;
+    overflow: auto;
+    display: grid;
+    gap: 10px;
+    padding-right: 4px;
+}
+
+.partner-chat-bubble {
+    max-width: 86%;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: #f8fafc;
+}
+
+.partner-chat-bubble.is-self {
+    margin-left: auto;
+    border-color: rgba(37, 99, 235, .36);
+    background: #eff6ff;
+}
+
+.partner-chat-bubble header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.partner-chat-bubble p {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.partner-chat-reply-form {
+    display: grid;
+    gap: 10px;
+}
+
+.partner-chat-reply-form textarea {
+    width: 100%;
+    border: 1px solid var(--partner-border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    min-height: 92px;
+}
+
 @media (max-width: 900px) {
+    .partner-reservation-filters {
+        grid-template-columns: 1fr;
+    }
+
     .partner-search-shell {
         min-width: 100%;
     }
 
     .partner-dialog-grid,
     .partner-dialog-notes {
+        grid-template-columns: 1fr;
+    }
+
+    .partner-chat-grid {
         grid-template-columns: 1fr;
     }
 }

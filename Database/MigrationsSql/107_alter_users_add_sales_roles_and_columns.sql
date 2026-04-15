@@ -1,18 +1,7 @@
 SET NAMES utf8mb4;
 
 ALTER TABLE users
-MODIFY COLUMN rol ENUM(
-    'user',
-    'admin',
-    'partner_owner',
-    'partner_manager',
-    'partner_staff',
-    'firma_admin',
-    'firma_manager',
-    'firma_staff',
-    'sales_admin',
-    'sales_agent'
-) NOT NULL DEFAULT 'user';
+MODIFY COLUMN rol VARCHAR(64) NOT NULL DEFAULT 'user';
 
 ALTER TABLE users
 ADD COLUMN satis_ekibi VARCHAR(100) NULL AFTER gorev_unvani,

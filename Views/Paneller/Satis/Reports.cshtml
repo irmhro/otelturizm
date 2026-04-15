@@ -3,8 +3,109 @@
     Layout = "~/Views/Paneller/Satis/_SalesPanelLayout.cshtml";
     ViewData["SalesShell"] = Model.Shell;
 }
-<section class="sales-grid cards-3">
-    <article class="sales-stat-card success"><div class="sales-stat-icon"><i class="fas fa-turkish-lira-sign"></i></div><strong>@Model.MonthlyRevenue.ToString("N0") TL</strong><h3>Aylık Ciro</h3><p>Satış paneli rezervasyon geliri</p></article>
+<section class="sales-panel-card">
+    <div class="sales-card-head sales-card-head-stack">
+        <div>
+            <h2>Satış Performans Raporları</h2>
+            <span>Aylık rezervasyon hacmi, onay/iptal oranı ve kazandırılan ciroyu tek ekranda izleyin.</span>
+        </div>
+    </div>
+    <form method="get" class="sales-form-grid compact-grid sales-report-filter-grid">
+        <div>
+            <label>Yıl</label>
+            <input type="number" name="year" value="@Model.SelectedYear" min="2024" max="2035" />
+        </div>
+        <div>
+            <label>Sayfa başı</label>
+            <select name="pageSize">
+                <option value="10" selected="@(Model.Pagination.PageSize == 10)">10 ay</option>
+                <option value="20" selected="@(Model.Pagination.PageSize == 20)">20 ay</option>
+                <option value="30" selected="@(Model.Pagination.PageSize == 30)">30 ay</option>
+            </select>
+        </div>
+        <input type="hidden" name="page" value="1" />
+        <div class="sales-filter-actions">
+            <button type="submit">Raporu Güncelle</button>
+        </div>
+    </form>
+</section>
+
+<section class="sales-grid cards-4 sales-summary-strip">
+    <article class="sales-stat-card success"><div class="sales-stat-icon"><i class="fas fa-turkish-lira-sign"></i></div><strong>@Model.MonthlyRevenue.ToString("N0") TL</strong><h3>Toplam Ciro</h3><p>@Model.SelectedYear yılı satış tutarı</p></article>
     <article class="sales-stat-card warning"><div class="sales-stat-icon"><i class="fas fa-percent"></i></div><strong>@Model.MonthlyCommission.ToString("N0") TL</strong><h3>Komisyon</h3><p>Platform komisyon toplamı</p></article>
-    <article class="sales-stat-card info"><div class="sales-stat-icon"><i class="fas fa-calendar-check"></i></div><strong>@Model.MonthlyReservationCount</strong><h3>Rezervasyon Adedi</h3><p>Bu ay oluşturulan satış kaydı</p></article>
+    <article class="sales-stat-card info"><div class="sales-stat-icon"><i class="fas fa-calendar-check"></i></div><strong>@Model.MonthlyReservationCount</strong><h3>Rezervasyon</h3><p>Toplam oluşturulan kayıt</p></article>
+    <article class="sales-stat-card danger"><div class="sales-stat-icon"><i class="fas fa-ban"></i></div><strong>@Model.MonthlyCancelledCount</strong><h3>İptal</h3><p>Yıl içindeki iptal adedi</p></article>
+</section>
+
+<section class="sales-panel-card">
+    <div class="sales-card-head">
+        <h2>Aylık Kırılım</h2>
+        <span>@Model.Pagination.TotalCount dönem · Sayfa @Model.Pagination.Page / @Model.Pagination.TotalPages</span>
+    </div>
+
+    @if (!Model.MonthlyBreakdown.Any())
+    {
+        <div class="sales-empty-state">
+            <i class="fas fa-chart-line"></i>
+            <strong>Seçili yılda rapor verisi bulunamadı</strong>
+            <p>Henüz rezervasyon açılmadıysa veya farklı yıl seçildiyse sonuç boş görünebilir.</p>
+        </div>
+    }
+    else
+    {
+        <div class="sales-table-wrap sales-desktop-only">
+            <table class="sales-table">
+                <thead>
+                    <tr>
+                        <th>Dönem</th>
+                        <th>Rezervasyon</th>
+                        <th>Onaylanan</th>
+                        <th>İptal</th>
+                        <th>Ciro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.MonthlyBreakdown)
+                {
+                    <tr>
+                        <td><strong>@item.PeriodLabel</strong></td>
+                        <td>@item.ReservationCount</td>
+                        <td>@item.ApprovedCount</td>
+                        <td>@item.CancelledCount</td>
+                        <td>@item.RevenueText</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="sales-mobile-card-list sales-mobile-only">
+            @foreach (var item in Model.MonthlyBreakdown)
+            {
+                <article class="sales-mobile-card">
+                    <div class="sales-mobile-card-head">
+                        <strong>@item.PeriodLabel</strong>
+                        <span>@item.RevenueText</span>
+                    </div>
+                    <div class="sales-mobile-card-metrics">
+                        <span>@item.ReservationCount rezervasyon</span>
+                        <span>@item.ApprovedCount onay</span>
+                        <span>@item.CancelledCount iptal</span>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+
+    @if (Model.Pagination.TotalPages > 1)
+    {
+        <div class="sales-pagination">
+            @for (var pageNumber = 1; pageNumber <= Model.Pagination.TotalPages; pageNumber++)
+            {
+                var reportPageUrl = $"/panel/satis/raporlar?year={Model.SelectedYear}&pageSize={Model.Pagination.PageSize}&page={pageNumber}";
+                <a class="@(pageNumber == Model.Pagination.Page ? "active" : string.Empty)"
+                   href="@reportPageUrl">@pageNumber</a>
+            }
+        </div>
+    }
 </section>

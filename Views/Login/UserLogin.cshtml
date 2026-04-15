@@ -1,5 +1,7 @@
 @{
     ViewData["Title"] = "Kullanıcı Giriş";
+    var showResendVerifyButton = string.Equals(TempData["ShowResendVerifyButton"] as string, "1", StringComparison.Ordinal);
+    var resendVerifyEmail = TempData["ResendVerifyEmail"] as string ?? string.Empty;
 }
 
 <section class="auth-shell user-auth-shell">
@@ -45,6 +47,16 @@
                 @if (TempData["UserLoginError"] is string loginError)
                 {
                     <div class="auth-alert">@loginError</div>
+                    @if (showResendVerifyButton && !string.IsNullOrWhiteSpace(resendVerifyEmail))
+                    {
+                        <form method="post" action="/eposta-dogrula/tekrar-gonder" class="auth-resend-verify-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="email" value="@resendVerifyEmail" />
+                            <button type="submit" class="auth-resend-verify-btn">
+                                <i class="fas fa-paper-plane"></i> Onaylama E-postası Gönder
+                            </button>
+                        </form>
+                    }
                 }
                 @if (TempData["UserLoginSuccess"] is string loginSuccess)
                 {
@@ -57,7 +69,7 @@
                         <label for="loginEmail">E-posta Adresiniz</label>
                         <div class="input-wrap">
                             <i class="far fa-envelope"></i>
-                            <input id="loginEmail" name="loginEmail" type="email" class="form-control" placeholder="ornek@email.com" required />
+                            <input id="loginEmail" name="loginEmail" type="email" class="form-control" placeholder="ornek@email.com" value="@resendVerifyEmail" required />
                         </div>
                     </div>
 

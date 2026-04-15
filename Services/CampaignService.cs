@@ -179,7 +179,16 @@ public class CampaignService : ICampaignService
             LEFT JOIN (
                 SELECT
                     ot.otel_id,
-                    MIN(COALESCE(ofm.indirimli_fiyat, ot.standart_gecelik_fiyat)) AS baslangic_fiyat
+                    MIN(
+                        COALESCE(
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                ELSE COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))
+                            END,
+                            NULLIF(ot.standart_gecelik_fiyat, 0)
+                        )
+                    ) AS baslangic_fiyat
                 FROM oda_tipleri ot
                 LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
                     AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 45 DAY)

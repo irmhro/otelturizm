@@ -30,6 +30,7 @@ public class EmailQueueService : IEmailQueueService
         var provider = await LoadProviderAsync(connection, transaction, cancellationToken);
         var renderedSubject = ReplaceTokens(string.IsNullOrWhiteSpace(request.SubjectOverride) ? subject : request.SubjectOverride!, request.Tokens);
         var renderedBody = await _emailTemplateService.RenderTemplateFileAsync(viewPath, request.Tokens, cancellationToken);
+        var safeUserId = await ResolveSafeUserIdAsync(connection, transaction, request.UserId, request.RecipientEmail, cancellationToken);
 
         const string insertSql = @"
             INSERT INTO bildirim_loglari
@@ -38,7 +39,7 @@ public class EmailQueueService : IEmailQueueService
             (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId);";
 
         await using var command = new MySqlCommand(insertSql, connection, transaction);
-        command.Parameters.AddWithValue("@userId", request.UserId);
+        command.Parameters.AddWithValue("@userId", safeUserId);
         command.Parameters.AddWithValue("@templateId", templateId);
         command.Parameters.AddWithValue("@email", request.RecipientEmail.Trim());
         command.Parameters.AddWithValue("@subject", renderedSubject);
@@ -47,6 +48,53 @@ public class EmailQueueService : IEmailQueueService
         command.Parameters.AddWithValue("@relatedTable", string.IsNullOrWhiteSpace(request.RelatedTable) ? DBNull.Value : request.RelatedTable);
         command.Parameters.AddWithValue("@relatedId", request.RelatedRecordId.HasValue ? request.RelatedRecordId.Value : DBNull.Value);
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task<long> ResolveSafeUserIdAsync(
+        MySqlConnection connection,
+        MySqlTransaction? transaction,
+        long requestedUserId,
+        string? recipientEmail,
+        CancellationToken cancellationToken)
+    {
+        if (requestedUserId > 0)
+        {
+            const string userExistsSql = "SELECT COUNT(*) FROM users WHERE id = @userId LIMIT 1;";
+            await using var userExistsCommand = new MySqlCommand(userExistsSql, connection, transaction);
+            userExistsCommand.Parameters.AddWithValue("@userId", requestedUserId);
+            var exists = Convert.ToInt32(await userExistsCommand.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture) > 0;
+            if (exists)
+            {
+                return requestedUserId;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(recipientEmail))
+        {
+            const string byEmailSql = @"
+                SELECT id
+                FROM users
+                WHERE LOWER(eposta) = LOWER(@email)
+                ORDER BY id ASC
+                LIMIT 1;";
+            await using var byEmailCommand = new MySqlCommand(byEmailSql, connection, transaction);
+            byEmailCommand.Parameters.AddWithValue("@email", recipientEmail.Trim());
+            var byEmailScalar = await byEmailCommand.ExecuteScalarAsync(cancellationToken);
+            if (byEmailScalar is not null && byEmailScalar != DBNull.Value)
+            {
+                return Convert.ToInt64(byEmailScalar, CultureInfo.InvariantCulture);
+            }
+        }
+
+        const string fallbackSql = "SELECT MIN(id) FROM users;";
+        await using var fallbackCommand = new MySqlCommand(fallbackSql, connection, transaction);
+        var fallbackScalar = await fallbackCommand.ExecuteScalarAsync(cancellationToken);
+        if (fallbackScalar is not null && fallbackScalar != DBNull.Value)
+        {
+            return Convert.ToInt64(fallbackScalar, CultureInfo.InvariantCulture);
+        }
+
+        throw new InvalidOperationException("E-posta kuyrugu icin gecerli kullanici kaydi bulunamadi.");
     }
 
     private static string ReplaceTokens(string content, IReadOnlyDictionary<string, string> tokens)

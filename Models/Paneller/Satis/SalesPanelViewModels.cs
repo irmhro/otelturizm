@@ -26,12 +26,17 @@ public class SalesReservationListItemViewModel
     public string ReservationNo { get; set; } = string.Empty;
     public string HotelName { get; set; } = string.Empty;
     public string CustomerName { get; set; } = string.Empty;
+    public string CustomerEmail { get; set; } = string.Empty;
+    public string CustomerPhone { get; set; } = string.Empty;
     public string StayText { get; set; } = string.Empty;
     public string RoomName { get; set; } = string.Empty;
     public string StatusText { get; set; } = string.Empty;
     public string ApprovalText { get; set; } = string.Empty;
     public string TotalText { get; set; } = string.Empty;
     public string CommissionText { get; set; } = string.Empty;
+    public string CreatedAtText { get; set; } = string.Empty;
+    public string ChannelText { get; set; } = string.Empty;
+    public string? DemandNote { get; set; }
 }
 
 public class SalesCustomerCardViewModel
@@ -45,6 +50,12 @@ public class SalesCustomerCardViewModel
     public string ReservationCountText { get; set; } = string.Empty;
     public string LastStayText { get; set; } = string.Empty;
     public string LastRequestSummary { get; set; } = string.Empty;
+    public string TotalSpendText { get; set; } = string.Empty;
+    public string LocationText { get; set; } = string.Empty;
+    public string? City { get; set; }
+    public string? District { get; set; }
+    public string? Neighborhood { get; set; }
+    public string? Address { get; set; }
 }
 
 public class SalesHotelGuideItemViewModel
@@ -65,6 +76,9 @@ public class SalesAvailabilityDayViewModel
     public DateOnly Date { get; set; }
     public bool IsAvailable { get; set; }
     public string PriceText { get; set; } = string.Empty;
+    public string CampaignPriceText { get; set; } = string.Empty;
+    public string StockText { get; set; } = string.Empty;
+    public string SoldOutText { get; set; } = string.Empty;
 }
 
 public class SalesStatCardViewModel
@@ -100,6 +114,8 @@ public class SalesCreateReservationPageViewModel
     public List<SalesRoomOptionViewModel> AvailableRooms { get; set; } = new();
     public List<SalesHotelSearchCardViewModel> HotelSearchResults { get; set; } = new();
     public SalesReservationPriceSummaryViewModel Summary { get; set; } = new();
+    public string SelectedHotelSummary { get; set; } = string.Empty;
+    public bool HasAssistantSearch { get; set; }
 }
 
 public class SalesCustomersPageViewModel
@@ -112,18 +128,26 @@ public class SalesCustomersPageViewModel
 public class SalesAvailabilityPageViewModel
 {
     public SalesPanelShellViewModel Shell { get; set; } = new();
+    public string? Search { get; set; }
     public long? SelectedHotelId { get; set; }
     public long? SelectedRoomTypeId { get; set; }
     public DateOnly SelectedMonth { get; set; }
     public List<SalesSelectOption> Hotels { get; set; } = new();
     public List<SalesSelectOption> RoomTypes { get; set; } = new();
     public List<SalesAvailabilityDayViewModel> Days { get; set; } = new();
+    public string SelectedHotelLabel { get; set; } = string.Empty;
+    public string SelectedRoomLabel { get; set; } = string.Empty;
+    public string PreviousMonthQuery { get; set; } = string.Empty;
+    public string NextMonthQuery { get; set; } = string.Empty;
 }
 
 public class SalesReservationsPageViewModel
 {
     public SalesPanelShellViewModel Shell { get; set; } = new();
     public List<SalesReservationListItemViewModel> Reservations { get; set; } = new();
+    public SalesReservationsFilterViewModel Filters { get; set; } = new();
+    public SalesPaginationViewModel Pagination { get; set; } = new();
+    public SalesReservationSummaryViewModel Summary { get; set; } = new();
 }
 
 public class SalesReportsPageViewModel
@@ -132,6 +156,11 @@ public class SalesReportsPageViewModel
     public decimal MonthlyRevenue { get; set; }
     public decimal MonthlyCommission { get; set; }
     public int MonthlyReservationCount { get; set; }
+    public int MonthlyApprovedCount { get; set; }
+    public int MonthlyCancelledCount { get; set; }
+    public List<SalesMonthlyPerformanceItemViewModel> MonthlyBreakdown { get; set; } = new();
+    public SalesPaginationViewModel Pagination { get; set; } = new();
+    public int SelectedYear { get; set; } = DateTime.Today.Year;
 }
 
 public class SalesHotelGuidePageViewModel
@@ -220,5 +249,42 @@ public class SalesHotelSearchCardViewModel
     public string ReviewCountText { get; set; } = string.Empty;
     public string PriceText { get; set; } = string.Empty;
     public string TodayDemandText { get; set; } = string.Empty;
+    public string LocationText { get; set; } = string.Empty;
     public List<string> FeatureBadges { get; set; } = new();
+}
+
+public class SalesReservationsFilterViewModel
+{
+    public string? Search { get; set; }
+    public string? Status { get; set; }
+    public string? Approval { get; set; }
+    public DateOnly? StartDate { get; set; }
+    public DateOnly? EndDate { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+}
+
+public class SalesPaginationViewModel
+{
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public int TotalCount { get; set; }
+    public int TotalPages => PageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
+}
+
+public class SalesReservationSummaryViewModel
+{
+    public int TotalCount { get; set; }
+    public int ApprovedCount { get; set; }
+    public int CancelledCount { get; set; }
+    public string TotalRevenueText { get; set; } = string.Empty;
+}
+
+public class SalesMonthlyPerformanceItemViewModel
+{
+    public string PeriodLabel { get; set; } = string.Empty;
+    public int ReservationCount { get; set; }
+    public int ApprovedCount { get; set; }
+    public int CancelledCount { get; set; }
+    public string RevenueText { get; set; } = string.Empty;
 }

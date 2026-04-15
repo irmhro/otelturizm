@@ -22,4 +22,20 @@ public class UserFavoriteHotelCardViewModel
     public string RatingText { get; set; } = string.Empty;
     public string AddedDateText { get; set; } = string.Empty;
     public int PastStayCount { get; set; }
+    public bool PriceAlertEnabled { get; set; }
+    public string? PriceAlertTargetText { get; set; }
+    public string? PriceAlertDateRangeText { get; set; }
+    public string? PriceAlertLastTriggeredText { get; set; }
+    public decimal? PriceAlertTargetAmount { get; set; }
+    public string? PriceAlertStartDateValue { get; set; }
+    public string? PriceAlertEndDateValue { get; set; }
+}
+
+public class UserFavoritePriceAlertForm
+{
+    public long HotelId { get; set; }
+    public bool Enabled { get; set; }
+    public string? TargetPriceText { get; set; }
+    public string? StartDateText { get; set; }
+    public string? EndDateText { get; set; }
 }

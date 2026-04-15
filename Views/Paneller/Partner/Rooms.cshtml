@@ -37,7 +37,7 @@
     {
         @foreach (var room in Model.Rooms)
         {
-            <article class="partner-room-card @(room.IsActive ? string.Empty : "is-passive")">
+            <article class="partner-room-card @(room.IsActive ? string.Empty : "is-passive") @(Model.SelectedRoomId == room.RoomId ? "is-selected" : string.Empty)">
                 <div class="partner-room-card-media">
                     @if (!string.IsNullOrWhiteSpace(room.CoverPhotoUrl))
                     {
@@ -66,8 +66,15 @@
                         <li><i class="fas fa-box-open"></i> @room.StockText</li>
                         <li><i class="fas fa-tag"></i> @room.DiscountPriceText</li>
                     </ul>
+                    @if (Model.SelectedRoomId == room.RoomId)
+                    {
+                        <div class="partner-room-selected-badge">
+                            <i class="fas fa-circle-check"></i>
+                            Duzenlenen oda tipi
+                        </div>
+                    }
                     <div class="partner-room-actions">
-                        <a href="/panel/partner/oda-yonetimi?otelId=@Model.SelectedHotelId&roomId=@room.RoomId" class="partner-secondary-btn">
+                        <a href="/panel/partner/oda-yonetimi?otelId=@Model.SelectedHotelId&roomId=@room.RoomId#room-form" class="partner-secondary-btn">
                             <i class="fas fa-pen"></i>
                             Düzenle
                         </a>
@@ -75,13 +82,13 @@
                             <i class="fas fa-calendar-days"></i>
                             Takvim
                         </a>
-                        <form method="post" action="/panel/partner/oda-yonetimi/sil" onsubmit="return confirm('Bu oda tipini pasife almak istediğinize emin misiniz?');">
+                        <form method="post" action="/panel/partner/oda-yonetimi/sil" onsubmit="return confirm('Bu oda tipini silmek istediginize emin misiniz? Odaya bagli fiyat, takvim, gorsel ve iliski verileri temizlenecektir.');">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
                             <input type="hidden" name="roomId" value="@room.RoomId" />
                             <button type="submit" class="partner-danger-btn">
                                 <i class="fas fa-trash"></i>
-                                Pasife al
+                                Sil ve temizle
                             </button>
                         </form>
                     </div>
@@ -138,7 +145,7 @@
         }
     </article>
 
-    <article class="partner-section-card partner-room-form-card">
+    <article class="partner-section-card partner-room-form-card" id="room-form">
         <div class="partner-section-head">
             <div>
                 <h2>@(Model.IsEditingRoom ? "Oda tipini düzenle" : "Yeni oda tipi ekle")</h2>
@@ -146,7 +153,7 @@
             </div>
             @if (Model.IsEditingRoom)
             {
-                <a href="/panel/partner/oda-yonetimi?otelId=@Model.SelectedHotelId" class="partner-text-link">Yeni kayıt moduna dön</a>
+                <a href="/panel/partner/oda-yonetimi?otelId=@Model.SelectedHotelId#room-form" class="partner-text-link">Yeni kayıt moduna dön</a>
             }
         </div>
         <form method="post" action="/panel/partner/oda-yonetimi/kaydet" class="partner-form-grid">
@@ -163,7 +170,14 @@
                 <select name="RoomCategory">
                     @foreach (var category in roomCategories)
                     {
-                        <option value="@category" selected="@(Model.Form.RoomCategory == category)">@category</option>
+                        if (Model.Form.RoomCategory == category)
+                        {
+                            <option value="@category" selected="selected">@category</option>
+                        }
+                        else
+                        {
+                            <option value="@category">@category</option>
+                        }
                     }
                 </select>
             </label>
@@ -197,7 +211,14 @@
                     <option value="">Seçiniz</option>
                     @foreach (var bedType in bedTypes)
                     {
-                        <option value="@bedType" selected="@(Model.Form.BedType == bedType)">@bedType</option>
+                        if (Model.Form.BedType == bedType)
+                        {
+                            <option value="@bedType" selected="selected">@bedType</option>
+                        }
+                        else
+                        {
+                            <option value="@bedType">@bedType</option>
+                        }
                     }
                 </select>
             </label>
@@ -207,7 +228,14 @@
                     <option value="">Seçiniz</option>
                     @foreach (var viewType in viewTypes)
                     {
-                        <option value="@viewType" selected="@(Model.Form.ViewType == viewType)">@viewType</option>
+                        if (Model.Form.ViewType == viewType)
+                        {
+                            <option value="@viewType" selected="selected">@viewType</option>
+                        }
+                        else
+                        {
+                            <option value="@viewType">@viewType</option>
+                        }
                     }
                 </select>
             </label>
@@ -220,7 +248,14 @@
                 <textarea name="RoomFeaturesText" placeholder="Örn. Klima, Balkon, Mini bar, Akıllı TV">@Model.Form.RoomFeaturesText</textarea>
             </label>
             <label class="partner-checkbox-inline partner-form-span">
-                <input type="checkbox" name="IsActive" value="true" checked="@Model.Form.IsActive" />
+                @if (Model.Form.IsActive)
+                {
+                    <input type="checkbox" name="IsActive" value="true" checked="checked" />
+                }
+                else
+                {
+                    <input type="checkbox" name="IsActive" value="true" />
+                }
                 <span>Bu oda tipi satışta aktif olsun</span>
             </label>
             <button type="submit" class="partner-primary-btn partner-form-span">
@@ -228,5 +263,91 @@
                 @(Model.IsEditingRoom ? "Oda tipini güncelle" : "Oda tipini kaydet")
             </button>
         </form>
+
+        @if (Model.SelectedRoomId.HasValue)
+        {
+            <section class="partner-room-gallery-section" id="room-gallery">
+                <div class="partner-section-head">
+                    <div>
+                        <h2>Oda görselleri ve vitrin yönetimi</h2>
+                        <p>Seçili oda için birden fazla görsel yükleyebilir, vitrin görselini belirleyebilir ve kullanılmayan dosyaları temizleyebilirsiniz.</p>
+                    </div>
+                </div>
+
+                <form method="post" action="/panel/partner/oda-yonetimi/gorsel-yukle" enctype="multipart/form-data" class="partner-room-upload-box">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="HotelId" value="@Model.PhotoUploadForm.HotelId" />
+                    <input type="hidden" name="RoomId" value="@Model.PhotoUploadForm.RoomId" />
+                    <label class="partner-room-upload-field">
+                        <span>Oda görselleri</span>
+                        <input type="file" name="Files" accept="image/*" multiple />
+                        <small>Yüklenen tüm görseller optimize edilerek WebP formatına dönüştürülür.</small>
+                    </label>
+                    <button type="submit" class="partner-primary-btn">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                        Oda görsellerini yükle
+                    </button>
+                </form>
+
+                @if (Model.SelectedRoomPhotos.Count == 0)
+                {
+                    <div class="partner-empty-state partner-room-gallery-empty">
+                        <strong>Henüz oda görseli yok</strong>
+                        <p>Bu odaya vitrin ve galeri görselleri eklediğinizde public otel detay sayfasında oda kartında otomatik görünür.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="partner-room-photo-grid">
+                        @foreach (var photo in Model.SelectedRoomPhotos)
+                        {
+                            <article class="partner-room-photo-card @(photo.IsCover ? "is-cover" : string.Empty)">
+                                <div class="partner-room-photo-media">
+                                    <img src="@photo.Url" alt="@photo.Title" />
+                                    @if (photo.IsCover)
+                                    {
+                                        <span class="partner-room-photo-badge">
+                                            <i class="fas fa-star"></i>
+                                            Vitrin
+                                        </span>
+                                    }
+                                </div>
+                                <div class="partner-room-photo-body">
+                                    <div>
+                                        <strong>@(!string.IsNullOrWhiteSpace(photo.Title) ? photo.Title : $"Oda Gorseli #{photo.PhotoId}")</strong>
+                                        <small>Siralama: @photo.DisplayOrder</small>
+                                    </div>
+                                    <div class="partner-room-photo-actions">
+                                        @if (!photo.IsCover)
+                                        {
+                                            <form method="post" action="/panel/partner/oda-yonetimi/gorsel-kapak-yap">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
+                                                <input type="hidden" name="roomId" value="@Model.SelectedRoomId" />
+                                                <input type="hidden" name="photoId" value="@photo.PhotoId" />
+                                                <button type="submit" class="partner-secondary-btn">
+                                                    <i class="fas fa-image"></i>
+                                                    Vitrin yap
+                                                </button>
+                                            </form>
+                                        }
+                                        <form method="post" action="/panel/partner/oda-yonetimi/gorsel-sil" onsubmit="return confirm('Bu oda görselini silmek istediğinize emin misiniz?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
+                                            <input type="hidden" name="roomId" value="@Model.SelectedRoomId" />
+                                            <input type="hidden" name="photoId" value="@photo.PhotoId" />
+                                            <button type="submit" class="partner-danger-btn">
+                                                <i class="fas fa-trash"></i>
+                                                Sil
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </section>
+        }
     </article>
 </section>

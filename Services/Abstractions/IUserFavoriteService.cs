@@ -16,4 +16,14 @@ public interface IUserFavoriteService
         string? deviceType,
         string? ipAddress,
         CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string Message)> SavePriceAlertAsync(
+        long userId,
+        UserFavoritePriceAlertForm form,
+        CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string Message)> DeletePriceAlertAsync(
+        long userId,
+        long hotelId,
+        CancellationToken cancellationToken = default);
 }

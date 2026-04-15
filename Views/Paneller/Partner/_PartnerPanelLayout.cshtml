@@ -1,9 +1,16 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@using otelturizmnew.Models.Paneller.Common
 @using otelturizmnew.Models.Paneller.Partner
+@inject otelturizmnew.Services.Abstractions.IHeaderBildiriService HeaderBildiriService
 @{
     Layout = null;
     var pageCssPath = ViewData["PageCssPath"] as string;
     var shell = ViewData["PartnerShell"] as PartnerShellViewModel ?? Model as PartnerShellViewModel;
     var title = ViewData["Title"] as string ?? shell?.PanelTitle ?? "Partner Panel";
+    var partnerUserRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var partnerUserId = long.TryParse(partnerUserRaw, out var parsedPartnerUserId) ? parsedPartnerUserId : 0;
+    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.Partner, partnerUserId, Context.RequestAborted);
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -16,6 +23,7 @@
     <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
     <link rel="stylesheet" href="~/assets/css/paneller/partner/shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.css" asp-append-version="true" />
     @if (!string.IsNullOrWhiteSpace(pageCssPath))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
@@ -31,7 +39,7 @@
         <main class="partner-panel-main">
             @if (shell is not null)
             {
-                <header class="partner-page-header">
+                <header class="partner-page-header partner-page-header-sticky">
                     <div>
                         <p class="partner-kicker">PARTNER PANEL</p>
                         <h1>@shell.PanelTitle</h1>
@@ -41,6 +49,11 @@
                         <span><i class="fas fa-hourglass-half"></i> @shell.PendingReservations bekleyen</span>
                         <span><i class="fas fa-bell"></i> @shell.OpenSupportTickets destek</span>
                         <span><i class="fas fa-box-open"></i> @shell.LowStockAlerts stok uyarisi</span>
+                        @if (headerBildiri.UnreadCount > 0)
+                        {
+                            <span class="partner-unread-chip"><i class="fas fa-circle-exclamation"></i> @headerBildiri.UnreadCount okunmamis bildiri</span>
+                        }
+                        <partial name="~/Views/Shared/_HeaderBildiri.cshtml" model="headerBildiri" />
                         <form method="post" action="/cikis-yap" class="panel-header-logout-form">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="panel-header-logout-btn">
@@ -74,6 +87,10 @@
     {
         <partial name="~/Views/Paneller/Partner/_PartnerMobileNav.cshtml" model="shell" />
     }
+    <audio id="partnerNotificationAudio" preload="auto">
+        <source src="~/uploads/ses/partner-bildiri.wav" type="audio/wav" />
+    </audio>
+    <script src="~/assets/js/panel-header-bildiri.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

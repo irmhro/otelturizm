@@ -67,10 +67,53 @@
         </div>
 
         <div class="chip-row">
-            <button type="button" class="chip active">Tümü</button>
-            <button type="button" class="chip">Onaylı</button>
-            <button type="button" class="chip">Bekleyen</button>
+            <a asp-action="Index"
+               asp-route-reservationStatus="all"
+               asp-route-reservationStartDate="@Model.ReservationStartDateText"
+               asp-route-reservationEndDate="@Model.ReservationEndDateText"
+               asp-route-reservationPage="1"
+               asp-route-reservationPageSize="@Model.ReservationPageSize"
+               class="chip @(Model.ReservationStatusFilter == "all" ? "active" : string.Empty)">Tümü</a>
+            <a asp-action="Index"
+               asp-route-reservationStatus="approved"
+               asp-route-reservationStartDate="@Model.ReservationStartDateText"
+               asp-route-reservationEndDate="@Model.ReservationEndDateText"
+               asp-route-reservationPage="1"
+               asp-route-reservationPageSize="@Model.ReservationPageSize"
+               class="chip @(Model.ReservationStatusFilter == "approved" ? "active" : string.Empty)">Onaylı</a>
+            <a asp-action="Index"
+               asp-route-reservationStatus="pending"
+               asp-route-reservationStartDate="@Model.ReservationStartDateText"
+               asp-route-reservationEndDate="@Model.ReservationEndDateText"
+               asp-route-reservationPage="1"
+               asp-route-reservationPageSize="@Model.ReservationPageSize"
+               class="chip @(Model.ReservationStatusFilter == "pending" ? "active" : string.Empty)">Bekleyen</a>
         </div>
+        <form method="get" asp-action="Index" class="reservation-filter-form">
+            <input type="hidden" name="reservationStatus" value="@Model.ReservationStatusFilter" />
+            <input type="hidden" name="reservationPage" value="1" />
+            <label>
+                <span>Giriş başlangıç</span>
+                <input type="date" name="reservationStartDate" value="@Model.ReservationStartDateText" />
+            </label>
+            <label>
+                <span>Giriş bitiş</span>
+                <input type="date" name="reservationEndDate" value="@Model.ReservationEndDateText" />
+            </label>
+            <label>
+                <span>Sayfa başı</span>
+                <select name="reservationPageSize">
+                    @foreach (var option in new[] { 5, 10, 15, 20 })
+                    {
+                        <option value="@option" selected="@(Model.ReservationPageSize == option)">@option</option>
+                    }
+                </select>
+            </label>
+            <div class="reservation-filter-actions">
+                <button type="submit" class="ghost-btn">Filtreyi uygula</button>
+                <a asp-action="Index" class="ghost-btn">Temizle</a>
+            </div>
+        </form>
 
         @if (Model.RecentReservations.Count == 0)
         {
@@ -130,6 +173,26 @@
                     </div>
                 </article>
             }
+        }
+        @if (Model.ReservationTotalPages > 1)
+        {
+            <div class="reservation-pager">
+                <a asp-action="Index"
+                   asp-route-reservationStatus="@Model.ReservationStatusFilter"
+                   asp-route-reservationStartDate="@Model.ReservationStartDateText"
+                   asp-route-reservationEndDate="@Model.ReservationEndDateText"
+                   asp-route-reservationPageSize="@Model.ReservationPageSize"
+                   asp-route-reservationPage="@(Math.Max(1, Model.ReservationPage - 1))"
+                   class="pager-link @(Model.ReservationPage <= 1 ? "disabled" : string.Empty)">Önceki</a>
+                <span>Sayfa @Model.ReservationPage / @Model.ReservationTotalPages</span>
+                <a asp-action="Index"
+                   asp-route-reservationStatus="@Model.ReservationStatusFilter"
+                   asp-route-reservationStartDate="@Model.ReservationStartDateText"
+                   asp-route-reservationEndDate="@Model.ReservationEndDateText"
+                   asp-route-reservationPageSize="@Model.ReservationPageSize"
+                   asp-route-reservationPage="@(Math.Min(Model.ReservationTotalPages, Model.ReservationPage + 1))"
+                   class="pager-link @(Model.ReservationPage >= Model.ReservationTotalPages ? "disabled" : string.Empty)">Sonraki</a>
+            </div>
         }
     </div>
 

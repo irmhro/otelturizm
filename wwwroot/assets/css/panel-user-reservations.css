@@ -22,6 +22,112 @@
     color: #64748b;
 }
 
+.user-reservation-alert {
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-weight: 700;
+}
+
+.user-reservation-alert.is-success {
+    background: #ecfdf5;
+    border: 1px solid rgba(16, 185, 129, .35);
+    color: #047857;
+}
+
+.user-reservation-alert.is-error {
+    background: #fef2f2;
+    border: 1px solid rgba(239, 68, 68, .35);
+    color: #b91c1c;
+}
+
+.user-reservation-dialog {
+    border: none;
+    border-radius: 20px;
+    padding: 0;
+    width: min(760px, calc(100vw - 24px));
+    max-height: calc(100vh - 36px);
+}
+
+.user-reservation-dialog::backdrop {
+    background: rgba(15, 23, 42, .55);
+}
+
+.user-reservation-dialog-card {
+    background: #fff;
+    padding: 18px;
+}
+
+.user-reservation-dialog-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.user-reservation-dialog-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.user-reservation-dialog-grid article,
+.user-reservation-dialog-note {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px;
+    background: #f8fafc;
+}
+
+.user-reservation-dialog-grid span,
+.user-reservation-dialog-note span {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.user-reservation-dialog-grid strong {
+    color: #0f172a;
+}
+
+.user-reservation-dialog-note {
+    margin-top: 10px;
+}
+
+.user-reservation-dialog-note p {
+    margin: 0;
+    color: #0f172a;
+}
+
+.user-reservation-cancel-form {
+    display: grid;
+    gap: 10px;
+}
+
+.user-reservation-cancel-form label {
+    display: grid;
+    gap: 6px;
+}
+
+.user-reservation-cancel-form label span {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.user-reservation-cancel-form textarea {
+    width: 100%;
+    border: 1px solid #d6e2f0;
+    border-radius: 12px;
+    padding: 12px;
+    font: inherit;
+    resize: vertical;
+    min-height: 120px;
+}
+
 @media (max-width: 640px) {
     .stats-strip { grid-template-columns: 1fr; }
+    .user-reservation-dialog-grid { grid-template-columns: 1fr; }
 }

@@ -5,6 +5,15 @@
 }
 
 <section class="panel-card">
+    @if (TempData["UserReservationSuccess"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="user-reservation-alert is-success">@successMessage</div>
+    }
+    @if (TempData["UserReservationError"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="user-reservation-alert is-error">@errorMessage</div>
+    }
+
     <div class="stats-strip">
         <article><strong>@Model.UpcomingCount</strong><span>Yaklaşan Rezervasyon</span></article>
         <article><strong>@Model.PastCount</strong><span>Geçmiş Rezervasyon</span></article>
@@ -77,11 +86,31 @@
                         <div class="reservation-footer">
                             <strong>@reservation.TotalText</strong>
                             <div class="action-row">
-                                <a href="/oteller/@reservation.HotelSlug" class="ghost-btn">Detaylar</a>
+                                <button type="button"
+                                        class="ghost-btn"
+                                        data-reservation-detail
+                                        data-reservation-no="@reservation.ReservationNo"
+                                        data-hotel-name="@reservation.HotelName"
+                                        data-room-name="@reservation.RoomName"
+                                        data-stay="@reservation.StayDateText"
+                                        data-guest="@reservation.GuestText"
+                                        data-status="@reservation.StatusText"
+                                        data-total="@reservation.TotalText"
+                                        data-cancel-reason="@(reservation.CancellationReason ?? string.Empty)"
+                                        data-cancel-time="@(reservation.CancellationTimeText ?? string.Empty)">
+                                    Detaylar
+                                </button>
                                 <a asp-action="Messages" class="ghost-btn">Otelle iletişim</a>
                                 @if (reservation.CanCancel)
                                 {
-                                    <button type="button" class="ghost-btn danger" disabled>İptal talebi yakında</button>
+                                    <button type="button"
+                                            class="ghost-btn danger"
+                                            data-reservation-cancel
+                                            data-reservation-id="@reservation.ReservationId"
+                                            data-reservation-no="@reservation.ReservationNo"
+                                            data-hotel-name="@reservation.HotelName">
+                                        İptal Et
+                                    </button>
                                 }
                             </div>
                         </div>
@@ -91,3 +120,130 @@
         }
     </div>
 </section>
+
+<dialog id="user-reservation-detail-dialog" class="user-reservation-dialog">
+    <div class="user-reservation-dialog-card">
+        <div class="user-reservation-dialog-head">
+            <div>
+                <p class="mini-label">REZERVASYON DETAYLARI</p>
+                <h3 id="detail-reservation-no">-</h3>
+            </div>
+            <button type="button" class="ghost-btn" data-close-user-dialog>Kapat</button>
+        </div>
+        <div class="user-reservation-dialog-grid">
+            <article>
+                <span>Otel</span>
+                <strong id="detail-hotel-name">-</strong>
+            </article>
+            <article>
+                <span>Oda</span>
+                <strong id="detail-room-name">-</strong>
+            </article>
+            <article>
+                <span>Tarih</span>
+                <strong id="detail-stay">-</strong>
+            </article>
+            <article>
+                <span>Misafir</span>
+                <strong id="detail-guest">-</strong>
+            </article>
+            <article>
+                <span>Durum</span>
+                <strong id="detail-status">-</strong>
+            </article>
+            <article>
+                <span>Tutar</span>
+                <strong id="detail-total">-</strong>
+            </article>
+        </div>
+        <article class="user-reservation-dialog-note">
+            <span>İptal Bilgisi</span>
+            <p id="detail-cancel-info">İptal kaydı yok.</p>
+        </article>
+    </div>
+</dialog>
+
+<dialog id="user-reservation-cancel-dialog" class="user-reservation-dialog">
+    <div class="user-reservation-dialog-card">
+        <div class="user-reservation-dialog-head">
+            <div>
+                <p class="mini-label">REZERVASYON İPTALİ</p>
+                <h3 id="cancel-dialog-title">İptal nedeni girin</h3>
+            </div>
+            <button type="button" class="ghost-btn" data-close-user-dialog>Kapat</button>
+        </div>
+        <form method="post" asp-action="CancelReservation" class="user-reservation-cancel-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="reservationId" id="cancel-reservation-id" value="0" />
+            <label>
+                <span>İptal nedeni (zorunlu)</span>
+                <textarea name="cancellationReason"
+                          id="cancel-reason"
+                          rows="5"
+                          minlength="10"
+                          required
+                          placeholder="Lutfen rezervasyonu neden iptal ettiginizi aciklayin."></textarea>
+            </label>
+            <button type="submit" class="ghost-btn danger">İptal Talebini Kaydet</button>
+        </form>
+    </div>
+</dialog>
+
+@section Scripts {
+<script>
+(() => {
+    const detailDialog = document.getElementById('user-reservation-detail-dialog');
+    const cancelDialog = document.getElementById('user-reservation-cancel-dialog');
+
+    document.querySelectorAll('[data-reservation-detail]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!detailDialog) return;
+            document.getElementById('detail-reservation-no').textContent = button.dataset.reservationNo || '-';
+            document.getElementById('detail-hotel-name').textContent = button.dataset.hotelName || '-';
+            document.getElementById('detail-room-name').textContent = button.dataset.roomName || '-';
+            document.getElementById('detail-stay').textContent = button.dataset.stay || '-';
+            document.getElementById('detail-guest').textContent = button.dataset.guest || '-';
+            document.getElementById('detail-status').textContent = button.dataset.status || '-';
+            document.getElementById('detail-total').textContent = button.dataset.total || '-';
+
+            const reason = (button.dataset.cancelReason || '').trim();
+            const time = (button.dataset.cancelTime || '').trim();
+            document.getElementById('detail-cancel-info').textContent = reason
+                ? `${reason}${time ? ` (Iptal tarihi: ${time})` : ''}`
+                : 'İptal kaydı yok.';
+            detailDialog.showModal();
+        });
+    });
+
+    document.querySelectorAll('[data-reservation-cancel]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!cancelDialog) return;
+            document.getElementById('cancel-reservation-id').value = button.dataset.reservationId || '0';
+            document.getElementById('cancel-reason').value = '';
+            document.getElementById('cancel-dialog-title').textContent = `${button.dataset.reservationNo || 'Rezervasyon'} / ${button.dataset.hotelName || 'Otel'}`;
+            cancelDialog.showModal();
+        });
+    });
+
+    document.querySelectorAll('[data-close-user-dialog]').forEach((button) => {
+        button.addEventListener('click', () => {
+            button.closest('dialog')?.close();
+        });
+    });
+
+    [detailDialog, cancelDialog].forEach((dialog) => {
+        if (!dialog) return;
+        dialog.addEventListener('click', (event) => {
+            const rect = dialog.getBoundingClientRect();
+            const inDialog = rect.top <= event.clientY
+                && event.clientY <= rect.top + rect.height
+                && rect.left <= event.clientX
+                && event.clientX <= rect.left + rect.width;
+            if (!inDialog) {
+                dialog.close();
+            }
+        });
+    });
+})();
+</script>
+}

@@ -103,6 +103,8 @@ public class PartnerReservationRowViewModel
     public string? SourceLabel { get; set; }
     public string? GuestNote { get; set; }
     public string? RequestNote { get; set; }
+    public string? CancellationReason { get; set; }
+    public string? CancellationTimeText { get; set; }
     public byte AdultCount { get; set; }
     public byte ChildCount { get; set; }
     public short NightCount { get; set; }
@@ -117,8 +119,51 @@ public class PartnerReservationsPageViewModel
     public PartnerShellViewModel Shell { get; set; } = new();
     public List<PartnerStatCardViewModel> SummaryCards { get; set; } = new();
     public List<PartnerReservationRowViewModel> Reservations { get; set; } = new();
+    public PartnerReservationFilterViewModel Filters { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int CurrentPage { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public int TotalPages { get; set; }
+    public int RejectCountLast30Days { get; set; }
+    public bool PenaltyActive { get; set; }
+    public string? PenaltyEndText { get; set; }
+    public long? SelectedConversationId { get; set; }
+    public List<PartnerConversationSummaryViewModel> Conversations { get; set; } = new();
+    public List<PartnerConversationMessageViewModel> ConversationMessages { get; set; } = new();
     public PartnerReservationStatusRequest StatusForm { get; set; } = new();
     public PartnerGuestMessageRequest MessageForm { get; set; } = new();
+}
+
+public class PartnerConversationSummaryViewModel
+{
+    public long ConversationId { get; set; }
+    public long ReservationId { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string LastMessagePreview { get; set; } = string.Empty;
+    public string LastMessageTimeText { get; set; } = string.Empty;
+    public int UnreadCount { get; set; }
+    public bool IsSelected { get; set; }
+}
+
+public class PartnerConversationMessageViewModel
+{
+    public long MessageId { get; set; }
+    public string SenderLabel { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public string TimeText { get; set; } = string.Empty;
+    public bool IsFromHotel { get; set; }
+}
+
+public class PartnerReservationFilterViewModel
+{
+    public string? DateFrom { get; set; }
+    public string? DateTo { get; set; }
+    public string Status { get; set; } = "all";
+    public string PaymentMethod { get; set; } = "all";
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
 }
 
 public class PartnerReservationStatusRequest
@@ -133,6 +178,7 @@ public class PartnerGuestMessageRequest
 {
     public long HotelId { get; set; }
     public long ReservationId { get; set; }
+    public long? ConversationId { get; set; }
     public string Subject { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
 }
@@ -146,12 +192,20 @@ public class PartnerPricingPageViewModel
     public string MonthLabel { get; set; } = string.Empty;
     public string PreviousMonthKey { get; set; } = string.Empty;
     public string NextMonthKey { get; set; } = string.Empty;
+    public List<PartnerMonthOptionViewModel> MonthOptions { get; set; } = new();
     public List<PartnerRoomSummaryViewModel> Rooms { get; set; } = new();
     public List<PartnerStatCardViewModel> SummaryCards { get; set; } = new();
     public List<PartnerPricingDayViewModel> CalendarDays { get; set; } = new();
     public List<PartnerCampaignOptionViewModel> AvailableCampaigns { get; set; } = new();
     public PartnerBulkPricingUpdateRequest BulkForm { get; set; } = new();
     public PartnerDailyPricingUpdateRequest DailyForm { get; set; } = new();
+}
+
+public class PartnerMonthOptionViewModel
+{
+    public string MonthKey { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public bool IsCurrent { get; set; }
 }
 
 public class PartnerPricingDayViewModel
@@ -281,9 +335,12 @@ public class PartnerRoomManagementPageViewModel
 {
     public PartnerShellViewModel Shell { get; set; } = new();
     public long SelectedHotelId { get; set; }
+    public long? SelectedRoomId { get; set; }
     public List<PartnerRoomSummaryViewModel> Rooms { get; set; } = new();
     public List<PartnerRoomInventoryRowViewModel> InventoryRows { get; set; } = new();
+    public List<PartnerRoomPhotoCardViewModel> SelectedRoomPhotos { get; set; } = new();
     public PartnerRoomUpsertRequest Form { get; set; } = new();
+    public PartnerRoomPhotoUploadRequest PhotoUploadForm { get; set; } = new();
     public bool IsEditingRoom => Form.RoomId.HasValue;
 }
 
@@ -331,6 +388,28 @@ public class PartnerRoomUpsertRequest
     public string? CoverPhotoPath { get; set; }
     public string? RoomFeaturesText { get; set; }
     public bool IsActive { get; set; } = true;
+}
+
+public class PartnerRoomPhotoCardViewModel
+{
+    public long PhotoId { get; set; }
+    public string Url { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public ushort DisplayOrder { get; set; }
+    public bool IsCover { get; set; }
+    public bool IsApproved { get; set; }
+}
+
+public class PartnerRoomPhotoUploadRequest
+{
+    public long HotelId { get; set; }
+    public long RoomId { get; set; }
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public bool MakeCover { get; set; }
+    public ushort DisplayOrder { get; set; }
+    public List<IFormFile> Files { get; set; } = new();
 }
 
 public class PartnerHotelInfoPageViewModel

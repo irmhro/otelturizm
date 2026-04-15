@@ -1,5 +1,6 @@
 using System.Globalization;
 using MySqlConnector;
+using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.User;
 using otelturizmnew.Services.Abstractions;
@@ -11,19 +12,41 @@ public class UserPanelService : IUserPanelService
     private readonly string _connectionString;
     private readonly IMessageCenterService _messageCenterService;
     private readonly IAddressLookupService _addressLookupService;
+    private readonly IEmailQueueService _emailQueueService;
 
-    public UserPanelService(IConfiguration configuration, IMessageCenterService messageCenterService, IAddressLookupService addressLookupService)
+    public UserPanelService(
+        IConfiguration configuration,
+        IMessageCenterService messageCenterService,
+        IAddressLookupService addressLookupService,
+        IEmailQueueService emailQueueService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _messageCenterService = messageCenterService;
         _addressLookupService = addressLookupService;
+        _emailQueueService = emailQueueService;
     }
 
-    public async Task<UserDashboardPageViewModel> GetDashboardAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<UserDashboardPageViewModel> GetDashboardAsync(
+        long userId,
+        string? reservationStatus = null,
+        DateOnly? reservationStartDate = null,
+        DateOnly? reservationEndDate = null,
+        int reservationPage = 1,
+        int reservationPageSize = 5,
+        CancellationToken cancellationToken = default)
     {
         var model = new UserDashboardPageViewModel();
         await using var connection = await OpenConnectionAsync(cancellationToken);
+        var normalizedStatus = NormalizeDashboardReservationStatus(reservationStatus);
+        var normalizedPageSize = reservationPageSize is 5 or 10 or 15 or 20 ? reservationPageSize : 5;
+        var normalizedPage = reservationPage <= 0 ? 1 : reservationPage;
+        var startDate = reservationStartDate;
+        var endDate = reservationEndDate;
+        if (startDate.HasValue && endDate.HasValue && endDate.Value < startDate.Value)
+        {
+            (startDate, endDate) = (endDate, startDate);
+        }
 
         const string summarySql = @"
             SELECT
@@ -47,7 +70,21 @@ public class UserPanelService : IUserPanelService
             }
         }
 
-        model.RecentReservations = await LoadReservationsAsync(connection, userId, 3, cancellationToken);
+        model.ReservationStatusFilter = normalizedStatus;
+        model.ReservationStartDateText = startDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        model.ReservationEndDateText = endDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        model.ReservationPageSize = normalizedPageSize;
+        model.ReservationTotalCount = await CountDashboardReservationsAsync(connection, userId, normalizedStatus, startDate, endDate, cancellationToken);
+        model.ReservationPage = Math.Min(normalizedPage, Math.Max(1, model.ReservationTotalPages));
+        model.RecentReservations = await LoadDashboardReservationsAsync(
+            connection,
+            userId,
+            normalizedStatus,
+            startDate,
+            endDate,
+            model.ReservationPage,
+            model.ReservationPageSize,
+            cancellationToken);
         model.FavoriteHotels = await LoadFavoriteSummariesAsync(connection, userId, 3, cancellationToken);
         return model;
     }
@@ -63,11 +100,17 @@ public class UserPanelService : IUserPanelService
         return model;
     }
 
-    public async Task<(bool Success, string Message)> CancelReservationAsync(long userId, long reservationId, CancellationToken cancellationToken = default)
+    public async Task<(bool Success, string Message)> CancelReservationAsync(long userId, long reservationId, string cancellationReason, CancellationToken cancellationToken = default)
     {
         if (reservationId <= 0)
         {
             return (false, "Gecerli bir rezervasyon seciniz.");
+        }
+
+        var reason = (cancellationReason ?? string.Empty).Trim();
+        if (reason.Length < 10)
+        {
+            return (false, "Iptal nedeni zorunludur ve en az 10 karakter olmalidir.");
         }
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
@@ -103,22 +146,57 @@ public class UserPanelService : IUserPanelService
 
         if (checkInDate.Value.Date <= DateTime.Today)
         {
-            return (false, "Check-in tarihi gelen veya gecen rezervasyonlar panelden iptal edilemez.");
+            return (false, "Check-in tarihi gelen veya gecen rezervasyonlar panelden iptal edilemez. Sadece otel rezervasyonunuzu iptal edebilir, firma ile iletisim icin Mesajlarim alanina geciniz.");
         }
 
         const string updateSql = @"
             UPDATE rezervasyonlar
             SET durum = 'İptal Edildi',
                 otel_onay_durumu = 'Reddedildi',
-                iptal_nedeni = 'Kullanici panelinden iptal edildi.'
+                iptal_nedeni = @reason,
+                iptal_eden = 'Misafir',
+                iptal_tarihi = NOW()
             WHERE id = @reservationId AND kullanici_id = @userId;";
         await using var updateCommand = new MySqlCommand(updateSql, connection);
         updateCommand.Parameters.AddWithValue("@reservationId", reservationId);
         updateCommand.Parameters.AddWithValue("@userId", userId);
+        updateCommand.Parameters.AddWithValue("@reason", reason);
         var affected = await updateCommand.ExecuteNonQueryAsync(cancellationToken);
-        return affected > 0
-            ? (true, "Rezervasyonunuz iptal edildi.")
-            : (false, "Rezervasyon iptal edilemedi.");
+        if (affected <= 0)
+        {
+            return (false, "Rezervasyon iptal edilemedi.");
+        }
+
+        var snapshot = await LoadReservationCancellationSnapshotAsync(connection, userId, reservationId, cancellationToken);
+        if (snapshot is not null)
+        {
+            var partner = await ResolvePartnerRecipientAsync(connection, snapshot.HotelId, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(partner.Email))
+            {
+                await _emailQueueService.QueueTemplateAsync(connection, null, new QueuedEmailTemplateRequest
+                {
+                    UserId = partner.UserId,
+                    RecipientEmail = partner.Email,
+                    TemplateCode = "reservation_cancelled_partner",
+                    RelatedTable = "rezervasyonlar",
+                    RelatedRecordId = reservationId,
+                    Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["hotel_manager_name"] = partner.ManagerName,
+                        ["hotel_name"] = snapshot.HotelName,
+                        ["booking_reference"] = snapshot.ReservationNo,
+                        ["guest_full_name"] = snapshot.GuestName,
+                        ["check_in_date"] = snapshot.CheckIn.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["check_out_date"] = snapshot.CheckOut.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["room_type_name"] = snapshot.RoomName,
+                        ["total_price"] = snapshot.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["cancel_reason"] = reason
+                    }
+                }, cancellationToken);
+            }
+        }
+
+        return (true, "Rezervasyonunuz iptal edildi.");
     }
 
     public async Task<UserMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default)
@@ -138,7 +216,7 @@ public class UserPanelService : IUserPanelService
         => _messageCenterService.SendFromUserAsync(userId, form, attachments, httpContext, cancellationToken);
 
     public Task<(bool Success, string Message)> DeleteMessageAsync(long userId, MessageDeleteRequest form, CancellationToken cancellationToken = default)
-        => _messageCenterService.DeleteForUserAsync(userId, form, cancellationToken);
+        => Task.FromResult((false, "Mesaj silme islemi kullanici panelinde devre disi."));
 
     public async Task<UserProfilePageViewModel> GetProfileAsync(long userId, CancellationToken cancellationToken = default)
     {
@@ -384,6 +462,10 @@ public class UserPanelService : IUserPanelService
         {
             return (false, "Yeni şifre tekrarı eşleşmiyor.");
         }
+        if (!IsPasswordPolicyValid(form.NewPassword))
+        {
+            return (false, "Yeni sifre en az 6 karakter olmali ve en az 1 harf ile 1 rakam icermelidir.");
+        }
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var command = new MySqlCommand(@"
@@ -394,6 +476,18 @@ public class UserPanelService : IUserPanelService
         command.Parameters.AddWithValue("@userId", userId);
         var affected = await command.ExecuteNonQueryAsync(cancellationToken);
         return affected > 0 ? (true, "Şifren güncellendi.") : (false, "Mevcut şifre doğrulanamadı.");
+    }
+
+    private static bool IsPasswordPolicyValid(string? password)
+    {
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
+        {
+            return false;
+        }
+
+        var hasLetter = password.Any(char.IsLetter);
+        var hasDigit = password.Any(char.IsDigit);
+        return hasLetter && hasDigit;
     }
 
     public async Task<bool> SaveTwoFactorAsync(long userId, UserTwoFactorForm form, CancellationToken cancellationToken = default)
@@ -504,7 +598,9 @@ public class UserPanelService : IUserPanelService
         const string sql = @"
             SELECT r.id, r.rezervasyon_no, o.otel_adi, o.otel_kodu, COALESCE(o.ilce, ''), COALESCE(o.sehir, ''),
                    COALESCE(ot.oda_adi, 'Oda'), r.giris_tarihi, r.cikis_tarihi, r.yetiskin_sayisi, r.cocuk_sayisi,
-                   r.toplam_tutar, r.durum, COALESCE(og.gorsel_url, ''), COALESCE(r.otel_onay_durumu, '')
+                   r.toplam_tutar, r.durum, COALESCE(og.gorsel_url, ''), COALESCE(r.otel_onay_durumu, ''),
+                   COALESCE(NULLIF(r.iptal_nedeni, ''), '') AS iptal_nedeni,
+                   r.iptal_tarihi
             FROM rezervasyonlar r
             INNER JOIN oteller o ON o.id = r.otel_id
             LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
@@ -543,10 +639,116 @@ public class UserPanelService : IUserPanelService
                 ImageUrl = string.IsNullOrWhiteSpace(reader.GetString(13)) ? null : reader.GetString(13),
                 CanCancel = isUpcoming && !isCancelled,
                 IsUpcoming = isUpcoming,
-                IsCancelled = isCancelled
+                IsCancelled = isCancelled,
+                CancellationReason = reader.IsDBNull(15) || string.IsNullOrWhiteSpace(reader.GetString(15)) ? null : reader.GetString(15),
+                CancellationTimeText = reader.IsDBNull(16) ? null : reader.GetDateTime(16).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"))
             });
         }
         return list;
+    }
+
+    private async Task<List<UserReservationCardViewModel>> LoadDashboardReservationsAsync(
+        MySqlConnection connection,
+        long userId,
+        string statusFilter,
+        DateOnly? startDate,
+        DateOnly? endDate,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var list = new List<UserReservationCardViewModel>();
+        const string sql = @"
+            SELECT r.id, r.rezervasyon_no, o.otel_adi, o.otel_kodu, COALESCE(o.ilce, ''), COALESCE(o.sehir, ''),
+                   COALESCE(ot.oda_adi, 'Oda'), r.giris_tarihi, r.cikis_tarihi, r.yetiskin_sayisi, r.cocuk_sayisi,
+                   r.toplam_tutar, r.durum, COALESCE(og.gorsel_url, ''), COALESCE(r.otel_onay_durumu, ''),
+                   COALESCE(NULLIF(r.iptal_nedeni, ''), '') AS iptal_nedeni,
+                   r.iptal_tarihi
+            FROM rezervasyonlar r
+            INNER JOIN oteller o ON o.id = r.otel_id
+            LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
+            LEFT JOIN otel_gorselleri og ON og.otel_id = o.id AND (og.kapak_fotografi_mi = 1 OR og.siralama = 1)
+            WHERE r.kullanici_id = @userId
+              AND (@statusFilter = 'all'
+                   OR (@statusFilter = 'approved' AND r.durum = 'Onaylandı')
+                   OR (@statusFilter = 'pending' AND (COALESCE(r.otel_onay_durumu, '') = 'Beklemede' OR r.durum = 'Onay Bekliyor')))
+              AND (@startDate IS NULL OR DATE(r.giris_tarihi) >= @startDate)
+              AND (@endDate IS NULL OR DATE(r.giris_tarihi) <= @endDate)
+            ORDER BY r.giris_tarihi DESC, r.id DESC
+            LIMIT @offset, @pageSize;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@statusFilter", statusFilter);
+        command.Parameters.AddWithValue("@startDate", startDate.HasValue ? startDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+        command.Parameters.AddWithValue("@endDate", endDate.HasValue ? endDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+        command.Parameters.AddWithValue("@offset", (page - 1) * pageSize);
+        command.Parameters.AddWithValue("@pageSize", pageSize);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var checkIn = reader.GetDateTime(7);
+            var checkOut = reader.GetDateTime(8);
+            var status = reader.GetString(12);
+            var isCancelled = string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase);
+            var isUpcoming = checkOut >= DateTime.Today;
+            list.Add(new UserReservationCardViewModel
+            {
+                ReservationId = reader.GetInt64(0),
+                ReservationNo = reader.GetString(1),
+                HotelName = reader.GetString(2),
+                HotelSlug = BuildSlug(reader.GetString(2), reader.GetString(3)),
+                District = reader.GetString(4),
+                City = reader.GetString(5),
+                RoomName = reader.GetString(6),
+                StayDateText = $"{checkIn:dd MMM} - {checkOut:dd MMM yyyy}",
+                GuestText = $"{reader.GetInt32(9)} Yetiskin" + (reader.GetInt32(10) > 0 ? $", {reader.GetInt32(10)} Cocuk" : string.Empty),
+                MealOrRoomText = reader.GetString(6),
+                StatusText = status,
+                StatusTone = GetReservationStatusTone(status, reader.GetString(14), checkIn),
+                SubNote = BuildReservationNote(status, checkIn, checkOut),
+                SubNoteTone = isCancelled ? "danger" : isUpcoming ? "info" : "success",
+                TotalText = FormatMoney(SafeDecimal(reader, 11)),
+                ImageUrl = string.IsNullOrWhiteSpace(reader.GetString(13)) ? null : reader.GetString(13),
+                CanCancel = isUpcoming && !isCancelled,
+                IsUpcoming = isUpcoming,
+                IsCancelled = isCancelled,
+                CancellationReason = reader.IsDBNull(15) || string.IsNullOrWhiteSpace(reader.GetString(15)) ? null : reader.GetString(15),
+                CancellationTimeText = reader.IsDBNull(16) ? null : reader.GetDateTime(16).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"))
+            });
+        }
+        return list;
+    }
+
+    private static async Task<int> CountDashboardReservationsAsync(
+        MySqlConnection connection,
+        long userId,
+        string statusFilter,
+        DateOnly? startDate,
+        DateOnly? endDate,
+        CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COUNT(*)
+            FROM rezervasyonlar r
+            WHERE r.kullanici_id = @userId
+              AND (@statusFilter = 'all'
+                   OR (@statusFilter = 'approved' AND r.durum = 'Onaylandı')
+                   OR (@statusFilter = 'pending' AND (COALESCE(r.otel_onay_durumu, '') = 'Beklemede' OR r.durum = 'Onay Bekliyor')))
+              AND (@startDate IS NULL OR DATE(r.giris_tarihi) >= @startDate)
+              AND (@endDate IS NULL OR DATE(r.giris_tarihi) <= @endDate);";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@statusFilter", statusFilter);
+        command.Parameters.AddWithValue("@startDate", startDate.HasValue ? startDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+        command.Parameters.AddWithValue("@endDate", endDate.HasValue ? endDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+    }
+
+    private static string NormalizeDashboardReservationStatus(string? status)
+    {
+        var normalized = (status ?? string.Empty).Trim().ToLowerInvariant();
+        return normalized is "approved" or "pending" ? normalized : "all";
     }
 
     private async Task<List<UserFavoriteSummaryViewModel>> LoadFavoriteSummariesAsync(MySqlConnection connection, long userId, int take, CancellationToken cancellationToken)
@@ -653,4 +855,77 @@ public class UserPanelService : IUserPanelService
         if (string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase)) return "Rezervasyon onaylı ve konaklama planı hazır.";
         return "Rezervasyon otel onay sürecinde.";
     }
+
+    private async Task<ReservationCancellationSnapshot?> LoadReservationCancellationSnapshotAsync(MySqlConnection connection, long userId, long reservationId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT r.id,
+                   r.otel_id,
+                   r.rezervasyon_no,
+                   COALESCE(NULLIF(r.misafir_ad_soyad, ''), 'Misafir') AS misafir_ad_soyad,
+                   r.giris_tarihi,
+                   r.cikis_tarihi,
+                   COALESCE(r.toplam_tutar, 0) AS toplam_tutar,
+                   COALESCE(NULLIF(ot.oda_adi, ''), 'Oda') AS oda_adi,
+                   COALESCE(NULLIF(o.otel_adi, ''), 'Otel') AS otel_adi
+            FROM rezervasyonlar r
+            LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
+            LEFT JOIN oteller o ON o.id = r.otel_id
+            WHERE r.id = @reservationId
+              AND r.kullanici_id = @userId
+            LIMIT 1;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@reservationId", reservationId);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new ReservationCancellationSnapshot(
+            reader.GetInt64(0),
+            reader.GetInt64(1),
+            reader.GetString(2),
+            reader.GetString(3),
+            reader.GetDateTime(4),
+            reader.GetDateTime(5),
+            SafeDecimal(reader, 6),
+            reader.GetString(7),
+            reader.GetString(8));
+    }
+
+    private static async Task<(long UserId, string Email, string ManagerName)> ResolvePartnerRecipientAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COALESCE(o.user_id, oks.user_id, 1),
+                   COALESCE(u.eposta, o.satis_kontak_eposta, o.eposta, 'partner@otelturizm.com'),
+                   COALESCE(u.ad_soyad, o.satis_kontak_adi, 'Partner Yetkilisi')
+            FROM oteller o
+            LEFT JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = o.id AND oks.aktif_mi = 1
+            LEFT JOIN users u ON u.id = COALESCE(o.user_id, oks.user_id)
+            WHERE o.id = @hotelId
+            ORDER BY oks.ana_sorumlu_mu DESC, oks.id ASC
+            LIMIT 1;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            return (reader.IsDBNull(0) ? 1L : reader.GetInt64(0), reader.GetString(1), reader.GetString(2));
+        }
+
+        return (1L, "partner@otelturizm.com", "Partner Yetkilisi");
+    }
+
+    private sealed record ReservationCancellationSnapshot(
+        long ReservationId,
+        long HotelId,
+        string ReservationNo,
+        string GuestName,
+        DateTime CheckIn,
+        DateTime CheckOut,
+        decimal TotalAmount,
+        string RoomName,
+        string HotelName);
 }

@@ -1,1 +1,11 @@
-.sales-grid.cards-3 .sales-stat-card strong { font-size: 34px; }
+.sales-report-filter-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sales-grid.cards-4 .sales-stat-card strong { font-size: 30px; }
+
+@media (max-width: 720px) {
+    .sales-report-filter-grid {
+        grid-template-columns: 1fr;
+    }
+}
