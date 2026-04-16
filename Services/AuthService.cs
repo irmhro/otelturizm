@@ -417,6 +417,7 @@ public class AuthService : IAuthService
         await connection.OpenAsync(cancellationToken);
 
         var userColumns = await GetUsersTableColumnsAsync(connection, cancellationToken);
+        var usersPartnerColumns = await GetColumnsAsync(connection, "users_partner", cancellationToken);
 
         const string existsSql = """
             SELECT
@@ -666,29 +667,47 @@ public class AuthService : IAuthService
                 hotelId = Convert.ToInt64(result);
             }
 
-            const string insertUserPartnerSql = """
-                INSERT INTO users_partner
-                (
-                    user_id,
-                    partner_id,
-                    rol,
-                    aktif_mi,
-                    ana_hesap_mi,
-                    olusturulma_tarihi
-                )
-                VALUES
-                (
-                    @userId,
-                    @partnerId,
-                    'owner',
-                    1,
-                    1,
-                    SYSUTCDATETIME()
-                );
-                """;
-
-            await using (var insertUserPartnerCommand = new SqlCommand(insertUserPartnerSql, connection, (SqlTransaction)transaction))
+            if (usersPartnerColumns.Contains("user_id") && usersPartnerColumns.Contains("partner_id"))
             {
+                var usersPartnerInsertColumns = new List<string> { "user_id", "partner_id" };
+                var usersPartnerInsertValues = new List<string> { "@userId", "@partnerId" };
+
+                if (usersPartnerColumns.Contains("rol"))
+                {
+                    usersPartnerInsertColumns.Add("rol");
+                    usersPartnerInsertValues.Add("'owner'");
+                }
+
+                if (usersPartnerColumns.Contains("aktif_mi"))
+                {
+                    usersPartnerInsertColumns.Add("aktif_mi");
+                    usersPartnerInsertValues.Add("1");
+                }
+
+                if (usersPartnerColumns.Contains("ana_hesap_mi"))
+                {
+                    usersPartnerInsertColumns.Add("ana_hesap_mi");
+                    usersPartnerInsertValues.Add("1");
+                }
+
+                if (usersPartnerColumns.Contains("olusturulma_tarihi"))
+                {
+                    usersPartnerInsertColumns.Add("olusturulma_tarihi");
+                    usersPartnerInsertValues.Add("SYSUTCDATETIME()");
+                }
+
+                var insertUserPartnerSql = $"""
+                    INSERT INTO users_partner
+                    (
+                        {string.Join(",\n                        ", usersPartnerInsertColumns)}
+                    )
+                    VALUES
+                    (
+                        {string.Join(",\n                        ", usersPartnerInsertValues)}
+                    );
+                    """;
+
+                await using var insertUserPartnerCommand = new SqlCommand(insertUserPartnerSql, connection, (SqlTransaction)transaction);
                 insertUserPartnerCommand.Parameters.AddWithValue("@userId", userId);
                 insertUserPartnerCommand.Parameters.AddWithValue("@partnerId", partnerId);
                 await insertUserPartnerCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -1073,12 +1092,11 @@ public class AuthService : IAuthService
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         const string sql = """
-            SELECT id, kullanici_id, gecerlilik_suresi, kullanildi_mi, deneme_sayisi, maksimum_deneme, token
+            SELECT TOP (1) id, kullanici_id, gecerlilik_suresi, kullanildi_mi, deneme_sayisi, maksimum_deneme, token
             FROM email_dogrulama_tokenlari
             WHERE eposta = @email
               AND dogrulama_kodu = @code
-            ORDER BY olusturulma_tarihi DESC
-            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;
+            ORDER BY olusturulma_tarihi DESC;
             """;
 
         long tokenId;
@@ -1450,9 +1468,36 @@ public class AuthService : IAuthService
             ? "u.sahiplik_partner_id"
             : "NULL";
 
-        var partnerIdSelect = authSchema.HasOwnershipPartnerColumn
-            ? "COALESCE(up.partner_id, u.sahiplik_partner_id)"
-            : "up.partner_id";
+        var partnerIdSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerPartnerIdColumn
+            ? (authSchema.HasOwnershipPartnerColumn
+                ? "COALESCE(up.partner_id, u.sahiplik_partner_id)"
+                : "up.partner_id")
+            : (authSchema.HasOwnershipPartnerColumn ? "u.sahiplik_partner_id" : "NULL");
+
+        var usersPartnerJoinClause = authSchema.HasUsersPartnerTable
+            ? (authSchema.HasUsersPartnerActiveColumn
+                ? """
+                    LEFT JOIN users_partner up
+                        ON up.user_id = u.id
+                       AND up.aktif_mi = 1
+                    """
+                : """
+                    LEFT JOIN users_partner up
+                        ON up.user_id = u.id
+                    """)
+            : string.Empty;
+
+        var partnerSortOrderSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerMainAccountColumn
+            ? "MAX(COALESCE(up.ana_hesap_mi, 0))"
+            : "0";
+
+        var partnerRowIdSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerIdColumn
+            ? "MIN(COALESCE(up.id, 0))"
+            : "0";
+
+        var partnerRequirementClause = authSchema.HasUserRoleColumn
+            ? $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL OR u.rol LIKE 'partner_%')"
+            : $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL)";
 
         var managedHotelSelect = authSchema.HasHotelOwnershipTable
             ? """
@@ -1493,13 +1538,11 @@ public class AuthService : IAuthService
                 {roleSelect} AS user_role,
                 {ownershipPartnerSelect} AS sahiplik_partner_id,
                 {managedHotelSelect} AS managed_hotel_ids,
-                MAX(COALESCE(up.ana_hesap_mi, 0)) AS ana_hesap_mi_order,
-                MIN(COALESCE(up.id, 0)) AS user_partner_row_id,
+                {partnerSortOrderSelect} AS ana_hesap_mi_order,
+                {partnerRowIdSelect} AS user_partner_row_id,
                 {roleCodesSelect} AS role_codes
             FROM users u
-            LEFT JOIN users_partner up
-                ON up.user_id = u.id
-               AND up.aktif_mi = 1
+            {usersPartnerJoinClause}
             WHERE u.hesap_durumu = 1
               AND u.sifre = LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2))
               AND (
@@ -1530,8 +1573,8 @@ public class AuthService : IAuthService
                     )
                  )
               )
-              AND (@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL)
-            GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}
+              AND {partnerRequirementClause}
+            GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}, {roleSelect}, {ownershipPartnerSelect}
             ORDER BY ana_hesap_mi_order DESC, user_partner_row_id ASC
             """;
 
@@ -1664,9 +1707,32 @@ public class AuthService : IAuthService
             ? "u.sahiplik_partner_id"
             : "NULL";
 
-        var partnerIdSelect = authSchema.HasOwnershipPartnerColumn
-            ? "COALESCE(up.partner_id, u.sahiplik_partner_id)"
-            : "up.partner_id";
+        var partnerIdSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerPartnerIdColumn
+            ? (authSchema.HasOwnershipPartnerColumn
+                ? "COALESCE(up.partner_id, u.sahiplik_partner_id)"
+                : "up.partner_id")
+            : (authSchema.HasOwnershipPartnerColumn ? "u.sahiplik_partner_id" : "NULL");
+
+        var usersPartnerJoinClause = authSchema.HasUsersPartnerTable
+            ? (authSchema.HasUsersPartnerActiveColumn
+                ? """
+                    LEFT JOIN users_partner up
+                        ON up.user_id = u.id
+                       AND up.aktif_mi = 1
+                    """
+                : """
+                    LEFT JOIN users_partner up
+                        ON up.user_id = u.id
+                    """)
+            : string.Empty;
+
+        var partnerSortOrderSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerMainAccountColumn
+            ? "MAX(COALESCE(up.ana_hesap_mi, 0))"
+            : "0";
+
+        var partnerRowIdSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerIdColumn
+            ? "MIN(COALESCE(up.id, 0))"
+            : "0";
 
         var managedHotelSelect = authSchema.HasHotelOwnershipTable
             ? """
@@ -1707,15 +1773,13 @@ public class AuthService : IAuthService
                 {roleSelect} AS user_role,
                 {ownershipPartnerSelect} AS sahiplik_partner_id,
                 {managedHotelSelect} AS managed_hotel_ids,
-                MAX(COALESCE(up.ana_hesap_mi, 0)) AS ana_hesap_mi_order,
-                MIN(COALESCE(up.id, 0)) AS user_partner_row_id,
+                {partnerSortOrderSelect} AS ana_hesap_mi_order,
+                {partnerRowIdSelect} AS user_partner_row_id,
                 {roleCodesSelect} AS role_codes
             FROM users u
-            LEFT JOIN users_partner up
-                ON up.user_id = u.id
-               AND up.aktif_mi = 1
+            {usersPartnerJoinClause}
             WHERE u.id = @userId
-            GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}
+            GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}, {roleSelect}, {ownershipPartnerSelect}
             ORDER BY ana_hesap_mi_order DESC, user_partner_row_id ASC
             """;
 
@@ -1790,19 +1854,46 @@ public class AuthService : IAuthService
         return columns;
     }
 
+    private static async Task<HashSet<string>> GetColumnsAsync(SqlConnection connection, string tableName, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT COLUMN_NAME
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = 'dbo'
+              AND TABLE_NAME = @tableName;
+            """;
+
+        var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            columns.Add(reader.GetString(0));
+        }
+
+        return columns;
+    }
+
     private static async Task<AuthSchemaInfo> GetAuthSchemaAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = """
             SELECT
-                SUM(CASE WHEN TABLE_NAME = 'users' AND COLUMN_NAME = 'rol' THEN 1 ELSE 0 END) AS has_user_role_column,
-                SUM(CASE WHEN TABLE_NAME = 'users' AND COLUMN_NAME = 'sahiplik_partner_id' THEN 1 ELSE 0 END) AS has_ownership_partner_column,
-                SUM(CASE WHEN TABLE_NAME = 'otel_kullanici_sahiplikleri' THEN 1 ELSE 0 END) AS has_hotel_ownership_table
-            FROM information_schema.COLUMNS
-            WHERE TABLE_SCHEMA = 'dbo'
-              AND (
-                    (TABLE_NAME = 'users' AND COLUMN_NAME IN ('rol', 'sahiplik_partner_id'))
-                 OR TABLE_NAME = 'otel_kullanici_sahiplikleri'
-              );
+                SUM(CASE WHEN c.TABLE_NAME = 'users' AND c.COLUMN_NAME = 'rol' THEN 1 ELSE 0 END) AS has_user_role_column,
+                SUM(CASE WHEN c.TABLE_NAME = 'users' AND c.COLUMN_NAME = 'sahiplik_partner_id' THEN 1 ELSE 0 END) AS has_ownership_partner_column,
+                MAX(CASE WHEN t.TABLE_NAME = 'otel_kullanici_sahiplikleri' THEN 1 ELSE 0 END) AS has_hotel_ownership_table,
+                MAX(CASE WHEN t.TABLE_NAME = 'users_partner' THEN 1 ELSE 0 END) AS has_users_partner_table,
+                SUM(CASE WHEN c.TABLE_NAME = 'users_partner' AND c.COLUMN_NAME = 'partner_id' THEN 1 ELSE 0 END) AS has_users_partner_partner_id_column,
+                SUM(CASE WHEN c.TABLE_NAME = 'users_partner' AND c.COLUMN_NAME = 'aktif_mi' THEN 1 ELSE 0 END) AS has_users_partner_active_column,
+                SUM(CASE WHEN c.TABLE_NAME = 'users_partner' AND c.COLUMN_NAME = 'ana_hesap_mi' THEN 1 ELSE 0 END) AS has_users_partner_main_account_column,
+                SUM(CASE WHEN c.TABLE_NAME = 'users_partner' AND c.COLUMN_NAME = 'id' THEN 1 ELSE 0 END) AS has_users_partner_id_column
+            FROM information_schema.TABLES t
+            LEFT JOIN information_schema.COLUMNS c
+                ON c.TABLE_SCHEMA = t.TABLE_SCHEMA
+               AND c.TABLE_NAME = t.TABLE_NAME
+            WHERE t.TABLE_SCHEMA = 'dbo'
+              AND t.TABLE_NAME IN ('users', 'otel_kullanici_sahiplikleri', 'users_partner');
             """;
 
         await using var command = new SqlCommand(sql, connection);
@@ -1815,9 +1906,14 @@ public class AuthService : IAuthService
 
         return new AuthSchemaInfo
         {
-            HasUserRoleColumn = !reader.IsDBNull(0) && reader.GetInt64(0) > 0,
-            HasOwnershipPartnerColumn = !reader.IsDBNull(1) && reader.GetInt64(1) > 0,
-            HasHotelOwnershipTable = !reader.IsDBNull(2) && reader.GetInt64(2) > 0
+            HasUserRoleColumn = !reader.IsDBNull(0) && Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture) > 0,
+            HasOwnershipPartnerColumn = !reader.IsDBNull(1) && Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture) > 0,
+            HasHotelOwnershipTable = !reader.IsDBNull(2) && Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture) > 0,
+            HasUsersPartnerTable = !reader.IsDBNull(3) && Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture) > 0,
+            HasUsersPartnerPartnerIdColumn = !reader.IsDBNull(4) && Convert.ToInt64(reader.GetValue(4), CultureInfo.InvariantCulture) > 0,
+            HasUsersPartnerActiveColumn = !reader.IsDBNull(5) && Convert.ToInt64(reader.GetValue(5), CultureInfo.InvariantCulture) > 0,
+            HasUsersPartnerMainAccountColumn = !reader.IsDBNull(6) && Convert.ToInt64(reader.GetValue(6), CultureInfo.InvariantCulture) > 0,
+            HasUsersPartnerIdColumn = !reader.IsDBNull(7) && Convert.ToInt64(reader.GetValue(7), CultureInfo.InvariantCulture) > 0
         };
     }
 
@@ -1941,7 +2037,28 @@ public class AuthService : IAuthService
         var authSchema = await GetAuthSchemaAsync(connection, cancellationToken);
         var roleSelect = authSchema.HasUserRoleColumn ? "u.rol" : "'user'";
         var ownershipPartnerSelect = authSchema.HasOwnershipPartnerColumn ? "u.sahiplik_partner_id" : "NULL";
-        var partnerIdSelect = authSchema.HasOwnershipPartnerColumn ? "COALESCE(up.partner_id, u.sahiplik_partner_id)" : "up.partner_id";
+        var partnerIdSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerPartnerIdColumn
+            ? (authSchema.HasOwnershipPartnerColumn
+                ? "COALESCE(up.partner_id, u.sahiplik_partner_id)"
+                : "up.partner_id")
+            : (authSchema.HasOwnershipPartnerColumn ? "u.sahiplik_partner_id" : "NULL");
+
+        var usersPartnerJoinClause = authSchema.HasUsersPartnerTable
+            ? (authSchema.HasUsersPartnerActiveColumn
+                ? """
+                    LEFT JOIN users_partner up
+                        ON up.user_id = u.id
+                       AND up.aktif_mi = 1
+                    """
+                : """
+                    LEFT JOIN users_partner up
+                        ON up.user_id = u.id
+                    """)
+            : string.Empty;
+
+        var partnerRequirementClause = authSchema.HasUserRoleColumn
+            ? $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL OR u.rol LIKE 'partner_%')"
+            : $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL)";
 
         var sql = $"""
             SELECT TOP (1)
@@ -1953,9 +2070,7 @@ public class AuthService : IAuthService
                 {partnerIdSelect} AS partner_id,
                 {ownershipPartnerSelect} AS sahiplik_partner_id
             FROM users u
-            LEFT JOIN users_partner up
-                ON up.user_id = u.id
-               AND up.aktif_mi = 1
+            {usersPartnerJoinClause}
             WHERE u.hesap_durumu = 1
               AND (
                     u.eposta = @identity
@@ -1984,7 +2099,7 @@ public class AuthService : IAuthService
                     )
                  )
               )
-              AND (@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL)
+              AND {partnerRequirementClause}
             ORDER BY u.id ASC;
             """;
 
@@ -2260,6 +2375,11 @@ public class AuthService : IAuthService
         public bool HasUserRoleColumn { get; init; }
         public bool HasOwnershipPartnerColumn { get; init; }
         public bool HasHotelOwnershipTable { get; init; }
+        public bool HasUsersPartnerTable { get; init; }
+        public bool HasUsersPartnerPartnerIdColumn { get; init; }
+        public bool HasUsersPartnerActiveColumn { get; init; }
+        public bool HasUsersPartnerMainAccountColumn { get; init; }
+        public bool HasUsersPartnerIdColumn { get; init; }
     }
 
     private sealed class AuthCandidateInfo

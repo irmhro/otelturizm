@@ -89,9 +89,9 @@ public class AuthController : Controller
             SetResendVerifyTempData(ex, loginEmail);
             return Redirect(UserLoginPath);
         }
-        catch
+        catch (Exception ex)
         {
-            TempData["UserLoginError"] = "Veritabani baglantisi veya giris dogrulama sirasinda hata olustu.";
+            TempData["UserLoginError"] = $"Veritabani baglantisi veya giris dogrulama sirasinda hata olustu: {ex.Message}";
             return Redirect(UserLoginPath);
         }
 
@@ -170,9 +170,9 @@ public class AuthController : Controller
             SetResendVerifyTempData(ex, firmaIdentity);
             return Redirect(FirmaLoginPath);
         }
-        catch
+        catch (Exception ex)
         {
-            TempData["FirmaLoginError"] = "Veritabanı bağlantısı veya firma giriş doğrulaması sırasında hata oluştu.";
+            TempData["FirmaLoginError"] = $"Veritabanı bağlantısı veya firma giriş doğrulaması sırasında hata oluştu: {ex.Message}";
             return Redirect(FirmaLoginPath);
         }
 
@@ -219,9 +219,9 @@ public class AuthController : Controller
             SetResendVerifyTempData(ex, partnerIdentity);
             return Redirect(PartnerLoginPath);
         }
-        catch
+        catch (Exception ex)
         {
-            TempData["PartnerLoginError"] = "Veritabani baglantisi veya partner giris dogrulama sirasinda hata olustu.";
+            TempData["PartnerLoginError"] = $"Veritabani baglantisi veya partner giris dogrulama sirasinda hata olustu: {ex.Message}";
             return Redirect(PartnerLoginPath);
         }
 

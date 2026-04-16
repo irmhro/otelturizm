@@ -63,9 +63,9 @@ public class RegisterController : Controller
             TempData["UserLoginSuccess"] = result.Message;
             return Redirect($"/eposta-dogrula?email={Uri.EscapeDataString(model.Email.Trim().ToLowerInvariant())}");
         }
-        catch
+        catch (Exception ex)
         {
-            TempData["UserRegisterError"] = "Kayıt işlemi sırasında beklenmeyen bir hata oluştu.";
+            TempData["UserRegisterError"] = $"Kayıt işlemi sırasında beklenmeyen bir hata oluştu: {ex.Message}";
             TempData["OpenUserRegisterTab"] = "1";
             return Redirect(UserLoginPath);
         }
@@ -89,9 +89,9 @@ public class RegisterController : Controller
             TempData["UserLoginSuccess"] = result.Message;
             return Redirect($"/eposta-dogrula?email={Uri.EscapeDataString(normalizedEmail)}");
         }
-        catch
+        catch (Exception ex)
         {
-            TempData["PartnerRegisterError"] = "Partner kaydı sırasında beklenmeyen bir hata oluştu.";
+            TempData["PartnerRegisterError"] = $"Partner kaydı sırasında beklenmeyen bir hata oluştu: {ex.Message}";
             TempData["OpenPartnerRegisterTab"] = "1";
             return Redirect(PartnerLoginPath);
         }
@@ -115,9 +115,9 @@ public class RegisterController : Controller
             TempData["UserLoginSuccess"] = result.Message;
             return Redirect($"/eposta-dogrula?email={Uri.EscapeDataString(normalizedEmail)}");
         }
-        catch
+        catch (Exception ex)
         {
-            TempData["FirmaRegisterError"] = "Firma başvurusu sırasında beklenmeyen bir hata oluştu.";
+            TempData["FirmaRegisterError"] = $"Firma başvurusu sırasında beklenmeyen bir hata oluştu: {ex.Message}";
             TempData["OpenFirmaRegisterTab"] = "1";
             return Redirect(FirmaLoginPath);
         }

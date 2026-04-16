@@ -124,7 +124,7 @@ public class EmailQueueService : IEmailQueueService
             throw new InvalidOperationException($"E-posta şablonu bulunamadı: {templateCode}");
         }
 
-        return (reader.GetInt64(0), reader.GetString(1), reader.GetString(2));
+        return (Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture), reader.GetString(1), reader.GetString(2));
     }
 
     private static async Task<EmailProviderSettings> LoadProviderAsync(DbConnection connection, DbTransaction? transaction, CancellationToken cancellationToken)
