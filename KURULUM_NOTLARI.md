@@ -99,3 +99,42 @@ Yeni bilgisayarda SMTP erisimi icin:
 - [ ] `dotnet restore/build/run` hatasiz
 - [ ] Login / Register / Forgot Password / Verify Email sayfalari aciliyor
 
+## 10) GitHub Kullanici ve Kimlik Ayarlari (Yeni Bilgisayar)
+
+Bu ayarlar yeni bilgisayarda ayri yapilmalidir (repo ile otomatik gelmez).
+
+### Git kullanici bilgisi
+
+```powershell
+git config --global user.name "GITHUB_KULLANICI_ADIN"
+git config --global user.email "GITHUB_EMAIL_ADRESIN"
+```
+
+Kontrol:
+
+```powershell
+git config --global --get user.name
+git config --global --get user.email
+```
+
+### GitHub kimlik dogrulama
+
+Secenek 1 (onerilen): GitHub CLI
+
+```powershell
+gh auth login
+```
+
+Secenek 2: HTTPS + Personal Access Token (PAT)
+
+- Push/pull sirasinda sifre yerine PAT kullanin.
+
+### Projeyi cekme
+
+```powershell
+git clone https://github.com/irmhro/otelturizmnew.git
+cd otelturizmnew
+git checkout master
+git pull origin master
+```
+
