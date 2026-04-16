@@ -37,6 +37,7 @@ Kullanıcı: https://localhost:7223/kullanici-giris
 Partner: https://localhost:7223/partner-giris
 Admin: https://localhost:7223/admin-giris
 Firma: https://localhost:7223/kullanici-giris
+satış departmanıda kullanıcı panelinden giriş yapacak
 Ek not:
 
 Kontrolde şu an SHA2('1585',256) ile eşleşen 40 aktif test hesabı var.
