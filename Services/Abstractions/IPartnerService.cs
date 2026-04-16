@@ -39,8 +39,10 @@ public interface IPartnerService
     Task<(bool Success, string Message)> SaveBankInfoAsync(long userId, PartnerBankInfoForm request, CancellationToken cancellationToken = default);
     Task<string> ExportFinanceCsvAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
     Task<(byte[] Content, string ContentType, string FileName)?> DownloadInvoiceAsync(long userId, long hotelId, long invoiceId, CancellationToken cancellationToken = default);
-    Task<PartnerPreferencesPageViewModel> GetPreferencesAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
-    Task<(bool Success, string Message)> SavePreferencesAsync(long userId, PartnerPreferencesForm request, CancellationToken cancellationToken = default);
+    Task<PartnerApplicationPageViewModel> GetApplicationAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SaveApplicationAsync(long userId, PartnerApplicationProfileForm request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> UploadApplicationDocumentAsync(long userId, PartnerApplicationDocumentUploadForm request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> DeleteApplicationDocumentAsync(long userId, long hotelId, long documentId, CancellationToken cancellationToken = default);
     Task<PartnerSupportPageViewModel> GetSupportAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> CreateSupportTicketAsync(long userId, PartnerSupportCreateTicketRequest request, CancellationToken cancellationToken = default);
 }

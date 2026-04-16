@@ -1,7 +1,11 @@
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Paneller.Admin;
 using otelturizmnew.Services.Abstractions;
 
@@ -23,7 +27,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     public async Task<AdminHotelsPageViewModel> GetHotelsPageAsync(string fullName, string email, string userRole, string? searchTerm = null, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var shell = await BuildShellAsync(connection, "Oteller", "Otel kayitlarini, odalari ve medya varliklarini admin tarafindan hizli sekilde yonetin.", fullName, email, userRole, cancellationToken);
@@ -36,7 +40,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         model.SummaryCards.AddRange(await LoadHotelSummaryCardsAsync(connection, cancellationToken));
 
         const string sql = @"
-            SELECT o.id,
+            SELECT TOP (120) o.id,
                    o.otel_kodu,
                    o.otel_adi,
                    o.otel_turu,
@@ -65,11 +69,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 LEFT JOIN oda_gorselleri og ON og.oda_tip_id = od.id
                 GROUP BY od.otel_id
             ) roomPhotos ON roomPhotos.otel_id = o.id
-            WHERE (@search = '' OR o.otel_adi LIKE CONCAT('%', @search, '%') OR o.otel_kodu LIKE CONCAT('%', @search, '%') OR o.sehir LIKE CONCAT('%', @search, '%') OR o.ilce LIKE CONCAT('%', @search, '%'))
-            ORDER BY o.id DESC
-            LIMIT 120;";
+            WHERE (@search = '' OR o.otel_adi LIKE '%' + @search + '%' OR o.otel_kodu LIKE '%' + @search + '%' OR o.sehir LIKE '%' + @search + '%' OR o.ilce LIKE '%' + @search + '%')
+            ORDER BY o.id DESC;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@search", model.SearchTerm);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -96,7 +99,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     public async Task<AdminHotelManagementPageViewModel> GetHotelManagementPageAsync(long hotelId, string fullName, string email, string userRole, long? roomId = null, long? hotelPhotoId = null, long? roomPhotoId = null, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var hotel = await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
@@ -142,7 +145,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             return (false, "Otel kodu ve otel adi zorunludur.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsureHotelExistsAsync(connection, request.HotelId, cancellationToken);
 
@@ -212,14 +215,14 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 yayin_durumu = @publishStatus,
                 onay_durumu = @approvalStatus,
                 onaylayan_admin_id = @adminUserId,
-                onay_tarihi = CASE WHEN @approvalStatus = 'Onaylandı' THEN NOW() ELSE onay_tarihi END,
+                onay_tarihi = CASE WHEN @approvalStatus = 'Onaylandı' THEN SYSUTCDATETIME() ELSE onay_tarihi END,
                 populerlik_sirasi = @popularityOrder,
                 one_cikan_otel = @isFeatured,
                 tavsiye_edilen_otel = @isRecommended,
-                guncellenme_tarihi = NOW()
+                guncellenme_tarihi = SYSUTCDATETIME()
             WHERE id = @hotelId;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", request.HotelId);
         command.Parameters.AddWithValue("@hotelCode", request.HotelCode.Trim());
         command.Parameters.AddWithValue("@partnerId", request.PartnerId);
@@ -300,7 +303,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             return (false, "Oda adi ve taban fiyat zorunludur.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var hotel = await EnsureHotelExistsAsync(connection, request.HotelId, cancellationToken);
 
@@ -340,10 +343,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                     ozellikler = @featuresJson,
                     aktif_mi = @isActive,
                     siralama = @sortOrder,
-                    guncellenme_tarihi = NOW()
+                    guncellenme_tarihi = SYSUTCDATETIME()
                 WHERE id = @roomId AND otel_id = @hotelId;";
 
-            await using var command = new MySqlCommand(updateSql, connection);
+            await using var command = new SqlCommand(updateSql, connection);
             BindRoomCommand(command, request, hotel.HotelId, featuresJson);
             command.Parameters.AddWithValue("@roomId", request.RoomId.Value);
             await command.ExecuteNonQueryAsync(cancellationToken);
@@ -356,7 +359,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             VALUES
             (@hotelId, @roomCode, @roomName, @roomCategory, @maxPeople, @maxAdults, @maxChildren, @bedType, @bedCount, @extraBedAvailable, @roomSize, @balconyAvailable, @balconySize, @viewType, @privateBathroom, @bathroomType, @basePrice, @weekendDifferenceRate, @childDiscountRate, @babyFree, @babyAgeLimit, @childAgeLimit, @totalRooms, @overbookingLimit, @coverPhotoPath, @galleryJson, @featuresJson, @isActive, @sortOrder);";
 
-            await using var insertCommand = new MySqlCommand(insertSql, connection);
+            await using var insertCommand = new SqlCommand(insertSql, connection);
             BindRoomCommand(insertCommand, request, hotel.HotelId, featuresJson);
             await insertCommand.ExecuteNonQueryAsync(cancellationToken);
             return (true, "Yeni oda tipi eklendi.");
@@ -364,7 +367,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         public async Task<(bool Success, string Message)> DeactivateHotelAsync(long hotelId, long adminUserId, CancellationToken cancellationToken = default)
         {
-            await using var connection = new MySqlConnection(_connectionString);
+            await using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
             await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
 
@@ -372,9 +375,9 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 UPDATE oteller
                 SET yayin_durumu = 'Kapatıldı',
                     onaylayan_admin_id = @adminUserId,
-                    guncellenme_tarihi = NOW()
+                    guncellenme_tarihi = SYSUTCDATETIME()
                 WHERE id = @hotelId;";
-            await using var command = new MySqlCommand(sql, connection);
+            await using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@hotelId", hotelId);
             command.Parameters.AddWithValue("@adminUserId", adminUserId);
             var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
@@ -385,12 +388,12 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         public async Task<(bool Success, string Message)> DeactivateRoomAsync(long hotelId, long roomId, CancellationToken cancellationToken = default)
         {
-            await using var connection = new MySqlConnection(_connectionString);
+            await using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
             await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
 
-            const string sql = "UPDATE oda_tipleri SET aktif_mi = 0, guncellenme_tarihi = NOW() WHERE id = @roomId AND otel_id = @hotelId;";
-            await using var command = new MySqlCommand(sql, connection);
+            const string sql = "UPDATE oda_tipleri SET aktif_mi = 0, guncellenme_tarihi = SYSUTCDATETIME() WHERE id = @roomId AND otel_id = @hotelId;";
+            await using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@roomId", roomId);
             command.Parameters.AddWithValue("@hotelId", hotelId);
             var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
@@ -404,7 +407,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             return (false, "En az bir otel gorseli secmelisiniz.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var hotel = await EnsureHotelExistsAsync(connection, request.HotelId, cancellationToken);
         var targetDirectory = Path.Combine(_environment.WebRootPath, "uploads", "hotels", "admin", hotel.HotelId.ToString(CultureInfo.InvariantCulture));
@@ -426,8 +429,8 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                     INSERT INTO otel_gorselleri
                     (otel_id, gorsel_url, gorsel_turu, baslik, aciklama, kapak_fotografi_mi, one_cikan, siralama, boyut_kb, onay_durumu, onaylayan_admin_id, onay_tarihi, yukleyen_kullanici_id)
                     VALUES
-                    (@hotelId, @url, @photoType, @title, @description, @isCover, @featured, @sortOrder, @sizeKb, 'Onaylandı', @adminUserId, NOW(), @adminUserId);";
-                await using var insertCommand = new MySqlCommand(insertSql, connection, (MySqlTransaction)transaction);
+                    (@hotelId, @url, @photoType, @title, @description, @isCover, @featured, @sortOrder, @sizeKb, 'Onaylandı', @adminUserId, SYSUTCDATETIME(), @adminUserId);";
+                await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
                 insertCommand.Parameters.AddWithValue("@hotelId", hotel.HotelId);
                 insertCommand.Parameters.AddWithValue("@url", relativePath);
                 insertCommand.Parameters.AddWithValue("@photoType", request.PhotoType);
@@ -442,12 +445,12 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
                 if (shouldMakeCover)
                 {
-                    await using var resetCover = new MySqlCommand("UPDATE otel_gorselleri SET kapak_fotografi_mi = CASE WHEN gorsel_url = @coverUrl THEN 1 ELSE 0 END WHERE otel_id = @hotelId;", connection, (MySqlTransaction)transaction);
+                    await using var resetCover = new SqlCommand("UPDATE otel_gorselleri SET kapak_fotografi_mi = CASE WHEN gorsel_url = @coverUrl THEN 1 ELSE 0 END WHERE otel_id = @hotelId;", connection, (SqlTransaction)transaction);
                     resetCover.Parameters.AddWithValue("@coverUrl", relativePath);
                     resetCover.Parameters.AddWithValue("@hotelId", hotel.HotelId);
                     await resetCover.ExecuteNonQueryAsync(cancellationToken);
 
-                    await using var updateHotel = new MySqlCommand("UPDATE oteller SET kapak_fotografi = @coverUrl WHERE id = @hotelId;", connection, (MySqlTransaction)transaction);
+                    await using var updateHotel = new SqlCommand("UPDATE oteller SET kapak_fotografi = @coverUrl WHERE id = @hotelId;", connection, (SqlTransaction)transaction);
                     updateHotel.Parameters.AddWithValue("@coverUrl", relativePath);
                     updateHotel.Parameters.AddWithValue("@hotelId", hotel.HotelId);
                     await updateHotel.ExecuteNonQueryAsync(cancellationToken);
@@ -478,7 +481,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             return (false, "Guncellenecek otel fotografi secilmedi.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsureHotelExistsAsync(connection, request.HotelId, cancellationToken);
 
@@ -490,7 +493,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 siralama = @displayOrder,
                 one_cikan = @featured
             WHERE id = @photoId AND otel_id = @hotelId;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@photoId", request.PhotoId.Value);
         command.Parameters.AddWithValue("@hotelId", request.HotelId);
         command.Parameters.AddWithValue("@title", DbValue(request.Title));
@@ -504,12 +507,12 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     public async Task<(bool Success, string Message)> SetHotelCoverAsync(long hotelId, long photoId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
 
-        const string selectSql = "SELECT gorsel_url FROM otel_gorselleri WHERE id = @photoId AND otel_id = @hotelId LIMIT 1;";
-        await using var selectCommand = new MySqlCommand(selectSql, connection);
+        const string selectSql = "SELECT TOP (1) gorsel_url FROM otel_gorselleri WHERE id = @photoId AND otel_id = @hotelId;";
+        await using var selectCommand = new SqlCommand(selectSql, connection);
         selectCommand.Parameters.AddWithValue("@photoId", photoId);
         selectCommand.Parameters.AddWithValue("@hotelId", hotelId);
         var url = await selectCommand.ExecuteScalarAsync(cancellationToken) as string;
@@ -519,13 +522,13 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await using (var updatePhotos = new MySqlCommand("UPDATE otel_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE otel_id = @hotelId;", connection, (MySqlTransaction)transaction))
+        await using (var updatePhotos = new SqlCommand("UPDATE otel_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE otel_id = @hotelId;", connection, (SqlTransaction)transaction))
         {
             updatePhotos.Parameters.AddWithValue("@photoId", photoId);
             updatePhotos.Parameters.AddWithValue("@hotelId", hotelId);
             await updatePhotos.ExecuteNonQueryAsync(cancellationToken);
         }
-        await using (var updateHotel = new MySqlCommand("UPDATE oteller SET kapak_fotografi = @coverUrl WHERE id = @hotelId;", connection, (MySqlTransaction)transaction))
+        await using (var updateHotel = new SqlCommand("UPDATE oteller SET kapak_fotografi = @coverUrl WHERE id = @hotelId;", connection, (SqlTransaction)transaction))
         {
             updateHotel.Parameters.AddWithValue("@coverUrl", url);
             updateHotel.Parameters.AddWithValue("@hotelId", hotelId);
@@ -537,14 +540,14 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     public async Task<(bool Success, string Message)> DeleteHotelPhotoAsync(long hotelId, long photoId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
 
         string? relativePath = null;
         var wasCover = false;
-        const string selectSql = "SELECT gorsel_url, kapak_fotografi_mi FROM otel_gorselleri WHERE id = @photoId AND otel_id = @hotelId LIMIT 1;";
-        await using (var selectCommand = new MySqlCommand(selectSql, connection))
+        const string selectSql = "SELECT TOP (1) gorsel_url, kapak_fotografi_mi FROM otel_gorselleri WHERE id = @photoId AND otel_id = @hotelId;";
+        await using (var selectCommand = new SqlCommand(selectSql, connection))
         {
             selectCommand.Parameters.AddWithValue("@photoId", photoId);
             selectCommand.Parameters.AddWithValue("@hotelId", hotelId);
@@ -562,7 +565,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await using (var deleteCommand = new MySqlCommand("DELETE FROM otel_gorselleri WHERE id = @photoId AND otel_id = @hotelId;", connection, (MySqlTransaction)transaction))
+        await using (var deleteCommand = new SqlCommand("DELETE FROM otel_gorselleri WHERE id = @photoId AND otel_id = @hotelId;", connection, (SqlTransaction)transaction))
         {
             deleteCommand.Parameters.AddWithValue("@photoId", photoId);
             deleteCommand.Parameters.AddWithValue("@hotelId", hotelId);
@@ -571,7 +574,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         if (wasCover)
         {
-            await PromoteNextHotelCoverAsync(connection, (MySqlTransaction)transaction, hotelId, cancellationToken);
+            await PromoteNextHotelCoverAsync(connection, (SqlTransaction)transaction, hotelId, cancellationToken);
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -587,7 +590,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             return (false, "En az bir oda gorseli secmelisiniz.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsureHotelExistsAsync(connection, request.HotelId, cancellationToken);
         var room = await EnsureRoomExistsAsync(connection, request.HotelId, request.RoomId, cancellationToken);
@@ -610,8 +613,8 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                     INSERT INTO oda_gorselleri
                     (oda_tip_id, gorsel_url, baslik, aciklama, kapak_fotografi_mi, siralama, boyut_kb, onay_durumu, onaylayan_admin_id, onay_tarihi, yukleyen_kullanici_id)
                     VALUES
-                    (@roomId, @url, @title, @description, @isCover, @sortOrder, @sizeKb, 'Onaylandı', @adminUserId, NOW(), @adminUserId);";
-                await using var insertCommand = new MySqlCommand(insertSql, connection, (MySqlTransaction)transaction);
+                    (@roomId, @url, @title, @description, @isCover, @sortOrder, @sizeKb, 'Onaylandı', @adminUserId, SYSUTCDATETIME(), @adminUserId);";
+                await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
                 insertCommand.Parameters.AddWithValue("@roomId", request.RoomId);
                 insertCommand.Parameters.AddWithValue("@url", relativePath);
                 insertCommand.Parameters.AddWithValue("@title", string.IsNullOrWhiteSpace(request.Title) ? room.RoomName : request.Title.Trim());
@@ -624,12 +627,12 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
                 if (shouldMakeCover)
                 {
-                    await using var resetCover = new MySqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN gorsel_url = @coverUrl THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, (MySqlTransaction)transaction);
+                    await using var resetCover = new SqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN gorsel_url = @coverUrl THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, (SqlTransaction)transaction);
                     resetCover.Parameters.AddWithValue("@coverUrl", relativePath);
                     resetCover.Parameters.AddWithValue("@roomId", request.RoomId);
                     await resetCover.ExecuteNonQueryAsync(cancellationToken);
 
-                    await using var updateRoom = new MySqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, (MySqlTransaction)transaction);
+                    await using var updateRoom = new SqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, (SqlTransaction)transaction);
                     updateRoom.Parameters.AddWithValue("@coverUrl", relativePath);
                     updateRoom.Parameters.AddWithValue("@roomId", request.RoomId);
                     await updateRoom.ExecuteNonQueryAsync(cancellationToken);
@@ -660,7 +663,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             return (false, "Guncellenecek oda fotografi secilmedi.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsureRoomExistsAsync(connection, request.HotelId, request.RoomId, cancellationToken);
 
@@ -670,7 +673,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 aciklama = @description,
                 siralama = @displayOrder
             WHERE id = @photoId AND oda_tip_id = @roomId;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@photoId", request.PhotoId.Value);
         command.Parameters.AddWithValue("@roomId", request.RoomId);
         command.Parameters.AddWithValue("@title", DbValue(request.Title));
@@ -682,12 +685,12 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     public async Task<(bool Success, string Message)> SetRoomCoverAsync(long hotelId, long roomId, long photoId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsureRoomExistsAsync(connection, hotelId, roomId, cancellationToken);
 
-        const string selectSql = "SELECT gorsel_url FROM oda_gorselleri WHERE id = @photoId AND oda_tip_id = @roomId LIMIT 1;";
-        await using var selectCommand = new MySqlCommand(selectSql, connection);
+        const string selectSql = "SELECT TOP (1) gorsel_url FROM oda_gorselleri WHERE id = @photoId AND oda_tip_id = @roomId;";
+        await using var selectCommand = new SqlCommand(selectSql, connection);
         selectCommand.Parameters.AddWithValue("@photoId", photoId);
         selectCommand.Parameters.AddWithValue("@roomId", roomId);
         var url = await selectCommand.ExecuteScalarAsync(cancellationToken) as string;
@@ -697,13 +700,13 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await using (var updatePhotos = new MySqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, (MySqlTransaction)transaction))
+        await using (var updatePhotos = new SqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, (SqlTransaction)transaction))
         {
             updatePhotos.Parameters.AddWithValue("@photoId", photoId);
             updatePhotos.Parameters.AddWithValue("@roomId", roomId);
             await updatePhotos.ExecuteNonQueryAsync(cancellationToken);
         }
-        await using (var updateRoom = new MySqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, (MySqlTransaction)transaction))
+        await using (var updateRoom = new SqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, (SqlTransaction)transaction))
         {
             updateRoom.Parameters.AddWithValue("@coverUrl", url);
             updateRoom.Parameters.AddWithValue("@roomId", roomId);
@@ -715,14 +718,14 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     public async Task<(bool Success, string Message)> DeleteRoomPhotoAsync(long hotelId, long roomId, long photoId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsureRoomExistsAsync(connection, hotelId, roomId, cancellationToken);
 
         string? relativePath = null;
         var wasCover = false;
-        const string selectSql = "SELECT gorsel_url, kapak_fotografi_mi FROM oda_gorselleri WHERE id = @photoId AND oda_tip_id = @roomId LIMIT 1;";
-        await using (var selectCommand = new MySqlCommand(selectSql, connection))
+        const string selectSql = "SELECT TOP (1) gorsel_url, kapak_fotografi_mi FROM oda_gorselleri WHERE id = @photoId AND oda_tip_id = @roomId;";
+        await using (var selectCommand = new SqlCommand(selectSql, connection))
         {
             selectCommand.Parameters.AddWithValue("@photoId", photoId);
             selectCommand.Parameters.AddWithValue("@roomId", roomId);
@@ -740,7 +743,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await using (var deleteCommand = new MySqlCommand("DELETE FROM oda_gorselleri WHERE id = @photoId AND oda_tip_id = @roomId;", connection, (MySqlTransaction)transaction))
+        await using (var deleteCommand = new SqlCommand("DELETE FROM oda_gorselleri WHERE id = @photoId AND oda_tip_id = @roomId;", connection, (SqlTransaction)transaction))
         {
             deleteCommand.Parameters.AddWithValue("@photoId", photoId);
             deleteCommand.Parameters.AddWithValue("@roomId", roomId);
@@ -749,7 +752,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         if (wasCover)
         {
-            await PromoteNextRoomCoverAsync(connection, (MySqlTransaction)transaction, roomId, cancellationToken);
+            await PromoteNextRoomCoverAsync(connection, (SqlTransaction)transaction, roomId, cancellationToken);
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -758,7 +761,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return (true, "Oda fotografi silindi.");
     }
 
-    private async Task<AdminShellViewModel> BuildShellAsync(MySqlConnection connection, string title, string subtitle, string fullName, string email, string userRole, CancellationToken cancellationToken)
+    private async Task<AdminShellViewModel> BuildShellAsync(SqlConnection connection, string title, string subtitle, string fullName, string email, string userRole, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT
@@ -767,7 +770,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 (SELECT COUNT(*) FROM sistem_hata_loglari WHERE hata_seviyesi IN ('CRITICAL','ALERT','EMERGENCY') AND cozuldu_mu = 0) AS critical_logs,
                 (SELECT COUNT(*) FROM yorumlar WHERE onay_durumu = 'Beklemede') AS pending_reviews;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var shell = new AdminShellViewModel
         {
@@ -789,7 +792,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return shell;
     }
 
-    private static async Task<List<AdminSummaryCardViewModel>> LoadHotelSummaryCardsAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    private static async Task<List<AdminSummaryCardViewModel>> LoadHotelSummaryCardsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         var cards = new List<AdminSummaryCardViewModel>();
         var definitions = new[]
@@ -802,7 +805,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         foreach (var definition in definitions)
         {
-            await using var command = new MySqlCommand(definition.Item2, connection);
+            await using var command = new SqlCommand(definition.Item2, connection);
             var value = await command.ExecuteScalarAsync(cancellationToken);
             cards.Add(new AdminSummaryCardViewModel
             {
@@ -817,7 +820,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return cards;
     }
 
-    private static async Task<List<AdminSummaryCardViewModel>> LoadHotelManagementCardsAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private static async Task<List<AdminSummaryCardViewModel>> LoadHotelManagementCardsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT
@@ -826,7 +829,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 (SELECT COUNT(*) FROM oda_gorselleri og INNER JOIN oda_tipleri od ON od.id = og.oda_tip_id WHERE od.otel_id = @hotelId) AS room_photo_count,
                 (SELECT COUNT(*) FROM rezervasyonlar WHERE otel_id = @hotelId) AS reservation_count;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var cards = new List<AdminSummaryCardViewModel>();
@@ -840,10 +843,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return cards;
     }
 
-    private static async Task<(long HotelId, string HotelName)> EnsureHotelExistsAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private static async Task<(long HotelId, string HotelName)> EnsureHotelExistsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT id, otel_adi FROM oteller WHERE id = @hotelId LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        const string sql = "SELECT TOP (1) id, otel_adi FROM oteller WHERE id = @hotelId;";
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -854,10 +857,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return (reader.GetInt64(0), reader.GetString(1));
     }
 
-    private static async Task<(long RoomId, string RoomName)> EnsureRoomExistsAsync(MySqlConnection connection, long hotelId, long roomId, CancellationToken cancellationToken)
+    private static async Task<(long RoomId, string RoomName)> EnsureRoomExistsAsync(SqlConnection connection, long hotelId, long roomId, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT id, oda_adi FROM oda_tipleri WHERE id = @roomId AND otel_id = @hotelId LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        const string sql = "SELECT TOP (1) id, oda_adi FROM oda_tipleri WHERE id = @roomId AND otel_id = @hotelId;";
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@roomId", roomId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -869,7 +872,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return (reader.GetInt64(0), reader.GetString(1));
     }
 
-    private static async Task<AdminHotelEditForm> LoadHotelFormAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private static async Task<AdminHotelEditForm> LoadHotelFormAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT id, otel_kodu, partner_id, user_id, otel_adi, otel_turu, yildiz_sayisi, turizm_belge_no, turizm_belge_turu,
@@ -881,9 +884,9 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                    depozito_tutari, depozito_iade_suresi, minimum_konaklama_gecesi, maksimum_konaklama_gecesi, konusulan_diller,
                    ortalama_puan, toplam_yorum_sayisi, temizlik_puani, konfor_puani, konum_puani, personel_puani, fiyat_performans_puani,
                    kapak_fotografi, video_url, sanal_tur_url, yayin_durumu, onay_durumu, populerlik_sirasi, one_cikan_otel, tavsiye_edilen_otel
-            FROM oteller WHERE id = @hotelId LIMIT 1;";
+            FROM oteller WHERE id = @hotelId;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -907,14 +910,14 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         };
     }
 
-    private static async Task<List<AdminRoomCardViewModel>> LoadRoomCardsAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private static async Task<List<AdminRoomCardViewModel>> LoadRoomCardsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT id, oda_tip_kodu, oda_adi, oda_kategorisi, standart_gecelik_fiyat, maksimum_kisi_sayisi, toplam_oda_sayisi, kapak_fotografi, aktif_mi
             FROM oda_tipleri
             WHERE otel_id = @hotelId
             ORDER BY aktif_mi DESC, siralama, id DESC;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var rooms = new List<AdminRoomCardViewModel>();
@@ -936,7 +939,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return rooms;
     }
 
-    private static async Task<AdminRoomEditForm> LoadRoomFormAsync(MySqlConnection connection, long hotelId, long roomId, CancellationToken cancellationToken)
+    private static async Task<AdminRoomEditForm> LoadRoomFormAsync(SqlConnection connection, long hotelId, long roomId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT id, otel_id, oda_tip_kodu, oda_adi, oda_kategorisi, maksimum_kisi_sayisi, maksimum_yetiskin_sayisi, maksimum_cocuk_sayisi,
@@ -944,8 +947,8 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                    ozel_banyo_var_mi, banyo_tipi, standart_gecelik_fiyat, haftasonu_fark_orani, cocuk_indirim_orani, bebek_ucretsiz_mi,
                    bebek_yas_siniri, cocuk_yas_siniri, toplam_oda_sayisi, overbooking_limit, kapak_fotografi, galeri, ozellikler, aktif_mi, siralama
             FROM oda_tipleri
-            WHERE id = @roomId AND otel_id = @hotelId LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+            WHERE id = @roomId AND otel_id = @hotelId;";
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@roomId", roomId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -964,14 +967,14 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         };
     }
 
-    private static async Task<List<AdminPhotoCardViewModel>> LoadHotelPhotosAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private static async Task<List<AdminPhotoCardViewModel>> LoadHotelPhotosAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT id, gorsel_url, COALESCE(baslik,''), COALESCE(aciklama,''), gorsel_turu, siralama, kapak_fotografi_mi, onay_durumu
             FROM otel_gorselleri
             WHERE otel_id = @hotelId
             ORDER BY kapak_fotografi_mi DESC, siralama, id DESC;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var photos = new List<AdminPhotoCardViewModel>();
@@ -985,13 +988,13 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return photos;
     }
 
-    private static async Task<AdminHotelPhotoEditForm> LoadHotelPhotoEditFormAsync(MySqlConnection connection, long hotelId, long photoId, CancellationToken cancellationToken)
+    private static async Task<AdminHotelPhotoEditForm> LoadHotelPhotoEditFormAsync(SqlConnection connection, long hotelId, long photoId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT id, COALESCE(baslik,''), gorsel_turu, COALESCE(aciklama,''), siralama, one_cikan
             FROM otel_gorselleri
-            WHERE id = @photoId AND otel_id = @hotelId LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+            WHERE id = @photoId AND otel_id = @hotelId;";
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@photoId", photoId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1012,7 +1015,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         };
     }
 
-    private static async Task<List<AdminRoomPhotoCardViewModel>> LoadRoomPhotosAsync(MySqlConnection connection, long roomId, CancellationToken cancellationToken)
+    private static async Task<List<AdminRoomPhotoCardViewModel>> LoadRoomPhotosAsync(SqlConnection connection, long roomId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT og.id, og.oda_tip_id, od.oda_adi, og.gorsel_url, COALESCE(og.baslik,''), COALESCE(og.aciklama,''), og.siralama, og.kapak_fotografi_mi, og.onay_durumu
@@ -1020,7 +1023,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             INNER JOIN oda_tipleri od ON od.id = og.oda_tip_id
             WHERE og.oda_tip_id = @roomId
             ORDER BY og.kapak_fotografi_mi DESC, og.siralama, og.id DESC;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@roomId", roomId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var photos = new List<AdminRoomPhotoCardViewModel>();
@@ -1034,13 +1037,13 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return photos;
     }
 
-    private static async Task<AdminRoomPhotoEditForm> LoadRoomPhotoEditFormAsync(MySqlConnection connection, long roomId, long photoId, CancellationToken cancellationToken)
+    private static async Task<AdminRoomPhotoEditForm> LoadRoomPhotoEditFormAsync(SqlConnection connection, long roomId, long photoId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT id, oda_tip_id, COALESCE(baslik,''), COALESCE(aciklama,''), siralama
             FROM oda_gorselleri
-            WHERE id = @photoId AND oda_tip_id = @roomId LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+            WHERE id = @photoId AND oda_tip_id = @roomId;";
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@photoId", photoId);
         command.Parameters.AddWithValue("@roomId", roomId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1055,10 +1058,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         };
     }
 
-    private static async Task PromoteNextHotelCoverAsync(MySqlConnection connection, MySqlTransaction transaction, long hotelId, CancellationToken cancellationToken)
+    private static async Task PromoteNextHotelCoverAsync(SqlConnection connection, SqlTransaction transaction, long hotelId, CancellationToken cancellationToken)
     {
-        const string selectNextSql = "SELECT id, gorsel_url FROM otel_gorselleri WHERE otel_id = @hotelId ORDER BY siralama, id LIMIT 1;";
-        await using var selectCommand = new MySqlCommand(selectNextSql, connection, transaction);
+        const string selectNextSql = "SELECT TOP (1) id, gorsel_url FROM otel_gorselleri WHERE otel_id = @hotelId ORDER BY siralama, id;";
+        await using var selectCommand = new SqlCommand(selectNextSql, connection, (SqlTransaction)transaction);
         selectCommand.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await selectCommand.ExecuteReaderAsync(cancellationToken);
         long? nextPhotoId = null;
@@ -1072,22 +1075,22 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         if (nextPhotoId.HasValue)
         {
-            await using var updatePhotos = new MySqlCommand("UPDATE otel_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE otel_id = @hotelId;", connection, transaction);
+            await using var updatePhotos = new SqlCommand("UPDATE otel_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE otel_id = @hotelId;", connection, (SqlTransaction)transaction);
             updatePhotos.Parameters.AddWithValue("@photoId", nextPhotoId.Value);
             updatePhotos.Parameters.AddWithValue("@hotelId", hotelId);
             await updatePhotos.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await using var updateHotel = new MySqlCommand("UPDATE oteller SET kapak_fotografi = @coverUrl WHERE id = @hotelId;", connection, transaction);
+        await using var updateHotel = new SqlCommand("UPDATE oteller SET kapak_fotografi = @coverUrl WHERE id = @hotelId;", connection, (SqlTransaction)transaction);
         updateHotel.Parameters.AddWithValue("@coverUrl", (object?)nextUrl ?? DBNull.Value);
         updateHotel.Parameters.AddWithValue("@hotelId", hotelId);
         await updateHotel.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task PromoteNextRoomCoverAsync(MySqlConnection connection, MySqlTransaction transaction, long roomId, CancellationToken cancellationToken)
+    private static async Task PromoteNextRoomCoverAsync(SqlConnection connection, SqlTransaction transaction, long roomId, CancellationToken cancellationToken)
     {
-        const string selectNextSql = "SELECT id, gorsel_url FROM oda_gorselleri WHERE oda_tip_id = @roomId ORDER BY siralama, id LIMIT 1;";
-        await using var selectCommand = new MySqlCommand(selectNextSql, connection, transaction);
+        const string selectNextSql = "SELECT TOP (1) id, gorsel_url FROM oda_gorselleri WHERE oda_tip_id = @roomId ORDER BY siralama, id;";
+        await using var selectCommand = new SqlCommand(selectNextSql, connection, (SqlTransaction)transaction);
         selectCommand.Parameters.AddWithValue("@roomId", roomId);
         await using var reader = await selectCommand.ExecuteReaderAsync(cancellationToken);
         long? nextPhotoId = null;
@@ -1101,19 +1104,19 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         if (nextPhotoId.HasValue)
         {
-            await using var updatePhotos = new MySqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, transaction);
+            await using var updatePhotos = new SqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, (SqlTransaction)transaction);
             updatePhotos.Parameters.AddWithValue("@photoId", nextPhotoId.Value);
             updatePhotos.Parameters.AddWithValue("@roomId", roomId);
             await updatePhotos.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await using var updateRoom = new MySqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, transaction);
+        await using var updateRoom = new SqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, (SqlTransaction)transaction);
         updateRoom.Parameters.AddWithValue("@coverUrl", (object?)nextUrl ?? DBNull.Value);
         updateRoom.Parameters.AddWithValue("@roomId", roomId);
         await updateRoom.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static void BindRoomCommand(MySqlCommand command, AdminRoomEditForm request, long hotelId, object featuresJson)
+    private static void BindRoomCommand(SqlCommand command, AdminRoomEditForm request, long hotelId, object featuresJson)
     {
         command.Parameters.AddWithValue("@hotelId", hotelId);
         command.Parameters.AddWithValue("@roomCode", string.IsNullOrWhiteSpace(request.RoomCode) ? BuildRoomCode(hotelId) : request.RoomCode.Trim());
@@ -1169,10 +1172,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
     }
 
-    private static string? SafeString(MySqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
-    private static bool SafeBool(MySqlDataReader reader, int ordinal) => !reader.IsDBNull(ordinal) && reader.GetBoolean(ordinal);
-    private static int SafeInt(MySqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
-    private static int? SafeNullableInt(MySqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
-    private static decimal? SafeDecimalNullable(MySqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
-    private static string? SafeTime(MySqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : reader.GetTimeSpan(ordinal).ToString(@"hh\:mm", CultureInfo.InvariantCulture);
+    private static string? SafeString(SqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
+    private static bool SafeBool(SqlDataReader reader, int ordinal) => !reader.IsDBNull(ordinal) && reader.GetBoolean(ordinal);
+    private static int SafeInt(SqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+    private static int? SafeNullableInt(SqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+    private static decimal? SafeDecimalNullable(SqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+    private static string? SafeTime(SqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : reader.GetTimeSpan(ordinal).ToString(@"hh\:mm", CultureInfo.InvariantCulture);
 }

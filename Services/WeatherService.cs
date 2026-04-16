@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
 using otelturizmnew.Models.Oteller;
 using otelturizmnew.Services.Abstractions;
 
@@ -201,10 +201,10 @@ public class WeatherService : IWeatherService
               AND ic.boylam IS NOT NULL;
             """;
 
-        await using var connection = new MySqlConnection(connectionString);
+        await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {

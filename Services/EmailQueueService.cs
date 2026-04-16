@@ -1,5 +1,6 @@
 using System.Globalization;
-using MySqlConnector;
+using System.Data.Common;
+using Microsoft.Data.SqlClient;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Services.Abstractions;
 
@@ -19,12 +20,12 @@ public class EmailQueueService : IEmailQueueService
 
     public async Task QueueTemplateAsync(QueuedEmailTemplateRequest request, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await QueueTemplateAsync(connection, null, request, cancellationToken);
     }
 
-    public async Task QueueTemplateAsync(MySqlConnection connection, MySqlTransaction? transaction, QueuedEmailTemplateRequest request, CancellationToken cancellationToken = default)
+    public async Task QueueTemplateAsync(DbConnection connection, DbTransaction? transaction, QueuedEmailTemplateRequest request, CancellationToken cancellationToken = default)
     {
         var (templateId, subject, viewPath) = await LoadTemplateAsync(connection, transaction, request.TemplateCode, cancellationToken);
         var provider = await LoadProviderAsync(connection, transaction, cancellationToken);
@@ -38,7 +39,7 @@ public class EmailQueueService : IEmailQueueService
             VALUES
             (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId);";
 
-        await using var command = new MySqlCommand(insertSql, connection, transaction);
+        await using var command = new SqlCommand(insertSql, (SqlConnection)connection, (SqlTransaction?)transaction);
         command.Parameters.AddWithValue("@userId", safeUserId);
         command.Parameters.AddWithValue("@templateId", templateId);
         command.Parameters.AddWithValue("@email", request.RecipientEmail.Trim());
@@ -51,16 +52,16 @@ public class EmailQueueService : IEmailQueueService
     }
 
     private static async Task<long> ResolveSafeUserIdAsync(
-        MySqlConnection connection,
-        MySqlTransaction? transaction,
+        DbConnection connection,
+        DbTransaction? transaction,
         long requestedUserId,
         string? recipientEmail,
         CancellationToken cancellationToken)
     {
         if (requestedUserId > 0)
         {
-            const string userExistsSql = "SELECT COUNT(*) FROM users WHERE id = @userId LIMIT 1;";
-            await using var userExistsCommand = new MySqlCommand(userExistsSql, connection, transaction);
+            const string userExistsSql = "SELECT COUNT(*) FROM users WHERE id = @userId;";
+            await using var userExistsCommand = new SqlCommand(userExistsSql, (SqlConnection)connection, (SqlTransaction?)transaction);
             userExistsCommand.Parameters.AddWithValue("@userId", requestedUserId);
             var exists = Convert.ToInt32(await userExistsCommand.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture) > 0;
             if (exists)
@@ -72,12 +73,11 @@ public class EmailQueueService : IEmailQueueService
         if (!string.IsNullOrWhiteSpace(recipientEmail))
         {
             const string byEmailSql = @"
-                SELECT id
+                SELECT TOP (1) id
                 FROM users
                 WHERE LOWER(eposta) = LOWER(@email)
-                ORDER BY id ASC
-                LIMIT 1;";
-            await using var byEmailCommand = new MySqlCommand(byEmailSql, connection, transaction);
+                ORDER BY id ASC;";
+            await using var byEmailCommand = new SqlCommand(byEmailSql, (SqlConnection)connection, (SqlTransaction?)transaction);
             byEmailCommand.Parameters.AddWithValue("@email", recipientEmail.Trim());
             var byEmailScalar = await byEmailCommand.ExecuteScalarAsync(cancellationToken);
             if (byEmailScalar is not null && byEmailScalar != DBNull.Value)
@@ -87,7 +87,7 @@ public class EmailQueueService : IEmailQueueService
         }
 
         const string fallbackSql = "SELECT MIN(id) FROM users;";
-        await using var fallbackCommand = new MySqlCommand(fallbackSql, connection, transaction);
+        await using var fallbackCommand = new SqlCommand(fallbackSql, (SqlConnection)connection, (SqlTransaction?)transaction);
         var fallbackScalar = await fallbackCommand.ExecuteScalarAsync(cancellationToken);
         if (fallbackScalar is not null && fallbackScalar != DBNull.Value)
         {
@@ -109,15 +109,14 @@ public class EmailQueueService : IEmailQueueService
         return rendered;
     }
 
-    private static async Task<(long TemplateId, string Subject, string ViewPath)> LoadTemplateAsync(MySqlConnection connection, MySqlTransaction? transaction, string templateCode, CancellationToken cancellationToken)
+    private static async Task<(long TemplateId, string Subject, string ViewPath)> LoadTemplateAsync(DbConnection connection, DbTransaction? transaction, string templateCode, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, COALESCE(konu, ''), COALESCE(icerik, '')
+            SELECT TOP (1) id, COALESCE(konu, ''), COALESCE(icerik, '')
             FROM bildirim_sablonlari
             WHERE sablon_kodu = @templateCode AND tur = 'E-posta' AND aktif_mi = 1
-            ORDER BY dil = 'tr' DESC, id ASC
-            LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection, transaction);
+            ORDER BY CASE WHEN dil = 'tr' THEN 1 ELSE 0 END DESC, id ASC;";
+        await using var command = new SqlCommand(sql, (SqlConnection)connection, (SqlTransaction?)transaction);
         command.Parameters.AddWithValue("@templateCode", templateCode);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -128,15 +127,14 @@ public class EmailQueueService : IEmailQueueService
         return (reader.GetInt64(0), reader.GetString(1), reader.GetString(2));
     }
 
-    private static async Task<EmailProviderSettings> LoadProviderAsync(MySqlConnection connection, MySqlTransaction? transaction, CancellationToken cancellationToken)
+    private static async Task<EmailProviderSettings> LoadProviderAsync(DbConnection connection, DbTransaction? transaction, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT saglayici, gonderen_ad, gonderen_eposta, test_modu
+            SELECT TOP (1) saglayici, gonderen_ad, gonderen_eposta, test_modu
             FROM email_services
             WHERE aktif_mi = 1
-            ORDER BY varsayilan_mi DESC, id ASC
-            LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection, transaction);
+            ORDER BY varsayilan_mi DESC, id ASC;";
+        await using var command = new SqlCommand(sql, (SqlConnection)connection, (SqlTransaction?)transaction);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
         {

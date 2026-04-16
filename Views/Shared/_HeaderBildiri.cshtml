@@ -24,13 +24,13 @@
                     data-header-item-read="@(item.IsRead ? "1" : "0")">
                     <a href="@item.Url" data-header-item-link>
                         <i class="fas @item.IconClass"></i>
-                        <div>
+                        <div class="header-bildiri-content">
                             <strong>@item.Title</strong>
                             <p>@item.Description</p>
-                            <small class="header-bildiri-time">
-                                <span>@item.TimeLabel</span>
-                                <span>@item.AbsoluteTimeLabel</span>
-                            </small>
+                            <div class="header-bildiri-time">
+                                <span class="header-bildiri-time-chip">@item.TimeLabel</span>
+                                <span class="header-bildiri-time-chip">@item.AbsoluteTimeLabel</span>
+                            </div>
                         </div>
                     </a>
                 </li>

@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
 using otelturizmnew.Constants;
 using otelturizmnew.Services.Abstractions;
 
@@ -74,29 +74,39 @@ public class SessionSecurityService : ISessionSecurityService
             return;
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-            INSERT INTO kullanici_oturum_istatistikleri
-            (kullanici_id, hesap_tipi, partner_id, cihaz_anahtari, cihaz_etiketi, beni_hatirla_tercihi, toplam_ziyaret_sayisi, toplam_oturum_suresi_saniye, son_oturum_baslangici, son_oturum_bitisi, son_aktivite_tarihi, son_ip_hash, son_user_agent_hash)
-            VALUES
-            (@userId, @accountType, @partnerId, @deviceKey, @deviceLabel, @rememberMe, @visitIncrement, @durationIncrement, @sessionStartedAt, @sessionEndedAt, @lastActivityAt, @ipHash, @userAgentHash)
-            ON DUPLICATE KEY UPDATE
-                hesap_tipi = VALUES(hesap_tipi),
-                partner_id = VALUES(partner_id),
-                cihaz_etiketi = VALUES(cihaz_etiketi),
-                beni_hatirla_tercihi = VALUES(beni_hatirla_tercihi),
-                toplam_ziyaret_sayisi = toplam_ziyaret_sayisi + @visitIncrement,
-                toplam_oturum_suresi_saniye = toplam_oturum_suresi_saniye + @durationIncrement,
-                son_oturum_baslangici = IF(@visitIncrement = 1, VALUES(son_oturum_baslangici), son_oturum_baslangici),
-                son_oturum_bitisi = VALUES(son_oturum_bitisi),
-                son_aktivite_tarihi = VALUES(son_aktivite_tarihi),
-                son_ip_hash = VALUES(son_ip_hash),
-                son_user_agent_hash = VALUES(son_user_agent_hash),
-                guncellenme_tarihi = CURRENT_TIMESTAMP;";
+            MERGE kullanici_oturum_istatistikleri AS target
+            USING (
+                SELECT
+                    @userId AS kullanici_id,
+                    @deviceKey AS cihaz_anahtari
+            ) AS source
+            ON target.kullanici_id = source.kullanici_id
+               AND target.cihaz_anahtari = source.cihaz_anahtari
+            WHEN MATCHED THEN
+                UPDATE SET
+                    hesap_tipi = @accountType,
+                    partner_id = @partnerId,
+                    cihaz_etiketi = @deviceLabel,
+                    beni_hatirla_tercihi = @rememberMe,
+                    toplam_ziyaret_sayisi = COALESCE(target.toplam_ziyaret_sayisi, 0) + @visitIncrement,
+                    toplam_oturum_suresi_saniye = COALESCE(target.toplam_oturum_suresi_saniye, 0) + @durationIncrement,
+                    son_oturum_baslangici = CASE WHEN @visitIncrement = 1 THEN @sessionStartedAt ELSE target.son_oturum_baslangici END,
+                    son_oturum_bitisi = @sessionEndedAt,
+                    son_aktivite_tarihi = @lastActivityAt,
+                    son_ip_hash = @ipHash,
+                    son_user_agent_hash = @userAgentHash,
+                    guncellenme_tarihi = CURRENT_TIMESTAMP
+            WHEN NOT MATCHED THEN
+                INSERT
+                (kullanici_id, hesap_tipi, partner_id, cihaz_anahtari, cihaz_etiketi, beni_hatirla_tercihi, toplam_ziyaret_sayisi, toplam_oturum_suresi_saniye, son_oturum_baslangici, son_oturum_bitisi, son_aktivite_tarihi, son_ip_hash, son_user_agent_hash)
+                VALUES
+                (@userId, @accountType, @partnerId, @deviceKey, @deviceLabel, @rememberMe, @visitIncrement, @durationIncrement, @sessionStartedAt, @sessionEndedAt, @lastActivityAt, @ipHash, @userAgentHash);";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@accountType", accountType);
         command.Parameters.AddWithValue("@partnerId", partnerId.HasValue ? partnerId.Value : DBNull.Value);

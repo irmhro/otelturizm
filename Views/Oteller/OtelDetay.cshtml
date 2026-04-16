@@ -15,8 +15,13 @@
             CancellationText = "Ucretsiz iptal"
         }
     };
-    var reservationForm = Model.ReservationForm ?? new otelturizmnew.Models.Reservations.PublicHotelReservationForm { HotelId = Model.Id, RoomTypeId = roomSelectOptions.FirstOrDefault()?.RoomTypeId ?? 0 };
-    var selectedRoomSeed = roomSelectOptions.FirstOrDefault(x => x.RoomTypeId == reservationForm.RoomTypeId) ?? roomSelectOptions.First();
+    var reservableRoomOptions = roomSelectOptions.Where(x => x.Price > 0m).ToList();
+    if (reservableRoomOptions.Count == 0)
+    {
+        reservableRoomOptions = roomSelectOptions;
+    }
+    var reservationForm = Model.ReservationForm ?? new otelturizmnew.Models.Reservations.PublicHotelReservationForm { HotelId = Model.Id, RoomTypeId = reservableRoomOptions.FirstOrDefault()?.RoomTypeId ?? 0 };
+    var selectedRoomSeed = reservableRoomOptions.FirstOrDefault(x => x.RoomTypeId == reservationForm.RoomTypeId) ?? reservableRoomOptions.First();
     var roomPriceSeed = selectedRoomSeed.Price;
     var checkInDefault = reservationForm.CheckInDate.ToString("yyyy-MM-dd");
     var checkOutDefault = reservationForm.CheckOutDate.ToString("yyyy-MM-dd");
@@ -73,17 +78,47 @@
 
 <section class="gallery-grid">
     <div class="gallery-main-image">
-        <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" />
+        <button type="button" class="gallery-main-trigger" data-gallery-index="0" aria-label="Galeriyi ac">
+            <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" />
+        </button>
     </div>
     <div class="gallery-side-grid">
-        @foreach (var image in gallery.Skip(1).Take(4))
+        @for (var imageIndex = 1; imageIndex < gallery.Count && imageIndex <= 4; imageIndex++)
         {
-            <button type="button" class="gallery-thumb" data-image="@image">
-                <img src="@image" alt="@Model.Name galeri" />
+            var image = gallery[imageIndex];
+            <button type="button" class="gallery-thumb" data-image="@image" data-gallery-index="@imageIndex">
+                <img src="@image" alt="@Model.Name galeri @imageIndex" />
             </button>
         }
     </div>
+    @if (gallery.Count > 1)
+    {
+        <div class="gallery-mobile-track" aria-label="Mobil galeri">
+            @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
+            {
+                <button type="button" class="gallery-mobile-slide" data-image="@gallery[imageIndex]" data-gallery-index="@imageIndex" aria-label="Gorsel @(imageIndex + 1)">
+                    <img src="@gallery[imageIndex]" alt="@Model.Name mobil galeri @(imageIndex + 1)" />
+                </button>
+            }
+        </div>
+    }
 </section>
+
+<div class="gallery-lightbox" id="galleryLightbox" hidden>
+    <button type="button" class="gallery-lightbox-close" id="galleryLightboxClose" aria-label="Galeriyi kapat">
+        <i class="fas fa-times"></i>
+    </button>
+    <button type="button" class="gallery-lightbox-nav prev" id="galleryLightboxPrev" aria-label="Onceki gorsel">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+    <figure class="gallery-lightbox-figure">
+        <img src="" alt="@Model.Name tam ekran galeri" id="galleryLightboxImage" />
+        <figcaption id="galleryLightboxCaption"></figcaption>
+    </figure>
+    <button type="button" class="gallery-lightbox-nav next" id="galleryLightboxNext" aria-label="Sonraki gorsel">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+</div>
 
 <section class="detail-header">
     <div>
@@ -274,14 +309,27 @@
                             </div>
                         </div>
                         <div class="room-price-box">
-                            <strong>₺@room.Price.ToString("N0")</strong>
-                            <span>Gecelik, vergiler dahil</span>
-                            <button type="button"
-                                    class="select-room-btn"
-                                    data-room-id="@room.RoomTypeId"
-                                    data-price="@room.Price.ToString("0", System.Globalization.CultureInfo.InvariantCulture)">
-                                Odayi Sec
-                            </button>
+                            <strong>@(room.Price > 0m ? $"₺{room.Price:N0}" : "Fiyat Yok")</strong>
+                            <span>@(room.Price > 0m ? "Gecelik, vergiler dahil" : "Bu oda icin aktif fiyat bulunamadi")</span>
+                            @if (room.Price > 0m)
+                            {
+                                <button type="button"
+                                        class="select-room-btn"
+                                        data-room-id="@room.RoomTypeId"
+                                        data-price="@room.Price.ToString("0", System.Globalization.CultureInfo.InvariantCulture)">
+                                    Odayi Sec
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        class="select-room-btn"
+                                        data-room-id="@room.RoomTypeId"
+                                        data-price="0"
+                                        disabled>
+                                    Fiyat Yok
+                                </button>
+                            }
                         </div>
                     </div>
                 }
@@ -358,39 +406,13 @@
             </div>
         </article>
 
-        <article class="content-card">
-            <div class="section-head section-head-inline">
-                <div>
-                    <h2>Benzer Oteller</h2>
-                    <p>Ayni sehirdeki diger aktif tesisler.</p>
-                </div>
-                <a asp-controller="Oteller" asp-action="OtelListeleme" class="inline-link">Tümünü Gor</a>
-            </div>
-
-            <div class="similar-grid">
-                @foreach (var hotel in Model.SimilarHotels)
-                {
-                    <article class="similar-card">
-                        <img src="@hotel.ImageUrl" alt="@hotel.Name" />
-                        <div class="similar-card-body">
-                            <h3>@hotel.Name</h3>
-                            <p>@hotel.RatingText</p>
-                            <div class="similar-bottom">
-                                <strong>@hotel.PriceText</strong>
-                                <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug">Incele</a>
-                            </div>
-                        </div>
-                    </article>
-                }
-            </div>
-        </article>
     </div>
 
     <aside class="booking-sidebar">
         <div class="booking-card">
             <div class="booking-price-head">
                 <div>
-                    <strong id="bookingPrice">₺@Model.LowestRoomPrice.ToString("N0")</strong>
+                    <strong id="bookingPrice">@(Model.LowestRoomPrice > 0m ? $"₺{Model.LowestRoomPrice:N0}" : "Fiyat Yok")</strong>
                     <span>/ gece</span>
                 </div>
                 <span class="discount-pill">Akilli fiyat</span>
@@ -435,7 +457,7 @@
                 <label>
                     <span>Oda Tipi</span>
                     <select id="roomTypeSelect" name="RoomTypeId">
-                        @foreach (var room in roomSelectOptions)
+                        @foreach (var room in reservableRoomOptions)
                         {
                             if (room.RoomTypeId == reservationForm.RoomTypeId)
                             {
@@ -458,21 +480,25 @@
                     </select>
                 </label>
 
-                <label>
-                    <span>Odeme Tipi</span>
-                    <select name="PaymentMethod" id="paymentMethodSelect">
-                        <option value="Kapıda Ödeme" selected="@(reservationForm.PaymentMethod == "Kapıda Ödeme")">Kapida Odeme / Nakit</option>
-                        <option value="Online Ödeme" selected="@(reservationForm.PaymentMethod == "Online Ödeme" || reservationForm.PaymentMethod == "Sanal POS")">Online Odeme (Gelistiriliyor)</option>
-                    </select>
-                </label>
-                <div class="booking-payment-note" id="bookingPaymentNote" hidden>
-                    Online ödeme altyapısı geliştiriliyor. Şimdilik rezervasyonlar kapıda ödeme ile tamamlanabiliyor.
-                </div>
-
-                <label>
-                    <span>Check-in / Check-out</span>
-                    <input type="text" value="@(Model.CheckInTime?.ToString(@"hh\:mm") ?? "14:00") / @(Model.CheckOutTime?.ToString(@"hh\:mm") ?? "12:00")" readonly />
-                </label>
+                <details class="booking-advanced-fields" id="bookingAdvancedFields" open>
+                    <summary>Ek rezervasyon detaylari</summary>
+                    <div class="booking-advanced-grid">
+                        <label>
+                            <span>Odeme Tipi</span>
+                            <select name="PaymentMethod" id="paymentMethodSelect">
+                                <option value="Kapıda Ödeme" selected="@(reservationForm.PaymentMethod == "Kapıda Ödeme")">Kapida Odeme / Nakit</option>
+                                <option value="Online Ödeme" selected="@(reservationForm.PaymentMethod == "Online Ödeme" || reservationForm.PaymentMethod == "Sanal POS")">Online Odeme (Gelistiriliyor)</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Check-in / Check-out</span>
+                            <input type="text" value="@(Model.CheckInTime?.ToString(@"hh\:mm") ?? "14:00") / @(Model.CheckOutTime?.ToString(@"hh\:mm") ?? "12:00")" readonly />
+                        </label>
+                    </div>
+                    <div class="booking-payment-note" id="bookingPaymentNote" hidden>
+                        Online ödeme altyapısı geliştiriliyor. Şimdilik rezervasyonlar kapıda ödeme ile tamamlanabiliyor.
+                    </div>
+                </details>
 
                 <button type="submit" class="reserve-btn">Rezervasyon Yap</button>
             </form>
@@ -661,7 +687,14 @@
 @section Scripts {
     <script>
         (function () {
+            const galleryImages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(gallery));
             const mainImage = document.getElementById('mainGalleryImage');
+            const lightbox = document.getElementById('galleryLightbox');
+            const lightboxImage = document.getElementById('galleryLightboxImage');
+            const lightboxCaption = document.getElementById('galleryLightboxCaption');
+            const lightboxClose = document.getElementById('galleryLightboxClose');
+            const lightboxPrev = document.getElementById('galleryLightboxPrev');
+            const lightboxNext = document.getElementById('galleryLightboxNext');
             const saveButton = document.getElementById('saveHotelBtn');
             const bookingForm = document.getElementById('bookingForm');
             const roomTypeSelect = document.getElementById('roomTypeSelect');
@@ -687,17 +720,85 @@
             const weatherPopupClose = document.getElementById('weatherPopupClose');
             const shareButton = document.getElementById('shareHotelBtn');
             const shareMenu = document.getElementById('shareMenu');
+            const bookingAdvancedFields = document.getElementById('bookingAdvancedFields');
             const activeDraftResumeLink = document.querySelector('.active-draft-link');
             const activeDraftMessage = document.querySelector('.active-draft-message');
             const openProfileCompletionFromBanner = document.getElementById('openProfileCompletionFromBanner');
             let adults = parseInt(document.getElementById('adultCountInput')?.value || '2', 10);
             let children = parseInt(document.getElementById('childCountInput')?.value || '0', 10);
             let latestQuoteRequest = null;
+            let activeGalleryIndex = 0;
+
+            function syncMainImage(index) {
+                if (!Array.isArray(galleryImages) || !galleryImages.length || !mainImage) {
+                    return;
+                }
+
+                const safeIndex = Math.min(Math.max(index, 0), galleryImages.length - 1);
+                activeGalleryIndex = safeIndex;
+                mainImage.src = galleryImages[safeIndex];
+            }
+
+            function openLightbox(index) {
+                if (!lightbox || !lightboxImage || !Array.isArray(galleryImages) || !galleryImages.length) {
+                    return;
+                }
+
+                activeGalleryIndex = Math.min(Math.max(index, 0), galleryImages.length - 1);
+                lightboxImage.src = galleryImages[activeGalleryIndex];
+                if (lightboxCaption) {
+                    lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
+                }
+                lightbox.hidden = false;
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeLightbox() {
+                if (!lightbox) {
+                    return;
+                }
+
+                lightbox.hidden = true;
+                document.body.style.overflow = '';
+            }
+
+            function moveLightbox(step) {
+                if (!Array.isArray(galleryImages) || !galleryImages.length) {
+                    return;
+                }
+
+                activeGalleryIndex = (activeGalleryIndex + step + galleryImages.length) % galleryImages.length;
+                if (lightboxImage) {
+                    lightboxImage.src = galleryImages[activeGalleryIndex];
+                }
+                if (lightboxCaption) {
+                    lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
+                }
+                syncMainImage(activeGalleryIndex);
+            }
 
             document.querySelectorAll('.gallery-thumb').forEach(function (button) {
                 button.addEventListener('click', function () {
-                    mainImage.src = button.getAttribute('data-image');
+                    const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
+                    syncMainImage(index);
                 });
+            });
+
+            document.querySelectorAll('.gallery-main-trigger, .gallery-mobile-slide').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
+                    syncMainImage(index);
+                    openLightbox(index);
+                });
+            });
+
+            lightboxClose?.addEventListener('click', closeLightbox);
+            lightboxPrev?.addEventListener('click', function () { moveLightbox(-1); });
+            lightboxNext?.addEventListener('click', function () { moveLightbox(1); });
+            lightbox?.addEventListener('click', function (event) {
+                if (event.target === lightbox) {
+                    closeLightbox();
+                }
             });
 
             document.querySelectorAll('.select-room-btn').forEach(function (button) {
@@ -899,6 +1000,18 @@
             weatherPopupClose?.addEventListener('click', closeWeatherPopup);
             weatherPopupBackdrop?.addEventListener('click', closeWeatherPopup);
             document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && lightbox && !lightbox.hidden) {
+                    closeLightbox();
+                }
+
+                if (event.key === 'ArrowLeft' && lightbox && !lightbox.hidden) {
+                    moveLightbox(-1);
+                }
+
+                if (event.key === 'ArrowRight' && lightbox && !lightbox.hidden) {
+                    moveLightbox(1);
+                }
+
                 if (event.key === 'Escape' && weatherPopup && !weatherPopup.hidden) {
                     closeWeatherPopup();
                 }
@@ -1268,6 +1381,9 @@
 
             const locationQuery = new URLSearchParams(window.location.search);
             const shouldOpenProfileFromQuery = locationQuery.get('openProfile') === '1';
+            if (window.matchMedia('(max-width: 860px)').matches) {
+                bookingAdvancedFields?.removeAttribute('open');
+            }
 
             if (shouldOpenProfileFromQuery && @((Model.ActiveDraft is not null && Model.IsLoggedInUser) ? "true" : "false")) {
                 hydrateProfileAddressSelectors();

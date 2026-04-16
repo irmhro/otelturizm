@@ -297,16 +297,16 @@ Bu dokuman, `otelturizmnew` projesinde zorunlu klasorleme, tasarim referansi ve 
 - Uygulama derleme ve calistirma ana ortami `Visual Studio` olacaktir.
 - Kod degisikligi sonrasi ana dogrulama `Visual Studio Build/Rebuild` ile yapilir.
 - `MSB3026`, `MSB3027`, `EXE kilitli` benzeri hatalarda once calisan `otelturizmnew.exe` surecleri durdurulur, sonra yeniden derleme yapilir.
-- Yerel veritabani ortami `Laragon` uzerinden yonetilir.
-- Veritabani olusturma, tablo kontrolu, veri inceleme ve manuel SQL yonetimi `HeidiSQL` ile yapilir.
-- Yerel veritabani adi `otelturizmnew` olarak esas alinir.
-- Migration, seed, tablo kontrolu ve veri aktarimlarinda Laragon MySQL + HeidiSQL birlikte referans gelistirme ortami kabul edilir.
+- Yerel veritabani ortami `Microsoft SQL Server LocalDB` uzerinden yonetilir.
+- Veritabani olusturma, tablo kontrolu, veri inceleme ve manuel SQL yonetimi `SQL Server Management Studio` veya Visual Studio SQL araclari ile yapilir.
+- Yerel veritabani adi `otelturizm_2026db` olarak esas alinir.
+- Migration, seed, tablo kontrolu ve veri aktarimlarinda tek referans gelistirme ortami `MSSQL/LocalDB` kabul edilir.
 
 ## 8) Canli Yayin Hazirlik Notu
 - Canli sunucu, FTP, yayinlama ve production veritabani gecisi kurallari proje sozlesmesinde not olarak tutulur.
 - Bu asamada canliya yukleme yapilmamis kabul edilir.
 - Canliya gecis basladiginda FTP, veritabani baglanti, migration uygulama sirasi ve yedekleme adimlari ayrica netlestirilir.
-- Production islemine gecmeden once yerel ortamda son dogrulama `Visual Studio`, `Laragon` ve `HeidiSQL` uzerinden tamamlanir.
+- Production islemine gecmeden once yerel ortamda son dogrulama `Visual Studio` ve `MSSQL/LocalDB` uzerinden tamamlanir.
 - Migration uygulama sirasi production icin su mantikla korunur:
   1. Once tam yedek alinir.
   2. Sonra sirali migrationlar uygulanir.
@@ -649,7 +649,7 @@ Bu sozlesme tum yeni ekranlar icin baglayicidir.
   - iliski gerekiyorsa `kampanya_oteller.katilim_durumu = 'Aktif'`
   - iliski tarihi de bugun icin gecerli olmalidir
 - Kampanya bittiginde veya tarih araligi gectiginde ilgili kampanya ve ona bagli oteller public vitrinde gosterilmez.
-- Kampanya migrasyonlari MySQL uyumlu, tekrar calistirilabilir ve idempotent sekilde yazilir; `IF NOT EXISTS` destegi belirsiz ise `information_schema` kontrollu dinamik SQL tercih edilir.
+- Kampanya migrasyonlari SQL Server uyumlu, tekrar calistirilabilir ve idempotent sekilde yazilir; gerekiyorsa `INFORMATION_SCHEMA` veya `sys` kataloglari kontrollu dinamik SQL tercih edilir.
 ## 2026-04-14 Kampanya ve Favori Kuralları
 
 - Public `favori` aksiyonları sadece gerçek `user` oturumu ile çalışır.
@@ -704,7 +704,7 @@ Bu sozlesme tum yeni ekranlar icin baglayicidir.
 
 ## Panel DB Uyum Kuralı
 - Panel sayfaları yalnızca açılıyor olmakla kabul edilmiş sayılmaz; ekran içeriği mümkün olan her yerde gerçek veritabanı sorguları ile beslenmeli, statik örnek içerik geçici ise notlanmalıdır.
-- Geliştirme sırasında migration dosyaları hedef veritabanı motoru ile uyumlu hazırlanmalıdır. MariaDB/MySQL sürüm farkı olan projelerde IF NOT EXISTS gibi sözdizimleri körlemesine kullanılmayacak; gerekiyorsa INFORMATION_SCHEMA kontrollü idempotent migration yazılacaktır.
+- Geliştirme sırasında migration dosyaları hedef veritabanı motoru ile uyumlu hazırlanmalıdır. Bu projede hedef motor SQL Server'dır; `LIMIT`, `NOW()`, `IFNULL`, `LAST_INSERT_ID()` gibi MySQL kalıpları aktif runtime veya migration dosyalarına alınmayacaktır.
 - Kullanıcı, partner, firma ve admin panelindeki her POST aksiyonu build ve DB yazma testi ile doğrulanmadan tamamlanmış kabul edilmez.
 
 ## 8.13) Guvenli Mesaj ve Belge Kurali
@@ -746,3 +746,32 @@ Bu sozlesme tum yeni ekranlar icin baglayicidir.
   - `giris_kilit_bitis_tarihi`
   - `email_dogrulama_son_gonderim_tarihi`
 - 5 hatalı giriş sonrası 10 dakika kilit mantığı zorunludur.
+
+## 8.14) Partner Basvuru ve Onay Kurali
+- Partner kimlik ve panel akisinin ana tabani `users` tablosudur. `kullanicilar` gibi legacy tablolar aktif runtime'da kullanilmiyorsa arsivlenir ve aktif semadan cikarilir.
+- Partner kaydi sonrasi olusacak ana tablolar:
+  - `users`
+  - `partner_detaylari`
+  - `users_partner`
+  - `otel_kullanici_sahiplikleri`
+  - `oteller` (taslak tesis)
+  - `partner_basvuru_hareketleri`
+  - `partner_basvuru_evraklari`
+- Partner kaydi sonrasi davranis zorunludur:
+  - e-posta dogrulama linki gonderilir
+  - e-posta onayi olmadan partner girisi acilmaz
+  - e-posta onayi sonrasi partner panele girebilir
+  - admin onayi gelene kadar oda, gorsel ve tesis bilgisi duzenlenebilir
+  - admin onayi gelmeden tesis public listelerde yayinlanmaz
+- Partner onboarding ekraninin yeri:
+  - `Basvuru & Evraklar`
+  - eski `Tercihler` sayfasi gibi sahte/placeholder mantik kabul edilmez
+- Admin panelde partner basvurusu icin ayri karar ekrani zorunludur:
+  - listeleme
+  - e-posta onayi gorunurlugu
+  - belge sayisi
+  - onay / red / aski karari
+  - not girisi
+- Admin partner karari yalniz `partner_detaylari`ni degil, partnere bagli `oteller` kaydinin `onay_durumu` / `yayin_durumu` alanlarini da sema kurallarina gore gunceller.
+- Partner ve admin transaction iceren servislerde `INFORMATION_SCHEMA` gibi yan sorgular ayni aktif transaction ile calistirilir; transaction'li `SqlConnection` uzerinde transaction'siz komut acmak yasaktir.
+- `appsettings.Development.json` yerel gelistirme veritabanina bakar; production benzeri hostlar development profilinde kullanilmaz.

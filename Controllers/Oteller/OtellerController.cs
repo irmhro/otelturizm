@@ -101,6 +101,12 @@ public class OtellerController : Controller
         return Redirect($"/oteller/{slug}");
     }
 
+    [HttpGet("{slug}/rezervasyon")]
+    public IActionResult ReservationGetFallback(string slug)
+    {
+        return Redirect($"/oteller/{slug}");
+    }
+
     [HttpPost("{slug}/profil-bilgilerini-tamamla")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CompleteProfileInline(string slug, [FromForm] UserProfileForm form, CancellationToken cancellationToken)

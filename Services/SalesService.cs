@@ -1,5 +1,9 @@
 using System.Globalization;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Paneller.Satis;
 using otelturizmnew.Services.Abstractions;
@@ -35,7 +39,7 @@ public class SalesService : ISalesService
             WHERE satis_temsilcisi_id = @userId
               AND olusturulma_tarihi >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
               AND olusturulma_tarihi < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH);";
-        await using (var command = new MySqlCommand(sql, connection))
+        await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -215,7 +219,7 @@ public class SalesService : ISalesService
             FROM rezervasyonlar
             WHERE satis_temsilcisi_id = @userId
               AND YEAR(olusturulma_tarihi) = @year;";
-        await using (var command = new MySqlCommand(sql, connection))
+        await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             command.Parameters.AddWithValue("@year", year);
@@ -270,9 +274,9 @@ public class SalesService : ISalesService
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            var salesCustomerId = await EnsureSalesCustomerAsync(connection, transaction, userId, model, cancellationToken);
-            var publicUserId = await EnsurePublicCustomerUserAsync(connection, transaction, model, cancellationToken);
-            var reservationNo = await GenerateReservationNoAsync(connection, transaction, cancellationToken);
+            var salesCustomerId = await EnsureSalesCustomerAsync(connection, (SqlTransaction)transaction, userId, model, cancellationToken);
+            var publicUserId = await EnsurePublicCustomerUserAsync(connection, (SqlTransaction)transaction, model, cancellationToken);
+            var reservationNo = await GenerateReservationNoAsync(connection, (SqlTransaction)transaction, cancellationToken);
 
             const string insertSql = @"
                 INSERT INTO rezervasyonlar
@@ -295,7 +299,7 @@ public class SalesService : ISalesService
                 );
                 SELECT LAST_INSERT_ID();";
             long reservationId;
-            await using (var command = new MySqlCommand(insertSql, connection, (MySqlTransaction)transaction))
+            await using (var command = new SqlCommand(insertSql, connection, (SqlTransaction)transaction))
             {
                 command.Parameters.AddWithValue("@reservationNo", reservationNo);
                 command.Parameters.AddWithValue("@hotelId", model.HotelId);
@@ -331,7 +335,7 @@ public class SalesService : ISalesService
                     son_rezervasyon_tarihi = @checkIn,
                     son_talep_ozeti = @summary
                 WHERE id = @customerId;";
-            await using (var command = new MySqlCommand(updateCustomerSql, connection, (MySqlTransaction)transaction))
+            await using (var command = new SqlCommand(updateCustomerSql, connection, (SqlTransaction)transaction))
             {
                 command.Parameters.AddWithValue("@totalAmount", summary.TotalAmount);
                 command.Parameters.AddWithValue("@checkIn", model.CheckInDate.ToDateTime(TimeOnly.MinValue));
@@ -340,7 +344,7 @@ public class SalesService : ISalesService
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
 
-            await _emailQueueService.QueueTemplateAsync(connection, (MySqlTransaction)transaction, new QueuedEmailTemplateRequest
+            await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
             {
                 UserId = publicUserId,
                 RecipientEmail = model.CustomerEmail.Trim(),
@@ -360,7 +364,7 @@ public class SalesService : ISalesService
                     ["hotel_address"] = hotelInfo.HotelName
                 }
             }, cancellationToken);
-            await _emailQueueService.QueueTemplateAsync(connection, (MySqlTransaction)transaction, new QueuedEmailTemplateRequest
+            await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
             {
                 UserId = partnerRecipient.UserId,
                 RecipientEmail = partnerRecipient.Email,
@@ -414,18 +418,18 @@ public class SalesService : ISalesService
                 DemandNote = model.Note
             };
 
-            var customerId = await EnsureSalesCustomerAsync(connection, transaction, userId, reservationModel, cancellationToken, model.MembershipLevel);
+            var customerId = await EnsureSalesCustomerAsync(connection, (SqlTransaction)transaction, userId, reservationModel, cancellationToken, model.MembershipLevel);
             if (!string.IsNullOrWhiteSpace(model.Note))
             {
                 const string noteSql = "INSERT INTO satis_musteri_notlari (satis_musteri_id, sales_user_id, not_basligi, not_icerigi) VALUES (@customerId, @userId, 'Müşteri Notu', @note);";
-                await using var noteCommand = new MySqlCommand(noteSql, connection, (MySqlTransaction)transaction);
+                await using var noteCommand = new SqlCommand(noteSql, connection, (SqlTransaction)transaction);
                 noteCommand.Parameters.AddWithValue("@customerId", customerId);
                 noteCommand.Parameters.AddWithValue("@userId", userId);
                 noteCommand.Parameters.AddWithValue("@note", model.Note);
                 await noteCommand.ExecuteNonQueryAsync(cancellationToken);
             }
 
-            await EnsurePublicCustomerUserAsync(connection, transaction, reservationModel, cancellationToken);
+            await EnsurePublicCustomerUserAsync(connection, (SqlTransaction)transaction, reservationModel, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return (true, "Müşteri kaydı oluşturuldu.");
         }
@@ -436,7 +440,7 @@ public class SalesService : ISalesService
         }
     }
 
-    private async Task<SalesPanelShellViewModel> BuildShellAsync(MySqlConnection connection, long userId, string activeSectionKey, string title, string subtitle, CancellationToken cancellationToken)
+    private async Task<SalesPanelShellViewModel> BuildShellAsync(SqlConnection connection, long userId, string activeSectionKey, string title, string subtitle, CancellationToken cancellationToken)
     {
         await EnsureSalesUserAsync(connection, userId, cancellationToken);
         const string sql = @"
@@ -448,7 +452,7 @@ public class SalesService : ISalesService
                 COALESCE((SELECT COUNT(*) FROM rezervasyonlar r WHERE r.satis_temsilcisi_id = u.id AND YEAR(r.olusturulma_tarihi)=YEAR(CURDATE()) AND MONTH(r.olusturulma_tarihi)=MONTH(CURDATE())),0)
             FROM users u WHERE u.id = @userId LIMIT 1;";
         var shell = new SalesPanelShellViewModel();
-        await using (var command = new MySqlCommand(sql, connection))
+        await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -473,10 +477,10 @@ public class SalesService : ISalesService
         return shell;
     }
 
-    private async Task EnsureSalesUserAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private async Task EnsureSalesUserAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         const string sql = "SELECT COUNT(*) FROM users WHERE id = @userId AND rol IN ('sales_admin','sales_agent') AND hesap_durumu = 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         if (Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) == 0)
         {
@@ -484,7 +488,7 @@ public class SalesService : ISalesService
         }
     }
 
-    private async Task<int> LoadRankingAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private async Task<int> LoadRankingAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT siralama FROM (
@@ -495,13 +499,13 @@ public class SalesService : ISalesService
                   AND olusturulma_tarihi < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
                 GROUP BY satis_temsilcisi_id
             ) t WHERE satis_temsilcisi_id = @userId LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return result is null or DBNull ? 0 : Convert.ToInt32(result, CultureInfo.InvariantCulture);
     }
 
-    private async Task<List<SalesReservationListItemViewModel>> LoadReservationsAsync(MySqlConnection connection, long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken)
+    private async Task<List<SalesReservationListItemViewModel>> LoadReservationsAsync(SqlConnection connection, long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT r.id, r.rezervasyon_no, o.otel_adi, r.misafir_ad_soyad, COALESCE(r.misafir_eposta,''), COALESCE(r.misafir_telefon,''),
@@ -520,7 +524,7 @@ public class SalesService : ISalesService
             ORDER BY r.olusturulma_tarihi DESC
             LIMIT @offset, @limit;";
         var items = new List<SalesReservationListItemViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@search", string.IsNullOrWhiteSpace(filters.Search) ? DBNull.Value : filters.Search.Trim());
         command.Parameters.AddWithValue("@status", string.IsNullOrWhiteSpace(filters.Status) ? DBNull.Value : filters.Status.Trim());
@@ -554,7 +558,7 @@ public class SalesService : ISalesService
         return items;
     }
 
-    private async Task<List<SalesCustomerCardViewModel>> LoadCustomersAsync(MySqlConnection connection, string? search, int limit, CancellationToken cancellationToken)
+    private async Task<List<SalesCustomerCardViewModel>> LoadCustomersAsync(SqlConnection connection, string? search, int limit, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT id, musteri_kodu, ad_soyad, COALESCE(eposta,''), COALESCE(telefon,''), uyelik_seviyesi,
@@ -566,7 +570,7 @@ public class SalesService : ISalesService
             ORDER BY toplam_rezervasyon_sayisi DESC, guncellenme_tarihi DESC, olusturulma_tarihi DESC
             LIMIT @limit;";
         var items = new List<SalesCustomerCardViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@search", string.IsNullOrWhiteSpace(search) ? DBNull.Value : search.Trim());
         command.Parameters.AddWithValue("@limit", limit);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -594,7 +598,7 @@ public class SalesService : ISalesService
         return items;
     }
 
-    private async Task<List<SalesSelectOption>> LoadHotelOptionsAsync(MySqlConnection connection, string? search, string? city, string? district, string? neighborhood, CancellationToken cancellationToken)
+    private async Task<List<SalesSelectOption>> LoadHotelOptionsAsync(SqlConnection connection, string? search, string? city, string? district, string? neighborhood, CancellationToken cancellationToken)
         => await LoadOptionsAsync(connection, @"
             SELECT
                 id,
@@ -629,16 +633,16 @@ public class SalesService : ISalesService
             },
             cancellationToken);
 
-    private async Task<List<SalesSelectOption>> LoadCitiesAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    private async Task<List<SalesSelectOption>> LoadCitiesAsync(SqlConnection connection, CancellationToken cancellationToken)
         => await LoadOptionsAsync(connection, "SELECT MIN(id), sehir FROM oteller GROUP BY sehir ORDER BY sehir;", null, cancellationToken);
 
-    private async Task<List<SalesSelectOption>> LoadDistrictsAsync(MySqlConnection connection, string? city, CancellationToken cancellationToken)
+    private async Task<List<SalesSelectOption>> LoadDistrictsAsync(SqlConnection connection, string? city, CancellationToken cancellationToken)
         => await LoadOptionsAsync(connection, "SELECT MIN(id), ilce FROM oteller WHERE (@city IS NULL OR sehir = @city) GROUP BY ilce ORDER BY ilce;", cmd => cmd.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? DBNull.Value : city.Trim()), cancellationToken);
 
-    private async Task<List<SalesSelectOption>> LoadRoomTypeOptionsAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private async Task<List<SalesSelectOption>> LoadRoomTypeOptionsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
         => await LoadOptionsAsync(connection, "SELECT id, oda_adi FROM oda_tipleri WHERE otel_id = @hotelId AND aktif_mi = 1 ORDER BY standart_gecelik_fiyat ASC, oda_adi;", cmd => cmd.Parameters.AddWithValue("@hotelId", hotelId), cancellationToken);
 
-    private async Task<List<SalesRoomOptionViewModel>> LoadRoomOptionsAsync(MySqlConnection connection, long hotelId, DateOnly checkIn, DateOnly checkOut, CancellationToken cancellationToken)
+    private async Task<List<SalesRoomOptionViewModel>> LoadRoomOptionsAsync(SqlConnection connection, long hotelId, DateOnly checkIn, DateOnly checkOut, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT o.id, o.oda_adi, o.maksimum_kisi_sayisi, o.toplam_oda_sayisi,
@@ -656,7 +660,7 @@ public class SalesService : ISalesService
             GROUP BY o.id, o.oda_adi, o.maksimum_kisi_sayisi, o.toplam_oda_sayisi, o.standart_gecelik_fiyat
             ORDER BY fiyat ASC;";
         var items = new List<SalesRoomOptionViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         command.Parameters.AddWithValue("@checkIn", checkIn.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@checkOut", checkOut.ToDateTime(TimeOnly.MinValue));
@@ -680,7 +684,7 @@ public class SalesService : ISalesService
         return items;
     }
 
-    private async Task<SalesReservationPriceSummaryViewModel> BuildPriceSummaryAsync(MySqlConnection connection, long roomTypeId, DateOnly checkIn, DateOnly checkOut, int roomCount, CancellationToken cancellationToken)
+    private async Task<SalesReservationPriceSummaryViewModel> BuildPriceSummaryAsync(SqlConnection connection, long roomTypeId, DateOnly checkIn, DateOnly checkOut, int roomCount, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT COALESCE(AVG(COALESCE(ofm.indirimli_fiyat, ofm.gecelik_fiyat)), ot.standart_gecelik_fiyat)
@@ -690,7 +694,7 @@ public class SalesService : ISalesService
                 AND ofm.tarih >= @checkIn
                 AND ofm.tarih < @checkOut
             WHERE ot.id = @roomTypeId;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@checkIn", checkIn.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@checkOut", checkOut.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
@@ -712,7 +716,7 @@ public class SalesService : ISalesService
         };
     }
 
-    private async Task<List<SalesHotelSearchCardViewModel>> LoadHotelSearchResultsAsync(MySqlConnection connection, string? searchTerm, string? city, string? district, string? neighborhood, decimal? minPrice, decimal? maxPrice, decimal? minimumRating, int? minimumReviewCount, string? feature, int resultLimit, CancellationToken cancellationToken)
+    private async Task<List<SalesHotelSearchCardViewModel>> LoadHotelSearchResultsAsync(SqlConnection connection, string? searchTerm, string? city, string? district, string? neighborhood, decimal? minPrice, decimal? maxPrice, decimal? minimumRating, int? minimumReviewCount, string? feature, int resultLimit, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT o.id, o.otel_adi, o.sehir, o.ilce, o.tam_adres, COALESCE(o.rezervasyon_telefonu, o.telefon_1, ''),
@@ -737,7 +741,7 @@ public class SalesService : ISalesService
                 o.one_cikan_otel DESC, o.ortalama_puan DESC, o.toplam_yorum_sayisi DESC
             LIMIT @resultLimit;";
         var items = new List<SalesHotelSearchCardViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@searchTerm", string.IsNullOrWhiteSpace(searchTerm) ? DBNull.Value : searchTerm.Trim());
         command.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? DBNull.Value : city.Trim());
         command.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(district) ? DBNull.Value : district.Trim());
@@ -791,7 +795,7 @@ public class SalesService : ISalesService
            || minimumRating.HasValue
            || minimumReviewCount.HasValue;
 
-    private static async Task<SalesSelectOption?> LoadHotelOptionByIdAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private static async Task<SalesSelectOption?> LoadHotelOptionByIdAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT id,
@@ -805,7 +809,7 @@ public class SalesService : ISalesService
             FROM oteller
             WHERE id = @hotelId
             LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -820,7 +824,7 @@ public class SalesService : ISalesService
         };
     }
 
-    private async Task<List<SalesAvailabilityDayViewModel>> LoadAvailabilityDaysAsync(MySqlConnection connection, long roomTypeId, DateOnly monthStart, CancellationToken cancellationToken)
+    private async Task<List<SalesAvailabilityDayViewModel>> LoadAvailabilityDaysAsync(SqlConnection connection, long roomTypeId, DateOnly monthStart, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT ofm.tarih, ofm.gecelik_fiyat, ofm.indirimli_fiyat, ofm.toplam_oda_sayisi, ofm.satilan_oda_sayisi, ofm.bloke_oda_sayisi
@@ -832,7 +836,7 @@ public class SalesService : ISalesService
               AND ofm.tarih < DATE_ADD(@monthStart, INTERVAL 1 MONTH)
             ORDER BY ofm.tarih;";
         var items = new List<SalesAvailabilityDayViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
         command.Parameters.AddWithValue("@monthStart", monthStart.ToDateTime(TimeOnly.MinValue));
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -855,7 +859,7 @@ public class SalesService : ISalesService
         return items;
     }
 
-    private async Task<List<SalesHotelGuideItemViewModel>> LoadHotelGuideAsync(MySqlConnection connection, string? search, CancellationToken cancellationToken)
+    private async Task<List<SalesHotelGuideItemViewModel>> LoadHotelGuideAsync(SqlConnection connection, string? search, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT o.id, o.otel_adi, COALESCE(o.rezervasyon_telefonu, o.telefon_1, ''),
@@ -868,7 +872,7 @@ public class SalesService : ISalesService
               AND (@search IS NULL OR o.otel_adi LIKE CONCAT('%', @search, '%') OR o.sehir LIKE CONCAT('%', @search, '%') OR o.ilce LIKE CONCAT('%', @search, '%'))
             ORDER BY 9 DESC, o.one_cikan_otel DESC, o.otel_adi;";
         var items = new List<SalesHotelGuideItemViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@search", string.IsNullOrWhiteSpace(search) ? DBNull.Value : search.Trim());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -889,10 +893,10 @@ public class SalesService : ISalesService
         return items;
     }
 
-    private async Task<long> EnsureSalesCustomerAsync(MySqlConnection connection, MySqlTransaction transaction, long userId, SalesReservationCreateModel model, CancellationToken cancellationToken, string? membershipLevel = null)
+    private async Task<long> EnsureSalesCustomerAsync(SqlConnection connection, SqlTransaction transaction, long userId, SalesReservationCreateModel model, CancellationToken cancellationToken, string? membershipLevel = null)
     {
         const string findSql = "SELECT id FROM satis_musterileri WHERE (eposta = @email AND @email <> '') OR (telefon = @phone AND @phone <> '') LIMIT 1;";
-        await using (var findCommand = new MySqlCommand(findSql, connection, transaction))
+        await using (var findCommand = new SqlCommand(findSql, connection, (SqlTransaction)transaction))
         {
             findCommand.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
             findCommand.Parameters.AddWithValue("@phone", model.CustomerPhone.Trim());
@@ -900,7 +904,7 @@ public class SalesService : ISalesService
             if (existing is not null and not DBNull) return Convert.ToInt64(existing, CultureInfo.InvariantCulture);
         }
 
-        await using var seqCommand = new MySqlCommand("SELECT COUNT(*) + 1 FROM satis_musterileri;", connection, transaction);
+        await using var seqCommand = new SqlCommand("SELECT COUNT(*) + 1 FROM satis_musterileri;", connection, (SqlTransaction)transaction);
         var seq = Convert.ToInt32(await seqCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
         var code = $"SATMUST-{seq:0000}";
         const string insertSql = @"
@@ -909,7 +913,7 @@ public class SalesService : ISalesService
             VALUES
             (@code, @fullName, @email, @phone, @city, @district, @neighborhood, @address, @membership, @summary, @notes, @userId);
             SELECT LAST_INSERT_ID();";
-        await using var insertCommand = new MySqlCommand(insertSql, connection, transaction);
+        await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
         insertCommand.Parameters.AddWithValue("@code", code);
         insertCommand.Parameters.AddWithValue("@fullName", model.CustomerFullName.Trim());
         insertCommand.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
@@ -925,10 +929,10 @@ public class SalesService : ISalesService
         return Convert.ToInt64(await insertCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
     }
 
-    private async Task<long> EnsurePublicCustomerUserAsync(MySqlConnection connection, MySqlTransaction transaction, SalesReservationCreateModel model, CancellationToken cancellationToken)
+    private async Task<long> EnsurePublicCustomerUserAsync(SqlConnection connection, SqlTransaction transaction, SalesReservationCreateModel model, CancellationToken cancellationToken)
     {
         const string findSql = "SELECT id FROM users WHERE eposta = @email OR (telefon = @phone AND @phone <> '') ORDER BY id LIMIT 1;";
-        await using (var findCommand = new MySqlCommand(findSql, connection, transaction))
+        await using (var findCommand = new SqlCommand(findSql, connection, (SqlTransaction)transaction))
         {
             findCommand.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
             findCommand.Parameters.AddWithValue("@phone", model.CustomerPhone.Trim());
@@ -942,7 +946,7 @@ public class SalesService : ISalesService
             VALUES
             (@fullName, @email, @phone, @city, @district, @neighborhood, @address, SHA2('1585', 256), 'user', 1, 'tr', 'TRY', 'Türkiye');
             SELECT LAST_INSERT_ID();";
-        await using var insertCommand = new MySqlCommand(insertSql, connection, transaction);
+        await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
         insertCommand.Parameters.AddWithValue("@fullName", model.CustomerFullName.Trim());
         insertCommand.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
         insertCommand.Parameters.AddWithValue("@phone", model.CustomerPhone.Trim());
@@ -953,25 +957,25 @@ public class SalesService : ISalesService
         return Convert.ToInt64(await insertCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
     }
 
-    private async Task<string> GenerateReservationNoAsync(MySqlConnection connection, MySqlTransaction transaction, CancellationToken cancellationToken)
+    private async Task<string> GenerateReservationNoAsync(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("SELECT COUNT(*) + 1 FROM rezervasyonlar WHERE DATE(olusturulma_tarihi) = CURDATE();", connection, transaction);
+        await using var command = new SqlCommand("SELECT COUNT(*) + 1 FROM rezervasyonlar WHERE DATE(olusturulma_tarihi) = CURDATE();", connection, (SqlTransaction)transaction);
         var seq = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
         return $"SAT-{DateTime.Now:yyyyMMdd}-{seq:0000}";
     }
 
-    private async Task<(string HotelName, decimal CommissionRate)> GetHotelSummaryAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private async Task<(string HotelName, decimal CommissionRate)> GetHotelSummaryAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("SELECT otel_adi, varsayilan_komisyon_orani FROM oteller WHERE id = @hotelId LIMIT 1;", connection);
+        await using var command = new SqlCommand("SELECT otel_adi, varsayilan_komisyon_orani FROM oteller WHERE id = @hotelId LIMIT 1;", connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken)) throw new InvalidOperationException("Otel bulunamadı.");
         return (reader.GetString(0), ReadDecimal(reader, 1));
     }
 
-    private async Task<string> GetRoomNameAsync(MySqlConnection connection, long roomTypeId, long hotelId, CancellationToken cancellationToken)
+    private async Task<string> GetRoomNameAsync(SqlConnection connection, long roomTypeId, long hotelId, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("SELECT oda_adi FROM oda_tipleri WHERE id = @roomTypeId AND otel_id = @hotelId LIMIT 1;", connection);
+        await using var command = new SqlCommand("SELECT oda_adi FROM oda_tipleri WHERE id = @roomTypeId AND otel_id = @hotelId LIMIT 1;", connection);
         command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
@@ -979,7 +983,7 @@ public class SalesService : ISalesService
         return Convert.ToString(result, CultureInfo.InvariantCulture) ?? "Oda";
     }
 
-    private async Task<(long UserId, string Email)> ResolvePartnerRecipientAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private async Task<(long UserId, string Email)> ResolvePartnerRecipientAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT COALESCE(o.user_id, oks.user_id, 1), COALESCE(o.satis_kontak_eposta, u.eposta, o.eposta, 'partner@otelturizm.com')
@@ -989,24 +993,24 @@ public class SalesService : ISalesService
             WHERE o.id = @hotelId
             ORDER BY oks.ana_sorumlu_mu DESC, oks.id ASC
             LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken)) return (reader.IsDBNull(0) ? 1L : reader.GetInt64(0), reader.GetString(1));
         return (1, "partner@otelturizm.com");
     }
 
-    private static async Task<List<SalesSelectOption>> LoadOptionsAsync(MySqlConnection connection, string sql, Action<MySqlCommand>? configure, CancellationToken cancellationToken)
+    private static async Task<List<SalesSelectOption>> LoadOptionsAsync(SqlConnection connection, string sql, Action<SqlCommand>? configure, CancellationToken cancellationToken)
     {
         var items = new List<SalesSelectOption>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         configure?.Invoke(command);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken)) items.Add(new SalesSelectOption { Value = reader.GetInt64(0), Label = reader.GetString(1) });
         return items;
     }
 
-    private async Task<SalesCustomerCardViewModel?> LoadCustomerPrefillAsync(MySqlConnection connection, long customerId, CancellationToken cancellationToken)
+    private async Task<SalesCustomerCardViewModel?> LoadCustomerPrefillAsync(SqlConnection connection, long customerId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT id, musteri_kodu, ad_soyad, COALESCE(eposta,''), COALESCE(telefon,''), COALESCE(uyelik_seviyesi,'Standart'),
@@ -1015,7 +1019,7 @@ public class SalesService : ISalesService
             FROM satis_musterileri
             WHERE id = @customerId
             LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@customerId", customerId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -1043,7 +1047,7 @@ public class SalesService : ISalesService
         };
     }
 
-    private async Task<string> BuildSelectedHotelSummaryAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private async Task<string> BuildSelectedHotelSummaryAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         if (hotelId <= 0)
         {
@@ -1056,7 +1060,7 @@ public class SalesService : ISalesService
             FROM oteller
             WHERE id = @hotelId
             LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -1095,7 +1099,7 @@ public class SalesService : ISalesService
         }
     }
 
-    private async Task<SalesPaginationViewModel> LoadReservationsPaginationAsync(MySqlConnection connection, long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken)
+    private async Task<SalesPaginationViewModel> LoadReservationsPaginationAsync(SqlConnection connection, long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT COUNT(*)
@@ -1107,7 +1111,7 @@ public class SalesService : ISalesService
               AND (@approval IS NULL OR r.otel_onay_durumu = @approval)
               AND (@startDate IS NULL OR r.giris_tarihi >= @startDate)
               AND (@endDate IS NULL OR r.cikis_tarihi <= @endDate);";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@search", filters.Search is null ? DBNull.Value : filters.Search);
         command.Parameters.AddWithValue("@status", filters.Status is null ? DBNull.Value : filters.Status);
@@ -1123,7 +1127,7 @@ public class SalesService : ISalesService
         };
     }
 
-    private async Task<SalesReservationSummaryViewModel> LoadReservationSummaryAsync(MySqlConnection connection, long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken)
+    private async Task<SalesReservationSummaryViewModel> LoadReservationSummaryAsync(SqlConnection connection, long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT COUNT(*),
@@ -1138,7 +1142,7 @@ public class SalesService : ISalesService
               AND (@approval IS NULL OR r.otel_onay_durumu = @approval)
               AND (@startDate IS NULL OR r.giris_tarihi >= @startDate)
               AND (@endDate IS NULL OR r.cikis_tarihi <= @endDate);";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@search", filters.Search is null ? DBNull.Value : filters.Search);
         command.Parameters.AddWithValue("@status", filters.Status is null ? DBNull.Value : filters.Status);
@@ -1160,7 +1164,7 @@ public class SalesService : ISalesService
         };
     }
 
-    private async Task<List<SalesMonthlyPerformanceItemViewModel>> LoadMonthlyPerformanceAsync(MySqlConnection connection, long userId, int year, int page, int pageSize, CancellationToken cancellationToken)
+    private async Task<List<SalesMonthlyPerformanceItemViewModel>> LoadMonthlyPerformanceAsync(SqlConnection connection, long userId, int year, int page, int pageSize, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT MONTH(olusturulma_tarihi) AS ay,
@@ -1175,7 +1179,7 @@ public class SalesService : ISalesService
             ORDER BY ay DESC
             LIMIT @offset, @limit;";
         var items = new List<SalesMonthlyPerformanceItemViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@year", year);
         command.Parameters.AddWithValue("@offset", (page - 1) * pageSize);
@@ -1196,7 +1200,7 @@ public class SalesService : ISalesService
         return items;
     }
 
-    private async Task<int> CountMonthlyPerformanceRowsAsync(MySqlConnection connection, long userId, int year, CancellationToken cancellationToken)
+    private async Task<int> CountMonthlyPerformanceRowsAsync(SqlConnection connection, long userId, int year, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT COUNT(*)
@@ -1207,21 +1211,21 @@ public class SalesService : ISalesService
                   AND YEAR(olusturulma_tarihi) = @year
                 GROUP BY MONTH(olusturulma_tarihi)
             ) aylik;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@year", year);
         return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
     }
 
-    private static decimal ReadDecimal(MySqlDataReader reader, int index) => reader.IsDBNull(index) ? 0m : Convert.ToDecimal(reader.GetValue(index), CultureInfo.InvariantCulture);
-    private static int ReadInt(MySqlDataReader reader, int index) => reader.IsDBNull(index) ? 0 : Convert.ToInt32(reader.GetValue(index), CultureInfo.InvariantCulture);
+    private static decimal ReadDecimal(SqlDataReader reader, int index) => reader.IsDBNull(index) ? 0m : Convert.ToDecimal(reader.GetValue(index), CultureInfo.InvariantCulture);
+    private static int ReadInt(SqlDataReader reader, int index) => reader.IsDBNull(index) ? 0 : Convert.ToInt32(reader.GetValue(index), CultureInfo.InvariantCulture);
     private static string FormatMoney(decimal value) => value.ToString("'₺'#,##0.##", CultureInfo.GetCultureInfo("tr-TR"));
     private static List<string> SplitFeatures(string raw) => string.IsNullOrWhiteSpace(raw) ? new List<string>() : raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(3).ToList();
     private static string SplitFirstName(string fullName) => string.IsNullOrWhiteSpace(fullName) ? "Misafir" : fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Misafir";
 
-    private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
+    private async Task<SqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
-        var connection = new MySqlConnection(_connectionString);
+        var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         return connection;
     }

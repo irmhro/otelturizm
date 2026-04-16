@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Security.Cryptography;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Services.Abstractions;
 
@@ -37,7 +37,7 @@ public class SecureFileService : ISecureFileService
         }
 
         var hash = await ComputeSha256Async(absolutePath, cancellationToken);
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
@@ -53,9 +53,9 @@ public class SecureFileService : ISecureFileService
                 @category, @scope, @originalFileName, @storedFileName, @storagePath,
                 @contentType, @extension, @size, @hash, @isImage
             );
-            SELECT LAST_INSERT_ID();";
+            SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@contextTable", request.ContextTable);
         command.Parameters.AddWithValue("@contextId", request.ContextId);
         command.Parameters.AddWithValue("@ownerUserId", request.OwnerUserId.HasValue ? request.OwnerUserId.Value : DBNull.Value);
@@ -86,7 +86,7 @@ public class SecureFileService : ISecureFileService
     public async Task<string> CreateAccessUrlAsync(long fileId, long viewerUserId, string viewerAccountType, CancellationToken cancellationToken = default)
     {
         var token = Guid.NewGuid().ToString("N");
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
@@ -98,10 +98,10 @@ public class SecureFileService : ISecureFileService
             VALUES
             (
                 @fileId, @token, @userId, @accountType,
-                DATE_ADD(UTC_TIMESTAMP(), INTERVAL 30 MINUTE), 30
+                DATEADD(MINUTE, 30, SYSUTCDATETIME()), 30
             );";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@fileId", fileId);
         command.Parameters.AddWithValue("@token", token);
         command.Parameters.AddWithValue("@userId", viewerUserId);
@@ -113,11 +113,11 @@ public class SecureFileService : ISecureFileService
 
     public async Task<SecureFileDownloadResult?> ResolveDownloadAsync(string token, long viewerUserId, string viewerAccountType, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-            SELECT gfv.depolama_yolu, gfv.orijinal_dosya_adi, gfv.mime_tipi,
+            SELECT TOP (1) gfv.depolama_yolu, gfv.orijinal_dosya_adi, gfv.mime_tipi,
                    gdet.id, gdet.kullanim_sayisi, gdet.maksimum_kullanim_sayisi
             FROM guvenli_dosya_erisim_tokenlari gdet
             INNER JOIN guvenli_dosya_varliklari gfv ON gfv.id = gdet.guvenli_dosya_id
@@ -125,9 +125,8 @@ public class SecureFileService : ISecureFileService
               AND gdet.iptal_tarihi IS NULL
               AND gdet.kullanici_id = @userId
               AND gdet.hesap_tipi = @accountType
-              AND gdet.gecerlilik_tarihi >= UTC_TIMESTAMP()
-              AND gfv.aktif_mi = 1
-            LIMIT 1;";
+              AND gdet.gecerlilik_tarihi >= SYSUTCDATETIME()
+              AND gfv.aktif_mi = 1;";
 
         long accessTokenId;
         long usageCount;
@@ -136,7 +135,7 @@ public class SecureFileService : ISecureFileService
         string originalName;
         string contentType;
 
-        await using (var command = new MySqlCommand(sql, connection))
+        await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@token", token);
             command.Parameters.AddWithValue("@userId", viewerUserId);
@@ -165,10 +164,10 @@ public class SecureFileService : ISecureFileService
             return null;
         }
 
-        await using (var updateCommand = new MySqlCommand(@"
+        await using (var updateCommand = new SqlCommand(@"
             UPDATE guvenli_dosya_erisim_tokenlari
             SET kullanim_sayisi = kullanim_sayisi + 1,
-                son_erisim_tarihi = UTC_TIMESTAMP()
+                son_erisim_tarihi = SYSUTCDATETIME()
             WHERE id = @id;", connection))
         {
             updateCommand.Parameters.AddWithValue("@id", accessTokenId);

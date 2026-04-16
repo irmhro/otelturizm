@@ -729,29 +729,37 @@
 
 @media (max-width: 640px) {
     .listing-category-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
     }
 
     .listing-category-card {
-        grid-template-columns: 36px minmax(0, 1fr);
-        min-height: 54px;
-        padding: 8px 10px;
-        border-radius: 14px;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+        min-height: 82px;
+        padding: 8px 6px;
+        border-radius: 12px;
+        gap: 6px;
     }
 
     .listing-category-icon {
-        width: 30px;
-        height: 30px;
-        border-radius: 9px;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
         font-size: 0.72rem;
     }
 
+    .listing-category-content {
+        gap: 0;
+    }
+
     .listing-category-title {
-        font-size: 0.8rem;
+        font-size: 0.66rem;
+        line-height: 1.2;
     }
 
     .listing-category-subtitle {
-        font-size: 0.68rem;
+        display: none;
     }
 }

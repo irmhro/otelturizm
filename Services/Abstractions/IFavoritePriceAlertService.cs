@@ -1,12 +1,12 @@
-using MySqlConnector;
+using System.Data.Common;
 
 namespace otelturizmnew.Services.Abstractions;
 
 public interface IFavoritePriceAlertService
 {
     Task QueuePriceRecheckJobAsync(
-        MySqlConnection connection,
-        MySqlTransaction? transaction,
+        DbConnection connection,
+        DbTransaction? transaction,
         long hotelId,
         DateTime startDate,
         DateTime endDate,

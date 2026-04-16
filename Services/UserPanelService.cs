@@ -1,5 +1,9 @@
 using System.Globalization;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.User;
@@ -59,7 +63,7 @@ public class UserPanelService : IUserPanelService
                 (SELECT COUNT(*) FROM mesaj_konusmalari WHERE misafir_kullanici_id = @userId AND durum <> 'Arşivlendi') AS message_count,
                 (SELECT COALESCE(SUM(toplam_tasarruf), 0) FROM rezervasyonlar WHERE kullanici_id = @userId) AS total_discount;";
 
-        await using (var command = new MySqlCommand(summarySql, connection))
+        await using (var command = new SqlCommand(summarySql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -171,7 +175,7 @@ public class UserPanelService : IUserPanelService
 
         string? currentStatus = null;
         DateTime? checkInDate = null;
-        await using (var selectCommand = new MySqlCommand(selectSql, connection))
+        await using (var selectCommand = new SqlCommand(selectSql, connection))
         {
             selectCommand.Parameters.AddWithValue("@reservationId", reservationId);
             selectCommand.Parameters.AddWithValue("@userId", userId);
@@ -206,7 +210,7 @@ public class UserPanelService : IUserPanelService
                 iptal_eden = 'Misafir',
                 iptal_tarihi = NOW()
             WHERE id = @reservationId AND kullanici_id = @userId;";
-        await using var updateCommand = new MySqlCommand(updateSql, connection);
+        await using var updateCommand = new SqlCommand(updateSql, connection);
         updateCommand.Parameters.AddWithValue("@reservationId", reservationId);
         updateCommand.Parameters.AddWithValue("@userId", userId);
         updateCommand.Parameters.AddWithValue("@reason", reason);
@@ -278,7 +282,7 @@ public class UserPanelService : IUserPanelService
             LIMIT 1;";
 
         var model = new UserProfilePageViewModel();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
@@ -330,7 +334,7 @@ public class UserPanelService : IUserPanelService
         }
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using (var duplicateCheckCommand = new MySqlCommand("SELECT COUNT(*) FROM users WHERE eposta = @email AND id <> @userId;", connection))
+        await using (var duplicateCheckCommand = new SqlCommand("SELECT COUNT(*) FROM users WHERE eposta = @email AND id <> @userId;", connection))
         {
             duplicateCheckCommand.Parameters.AddWithValue("@email", email);
             duplicateCheckCommand.Parameters.AddWithValue("@userId", userId);
@@ -343,7 +347,7 @@ public class UserPanelService : IUserPanelService
 
         try
         {
-            await using var command = new MySqlCommand(@"
+            await using var command = new SqlCommand(@"
                 UPDATE users
                 SET ad_soyad = @fullName,
                     eposta = @email,
@@ -384,7 +388,7 @@ public class UserPanelService : IUserPanelService
             command.Parameters.AddWithValue("@userId", userId);
             return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
         }
-        catch (MySqlException)
+        catch (SqlException)
         {
             return false;
         }
@@ -395,7 +399,7 @@ public class UserPanelService : IUserPanelService
         var model = new UserNotificationsPageViewModel();
         await using var connection = await OpenConnectionAsync(cancellationToken);
 
-        await using (var command = new MySqlCommand(@"
+        await using (var command = new SqlCommand(@"
             SELECT rezervasyon_eposta, rezervasyon_push, checkin_hatirlatma, iptal_degisim, kampanya_eposta, kampanya_sms, sistem_bildirimi
             FROM kullanici_bildirim_tercihleri WHERE kullanici_id = @userId LIMIT 1;", connection))
         {
@@ -416,7 +420,7 @@ public class UserPanelService : IUserPanelService
             }
         }
 
-        await using (var command = new MySqlCommand(@"
+        await using (var command = new SqlCommand(@"
             SELECT baslik, mesaj, bildirim_turu, olusturulma_tarihi
             FROM sistem_ici_bildirimler
             WHERE kullanici_id = @userId AND arsivlendi_mi = 0
@@ -442,7 +446,7 @@ public class UserPanelService : IUserPanelService
     public async Task<bool> SaveNotificationsAsync(long userId, UserNotificationPreferencesForm form, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             INSERT INTO kullanici_bildirim_tercihleri
             (kullanici_id, rezervasyon_eposta, rezervasyon_push, checkin_hatirlatma, iptal_degisim, kampanya_eposta, kampanya_sms, sistem_bildirimi)
             VALUES
@@ -472,14 +476,14 @@ public class UserPanelService : IUserPanelService
         var model = new UserSecurityPageViewModel();
         await using var connection = await OpenConnectionAsync(cancellationToken);
 
-        await using (var command = new MySqlCommand("SELECT iki_asamali_dogrulama_aktif_mi FROM users WHERE id = @userId LIMIT 1;", connection))
+        await using (var command = new SqlCommand("SELECT iki_asamali_dogrulama_aktif_mi FROM users WHERE id = @userId LIMIT 1;", connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             var scalar = await command.ExecuteScalarAsync(cancellationToken);
             model.TwoFactorEnabled = scalar is not null && scalar != DBNull.Value && Convert.ToInt32(scalar, CultureInfo.InvariantCulture) == 1;
         }
 
-        await using var sessionCommand = new MySqlCommand(@"
+        await using var sessionCommand = new SqlCommand(@"
             SELECT COALESCE(cihaz_etiketi, 'Bilinmeyen cihaz'), beni_hatirla_tercihi, toplam_oturum_suresi_saniye, son_aktivite_tarihi
             FROM kullanici_oturum_istatistikleri
             WHERE kullanici_id = @userId AND hesap_tipi = 'user'
@@ -517,7 +521,7 @@ public class UserPanelService : IUserPanelService
         }
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             UPDATE users SET sifre = SHA2(@newPassword, 256)
             WHERE id = @userId AND sifre = SHA2(@currentPassword, 256);", connection);
         command.Parameters.AddWithValue("@newPassword", form.NewPassword);
@@ -542,7 +546,7 @@ public class UserPanelService : IUserPanelService
     public async Task<bool> SaveTwoFactorAsync(long userId, UserTwoFactorForm form, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new MySqlCommand("UPDATE users SET iki_asamali_dogrulama_aktif_mi = @enabled WHERE id = @userId;", connection);
+        await using var command = new SqlCommand("UPDATE users SET iki_asamali_dogrulama_aktif_mi = @enabled WHERE id = @userId;", connection);
         command.Parameters.AddWithValue("@enabled", form.Enabled ? 1 : 0);
         command.Parameters.AddWithValue("@userId", userId);
         return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
@@ -553,7 +557,7 @@ public class UserPanelService : IUserPanelService
         var model = new UserPaymentMethodsPageViewModel();
         await using var connection = await OpenConnectionAsync(cancellationToken);
 
-        await using (var command = new MySqlCommand(@"
+        await using (var command = new SqlCommand(@"
             SELECT id, kart_etiketi, marka, son_dort_hane, son_kullanim_ay, son_kullanim_yil, varsayilan_mi
             FROM kullanici_odeme_yontemleri
             WHERE kullanici_id = @userId AND aktif_mi = 1
@@ -573,7 +577,7 @@ public class UserPanelService : IUserPanelService
             }
         }
 
-        await using var billingCommand = new MySqlCommand(@"
+        await using var billingCommand = new SqlCommand(@"
             SELECT ad_soyad, CONCAT_WS(', ', NULLIF(adres, ''), NULLIF(ilce, ''), NULLIF(sehir, '')) AS full_address, eposta
             FROM users WHERE id = @userId LIMIT 1;", connection);
         billingCommand.Parameters.AddWithValue("@userId", userId);
@@ -602,16 +606,16 @@ public class UserPanelService : IUserPanelService
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         if (form.SetAsDefault)
         {
-            await using var clear = new MySqlCommand("UPDATE kullanici_odeme_yontemleri SET varsayilan_mi = 0 WHERE kullanici_id = @userId;", connection, transaction);
+            await using var clear = new SqlCommand("UPDATE kullanici_odeme_yontemleri SET varsayilan_mi = 0 WHERE kullanici_id = @userId;", connection, (SqlTransaction)transaction);
             clear.Parameters.AddWithValue("@userId", userId);
             await clear.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             INSERT INTO kullanici_odeme_yontemleri
             (kullanici_id, kart_etiketi, kart_sahibi, marka, son_dort_hane, son_kullanim_ay, son_kullanim_yil, varsayilan_mi, aktif_mi)
             VALUES
-            (@userId, @label, @holder, @brand, @lastFour, @month, @year, @isDefault, 1);", connection, transaction);
+            (@userId, @label, @holder, @brand, @lastFour, @month, @year, @isDefault, 1);", connection, (SqlTransaction)transaction);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@label", form.CardLabel.Trim());
         command.Parameters.AddWithValue("@holder", form.CardHolder.Trim());
@@ -628,7 +632,7 @@ public class UserPanelService : IUserPanelService
     public async Task<bool> DeletePaymentMethodAsync(long userId, long paymentMethodId, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new MySqlCommand("UPDATE kullanici_odeme_yontemleri SET aktif_mi = 0, varsayilan_mi = 0 WHERE id = @paymentMethodId AND kullanici_id = @userId;", connection);
+        await using var command = new SqlCommand("UPDATE kullanici_odeme_yontemleri SET aktif_mi = 0, varsayilan_mi = 0 WHERE id = @paymentMethodId AND kullanici_id = @userId;", connection);
         command.Parameters.AddWithValue("@paymentMethodId", paymentMethodId);
         command.Parameters.AddWithValue("@userId", userId);
         return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
@@ -643,7 +647,7 @@ public class UserPanelService : IUserPanelService
 
         var alertHotelIds = new List<long>();
 
-        await using (var summaryCommand = new MySqlCommand(@"
+        await using (var summaryCommand = new SqlCommand(@"
             SELECT
                 COALESCE(u.ad_soyad, 'Misafir') AS ad_soyad,
                 COALESCE(h.toplam_puan, 0) AS toplam_puan,
@@ -741,7 +745,7 @@ public class UserPanelService : IUserPanelService
         var travelerCount = form.TravelerCount <= 0 ? 2 : form.TravelerCount;
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             INSERT INTO kullanici_butce_planlari
             (kullanici_id, hedef_sehir, hedef_butce, gece_sayisi, kisi_sayisi, para_birimi, notlar, olusturulma_tarihi, guncellenme_tarihi)
             VALUES
@@ -784,7 +788,7 @@ public class UserPanelService : IUserPanelService
         await using var connection = await OpenConnectionAsync(cancellationToken);
         var planCode = $"PLAN-{userId:D4}-{DateTime.UtcNow:ddHHmmss}";
         var inviteCode = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             INSERT INTO kullanici_seyahat_planlari
             (olusturan_kullanici_id, plan_kodu, plan_adi, hedef_sehir, baslangic_tarihi, bitis_tarihi, butce_tutari, para_birimi, davet_kodu, durum, olusturulma_tarihi, guncellenme_tarihi)
             VALUES
@@ -802,17 +806,17 @@ public class UserPanelService : IUserPanelService
         return (true, "Seyahat planiniz kaydedildi. Artik otelleri ortak plana ekleyebilirsiniz.");
     }
 
-    private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
+    private async Task<SqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
-        var connection = new MySqlConnection(_connectionString);
+        var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         return connection;
     }
 
-    private async Task EnsureLoyaltyAccountAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private async Task EnsureLoyaltyAccountAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         const string existsSql = "SELECT COUNT(*) FROM kullanici_sadakat_hesaplari WHERE kullanici_id = @userId;";
-        await using (var existsCommand = new MySqlCommand(existsSql, connection))
+        await using (var existsCommand = new SqlCommand(existsSql, connection))
         {
             existsCommand.Parameters.AddWithValue("@userId", userId);
             var exists = Convert.ToInt32(await existsCommand.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
@@ -820,7 +824,7 @@ public class UserPanelService : IUserPanelService
             {
                 var bronzeTierId = await ResolveTierIdAsync(connection, "BRONZE", cancellationToken);
                 var silverTierId = await ResolveTierIdAsync(connection, "SILVER", cancellationToken);
-                await using var insertCommand = new MySqlCommand(@"
+                await using var insertCommand = new SqlCommand(@"
                     INSERT INTO kullanici_sadakat_hesaplari
                     (kullanici_id, toplam_puan, kullanilabilir_puan, bu_yil_kazanilan_puan, bu_yil_kullanilan_puan, mevcut_seviye_id, sonraki_seviye_id, puan_gecerlilik_tarihi, olusturulma_tarihi, guncellenme_tarihi)
                     VALUES
@@ -832,7 +836,7 @@ public class UserPanelService : IUserPanelService
             }
         }
 
-        await using var syncCommand = new MySqlCommand(@"
+        await using var syncCommand = new SqlCommand(@"
             UPDATE kullanici_sadakat_hesaplari h
             JOIN (
                 SELECT
@@ -881,9 +885,9 @@ public class UserPanelService : IUserPanelService
         await syncCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private async Task<long> ResolveTierIdAsync(MySqlConnection connection, string code, CancellationToken cancellationToken)
+    private async Task<long> ResolveTierIdAsync(SqlConnection connection, string code, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("SELECT id FROM sadakat_seviyeleri WHERE kod = @code LIMIT 1;", connection);
+        await using var command = new SqlCommand("SELECT id FROM sadakat_seviyeleri WHERE kod = @code LIMIT 1;", connection);
         command.Parameters.AddWithValue("@code", code);
         var value = await command.ExecuteScalarAsync(cancellationToken);
         return value is null ? 0L : Convert.ToInt64(value, CultureInfo.InvariantCulture);
@@ -932,10 +936,10 @@ public class UserPanelService : IUserPanelService
             };
     }
 
-    private async Task<List<UserLoyaltyTierViewModel>> LoadLoyaltyTiersAsync(MySqlConnection connection, string currentTierCode, CancellationToken cancellationToken)
+    private async Task<List<UserLoyaltyTierViewModel>> LoadLoyaltyTiersAsync(SqlConnection connection, string currentTierCode, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyTierViewModel>();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             SELECT id, kod, ad, minimum_puan, maximum_puan, COALESCE(avantajlar_metin, '')
             FROM sadakat_seviyeleri
             WHERE aktif_mi = 1
@@ -963,10 +967,10 @@ public class UserPanelService : IUserPanelService
         return list;
     }
 
-    private async Task<List<UserLoyaltyPointTransactionViewModel>> LoadLoyaltyTransactionsAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private async Task<List<UserLoyaltyPointTransactionViewModel>> LoadLoyaltyTransactionsAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyPointTransactionViewModel>();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             SELECT DATE_FORMAT(COALESCE(islem_tarihi, olusturulma_tarihi), '%d.%m.%Y') AS tarih,
                    COALESCE(hareket_tipi, 'Bilgi'),
                    COALESCE(baslik, 'Puan hareketi'),
@@ -999,10 +1003,10 @@ public class UserPanelService : IUserPanelService
         return list;
     }
 
-    private async Task<List<UserLoyaltyRewardViewModel>> LoadLoyaltyRewardsAsync(MySqlConnection connection, int availablePoints, CancellationToken cancellationToken)
+    private async Task<List<UserLoyaltyRewardViewModel>> LoadLoyaltyRewardsAsync(SqlConnection connection, int availablePoints, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyRewardViewModel>();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             SELECT id, ad, aciklama, gerekli_puan, COALESCE(ikon, 'fas fa-gift'), COALESCE(ton, 'primary')
             FROM sadakat_odulleri
             WHERE aktif_mi = 1
@@ -1027,10 +1031,10 @@ public class UserPanelService : IUserPanelService
         return list;
     }
 
-    private async Task<List<UserLoyaltyBadgeViewModel>> LoadUserBadgesAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private async Task<List<UserLoyaltyBadgeViewModel>> LoadUserBadgesAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyBadgeViewModel>();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             SELECT r.ad, COALESCE(r.ikon, 'fas fa-award'), COALESCE(kr.durum, 'Kilitli'), COALESCE(kr.ilerleme_degeri, 0), COALESCE(r.hedef_deger, 1)
             FROM rozet_tanimlari r
             LEFT JOIN kullanici_rozetleri kr ON kr.rozet_id = r.id AND kr.kullanici_id = @userId
@@ -1056,10 +1060,10 @@ public class UserPanelService : IUserPanelService
         return list;
     }
 
-    private async Task<List<UserLoyaltyPassportCityViewModel>> LoadPassportCitiesAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private async Task<List<UserLoyaltyPassportCityViewModel>> LoadPassportCitiesAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyPassportCityViewModel>();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             SELECT sehir, COALESCE(ulke, 'Türkiye'), toplam_konaklama_sayisi, ilk_konaklama_tarihi, son_konaklama_tarihi
             FROM kullanici_dijital_pasaportlari
             WHERE kullanici_id = @userId
@@ -1085,10 +1089,10 @@ public class UserPanelService : IUserPanelService
         return list;
     }
 
-    private async Task<List<UserLoyaltyTravelPlanViewModel>> LoadTravelPlansAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private async Task<List<UserLoyaltyTravelPlanViewModel>> LoadTravelPlansAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyTravelPlanViewModel>();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             SELECT p.id, p.plan_adi, p.hedef_sehir, p.baslangic_tarihi, p.bitis_tarihi, COALESCE(p.butce_tutari, 0), COALESCE(p.durum, 'Taslak'),
                    COALESCE(COUNT(ps.id), 0) AS secim_sayisi
             FROM kullanici_seyahat_planlari p
@@ -1118,10 +1122,10 @@ public class UserPanelService : IUserPanelService
         return list;
     }
 
-    private async Task<List<UserLoyaltyOfferViewModel>> LoadOffersAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private async Task<List<UserLoyaltyOfferViewModel>> LoadOffersAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyOfferViewModel>();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             SELECT baslik, aciklama, kampanya_kodu, COALESCE(buton_url, '/oteller'), gecerlilik_bitis
             FROM kullanici_ozel_teklifleri
             WHERE aktif_mi = 1
@@ -1146,10 +1150,10 @@ public class UserPanelService : IUserPanelService
         return list;
     }
 
-    private async Task<List<UserLoyaltyBudgetPlanViewModel>> LoadBudgetPlansAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private async Task<List<UserLoyaltyBudgetPlanViewModel>> LoadBudgetPlansAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyBudgetPlanViewModel>();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             SELECT hedef_sehir, hedef_butce, gece_sayisi, kisi_sayisi
             FROM kullanici_butce_planlari
             WHERE kullanici_id = @userId
@@ -1173,10 +1177,10 @@ public class UserPanelService : IUserPanelService
         return list;
     }
 
-    private async Task<List<UserLoyaltyPriceAlertViewModel>> LoadPriceAlertsAsync(MySqlConnection connection, long userId, List<long> alertHotelIds, CancellationToken cancellationToken)
+    private async Task<List<UserLoyaltyPriceAlertViewModel>> LoadPriceAlertsAsync(SqlConnection connection, long userId, List<long> alertHotelIds, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyPriceAlertViewModel>();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             SELECT a.otel_id, o.otel_adi, a.hedef_maksimum_fiyat
             FROM user_favorite_price_alerts a
             INNER JOIN oteller o ON o.id = a.otel_id
@@ -1202,10 +1206,10 @@ public class UserPanelService : IUserPanelService
         return list;
     }
 
-    private async Task<List<UserLoyaltyRecommendationViewModel>> LoadRecommendationsAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    private async Task<List<UserLoyaltyRecommendationViewModel>> LoadRecommendationsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyRecommendationViewModel>();
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             SELECT o.otel_adi, o.otel_kodu, COALESCE(o.ilce, ''), COALESCE(o.sehir, ''), COALESCE(o.ortalama_puan, 0), COALESCE(og.gorsel_url, '')
             FROM oteller o
             LEFT JOIN otel_gorselleri og ON og.otel_id = o.id AND (og.kapak_fotografi_mi = 1 OR og.siralama = 1)
@@ -1265,7 +1269,7 @@ public class UserPanelService : IUserPanelService
                || decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out amount);
     }
 
-    private async Task<List<UserReservationCardViewModel>> LoadReservationsAsync(MySqlConnection connection, long userId, int take, CancellationToken cancellationToken)
+    private async Task<List<UserReservationCardViewModel>> LoadReservationsAsync(SqlConnection connection, long userId, int take, CancellationToken cancellationToken)
     {
         var list = new List<UserReservationCardViewModel>();
         const string sql = @"
@@ -1292,7 +1296,7 @@ public class UserPanelService : IUserPanelService
             WHERE r.kullanici_id = @userId
             ORDER BY r.giris_tarihi DESC, r.id DESC
             LIMIT @take;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@take", take);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1334,7 +1338,7 @@ public class UserPanelService : IUserPanelService
     }
 
     private async Task<List<UserReservationCardViewModel>> LoadDashboardReservationsAsync(
-        MySqlConnection connection,
+        SqlConnection connection,
         long userId,
         string statusFilter,
         DateOnly? startDate,
@@ -1373,7 +1377,7 @@ public class UserPanelService : IUserPanelService
               AND (@endDate IS NULL OR DATE(r.giris_tarihi) <= @endDate)
             ORDER BY r.giris_tarihi DESC, r.id DESC
             LIMIT @offset, @pageSize;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@statusFilter", statusFilter);
         command.Parameters.AddWithValue("@startDate", startDate.HasValue ? startDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
@@ -1420,7 +1424,7 @@ public class UserPanelService : IUserPanelService
     }
 
     private static async Task<int> CountDashboardReservationsAsync(
-        MySqlConnection connection,
+        SqlConnection connection,
         long userId,
         string statusFilter,
         DateOnly? startDate,
@@ -1436,7 +1440,7 @@ public class UserPanelService : IUserPanelService
                    OR (@statusFilter = 'pending' AND (COALESCE(r.otel_onay_durumu, '') = 'Beklemede' OR r.durum = 'Onay Bekliyor')))
               AND (@startDate IS NULL OR DATE(r.giris_tarihi) >= @startDate)
               AND (@endDate IS NULL OR DATE(r.giris_tarihi) <= @endDate);";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@statusFilter", statusFilter);
         command.Parameters.AddWithValue("@startDate", startDate.HasValue ? startDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value);
@@ -1450,7 +1454,7 @@ public class UserPanelService : IUserPanelService
         return normalized is "approved" or "pending" ? normalized : "all";
     }
 
-    private async Task<List<UserFavoriteSummaryViewModel>> LoadFavoriteSummariesAsync(MySqlConnection connection, long userId, int take, CancellationToken cancellationToken)
+    private async Task<List<UserFavoriteSummaryViewModel>> LoadFavoriteSummariesAsync(SqlConnection connection, long userId, int take, CancellationToken cancellationToken)
     {
         var list = new List<UserFavoriteSummaryViewModel>();
         const string sql = @"
@@ -1461,7 +1465,7 @@ public class UserPanelService : IUserPanelService
             WHERE uf.user_id = @userId AND uf.aktif_mi = 1
             ORDER BY uf.son_islem_tarihi DESC, uf.id DESC
             LIMIT @take;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@take", take);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1528,10 +1532,10 @@ public class UserPanelService : IUserPanelService
         return string.IsNullOrWhiteSpace(slug) ? hotelCode.ToLowerInvariant() : slug;
     }
 
-    private static int SafeInt(MySqlDataReader reader, int ordinal)
+    private static int SafeInt(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
 
-    private static decimal SafeDecimal(MySqlDataReader reader, int ordinal)
+    private static decimal SafeDecimal(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0m : reader.GetDecimal(ordinal);
 
     private static string FormatMoney(decimal amount)
@@ -1561,7 +1565,7 @@ public class UserPanelService : IUserPanelService
         return value is "upcoming" or "past" or "cancelled" ? value : "all";
     }
 
-    private async Task<ReservationCancellationSnapshot?> LoadReservationCancellationSnapshotAsync(MySqlConnection connection, long userId, long reservationId, CancellationToken cancellationToken)
+    private async Task<ReservationCancellationSnapshot?> LoadReservationCancellationSnapshotAsync(SqlConnection connection, long userId, long reservationId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT r.id,
@@ -1579,7 +1583,7 @@ public class UserPanelService : IUserPanelService
             WHERE r.id = @reservationId
               AND r.kullanici_id = @userId
             LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@reservationId", reservationId);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1600,7 +1604,7 @@ public class UserPanelService : IUserPanelService
             reader.GetString(8));
     }
 
-    private static async Task<(long UserId, string Email, string ManagerName)> ResolvePartnerRecipientAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private static async Task<(long UserId, string Email, string ManagerName)> ResolvePartnerRecipientAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT COALESCE(o.user_id, oks.user_id, 1),
@@ -1612,7 +1616,7 @@ public class UserPanelService : IUserPanelService
             WHERE o.id = @hotelId
             ORDER BY oks.ana_sorumlu_mu DESC, oks.id ASC
             LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))

@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Configuration;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
 using otelturizmnew.Models.Destek;
 using otelturizmnew.Services.Abstractions;
 
@@ -22,7 +22,7 @@ public class SupportService : ISupportService
             SearchTerm = searchTerm?.Trim() ?? string.Empty
         };
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string categoriesSql = @"
@@ -31,7 +31,7 @@ public class SupportService : ISupportService
             WHERE durum = 1
             ORDER BY siralama, id;";
 
-        await using (var command = new MySqlCommand(categoriesSql, connection))
+        await using (var command = new SqlCommand(categoriesSql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
             while (await reader.ReadAsync(cancellationToken))
@@ -57,12 +57,12 @@ public class SupportService : ISupportService
 
         if (!string.IsNullOrWhiteSpace(model.SearchTerm))
         {
-            topicsSql += " AND (baslik LIKE CONCAT('%', @search, '%') OR ozet LIKE CONCAT('%', @search, '%') OR icerik LIKE CONCAT('%', @search, '%'))";
+            topicsSql += " AND (baslik LIKE '%' + @search + '%' OR ozet LIKE '%' + @search + '%' OR icerik LIKE '%' + @search + '%')";
         }
 
-        topicsSql += " ORDER BY one_cikan_mi DESC, siralama, id LIMIT 6;";
+        topicsSql += " ORDER BY one_cikan_mi DESC, siralama, id OFFSET 0 ROWS FETCH NEXT 6 ROWS ONLY;";
 
-        await using (var command = new MySqlCommand(topicsSql, connection))
+        await using (var command = new SqlCommand(topicsSql, connection))
         {
             if (!string.IsNullOrWhiteSpace(model.SearchTerm))
             {
@@ -90,7 +90,7 @@ public class SupportService : ISupportService
             WHERE aktif_mi = 1
             ORDER BY siralama, id;";
 
-        await using (var command = new MySqlCommand(channelsSql, connection))
+        await using (var command = new SqlCommand(channelsSql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
             while (await reader.ReadAsync(cancellationToken))
@@ -126,7 +126,7 @@ public class SupportService : ISupportService
             ActiveCategorySlug = normalizedCategory
         };
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string categorySql = @"
@@ -142,7 +142,7 @@ public class SupportService : ISupportService
             IsActive = normalizedCategory == "tumu"
         });
 
-        await using (var command = new MySqlCommand(categorySql, connection))
+        await using (var command = new SqlCommand(categorySql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
             while (await reader.ReadAsync(cancellationToken))
@@ -177,13 +177,13 @@ public class SupportService : ISupportService
 
         if (!string.IsNullOrWhiteSpace(model.SearchTerm))
         {
-            faqSql += " AND (s.soru LIKE CONCAT('%', @search, '%') OR s.cevap LIKE CONCAT('%', @search, '%'))";
+            faqSql += " AND (s.soru LIKE '%' + @search + '%' OR s.cevap LIKE '%' + @search + '%')";
         }
 
         faqSql += " ORDER BY k.siralama, k.id, s.siralama, s.id;";
 
         var sections = new Dictionary<string, SssBolumViewModel>(StringComparer.OrdinalIgnoreCase);
-        await using (var command = new MySqlCommand(faqSql, connection))
+        await using (var command = new SqlCommand(faqSql, connection))
         {
             if (normalizedCategory != "tumu")
             {
@@ -222,13 +222,12 @@ public class SupportService : ISupportService
         }
 
         const string ctaSql = @"
-            SELECT kanal_adi, aciklama, ikon, buton_metin, baglanti_url, ek_bilgi, renk_tonu
+            SELECT TOP (1) kanal_adi, aciklama, ikon, buton_metin, baglanti_url, ek_bilgi, renk_tonu
             FROM destek_kanallari
             WHERE aktif_mi = 1 AND kanal_turu = 'canli_destek'
-            ORDER BY siralama, id
-            LIMIT 1;";
+            ORDER BY siralama, id;";
 
-        await using (var command = new MySqlCommand(ctaSql, connection))
+        await using (var command = new SqlCommand(ctaSql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
             if (await reader.ReadAsync(cancellationToken))

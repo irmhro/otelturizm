@@ -1,5 +1,10 @@
+using System.Globalization;
 using Microsoft.Extensions.Configuration;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Paneller.Admin;
 using otelturizmnew.Services.Abstractions;
 
@@ -17,7 +22,7 @@ public class AdminService : IAdminService
 
     public async Task<AdminDashboardViewModel> GetDashboardAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var shell = await GetShellAsync(connection, "Dashboard", "Panel genel operasyon durumunu ve kritik metrikleri canli verilerle takip edin.", fullName, email, userRole, cancellationToken);
@@ -30,7 +35,7 @@ public class AdminService : IAdminService
                 (SELECT COUNT(*) FROM odeme_islemleri WHERE odeme_durumu IN ('Başarılı','Geri Ödendi','Kısmi Geri Ödendi')) AS successful_payments,
                 (SELECT COUNT(*) FROM users WHERE rol = 'admin') AS admin_count;";
 
-        await using (var command = new MySqlCommand(metricsSql, connection))
+        await using (var command = new SqlCommand(metricsSql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
             if (await reader.ReadAsync(cancellationToken))
@@ -43,14 +48,14 @@ public class AdminService : IAdminService
         }
 
         const string chartSql = @"
-            SELECT DATE_FORMAT(olusturulma_tarihi, '%b') AS ay, COUNT(*) AS adet
+            SELECT FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR') AS ay, COUNT(*) AS adet
             FROM rezervasyonlar
-            WHERE olusturulma_tarihi >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
-            GROUP BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi), DATE_FORMAT(olusturulma_tarihi, '%b')
+            WHERE olusturulma_tarihi >= DATEADD(MONTH, -5, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
+            GROUP BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi), FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR')
             ORDER BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi);";
 
         var chartRows = new List<(string Label, int Value)>();
-        await using (var chartCommand = new MySqlCommand(chartSql, connection))
+        await using (var chartCommand = new SqlCommand(chartSql, connection))
         await using (var chartReader = await chartCommand.ExecuteReaderAsync(cancellationToken))
         {
             while (await chartReader.ReadAsync(cancellationToken))
@@ -71,24 +76,27 @@ public class AdminService : IAdminService
         }
 
         const string activitySql = @"
-            SELECT 'Partner basvurusu' AS baslik,
-                   CONCAT(p.firma_unvani, ' · ', p.onay_durumu) AS alt_baslik,
-                   p.olusturulma_tarihi AS zaman
-            FROM partner_detaylari p
-            UNION ALL
-            SELECT 'Admin islemi',
-                   CONCAT(a.hedef_tablo, ' · ', a.islem_turu),
-                   a.islem_tarihi
-            FROM admin_islem_loglari a
-            UNION ALL
-            SELECT 'Sistem hatasi',
-                   CONCAT(s.hata_seviyesi, ' · ', LEFT(s.hata_mesaji, 70)),
-                   s.olusma_tarihi
-            FROM sistem_hata_loglari s
-            ORDER BY zaman DESC
-            LIMIT 6;";
+            SELECT TOP (6) *
+            FROM
+            (
+                SELECT 'Partner basvurusu' AS baslik,
+                       CONCAT(p.firma_unvani, ' · ', p.onay_durumu) AS alt_baslik,
+                       p.olusturulma_tarihi AS zaman
+                FROM partner_detaylari p
+                UNION ALL
+                SELECT 'Admin islemi',
+                       CONCAT(a.hedef_tablo, ' · ', a.islem_turu),
+                       a.islem_tarihi
+                FROM admin_islem_loglari a
+                UNION ALL
+                SELECT 'Sistem hatasi',
+                       CONCAT(s.hata_seviyesi, ' · ', LEFT(s.hata_mesaji, 70)),
+                       s.olusma_tarihi
+                FROM sistem_hata_loglari s
+            ) activity_feed
+            ORDER BY zaman DESC;";
 
-        await using (var activityCommand = new MySqlCommand(activitySql, connection))
+        await using (var activityCommand = new SqlCommand(activitySql, connection))
         await using (var activityReader = await activityCommand.ExecuteReaderAsync(cancellationToken))
         {
             while (await activityReader.ReadAsync(cancellationToken))
@@ -110,7 +118,7 @@ public class AdminService : IAdminService
         }
 
         const string hotelsSql = @"
-            SELECT
+            SELECT TOP (6)
                 o.otel_adi,
                 CONCAT(o.ilce, ', ', o.sehir) AS sehir_label,
                 o.yayin_durumu,
@@ -119,10 +127,9 @@ public class AdminService : IAdminService
             FROM oteller o
             LEFT JOIN rezervasyonlar r ON r.otel_id = o.id
             GROUP BY o.id, o.otel_adi, o.ilce, o.sehir, o.yayin_durumu, o.ortalama_puan
-            ORDER BY rezervasyon_adedi DESC, o.id DESC
-            LIMIT 6;";
+            ORDER BY rezervasyon_adedi DESC, o.id DESC;";
 
-        await using (var hotelsCommand = new MySqlCommand(hotelsSql, connection))
+        await using (var hotelsCommand = new SqlCommand(hotelsSql, connection))
         await using (var hotelsReader = await hotelsCommand.ExecuteReaderAsync(cancellationToken))
         {
             while (await hotelsReader.ReadAsync(cancellationToken))
@@ -145,7 +152,7 @@ public class AdminService : IAdminService
 
     public async Task<AdminSectionPageViewModel> GetSectionPageAsync(string sectionKey, string fullName, string email, string userRole, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var config = GetSectionConfig(sectionKey);
@@ -165,7 +172,218 @@ public class AdminService : IAdminService
         return model;
     }
 
-    private async Task<AdminShellViewModel> GetShellAsync(MySqlConnection connection, string title, string subtitle, string fullName, string email, string userRole, CancellationToken cancellationToken)
+    public async Task<AdminPartnerApplicationsPageViewModel> GetPartnerApplicationsAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var model = new AdminPartnerApplicationsPageViewModel
+        {
+            Shell = await GetShellAsync(connection, "Partner Basvurulari", "Partner onboarding, e-posta dogrulama ve admin onay akislarini yonetin.", fullName, email, userRole, cancellationToken)
+        };
+
+        var summaryDefinitions = GetSummaryDefinitions("partner-applications").ToList();
+        model.SummaryCards.AddRange(summaryDefinitions.Select(static item => new AdminSummaryCardViewModel
+        {
+            Label = item.Label,
+            Description = item.Description,
+            ToneClass = item.ToneClass,
+            IconClass = item.IconClass
+        }));
+
+        for (var i = 0; i < model.SummaryCards.Count; i++)
+        {
+            await using var command = new SqlCommand(summaryDefinitions[i].Sql, connection);
+            var raw = await command.ExecuteScalarAsync(cancellationToken);
+            model.SummaryCards[i].Value = FormatScalar(raw);
+        }
+
+        const string sql = @"
+            SELECT p.id, p.kullanici_id, o.id AS hotel_id, p.firma_unvani, COALESCE(o.otel_adi, p.firma_unvani),
+                   p.yetkili_ad_soyad, p.yetkili_eposta, p.vergi_numarasi, p.onay_durumu, p.olusturulma_tarihi,
+                   p.onay_tarihi, u.email_dogrulama_tarihi,
+                   (SELECT COUNT(*) FROM partner_basvuru_evraklari ped WHERE ped.partner_id = p.id) AS document_count,
+                   COALESCE(p.red_nedeni, '')
+            FROM partner_detaylari p
+            INNER JOIN users u ON u.id = p.kullanici_id
+            LEFT JOIN oteller o ON o.partner_id = p.id
+            ORDER BY
+                CASE p.onay_durumu
+                    WHEN 'Beklemede' THEN 0
+                    WHEN 'Reddedildi' THEN 1
+                    WHEN 'Askida' THEN 2
+                    ELSE 3
+                END,
+                p.olusturulma_tarihi DESC;";
+
+        await using var listCommand = new SqlCommand(sql, connection);
+        await using var reader = await listCommand.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var status = reader.GetString(8);
+            model.Applications.Add(new AdminPartnerApplicationRowViewModel
+            {
+                PartnerId = reader.GetInt64(0),
+                UserId = reader.GetInt64(1),
+                HotelId = reader.IsDBNull(2) ? null : reader.GetInt64(2),
+                CompanyName = reader.GetString(3),
+                HotelName = reader.GetString(4),
+                ContactName = reader.GetString(5),
+                Email = reader.GetString(6),
+                TaxNumber = reader.GetString(7),
+                StatusText = status,
+                StatusToneClass = status switch
+                {
+                    "Onaylandi" => "success",
+                    "Reddedildi" => "danger",
+                    "Askida" => "warning",
+                    _ => "info"
+                },
+                RegistrationDateText = reader.GetDateTime(9).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                ApprovalDateText = reader.IsDBNull(10) ? null : reader.GetDateTime(10).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                EmailVerified = !reader.IsDBNull(11),
+                DocumentCount = reader.IsDBNull(12) ? 0 : reader.GetInt32(12),
+                ReviewNote = reader.IsDBNull(13) ? null : reader.GetString(13)
+            });
+        }
+
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> ReviewPartnerApplicationAsync(long adminUserId, AdminPartnerApplicationDecisionRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.PartnerId <= 0)
+        {
+            return (false, "Guncellenecek partner basvurusu bulunamadi.");
+        }
+
+        var targetStatus = request.TargetStatus switch
+        {
+            "Onaylandi" => "Onaylandi",
+            "Reddedildi" => "Reddedildi",
+            "Askida" => "Askida",
+            _ => string.Empty
+        };
+
+        if (string.IsNullOrWhiteSpace(targetStatus))
+        {
+            return (false, "Gecersiz partner basvuru durumu secildi.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            const string readSql = """
+                SELECT TOP (1) kullanici_id, onay_durumu
+                FROM partner_detaylari
+                WHERE id = @partnerId;
+                """;
+
+            long userId;
+            string currentStatus;
+            await using (var readCommand = new SqlCommand(readSql, connection, (SqlTransaction)transaction))
+            {
+                readCommand.Parameters.AddWithValue("@partnerId", request.PartnerId);
+                await using var reader = await readCommand.ExecuteReaderAsync(cancellationToken);
+                if (!await reader.ReadAsync(cancellationToken))
+                {
+                    return (false, "Partner basvurusu bulunamadi.");
+                }
+
+                userId = reader.GetInt64(0);
+                currentStatus = reader.GetString(1);
+            }
+
+            const string updateSql = @"
+                UPDATE partner_detaylari
+                SET onay_durumu = @targetStatus,
+                    onay_tarihi = CASE WHEN @targetStatus = 'Onaylandi' THEN SYSUTCDATETIME() ELSE onay_tarihi END,
+                    onaylayan_admin_id = @adminUserId,
+                    red_nedeni = @note,
+                    guncellenme_tarihi = SYSUTCDATETIME()
+                WHERE id = @partnerId;";
+
+            await using (var updateCommand = new SqlCommand(updateSql, connection, (SqlTransaction)transaction))
+            {
+                updateCommand.Parameters.AddWithValue("@targetStatus", targetStatus);
+                updateCommand.Parameters.AddWithValue("@adminUserId", adminUserId);
+                updateCommand.Parameters.AddWithValue("@note", string.IsNullOrWhiteSpace(request.Note) ? DBNull.Value : request.Note.Trim());
+                updateCommand.Parameters.AddWithValue("@partnerId", request.PartnerId);
+                await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            const string hotelUpdateSql = @"
+                UPDATE oteller
+                SET onay_durumu = CASE
+                        WHEN @targetStatus = 'Onaylandi' THEN 'Onaylandı'
+                        WHEN @targetStatus = 'Reddedildi' THEN 'Reddedildi'
+                        ELSE 'Beklemede'
+                    END,
+                    yayin_durumu = CASE
+                        WHEN @targetStatus = 'Askida' THEN 'Askıda'
+                        WHEN @targetStatus = 'Reddedildi' THEN 'Taslak'
+                        ELSE yayin_durumu
+                    END,
+                    onay_tarihi = CASE WHEN @targetStatus = 'Onaylandi' THEN SYSUTCDATETIME() ELSE onay_tarihi END
+                WHERE partner_id = @partnerId;";
+
+            await using (var hotelUpdateCommand = new SqlCommand(hotelUpdateSql, connection, (SqlTransaction)transaction))
+            {
+                hotelUpdateCommand.Parameters.AddWithValue("@targetStatus", targetStatus);
+                hotelUpdateCommand.Parameters.AddWithValue("@partnerId", request.PartnerId);
+                await hotelUpdateCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            if (await TableExistsAsync(connection, "partner_basvuru_hareketleri", cancellationToken, (SqlTransaction?)transaction))
+            {
+                const string historySql = @"
+                    INSERT INTO partner_basvuru_hareketleri
+                    (partner_id, onceki_durum, yeni_durum, islem_tipi, aciklama, islem_yapan_kullanici_id, olusturulma_tarihi)
+                    VALUES
+                    (@partnerId, @currentStatus, @targetStatus, 'AdminPartnerBasvuruKarari', @note, @adminUserId, SYSUTCDATETIME());";
+
+                await using var historyCommand = new SqlCommand(historySql, connection, (SqlTransaction)transaction);
+                historyCommand.Parameters.AddWithValue("@partnerId", request.PartnerId);
+                historyCommand.Parameters.AddWithValue("@currentStatus", currentStatus);
+                historyCommand.Parameters.AddWithValue("@targetStatus", targetStatus);
+                historyCommand.Parameters.AddWithValue("@note", string.IsNullOrWhiteSpace(request.Note) ? "Admin partner basvurusunu guncelledi." : request.Note.Trim());
+                historyCommand.Parameters.AddWithValue("@adminUserId", adminUserId);
+                await historyCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            const string userSql = """
+                UPDATE users
+                SET hesap_durumu = CASE WHEN @targetStatus = 'Kara Liste' THEN 0 ELSE hesap_durumu END
+                WHERE id = @userId;
+                """;
+
+            await using (var userCommand = new SqlCommand(userSql, connection, (SqlTransaction)transaction))
+            {
+                userCommand.Parameters.AddWithValue("@targetStatus", targetStatus);
+                userCommand.Parameters.AddWithValue("@userId", userId);
+                await userCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return (true, targetStatus switch
+            {
+                "Onaylandi" => "Partner basvurusu onaylandi. Partner artik yayin oncesi son icerik adimlarini tamamlayabilir.",
+                "Reddedildi" => "Partner basvurusu reddedildi.",
+                "Askida" => "Partner basvurusu askiya alindi.",
+                _ => "Partner basvurusu guncellendi."
+            });
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    private async Task<AdminShellViewModel> GetShellAsync(SqlConnection connection, string title, string subtitle, string fullName, string email, string userRole, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT
@@ -174,7 +392,7 @@ public class AdminService : IAdminService
                 (SELECT COUNT(*) FROM sistem_hata_loglari WHERE hata_seviyesi IN ('CRITICAL','ALERT','EMERGENCY') AND cozuldu_mu = 0) AS critical_logs,
                 (SELECT COUNT(*) FROM yorumlar WHERE onay_durumu = 'Beklemede') AS pending_reviews;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
         var shell = new AdminShellViewModel { FullName = fullName, Email = email, UserRole = userRole, PanelTitle = title, PanelSubtitle = subtitle };
@@ -189,12 +407,12 @@ public class AdminService : IAdminService
         return shell;
     }
 
-    private static async Task FillSummaryCardsAsync(MySqlConnection connection, AdminSectionPageViewModel model, string sectionKey, CancellationToken cancellationToken)
+    private static async Task FillSummaryCardsAsync(SqlConnection connection, AdminSectionPageViewModel model, string sectionKey, CancellationToken cancellationToken)
     {
         var cards = GetSummaryDefinitions(sectionKey);
         foreach (var card in cards)
         {
-            await using var command = new MySqlCommand(card.Sql, connection);
+            await using var command = new SqlCommand(card.Sql, connection);
             var rawValue = await command.ExecuteScalarAsync(cancellationToken);
             model.SummaryCards.Add(new AdminSummaryCardViewModel
             {
@@ -207,7 +425,7 @@ public class AdminService : IAdminService
         }
     }
 
-    private static async Task FillTableAsync(MySqlConnection connection, AdminSectionPageViewModel model, string sectionKey, CancellationToken cancellationToken)
+    private static async Task FillTableAsync(SqlConnection connection, AdminSectionPageViewModel model, string sectionKey, CancellationToken cancellationToken)
     {
         var sql = GetTableSql(sectionKey);
         if (string.IsNullOrWhiteSpace(sql))
@@ -215,7 +433,7 @@ public class AdminService : IAdminService
             return;
         }
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -368,25 +586,25 @@ public class AdminService : IAdminService
     {
         return sectionKey switch
         {
-            "users" => @"SELECT ad_soyad, eposta, rol, hesap_durumu, DATE_FORMAT(olusturulma_tarihi, '%d.%m.%Y') FROM users ORDER BY id DESC LIMIT 12;",
-            "managers" => @"SELECT u.ad_soyad, u.eposta, COALESCE(d.departman_adi, '-'), COALESCE(r.rol_adi, u.rol), COALESCE(DATE_FORMAT(u.son_giris_tarihi, '%d.%m.%Y %H:%i'), '-') FROM users u LEFT JOIN kullanici_departman kd ON kd.kullanici_id = u.id LEFT JOIN departmanlar d ON d.id = kd.departman_id LEFT JOIN kullanici_rolleri kr ON kr.kullanici_id = u.id AND (kr.bitis_tarihi IS NULL OR kr.bitis_tarihi > NOW()) LEFT JOIN roller r ON r.id = kr.rol_id WHERE u.rol = 'admin' ORDER BY u.id DESC LIMIT 12;",
-            "hotels" => @"SELECT otel_adi, CONCAT(ilce, ', ', sehir), otel_turu, yayin_durumu, onay_durumu, FORMAT(ortalama_puan,1) FROM oteller ORDER BY id DESC LIMIT 12;",
-            "reservations" => @"SELECT rezervasyon_no, misafir_ad_soyad, DATE_FORMAT(giris_tarihi, '%d.%m.%Y'), DATE_FORMAT(cikis_tarihi, '%d.%m.%Y'), durum, FORMAT(toplam_tutar,0) FROM rezervasyonlar ORDER BY id DESC LIMIT 12;",
-            "payments" => @"SELECT islem_no, odeme_turu, odeme_durumu, odeme_yontemi, FORMAT(toplam_tahsilat,0), DATE_FORMAT(odeme_baslangic_tarihi, '%d.%m.%Y %H:%i') FROM odeme_islemleri ORDER BY id DESC LIMIT 12;",
-            "invoices" => @"SELECT fatura_no, DATE_FORMAT(fatura_tarihi, '%d.%m.%Y'), fatura_turu, fatura_durumu, FORMAT(genel_toplam,0), para_birimi FROM faturalar ORDER BY id DESC LIMIT 12;",
-            "commissions" => @"SELECT kayit_no, donem, o.otel_adi, FORMAT(komisyon_tutari,0), otele_odeme_durumu, mutabakat_durumu FROM komisyon_muhasebe_kayitlari k LEFT JOIN oteller o ON o.id = k.otel_id ORDER BY k.id DESC LIMIT 12;",
-            "partner-applications" => @"SELECT firma_unvani, yetkili_ad_soyad, yetkili_eposta, vergi_numarasi, onay_durumu, DATE_FORMAT(olusturulma_tarihi, '%d.%m.%Y') FROM partner_detaylari ORDER BY id DESC LIMIT 12;",
-            "reviews" => @"SELECT COALESCE(yorum_basligi, 'Basliksiz'), genel_puan, onay_durumu, rapor_sayisi, dogrulanmis_konaklama, DATE_FORMAT(olusturulma_tarihi, '%d.%m.%Y') FROM yorumlar ORDER BY id DESC LIMIT 12;",
-            "campaigns" => @"SELECT kampanya_adi, tur, DATE_FORMAT(baslangic_tarihi, '%d.%m.%Y'), DATE_FORMAT(bitis_tarihi, '%d.%m.%Y'), aktif_mi, kullanilan_adet FROM kampanyalar ORDER BY id DESC LIMIT 12;",
-            "notifications" => @"SELECT baslik, bildirim_turu, onem_derecesi, okundu_mu, arsivlendi_mi, DATE_FORMAT(olusturulma_tarihi, '%d.%m.%Y %H:%i') FROM sistem_ici_bildirimler ORDER BY id DESC LIMIT 12;",
-            "logs" => @"SELECT hedef_tablo, islem_turu, ip_adresi, DATE_FORMAT(islem_tarihi, '%d.%m.%Y %H:%i'), 'Admin Islem', '' FROM admin_islem_loglari ORDER BY id DESC LIMIT 6;",
-            "email-templates" => @"SELECT sablon_adi, kategori, dil, aktif_mi, sistem_geneli_mi, konu_basligi FROM mesaj_sablonlari ORDER BY id DESC LIMIT 12;",
-            "faq" => @"SELECT k.kategori_adi, s.soru, s.one_cikan_mi, s.aktif_mi, DATE_FORMAT(s.olusturulma_tarihi, '%d.%m.%Y') FROM sss_sorulari s INNER JOIN sss_kategorileri k ON k.id = s.sss_kategori_id ORDER BY k.siralama, s.siralama, s.id LIMIT 20;",
+            "users" => @"SELECT TOP (12) ad_soyad, eposta, rol, hesap_durumu, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR') FROM users ORDER BY id DESC;",
+            "managers" => @"SELECT TOP (12) u.ad_soyad, u.eposta, COALESCE(d.departman_adi, '-'), COALESCE(r.rol_adi, u.rol), COALESCE(FORMAT(u.son_giris_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR'), '-') FROM users u LEFT JOIN kullanici_departman kd ON kd.kullanici_id = u.id LEFT JOIN departmanlar d ON d.id = kd.departman_id LEFT JOIN kullanici_rolleri kr ON kr.kullanici_id = u.id AND (kr.bitis_tarihi IS NULL OR kr.bitis_tarihi > SYSUTCDATETIME()) LEFT JOIN roller r ON r.id = kr.rol_id WHERE u.rol = 'admin' ORDER BY u.id DESC;",
+            "hotels" => @"SELECT TOP (12) otel_adi, CONCAT(ilce, ', ', sehir), otel_turu, yayin_durumu, onay_durumu, FORMAT(ortalama_puan, '0.0', 'tr-TR') FROM oteller ORDER BY id DESC;",
+            "reservations" => @"SELECT TOP (12) rezervasyon_no, misafir_ad_soyad, FORMAT(giris_tarihi, 'dd.MM.yyyy', 'tr-TR'), FORMAT(cikis_tarihi, 'dd.MM.yyyy', 'tr-TR'), durum, FORMAT(toplam_tutar, 'N0', 'tr-TR') FROM rezervasyonlar ORDER BY id DESC;",
+            "payments" => @"SELECT TOP (12) islem_no, odeme_turu, odeme_durumu, odeme_yontemi, FORMAT(toplam_tahsilat, 'N0', 'tr-TR'), FORMAT(odeme_baslangic_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR') FROM odeme_islemleri ORDER BY id DESC;",
+            "invoices" => @"SELECT TOP (12) fatura_no, FORMAT(fatura_tarihi, 'dd.MM.yyyy', 'tr-TR'), fatura_turu, fatura_durumu, FORMAT(genel_toplam, 'N0', 'tr-TR'), para_birimi FROM faturalar ORDER BY id DESC;",
+            "commissions" => @"SELECT TOP (12) kayit_no, donem, o.otel_adi, FORMAT(komisyon_tutari, 'N0', 'tr-TR'), otele_odeme_durumu, mutabakat_durumu FROM komisyon_muhasebe_kayitlari k LEFT JOIN oteller o ON o.id = k.otel_id ORDER BY k.id DESC;",
+            "partner-applications" => @"SELECT TOP (12) firma_unvani, yetkili_ad_soyad, yetkili_eposta, vergi_numarasi, onay_durumu, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR') FROM partner_detaylari ORDER BY id DESC;",
+            "reviews" => @"SELECT TOP (12) COALESCE(yorum_basligi, 'Basliksiz'), genel_puan, onay_durumu, rapor_sayisi, dogrulanmis_konaklama, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR') FROM yorumlar ORDER BY id DESC;",
+            "campaigns" => @"SELECT TOP (12) kampanya_adi, tur, FORMAT(baslangic_tarihi, 'dd.MM.yyyy', 'tr-TR'), FORMAT(bitis_tarihi, 'dd.MM.yyyy', 'tr-TR'), aktif_mi, kullanilan_adet FROM kampanyalar ORDER BY id DESC;",
+            "notifications" => @"SELECT TOP (12) baslik, bildirim_turu, onem_derecesi, okundu_mu, arsivlendi_mi, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR') FROM sistem_ici_bildirimler ORDER BY id DESC;",
+            "logs" => @"SELECT TOP (6) hedef_tablo, islem_turu, ip_adresi, FORMAT(islem_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR'), 'Admin Islem', '' FROM admin_islem_loglari ORDER BY id DESC;",
+            "email-templates" => @"SELECT TOP (12) sablon_adi, kategori, dil, aktif_mi, sistem_geneli_mi, konu_basligi FROM mesaj_sablonlari ORDER BY id DESC;",
+            "faq" => @"SELECT TOP (20) k.kategori_adi, s.soru, s.one_cikan_mi, s.aktif_mi, FORMAT(s.olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR') FROM sss_sorulari s INNER JOIN sss_kategorileri k ON k.id = s.sss_kategori_id ORDER BY k.siralama, s.siralama, s.id;",
             _ => string.Empty
         };
     }
 
-    private static int SafeInt(MySqlDataReader reader, int ordinal)
+    private static int SafeInt(SqlDataReader reader, int ordinal)
     {
         return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
     }
@@ -426,6 +644,24 @@ public class AdminService : IAdminService
             "Kapatıldı" or "Reddedildi" => "danger",
             _ => "info"
         };
+    }
+
+    private static async Task<bool> TableExistsAsync(
+        SqlConnection connection,
+        string tableName,
+        CancellationToken cancellationToken,
+        SqlTransaction? transaction = null)
+    {
+        const string sql = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = 'dbo'
+              AND TABLE_NAME = @tableName;
+            """;
+
+        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) > 0;
     }
 }
 

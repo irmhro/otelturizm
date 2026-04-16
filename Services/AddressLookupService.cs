@@ -1,4 +1,9 @@
-using MySqlConnector;
+using System.Data.Common;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -6,11 +11,14 @@ namespace otelturizmnew.Services;
 public class AddressLookupService : IAddressLookupService
 {
     private readonly string _connectionString;
+    private readonly bool _isSqlServer;
 
     public AddressLookupService(IConfiguration configuration)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
+        var configuredProvider = configuration["Database:Provider"];
+        _isSqlServer = string.Equals(configuredProvider, "SqlServer", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<IReadOnlyList<AddressProvinceOption>> GetProvincesAsync(CancellationToken cancellationToken = default)
@@ -23,9 +31,8 @@ public class AddressLookupService : IAddressLookupService
             """;
 
         var items = new List<AddressProvinceOption>();
-        await using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
-        await using var command = new MySqlCommand(sql, connection);
+        await using var connection = await CreateOpenConnectionAsync(cancellationToken);
+        await using var command = CreateCommand(connection, sql);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -43,17 +50,23 @@ public class AddressLookupService : IAddressLookupService
 
     public async Task<IReadOnlyList<AddressCountryOption>> GetCountriesAsync(CancellationToken cancellationToken = default)
     {
-        const string tableCheckSql = """
-            SELECT COUNT(*)
-            FROM information_schema.TABLES
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = 'ulkeler';
-            """;
+        var tableCheckSql = _isSqlServer
+            ? """
+              SELECT COUNT(*)
+              FROM INFORMATION_SCHEMA.TABLES
+              WHERE TABLE_CATALOG = DB_NAME()
+                AND TABLE_NAME = 'ulkeler';
+              """
+            : """
+              SELECT COUNT(*)
+              FROM information_schema.TABLES
+              WHERE TABLE_SCHEMA = DATABASE()
+                AND TABLE_NAME = 'ulkeler';
+              """;
 
-        await using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await using var connection = await CreateOpenConnectionAsync(cancellationToken);
 
-        await using (var tableCheck = new MySqlCommand(tableCheckSql, connection))
+        await using (var tableCheck = CreateCommand(connection, tableCheckSql))
         {
             var exists = Convert.ToInt32(await tableCheck.ExecuteScalarAsync(cancellationToken), System.Globalization.CultureInfo.InvariantCulture) > 0;
             if (!exists)
@@ -73,7 +86,7 @@ public class AddressLookupService : IAddressLookupService
             """;
 
         var items = new List<AddressCountryOption>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = CreateCommand(connection, sql);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -104,10 +117,9 @@ public class AddressLookupService : IAddressLookupService
             """;
 
         var items = new List<AddressDistrictOption>();
-        await using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
-        await using var command = new MySqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@provinceId", provinceId);
+        await using var connection = await CreateOpenConnectionAsync(cancellationToken);
+        await using var command = CreateCommand(connection, sql);
+        AddParameter(command, "@provinceId", provinceId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -138,10 +150,9 @@ public class AddressLookupService : IAddressLookupService
             """;
 
         var items = new List<AddressNeighborhoodOption>();
-        await using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
-        await using var command = new MySqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@districtId", districtId);
+        await using var connection = await CreateOpenConnectionAsync(cancellationToken);
+        await using var command = CreateCommand(connection, sql);
+        AddParameter(command, "@districtId", districtId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -161,29 +172,27 @@ public class AddressLookupService : IAddressLookupService
     public async Task<AddressSelectionResolution?> ResolveSelectionAsync(string? city, string? district, string? neighborhood, string? country, CancellationToken cancellationToken = default)
     {
         var result = new AddressSelectionResolution();
-        await using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await using var connection = await CreateOpenConnectionAsync(cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(country))
         {
-            const string countrySql = """
-                SELECT id
+            var countrySql = """
+                SELECT TOP (1) id
                 FROM ulkeler
                 WHERE aktif_mi = 1
-                  AND LOWER(ulke_adi) = LOWER(@country)
-                LIMIT 1;
+                  AND LOWER(ulke_adi) = LOWER(@country);
                 """;
             try
             {
-                await using var countryCommand = new MySqlCommand(countrySql, connection);
-                countryCommand.Parameters.AddWithValue("@country", country.Trim());
+                await using var countryCommand = CreateCommand(connection, countrySql);
+                AddParameter(countryCommand, "@country", country.Trim());
                 var countryId = await countryCommand.ExecuteScalarAsync(cancellationToken);
                 if (countryId is not null && countryId != DBNull.Value)
                 {
                     result.CountryId = Convert.ToInt64(countryId, System.Globalization.CultureInfo.InvariantCulture);
                 }
             }
-            catch (MySqlException)
+            catch (DbException)
             {
                 // ulkeler tablosu henüz yoksa fallback ile devam ediyoruz.
             }
@@ -191,15 +200,14 @@ public class AddressLookupService : IAddressLookupService
 
         if (!string.IsNullOrWhiteSpace(city))
         {
-            const string provinceSql = """
-                SELECT id
+            var provinceSql = """
+                SELECT TOP (1) id
                 FROM iller
                 WHERE aktif_mi = 1
-                  AND LOWER(il_adi) = LOWER(@city)
-                LIMIT 1;
+                  AND LOWER(il_adi) = LOWER(@city);
                 """;
-            await using var provinceCommand = new MySqlCommand(provinceSql, connection);
-            provinceCommand.Parameters.AddWithValue("@city", city.Trim());
+            await using var provinceCommand = CreateCommand(connection, provinceSql);
+            AddParameter(provinceCommand, "@city", city.Trim());
             var provinceId = await provinceCommand.ExecuteScalarAsync(cancellationToken);
             if (provinceId is not null && provinceId != DBNull.Value)
             {
@@ -209,17 +217,16 @@ public class AddressLookupService : IAddressLookupService
 
         if (result.ProvinceId.HasValue && !string.IsNullOrWhiteSpace(district))
         {
-            const string districtSql = """
-                SELECT id
+            var districtSql = """
+                SELECT TOP (1) id
                 FROM ilceler
                 WHERE aktif_mi = 1
                   AND il_id = @provinceId
-                  AND LOWER(ilce_adi) = LOWER(@district)
-                LIMIT 1;
+                  AND LOWER(ilce_adi) = LOWER(@district);
                 """;
-            await using var districtCommand = new MySqlCommand(districtSql, connection);
-            districtCommand.Parameters.AddWithValue("@provinceId", result.ProvinceId.Value);
-            districtCommand.Parameters.AddWithValue("@district", district.Trim());
+            await using var districtCommand = CreateCommand(connection, districtSql);
+            AddParameter(districtCommand, "@provinceId", result.ProvinceId.Value);
+            AddParameter(districtCommand, "@district", district.Trim());
             var districtId = await districtCommand.ExecuteScalarAsync(cancellationToken);
             if (districtId is not null && districtId != DBNull.Value)
             {
@@ -229,17 +236,16 @@ public class AddressLookupService : IAddressLookupService
 
         if (result.DistrictId.HasValue && !string.IsNullOrWhiteSpace(neighborhood))
         {
-            const string neighborhoodSql = """
-                SELECT id
+            var neighborhoodSql = """
+                SELECT TOP (1) id
                 FROM mahalleler
                 WHERE aktif_mi = 1
                   AND ilce_id = @districtId
-                  AND LOWER(mahalle_adi) = LOWER(@neighborhood)
-                LIMIT 1;
+                  AND LOWER(mahalle_adi) = LOWER(@neighborhood);
                 """;
-            await using var neighborhoodCommand = new MySqlCommand(neighborhoodSql, connection);
-            neighborhoodCommand.Parameters.AddWithValue("@districtId", result.DistrictId.Value);
-            neighborhoodCommand.Parameters.AddWithValue("@neighborhood", neighborhood.Trim());
+            await using var neighborhoodCommand = CreateCommand(connection, neighborhoodSql);
+            AddParameter(neighborhoodCommand, "@districtId", result.DistrictId.Value);
+            AddParameter(neighborhoodCommand, "@neighborhood", neighborhood.Trim());
             var neighborhoodId = await neighborhoodCommand.ExecuteScalarAsync(cancellationToken);
             if (neighborhoodId is not null && neighborhoodId != DBNull.Value)
             {
@@ -248,5 +254,27 @@ public class AddressLookupService : IAddressLookupService
         }
 
         return result;
+    }
+
+    private async Task<DbConnection> CreateOpenConnectionAsync(CancellationToken cancellationToken)
+    {
+        DbConnection connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        return connection;
+    }
+
+    private static DbCommand CreateCommand(DbConnection connection, string sql)
+    {
+        var command = connection.CreateCommand();
+        command.CommandText = sql;
+        return command;
+    }
+
+    private static void AddParameter(DbCommand command, string name, object? value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value ?? DBNull.Value;
+        command.Parameters.Add(parameter);
     }
 }

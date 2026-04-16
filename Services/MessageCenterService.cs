@@ -1,5 +1,9 @@
 using System.Globalization;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Services.Abstractions;
 
@@ -69,7 +73,7 @@ public class MessageCenterService : IMessageCenterService
             ORDER BY COALESCE(son_mesaj_tarihi, olusturulma_tarihi) DESC, id DESC
             LIMIT 1;";
 
-        await using (var existingCommand = new MySqlCommand(existingSql, connection))
+        await using (var existingCommand = new SqlCommand(existingSql, connection))
         {
             existingCommand.Parameters.AddWithValue("@userId", userId);
             existingCommand.Parameters.AddWithValue("@hotelId", hotelId);
@@ -96,10 +100,11 @@ public class MessageCenterService : IMessageCenterService
                     @code, @reservationId, @hotelId, @userId, @hotelManagerUserId,
                     @subject, 'Rezervasyon', 'Açık', 'Normal', CURRENT_TIMESTAMP, 'Misafir', 'Görüşme başlatıldı.',
                     1, 0
-                );";
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
             long conversationId;
-            await using (var insertConversationCommand = new MySqlCommand(insertConversationSql, connection, (MySqlTransaction)transaction))
+            await using (var insertConversationCommand = new SqlCommand(insertConversationSql, connection, (SqlTransaction)transaction))
             {
             insertConversationCommand.Parameters.AddWithValue("@code", $"MS{DateTime.UtcNow:yyMMddHHmm}{Random.Shared.Next(100, 999)}");
                 insertConversationCommand.Parameters.AddWithValue("@reservationId", reservationId);
@@ -107,8 +112,8 @@ public class MessageCenterService : IMessageCenterService
                 insertConversationCommand.Parameters.AddWithValue("@userId", userId);
                 insertConversationCommand.Parameters.AddWithValue("@hotelManagerUserId", hotelInfo.ManagerUserId > 0 ? hotelInfo.ManagerUserId : DBNull.Value);
                 insertConversationCommand.Parameters.AddWithValue("@subject", $"{hotelInfo.HotelName} ile görüşme");
-                await insertConversationCommand.ExecuteNonQueryAsync(cancellationToken);
-                conversationId = insertConversationCommand.LastInsertedId;
+                var conversationIdRaw = await insertConversationCommand.ExecuteScalarAsync(cancellationToken);
+                conversationId = Convert.ToInt64(conversationIdRaw ?? 0L, CultureInfo.InvariantCulture);
             }
 
             const string insertMessageSql = @"
@@ -121,7 +126,7 @@ public class MessageCenterService : IMessageCenterService
                     @conversationId, 'Sistem', NULL, @message, 'Sistem Bildirimi', 0, 'Gönderildi', CURRENT_TIMESTAMP
                 );";
 
-            await using (var insertMessageCommand = new MySqlCommand(insertMessageSql, connection, (MySqlTransaction)transaction))
+            await using (var insertMessageCommand = new SqlCommand(insertMessageSql, connection, (SqlTransaction)transaction))
             {
                 insertMessageCommand.Parameters.AddWithValue("@conversationId", conversationId);
                 insertMessageCommand.Parameters.AddWithValue("@message", $"Görüşme {hotelInfo.HotelName} için başlatıldı. Mesajınızı yazabilirsiniz.");
@@ -181,7 +186,7 @@ public class MessageCenterService : IMessageCenterService
               AND m.gonderen_kullanici_id = @userId
               AND m.durum <> 'Silindi';";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@messageId", request.MessageId);
         command.Parameters.AddWithValue("@conversationId", request.ConversationId);
         command.Parameters.AddWithValue("@userId", userId);
@@ -208,7 +213,7 @@ public class MessageCenterService : IMessageCenterService
               AND m.gonderen_firma_id = @firmaId
               AND m.durum <> 'Silindi';";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@messageId", request.MessageId);
         command.Parameters.AddWithValue("@conversationId", request.ConversationId);
         command.Parameters.AddWithValue("@firmaId", firmaId);
@@ -216,7 +221,7 @@ public class MessageCenterService : IMessageCenterService
         return affected > 0 ? (true, "Mesaj silindi olarak işaretlendi.") : (false, "Mesaj silinemedi.");
     }
 
-    private async Task<MessageInboxResult> LoadInboxAsync(MySqlConnection connection, long userId, long? firmaId, long? conversationId, string viewerAccountType, string routeBase, CancellationToken cancellationToken)
+    private async Task<MessageInboxResult> LoadInboxAsync(SqlConnection connection, long userId, long? firmaId, long? conversationId, string viewerAccountType, string routeBase, CancellationToken cancellationToken)
     {
         var result = new MessageInboxResult();
 
@@ -237,7 +242,7 @@ public class MessageCenterService : IMessageCenterService
               AND mk.durum <> 'Arşivlendi'
             ORDER BY COALESCE(mk.son_mesaj_tarihi, mk.olusturulma_tarihi) DESC, mk.id DESC;";
 
-        await using (var command = new MySqlCommand(threadsSql, connection))
+        await using (var command = new SqlCommand(threadsSql, connection))
         {
             command.Parameters.AddWithValue("@viewerType", viewerAccountType);
             command.Parameters.AddWithValue("@userId", userId);
@@ -285,7 +290,7 @@ public class MessageCenterService : IMessageCenterService
                OR  (@viewerType = 'firma' AND mk.firma_id = @firmaId))
             LIMIT 1;";
 
-        await using (var titleCommand = new MySqlCommand(titleSql, connection))
+        await using (var titleCommand = new SqlCommand(titleSql, connection))
         {
             titleCommand.Parameters.AddWithValue("@conversationId", result.SelectedConversationId.Value);
             titleCommand.Parameters.AddWithValue("@viewerType", viewerAccountType);
@@ -319,7 +324,7 @@ public class MessageCenterService : IMessageCenterService
             WHERE m.konusma_id = @conversationId
             ORDER BY m.gonderim_tarihi ASC, m.id ASC;";
 
-        await using (var messageCommand = new MySqlCommand(messagesSql, connection))
+        await using (var messageCommand = new SqlCommand(messagesSql, connection))
         {
             messageCommand.Parameters.AddWithValue("@conversationId", result.SelectedConversationId.Value);
             await using var reader = await messageCommand.ExecuteReaderAsync(cancellationToken);
@@ -351,7 +356,7 @@ public class MessageCenterService : IMessageCenterService
         return result;
     }
 
-    private static async Task<long> ResolveEligibleReservationIdAsync(MySqlConnection connection, long userId, long hotelId, CancellationToken cancellationToken)
+    private static async Task<long> ResolveEligibleReservationIdAsync(SqlConnection connection, long userId, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT id
@@ -362,7 +367,7 @@ public class MessageCenterService : IMessageCenterService
             ORDER BY COALESCE(cikis_tarihi, giris_tarihi) DESC, id DESC
             LIMIT 1;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         var scalar = await command.ExecuteScalarAsync(cancellationToken);
@@ -371,7 +376,7 @@ public class MessageCenterService : IMessageCenterService
             : Convert.ToInt64(scalar, CultureInfo.InvariantCulture);
     }
 
-    private static async Task<(string HotelName, long ManagerUserId)> LoadHotelConversationContextAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private static async Task<(string HotelName, long ManagerUserId)> LoadHotelConversationContextAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT
@@ -386,7 +391,7 @@ public class MessageCenterService : IMessageCenterService
             ORDER BY oks.id ASC
             LIMIT 1;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
@@ -397,7 +402,7 @@ public class MessageCenterService : IMessageCenterService
         return ("Otel", 0);
     }
 
-    private async Task<Dictionary<long, List<MessageAttachmentViewModel>>> LoadAttachmentMapAsync(MySqlConnection connection, long conversationId, long viewerUserId, string viewerAccountType, CancellationToken cancellationToken)
+    private async Task<Dictionary<long, List<MessageAttachmentViewModel>>> LoadAttachmentMapAsync(SqlConnection connection, long conversationId, long viewerUserId, string viewerAccountType, CancellationToken cancellationToken)
     {
         var result = new Dictionary<long, List<MessageAttachmentViewModel>>();
         const string sql = @"
@@ -410,7 +415,7 @@ public class MessageCenterService : IMessageCenterService
               AND gfv.aktif_mi = 1
             ORDER BY md.siralama ASC, md.id ASC;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@conversationId", conversationId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var rows = new List<(long MessageId, long FileId, string Name, string Mime, long Size, bool IsImage)>();
@@ -447,7 +452,7 @@ public class MessageCenterService : IMessageCenterService
         return result;
     }
 
-    private async Task<(bool Success, string Message)> SaveMessageAsync(MySqlConnection connection, MessageSendRequest request, IReadOnlyList<IFormFile>? attachments, HttpContext httpContext, long senderUserId, long? senderFirmaId, string senderType, CancellationToken cancellationToken)
+    private async Task<(bool Success, string Message)> SaveMessageAsync(SqlConnection connection, MessageSendRequest request, IReadOnlyList<IFormFile>? attachments, HttpContext httpContext, long senderUserId, long? senderFirmaId, string senderType, CancellationToken cancellationToken)
     {
         if (request.ConversationId <= 0 || string.IsNullOrWhiteSpace(request.Message) && (attachments is null || attachments.Count == 0))
         {
@@ -467,9 +472,10 @@ public class MessageCenterService : IMessageCenterService
                 (
                     @conversationId, @senderType, @senderUserId, @senderFirmaId, @senderFirmaUserId,
                     @message, @messageType, 0, 'Gönderildi', @ipAddress, @deviceInfo, CURRENT_TIMESTAMP
-                );";
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
-            await using var insertCommand = new MySqlCommand(insertSql, connection, (MySqlTransaction)transaction);
+            await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
             insertCommand.Parameters.AddWithValue("@conversationId", request.ConversationId);
             insertCommand.Parameters.AddWithValue("@senderType", senderType);
             insertCommand.Parameters.AddWithValue("@senderUserId", senderUserId);
@@ -479,8 +485,8 @@ public class MessageCenterService : IMessageCenterService
             insertCommand.Parameters.AddWithValue("@messageType", attachments is { Count: > 0 } ? "Dosya" : "Metin");
             insertCommand.Parameters.AddWithValue("@ipAddress", httpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty);
             insertCommand.Parameters.AddWithValue("@deviceInfo", httpContext.Request.Headers.UserAgent.ToString());
-            await insertCommand.ExecuteNonQueryAsync(cancellationToken);
-            var messageId = insertCommand.LastInsertedId;
+            var messageIdRaw = await insertCommand.ExecuteScalarAsync(cancellationToken);
+            var messageId = Convert.ToInt64(messageIdRaw ?? 0L, CultureInfo.InvariantCulture);
 
             if (attachments is { Count: > 0 })
             {
@@ -497,11 +503,11 @@ public class MessageCenterService : IMessageCenterService
                         Category = "message-attachments"
                     }, cancellationToken);
 
-                    await using var fileCommand = new MySqlCommand(@"
+                    await using var fileCommand = new SqlCommand(@"
                         INSERT INTO mesaj_dosyalari
                         (mesaj_id, guvenli_dosya_id, gosterim_adi, siralama, aktif_mi)
                         VALUES
-                        (@messageId, @fileId, @displayName, @orderNo, 1);", connection, (MySqlTransaction)transaction);
+                        (@messageId, @fileId, @displayName, @orderNo, 1);", connection, (SqlTransaction)transaction);
                     fileCommand.Parameters.AddWithValue("@messageId", messageId);
                     fileCommand.Parameters.AddWithValue("@fileId", stored.FileId);
                     fileCommand.Parameters.AddWithValue("@displayName", stored.OriginalFileName);
@@ -510,7 +516,7 @@ public class MessageCenterService : IMessageCenterService
                 }
             }
 
-            await using (var updateConversationCommand = new MySqlCommand(@"
+            await using (var updateConversationCommand = new SqlCommand(@"
                 UPDATE mesaj_konusmalari
                 SET son_mesaj_tarihi = CURRENT_TIMESTAMP,
                     son_mesaj_gonderen = @senderType,
@@ -519,7 +525,7 @@ public class MessageCenterService : IMessageCenterService
                     firma_okunmamis_sayisi = CASE WHEN @senderType = 'Misafir' THEN firma_okunmamis_sayisi + 1 ELSE 0 END,
                     misafir_son_okuma_tarihi = CASE WHEN @senderType = 'Misafir' THEN CURRENT_TIMESTAMP ELSE misafir_son_okuma_tarihi END,
                     firma_son_okuma_tarihi = CASE WHEN @senderType = 'Firma' THEN CURRENT_TIMESTAMP ELSE firma_son_okuma_tarihi END
-                WHERE id = @conversationId;", connection, (MySqlTransaction)transaction))
+                WHERE id = @conversationId;", connection, (SqlTransaction)transaction))
             {
                 updateConversationCommand.Parameters.AddWithValue("@conversationId", request.ConversationId);
                 updateConversationCommand.Parameters.AddWithValue("@senderType", senderType);
@@ -537,9 +543,9 @@ public class MessageCenterService : IMessageCenterService
         }
     }
 
-    private static async Task MarkUserConversationAsReadAsync(MySqlConnection connection, long conversationId, long userId, CancellationToken cancellationToken)
+    private static async Task MarkUserConversationAsReadAsync(SqlConnection connection, long conversationId, long userId, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             UPDATE mesaj_konusmalari
             SET misafir_okunmamis_sayisi = 0,
                 misafir_son_okuma_tarihi = CURRENT_TIMESTAMP
@@ -550,9 +556,9 @@ public class MessageCenterService : IMessageCenterService
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task MarkFirmaConversationAsReadAsync(MySqlConnection connection, long conversationId, long firmaId, CancellationToken cancellationToken)
+    private static async Task MarkFirmaConversationAsReadAsync(SqlConnection connection, long conversationId, long firmaId, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand(@"
+        await using var command = new SqlCommand(@"
             UPDATE mesaj_konusmalari
             SET firma_okunmamis_sayisi = 0,
                 firma_son_okuma_tarihi = CURRENT_TIMESTAMP
@@ -563,35 +569,35 @@ public class MessageCenterService : IMessageCenterService
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task<bool> AuthorizeConversationForUserAsync(MySqlConnection connection, long conversationId, long userId, CancellationToken cancellationToken)
+    private static async Task<bool> AuthorizeConversationForUserAsync(SqlConnection connection, long conversationId, long userId, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("SELECT COUNT(*) FROM mesaj_konusmalari WHERE id = @id AND misafir_kullanici_id = @userId;", connection);
+        await using var command = new SqlCommand("SELECT COUNT(*) FROM mesaj_konusmalari WHERE id = @id AND misafir_kullanici_id = @userId;", connection);
         command.Parameters.AddWithValue("@id", conversationId);
         command.Parameters.AddWithValue("@userId", userId);
         var count = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
         return count > 0;
     }
 
-    private static async Task<bool> AuthorizeConversationForFirmaAsync(MySqlConnection connection, long conversationId, long firmaId, CancellationToken cancellationToken)
+    private static async Task<bool> AuthorizeConversationForFirmaAsync(SqlConnection connection, long conversationId, long firmaId, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("SELECT COUNT(*) FROM mesaj_konusmalari WHERE id = @id AND firma_id = @firmaId;", connection);
+        await using var command = new SqlCommand("SELECT COUNT(*) FROM mesaj_konusmalari WHERE id = @id AND firma_id = @firmaId;", connection);
         command.Parameters.AddWithValue("@id", conversationId);
         command.Parameters.AddWithValue("@firmaId", firmaId);
         var count = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
         return count > 0;
     }
 
-    private static async Task<long> ResolveFirmaIdAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private static async Task<long> ResolveFirmaIdAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("SELECT COALESCE(firma_id, 0) FROM users WHERE id = @userId LIMIT 1;", connection);
+        await using var command = new SqlCommand("SELECT COALESCE(firma_id, 0) FROM users WHERE id = @userId LIMIT 1;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         var scalar = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt64(scalar ?? 0L, CultureInfo.InvariantCulture);
     }
 
-    private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
+    private async Task<SqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
-        var connection = new MySqlConnection(_connectionString);
+        var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         return connection;
     }

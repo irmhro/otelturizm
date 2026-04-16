@@ -1,5 +1,9 @@
 using System.Globalization;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Reservations;
 using otelturizmnew.Services.Abstractions;
 
@@ -49,7 +53,7 @@ public class ReservationDraftService : IReservationDraftService
                 WHERE user_id IS NULL
                   AND session_anahtari = @sessionKey
                   AND durum IN ('Taslak','Profil Eksik','Giris Bekliyor');";
-            await using var attachCommand = new MySqlCommand(attachSql, connection);
+            await using var attachCommand = new SqlCommand(attachSql, connection);
             attachCommand.Parameters.AddWithValue("@userId", resolvedUserId);
             attachCommand.Parameters.AddWithValue("@sessionKey", sessionKey.Trim());
             await attachCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -76,9 +80,9 @@ public class ReservationDraftService : IReservationDraftService
             WHERE rt.durum IN ('Taslak','Profil Eksik','Giris Bekliyor')
               AND ((@userId > 0 AND rt.user_id = @userId) OR (@sessionKey <> '' AND rt.session_anahtari = @sessionKey))
             ORDER BY rt.son_aktivite_tarihi DESC, rt.id DESC
-            LIMIT 1;";
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId.GetValueOrDefault());
         command.Parameters.AddWithValue("@sessionKey", sessionKey?.Trim() ?? string.Empty);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -120,9 +124,9 @@ public class ReservationDraftService : IReservationDraftService
                 const string updateSql = @"
                     UPDATE rezervasyon_taslaklari
                     SET durum = @status,
-                        son_aktivite_tarihi = UTC_TIMESTAMP()
+                        son_aktivite_tarihi = SYSUTCDATETIME()
                     WHERE id = @draftId;";
-                await using var updateCommand = new MySqlCommand(updateSql, connection);
+                await using var updateCommand = new SqlCommand(updateSql, connection);
                 updateCommand.Parameters.AddWithValue("@status", resolvedStatus);
                 updateCommand.Parameters.AddWithValue("@draftId", draftId);
                 await updateCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -172,7 +176,7 @@ public class ReservationDraftService : IReservationDraftService
                 WHERE user_id IS NULL
                   AND session_anahtari = @sessionKey
                   AND durum IN ('Taslak','Profil Eksik','Giris Bekliyor');";
-            await using var attachCommand = new MySqlCommand(attachSql, connection);
+            await using var attachCommand = new SqlCommand(attachSql, connection);
             attachCommand.Parameters.AddWithValue("@userId", request.UserId!.Value);
             attachCommand.Parameters.AddWithValue("@sessionKey", request.SessionKey!.Trim());
             await attachCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -185,10 +189,10 @@ public class ReservationDraftService : IReservationDraftService
               AND ((@userId > 0 AND user_id = @userId) OR (@sessionKey <> '' AND session_anahtari = @sessionKey))
               AND durum IN ('Taslak','Profil Eksik','Giris Bekliyor')
             ORDER BY son_aktivite_tarihi DESC, id DESC
-            LIMIT 1;";
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
         long? existingId = null;
-        await using (var findCommand = new MySqlCommand(findSql, connection))
+        await using (var findCommand = new SqlCommand(findSql, connection))
         {
             findCommand.Parameters.AddWithValue("@hotelId", request.HotelId);
             findCommand.Parameters.AddWithValue("@userId", request.UserId.GetValueOrDefault());
@@ -228,10 +232,10 @@ public class ReservationDraftService : IReservationDraftService
                     donus_url = @returnUrl,
                     profil_tamamlanma_url = @profileCompletionUrl,
                     notlar = @notes,
-                    gecerlilik_tarihi = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 30 DAY),
-                    son_aktivite_tarihi = UTC_TIMESTAMP()
+                    gecerlilik_tarihi = DATEADD(DAY, 30, SYSUTCDATETIME()),
+                    son_aktivite_tarihi = SYSUTCDATETIME()
                 WHERE id = @draftId;";
-            await using var updateCommand = new MySqlCommand(updateSql, connection);
+            await using var updateCommand = new SqlCommand(updateSql, connection);
             BindDraftParameters(updateCommand, request);
             updateCommand.Parameters.AddWithValue("@draftId", existingId.Value);
             await updateCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -253,10 +257,10 @@ public class ReservationDraftService : IReservationDraftService
                 @guestFullName, @guestEmail, @guestPhone, @guestCity, @guestDistrict, @guestNeighborhood, @guestAddress,
                 @checkIn, @checkOut, @adultCount, @childCount, @roomCount,
                 @nightlyPrice, @taxAmount, @totalAmount, @currency, @returnUrl, @profileCompletionUrl, @notes,
-                DATE_ADD(UTC_TIMESTAMP(), INTERVAL 30 DAY)
+                DATEADD(DAY, 30, SYSUTCDATETIME())
             );
-            SELECT LAST_INSERT_ID();";
-        await using var insertCommand = new MySqlCommand(insertSql, connection);
+            SELECT CAST(SCOPE_IDENTITY() AS bigint);";
+        await using var insertCommand = new SqlCommand(insertSql, connection);
         BindDraftParameters(insertCommand, request);
         insertCommand.Parameters.AddWithValue("@draftCode", Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture));
         return Convert.ToInt64(await insertCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
@@ -269,12 +273,12 @@ public class ReservationDraftService : IReservationDraftService
         const string sql = @"
             DELETE FROM rezervasyon_taslaklari
             WHERE id = @draftId;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@draftId", draftId);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static void BindDraftParameters(MySqlCommand command, ReservationDraftUpsertRequest request)
+    private static void BindDraftParameters(SqlCommand command, ReservationDraftUpsertRequest request)
     {
         command.Parameters.AddWithValue("@userId", request.UserId.HasValue ? request.UserId.Value : DBNull.Value);
         command.Parameters.AddWithValue("@sessionKey", string.IsNullOrWhiteSpace(request.SessionKey) ? DBNull.Value : request.SessionKey!.Trim());
@@ -341,13 +345,13 @@ public class ReservationDraftService : IReservationDraftService
         return string.IsNullOrWhiteSpace(slug) ? hotelCode.ToLowerInvariant() : slug;
     }
 
-    private static decimal ReadDecimal(MySqlDataReader reader, int ordinal)
+    private static decimal ReadDecimal(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0m : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
 
     private static string FormatMoney(decimal amount)
         => amount <= 0 ? "Tutar bekleniyor" : $"₺{amount:N0}";
 
-    private static async Task<bool> HasRequiredReservationProfileAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private static async Task<bool> HasRequiredReservationProfileAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT COALESCE(eposta, ''),
@@ -358,8 +362,9 @@ public class ReservationDraftService : IReservationDraftService
                    COALESCE(mahalle, '')
             FROM users
             WHERE id = @userId
-            LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+            ORDER BY id
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -375,9 +380,9 @@ public class ReservationDraftService : IReservationDraftService
                && !string.IsNullOrWhiteSpace(reader.GetString(5));
     }
 
-    private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
+    private async Task<SqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
-        var connection = new MySqlConnection(_connectionString);
+        var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         return connection;
     }

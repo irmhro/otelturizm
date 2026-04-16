@@ -1,5 +1,10 @@
 using System.Globalization;
-using MySqlConnector;
+using System.Data.Common;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -7,11 +12,14 @@ namespace otelturizmnew.Services;
 public sealed class HotelPricingReadService : IHotelPricingReadService
 {
     private readonly string _connectionString;
+    private readonly bool _isSqlServer;
 
     public HotelPricingReadService(IConfiguration configuration)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
+        var configuredProvider = configuration["Database:Provider"];
+        _isSqlServer = string.Equals(configuredProvider, "SqlServer", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<decimal?> GetHotelEffectivePriceAsync(long hotelId, DateOnly startDate, DateOnly endDate, CancellationToken cancellationToken = default)
@@ -47,14 +55,18 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
             SELECT
                 ot.otel_id,
                 MIN(
-                    COALESCE(
-                        CASE
-                            WHEN ofm.kapali_satis = 1 THEN NULL
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                            ELSE COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))
-                        END,
-                        NULLIF(ot.standart_gecelik_fiyat, 0)
-                    )
+                    CASE
+                        WHEN ofm.kapali_satis = 1 THEN NULL
+                        WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                        WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
+                        WHEN ofm.kampanya_id IS NOT NULL
+                             AND ofm.kampanya_id > 0
+                             AND ofm.indirimli_fiyat IS NOT NULL
+                             AND ofm.indirimli_fiyat > 0
+                             AND ofm.indirimli_fiyat < ofm.gecelik_fiyat
+                            THEN ofm.indirimli_fiyat
+                        ELSE ofm.gecelik_fiyat
+                    END
                 ) AS effective_price
             FROM oda_tipleri ot
             LEFT JOIN oda_fiyat_musaitlik ofm
@@ -66,14 +78,13 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
             GROUP BY ot.otel_id;";
 
         var result = new Dictionary<long, decimal>();
-        await using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
-        await using var command = new MySqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@startDate", fromDate.ToDateTime(TimeOnly.MinValue));
-        command.Parameters.AddWithValue("@endDate", toDate.ToDateTime(TimeOnly.MinValue));
+        await using var connection = await CreateOpenConnectionAsync(cancellationToken);
+        await using var command = CreateCommand(connection, sql);
+        AddParameter(command, "@startDate", fromDate.ToDateTime(TimeOnly.MinValue));
+        AddParameter(command, "@endDate", toDate.ToDateTime(TimeOnly.MinValue));
         for (var i = 0; i < ids.Count; i++)
         {
-            command.Parameters.AddWithValue($"@hotelId{i}", ids[i]);
+            AddParameter(command, $"@hotelId{i}", ids[i]);
         }
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -133,16 +144,19 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
         var sql = $@"
             SELECT
                 ot.id,
-                COALESCE(
-                    AVG(
-                        CASE
-                            WHEN ofm.kapali_satis = 1 THEN NULL
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                            ELSE COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))
-                        END
-                    ),
-                    NULLIF(ot.standart_gecelik_fiyat, 0),
-                    0
+                AVG(
+                    CASE
+                        WHEN ofm.kapali_satis = 1 THEN NULL
+                        WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                        WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
+                        WHEN ofm.kampanya_id IS NOT NULL
+                             AND ofm.kampanya_id > 0
+                             AND ofm.indirimli_fiyat IS NOT NULL
+                             AND ofm.indirimli_fiyat > 0
+                             AND ofm.indirimli_fiyat < ofm.gecelik_fiyat
+                            THEN ofm.indirimli_fiyat
+                        ELSE ofm.gecelik_fiyat
+                    END
                 ) AS effective_nightly
             FROM oda_tipleri ot
             LEFT JOIN oda_fiyat_musaitlik ofm
@@ -150,17 +164,16 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
                AND ofm.otel_id = ot.otel_id
                AND ofm.tarih BETWEEN @startDate AND @endDate
             WHERE ot.id IN ({parameters})
-            GROUP BY ot.id, ot.standart_gecelik_fiyat;";
+            GROUP BY ot.id;";
 
         var result = new Dictionary<long, decimal>();
-        await using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
-        await using var command = new MySqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@startDate", fromDate.ToDateTime(TimeOnly.MinValue));
-        command.Parameters.AddWithValue("@endDate", toDate.ToDateTime(TimeOnly.MinValue));
+        await using var connection = await CreateOpenConnectionAsync(cancellationToken);
+        await using var command = CreateCommand(connection, sql);
+        AddParameter(command, "@startDate", fromDate.ToDateTime(TimeOnly.MinValue));
+        AddParameter(command, "@endDate", toDate.ToDateTime(TimeOnly.MinValue));
         for (var i = 0; i < ids.Count; i++)
         {
-            command.Parameters.AddWithValue($"@roomTypeId{i}", ids[i]);
+            AddParameter(command, $"@roomTypeId{i}", ids[i]);
         }
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -190,21 +203,24 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
             return Array.Empty<RoomNightlyPricePoint>();
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
+        await using var connection = await CreateOpenConnectionAsync(cancellationToken);
 
-        const string roomSql = @"
-            SELECT otel_id, standart_gecelik_fiyat, toplam_oda_sayisi
-            FROM oda_tipleri
-            WHERE id = @roomTypeId
-            LIMIT 1;";
+        var roomSql = _isSqlServer
+            ? @"
+                SELECT TOP (1) otel_id, toplam_oda_sayisi
+                FROM oda_tipleri
+                WHERE id = @roomTypeId;"
+            : @"
+                SELECT otel_id, toplam_oda_sayisi
+                FROM oda_tipleri
+                WHERE id = @roomTypeId
+                LIMIT 1;";
 
         long roomHotelId;
-        decimal defaultBasePrice;
         short defaultTotalRooms;
-        await using (var roomCommand = new MySqlCommand(roomSql, connection))
+        await using (var roomCommand = CreateCommand(connection, roomSql))
         {
-            roomCommand.Parameters.AddWithValue("@roomTypeId", roomTypeId);
+            AddParameter(roomCommand, "@roomTypeId", roomTypeId);
             await using var roomReader = await roomCommand.ExecuteReaderAsync(cancellationToken);
             if (!await roomReader.ReadAsync(cancellationToken))
             {
@@ -212,18 +228,16 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
             }
 
             roomHotelId = roomReader.GetInt64(0);
-            defaultBasePrice = roomReader.IsDBNull(1)
-                ? 0m
-                : Convert.ToDecimal(roomReader.GetValue(1), CultureInfo.InvariantCulture);
-            defaultTotalRooms = roomReader.IsDBNull(2)
+            defaultTotalRooms = roomReader.IsDBNull(1)
                 ? (short)0
-                : Convert.ToInt16(roomReader.GetValue(2), CultureInfo.InvariantCulture);
+                : Convert.ToInt16(roomReader.GetValue(1), CultureInfo.InvariantCulture);
         }
 
         const string pricingSql = @"
             SELECT tarih,
                    gecelik_fiyat,
                    indirimli_fiyat,
+                   kampanya_id,
                    toplam_oda_sayisi,
                    satilan_oda_sayisi,
                    bloke_oda_sayisi,
@@ -235,23 +249,33 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
             ORDER BY tarih ASC;";
 
         var dailyOverrides = new Dictionary<DateOnly, (decimal BasePrice, decimal? DiscountPrice, short TotalRooms, short SoldRooms, short BlockedRooms, bool IsClosed)>();
-        await using (var pricingCommand = new MySqlCommand(pricingSql, connection))
+        await using (var pricingCommand = CreateCommand(connection, pricingSql))
         {
-            pricingCommand.Parameters.AddWithValue("@roomTypeId", roomTypeId);
-            pricingCommand.Parameters.AddWithValue("@hotelId", roomHotelId);
-            pricingCommand.Parameters.AddWithValue("@startDate", checkInDate.ToDateTime(TimeOnly.MinValue));
-            pricingCommand.Parameters.AddWithValue("@endDate", checkOutDate.AddDays(-1).ToDateTime(TimeOnly.MinValue));
+            AddParameter(pricingCommand, "@roomTypeId", roomTypeId);
+            AddParameter(pricingCommand, "@hotelId", roomHotelId);
+            AddParameter(pricingCommand, "@startDate", checkInDate.ToDateTime(TimeOnly.MinValue));
+            AddParameter(pricingCommand, "@endDate", checkOutDate.AddDays(-1).ToDateTime(TimeOnly.MinValue));
             await using var pricingReader = await pricingCommand.ExecuteReaderAsync(cancellationToken);
             while (await pricingReader.ReadAsync(cancellationToken))
             {
                 var date = DateOnly.FromDateTime(pricingReader.GetDateTime(0));
+                var basePrice = pricingReader.IsDBNull(1) ? 0m : pricingReader.GetDecimal(1);
+                var rawDiscountPrice = pricingReader.IsDBNull(2) ? (decimal?)null : pricingReader.GetDecimal(2);
+                var campaignId = pricingReader.IsDBNull(3) ? 0L : pricingReader.GetInt64(3);
+                var validDiscountPrice = campaignId > 0
+                    && rawDiscountPrice.HasValue
+                    && rawDiscountPrice.Value > 0m
+                    && basePrice > 0m
+                    && rawDiscountPrice.Value < basePrice
+                    ? rawDiscountPrice
+                    : null;
                 dailyOverrides[date] = (
-                    pricingReader.IsDBNull(1) ? defaultBasePrice : pricingReader.GetDecimal(1),
-                    pricingReader.IsDBNull(2) ? null : pricingReader.GetDecimal(2),
-                    pricingReader.IsDBNull(3) ? defaultTotalRooms : pricingReader.GetInt16(3),
-                    pricingReader.IsDBNull(4) ? (short)0 : pricingReader.GetInt16(4),
+                    basePrice,
+                    validDiscountPrice,
+                    pricingReader.IsDBNull(4) ? defaultTotalRooms : pricingReader.GetInt16(4),
                     pricingReader.IsDBNull(5) ? (short)0 : pricingReader.GetInt16(5),
-                    !pricingReader.IsDBNull(6) && pricingReader.GetBoolean(6));
+                    pricingReader.IsDBNull(6) ? (short)0 : pricingReader.GetInt16(6),
+                    !pricingReader.IsDBNull(7) && pricingReader.GetBoolean(7));
             }
         }
 
@@ -260,7 +284,7 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
         {
             if (!dailyOverrides.TryGetValue(date, out var day))
             {
-                day = (defaultBasePrice, null, defaultTotalRooms, 0, 0, false);
+                day = (0m, null, 0, 0, 0, false);
             }
 
             var remainingRooms = Math.Max(day.TotalRooms - day.SoldRooms - day.BlockedRooms, 0);
@@ -268,12 +292,12 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
                 ? day.DiscountPrice.Value
                 : day.BasePrice > 0m
                     ? day.BasePrice
-                    : defaultBasePrice;
+                    : 0m;
 
             items.Add(new RoomNightlyPricePoint
             {
                 Date = date,
-                BasePrice = day.BasePrice > 0m ? day.BasePrice : defaultBasePrice,
+                BasePrice = day.BasePrice,
                 DiscountPrice = day.DiscountPrice,
                 EffectivePrice = effectivePrice,
                 RemainingRooms = Convert.ToInt16(Math.Min(remainingRooms, short.MaxValue), CultureInfo.InvariantCulture),
@@ -293,5 +317,29 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
         }
 
         return (startDate, endDate);
+    }
+
+    private async Task<DbConnection> CreateOpenConnectionAsync(CancellationToken cancellationToken)
+    {
+        DbConnection connection = _isSqlServer
+            ? new SqlConnection(_connectionString)
+            : new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        return connection;
+    }
+
+    private static DbCommand CreateCommand(DbConnection connection, string sql)
+    {
+        var command = connection.CreateCommand();
+        command.CommandText = sql;
+        return command;
+    }
+
+    private static void AddParameter(DbCommand command, string name, object? value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value ?? DBNull.Value;
+        command.Parameters.Add(parameter);
     }
 }

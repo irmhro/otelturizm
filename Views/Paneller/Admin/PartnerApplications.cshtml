@@ -1,9 +1,86 @@
-@using otelturizmnew.Models.Paneller.Admin
-@model AdminSectionPageViewModel
+@model otelturizmnew.Models.Paneller.Admin.AdminPartnerApplicationsPageViewModel
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
 }
-<partial name="~/Views/Paneller/Admin/_AdminSectionPage.cshtml" model="Model" />
 
+<section class="admin-section-grid">
+    @foreach (var card in Model.SummaryCards)
+    {
+        <article class="admin-summary-card">
+            <div class="admin-summary-card__icon"><i class="fas @card.IconClass"></i></div>
+            <div>
+                <span>@card.Label</span>
+                <strong>@card.Value</strong>
+                <p>@card.Description</p>
+            </div>
+        </article>
+    }
+</section>
 
+<section class="admin-section-card">
+    <div class="admin-section-header">
+        <div>
+            <h2>Partner basvuru listesi</h2>
+            <p>E-posta dogrulama, belge yukleme ve admin kararini tek ekrandan yonetin.</p>
+        </div>
+    </div>
+
+    @if (Model.Applications.Count == 0)
+    {
+        <div class="admin-empty-state">
+            <strong>Bekleyen partner basvurusu bulunmuyor.</strong>
+            <span>Yeni bir partner basvurusu geldikce bu alanda listelenecek.</span>
+        </div>
+    }
+    else
+    {
+        <div class="admin-partner-application-list">
+            @foreach (var application in Model.Applications)
+            {
+                <article class="admin-partner-application-card">
+                    <div class="admin-partner-application-main">
+                        <div>
+                            <span class="admin-eyebrow">PARTNER #@application.PartnerId</span>
+                            <h3>@application.CompanyName</h3>
+                            <p>@application.HotelName</p>
+                        </div>
+                        <span class="admin-status-chip @application.StatusToneClass">@application.StatusText</span>
+                    </div>
+
+                    <div class="admin-partner-meta">
+                        <span><strong>Yetkili:</strong> @application.ContactName</span>
+                        <span><strong>E-posta:</strong> @application.Email</span>
+                        <span><strong>Vergi No:</strong> @application.TaxNumber</span>
+                        <span><strong>Kayit:</strong> @application.RegistrationDateText</span>
+                        <span><strong>E-posta Onayi:</strong> @(application.EmailVerified ? "Tamamlandi" : "Bekleniyor")</span>
+                        <span><strong>Belge:</strong> @application.DocumentCount</span>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(application.ReviewNote))
+                    {
+                        <div class="admin-partner-note">@application.ReviewNote</div>
+                    }
+
+                    <form method="post" action="/admin/partner-basvurulari/durum" class="admin-partner-decision-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="PartnerId" value="@application.PartnerId" />
+                        <label>
+                            <span>Karar</span>
+                            <select name="TargetStatus">
+                                <option value="Onaylandi" selected="@(application.StatusText == "Onaylandi" ? "selected" : null)">Onayla</option>
+                                <option value="Askida" selected="@(application.StatusText == "Askida" ? "selected" : null)">Askıya Al</option>
+                                <option value="Reddedildi" selected="@(application.StatusText == "Reddedildi" ? "selected" : null)">Reddet</option>
+                            </select>
+                        </label>
+                        <label class="full-span">
+                            <span>Not</span>
+                            <textarea name="Note" rows="3" placeholder="Partnera gorunecek aciklama veya ic not.">@application.ReviewNote</textarea>
+                        </label>
+                        <button type="submit" class="admin-primary-btn">Karari Kaydet</button>
+                    </form>
+                </article>
+            }
+        </div>
+    }
+</section>

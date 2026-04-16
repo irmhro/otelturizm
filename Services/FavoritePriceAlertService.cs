@@ -1,5 +1,6 @@
 using System.Globalization;
-using MySqlConnector;
+using System.Data.Common;
+using Microsoft.Data.SqlClient;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Services.Abstractions;
 
@@ -20,8 +21,8 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
     }
 
     public async Task QueuePriceRecheckJobAsync(
-        MySqlConnection connection,
-        MySqlTransaction? transaction,
+        DbConnection connection,
+        DbTransaction? transaction,
         long hotelId,
         DateTime startDate,
         DateTime endDate,
@@ -37,8 +38,8 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
             INSERT INTO user_favorite_price_alert_jobs
             (otel_id, tarih_baslangic, tarih_bitis, tetikleyen_kullanici_id, durum, son_islenen_alert_id, islenen_kayit_sayisi, deneme_sayisi, planli_calisma_tarihi, olusturulma_tarihi, guncellenme_tarihi)
             VALUES
-            (@hotelId, @startDate, @endDate, @triggeredByUserId, 'Pending', 0, 0, 0, UTC_TIMESTAMP(), UTC_TIMESTAMP(), UTC_TIMESTAMP());";
-        await using var command = new MySqlCommand(insertSql, connection, transaction);
+            (@hotelId, @startDate, @endDate, @triggeredByUserId, 'Pending', 0, 0, 0, SYSUTCDATETIME(), SYSUTCDATETIME(), SYSUTCDATETIME());";
+        await using var command = new SqlCommand(insertSql, (SqlConnection)connection, (SqlTransaction?)transaction);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         command.Parameters.AddWithValue("@startDate", startDate.Date);
         command.Parameters.AddWithValue("@endDate", endDate.Date);
@@ -48,7 +49,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
 
     public async Task ProcessPendingJobsAsync(CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var jobs = await LoadCandidateJobsAsync(connection, cancellationToken);
@@ -73,7 +74,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
         }
     }
 
-    private async Task ProcessSingleJobAsync(MySqlConnection connection, PriceAlertJobRow job, CancellationToken cancellationToken)
+    private async Task ProcessSingleJobAsync(SqlConnection connection, PriceAlertJobRow job, CancellationToken cancellationToken)
     {
         const int batchSize = 250;
         var matches = await LoadMatchingAlertsAsync(connection, job, batchSize, cancellationToken);
@@ -114,11 +115,11 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
 
             const string touchAlertSql = @"
                 UPDATE user_favorite_price_alerts
-                SET son_tetiklenen_tarih = UTC_TIMESTAMP(),
+                SET son_tetiklenen_tarih = SYSUTCDATETIME(),
                     son_tetiklenen_fiyat = @price,
                     guncellenme_tarihi = CURRENT_TIMESTAMP
                 WHERE id = @alertId;";
-            await using var touchAlertCommand = new MySqlCommand(touchAlertSql, connection);
+            await using var touchAlertCommand = new SqlCommand(touchAlertSql, connection);
             touchAlertCommand.Parameters.AddWithValue("@alertId", match.AlertId);
             touchAlertCommand.Parameters.AddWithValue("@price", match.MatchedPrice);
             await touchAlertCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -139,31 +140,30 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
                 son_islenen_alert_id = @cursor,
                 islenen_kayit_sayisi = islenen_kayit_sayisi + @processedCount,
                 hata_mesaji = NULL,
-                planli_calisma_tarihi = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 2 SECOND),
+                planli_calisma_tarihi = DATEADD(SECOND, 2, SYSUTCDATETIME()),
                 guncellenme_tarihi = CURRENT_TIMESTAMP
             WHERE id = @jobId;";
-        await using var requeueCommand = new MySqlCommand(requeueSql, connection);
+        await using var requeueCommand = new SqlCommand(requeueSql, connection);
         requeueCommand.Parameters.AddWithValue("@jobId", job.JobId);
         requeueCommand.Parameters.AddWithValue("@cursor", lastCursor);
         requeueCommand.Parameters.AddWithValue("@processedCount", processedCount);
         await requeueCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task<List<PriceAlertJobRow>> LoadCandidateJobsAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    private static async Task<List<PriceAlertJobRow>> LoadCandidateJobsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, otel_id, tarih_baslangic, tarih_bitis, son_islenen_alert_id, deneme_sayisi
+            SELECT TOP (8) id, otel_id, tarih_baslangic, tarih_bitis, son_islenen_alert_id, deneme_sayisi
             FROM user_favorite_price_alert_jobs
-            WHERE planli_calisma_tarihi <= UTC_TIMESTAMP()
+            WHERE planli_calisma_tarihi <= SYSUTCDATETIME()
               AND (
                     durum = 'Pending'
-                    OR (durum = 'Processing' AND guncellenme_tarihi <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 5 MINUTE))
+                    OR (durum = 'Processing' AND guncellenme_tarihi <= DATEADD(MINUTE, -5, SYSUTCDATETIME()))
                   )
-            ORDER BY id ASC
-            LIMIT 8;";
+            ORDER BY id ASC;";
 
         var items = new List<PriceAlertJobRow>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -179,7 +179,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
         return items;
     }
 
-    private static async Task<bool> TryClaimJobAsync(MySqlConnection connection, long jobId, CancellationToken cancellationToken)
+    private static async Task<bool> TryClaimJobAsync(SqlConnection connection, long jobId, CancellationToken cancellationToken)
     {
         const string sql = @"
             UPDATE user_favorite_price_alert_jobs
@@ -189,18 +189,18 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
             WHERE id = @jobId
               AND (
                     durum = 'Pending'
-                    OR (durum = 'Processing' AND guncellenme_tarihi <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 5 MINUTE))
+                    OR (durum = 'Processing' AND guncellenme_tarihi <= DATEADD(MINUTE, -5, SYSUTCDATETIME()))
                   );";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@jobId", jobId);
         var affected = await command.ExecuteNonQueryAsync(cancellationToken);
         return affected > 0;
     }
 
-    private static async Task<List<PriceAlertMatchRow>> LoadMatchingAlertsAsync(MySqlConnection connection, PriceAlertJobRow job, int batchSize, CancellationToken cancellationToken)
+    private static async Task<List<PriceAlertMatchRow>> LoadMatchingAlertsAsync(SqlConnection connection, PriceAlertJobRow job, int batchSize, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT
+            SELECT TOP (@batchSize)
                 a.id AS alert_id,
                 a.user_id,
                 COALESCE(NULLIF(u.eposta, ''), '') AS user_email,
@@ -219,17 +219,19 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
             WHERE a.otel_id = @hotelId
               AND COALESCE(a.aktif_mi, 1) = 1
               AND a.id > @cursor
-              AND ofm.tarih BETWEEN GREATEST(DATE(a.baslangic_tarihi), DATE(@jobStart)) AND LEAST(DATE(a.bitis_tarihi), DATE(@jobEnd))
+              AND ofm.tarih BETWEEN
+                    (CASE WHEN CAST(a.baslangic_tarihi AS date) > CAST(@jobStart AS date) THEN CAST(a.baslangic_tarihi AS date) ELSE CAST(@jobStart AS date) END)
+                    AND
+                    (CASE WHEN CAST(a.bitis_tarihi AS date) < CAST(@jobEnd AS date) THEN CAST(a.bitis_tarihi AS date) ELSE CAST(@jobEnd AS date) END)
               AND COALESCE(ofm.kapali_satis, 0) = 0
               AND (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) > 0
               AND COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0), 999999999.99) <= a.hedef_maksimum_fiyat
-              AND (a.son_tetiklenen_tarih IS NULL OR a.son_tetiklenen_tarih <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 6 HOUR))
+              AND (a.son_tetiklenen_tarih IS NULL OR a.son_tetiklenen_tarih <= DATEADD(HOUR, -6, SYSUTCDATETIME()))
             GROUP BY a.id, a.user_id, u.eposta, u.ad_soyad, o.otel_adi, o.otel_kodu, a.hedef_maksimum_fiyat
-            ORDER BY a.id ASC
-            LIMIT @batchSize;";
+            ORDER BY a.id ASC;";
 
         var matches = new List<PriceAlertMatchRow>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", job.HotelId);
         command.Parameters.AddWithValue("@cursor", job.LastAlertCursor);
         command.Parameters.AddWithValue("@jobStart", job.StartDate.Date);
@@ -256,7 +258,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
         return matches;
     }
 
-    private static async Task MarkCompletedAsync(MySqlConnection connection, long jobId, long cursor, int processedCount, CancellationToken cancellationToken)
+    private static async Task MarkCompletedAsync(SqlConnection connection, long jobId, long cursor, int processedCount, CancellationToken cancellationToken)
     {
         const string sql = @"
             UPDATE user_favorite_price_alert_jobs
@@ -266,23 +268,29 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
                 hata_mesaji = NULL,
                 guncellenme_tarihi = CURRENT_TIMESTAMP
             WHERE id = @jobId;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@jobId", jobId);
         command.Parameters.AddWithValue("@cursor", cursor);
         command.Parameters.AddWithValue("@processedCount", processedCount);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task MarkFailedAsync(MySqlConnection connection, long jobId, string errorMessage, CancellationToken cancellationToken)
+    private static async Task MarkFailedAsync(SqlConnection connection, long jobId, string errorMessage, CancellationToken cancellationToken)
     {
         const string sql = @"
             UPDATE user_favorite_price_alert_jobs
             SET durum = 'Pending',
-                planli_calisma_tarihi = DATE_ADD(UTC_TIMESTAMP(), INTERVAL LEAST(300, POW(2, deneme_sayisi)) SECOND),
+                planli_calisma_tarihi = DATEADD(
+                    SECOND,
+                    CASE
+                        WHEN POWER(CAST(2 AS bigint), deneme_sayisi) > 300 THEN 300
+                        ELSE CAST(POWER(CAST(2 AS bigint), deneme_sayisi) AS int)
+                    END,
+                    SYSUTCDATETIME()),
                 hata_mesaji = @error,
                 guncellenme_tarihi = CURRENT_TIMESTAMP
             WHERE id = @jobId;";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@jobId", jobId);
         command.Parameters.AddWithValue("@error", errorMessage.Length > 500 ? errorMessage[..500] : errorMessage);
         await command.ExecuteNonQueryAsync(cancellationToken);

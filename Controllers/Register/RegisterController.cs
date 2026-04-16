@@ -25,6 +25,27 @@ public class RegisterController : Controller
         _authService = authService;
     }
 
+    [HttpGet(UserRegisterPath)]
+    public IActionResult UserRegisterRedirect()
+    {
+        TempData["OpenUserRegisterTab"] = "1";
+        return Redirect(UserLoginPath);
+    }
+
+    [HttpGet(PartnerRegisterPath)]
+    public IActionResult PartnerRegisterRedirect()
+    {
+        TempData["OpenPartnerRegisterTab"] = "1";
+        return Redirect(PartnerLoginPath);
+    }
+
+    [HttpGet(FirmaRegisterPath)]
+    public IActionResult FirmaRegisterRedirect()
+    {
+        TempData["OpenFirmaRegisterTab"] = "1";
+        return Redirect(FirmaLoginPath);
+    }
+
     [HttpPost(UserRegisterPath)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UserKayit(UserRegistrationModel model, CancellationToken cancellationToken = default)

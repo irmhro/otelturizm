@@ -1,5 +1,9 @@
 using System.Globalization;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Reservations;
 using otelturizmnew.Services.Abstractions;
@@ -164,7 +168,7 @@ public class PublicReservationService : IPublicReservationService
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            var reservationNo = await GenerateReservationNoAsync(connection, transaction, cancellationToken);
+            var reservationNo = await GenerateReservationNoAsync(connection, (SqlTransaction)transaction, cancellationToken);
             const string insertSql = @"
                 INSERT INTO rezervasyonlar
                 (
@@ -185,10 +189,11 @@ public class PublicReservationService : IPublicReservationService
                     @nightlyPrice, @roomTotal, @taxAmount, @totalAmount,
                     @commissionRate, 'Onay Bekliyor', 'Beklemede', @paymentMethod, 'Beklemede', 'Onay Gerekmiyor',
                     'Web', 'Web', @note, @draftId
-                );";
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
             long reservationId;
-            await using (var insertCommand = new MySqlCommand(insertSql, connection, (MySqlTransaction)transaction))
+            await using (var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction))
             {
                 insertCommand.Parameters.AddWithValue("@reservationNo", reservationNo);
                 insertCommand.Parameters.AddWithValue("@hotelId", form.HotelId);
@@ -214,11 +219,11 @@ public class PublicReservationService : IPublicReservationService
                 insertCommand.Parameters.AddWithValue("@commissionRate", hotel.CommissionRate);
                 insertCommand.Parameters.AddWithValue("@paymentMethod", paymentMethod);
                 insertCommand.Parameters.AddWithValue("@draftId", draftId);
-                await insertCommand.ExecuteNonQueryAsync(cancellationToken);
-                reservationId = insertCommand.LastInsertedId;
+                var reservationIdRaw = await insertCommand.ExecuteScalarAsync(cancellationToken);
+                reservationId = Convert.ToInt64(reservationIdRaw ?? 0L, CultureInfo.InvariantCulture);
             }
 
-            await _emailQueueService.QueueTemplateAsync(connection, (MySqlTransaction)transaction, new QueuedEmailTemplateRequest
+            await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
             {
                 UserId = authenticatedUserId,
                 RecipientEmail = userProfile.Email,
@@ -239,8 +244,8 @@ public class PublicReservationService : IPublicReservationService
                 }
             }, cancellationToken);
 
-            var partnerRecipient = await ResolvePartnerRecipientAsync(connection, (MySqlTransaction)transaction, form.HotelId, cancellationToken);
-            await _emailQueueService.QueueTemplateAsync(connection, (MySqlTransaction)transaction, new QueuedEmailTemplateRequest
+            var partnerRecipient = await ResolvePartnerRecipientAsync(connection, (SqlTransaction)transaction, form.HotelId, cancellationToken);
+            await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
             {
                 UserId = partnerRecipient.UserId,
                 RecipientEmail = partnerRecipient.Email,
@@ -301,14 +306,14 @@ public class PublicReservationService : IPublicReservationService
         }
     }
 
-    private async Task<UserProfileSnapshot> LoadUserProfileAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private async Task<UserProfileSnapshot> LoadUserProfileAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT ad_soyad, eposta, COALESCE(telefon, ''), COALESCE(sehir, ''), COALESCE(ilce, ''), COALESCE(mahalle, ''), COALESCE(adres, ''), dogum_tarihi, COALESCE(cinsiyet, '')
             FROM users
             WHERE id = @userId
-            LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -332,15 +337,15 @@ public class PublicReservationService : IPublicReservationService
         };
     }
 
-    private async Task<HotelSnapshot> LoadHotelAsync(MySqlConnection connection, long hotelId, long roomTypeId, CancellationToken cancellationToken)
+    private async Task<HotelSnapshot> LoadHotelAsync(SqlConnection connection, long hotelId, long roomTypeId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT o.otel_adi, o.otel_kodu, o.tam_adres, COALESCE(o.varsayilan_komisyon_orani,0), ot.oda_adi
             FROM oteller o
             INNER JOIN oda_tipleri ot ON ot.id = @roomTypeId AND ot.otel_id = o.id
             WHERE o.id = @hotelId
-            LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection);
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -362,7 +367,7 @@ public class PublicReservationService : IPublicReservationService
         };
     }
 
-    private async Task<(long UserId, string Email, string ManagerName)> ResolvePartnerRecipientAsync(MySqlConnection connection, MySqlTransaction transaction, long hotelId, CancellationToken cancellationToken)
+    private async Task<(long UserId, string Email, string ManagerName)> ResolvePartnerRecipientAsync(SqlConnection connection, SqlTransaction transaction, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT COALESCE(o.user_id, oks.user_id, 1),
@@ -373,8 +378,8 @@ public class PublicReservationService : IPublicReservationService
             LEFT JOIN users u ON u.id = COALESCE(o.user_id, oks.user_id)
             WHERE o.id = @hotelId
             ORDER BY oks.ana_sorumlu_mu DESC, oks.id ASC
-            LIMIT 1;";
-        await using var command = new MySqlCommand(sql, connection, transaction);
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
+        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
@@ -385,7 +390,7 @@ public class PublicReservationService : IPublicReservationService
         return (1L, "partner@otelturizm.com", "Partner Yetkilisi");
     }
 
-    private async Task<PriceSummary> BuildPriceSummaryAsync(MySqlConnection connection, long roomTypeId, DateOnly checkIn, DateOnly checkOut, int roomCount, CancellationToken cancellationToken)
+    private async Task<PriceSummary> BuildPriceSummaryAsync(SqlConnection connection, long roomTypeId, DateOnly checkIn, DateOnly checkOut, int roomCount, CancellationToken cancellationToken)
     {
         var nightlyBreakdown = await _hotelPricingReadService.GetRoomNightlyBreakdownAsync(roomTypeId, checkIn, checkOut, cancellationToken);
         if (nightlyBreakdown.Count == 0)
@@ -419,9 +424,9 @@ public class PublicReservationService : IPublicReservationService
         };
     }
 
-    private async Task<string> GenerateReservationNoAsync(MySqlConnection connection, MySqlTransaction transaction, CancellationToken cancellationToken)
+    private async Task<string> GenerateReservationNoAsync(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("SELECT COUNT(*) + 1 FROM rezervasyonlar WHERE DATE(olusturulma_tarihi) = CURDATE();", connection, transaction);
+        await using var command = new SqlCommand("SELECT COUNT(*) + 1 FROM rezervasyonlar WHERE DATE(olusturulma_tarihi) = CURDATE();", connection, (SqlTransaction)transaction);
         var seq = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
         return $"WEB-{DateTime.Now:yyyyMMdd}-{seq:0000}";
     }
@@ -521,9 +526,9 @@ public class PublicReservationService : IPublicReservationService
             Notes = source.Notes
         };
 
-    private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
+    private async Task<SqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
-        var connection = new MySqlConnection(_connectionString);
+        var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         return connection;
     }

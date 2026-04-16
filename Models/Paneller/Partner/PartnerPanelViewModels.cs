@@ -662,6 +662,78 @@ public class PartnerPreferencesForm
     public bool RememberDevice { get; set; } = true;
 }
 
+public class PartnerApplicationPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public PartnerApplicationStatusViewModel Status { get; set; } = new();
+    public PartnerApplicationProfileForm Form { get; set; } = new();
+    public PartnerApplicationDocumentUploadForm UploadForm { get; set; } = new();
+    public List<PartnerApplicationDocumentViewModel> Documents { get; set; } = new();
+}
+
+public class PartnerApplicationStatusViewModel
+{
+    public long PartnerId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string StatusToneClass { get; set; } = "warning";
+    public string RegistrationDateText { get; set; } = string.Empty;
+    public string? ApprovalDateText { get; set; }
+    public string? RejectionReason { get; set; }
+    public bool EmailVerified { get; set; }
+    public bool CanPublish { get; set; }
+    public string PublicationHint { get; set; } = string.Empty;
+}
+
+public class PartnerApplicationProfileForm
+{
+    public long HotelId { get; set; }
+    public long PartnerId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string CompanyType { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string ContactName { get; set; } = string.Empty;
+    public string ContactTitle { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string TaxOffice { get; set; } = string.Empty;
+    public string TaxNumber { get; set; } = string.Empty;
+    public string ContactTcNo { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string District { get; set; } = string.Empty;
+    public string? Neighborhood { get; set; }
+    public string BankName { get; set; } = string.Empty;
+    public string? BankBranch { get; set; }
+    public string Iban { get; set; } = string.Empty;
+    public string? Website { get; set; }
+    public string? Description { get; set; }
+}
+
+public class PartnerApplicationDocumentUploadForm
+{
+    public long HotelId { get; set; }
+    public long PartnerId { get; set; }
+    public string DocumentType { get; set; } = "Vergi Levhasi";
+    public string? DocumentTitle { get; set; }
+    public IFormFile? File { get; set; }
+}
+
+public class PartnerApplicationDocumentViewModel
+{
+    public long DocumentId { get; set; }
+    public long SecureFileId { get; set; }
+    public string DocumentType { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string StatusToneClass { get; set; } = "warning";
+    public string UploadedAtText { get; set; } = string.Empty;
+    public string? ReviewNote { get; set; }
+    public string? AccessUrl { get; set; }
+}
+
 public class PartnerSupportPageViewModel
 {
     public PartnerShellViewModel Shell { get; set; } = new();

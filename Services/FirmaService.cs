@@ -1,5 +1,9 @@
 using System.Globalization;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Firma;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.Firma;
@@ -21,7 +25,7 @@ public class FirmaService : IFirmaService
 
     public async Task<FirmaLandingPageViewModel> GetLandingPageAsync(CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var model = new FirmaLandingPageViewModel
@@ -35,7 +39,7 @@ public class FirmaService : IFirmaService
                 (SELECT COUNT(DISTINCT otel_id) FROM firma_ozel_fiyatlar WHERE aktif_mi = 1) AS contracted_hotels,
                 (SELECT COALESCE(MAX(indirim_orani), 0) FROM firma_ozel_fiyatlar WHERE aktif_mi = 1) AS max_discount;";
 
-        await using (var summaryCommand = new MySqlCommand(summarySql, connection))
+        await using (var summaryCommand = new SqlCommand(summarySql, connection))
         await using (var reader = await summaryCommand.ExecuteReaderAsync(cancellationToken))
         {
             if (await reader.ReadAsync(cancellationToken))
@@ -54,15 +58,14 @@ public class FirmaService : IFirmaService
         };
 
         const string dealsSql = @"
-            SELECT ot.id, ot.otel_adi, ot.sehir, od.standart_gecelik_fiyat, foz.ozel_fiyat, foz.indirim_orani, foz.minimum_oda_sayisi
+            SELECT TOP (6) ot.id, ot.otel_adi, ot.sehir, od.standart_gecelik_fiyat, foz.ozel_fiyat, foz.indirim_orani, foz.minimum_oda_sayisi
             FROM firma_ozel_fiyatlar foz
             INNER JOIN oteller ot ON ot.id = foz.otel_id
             LEFT JOIN oda_tipleri od ON od.id = foz.oda_tip_id
             WHERE foz.aktif_mi = 1
-            ORDER BY foz.indirim_orani DESC, foz.ozel_fiyat ASC
-            LIMIT 6;";
+            ORDER BY foz.indirim_orani DESC, foz.ozel_fiyat ASC;";
 
-        await using (var dealsCommand = new MySqlCommand(dealsSql, connection))
+        await using (var dealsCommand = new SqlCommand(dealsSql, connection))
         await using (var reader = await dealsCommand.ExecuteReaderAsync(cancellationToken))
         {
             while (await reader.ReadAsync(cancellationToken))
@@ -103,7 +106,7 @@ public class FirmaService : IFirmaService
 
     public async Task<FirmaDashboardPageViewModel> GetDashboardAsync(long userId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Dashboard", "Kurumsal fiyatları, çalışanları ve seyahat bütçesini tek panelden yönetin.", "dashboard", cancellationToken);
 
@@ -116,7 +119,7 @@ public class FirmaService : IFirmaService
                 (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.firma_id = @firmaId) AS reservation_count,
                 (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.firma_id = @firmaId AND r.firma_onay_durumu = 'Beklemede') AS pending_approval_count;";
 
-        await using (var command = new MySqlCommand(statsSql, connection))
+        await using (var command = new SqlCommand(statsSql, connection))
         {
             command.Parameters.AddWithValue("@firmaId", context.FirmaId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -137,7 +140,7 @@ public class FirmaService : IFirmaService
 
     public async Task<FirmaDealsPageViewModel> GetDealsAsync(long userId, string? city = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Firma Fiyatları", "Otellerin firmanız için tanımladığı özel kurumsal fiyatları canlı takip edin.", "deals", cancellationToken);
         return new FirmaDealsPageViewModel
@@ -151,7 +154,7 @@ public class FirmaService : IFirmaService
 
     public async Task<FirmaReservationsPageViewModel> GetReservationsAsync(long userId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Rezervasyonlar", "Firma adına oluşturulan tüm konaklama kayıtlarını görün.", "reservations", cancellationToken);
         return new FirmaReservationsPageViewModel { Shell = context.Shell, Reservations = await LoadReservationsAsync(connection, context.FirmaId, 200, cancellationToken) };
@@ -159,7 +162,7 @@ public class FirmaService : IFirmaService
 
     public async Task<FirmaMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Mesajlar", "Kullanıcılarla güvenli şekilde yazışın, ek ve belge paylaşın.", "messages", cancellationToken);
         var inbox = await _messageCenterService.GetFirmaInboxAsync(userId, conversationId, cancellationToken);
@@ -176,7 +179,7 @@ public class FirmaService : IFirmaService
 
     public async Task<FirmaEmployeesPageViewModel> GetEmployeesAsync(long userId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Çalışanlar", "Firma kullanıcılarını, departmanlarını ve harcama yetkilerini yönetin.", "employees", cancellationToken);
         var employees = await LoadEmployeesAsync(connection, context.FirmaId, 200, cancellationToken);
@@ -193,7 +196,7 @@ public class FirmaService : IFirmaService
 
     public async Task<FirmaLimitsPageViewModel> GetLimitsAsync(long userId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Limitler & Onaylar", "Departman ve çalışan bazlı harcama limitleri ile onay akışlarını yönetin.", "limits", cancellationToken);
         var model = new FirmaLimitsPageViewModel { Shell = context.Shell };
@@ -208,7 +211,7 @@ public class FirmaService : IFirmaService
             WHERE firma_id = @firmaId AND aktif_mi = 1
             ORDER BY kullanici_id IS NULL DESC, departman ASC, id ASC;";
 
-        await using (var command = new MySqlCommand(sql, connection))
+        await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@firmaId", context.FirmaId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -233,7 +236,7 @@ public class FirmaService : IFirmaService
 
     public async Task<FirmaInvoicesPageViewModel> GetInvoicesAsync(long userId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Faturalar", "Kurumsal rezervasyonlara ait fatura kayıtlarını takip edin.", "invoices", cancellationToken);
         var model = new FirmaInvoicesPageViewModel { Shell = context.Shell };
@@ -245,7 +248,7 @@ public class FirmaService : IFirmaService
             ORDER BY fatura_tarihi DESC, id DESC
             LIMIT 100;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", context.FirmaId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -266,7 +269,7 @@ public class FirmaService : IFirmaService
 
     public async Task<FirmaSpendingReportsPageViewModel> GetSpendingReportsAsync(long userId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Harcama Raporları", "Aylık kurumsal spend ve rezervasyon adetlerini izleyin.", "spending", cancellationToken);
         var model = new FirmaSpendingReportsPageViewModel { Shell = context.Shell };
@@ -279,7 +282,7 @@ public class FirmaService : IFirmaService
             GROUP BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi), DATE_FORMAT(olusturulma_tarihi, '%b')
             ORDER BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi);";
 
-        await using (var command = new MySqlCommand(sql, connection))
+        await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@firmaId", context.FirmaId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -306,7 +309,7 @@ public class FirmaService : IFirmaService
 
     public async Task<FirmaHotelReportsPageViewModel> GetHotelReportsAsync(long userId, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Otel Bazlı Rapor", "Hangi otelde ne kadar rezervasyon ve tasarruf oluştuğunu görün.", "hotels", cancellationToken);
         var model = new FirmaHotelReportsPageViewModel { Shell = context.Shell };
@@ -320,7 +323,7 @@ public class FirmaService : IFirmaService
             GROUP BY o.id, o.otel_adi, o.ilce, o.sehir
             ORDER BY toplam DESC, rezervasyon_sayisi DESC;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", context.FirmaId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -348,12 +351,12 @@ public class FirmaService : IFirmaService
         var normalizedEmail = model.Email.Trim().ToLowerInvariant();
         var role = NormalizeFirmaRole(model.Role);
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, string.Empty, string.Empty, "employees", cancellationToken);
 
         const string existsSql = "SELECT COUNT(*) FROM users WHERE eposta = @email;";
-        await using (var existsCommand = new MySqlCommand(existsSql, connection))
+        await using (var existsCommand = new SqlCommand(existsSql, connection))
         {
             existsCommand.Parameters.AddWithValue("@email", normalizedEmail);
             var existingCount = Convert.ToInt32(await existsCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
@@ -382,7 +385,7 @@ public class FirmaService : IFirmaService
                 SELECT LAST_INSERT_ID();";
 
             long createdUserId;
-            await using (var insertUserCommand = new MySqlCommand(insertUserSql, connection, transaction))
+            await using (var insertUserCommand = new SqlCommand(insertUserSql, connection, (SqlTransaction)transaction))
             {
                 insertUserCommand.Parameters.AddWithValue("@fullName", model.FullName.Trim());
                 insertUserCommand.Parameters.AddWithValue("@email", normalizedEmail);
@@ -410,7 +413,7 @@ public class FirmaService : IFirmaService
                         @firmaId, @userId, @department, @nightlyLimit, @approvalRequired, 1, NOW()
                     );";
 
-                await using var limitCommand = new MySqlCommand(limitSql, connection, transaction);
+                await using var limitCommand = new SqlCommand(limitSql, connection, (SqlTransaction)transaction);
                 limitCommand.Parameters.AddWithValue("@firmaId", context.FirmaId);
                 limitCommand.Parameters.AddWithValue("@userId", createdUserId);
                 limitCommand.Parameters.AddWithValue("@department", string.IsNullOrWhiteSpace(model.Department) ? DBNull.Value : (object)model.Department.Trim());
@@ -437,7 +440,7 @@ public class FirmaService : IFirmaService
 
     public async Task<(bool Success, string Message)> UpsertLimitAsync(long userId, FirmaLimitUpsertModel model, CancellationToken cancellationToken = default)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, string.Empty, string.Empty, "limits", cancellationToken);
 
@@ -452,7 +455,7 @@ public class FirmaService : IFirmaService
             if (model.UserId.HasValue)
             {
                 const string validateUserSql = "SELECT COUNT(*) FROM users WHERE id = @userId AND firma_id = @firmaId;";
-                await using var validateCommand = new MySqlCommand(validateUserSql, connection, transaction);
+                await using var validateCommand = new SqlCommand(validateUserSql, connection, (SqlTransaction)transaction);
                 validateCommand.Parameters.AddWithValue("@userId", model.UserId.Value);
                 validateCommand.Parameters.AddWithValue("@firmaId", context.FirmaId);
                 var exists = Convert.ToInt32(await validateCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) > 0;
@@ -475,7 +478,7 @@ public class FirmaService : IFirmaService
                 LIMIT 1;";
 
             long? existingId = null;
-            await using (var findCommand = new MySqlCommand(findSql, connection, transaction))
+            await using (var findCommand = new SqlCommand(findSql, connection, (SqlTransaction)transaction))
             {
                 findCommand.Parameters.AddWithValue("@firmaId", context.FirmaId);
                 findCommand.Parameters.AddWithValue("@userId", model.UserId.HasValue ? (object)model.UserId.Value : DBNull.Value);
@@ -500,7 +503,7 @@ public class FirmaService : IFirmaService
                         aktif_mi = 1
                     WHERE id = @id;";
 
-                await using var updateCommand = new MySqlCommand(updateSql, connection, transaction);
+                await using var updateCommand = new SqlCommand(updateSql, connection, (SqlTransaction)transaction);
                 updateCommand.Parameters.AddWithValue("@id", existingId.Value);
                 updateCommand.Parameters.AddWithValue("@department", string.IsNullOrWhiteSpace(model.Department) ? DBNull.Value : (object)model.Department.Trim());
                 updateCommand.Parameters.AddWithValue("@userId", model.UserId.HasValue ? (object)model.UserId.Value : DBNull.Value);
@@ -524,7 +527,7 @@ public class FirmaService : IFirmaService
                         @approvalRequired, 1, NOW()
                     );";
 
-                await using var insertCommand = new MySqlCommand(insertSql, connection, transaction);
+                await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
                 insertCommand.Parameters.AddWithValue("@firmaId", context.FirmaId);
                 insertCommand.Parameters.AddWithValue("@department", string.IsNullOrWhiteSpace(model.Department) ? DBNull.Value : (object)model.Department.Trim());
                 insertCommand.Parameters.AddWithValue("@userId", model.UserId.HasValue ? (object)model.UserId.Value : DBNull.Value);
@@ -542,7 +545,7 @@ public class FirmaService : IFirmaService
                     SET harcama_limiti = @nightlyLimit,
                         onay_gereksinimi = @approvalRequired
                     WHERE id = @userId AND firma_id = @firmaId;";
-                await using var userUpdateCommand = new MySqlCommand(userUpdateSql, connection, transaction);
+                await using var userUpdateCommand = new SqlCommand(userUpdateSql, connection, (SqlTransaction)transaction);
                 userUpdateCommand.Parameters.AddWithValue("@nightlyLimit", model.NightlyLimit.HasValue ? (object)model.NightlyLimit.Value : DBNull.Value);
                 userUpdateCommand.Parameters.AddWithValue("@approvalRequired", model.ApprovalRequired ? 1 : 0);
                 userUpdateCommand.Parameters.AddWithValue("@userId", model.UserId.Value);
@@ -574,7 +577,7 @@ public class FirmaService : IFirmaService
             return (false, "Geçerli bir onay kararı seçilmedi.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, string.Empty, string.Empty, "limits", cancellationToken);
 
@@ -589,7 +592,7 @@ public class FirmaService : IFirmaService
               AND firma_id = @firmaId
               AND firma_onay_durumu = 'Beklemede';";
 
-        await using var command = new MySqlCommand(updateSql, connection);
+        await using var command = new SqlCommand(updateSql, connection);
         command.Parameters.AddWithValue("@approvalStatus", isApprove ? "Onaylandı" : "Reddedildi");
         command.Parameters.AddWithValue("@reservationStatus", isApprove ? "Onaylandı" : "İptal Edildi");
         command.Parameters.AddWithValue("@cancelReason", isReject ? (object)"Firma paneli üzerinden rezervasyon reddedildi." : DBNull.Value);
@@ -603,7 +606,7 @@ public class FirmaService : IFirmaService
             : (false, "Rezervasyon bulunamadı veya daha önce işlem görmüş.");
     }
 
-    private async Task<FirmaContext> BuildContextAsync(MySqlConnection connection, long userId, string title, string subtitle, string activeSectionKey, CancellationToken cancellationToken)
+    private async Task<FirmaContext> BuildContextAsync(SqlConnection connection, long userId, string title, string subtitle, string activeSectionKey, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT f.id, f.firma_adi, COALESCE(f.onay_durumu, 'Beklemede') AS onay_durumu,
@@ -616,7 +619,7 @@ public class FirmaService : IFirmaService
             WHERE u.id = @userId
             LIMIT 1;";
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -664,7 +667,7 @@ public class FirmaService : IFirmaService
             _ => role
         };
 
-    private static async Task<List<string>> LoadDealCitiesAsync(MySqlConnection connection, long firmaId, CancellationToken cancellationToken)
+    private static async Task<List<string>> LoadDealCitiesAsync(SqlConnection connection, long firmaId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT DISTINCT ot.sehir
@@ -677,7 +680,7 @@ public class FirmaService : IFirmaService
             ORDER BY ot.sehir;";
 
         var cities = new List<string>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", firmaId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -688,7 +691,7 @@ public class FirmaService : IFirmaService
         return cities;
     }
 
-    private async Task<List<FirmaPanelDealRowViewModel>> LoadDealsAsync(MySqlConnection connection, long firmaId, int take, string? city = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default)
+    private async Task<List<FirmaPanelDealRowViewModel>> LoadDealsAsync(SqlConnection connection, long firmaId, int take, string? city = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default)
     {
         const string sql = @"
             SELECT foz.id, ot.otel_adi, od.oda_adi, CONCAT(ot.ilce, ', ', ot.sehir) AS city_text,
@@ -705,7 +708,7 @@ public class FirmaService : IFirmaService
             LIMIT @take;";
 
         var items = new List<FirmaPanelDealRowViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", firmaId);
         command.Parameters.AddWithValue("@take", take);
         command.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? DBNull.Value : (object)city);
@@ -734,7 +737,7 @@ public class FirmaService : IFirmaService
         return items;
     }
 
-    private async Task<List<FirmaPanelEmployeeRowViewModel>> LoadEmployeesAsync(MySqlConnection connection, long firmaId, int take, CancellationToken cancellationToken)
+    private async Task<List<FirmaPanelEmployeeRowViewModel>> LoadEmployeesAsync(SqlConnection connection, long firmaId, int take, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT u.id, u.ad_soyad, COALESCE(u.departman, 'Tanımsız'), COALESCE(u.gorev_unvani, u.rol), u.eposta,
@@ -748,7 +751,7 @@ public class FirmaService : IFirmaService
             LIMIT @take;";
 
         var items = new List<FirmaPanelEmployeeRowViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", firmaId);
         command.Parameters.AddWithValue("@take", take);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -774,7 +777,7 @@ public class FirmaService : IFirmaService
         return items;
     }
 
-    private async Task<List<FirmaPanelReservationRowViewModel>> LoadReservationsAsync(MySqlConnection connection, long firmaId, int take, CancellationToken cancellationToken)
+    private async Task<List<FirmaPanelReservationRowViewModel>> LoadReservationsAsync(SqlConnection connection, long firmaId, int take, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT r.id, r.rezervasyon_no, COALESCE(u.ad_soyad, r.misafir_ad_soyad) AS employee_name, o.otel_adi,
@@ -788,7 +791,7 @@ public class FirmaService : IFirmaService
             LIMIT @take;";
 
         var items = new List<FirmaPanelReservationRowViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", firmaId);
         command.Parameters.AddWithValue("@take", take);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -811,7 +814,7 @@ public class FirmaService : IFirmaService
         return items;
     }
 
-    private async Task<List<FirmaPanelReservationRowViewModel>> LoadPendingApprovalsAsync(MySqlConnection connection, long firmaId, CancellationToken cancellationToken)
+    private async Task<List<FirmaPanelReservationRowViewModel>> LoadPendingApprovalsAsync(SqlConnection connection, long firmaId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT r.id, r.rezervasyon_no, COALESCE(u.ad_soyad, r.misafir_ad_soyad) AS employee_name, o.otel_adi,
@@ -825,7 +828,7 @@ public class FirmaService : IFirmaService
             LIMIT 20;";
 
         var items = new List<FirmaPanelReservationRowViewModel>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", firmaId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -865,10 +868,10 @@ public class FirmaService : IFirmaService
         return values.Count == 0 ? 0m : values.Average();
     }
 
-    private static int SafeInt(MySqlDataReader reader, int ordinal)
+    private static int SafeInt(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
 
-    private static decimal SafeDecimal(MySqlDataReader reader, int ordinal)
+    private static decimal SafeDecimal(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0m : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
 
     private static string FormatMoney(decimal value)

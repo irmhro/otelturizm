@@ -1,18 +1,18 @@
 # Proje Bilgileri
 
 ## Veritabanı
-- Sunucu/Ortam: Laragon (HeidiSQL)
-- Veritabanı adı: `otelturizmnew`
-- Collation: `utf8mb4_turkish_ci`
-- Not: Veritabanı başarıyla oluşturuldu.
+- Sunucu/Ortam: `(localdb)\MSSQLLocalDB`
+- Veritabanı adı: `otelturizm_2026db`
+- Sağlayıcı: `Microsoft SQL Server / LocalDB`
+- Not: Geliştirme ortamında HeidiSQL, Laragon ve MySQL kullanılmaz.
 
 ## Migration Mantığı (SQL Script Tabanlı)
 - Script klasörü: `Database/MigrationsSql`
 - Migration dosyaları tablo adı bazlı ayrıldı (`create_table_<tablo>`, `seed_<tablo>`).
 - Uygulama başlangıcında `SqlMigrationRunner` otomatik kapalıdır (`RunMigrationsOnStartup = false`).
-- Migration'lar kontrollü olarak HeidiSQL veya local MySQL komutu ile uygulanır.
-- Uygulanan scriptler `schema_migrations` tablosunda tutulur.
-- Aynı script tekrar çalıştırılmaz; içeriği değişirse güvenlik için hata verir.
+- Migration'lar kontrollü olarak SQL Server Management Studio veya Visual Studio SQL araçları ile uygulanır.
+- Uygulanan scriptler MSSQL tarafında takip edilir; runtime başlangıcında otomatik MySQL-style script yürütme yoktur.
+- Aynı script tekrar çalıştırılmadan önce MSSQL uyumu ve idempotent davranışı kontrol edilir.
 
 ## Split Migration Dosya Düzeni
 - `001_bootstrap_set_names.sql`
@@ -23,10 +23,10 @@
 - Eski tek dosya arşivi: `Database/MigrationsSql/_archive/001_initial_schema.sql`
 
 ## Yenileme (Tablo bozulursa)
-1. HeidiSQL'de `otelturizmnew` veritabanını sil.
-2. Aynı adla tekrar oluştur (`utf8mb4_turkish_ci`).
-3. Uygulamayı yeniden başlat.
-4. Migration scriptleri sırasıyla yeniden yüklenir.
+1. SSMS veya Visual Studio SQL araçlarında `otelturizm_2026db` veritabanını kontrol et.
+2. Gerekirse LocalDB üzerinde aynı adıyla tekrar oluştur.
+3. MSSQL uyumlu migration scriptlerini sırasıyla uygula.
+4. Uygulamayı yeniden başlatıp bağlantıyı doğrula.
 
 ## Önemli Geçiş Notu
 - Eğer eski tek dosyalı migration daha önce çalıştırıldıysa, split migration'a geçerken en güvenlisi veritabanını yeniden oluşturmaktır.
@@ -72,7 +72,8 @@
   - `otel_kullanici_sahiplikleri`
   - mevcut partner-kullanıcı ilişkilerinden otel sahipliği geri doldurma
 
-## MySQL 8.4 Uyum Notu
-- Partition + Foreign Key birlikte hata verdiği için migration dosyalarındaki PARTITION BY RANGE blokları kaldırıldı.
-- Partition zorunluluğu olursa ileride FK yapısı yeniden tasarlanarak ayrı migration ile eklenecek.
+## MSSQL Geçiş Notu
+- Repo artık tek veritabanı standardı olarak MSSQL/LocalDB kullanır.
+- MySQL, MariaDB, HeidiSQL ve Laragon referansları yalnızca tarihsel not veya arşiv dosyalarında tutulabilir; aktif runtime için geçerli değildir.
+- Yeni migration ve sorgular SQL Server söz dizimi ile yazılacaktır.
 

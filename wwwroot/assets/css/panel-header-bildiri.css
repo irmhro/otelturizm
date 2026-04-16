@@ -99,6 +99,11 @@
     background: #f8fafc;
 }
 
+.header-bildiri-content {
+    display: grid;
+    gap: 4px;
+}
+
 .header-bildiri-item i {
     margin-top: 3px;
     color: #0f172a;
@@ -117,25 +122,27 @@
     line-height: 1.35;
 }
 
-.header-bildiri-item small {
-    display: inline-block;
-    margin-top: 0.22rem;
-    font-size: 0.7rem;
-    color: #6b7280;
-}
-
 .header-bildiri-time {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
 }
 
-.header-bildiri-time span:first-child {
+.header-bildiri-time-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #334155;
+    font-size: 0.69rem;
     font-weight: 700;
-}
-
-.header-bildiri-time span:last-child {
-    color: #94a3b8;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .header-bildiri-item.tone-success a { background: #ecfdf5; }

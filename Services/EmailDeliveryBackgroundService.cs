@@ -1,7 +1,8 @@
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using System.Globalization;
 
 namespace otelturizmnew.Services;
 
@@ -41,7 +42,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             return;
         }
 
-        await using var connection = new MySqlConnection(connectionString);
+        await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var smtp = await LoadActiveSmtpAsync(connection, cancellationToken);
@@ -65,20 +66,19 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         }
     }
 
-    private static async Task<List<QueuedEmailItem>> LoadPendingEmailsAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    private static async Task<List<QueuedEmailItem>> LoadPendingEmailsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT id, alici_eposta, konu, gonderilen_icerik, COALESCE(gonderme_denemesi, 1), COALESCE(maksimum_deneme, 3)
+            SELECT TOP (10) id, alici_eposta, konu, gonderilen_icerik, COALESCE(gonderme_denemesi, 1), COALESCE(maksimum_deneme, 3)
             FROM bildirim_loglari
             WHERE tur = 'E-posta'
               AND durum = 'Beklemede'
               AND alici_eposta IS NOT NULL
-            ORDER BY olusturulma_tarihi ASC
-            LIMIT 10;
+            ORDER BY olusturulma_tarihi ASC;
             """;
 
         var items = new List<QueuedEmailItem>();
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -88,25 +88,24 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 RecipientEmail = reader.GetString(1),
                 Subject = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
                 HtmlBody = reader.GetString(3),
-                AttemptCount = reader.IsDBNull(4) ? 1 : reader.GetInt32(4),
-                MaxAttempts = reader.IsDBNull(5) ? 3 : reader.GetInt32(5)
+                AttemptCount = reader.IsDBNull(4) ? 1 : Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture),
+                MaxAttempts = reader.IsDBNull(5) ? 3 : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture)
             });
         }
 
         return items;
     }
 
-    private static async Task<SmtpConfig?> LoadActiveSmtpAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    private static async Task<SmtpConfig?> LoadActiveSmtpAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT gonderen_ad, gonderen_eposta, yanitla_eposta, smtp_host, smtp_port, smtp_kullanici_adi, smtp_sifre, guvenlik_tipi, baglanti_zaman_asimi_saniye, test_modu
+            SELECT TOP (1) gonderen_ad, gonderen_eposta, yanitla_eposta, smtp_host, smtp_port, smtp_kullanici_adi, smtp_sifre, guvenlik_tipi, baglanti_zaman_asimi_saniye, test_modu
             FROM email_services
             WHERE aktif_mi = 1
-            ORDER BY varsayilan_mi DESC, id ASC
-            LIMIT 1;
+            ORDER BY varsayilan_mi DESC, id ASC;
             """;
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
         {
@@ -119,11 +118,11 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             SenderEmail = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
             ReplyToEmail = reader.IsDBNull(2) ? null : reader.GetString(2),
             Host = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
-            Port = reader.IsDBNull(4) ? 465 : reader.GetInt32(4),
+            Port = reader.IsDBNull(4) ? 465 : Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture),
             Username = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
             Password = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
             SecurityType = reader.IsDBNull(7) ? "SSL" : reader.GetString(7),
-            TimeoutSeconds = reader.IsDBNull(8) ? 30 : reader.GetInt32(8),
+            TimeoutSeconds = reader.IsDBNull(8) ? 30 : Convert.ToInt32(reader.GetValue(8), CultureInfo.InvariantCulture),
             TestMode = !reader.IsDBNull(9) && reader.GetBoolean(9)
         };
     }
@@ -190,12 +189,12 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         };
     }
 
-    private static async Task MarkEmailSentAsync(MySqlConnection connection, long notificationId, CancellationToken cancellationToken)
+    private static async Task MarkEmailSentAsync(SqlConnection connection, long notificationId, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("""
+        await using var command = new SqlCommand("""
             UPDATE bildirim_loglari
             SET durum = 'Gönderildi',
-                gonderim_tarihi = UTC_TIMESTAMP(),
+                gonderim_tarihi = SYSUTCDATETIME(),
                 hata_kodu = NULL,
                 hata_mesaji = NULL
             WHERE id = @id;
@@ -204,12 +203,12 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task MarkEmailFailedAsync(MySqlConnection connection, QueuedEmailItem item, string errorMessage, CancellationToken cancellationToken)
+    private static async Task MarkEmailFailedAsync(SqlConnection connection, QueuedEmailItem item, string errorMessage, CancellationToken cancellationToken)
     {
         var nextAttempt = item.AttemptCount + 1;
         var finalStatus = nextAttempt > item.MaxAttempts ? "Başarısız" : "Beklemede";
 
-        await using var command = new MySqlCommand("""
+        await using var command = new SqlCommand("""
             UPDATE bildirim_loglari
             SET durum = @status,
                 gonderme_denemesi = @attemptCount,

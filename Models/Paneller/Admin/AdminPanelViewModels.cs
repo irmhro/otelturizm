@@ -82,3 +82,36 @@ public class AdminTableColumnViewModel
     public string Label { get; set; } = string.Empty;
 }
 
+public class AdminPartnerApplicationsPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public List<AdminPartnerApplicationRowViewModel> Applications { get; set; } = new();
+}
+
+public class AdminPartnerApplicationRowViewModel
+{
+    public long PartnerId { get; set; }
+    public long UserId { get; set; }
+    public long? HotelId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string ContactName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string TaxNumber { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string StatusToneClass { get; set; } = "warning";
+    public string RegistrationDateText { get; set; } = string.Empty;
+    public string? ApprovalDateText { get; set; }
+    public bool EmailVerified { get; set; }
+    public int DocumentCount { get; set; }
+    public string? ReviewNote { get; set; }
+}
+
+public class AdminPartnerApplicationDecisionRequest
+{
+    public long PartnerId { get; set; }
+    public string TargetStatus { get; set; } = "Onaylandi";
+    public string? Note { get; set; }
+}
+

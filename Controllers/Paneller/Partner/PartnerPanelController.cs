@@ -386,22 +386,44 @@ public class PartnerPanelController : Controller
     }
 
     [HttpGet("tercihler")]
+    [HttpGet("basvuru-ve-evraklar")]
     public async Task<IActionResult> Preferences(long? otelId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetPreferencesAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Tercihler";
+        var model = await _partnerService.GetApplicationAsync(GetUserId(), otelId, cancellationToken);
+        ViewData["Title"] = "Partner Basvuru ve Evraklar";
         ViewData["PageCssPath"] = "paneller/partner/preferences";
         return View("~/Views/Paneller/Partner/Preferences.cshtml", model);
     }
 
     [HttpPost("tercihler/kaydet")]
+    [HttpPost("basvuru-ve-evraklar/kaydet")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SavePreferences(PartnerPreferencesForm request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SavePreferences(PartnerApplicationProfileForm request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.SavePreferencesAsync(GetUserId(), request, cancellationToken);
+        var result = await _partnerService.SaveApplicationAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
-        return Redirect($"/panel/partner/tercihler?otelId={request.HotelId}");
+        return Redirect($"/panel/partner/basvuru-ve-evraklar?otelId={request.HotelId}");
+    }
+
+    [HttpPost("basvuru-ve-evraklar/evrak-yukle")]
+    [ValidateAntiForgeryToken]
+    [RequestFormLimits(MultipartBodyLengthLimit = 52428800)]
+    [RequestSizeLimit(52428800)]
+    public async Task<IActionResult> UploadApplicationDocument(PartnerApplicationDocumentUploadForm request, CancellationToken cancellationToken)
+    {
+        var result = await _partnerService.UploadApplicationDocumentAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        return Redirect($"/panel/partner/basvuru-ve-evraklar?otelId={request.HotelId}");
+    }
+
+    [HttpPost("basvuru-ve-evraklar/evrak-sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteApplicationDocument(long hotelId, long documentId, CancellationToken cancellationToken)
+    {
+        var result = await _partnerService.DeleteApplicationDocumentAsync(GetUserId(), hotelId, documentId, cancellationToken);
+        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        return Redirect($"/panel/partner/basvuru-ve-evraklar?otelId={hotelId}");
     }
 
     [HttpGet("724-destek")]

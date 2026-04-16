@@ -272,7 +272,32 @@ public class AdminPanelController : Controller
     public Task<IActionResult> Commissions(CancellationToken cancellationToken) => RenderSectionAsync("commissions", "Commissions", cancellationToken);
 
     [HttpGet("partner-basvurulari")]
-    public Task<IActionResult> PartnerApplications(CancellationToken cancellationToken) => RenderSectionAsync("partner-applications", "PartnerApplications", cancellationToken);
+    public async Task<IActionResult> PartnerApplications(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetPartnerApplicationsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCss"] = "panel-admin-partner-applications";
+        return View("~/Views/Paneller/Admin/PartnerApplications.cshtml", model);
+    }
+
+    [HttpPost("partner-basvurulari/durum")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdatePartnerApplicationStatus(AdminPartnerApplicationDecisionRequest request, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.ReviewPartnerApplicationAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(PartnerApplications));
+    }
 
     [HttpGet("degerlendirmeler")]
     public Task<IActionResult> Reviews(CancellationToken cancellationToken) => RenderSectionAsync("reviews", "Reviews", cancellationToken);
@@ -363,6 +388,5 @@ public class AdminPanelController : Controller
         return long.TryParse(rawValue, out var userId) ? userId : 0;
     }
 }
-
 
 

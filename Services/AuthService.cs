@@ -2,7 +2,11 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Giris;
 using otelturizmnew.Models.Register;
@@ -16,6 +20,8 @@ public class AuthService : IAuthService
     private const string PartnerLoginPath = "/partner-giris";
     private const string FirmaLoginPath = "/firma-giris";
     private const string AdminLoginPath = "/admin-giris";
+    private const string PasswordHashSql = "LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2))";
+    private const string CurrentUtcSql = "SYSUTCDATETIME()";
 
     private readonly string _connectionString;
     private readonly IEmailQueueService _emailQueueService;
@@ -206,7 +212,7 @@ public class AuthService : IAuthService
             return (false, "Sifre tekrari eslesmiyor.", null);
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var userColumns = await GetUsersTableColumnsAsync(connection, cancellationToken);
@@ -218,7 +224,7 @@ public class AuthService : IAuthService
             FROM users;
             """;
 
-        await using (var existsCommand = new MySqlCommand(existsSql, connection))
+        await using (var existsCommand = new SqlCommand(existsSql, connection))
         {
             existsCommand.Parameters.AddWithValue("@email", email);
             existsCommand.Parameters.AddWithValue("@phone", (object?)phone ?? DBNull.Value);
@@ -259,18 +265,18 @@ public class AuthService : IAuthService
             "@fullName",
             "@email",
             "@phone",
-            "SHA2(@password, 256)",
+            PasswordHashSql,
             "1",
             "'tr'",
             "'TRY'",
             "'Turkiye'",
-            "NOW()"
+            CurrentUtcSql
         };
 
         if (userColumns.Contains("kvkk_onay_tarihi"))
         {
             insertColumns.Add("kvkk_onay_tarihi");
-            insertValues.Add("NOW()");
+            insertValues.Add(CurrentUtcSql);
         }
 
         if (userColumns.Contains("rol"))
@@ -301,13 +307,13 @@ public class AuthService : IAuthService
                 {string.Join(",\n                ", insertValues)}
             );
 
-            SELECT LAST_INSERT_ID();
+            SELECT CAST(SCOPE_IDENTITY() AS bigint);
             """;
 
         long newUserId;
         try
         {
-            await using var insertCommand = new MySqlCommand(insertSql, connection);
+            await using var insertCommand = new SqlCommand(insertSql, connection);
             insertCommand.Parameters.AddWithValue("@fullName", $"{firstName} {lastName}".Trim());
             insertCommand.Parameters.AddWithValue("@email", email);
             insertCommand.Parameters.AddWithValue("@phone", (object?)phone ?? DBNull.Value);
@@ -317,7 +323,7 @@ public class AuthService : IAuthService
             var result = await insertCommand.ExecuteScalarAsync(cancellationToken);
             newUserId = Convert.ToInt64(result);
         }
-        catch (MySqlException ex)
+        catch (SqlException ex)
         {
             return (false, $"Kayit veritabani hatasi: {ex.Message}", null);
         }
@@ -407,7 +413,7 @@ public class AuthService : IAuthService
             return (false, "Sifre tekrari eslesmiyor.", null);
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var userColumns = await GetUsersTableColumnsAsync(connection, cancellationToken);
@@ -420,7 +426,7 @@ public class AuthService : IAuthService
                 (SELECT COUNT(*) FROM partner_detaylari WHERE iban = @iban) AS iban_count;
             """;
 
-        await using (var existsCommand = new MySqlCommand(existsSql, connection))
+        await using (var existsCommand = new SqlCommand(existsSql, connection))
         {
             existsCommand.Parameters.AddWithValue("@email", email);
             existsCommand.Parameters.AddWithValue("@phone", phone);
@@ -474,18 +480,18 @@ public class AuthService : IAuthService
                 "@fullName",
                 "@email",
                 "@phone",
-                "SHA2(@password, 256)",
+                PasswordHashSql,
                 "1",
                 "'tr'",
                 "'TRY'",
                 "'Turkiye'",
-                "NOW()"
+                CurrentUtcSql
             };
 
             if (userColumns.Contains("kvkk_onay_tarihi"))
             {
                 insertColumns.Add("kvkk_onay_tarihi");
-                insertValues.Add("NOW()");
+                insertValues.Add(CurrentUtcSql);
             }
 
             if (userColumns.Contains("rol"))
@@ -516,11 +522,11 @@ public class AuthService : IAuthService
                     {string.Join(",\n                    ", insertValues)}
                 );
 
-                SELECT LAST_INSERT_ID();
+                SELECT CAST(SCOPE_IDENTITY() AS bigint);
                 """;
 
             long userId;
-            await using (var insertUserCommand = new MySqlCommand(insertUserSql, connection, transaction))
+            await using (var insertUserCommand = new SqlCommand(insertUserSql, connection, (SqlTransaction)transaction))
             {
                 insertUserCommand.Parameters.AddWithValue("@fullName", contactName);
                 insertUserCommand.Parameters.AddWithValue("@email", email);
@@ -578,18 +584,18 @@ public class AuthService : IAuthService
                     @iban,
                     @accountOwner,
                     'TRY',
-                    'Onaylandi',
-                    NOW(),
+                    'Beklemede',
+                    NULL,
                     @website,
                     @description,
-                    NOW()
+                    SYSUTCDATETIME()
                 );
 
-                SELECT LAST_INSERT_ID();
+                SELECT CAST(SCOPE_IDENTITY() AS bigint);
                 """;
 
             long partnerId;
-            await using (var insertPartnerCommand = new MySqlCommand(insertPartnerSql, connection, transaction))
+            await using (var insertPartnerCommand = new SqlCommand(insertPartnerSql, connection, (SqlTransaction)transaction))
             {
                 insertPartnerCommand.Parameters.AddWithValue("@userId", userId);
                 insertPartnerCommand.Parameters.AddWithValue("@companyName", companyName);
@@ -615,6 +621,51 @@ public class AuthService : IAuthService
                 partnerId = Convert.ToInt64(result);
             }
 
+            var hotelCode = await GenerateHotelCodeAsync(connection, (SqlTransaction)transaction, city, cancellationToken);
+            const string insertHotelSql = """
+                INSERT INTO oteller
+                (
+                    otel_kodu, partner_id, user_id, otel_adi, otel_turu, ulke, sehir, ilce, mahalle, tam_adres,
+                    telefon_1, eposta, web_sitesi, rezervasyon_telefonu, satis_kontak_adi, satis_kontak_telefonu, satis_kontak_eposta,
+                    check_in_saati, check_out_saati, toplam_oda_sayisi, kisa_aciklama, uzun_aciklama,
+                    varsayilan_komisyon_orani, odeme_vadesi, odeme_yontemi, fatura_kesim_turu,
+                    yayin_durumu, onay_durumu, olusturulma_tarihi
+                )
+                VALUES
+                (
+                    @hotelCode, @partnerId, @userId, @hotelName, 'Otel', 'Türkiye', @city, @district, @neighborhood, @address,
+                    @phone, @email, @website, @phone, @contactName, @phone, @email,
+                    '14:00:00', '12:00:00', @roomCount, @shortDescription, @description,
+                    15.00, 'Çıkış Günü', 'Havale/EFT', 'Otel Keser',
+                    'Taslak', 'Beklemede', SYSUTCDATETIME()
+                );
+
+                SELECT CAST(SCOPE_IDENTITY() AS bigint);
+                """;
+
+            long hotelId;
+            await using (var insertHotelCommand = new SqlCommand(insertHotelSql, connection, (SqlTransaction)transaction))
+            {
+                insertHotelCommand.Parameters.AddWithValue("@hotelCode", hotelCode);
+                insertHotelCommand.Parameters.AddWithValue("@partnerId", partnerId);
+                insertHotelCommand.Parameters.AddWithValue("@userId", userId);
+                insertHotelCommand.Parameters.AddWithValue("@hotelName", hotelName);
+                insertHotelCommand.Parameters.AddWithValue("@city", city);
+                insertHotelCommand.Parameters.AddWithValue("@district", district);
+                insertHotelCommand.Parameters.AddWithValue("@neighborhood", (object?)neighborhood ?? DBNull.Value);
+                insertHotelCommand.Parameters.AddWithValue("@address", address);
+                insertHotelCommand.Parameters.AddWithValue("@phone", phone);
+                insertHotelCommand.Parameters.AddWithValue("@email", email);
+                insertHotelCommand.Parameters.AddWithValue("@website", (object?)website ?? DBNull.Value);
+                insertHotelCommand.Parameters.AddWithValue("@contactName", contactName);
+                insertHotelCommand.Parameters.AddWithValue("@roomCount", Math.Max(1, model.RoomCount ?? 1));
+                insertHotelCommand.Parameters.AddWithValue("@shortDescription", $"{hotelName} için partner onboarding kaydı oluşturuldu.");
+                insertHotelCommand.Parameters.AddWithValue("@description", "Partner başvuru aşamasındaki taslak tesis kaydı. Admin onayı tamamlanana kadar yayına alınmaz.");
+
+                var result = await insertHotelCommand.ExecuteScalarAsync(cancellationToken);
+                hotelId = Convert.ToInt64(result);
+            }
+
             const string insertUserPartnerSql = """
                 INSERT INTO users_partner
                 (
@@ -632,15 +683,54 @@ public class AuthService : IAuthService
                     'owner',
                     1,
                     1,
-                    NOW()
+                    SYSUTCDATETIME()
                 );
                 """;
 
-            await using (var insertUserPartnerCommand = new MySqlCommand(insertUserPartnerSql, connection, transaction))
+            await using (var insertUserPartnerCommand = new SqlCommand(insertUserPartnerSql, connection, (SqlTransaction)transaction))
             {
                 insertUserPartnerCommand.Parameters.AddWithValue("@userId", userId);
                 insertUserPartnerCommand.Parameters.AddWithValue("@partnerId", partnerId);
                 await insertUserPartnerCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            const string insertOwnershipSql = """
+                INSERT INTO otel_kullanici_sahiplikleri
+                (
+                    otel_id, user_id, partner_id, rol, ana_sorumlu_mu, aktif_mi, olusturulma_tarihi
+                )
+                VALUES
+                (
+                    @hotelId, @userId, @partnerId, 'owner', 1, 1, SYSUTCDATETIME()
+                );
+                """;
+
+            await using (var insertOwnershipCommand = new SqlCommand(insertOwnershipSql, connection, (SqlTransaction)transaction))
+            {
+                insertOwnershipCommand.Parameters.AddWithValue("@hotelId", hotelId);
+                insertOwnershipCommand.Parameters.AddWithValue("@userId", userId);
+                insertOwnershipCommand.Parameters.AddWithValue("@partnerId", partnerId);
+                await insertOwnershipCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            if (await TableExistsAsync(connection, "partner_basvuru_hareketleri", cancellationToken, (SqlTransaction?)transaction))
+            {
+                const string insertHistorySql = """
+                    INSERT INTO partner_basvuru_hareketleri
+                    (
+                        partner_id, onceki_durum, yeni_durum, islem_tipi, aciklama, islem_yapan_kullanici_id, olusturulma_tarihi
+                    )
+                    VALUES
+                    (
+                        @partnerId, NULL, 'Beklemede', 'PartnerBasvurusuOlusturuldu',
+                        'Partner başvurusu oluşturuldu. E-posta doğrulaması ve admin incelemesi bekleniyor.', @userId, SYSUTCDATETIME()
+                    );
+                    """;
+
+                await using var historyCommand = new SqlCommand(insertHistorySql, connection, (SqlTransaction)transaction);
+                historyCommand.Parameters.AddWithValue("@partnerId", partnerId);
+                historyCommand.Parameters.AddWithValue("@userId", userId);
+                await historyCommand.ExecuteNonQueryAsync(cancellationToken);
             }
 
             if (userColumns.Contains("sahiplik_partner_id") || userColumns.Contains("rol"))
@@ -663,7 +753,7 @@ public class AuthService : IAuthService
                     WHERE id = @userId;
                     """;
 
-                await using var updateOwnershipCommand = new MySqlCommand(updateOwnershipSql, connection, transaction);
+                await using var updateOwnershipCommand = new SqlCommand(updateOwnershipSql, connection, (SqlTransaction)transaction);
                 updateOwnershipCommand.Parameters.AddWithValue("@partnerId", partnerId);
                 updateOwnershipCommand.Parameters.AddWithValue("@userId", userId);
                 await updateOwnershipCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -685,7 +775,7 @@ public class AuthService : IAuthService
                 ? (false, "Partner hesabi olusturuldu ancak oturum bilgisi hazirlanamadi.", null)
                 : (true, "Partner kaydi tamamlandi. Giris yapmadan once lütfen e-posta adresinizi onaylayin.", user);
         }
-        catch (MySqlException ex)
+        catch (SqlException ex)
         {
             await transaction.RollbackAsync(cancellationToken);
             return (false, $"Partner kaydi veritabani hatasi: {ex.Message}", null);
@@ -771,7 +861,7 @@ public class AuthService : IAuthService
             return (false, "Şifre tekrarı eşleşmiyor.", null);
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var userColumns = await GetUsersTableColumnsAsync(connection, cancellationToken);
@@ -783,7 +873,7 @@ public class AuthService : IAuthService
                 (SELECT COUNT(*) FROM users WHERE eposta = @contactEmail) AS user_email_count;
             """;
 
-        await using (var existsCommand = new MySqlCommand(existsSql, connection))
+        await using (var existsCommand = new SqlCommand(existsSql, connection))
         {
             existsCommand.Parameters.AddWithValue("@taxNumber", taxNumber);
             existsCommand.Parameters.AddWithValue("@companyEmail", companyEmail);
@@ -813,7 +903,7 @@ public class AuthService : IAuthService
 
         try
         {
-            var firmaCode = await GenerateFirmaCodeAsync(connection, transaction, cancellationToken);
+            var firmaCode = await GenerateFirmaCodeAsync(connection, (SqlTransaction)transaction, cancellationToken);
 
             const string insertFirmaSql = """
                 INSERT INTO firmalar
@@ -829,15 +919,15 @@ public class AuthService : IAuthService
                     @firmaCode, @companyName, @companyType, @taxNumber, @taxOffice, @tradeRegistryNumber, @mersisNumber,
                     @companyEmail, @companyPhone, @website, @sector, @employeeCount, @monthlyTravelBudget,
                     @address, @city, @district, @postalCode, @contactName, @contactTitle, @contactEmail,
-                    @contactPhone, 'Beklemede', NOW(), 1, 0,
-                    24, 'web_firma_register', NOW(), NOW(), @note, NOW()
+                    @contactPhone, 'Beklemede', SYSUTCDATETIME(), 1, 0,
+                    24, 'web_firma_register', SYSUTCDATETIME(), SYSUTCDATETIME(), @note, SYSUTCDATETIME()
                 );
 
-                SELECT LAST_INSERT_ID();
+                SELECT CAST(SCOPE_IDENTITY() AS bigint);
                 """;
 
             long firmaId;
-            await using (var insertFirmaCommand = new MySqlCommand(insertFirmaSql, connection, transaction))
+            await using (var insertFirmaCommand = new SqlCommand(insertFirmaSql, connection, (SqlTransaction)transaction))
             {
                 insertFirmaCommand.Parameters.AddWithValue("@firmaCode", firmaCode);
                 insertFirmaCommand.Parameters.AddWithValue("@companyName", companyName);
@@ -889,7 +979,7 @@ public class AuthService : IAuthService
                 "@fullName",
                 "@contactEmail",
                 "@contactPhone",
-                "SHA2(@password, 256)",
+                PasswordHashSql,
                 "'firma_admin'",
                 "@firmaId",
                 "'Kurumsal Satın Alma'",
@@ -899,13 +989,13 @@ public class AuthService : IAuthService
                 "'tr'",
                 "'TRY'",
                 "'Türkiye'",
-                "NOW()"
+                CurrentUtcSql
             };
 
             if (userColumns.Contains("kvkk_onay_tarihi"))
             {
                 insertColumns.Add("kvkk_onay_tarihi");
-                insertValues.Add("NOW()");
+                insertValues.Add(CurrentUtcSql);
             }
 
             if (userColumns.Contains("kayit_kaynagi"))
@@ -932,7 +1022,7 @@ public class AuthService : IAuthService
                 """;
 
             long userId;
-            await using (var insertUserCommand = new MySqlCommand(insertUserSql + "\nSELECT LAST_INSERT_ID();", connection, transaction))
+            await using (var insertUserCommand = new SqlCommand(insertUserSql + "\nSELECT CAST(SCOPE_IDENTITY() AS bigint);", connection, (SqlTransaction)transaction))
             {
                 insertUserCommand.Parameters.AddWithValue("@fullName", contactName);
                 insertUserCommand.Parameters.AddWithValue("@contactEmail", contactEmail);
@@ -957,7 +1047,7 @@ public class AuthService : IAuthService
                 cancellationToken);
             return (true, "Firma basvurunuz alindi. Giris yapmadan once e-posta adresinizi onaylayin.", null);
         }
-        catch (MySqlException ex)
+        catch (SqlException ex)
         {
             await transaction.RollbackAsync(cancellationToken);
             return (false, $"Firma başvurusu kaydedilirken veritabanı hatası oluştu: {ex.Message}", null);
@@ -978,7 +1068,7 @@ public class AuthService : IAuthService
             return (false, "E-posta ve doğrulama kodu zorunludur.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
@@ -988,7 +1078,7 @@ public class AuthService : IAuthService
             WHERE eposta = @email
               AND dogrulama_kodu = @code
             ORDER BY olusturulma_tarihi DESC
-            LIMIT 1;
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;
             """;
 
         long tokenId;
@@ -999,7 +1089,7 @@ public class AuthService : IAuthService
         int maxAttempt;
         string storedToken;
 
-        await using (var command = new MySqlCommand(sql, connection, transaction))
+        await using (var command = new SqlCommand(sql, connection, (SqlTransaction)transaction))
         {
             command.Parameters.AddWithValue("@email", normalizedEmail);
             command.Parameters.AddWithValue("@code", normalizedCode);
@@ -1020,7 +1110,7 @@ public class AuthService : IAuthService
 
         if (!string.IsNullOrWhiteSpace(token) && !string.Equals(token.Trim(), storedToken, StringComparison.Ordinal))
         {
-            await IncrementVerificationAttemptAsync(connection, transaction, tokenId, cancellationToken);
+            await IncrementVerificationAttemptAsync(connection, (SqlTransaction)transaction, tokenId, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return (false, "Doğrulama bağlantısı geçersiz.");
         }
@@ -1040,13 +1130,13 @@ public class AuthService : IAuthService
             return (false, "Bu doğrulama kodu çok fazla denendiği için geçersiz hale geldi.");
         }
 
-        await MarkVerificationTokenUsedAsync(connection, transaction, tokenId, cancellationToken);
-        await using (var verifyUserCommand = new MySqlCommand("""
+        await MarkVerificationTokenUsedAsync(connection, (SqlTransaction)transaction, tokenId, cancellationToken);
+        await using (var verifyUserCommand = new SqlCommand("""
             UPDATE users
-            SET email_dogrulama_tarihi = COALESCE(email_dogrulama_tarihi, UTC_TIMESTAMP()),
-                email_dogrulama_son_gonderim_tarihi = UTC_TIMESTAMP()
+            SET email_dogrulama_tarihi = COALESCE(email_dogrulama_tarihi, SYSUTCDATETIME()),
+                email_dogrulama_son_gonderim_tarihi = SYSUTCDATETIME()
             WHERE id = @userId;
-            """, connection, transaction))
+            """, connection, (SqlTransaction)transaction))
         {
             verifyUserCommand.Parameters.AddWithValue("@userId", userId);
             await verifyUserCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -1064,22 +1154,21 @@ public class AuthService : IAuthService
             return (false, "E-posta adresi zorunludur.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string userSql = """
-            SELECT id, ad_soyad, email_dogrulama_tarihi, email_dogrulama_son_gonderim_tarihi
+            SELECT TOP (1) id, ad_soyad, email_dogrulama_tarihi, email_dogrulama_son_gonderim_tarihi
             FROM users
             WHERE eposta = @email
-              AND hesap_durumu = 1
-            LIMIT 1;
+              AND hesap_durumu = 1;
             """;
 
         long userId;
         string fullName;
         DateTime? verifiedAt;
         DateTime? lastSentAt;
-        await using (var command = new MySqlCommand(userSql, connection))
+        await using (var command = new SqlCommand(userSql, connection))
         {
             command.Parameters.AddWithValue("@email", normalizedEmail);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1125,20 +1214,19 @@ public class AuthService : IAuthService
             return (false, "E-posta adresi zorunludur.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string userSql = """
-            SELECT id, ad_soyad
+            SELECT TOP (1) id, ad_soyad
             FROM users
             WHERE eposta = @email
-              AND hesap_durumu = 1
-            LIMIT 1;
+              AND hesap_durumu = 1;
             """;
 
         long userId;
         string fullName;
-        await using (var command = new MySqlCommand(userSql, connection))
+        await using (var command = new SqlCommand(userSql, connection))
         {
             command.Parameters.AddWithValue("@email", normalizedEmail);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1154,11 +1242,11 @@ public class AuthService : IAuthService
         var token = CreateSecureToken(48);
         var resetLink = $"{_publicBaseUrl}/sifre-sifirla?token={Uri.EscapeDataString(token)}";
 
-        await using (var insertCommand = new MySqlCommand("""
+        await using (var insertCommand = new SqlCommand("""
             INSERT INTO sifre_sifirlama_tokenlari
             (kullanici_id, eposta, token, ip_adresi, user_agent, kullanildi_mi, gecerlilik_suresi, olusturulma_tarihi)
             VALUES
-            (@userId, @email, @token, @ipAddress, @userAgent, 0, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 1 HOUR), UTC_TIMESTAMP());
+            (@userId, @email, @token, @ipAddress, @userAgent, 0, DATEADD(HOUR, 1, SYSUTCDATETIME()), SYSUTCDATETIME());
             """, connection))
         {
             insertCommand.Parameters.AddWithValue("@userId", userId);
@@ -1210,7 +1298,7 @@ public class AuthService : IAuthService
             return (false, "Şifre tekrarı eşleşmiyor.");
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
@@ -1218,12 +1306,12 @@ public class AuthService : IAuthService
         long userId;
         bool used;
         DateTime expiryUtc;
-        await using (var command = new MySqlCommand("""
-            SELECT id, kullanici_id, kullanildi_mi, gecerlilik_suresi
+        await using (var command = new SqlCommand("""
+            SELECT TOP (1) id, kullanici_id, kullanildi_mi, gecerlilik_suresi
             FROM sifre_sifirlama_tokenlari
             WHERE token = @token
-            LIMIT 1;
-            """, connection, transaction))
+            ORDER BY id DESC;
+            """, connection, (SqlTransaction)transaction))
         {
             command.Parameters.AddWithValue("@token", normalizedToken);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1248,26 +1336,26 @@ public class AuthService : IAuthService
             return (false, "Şifre sıfırlama bağlantısının süresi dolmuş.");
         }
 
-        await using (var updateUserCommand = new MySqlCommand("""
+        await using (var updateUserCommand = new SqlCommand("""
             UPDATE users
-            SET sifre = SHA2(@password, 256),
+            SET sifre = LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2)),
                 basarisiz_giris_sayisi = 0,
                 son_basarisiz_giris_tarihi = NULL,
                 giris_kilit_bitis_tarihi = NULL
             WHERE id = @userId;
-            """, connection, transaction))
+            """, connection, (SqlTransaction)transaction))
         {
             updateUserCommand.Parameters.AddWithValue("@password", newPassword);
             updateUserCommand.Parameters.AddWithValue("@userId", userId);
             await updateUserCommand.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await using (var updateTokenCommand = new MySqlCommand("""
+        await using (var updateTokenCommand = new SqlCommand("""
             UPDATE sifre_sifirlama_tokenlari
             SET kullanildi_mi = 1,
-                kullanilma_tarihi = UTC_TIMESTAMP()
+                kullanilma_tarihi = SYSUTCDATETIME()
             WHERE id = @tokenId;
-            """, connection, transaction))
+            """, connection, (SqlTransaction)transaction))
         {
             updateTokenCommand.Parameters.AddWithValue("@tokenId", tokenId);
             await updateTokenCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -1285,19 +1373,18 @@ public class AuthService : IAuthService
             return UserLoginPath;
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string sql = """
-            SELECT id
+            SELECT TOP (1) id
             FROM users
             WHERE eposta = @email
-            ORDER BY id DESC
-            LIMIT 1;
+            ORDER BY id DESC;
             """;
 
         long userId;
-        await using (var command = new MySqlCommand(sql, connection))
+        await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@email", normalizedEmail);
             var result = await command.ExecuteScalarAsync(cancellationToken);
@@ -1321,19 +1408,18 @@ public class AuthService : IAuthService
             return UserLoginPath;
         }
 
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string sql = """
-            SELECT kullanici_id
+            SELECT TOP (1) kullanici_id
             FROM sifre_sifirlama_tokenlari
             WHERE token = @token
-            ORDER BY id DESC
-            LIMIT 1;
+            ORDER BY id DESC;
             """;
 
         long userId;
-        await using (var command = new MySqlCommand(sql, connection))
+        await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@token", normalizedToken);
             var result = await command.ExecuteScalarAsync(cancellationToken);
@@ -1351,7 +1437,7 @@ public class AuthService : IAuthService
 
     private async Task<UserSessionModel?> GetUserAsync(string identity, string password, bool requirePartner, CancellationToken cancellationToken)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var authSchema = await GetAuthSchemaAsync(connection, cancellationToken);
@@ -1371,16 +1457,35 @@ public class AuthService : IAuthService
         var managedHotelSelect = authSchema.HasHotelOwnershipTable
             ? """
                 (
-                    SELECT GROUP_CONCAT(DISTINCT oku.otel_id ORDER BY oku.otel_id)
-                    FROM otel_kullanici_sahiplikleri oku
-                    WHERE oku.user_id = u.id
-                      AND oku.aktif_mi = 1
+                    SELECT STRING_AGG(CONVERT(varchar(20), hotel_ids.otel_id), ',') WITHIN GROUP (ORDER BY hotel_ids.otel_id)
+                    FROM
+                    (
+                        SELECT DISTINCT oku.otel_id
+                        FROM otel_kullanici_sahiplikleri oku
+                        WHERE oku.user_id = u.id
+                          AND oku.aktif_mi = 1
+                    ) AS hotel_ids
                 )
                 """
             : "NULL";
 
+        var roleCodesSelect = """
+            (
+                SELECT STRING_AGG(role_rows.rol_kodu, ',') WITHIN GROUP (ORDER BY role_rows.rol_kodu)
+                FROM
+                (
+                    SELECT DISTINCT r.rol_kodu
+                    FROM kullanici_rolleri kr
+                    INNER JOIN roller r
+                        ON r.id = kr.rol_id
+                    WHERE kr.kullanici_id = u.id
+                      AND (kr.bitis_tarihi IS NULL OR kr.bitis_tarihi > SYSUTCDATETIME())
+                ) AS role_rows
+            )
+            """;
+
         var sql = $"""
-            SELECT
+            SELECT TOP (1)
                 u.id,
                 u.ad_soyad,
                 u.eposta,
@@ -1390,18 +1495,13 @@ public class AuthService : IAuthService
                 {managedHotelSelect} AS managed_hotel_ids,
                 MAX(COALESCE(up.ana_hesap_mi, 0)) AS ana_hesap_mi_order,
                 MIN(COALESCE(up.id, 0)) AS user_partner_row_id,
-                GROUP_CONCAT(DISTINCT r.rol_kodu) AS role_codes
+                {roleCodesSelect} AS role_codes
             FROM users u
             LEFT JOIN users_partner up
                 ON up.user_id = u.id
                AND up.aktif_mi = 1
-            LEFT JOIN kullanici_rolleri kr
-                ON kr.kullanici_id = u.id
-               AND (kr.bitis_tarihi IS NULL OR kr.bitis_tarihi > NOW())
-            LEFT JOIN roller r
-                ON r.id = kr.rol_id
             WHERE u.hesap_durumu = 1
-              AND u.sifre = SHA2(@password, 256)
+              AND u.sifre = LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2))
               AND (
                     u.eposta = @identity
                  OR u.telefon = @identity
@@ -1433,10 +1533,9 @@ public class AuthService : IAuthService
               AND (@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL)
             GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}
             ORDER BY ana_hesap_mi_order DESC, user_partner_row_id ASC
-            LIMIT 1;
             """;
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@identity", identity.Trim());
         command.Parameters.AddWithValue("@password", password);
         command.Parameters.AddWithValue("@requirePartner", requirePartner ? 1 : 0);
@@ -1553,7 +1652,7 @@ public class AuthService : IAuthService
             : null;
     }
 
-    private static async Task<UserSessionModel?> GetUserByIdAsync(MySqlConnection connection, long userId, CancellationToken cancellationToken)
+    private static async Task<UserSessionModel?> GetUserByIdAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         var authSchema = await GetAuthSchemaAsync(connection, cancellationToken);
 
@@ -1572,16 +1671,35 @@ public class AuthService : IAuthService
         var managedHotelSelect = authSchema.HasHotelOwnershipTable
             ? """
                 (
-                    SELECT GROUP_CONCAT(DISTINCT oku.otel_id ORDER BY oku.otel_id)
-                    FROM otel_kullanici_sahiplikleri oku
-                    WHERE oku.user_id = u.id
-                      AND oku.aktif_mi = 1
+                    SELECT STRING_AGG(CONVERT(varchar(20), hotel_ids.otel_id), ',') WITHIN GROUP (ORDER BY hotel_ids.otel_id)
+                    FROM
+                    (
+                        SELECT DISTINCT oku.otel_id
+                        FROM otel_kullanici_sahiplikleri oku
+                        WHERE oku.user_id = u.id
+                          AND oku.aktif_mi = 1
+                    ) AS hotel_ids
                 )
                 """
             : "NULL";
 
+        var roleCodesSelect = """
+            (
+                SELECT STRING_AGG(role_rows.rol_kodu, ',') WITHIN GROUP (ORDER BY role_rows.rol_kodu)
+                FROM
+                (
+                    SELECT DISTINCT r.rol_kodu
+                    FROM kullanici_rolleri kr
+                    INNER JOIN roller r
+                        ON r.id = kr.rol_id
+                    WHERE kr.kullanici_id = u.id
+                      AND (kr.bitis_tarihi IS NULL OR kr.bitis_tarihi > SYSUTCDATETIME())
+                ) AS role_rows
+            )
+            """;
+
         var sql = $"""
-            SELECT
+            SELECT TOP (1)
                 u.id,
                 u.ad_soyad,
                 u.eposta,
@@ -1591,23 +1709,17 @@ public class AuthService : IAuthService
                 {managedHotelSelect} AS managed_hotel_ids,
                 MAX(COALESCE(up.ana_hesap_mi, 0)) AS ana_hesap_mi_order,
                 MIN(COALESCE(up.id, 0)) AS user_partner_row_id,
-                GROUP_CONCAT(DISTINCT r.rol_kodu) AS role_codes
+                {roleCodesSelect} AS role_codes
             FROM users u
             LEFT JOIN users_partner up
                 ON up.user_id = u.id
                AND up.aktif_mi = 1
-            LEFT JOIN kullanici_rolleri kr
-                ON kr.kullanici_id = u.id
-               AND (kr.bitis_tarihi IS NULL OR kr.bitis_tarihi > NOW())
-            LEFT JOIN roller r
-                ON r.id = kr.rol_id
             WHERE u.id = @userId
             GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}
             ORDER BY ana_hesap_mi_order DESC, user_partner_row_id ASC
-            LIMIT 1;
             """;
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1657,18 +1769,18 @@ public class AuthService : IAuthService
         };
     }
 
-    private static async Task<HashSet<string>> GetUsersTableColumnsAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    private static async Task<HashSet<string>> GetUsersTableColumnsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = """
             SELECT COLUMN_NAME
             FROM information_schema.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
+            WHERE TABLE_SCHEMA = 'dbo'
               AND TABLE_NAME = 'users';
             """;
 
         var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -1678,7 +1790,7 @@ public class AuthService : IAuthService
         return columns;
     }
 
-    private static async Task<AuthSchemaInfo> GetAuthSchemaAsync(MySqlConnection connection, CancellationToken cancellationToken)
+    private static async Task<AuthSchemaInfo> GetAuthSchemaAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = """
             SELECT
@@ -1686,14 +1798,14 @@ public class AuthService : IAuthService
                 SUM(CASE WHEN TABLE_NAME = 'users' AND COLUMN_NAME = 'sahiplik_partner_id' THEN 1 ELSE 0 END) AS has_ownership_partner_column,
                 SUM(CASE WHEN TABLE_NAME = 'otel_kullanici_sahiplikleri' THEN 1 ELSE 0 END) AS has_hotel_ownership_table
             FROM information_schema.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
+            WHERE TABLE_SCHEMA = 'dbo'
               AND (
                     (TABLE_NAME = 'users' AND COLUMN_NAME IN ('rol', 'sahiplik_partner_id'))
                  OR TABLE_NAME = 'otel_kullanici_sahiplikleri'
               );
             """;
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
         if (!await reader.ReadAsync(cancellationToken))
@@ -1755,7 +1867,7 @@ public class AuthService : IAuthService
         return hasLetter && hasDigit;
     }
 
-    private static List<long> ParseManagedHotelIds(MySqlDataReader reader, int ordinal)
+    private static List<long> ParseManagedHotelIds(SqlDataReader reader, int ordinal)
     {
         if (reader.IsDBNull(ordinal))
         {
@@ -1800,7 +1912,7 @@ public class AuthService : IAuthService
 
     private async Task<bool> CanFirmaUserAccessAsync(long userId, CancellationToken cancellationToken)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string sql = """
@@ -1815,7 +1927,7 @@ public class AuthService : IAuthService
               AND COALESCE(f.giris_izni_aktif_mi, 0) = 1;
             """;
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result) > 0;
@@ -1823,7 +1935,7 @@ public class AuthService : IAuthService
 
     private async Task<AuthCandidateInfo?> FindAuthCandidateAsync(string identity, bool requirePartner, CancellationToken cancellationToken)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var authSchema = await GetAuthSchemaAsync(connection, cancellationToken);
@@ -1832,7 +1944,7 @@ public class AuthService : IAuthService
         var partnerIdSelect = authSchema.HasOwnershipPartnerColumn ? "COALESCE(up.partner_id, u.sahiplik_partner_id)" : "up.partner_id";
 
         var sql = $"""
-            SELECT
+            SELECT TOP (1)
                 u.id,
                 u.eposta,
                 {roleSelect} AS user_role,
@@ -1873,11 +1985,10 @@ public class AuthService : IAuthService
                  )
               )
               AND (@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL)
-            ORDER BY u.id ASC
-            LIMIT 1;
+            ORDER BY u.id ASC;
             """;
 
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@identity", identity.Trim());
         command.Parameters.AddWithValue("@requirePartner", requirePartner ? 1 : 0);
 
@@ -1905,27 +2016,27 @@ public class AuthService : IAuthService
 
     private async Task<DateTime?> RegisterFailedLoginAttemptAsync(long userId, CancellationToken cancellationToken)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string sql = """
             UPDATE users
             SET basarisiz_giris_sayisi = COALESCE(basarisiz_giris_sayisi, 0) + 1,
-                son_basarisiz_giris_tarihi = UTC_TIMESTAMP(),
+                son_basarisiz_giris_tarihi = SYSUTCDATETIME(),
                 giris_kilit_bitis_tarihi = CASE
-                    WHEN COALESCE(basarisiz_giris_sayisi, 0) + 1 >= 5 THEN DATE_ADD(UTC_TIMESTAMP(), INTERVAL 10 MINUTE)
+                    WHEN COALESCE(basarisiz_giris_sayisi, 0) + 1 >= 5 THEN DATEADD(MINUTE, 10, SYSUTCDATETIME())
                     ELSE giris_kilit_bitis_tarihi
                 END
             WHERE id = @userId;
             """;
 
-        await using (var command = new MySqlCommand(sql, connection))
+        await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await using var readCommand = new MySqlCommand("SELECT giris_kilit_bitis_tarihi FROM users WHERE id = @userId LIMIT 1;", connection);
+        await using var readCommand = new SqlCommand("SELECT TOP (1) giris_kilit_bitis_tarihi FROM users WHERE id = @userId;", connection);
         readCommand.Parameters.AddWithValue("@userId", userId);
         var result = await readCommand.ExecuteScalarAsync(cancellationToken);
         return result is DBNull or null ? null : Convert.ToDateTime(result, CultureInfo.InvariantCulture);
@@ -1933,15 +2044,15 @@ public class AuthService : IAuthService
 
     private async Task ResetFailedLoginAttemptAsync(long userId, CancellationToken cancellationToken)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        await using var command = new MySqlCommand("""
+        await using var command = new SqlCommand("""
             UPDATE users
             SET basarisiz_giris_sayisi = 0,
                 son_basarisiz_giris_tarihi = NULL,
                 giris_kilit_bitis_tarihi = NULL,
-                son_giris_tarihi = UTC_TIMESTAMP()
+                son_giris_tarihi = SYSUTCDATETIME()
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -1950,18 +2061,18 @@ public class AuthService : IAuthService
 
     private async Task<bool> IsEmailVerifiedAsync(long userId, CancellationToken cancellationToken)
     {
-        await using var connection = new MySqlConnection(_connectionString);
+        await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        await using var command = new MySqlCommand("SELECT email_dogrulama_tarihi FROM users WHERE id = @userId LIMIT 1;", connection);
+        await using var command = new SqlCommand("SELECT TOP (1) email_dogrulama_tarihi FROM users WHERE id = @userId;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return result is not null && result is not DBNull;
     }
 
     private async Task CreateAndQueueEmailVerificationAsync(
-        MySqlConnection connection,
-        MySqlTransaction? transaction,
+        SqlConnection connection,
+        SqlTransaction? transaction,
         long userId,
         string email,
         string firstName,
@@ -1973,12 +2084,12 @@ public class AuthService : IAuthService
         var code = CreateNumericCode(6);
         var verificationLink = $"{_publicBaseUrl}/eposta-dogrula?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}&code={Uri.EscapeDataString(code)}";
 
-        await using (var insertCommand = new MySqlCommand("""
+        await using (var insertCommand = new SqlCommand("""
             INSERT INTO email_dogrulama_tokenlari
             (kullanici_id, eposta, token, dogrulama_kodu, kullanildi_mi, deneme_sayisi, maksimum_deneme, ip_adresi, user_agent, gecerlilik_suresi, olusturulma_tarihi)
             VALUES
-            (@userId, @email, @token, @code, 0, 0, 5, @ipAddress, @userAgent, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 24 HOUR), UTC_TIMESTAMP());
-            """, connection, transaction))
+            (@userId, @email, @token, @code, 0, 0, 5, @ipAddress, @userAgent, DATEADD(HOUR, 24, SYSUTCDATETIME()), SYSUTCDATETIME());
+            """, connection, (SqlTransaction)transaction))
         {
             insertCommand.Parameters.AddWithValue("@userId", userId);
             insertCommand.Parameters.AddWithValue("@email", email);
@@ -1989,11 +2100,11 @@ public class AuthService : IAuthService
             await insertCommand.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await using (var updateUserCommand = new MySqlCommand("""
+        await using (var updateUserCommand = new SqlCommand("""
             UPDATE users
-            SET email_dogrulama_son_gonderim_tarihi = UTC_TIMESTAMP()
+            SET email_dogrulama_son_gonderim_tarihi = SYSUTCDATETIME()
             WHERE id = @userId;
-            """, connection, transaction))
+            """, connection, (SqlTransaction)transaction))
         {
             updateUserCommand.Parameters.AddWithValue("@userId", userId);
             await updateUserCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -2021,25 +2132,25 @@ public class AuthService : IAuthService
             cancellationToken);
     }
 
-    private static async Task MarkVerificationTokenUsedAsync(MySqlConnection connection, MySqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
+    private static async Task MarkVerificationTokenUsedAsync(SqlConnection connection, SqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("""
+        await using var command = new SqlCommand("""
             UPDATE email_dogrulama_tokenlari
             SET kullanildi_mi = 1,
-                kullanilma_tarihi = UTC_TIMESTAMP()
+                kullanilma_tarihi = SYSUTCDATETIME()
             WHERE id = @tokenId;
-            """, connection, transaction);
+            """, connection, (SqlTransaction)transaction);
         command.Parameters.AddWithValue("@tokenId", tokenId);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task IncrementVerificationAttemptAsync(MySqlConnection connection, MySqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
+    private static async Task IncrementVerificationAttemptAsync(SqlConnection connection, SqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
     {
-        await using var command = new MySqlCommand("""
+        await using var command = new SqlCommand("""
             UPDATE email_dogrulama_tokenlari
             SET deneme_sayisi = COALESCE(deneme_sayisi, 0) + 1
             WHERE id = @tokenId;
-            """, connection, transaction);
+            """, connection, (SqlTransaction)transaction);
         command.Parameters.AddWithValue("@tokenId", tokenId);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
@@ -2078,17 +2189,70 @@ public class AuthService : IAuthService
         return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
     }
 
-    private static async Task<string> GenerateFirmaCodeAsync(MySqlConnection connection, MySqlTransaction transaction, CancellationToken cancellationToken)
+    private static async Task<string> GenerateFirmaCodeAsync(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
     {
         const string sql = """
             SELECT COALESCE(MAX(id), 0) + 1
             FROM firmalar;
             """;
 
-        await using var command = new MySqlCommand(sql, connection, transaction);
+        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         var nextId = Convert.ToInt64(result);
         return $"OTLTRZM-FRM-{nextId:0000}";
+    }
+
+    private static async Task<string> GenerateHotelCodeAsync(SqlConnection connection, SqlTransaction transaction, string city, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT COALESCE(MAX(id), 0) + 1
+            FROM oteller;
+            """;
+
+        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        var nextId = Convert.ToInt64(result, CultureInfo.InvariantCulture);
+        var cityCode = NormalizeAscii(city).ToUpperInvariant();
+        cityCode = string.IsNullOrWhiteSpace(cityCode) ? "TR" : cityCode[..Math.Min(3, cityCode.Length)];
+        return $"OTLTRZM-{cityCode}-{nextId:0000}";
+    }
+
+    private static async Task<bool> TableExistsAsync(
+        SqlConnection connection,
+        string tableName,
+        CancellationToken cancellationToken,
+        SqlTransaction? transaction = null)
+    {
+        const string sql = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = 'dbo'
+              AND TABLE_NAME = @tableName;
+            """;
+
+        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) > 0;
+    }
+
+    private static string NormalizeAscii(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return value
+            .Trim()
+            .Replace("ç", "c", StringComparison.OrdinalIgnoreCase)
+            .Replace("ğ", "g", StringComparison.OrdinalIgnoreCase)
+            .Replace("ı", "i", StringComparison.OrdinalIgnoreCase)
+            .Replace("İ", "I", StringComparison.Ordinal)
+            .Replace("ö", "o", StringComparison.OrdinalIgnoreCase)
+            .Replace("ş", "s", StringComparison.OrdinalIgnoreCase)
+            .Replace("ü", "u", StringComparison.OrdinalIgnoreCase)
+            .Replace(" ", string.Empty, StringComparison.Ordinal)
+            .Replace("-", string.Empty, StringComparison.Ordinal);
     }
 
     private sealed class AuthSchemaInfo
@@ -2107,4 +2271,3 @@ public class AuthService : IAuthService
         public DateTime? LockoutEndUtc { get; init; }
     }
 }
-

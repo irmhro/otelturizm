@@ -121,7 +121,7 @@
                              data-price-note="@day.PriceNote">
                         <div class="partner-calendar-cell-head">
                             <div>
-                                <strong>@day.DayLabel</strong>
+                                <strong>@day.Date.ToString("dd-MM-yyyy")</strong>
                                 <span>@day.WeekdayLabel</span>
                             </div>
                             <b class="partner-calendar-status">@day.StatusText</b>
@@ -151,12 +151,36 @@
                         }
                         @if (Model.SelectedRoomId.HasValue && day.IsCurrentMonth)
                         {
-                            <button type="button" class="partner-calendar-edit-btn"
-                                    data-open-daily-editor="true"
-                                    data-date="@day.Date.ToString("yyyy-MM-dd")">
-                                <i class="fas fa-pen"></i>
-                                Gunu Duzenle
-                            </button>
+                            <div class="partner-calendar-actions">
+                                <form method="post" action="/panel/partner/takvim-fiyatlar/gun-guncelle" class="partner-calendar-inline-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+                                    <input type="hidden" name="RoomId" value="@Model.SelectedRoomId.Value" />
+                                    <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
+                                    <input type="hidden" name="Date" value="@day.Date.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="SaleStatusAction" value="open" />
+                                    <button type="submit" class="partner-calendar-inline-btn is-open">
+                                        <i class="fas fa-lock-open"></i> Satisa Ac
+                                    </button>
+                                </form>
+                                <form method="post" action="/panel/partner/takvim-fiyatlar/gun-guncelle" class="partner-calendar-inline-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+                                    <input type="hidden" name="RoomId" value="@Model.SelectedRoomId.Value" />
+                                    <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
+                                    <input type="hidden" name="Date" value="@day.Date.ToString("yyyy-MM-dd")" />
+                                    <input type="hidden" name="SaleStatusAction" value="close" />
+                                    <button type="submit" class="partner-calendar-inline-btn is-close">
+                                        <i class="fas fa-lock"></i> Satisa Kapat
+                                    </button>
+                                </form>
+                                <button type="button" class="partner-calendar-edit-btn"
+                                        data-open-daily-editor="true"
+                                        data-date="@day.Date.ToString("yyyy-MM-dd")">
+                                    <i class="fas fa-pen"></i>
+                                    Gunu Duzenle
+                                </button>
+                            </div>
                         }
                     </article>
                 }

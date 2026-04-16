@@ -1,5 +1,9 @@
 using System.Globalization;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
+using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
+using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
+using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
+using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Oteller;
 using otelturizmnew.Models.Paneller.User;
 using otelturizmnew.Services.Abstractions;
@@ -37,9 +41,9 @@ public class UserFavoriteService : IUserFavoriteService
 
         var result = new HashSet<long>();
 
-        await using var connection = new MySqlConnection(connectionString);
+        await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         for (var i = 0; i < ids.Length; i++)
         {
@@ -70,9 +74,9 @@ public class UserFavoriteService : IUserFavoriteService
 
         const string sql = @"SELECT COUNT(*) FROM user_favori_oteller WHERE user_id = @userId AND COALESCE(aktif_mi, 1) = 1;";
 
-        await using var connection = new MySqlConnection(connectionString);
+        await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result, CultureInfo.InvariantCulture);
@@ -155,9 +159,9 @@ public class UserFavoriteService : IUserFavoriteService
               AND o.onay_durumu = 'Onaylandı'
             ORDER BY f.olusturulma_tarihi DESC, f.id DESC;";
 
-        await using var connection = new MySqlConnection(connectionString);
+        await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -247,7 +251,7 @@ public class UserFavoriteService : IUserFavoriteService
             return new HotelFavoriteToggleResponse { Success = false, Message = "Veritabanı bağlantısı bulunamadı." };
         }
 
-        await using var connection = new MySqlConnection(connectionString);
+        await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
         if (!await HotelExistsAsync(connection, hotelId, cancellationToken))
@@ -256,7 +260,7 @@ public class UserFavoriteService : IUserFavoriteService
         }
 
         const string selectSql = @"SELECT id, COALESCE(aktif_mi, 1) AS aktif_mi FROM user_favori_oteller WHERE user_id = @userId AND otel_id = @hotelId LIMIT 1;";
-        await using var selectCommand = new MySqlCommand(selectSql, connection);
+        await using var selectCommand = new SqlCommand(selectSql, connection);
         selectCommand.Parameters.AddWithValue("@userId", userId);
         selectCommand.Parameters.AddWithValue("@hotelId", hotelId);
 
@@ -284,7 +288,7 @@ public class UserFavoriteService : IUserFavoriteService
                 VALUES
                 (@userId, @hotelId, @sourcePage, @sourceUrl, @deviceType, @ipAddress, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);";
 
-            await using var insertCommand = new MySqlCommand(insertSql, connection);
+            await using var insertCommand = new SqlCommand(insertSql, connection);
             insertCommand.Parameters.AddWithValue("@userId", userId);
             insertCommand.Parameters.AddWithValue("@hotelId", hotelId);
             insertCommand.Parameters.AddWithValue("@sourcePage", DbValue(normalizedSourcePage));
@@ -307,7 +311,7 @@ public class UserFavoriteService : IUserFavoriteService
                 son_islem_tarihi = CURRENT_TIMESTAMP
             WHERE id = @id;";
 
-        await using var updateCommand = new MySqlCommand(updateSql, connection);
+        await using var updateCommand = new SqlCommand(updateSql, connection);
         updateCommand.Parameters.AddWithValue("@id", recordId.Value);
         updateCommand.Parameters.AddWithValue("@sourcePage", DbValue(normalizedSourcePage));
         updateCommand.Parameters.AddWithValue("@sourceUrl", DbValue(normalizedSourceUrl));
@@ -324,7 +328,7 @@ public class UserFavoriteService : IUserFavoriteService
                     guncellenme_tarihi = CURRENT_TIMESTAMP
                 WHERE user_id = @userId
                   AND otel_id = @hotelId;";
-            await using var disableAlertCommand = new MySqlCommand(disableAlertSql, connection);
+            await using var disableAlertCommand = new SqlCommand(disableAlertSql, connection);
             disableAlertCommand.Parameters.AddWithValue("@userId", userId);
             disableAlertCommand.Parameters.AddWithValue("@hotelId", hotelId);
             await disableAlertCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -351,7 +355,7 @@ public class UserFavoriteService : IUserFavoriteService
             return (false, "Veritabani baglantisi bulunamadi.");
         }
 
-        await using var connection = new MySqlConnection(connectionString);
+        await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string favoriteCheckSql = @"
@@ -360,7 +364,7 @@ public class UserFavoriteService : IUserFavoriteService
             WHERE user_id = @userId
               AND otel_id = @hotelId
               AND COALESCE(aktif_mi, 1) = 1;";
-        await using (var favoriteCommand = new MySqlCommand(favoriteCheckSql, connection))
+        await using (var favoriteCommand = new SqlCommand(favoriteCheckSql, connection))
         {
             favoriteCommand.Parameters.AddWithValue("@userId", userId);
             favoriteCommand.Parameters.AddWithValue("@hotelId", form.HotelId);
@@ -379,7 +383,7 @@ public class UserFavoriteService : IUserFavoriteService
                     guncellenme_tarihi = CURRENT_TIMESTAMP
                 WHERE user_id = @userId
                   AND otel_id = @hotelId;";
-            await using var disableCommand = new MySqlCommand(disableSql, connection);
+            await using var disableCommand = new SqlCommand(disableSql, connection);
             disableCommand.Parameters.AddWithValue("@userId", userId);
             disableCommand.Parameters.AddWithValue("@hotelId", form.HotelId);
             await disableCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -427,7 +431,7 @@ public class UserFavoriteService : IUserFavoriteService
                 bitis_tarihi = VALUES(bitis_tarihi),
                 aktif_mi = VALUES(aktif_mi),
                 guncellenme_tarihi = CURRENT_TIMESTAMP;";
-        await using var command = new MySqlCommand(upsertSql, connection);
+        await using var command = new SqlCommand(upsertSql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@hotelId", form.HotelId);
         command.Parameters.AddWithValue("@targetPrice", targetPrice);
@@ -451,14 +455,14 @@ public class UserFavoriteService : IUserFavoriteService
             return (false, "Veritabani baglantisi bulunamadi.");
         }
 
-        await using var connection = new MySqlConnection(connectionString);
+        await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
         const string deleteSql = @"
             DELETE FROM user_favorite_price_alerts
             WHERE user_id = @userId
               AND otel_id = @hotelId;";
-        await using var command = new MySqlCommand(deleteSql, connection);
+        await using var command = new SqlCommand(deleteSql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
@@ -468,10 +472,10 @@ public class UserFavoriteService : IUserFavoriteService
             : (false, "Silinecek aktif fiyat alarmi bulunamadi.");
     }
 
-    private static async Task<bool> HotelExistsAsync(MySqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private static async Task<bool> HotelExistsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"SELECT COUNT(*) FROM oteller WHERE id = @hotelId AND yayin_durumu = 'Yayında' AND onay_durumu = 'Onaylandı';";
-        await using var command = new MySqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;

@@ -395,3 +395,42 @@
 - Partner panelinde red islemi detayli gerekce olmadan kaydedilmez; aciklayici red nedeni zorunludur.
 - Misafire partner mesaji gonderildiginde hem panel mesajlasma kaydi olusur hem de misafir e-posta adresine bildirim kuyruga yazilir.
 - Rezervasyon onaylandiginda misafire onay e-postasi, reddedildiginde red nedeni iceren durum e-postasi otomatik gonderilir.
+
+## 2026-04-16 - Partner basvuru/onay akisi, legacy tablo temizligi ve local development DB sabitleme
+- `users` tablosunun aktif kimlik tablosu oldugu, `kullanicilar` tablosunun ise legacy ve runtime disi kaldigi teyit edildi.
+- Aktif foreign key ve runtime kullanim kontrolunden sonra `kullanicilar` tablosu dogrudan kullanilmadigi icin `kullanicilar_arsiv_yedek` tablosuna arsivlenip aktif semadan cikarildi.
+- Yeni partner workflow tablolari DB'ye uygulandi:
+  - `partner_basvuru_hareketleri`
+  - `partner_basvuru_evraklari`
+- Partner kayit akisi guncellendi:
+  - partner kaydi `partner_detaylari.onay_durumu = Beklemede` ile acilir
+  - ayni anda `oteller` tablosunda taslak bir tesis olusur
+  - partner e-posta onayi tamamlanmadan giris yapamaz
+  - e-posta onayindan sonra panele girebilir
+  - admin onayi gelene kadar tesis duzenlenebilir ama yayinlanmaz
+- Partner panelindeki eski `Tercihler` alani onboarding sayfasina cevildi:
+  - `Basvuru & Evraklar`
+  - basvuru bilgisi guncelleme
+  - guvenli evrak yukleme
+  - evrak listeleme ve silme
+- Admin panelde yeni partner karar ekrani gercek CRUD ile baglandi:
+  - `/admin/partner-basvurulari`
+  - `Onayla`
+  - `Askıya Al`
+  - `Reddet`
+- Admin karari partner durumunun yani sira partnere bagli taslak tesisin onay/yayin alanlarini da gunceller.
+- MySqlConnector transaction hatasi veren iki alan duzeltildi:
+  - `AuthService.RegisterPartnerAsync`
+  - `AdminService.ReviewPartnerApplicationAsync`
+  - `PartnerService.SaveApplicationAsync`
+- `appsettings.Development.json` local gelistirme icin tekrar yerel veritabanina sabitlendi; uzak prod benzeri host development profilinden kaldirildi.
+- `Database:RunMigrationsOnStartup` development profilinde `false` tutulur; migrationlar kontrollu sekilde uygulanir.
+- Canli dogrulama:
+  - partner basvurusu olusturuldu
+  - e-posta dogrulama tokeni yazildi
+  - partner e-posta onayi sonrasi panele girdi
+  - `/panel/partner/basvuru-ve-evraklar` `200`
+  - partner bilgi guncelleme `200`
+  - partner evrak yukleme `200`
+  - `/admin/partner-basvurulari` `200`
+  - admin onay karari DB'ye yazildi

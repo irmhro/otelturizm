@@ -1,4 +1,4 @@
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
 using otelturizmnew.Models.Paneller.Common;
 using otelturizmnew.Services.Abstractions;
 using System.Globalization;
@@ -96,15 +96,20 @@ public class HeaderBildiriService : IHeaderBildiriService
             foreach (var key in normalizedKeys)
             {
                 const string upsertSql = @"
-                    INSERT INTO panel_header_bildiri_okumalari
-                    (panel_kodu, kullanici_id, bildiri_anahtari, okundu_mi, okundu_tarihi, guncellenme_tarihi)
-                    VALUES
-                    (@panelKey, @userId, @itemKey, 1, UTC_TIMESTAMP(), CURRENT_TIMESTAMP)
-                    ON DUPLICATE KEY UPDATE
-                        okundu_mi = VALUES(okundu_mi),
-                        okundu_tarihi = VALUES(okundu_tarihi),
-                        guncellenme_tarihi = CURRENT_TIMESTAMP;";
-                await using var command = new MySqlCommand(upsertSql, connection, (MySqlTransaction)transaction);
+                    MERGE panel_header_bildiri_okumalari AS target
+                    USING (SELECT @panelKey AS panel_kodu, @userId AS kullanici_id, @itemKey AS bildiri_anahtari) AS source
+                    ON target.panel_kodu = source.panel_kodu
+                       AND target.kullanici_id = source.kullanici_id
+                       AND target.bildiri_anahtari = source.bildiri_anahtari
+                    WHEN MATCHED THEN
+                        UPDATE SET
+                            okundu_mi = 1,
+                            okundu_tarihi = SYSUTCDATETIME(),
+                            guncellenme_tarihi = CURRENT_TIMESTAMP
+                    WHEN NOT MATCHED THEN
+                        INSERT (panel_kodu, kullanici_id, bildiri_anahtari, okundu_mi, okundu_tarihi, guncellenme_tarihi)
+                        VALUES (@panelKey, @userId, @itemKey, 1, SYSUTCDATETIME(), CURRENT_TIMESTAMP);";
+                await using var command = new SqlCommand(upsertSql, connection, (SqlTransaction)transaction);
                 command.Parameters.AddWithValue("@panelKey", normalizedPanel);
                 command.Parameters.AddWithValue("@userId", userId);
                 command.Parameters.AddWithValue("@itemKey", key);
@@ -188,7 +193,7 @@ public class HeaderBildiriService : IHeaderBildiriService
         });
     }
 
-    private async Task FillUserItemsAsync(MySqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
+    private async Task FillUserItemsAsync(SqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
     {
         const string approvedSql = @"
             SELECT r.id, r.rezervasyon_no, COALESCE(o.otel_adi, 'Otel'), COALESCE(r.otel_onay_tarihi, r.guncellenme_tarihi, r.olusturulma_tarihi)
@@ -197,9 +202,9 @@ public class HeaderBildiriService : IHeaderBildiriService
             WHERE r.kullanici_id = @userId
               AND (r.durum = 'Onaylandı' OR COALESCE(r.otel_onay_durumu, '') = 'Onaylandı')
             ORDER BY COALESCE(r.otel_onay_tarihi, r.guncellenme_tarihi, r.olusturulma_tarihi) DESC
-            LIMIT 1;";
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
-        await using (var command = new MySqlCommand(approvedSql, connection))
+        await using (var command = new SqlCommand(approvedSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -220,8 +225,8 @@ public class HeaderBildiriService : IHeaderBildiriService
             }
         }
 
-        const string birthdaySql = "SELECT COALESCE(ad_soyad, ''), dogum_tarihi FROM users WHERE id = @userId LIMIT 1;";
-        await using (var command = new MySqlCommand(birthdaySql, connection))
+        const string birthdaySql = "SELECT TOP (1) COALESCE(ad_soyad, ''), dogum_tarihi FROM users WHERE id = @userId;";
+        await using (var command = new SqlCommand(birthdaySql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -246,7 +251,7 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
 
         const string reservationCountSql = "SELECT COUNT(*) FROM rezervasyonlar WHERE kullanici_id = @userId;";
-        await using (var command = new MySqlCommand(reservationCountSql, connection))
+        await using (var command = new SqlCommand(reservationCountSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             var count = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
@@ -269,7 +274,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             FROM mesaj_konusmalari
             WHERE misafir_kullanici_id = @userId
               AND durum <> 'Arşivlendi';";
-        await using (var command = new MySqlCommand(unreadSql, connection))
+        await using (var command = new SqlCommand(unreadSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             var unreadCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
@@ -288,7 +293,7 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
     }
 
-    private async Task FillPartnerItemsAsync(MySqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
+    private async Task FillPartnerItemsAsync(SqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
     {
         const string pendingSql = @"
             SELECT COUNT(*),
@@ -298,7 +303,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             WHERE oks.user_id = @userId
               AND oks.aktif_mi = 1
               AND r.durum IN ('Onay Bekliyor', 'Değişiklik Bekliyor');";
-        await using (var command = new MySqlCommand(pendingSql, connection))
+        await using (var command = new SqlCommand(pendingSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -331,8 +336,8 @@ public class HeaderBildiriService : IHeaderBildiriService
               AND oks.aktif_mi = 1
               AND r.durum IN ('Onay Bekliyor', 'Değişiklik Bekliyor')
             ORDER BY r.olusturulma_tarihi DESC
-            LIMIT 1;";
-        await using (var command = new MySqlCommand(latestPendingSql, connection))
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
+        await using (var command = new SqlCommand(latestPendingSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -362,7 +367,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             WHERE oks.user_id = @userId
               AND oks.aktif_mi = 1
               AND mk.durum <> 'Arşivlendi';";
-        await using (var command = new MySqlCommand(unreadSql, connection))
+        await using (var command = new SqlCommand(unreadSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -399,8 +404,8 @@ public class HeaderBildiriService : IHeaderBildiriService
               AND r.durum = 'İptal Edildi'
               AND COALESCE(r.iptal_eden, '') = 'Misafir'
             ORDER BY COALESCE(r.iptal_tarihi, r.guncellenme_tarihi, r.olusturulma_tarihi) DESC
-            LIMIT 1;";
-        await using (var command = new MySqlCommand(cancellationSql, connection))
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
+        await using (var command = new SqlCommand(cancellationSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -424,11 +429,11 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
     }
 
-    private async Task FillFirmaItemsAsync(MySqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
+    private async Task FillFirmaItemsAsync(SqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
     {
-        const string firmaSql = "SELECT COALESCE(firma_id, 0) FROM users WHERE id = @userId LIMIT 1;";
+        const string firmaSql = "SELECT TOP (1) COALESCE(firma_id, 0) FROM users WHERE id = @userId;";
         long firmaId;
-        await using (var command = new MySqlCommand(firmaSql, connection))
+        await using (var command = new SqlCommand(firmaSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             firmaId = Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken) ?? 0L);
@@ -440,7 +445,7 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
 
         const string pendingApprovalSql = "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id = @firmaId AND COALESCE(firma_onay_durumu, '') = 'Beklemede';";
-        await using (var command = new MySqlCommand(pendingApprovalSql, connection))
+        await using (var command = new SqlCommand(pendingApprovalSql, connection))
         {
             command.Parameters.AddWithValue("@firmaId", firmaId);
             var pendingCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
@@ -463,7 +468,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             FROM mesaj_konusmalari
             WHERE firma_id = @firmaId
               AND durum <> 'Arşivlendi';";
-        await using (var command = new MySqlCommand(unreadSql, connection))
+        await using (var command = new SqlCommand(unreadSql, connection))
         {
             command.Parameters.AddWithValue("@firmaId", firmaId);
             var unreadCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
@@ -481,8 +486,8 @@ public class HeaderBildiriService : IHeaderBildiriService
             }
         }
 
-        const string todaySql = "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id = @firmaId AND DATE(olusturulma_tarihi) = CURDATE();";
-        await using (var command = new MySqlCommand(todaySql, connection))
+        const string todaySql = "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id = @firmaId AND CAST(olusturulma_tarihi AS date) = CAST(SYSUTCDATETIME() AS date);";
+        await using (var command = new SqlCommand(todaySql, connection))
         {
             command.Parameters.AddWithValue("@firmaId", firmaId);
             var todayCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
@@ -501,10 +506,10 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
     }
 
-    private async Task FillSalesItemsAsync(MySqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
+    private async Task FillSalesItemsAsync(SqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
     {
-        const string todaySql = "SELECT COUNT(*) FROM rezervasyonlar WHERE satis_temsilcisi_id = @userId AND DATE(olusturulma_tarihi) = CURDATE();";
-        await using (var command = new MySqlCommand(todaySql, connection))
+        const string todaySql = "SELECT COUNT(*) FROM rezervasyonlar WHERE satis_temsilcisi_id = @userId AND CAST(olusturulma_tarihi AS date) = CAST(SYSUTCDATETIME() AS date);";
+        await using (var command = new SqlCommand(todaySql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             var todayCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
@@ -526,9 +531,9 @@ public class HeaderBildiriService : IHeaderBildiriService
             SELECT COALESCE(SUM(toplam_tutar), 0)
             FROM rezervasyonlar
             WHERE satis_temsilcisi_id = @userId
-              AND olusturulma_tarihi >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
-              AND olusturulma_tarihi < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH);";
-        await using (var command = new MySqlCommand(monthRevenueSql, connection))
+              AND olusturulma_tarihi >= DATEFROMPARTS(YEAR(SYSUTCDATETIME()), MONTH(SYSUTCDATETIME()), 1)
+              AND olusturulma_tarihi < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(SYSUTCDATETIME()), MONTH(SYSUTCDATETIME()), 1));";
+        await using (var command = new SqlCommand(monthRevenueSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             var monthRevenue = Convert.ToDecimal(await command.ExecuteScalarAsync(cancellationToken) ?? 0m);
@@ -547,7 +552,7 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
 
         const string pendingSql = "SELECT COUNT(*) FROM rezervasyonlar WHERE satis_temsilcisi_id = @userId AND durum = 'Onay Bekliyor';";
-        await using (var command = new MySqlCommand(pendingSql, connection))
+        await using (var command = new SqlCommand(pendingSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             var pendingCount = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0);
@@ -566,9 +571,9 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
     }
 
-    private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
+    private async Task<SqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
-        var connection = new MySqlConnection(_connectionString);
+        var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         return connection;
     }
@@ -576,7 +581,7 @@ public class HeaderBildiriService : IHeaderBildiriService
     private static string BuildItemKey(string prefix, string uniquePart)
         => $"{prefix}:{uniquePart}".ToLowerInvariant();
 
-    private static async Task ApplyReadStateAsync(MySqlConnection connection, string panelKey, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
+    private static async Task ApplyReadStateAsync(SqlConnection connection, string panelKey, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
     {
         var keys = model.Items
             .Where(static item => !item.IsPlaceholder && !string.IsNullOrWhiteSpace(item.ItemKey))
@@ -597,7 +602,7 @@ public class HeaderBildiriService : IHeaderBildiriService
               AND kullanici_id = @userId
               AND bildiri_anahtari IN ({placeholders});";
         var readMap = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-        await using (var command = new MySqlCommand(sql, connection))
+        await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@panelKey", panelKey);
             command.Parameters.AddWithValue("@userId", userId);
