@@ -1,20 +1,20 @@
 CREATE TABLE komisyon_muhasebe_kayitlari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT  NOT NULL IDENTITY(1,1) PRIMARY KEY,
     kayit_no VARCHAR(30) NOT NULL UNIQUE,
     kayit_tarihi DATE NOT NULL,
-    donem VARCHAR(7) NOT NULL COMMENT 'YYYY-MM formatında',
+    donem VARCHAR(7) NOT NULL,
     
     -- İlişkiler
-    rezervasyon_id BIGINT UNSIGNED NOT NULL,
-    otel_id BIGINT UNSIGNED NOT NULL,
-    partner_id BIGINT UNSIGNED NOT NULL,
-    fatura_id BIGINT UNSIGNED NULL,
+    rezervasyon_id BIGINT  NOT NULL,
+    otel_id BIGINT  NOT NULL,
+    partner_id BIGINT  NOT NULL,
+    fatura_id BIGINT  NULL,
     
     -- Finansal Bilgiler
-    toplam_rezervasyon_tutari DECIMAL(10,2) NOT NULL COMMENT 'Müşteriden tahsil edilen',
+    toplam_rezervasyon_tutari DECIMAL(10,2) NOT NULL,
     komisyon_orani DECIMAL(5,2) NOT NULL,
     komisyon_tutari DECIMAL(10,2) NOT NULL,
-    ek_kesintiler DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Reklam, görünürlük programı vb.',
+    ek_kesintiler DECIMAL(10,2) DEFAULT 0.00,
     net_otele_odenecek DECIMAL(10,2) NOT NULL,
     
     -- Ödeme Durumu
@@ -24,23 +24,23 @@ CREATE TABLE komisyon_muhasebe_kayitlari (
     odeme_emri_no VARCHAR(30) NULL,
     
     -- Muhasebe Hesapları
-    muhasebe_hesap_kodu VARCHAR(20) NULL COMMENT '600.01.001 vb.',
+    muhasebe_hesap_kodu VARCHAR(20) NULL,
     karsi_hesap_kodu VARCHAR(20) NULL,
     yevmiye_no VARCHAR(20) NULL,
     fis_no VARCHAR(20) NULL,
     
     -- Mutabakat
     mutabakat_durumu ENUM('Beklemede', 'Otele Gönderildi', 'Otel Onayladı', 'İtiraz Var', 'Çözüldü') DEFAULT 'Beklemede',
-    mutabakat_gonderim_tarihi TIMESTAMP NULL,
-    mutabakat_onay_tarihi TIMESTAMP NULL,
-    mutabakat_notu TEXT NULL,
+    mutabakat_gonderim_tarihi DATETIME2 NULL,
+    mutabakat_onay_tarihi DATETIME2 NULL,
+    mutabakat_notu NVARCHAR(MAX) NULL,
     
     -- İtiraz ve Düzeltme
-    itiraz_var_mi TINYINT(1) DEFAULT 0,
+    itiraz_var_mi BIT DEFAULT 0,
     itiraz_nedeni VARCHAR(500) NULL,
-    itiraz_tarihi TIMESTAMP NULL,
-    itiraz_cozum_tarihi TIMESTAMP NULL,
-    itiraz_cozum_aciklamasi TEXT NULL,
+    itiraz_tarihi DATETIME2 NULL,
+    itiraz_cozum_tarihi DATETIME2 NULL,
+    itiraz_cozum_aciklamasi NVARCHAR(MAX) NULL,
     duzeltme_tutari DECIMAL(10,2) NULL,
     
     -- Vergi
@@ -50,10 +50,10 @@ CREATE TABLE komisyon_muhasebe_kayitlari (
     kdv_tutari DECIMAL(10,2) DEFAULT 0.00,
     
     -- Zaman Damgaları
-    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    olusturan_admin_id BIGINT UNSIGNED NULL,
-    onaylayan_finans_admin_id BIGINT UNSIGNED NULL,
+    olusturulma_tarihi DATETIME2 DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NULL,
+    olusturan_admin_id BIGINT  NULL,
+    onaylayan_finans_admin_id BIGINT  NULL,
     
     -- İndeksler
     INDEX idx_kayit_no (kayit_no),
@@ -71,6 +71,5 @@ CREATE TABLE komisyon_muhasebe_kayitlari (
     FOREIGN KEY (fatura_id) REFERENCES faturalar(id) ON DELETE SET NULL,
     FOREIGN KEY (olusturan_admin_id) REFERENCES kullanicilar(id) ON DELETE SET NULL,
     FOREIGN KEY (onaylayan_finans_admin_id) REFERENCES kullanicilar(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Komisyon hesaplamaları ve muhasebe kayıtları';
+);
 

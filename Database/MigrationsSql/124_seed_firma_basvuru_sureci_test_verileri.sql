@@ -1,4 +1,4 @@
-SET @admin_user_id = (SELECT id FROM users WHERE eposta = 'root@otelturizm.com' LIMIT 1);
+DECLARE @admin_user_id BIGINT = (SELECT TOP (1) id FROM users WHERE eposta = 'root@otelturizm.com');
 
 INSERT INTO firmalar
 (
@@ -15,9 +15,9 @@ SELECT
     'kurumsal@marmarasatinalma.com', '02169000001', 'https://marmarasatinalma.com', 'Tedarik', 185, 420000.00,
     'TRY', 'Kosuyolu Mah. Bagdat Cad. No:18 Kadikoy/Istanbul', 'Istanbul', 'Kadikoy', '34718',
     'Burcu Aksoy', 'Satinalma Direktoru', 'onayli.firma.test@otelturizm.com', '05559000001',
-    'Onaylandı', DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY), NULL,
+    'Onaylandı', DATEADD(DAY, -3, SYSDATETIME()), DATEADD(DAY, -2, SYSDATETIME()), DATEADD(DAY, -1, SYSDATETIME()), NULL,
     @admin_user_id, 'Kurumsal hesap onaylandi ve giris yetkisi acildi.', 1, 1, 12,
-    'seed_firma_application', DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY), 'Onayli test firmasi'
+    'seed_firma_application', DATEADD(DAY, -3, SYSDATETIME()), DATEADD(DAY, -3, SYSDATETIME()), 'Onayli test firmasi'
 WHERE NOT EXISTS (SELECT 1 FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0901');
 
 INSERT INTO firmalar
@@ -35,9 +35,9 @@ SELECT
     'kurumsal@anadoluproje.com', '02169000002', 'https://anadoluproje.com', 'Lojistik', 74, 165000.00,
     'TRY', 'Ataturk Mah. Alemdagi Cad. No:42 Umraniye/Istanbul', 'Istanbul', 'Umraniye', '34764',
     'Deniz Ucar', 'Operasyon Muduru', 'bekleyen.firma.test@otelturizm.com', '05559000002',
-    'Beklemede', DATE_SUB(NOW(), INTERVAL 8 HOUR), DATE_SUB(NOW(), INTERVAL 6 HOUR), NULL, NULL,
+    'Beklemede', DATEADD(HOUR, -8, SYSDATETIME()), DATEADD(HOUR, -6, SYSDATETIME()), NULL, NULL,
     NULL, 'Belgeler inceleniyor.', 1, 0, 24,
-    'seed_firma_application', DATE_SUB(NOW(), INTERVAL 8 HOUR), DATE_SUB(NOW(), INTERVAL 8 HOUR), 'Bekleyen test firmasi'
+    'seed_firma_application', DATEADD(HOUR, -8, SYSDATETIME()), DATEADD(HOUR, -8, SYSDATETIME()), 'Bekleyen test firmasi'
 WHERE NOT EXISTS (SELECT 1 FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0902');
 
 INSERT INTO firmalar
@@ -55,9 +55,9 @@ SELECT
     'info@kuzeyorganizasyon.com', '02169000003', 'https://kuzeyorganizasyon.com', 'Etkinlik', 26, 88000.00,
     'TRY', 'Levent Mah. Buyukdere Cad. No:55 Besiktas/Istanbul', 'Istanbul', 'Besiktas', '34330',
     'Selin Tunca', 'Kurucu Ortak', 'reddedilen.firma.test@otelturizm.com', '05559000003',
-    'Reddedildi', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(NOW(), INTERVAL 4 DAY), NULL, DATE_SUB(NOW(), INTERVAL 3 DAY),
+    'Reddedildi', DATEADD(DAY, -5, SYSDATETIME()), DATEADD(DAY, -4, SYSDATETIME()), NULL, DATEADD(DAY, -3, SYSDATETIME()),
     @admin_user_id, 'Vergi belge dogrulamasi tamamlanamadi.', 1, 0, 24,
-    'seed_firma_application', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(NOW(), INTERVAL 5 DAY), 'Reddedilen test firmasi'
+    'seed_firma_application', DATEADD(DAY, -5, SYSDATETIME()), DATEADD(DAY, -5, SYSDATETIME()), 'Reddedilen test firmasi'
 WHERE NOT EXISTS (SELECT 1 FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0903');
 
 INSERT INTO firmalar
@@ -75,34 +75,34 @@ SELECT
     'iletisim@deltakurumsal.com', '02169000004', 'https://deltakurumsal.com', 'Turizm', 310, 910000.00,
     'TRY', 'Mecidiyekoy Mah. Buyukdere Cad. No:77 Sisli/Istanbul', 'Istanbul', 'Sisli', '34387',
     'Mert Eren', 'Kurumsal Kanal Direktoru', 'askida.firma.test@otelturizm.com', '05559000004',
-    'Askıda', DATE_SUB(NOW(), INTERVAL 12 DAY), DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_SUB(NOW(), INTERVAL 9 DAY), NULL,
+    'Askıda', DATEADD(DAY, -12, SYSDATETIME()), DATEADD(DAY, -10, SYSDATETIME()), DATEADD(DAY, -9, SYSDATETIME()), NULL,
     @admin_user_id, 'Ek sozlesme evraki bekleniyor.', 1, 0, 48,
-    'seed_firma_application', DATE_SUB(NOW(), INTERVAL 12 DAY), DATE_SUB(NOW(), INTERVAL 12 DAY), 'Askida test firmasi'
+    'seed_firma_application', DATEADD(DAY, -12, SYSDATETIME()), DATEADD(DAY, -12, SYSDATETIME()), 'Askida test firmasi'
 WHERE NOT EXISTS (SELECT 1 FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0904');
 
-SET @firma_onayli = (SELECT id FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0901' LIMIT 1);
-SET @firma_bekleyen = (SELECT id FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0902' LIMIT 1);
-SET @firma_reddedilen = (SELECT id FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0903' LIMIT 1);
-SET @firma_askida = (SELECT id FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0904' LIMIT 1);
+DECLARE @firma_onayli BIGINT = (SELECT TOP (1) id FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0901');
+DECLARE @firma_bekleyen BIGINT = (SELECT TOP (1) id FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0902');
+DECLARE @firma_reddedilen BIGINT = (SELECT TOP (1) id FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0903');
+DECLARE @firma_askida BIGINT = (SELECT TOP (1) id FROM firmalar WHERE firma_kodu = 'OTLTRZM-FRM-0904');
 
 INSERT INTO users
 (ad_soyad, eposta, telefon, sifre, rol, firma_id, departman, gorev_unvani, harcama_limiti, onay_gereksinimi, personel_kodu, firma_yonetici_mi, hesap_durumu, dil_tercihi, para_birimi, ulke, olusturulma_tarihi)
-SELECT 'Burcu Aksoy', 'onayli.firma.test@otelturizm.com', '05559000001', SHA2('1585',256), 'firma_admin', @firma_onayli, 'Satinalma', 'Satinalma Direktoru', 12500.00, 0, 'FRM-901', 1, 1, 'tr', 'TRY', 'Türkiye', NOW()
+SELECT 'Burcu Aksoy', 'onayli.firma.test@otelturizm.com', '05559000001', CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', '1585'), 2), 'firma_admin', @firma_onayli, 'Satinalma', 'Satinalma Direktoru', 12500.00, 0, 'FRM-901', 1, 1, 'tr', 'TRY', 'Türkiye', SYSDATETIME()
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE eposta = 'onayli.firma.test@otelturizm.com');
 
 INSERT INTO users
 (ad_soyad, eposta, telefon, sifre, rol, firma_id, departman, gorev_unvani, harcama_limiti, onay_gereksinimi, personel_kodu, firma_yonetici_mi, hesap_durumu, dil_tercihi, para_birimi, ulke, olusturulma_tarihi)
-SELECT 'Deniz Ucar', 'bekleyen.firma.test@otelturizm.com', '05559000002', SHA2('1585',256), 'firma_admin', @firma_bekleyen, 'Operasyon', 'Operasyon Muduru', 9800.00, 1, 'FRM-902', 1, 1, 'tr', 'TRY', 'Türkiye', NOW()
+SELECT 'Deniz Ucar', 'bekleyen.firma.test@otelturizm.com', '05559000002', CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', '1585'), 2), 'firma_admin', @firma_bekleyen, 'Operasyon', 'Operasyon Muduru', 9800.00, 1, 'FRM-902', 1, 1, 'tr', 'TRY', 'Türkiye', SYSDATETIME()
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE eposta = 'bekleyen.firma.test@otelturizm.com');
 
 INSERT INTO users
 (ad_soyad, eposta, telefon, sifre, rol, firma_id, departman, gorev_unvani, harcama_limiti, onay_gereksinimi, personel_kodu, firma_yonetici_mi, hesap_durumu, dil_tercihi, para_birimi, ulke, olusturulma_tarihi)
-SELECT 'Selin Tunca', 'reddedilen.firma.test@otelturizm.com', '05559000003', SHA2('1585',256), 'firma_admin', @firma_reddedilen, 'Yonetim', 'Kurucu Ortak', 7800.00, 1, 'FRM-903', 1, 1, 'tr', 'TRY', 'Türkiye', NOW()
+SELECT 'Selin Tunca', 'reddedilen.firma.test@otelturizm.com', '05559000003', CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', '1585'), 2), 'firma_admin', @firma_reddedilen, 'Yonetim', 'Kurucu Ortak', 7800.00, 1, 'FRM-903', 1, 1, 'tr', 'TRY', 'Türkiye', SYSDATETIME()
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE eposta = 'reddedilen.firma.test@otelturizm.com');
 
 INSERT INTO users
 (ad_soyad, eposta, telefon, sifre, rol, firma_id, departman, gorev_unvani, harcama_limiti, onay_gereksinimi, personel_kodu, firma_yonetici_mi, hesap_durumu, dil_tercihi, para_birimi, ulke, olusturulma_tarihi)
-SELECT 'Mert Eren', 'askida.firma.test@otelturizm.com', '05559000004', SHA2('1585',256), 'firma_admin', @firma_askida, 'Kurumsal Satis', 'Kurumsal Kanal Direktoru', 15000.00, 1, 'FRM-904', 1, 1, 'tr', 'TRY', 'Türkiye', NOW()
+SELECT 'Mert Eren', 'askida.firma.test@otelturizm.com', '05559000004', CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', '1585'), 2), 'firma_admin', @firma_askida, 'Kurumsal Satis', 'Kurumsal Kanal Direktoru', 15000.00, 1, 'FRM-904', 1, 1, 'tr', 'TRY', 'Türkiye', SYSDATETIME()
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE eposta = 'askida.firma.test@otelturizm.com');
 
 UPDATE users SET firma_id = @firma_onayli, rol = 'firma_admin', departman = 'Satinalma', gorev_unvani = 'Satinalma Direktoru', firma_yonetici_mi = 1 WHERE eposta = 'onayli.firma.test@otelturizm.com';

@@ -15,7 +15,7 @@ SELECT
     'tr',
     'TRY',
     'Turkiye',
-    NOW()
+    GETDATE()
 FROM partner_detaylari p
 LEFT JOIN kullanicilar k ON k.id = p.kullanici_id
 WHERE k.id IS NULL;
@@ -34,7 +34,7 @@ SELECT
     'tr',
     'TRY',
     'Turkiye',
-    NOW()
+    GETDATE()
 FROM oteller o
 LEFT JOIN kullanicilar k ON k.id = o.id
 WHERE o.id IN (2,3,4,6,7,9,11,14,15,17,18,20,21,22,23,24,25,26,27,28,29,30)
@@ -79,7 +79,7 @@ SELECT
     CONCAT('TR', LPAD(o.id, 24, '0')),
     CONCAT(o.otel_adi, ' Isletmesi'),
     'Onaylandi',
-    NOW()
+    GETDATE()
 FROM oteller o
 LEFT JOIN partner_detaylari p ON p.id = o.id
 WHERE o.id IN (2,3,4,6,7,9,11,14,15,17,18,20,21,22,23,24,25,26,27,28,29,30)

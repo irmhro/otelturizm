@@ -1,18 +1,18 @@
 ﻿CREATE TABLE IF NOT EXISTS ulkeler (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
     ulke_adi VARCHAR(150) NOT NULL,
     iso2_kodu CHAR(2) NULL,
     iso3_kodu CHAR(3) NULL,
     telefon_kodu VARCHAR(10) NULL,
     para_birimi_kodu VARCHAR(10) NULL,
-    varsayilan_ulke TINYINT(1) NOT NULL DEFAULT 0,
-    aktif_mi TINYINT(1) NOT NULL DEFAULT 1,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+    varsayilan_ulke BIT NOT NULL DEFAULT 0,
+    aktif_mi BIT NOT NULL DEFAULT 1,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NULL DEFAULT NULL,
     UNIQUE KEY uk_ulkeler_iso2 (iso2_kodu),
     UNIQUE KEY uk_ulkeler_iso3 (iso3_kodu),
     KEY idx_ulkeler_aktif (aktif_mi, ulke_adi)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 INSERT INTO ulkeler (ulke_adi, iso2_kodu, iso3_kodu, varsayilan_ulke, aktif_mi)
 VALUES

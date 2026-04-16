@@ -205,6 +205,8 @@ public class OtellerController : Controller
                 date = item.Date.ToString("yyyy-MM-dd"),
                 dateText = item.DateText,
                 price = item.Price,
+                basePrice = item.BasePrice,
+                discountPrice = item.DiscountPrice,
                 priceText = item.PriceText,
                 isDiscounted = item.IsDiscounted,
                 isClosed = item.IsClosed,

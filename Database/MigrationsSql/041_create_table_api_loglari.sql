@@ -1,5 +1,5 @@
 CREATE TABLE api_loglari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGINT  NOT NULL IDENTITY(1,1),
     request_id VARCHAR(36) NOT NULL,
     
     -- API Bilgileri
@@ -11,30 +11,30 @@ CREATE TABLE api_loglari (
     request_headers JSON NULL,
     request_body JSON NULL,
     request_ip VARCHAR(45) NULL,
-    user_agent TEXT NULL,
+    user_agent NVARCHAR(MAX) NULL,
     
     -- Yanıt
-    response_status SMALLINT UNSIGNED NULL,
+    response_status SMALLINT  NULL,
     response_headers JSON NULL,
     response_body JSON NULL,
-    response_size INT UNSIGNED NULL,
+    response_size INT  NULL,
     
     -- Kimlik
-    kullanici_id BIGINT UNSIGNED NULL,
-    api_key_id INT UNSIGNED NULL,
-    partner_id BIGINT UNSIGNED NULL,
+    kullanici_id BIGINT  NULL,
+    api_key_id INT  NULL,
+    partner_id BIGINT  NULL,
     
     -- Performans
-    islem_suresi_ms INT UNSIGNED NULL COMMENT 'Milisaniye',
-    bellek_kullanimi_kb INT UNSIGNED NULL,
+    islem_suresi_ms INT  NULL,
+    bellek_kullanimi_kb INT  NULL,
     
     -- Durum
-    basarili_mi TINYINT(1) DEFAULT 1,
-    hata_mesaji TEXT NULL,
+    basarili_mi BIT DEFAULT 1,
+    hata_mesaji NVARCHAR(MAX) NULL,
     hata_kodu VARCHAR(20) NULL,
     
-    baslangic_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    bitis_tarihi TIMESTAMP NULL,
+    baslangic_tarihi DATETIME2 DEFAULT GETDATE(),
+    bitis_tarihi DATETIME2 NULL,
     
     PRIMARY KEY (id),
     UNIQUE KEY uk_request_id (request_id, baslangic_tarihi),
@@ -49,7 +49,5 @@ CREATE TABLE api_loglari (
     
     FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE SET NULL,
     FOREIGN KEY (partner_id) REFERENCES partner_detaylari(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Tüm API çağrılarının loglanması - Günlük partition zorunlu';
-
+);
 

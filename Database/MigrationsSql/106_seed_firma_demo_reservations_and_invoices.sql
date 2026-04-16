@@ -1,5 +1,3 @@
-SET NAMES utf8mb4;
-
 INSERT INTO rezervasyonlar
 (
     rezervasyon_no,
@@ -53,8 +51,7 @@ SELECT
     'Onaylandı',
     'Onaylandı',
     'Kurumsal',
-    NOW()
-FROM DUAL
+    SYSDATETIME()
 WHERE NOT EXISTS (SELECT 1 FROM rezervasyonlar WHERE rezervasyon_no = 'FRM-RES-1001');
 
 INSERT INTO rezervasyonlar
@@ -110,8 +107,7 @@ SELECT
     'Onay Bekliyor',
     'Beklemede',
     'Kurumsal',
-    NOW()
-FROM DUAL
+    SYSDATETIME()
 WHERE NOT EXISTS (SELECT 1 FROM rezervasyonlar WHERE rezervasyon_no = 'FRM-RES-1002');
 
 INSERT INTO rezervasyonlar
@@ -167,8 +163,7 @@ SELECT
     'Onaylandı',
     'Onay Gerekmiyor',
     'Kurumsal',
-    NOW()
-FROM DUAL
+    SYSDATETIME()
 WHERE NOT EXISTS (SELECT 1 FROM rezervasyonlar WHERE rezervasyon_no = 'FRM-RES-1003');
 
 INSERT INTO faturalar
@@ -201,7 +196,7 @@ SELECT
     'FRM-FAT-1001',
     '2026-04-11',
     'e-Fatura',
-    (SELECT id FROM rezervasyonlar WHERE rezervasyon_no = 'FRM-RES-1001' LIMIT 1),
+    (SELECT TOP (1) id FROM rezervasyonlar WHERE rezervasyon_no = 'FRM-RES-1001'),
     20,
     47,
     1,
@@ -220,8 +215,7 @@ SELECT
     11900.00,
     'TRY',
     'Kesildi',
-    NOW()
-FROM DUAL
+    SYSDATETIME()
 WHERE NOT EXISTS (SELECT 1 FROM faturalar WHERE fatura_no = 'FRM-FAT-1001');
 
 INSERT INTO faturalar
@@ -254,7 +248,7 @@ SELECT
     'FRM-FAT-1002',
     '2026-04-11',
     'Proforma',
-    (SELECT id FROM rezervasyonlar WHERE rezervasyon_no = 'FRM-RES-1002' LIMIT 1),
+    (SELECT TOP (1) id FROM rezervasyonlar WHERE rezervasyon_no = 'FRM-RES-1002'),
     25,
     48,
     1,
@@ -273,6 +267,5 @@ SELECT
     32100.00,
     'TRY',
     'Kesildi',
-    NOW()
-FROM DUAL
+    SYSDATETIME()
 WHERE NOT EXISTS (SELECT 1 FROM faturalar WHERE fatura_no = 'FRM-FAT-1002');

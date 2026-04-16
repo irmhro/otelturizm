@@ -55,6 +55,8 @@ public class PublicReservationService : IPublicReservationService
                     Date = item.Date,
                     DateText = item.Date.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
                     Price = item.EffectivePrice,
+                    BasePrice = item.BasePrice,
+                    DiscountPrice = item.DiscountPrice,
                     PriceText = item.EffectivePrice.ToString("N0", CultureInfo.GetCultureInfo("tr-TR")),
                     IsDiscounted = item.DiscountPrice.HasValue && item.DiscountPrice.Value > 0m && item.DiscountPrice.Value < item.BasePrice,
                     IsClosed = item.IsClosed,
@@ -88,6 +90,16 @@ public class PublicReservationService : IPublicReservationService
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         var hotel = await LoadHotelAsync(connection, form.HotelId, form.RoomTypeId, cancellationToken);
+        var occupancyValidationMessage = ValidateRoomOccupancy(form, hotel);
+        if (!string.IsNullOrWhiteSpace(occupancyValidationMessage))
+        {
+            return new PublicReservationResult
+            {
+                Message = occupancyValidationMessage,
+                RedirectUrl = $"/oteller/{hotel.Slug}"
+            };
+        }
+
         var pricing = await BuildPriceSummaryAsync(connection, form.RoomTypeId, form.CheckInDate, form.CheckOutDate, form.RoomCount, cancellationToken);
         if (!pricing.IsAvailable)
         {
@@ -309,10 +321,9 @@ public class PublicReservationService : IPublicReservationService
     private async Task<UserProfileSnapshot> LoadUserProfileAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT ad_soyad, eposta, COALESCE(telefon, ''), COALESCE(sehir, ''), COALESCE(ilce, ''), COALESCE(mahalle, ''), COALESCE(adres, ''), dogum_tarihi, COALESCE(cinsiyet, '')
+            SELECT TOP (1) ad_soyad, eposta, COALESCE(telefon, ''), COALESCE(sehir, ''), COALESCE(ilce, ''), COALESCE(mahalle, ''), COALESCE(adres, ''), dogum_tarihi, COALESCE(cinsiyet, '')
             FROM users
-            WHERE id = @userId
-            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
+            WHERE id = @userId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -340,11 +351,18 @@ public class PublicReservationService : IPublicReservationService
     private async Task<HotelSnapshot> LoadHotelAsync(SqlConnection connection, long hotelId, long roomTypeId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT o.otel_adi, o.otel_kodu, o.tam_adres, COALESCE(o.varsayilan_komisyon_orani,0), ot.oda_adi
+            SELECT TOP (1)
+                o.otel_adi,
+                o.otel_kodu,
+                o.tam_adres,
+                COALESCE(o.varsayilan_komisyon_orani, 0),
+                ot.oda_adi,
+                COALESCE(ot.maksimum_kisi_sayisi, 1),
+                COALESCE(ot.maksimum_yetiskin_sayisi, 1),
+                COALESCE(ot.maksimum_cocuk_sayisi, 0)
             FROM oteller o
             INNER JOIN oda_tipleri ot ON ot.id = @roomTypeId AND ot.otel_id = o.id
-            WHERE o.id = @hotelId
-            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
+            WHERE o.id = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
@@ -363,8 +381,49 @@ public class PublicReservationService : IPublicReservationService
             Address = reader.GetString(2),
             CommissionRate = reader.GetDecimal(3),
             RoomName = reader.GetString(4),
+            MaxGuestCount = Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture),
+            MaxAdultCount = Convert.ToInt32(reader.GetValue(6), CultureInfo.InvariantCulture),
+            MaxChildCount = Convert.ToInt32(reader.GetValue(7), CultureInfo.InvariantCulture),
             Slug = BuildSlug(name, code)
         };
+    }
+
+    private static string? ValidateRoomOccupancy(PublicHotelReservationForm form, HotelSnapshot hotel)
+    {
+        var roomCount = Math.Max(1, form.RoomCount);
+        var adultCount = Math.Max(1, form.AdultCount);
+        var childCount = Math.Max(0, form.ChildCount);
+        var totalGuestCount = adultCount + childCount;
+
+        var maxGuestPerRoom = Math.Max(1, hotel.MaxGuestCount);
+        var maxAdultPerRoom = Math.Max(1, hotel.MaxAdultCount);
+        var maxChildPerRoom = Math.Max(0, hotel.MaxChildCount);
+
+        var maxGuestTotal = maxGuestPerRoom * roomCount;
+        var maxAdultTotal = maxAdultPerRoom * roomCount;
+        var maxChildTotal = maxChildPerRoom * roomCount;
+
+        if (adultCount > maxAdultTotal)
+        {
+            var requiredRoomCount = (int)Math.Ceiling(adultCount / (double)maxAdultPerRoom);
+            return $"{hotel.RoomName} odasında en fazla {maxAdultPerRoom} yetişkin konaklayabilir. {adultCount} yetişkin için en az {requiredRoomCount} oda kiralamanız gerekmektedir.";
+        }
+
+        if (childCount > maxChildTotal)
+        {
+            var requiredRoomCount = maxChildPerRoom <= 0
+                ? roomCount + 1
+                : (int)Math.Ceiling(childCount / (double)maxChildPerRoom);
+            return $"{hotel.RoomName} odasında en fazla {maxChildPerRoom} çocuk konaklayabilir. {childCount} çocuk için en az {requiredRoomCount} oda kiralamanız gerekmektedir.";
+        }
+
+        if (totalGuestCount > maxGuestTotal)
+        {
+            var requiredRoomCount = (int)Math.Ceiling(totalGuestCount / (double)maxGuestPerRoom);
+            return $"{hotel.RoomName} odası en fazla {maxGuestPerRoom} kişiliktir. Toplam {totalGuestCount} misafir için en az {requiredRoomCount} oda kiralamanız gerekmektedir.";
+        }
+
+        return null;
     }
 
     private async Task<(long UserId, string Email, string ManagerName)> ResolvePartnerRecipientAsync(SqlConnection connection, SqlTransaction transaction, long hotelId, CancellationToken cancellationToken)
@@ -426,7 +485,7 @@ public class PublicReservationService : IPublicReservationService
 
     private async Task<string> GenerateReservationNoAsync(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand("SELECT COUNT(*) + 1 FROM rezervasyonlar WHERE DATE(olusturulma_tarihi) = CURDATE();", connection, (SqlTransaction)transaction);
+        await using var command = new SqlCommand("SELECT COUNT(*) + 1 FROM rezervasyonlar WHERE CAST(olusturulma_tarihi AS date) = CAST(SYSUTCDATETIME() AS date);", connection, (SqlTransaction)transaction);
         var seq = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
         return $"WEB-{DateTime.Now:yyyyMMdd}-{seq:0000}";
     }
@@ -564,6 +623,9 @@ public class PublicReservationService : IPublicReservationService
         public string Address { get; set; } = string.Empty;
         public decimal CommissionRate { get; set; }
         public string RoomName { get; set; } = string.Empty;
+        public int MaxGuestCount { get; set; }
+        public int MaxAdultCount { get; set; }
+        public int MaxChildCount { get; set; }
         public string Slug { get; set; } = string.Empty;
     }
 

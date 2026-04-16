@@ -1,11 +1,11 @@
 CREATE TABLE sistem_ici_bildirimler (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    kullanici_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    kullanici_id BIGINT  NOT NULL,
     
     bildirim_turu ENUM('Rezervasyon', 'Mesaj', 'Ödeme', 'Kampanya', 'Sistem', 'Hatırlatma', 'Uyarı', 'Başarı') NOT NULL,
     
     baslik VARCHAR(100) NOT NULL,
-    mesaj TEXT NOT NULL,
+    mesaj NVARCHAR(MAX) NOT NULL,
     
     ikon VARCHAR(50) NULL,
     renk VARCHAR(20) NULL DEFAULT '#007bff',
@@ -15,22 +15,22 @@ CREATE TABLE sistem_ici_bildirimler (
     aksiyon_metni VARCHAR(50) NULL,
     
     -- Okunma
-    okundu_mu TINYINT(1) DEFAULT 0,
-    okunma_tarihi TIMESTAMP NULL,
-    arsivlendi_mi TINYINT(1) DEFAULT 0,
+    okundu_mu BIT DEFAULT 0,
+    okunma_tarihi DATETIME2 NULL,
+    arsivlendi_mi BIT DEFAULT 0,
     
     -- Önem
     onem_derecesi ENUM('Düşük', 'Normal', 'Yüksek', 'Kritik') DEFAULT 'Normal',
     
     -- İlişki
     ilgili_tablo VARCHAR(50) NULL,
-    ilgili_kayit_id BIGINT UNSIGNED NULL,
+    ilgili_kayit_id BIGINT  NULL,
     
     -- Geçerlilik
-    gecerlilik_baslangic TIMESTAMP NULL,
-    gecerlilik_bitis TIMESTAMP NULL,
+    gecerlilik_baslangic DATETIME2 NULL,
+    gecerlilik_bitis DATETIME2 NULL,
     
-    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    olusturulma_tarihi DATETIME2 DEFAULT GETDATE(),
     
     INDEX idx_kullanici_id (kullanici_id),
     INDEX idx_okundu (kullanici_id, okundu_mu),
@@ -40,6 +40,5 @@ CREATE TABLE sistem_ici_bildirimler (
     INDEX idx_ilgili (ilgili_tablo, ilgili_kayit_id),
     
     FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Kullanıcıların sistem içi bildirimleri';
+);
 

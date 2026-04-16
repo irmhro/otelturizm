@@ -12,7 +12,7 @@ WHERE NOT EXISTS (SELECT 1 FROM roller WHERE rol_kodu = 'pazarlama_yoneticisi');
 
 -- Rol atamalari
 INSERT INTO kullanici_rolleri (kullanici_id, rol_id, atama_tarihi)
-SELECT u.id, r.id, NOW()
+SELECT u.id, r.id, GETDATE()
 FROM users u
 JOIN roller r ON r.rol_kodu = 'satis_yoneticisi'
 LEFT JOIN kullanici_rolleri kr ON kr.kullanici_id = u.id AND kr.rol_id = r.id
@@ -20,7 +20,7 @@ WHERE u.eposta = 'satis.yonetici@otelturizm.com'
   AND kr.kullanici_id IS NULL;
 
 INSERT INTO kullanici_rolleri (kullanici_id, rol_id, atama_tarihi)
-SELECT u.id, r.id, NOW()
+SELECT u.id, r.id, GETDATE()
 FROM users u
 JOIN roller r ON r.rol_kodu = 'pazarlama_yoneticisi'
 LEFT JOIN kullanici_rolleri kr ON kr.kullanici_id = u.id AND kr.rol_id = r.id

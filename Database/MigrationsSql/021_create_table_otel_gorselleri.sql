@@ -1,28 +1,28 @@
 CREATE TABLE otel_gorselleri (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    otel_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    otel_id BIGINT  NOT NULL,
     
     gorsel_url VARCHAR(500) NOT NULL,
     thumbnail_url VARCHAR(500) NULL,
     gorsel_turu ENUM('Dış Cephe', 'Lobi', 'Restoran', 'Havuz', 'Plaj', 'Oda', 'Banyo', 'Spor Salonu', 'SPA', 'Toplantı Odası', 'Genel Alan', 'Yemek', 'Manzara') NOT NULL,
     
     baslik VARCHAR(200) NULL,
-    aciklama TEXT NULL,
+    aciklama NVARCHAR(MAX) NULL,
     
-    kapak_fotografi_mi TINYINT(1) DEFAULT 0,
-    one_cikan TINYINT(1) DEFAULT 0,
-    siralama SMALLINT UNSIGNED DEFAULT 0,
+    kapak_fotografi_mi BIT DEFAULT 0,
+    one_cikan BIT DEFAULT 0,
+    siralama SMALLINT  DEFAULT 0,
     
-    boyut_kb INT UNSIGNED NULL,
-    genislik SMALLINT UNSIGNED NULL,
-    yukseklik SMALLINT UNSIGNED NULL,
+    boyut_kb INT  NULL,
+    genislik SMALLINT  NULL,
+    yukseklik SMALLINT  NULL,
     
     onay_durumu ENUM('Beklemede', 'Onaylandı', 'Reddedildi') DEFAULT 'Beklemede',
-    onaylayan_admin_id BIGINT UNSIGNED NULL,
-    onay_tarihi TIMESTAMP NULL,
+    onaylayan_admin_id BIGINT  NULL,
+    onay_tarihi DATETIME2 NULL,
     
-    yukleyen_kullanici_id BIGINT UNSIGNED NULL,
-    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    yukleyen_kullanici_id BIGINT  NULL,
+    olusturulma_tarihi DATETIME2 DEFAULT GETDATE(),
     
     INDEX idx_otel_id (otel_id),
     INDEX idx_gorsel_turu (gorsel_turu),
@@ -32,6 +32,5 @@ CREATE TABLE otel_gorselleri (
     FOREIGN KEY (otel_id) REFERENCES oteller(id) ON DELETE CASCADE,
     FOREIGN KEY (onaylayan_admin_id) REFERENCES kullanicilar(id) ON DELETE SET NULL,
     FOREIGN KEY (yukleyen_kullanici_id) REFERENCES kullanicilar(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Otellere ait detaylı görsel galerisi';
+);
 

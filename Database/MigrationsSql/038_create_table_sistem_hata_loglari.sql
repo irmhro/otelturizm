@@ -1,14 +1,14 @@
 CREATE TABLE sistem_hata_loglari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGINT  NOT NULL IDENTITY(1,1),
     
     hata_seviyesi ENUM('DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY') NOT NULL,
     hata_kodu VARCHAR(20) NULL,
-    hata_mesaji TEXT NOT NULL,
-    hata_detayi LONGTEXT NULL COMMENT 'Stack trace, context',
+    hata_mesaji NVARCHAR(MAX) NOT NULL,
+    hata_detayi NVARCHAR(MAX) NULL,
     
     -- Kaynak
     dosya_yolu VARCHAR(500) NULL,
-    satir_no INT UNSIGNED NULL,
+    satir_no INT  NULL,
     fonksiyon_adi VARCHAR(100) NULL,
     sinif_adi VARCHAR(100) NULL,
     
@@ -16,27 +16,27 @@ CREATE TABLE sistem_hata_loglari (
     url VARCHAR(2000) NULL,
     http_method VARCHAR(10) NULL,
     ip_adresi VARCHAR(45) NULL,
-    user_agent TEXT NULL,
+    user_agent NVARCHAR(MAX) NULL,
     referer VARCHAR(2000) NULL,
     
     -- Kullanıcı
-    kullanici_id BIGINT UNSIGNED NULL,
+    kullanici_id BIGINT  NULL,
     session_id VARCHAR(100) NULL,
-    request_id VARCHAR(36) NULL COMMENT 'İstek takibi için UUID',
+    request_id VARCHAR(36) NULL,
     
     -- Ek Veri
-    request_verisi JSON NULL COMMENT 'POST/GET parametreleri (hassas veriler maskelenmiş)',
+    request_verisi JSON NULL,
     response_verisi JSON NULL,
     ek_bilgiler JSON NULL,
     
     -- Zaman
-    olusma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    olusma_tarihi DATETIME2 DEFAULT GETDATE(),
     
     -- Durum
-    cozuldu_mu TINYINT(1) DEFAULT 0,
-    cozulme_tarihi TIMESTAMP NULL,
-    cozen_admin_id BIGINT UNSIGNED NULL,
-    cozum_notu TEXT NULL,
+    cozuldu_mu BIT DEFAULT 0,
+    cozulme_tarihi DATETIME2 NULL,
+    cozen_admin_id BIGINT  NULL,
+    cozum_notu NVARCHAR(MAX) NULL,
     
     PRIMARY KEY (id),
     INDEX idx_hata_seviyesi (hata_seviyesi),
@@ -49,7 +49,5 @@ CREATE TABLE sistem_hata_loglari (
     
     FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE SET NULL,
     FOREIGN KEY (cozen_admin_id) REFERENCES kullanicilar(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Sistem hataları ve exception logları - Günlük partition önerilir';
-
+);
 

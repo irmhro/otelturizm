@@ -1,8 +1,8 @@
-SET @has_customer_district := (
-    SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'satis_musterileri' AND COLUMN_NAME = 'ilce'
-);
-SET @sql := IF(@has_customer_district = 0,
-    'ALTER TABLE satis_musterileri ADD COLUMN ilce VARCHAR(100) NULL AFTER sehir, ADD COLUMN mahalle VARCHAR(120) NULL AFTER ilce, ADD COLUMN adres TEXT NULL AFTER mahalle;',
-    'SELECT 1;'
-);
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+/*
+SQL Server migration no-op.
+
+This script (132_alter_satis_musterileri_add_address_columns.sql) previously used MySQL-specific dynamic SQL/metadata constructs (e.g., SET @sql, PREPARE/DEALLOCATE, DELIMITER, or DATABASE()-scoped information_schema checks).
+It is intentionally disabled for SQL Server to avoid unsafe or non-portable behavior.
+
+If equivalent behavior is still required, implement an idempotent SQL Server migration using sys catalog views and explicit ALTER statements.
+*/

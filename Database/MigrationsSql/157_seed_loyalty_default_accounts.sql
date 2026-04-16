@@ -5,11 +5,11 @@ SELECT u.id,
        0,
        0,
        0,
-       (SELECT id FROM sadakat_seviyeleri WHERE kod = 'BRONZE' LIMIT 1),
-       (SELECT id FROM sadakat_seviyeleri WHERE kod = 'SILVER' LIMIT 1),
-       DATE_ADD(CURDATE(), INTERVAL 365 DAY),
-       CURRENT_TIMESTAMP,
-       CURRENT_TIMESTAMP
+       (SELECT TOP (1) id FROM sadakat_seviyeleri WHERE kod = 'BRONZE'),
+       (SELECT TOP (1) id FROM sadakat_seviyeleri WHERE kod = 'SILVER'),
+       DATEADD(DAY, 365, CAST(GETDATE() AS DATE)),
+       SYSDATETIME(),
+       SYSDATETIME()
 FROM users u
 LEFT JOIN kullanici_sadakat_hesaplari h ON h.kullanici_id = u.id
 WHERE h.id IS NULL;
@@ -24,41 +24,47 @@ SELECT u.id,
        100,
        100,
        'Tamamlandi',
-       CURRENT_TIMESTAMP,
-       DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 365 DAY),
-       CURRENT_TIMESTAMP
+       SYSDATETIME(),
+       DATEADD(DAY, 365, SYSDATETIME()),
+       SYSDATETIME()
 FROM users u
 INNER JOIN kullanici_sadakat_hesaplari h ON h.kullanici_id = u.id
 LEFT JOIN kullanici_puan_hareketleri ph ON ph.kullanici_id = u.id
 WHERE ph.id IS NULL;
 
-UPDATE kullanici_sadakat_hesaplari h
-JOIN (
+;WITH x AS (
     SELECT kullanici_id,
            COALESCE(SUM(CASE WHEN puan_degisim > 0 THEN puan_degisim ELSE 0 END), 0) AS toplam_kazanc,
            COALESCE(ABS(SUM(CASE WHEN puan_degisim < 0 THEN puan_degisim ELSE 0 END)), 0) AS toplam_kullanim
     FROM kullanici_puan_hareketleri
     GROUP BY kullanici_id
-) x ON x.kullanici_id = h.kullanici_id
-LEFT JOIN sadakat_seviyeleri current_tier
-    ON current_tier.id = (
-        SELECT s.id
-        FROM sadakat_seviyeleri s
-        WHERE x.toplam_kazanc - x.toplam_kullanim >= s.minimum_puan
-          AND (s.maximum_puan IS NULL OR x.toplam_kazanc - x.toplam_kullanim <= s.maximum_puan)
-        ORDER BY s.minimum_puan DESC
-        LIMIT 1
-    )
-LEFT JOIN sadakat_seviyeleri next_tier
-    ON next_tier.minimum_puan = (
-        SELECT MIN(s2.minimum_puan)
-        FROM sadakat_seviyeleri s2
-        WHERE s2.minimum_puan > x.toplam_kazanc - x.toplam_kullanim
-    )
+),
+current_tier AS (
+    SELECT x.kullanici_id,
+           s.id,
+           ROW_NUMBER() OVER (PARTITION BY x.kullanici_id ORDER BY s.minimum_puan DESC) AS rn
+    FROM x
+    INNER JOIN sadakat_seviyeleri s
+        ON x.toplam_kazanc - x.toplam_kullanim >= s.minimum_puan
+       AND (s.maximum_puan IS NULL OR x.toplam_kazanc - x.toplam_kullanim <= s.maximum_puan)
+),
+next_tier AS (
+    SELECT x.kullanici_id,
+           s2.id,
+           ROW_NUMBER() OVER (PARTITION BY x.kullanici_id ORDER BY s2.minimum_puan ASC) AS rn
+    FROM x
+    INNER JOIN sadakat_seviyeleri s2
+        ON s2.minimum_puan > x.toplam_kazanc - x.toplam_kullanim
+)
+UPDATE h
 SET h.toplam_puan = x.toplam_kazanc,
-    h.kullanilabilir_puan = GREATEST(x.toplam_kazanc - x.toplam_kullanim, 0),
+    h.kullanilabilir_puan = CASE WHEN x.toplam_kazanc - x.toplam_kullanim > 0 THEN x.toplam_kazanc - x.toplam_kullanim ELSE 0 END,
     h.bu_yil_kazanilan_puan = x.toplam_kazanc,
     h.bu_yil_kullanilan_puan = x.toplam_kullanim,
-    h.mevcut_seviye_id = COALESCE(current_tier.id, h.mevcut_seviye_id),
-    h.sonraki_seviye_id = next_tier.id,
-    h.guncellenme_tarihi = CURRENT_TIMESTAMP;
+    h.mevcut_seviye_id = COALESCE(ct.id, h.mevcut_seviye_id),
+    h.sonraki_seviye_id = nt.id,
+    h.guncellenme_tarihi = SYSDATETIME()
+FROM kullanici_sadakat_hesaplari h
+INNER JOIN x ON x.kullanici_id = h.kullanici_id
+LEFT JOIN current_tier ct ON ct.kullanici_id = h.kullanici_id AND ct.rn = 1
+LEFT JOIN next_tier nt ON nt.kullanici_id = h.kullanici_id AND nt.rn = 1;

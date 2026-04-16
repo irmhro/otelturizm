@@ -1918,9 +1918,4 @@ UNION ALL
 SELECT 34, ic.id, 40709, 'Teşvikiye', 'tesvikiye-sisli', NULL, NULL, NULL, 10735, 1 FROM ilceler ic WHERE ic.il_id = 34 AND ic.seo_slug = 'sisli'
 UNION ALL
 SELECT 34, ic.id, 40710, 'Yayla', 'yayla-sisli', NULL, NULL, NULL, 11398, 1 FROM ilceler ic WHERE ic.il_id = 34 AND ic.seo_slug = 'sisli'
-ON DUPLICATE KEY UPDATE
-    api_kodu = VALUES(api_kodu),
-    mahalle_adi = VALUES(mahalle_adi),
-    seo_slug = VALUES(seo_slug),
-    nufus = VALUES(nufus),
-    aktif_mi = VALUES(aktif_mi);
+;

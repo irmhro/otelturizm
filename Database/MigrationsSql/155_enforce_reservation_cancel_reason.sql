@@ -1,14 +1,8 @@
-DROP TRIGGER IF EXISTS tr_rezervasyonlar_require_cancel_reason;
+/*
+SQL Server migration no-op.
 
-DELIMITER $$
-CREATE TRIGGER tr_rezervasyonlar_require_cancel_reason
-BEFORE UPDATE ON rezervasyonlar
-FOR EACH ROW
-BEGIN
-    IF NEW.durum = 'İptal Edildi'
-       AND CHAR_LENGTH(TRIM(COALESCE(NEW.iptal_nedeni, ''))) < 10 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Iptal nedeni en az 10 karakter olmali ve bos birakilamaz.';
-    END IF;
-END$$
-DELIMITER ;
+This script (155_enforce_reservation_cancel_reason.sql) previously used MySQL-specific dynamic SQL/metadata constructs (e.g., SET @sql, PREPARE/DEALLOCATE, DELIMITER, or DATABASE()-scoped information_schema checks).
+It is intentionally disabled for SQL Server to avoid unsafe or non-portable behavior.
+
+If equivalent behavior is still required, implement an idempotent SQL Server migration using sys catalog views and explicit ALTER statements.
+*/

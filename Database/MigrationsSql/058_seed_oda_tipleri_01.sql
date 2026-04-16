@@ -9,4 +9,3 @@ INSERT INTO oda_tipleri (
 (1, 'SUI-01', 'Junior Suite', 'Junior Suite', 4, 2, 2, 'King Size', 2, 55, 'Deniz', 7500.00, 40),
 (1, 'FAM-01', 'Aile Odası', 'Aile Odası', 5, 2, 3, 'Queen Size', 2, 65, 'Havuz', 6000.00, 30);
 
-

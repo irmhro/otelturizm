@@ -205,16 +205,10 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
 
         await using var connection = await CreateOpenConnectionAsync(cancellationToken);
 
-        var roomSql = _isSqlServer
-            ? @"
-                SELECT TOP (1) otel_id, toplam_oda_sayisi
-                FROM oda_tipleri
-                WHERE id = @roomTypeId;"
-            : @"
-                SELECT otel_id, toplam_oda_sayisi
-                FROM oda_tipleri
-                WHERE id = @roomTypeId
-                LIMIT 1;";
+        const string roomSql = @"
+            SELECT TOP (1) otel_id, toplam_oda_sayisi
+            FROM oda_tipleri
+            WHERE id = @roomTypeId;";
 
         long roomHotelId;
         short defaultTotalRooms;

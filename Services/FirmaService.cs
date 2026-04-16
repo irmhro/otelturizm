@@ -203,7 +203,7 @@ public class FirmaService : IFirmaService
 
         const string sql = @"
             SELECT id,
-                   CASE WHEN kullanici_id IS NOT NULL THEN CONCAT('Kullanıcı · ', COALESCE((SELECT ad_soyad FROM users u WHERE u.id = fhl.kullanici_id LIMIT 1), 'Kayıt'))
+                   CASE WHEN kullanici_id IS NOT NULL THEN CONCAT('Kullanıcı · ', COALESCE((SELECT TOP (1) ad_soyad FROM users u WHERE u.id = fhl.kullanici_id), 'Kayıt'))
                         WHEN departman IS NOT NULL THEN CONCAT('Departman · ', departman)
                         ELSE 'Firma Geneli' END AS scope_text,
                    gecelik_limit, rezervasyon_basi_limit, aylik_limit, onay_gereksinimi
@@ -242,11 +242,10 @@ public class FirmaService : IFirmaService
         var model = new FirmaInvoicesPageViewModel { Shell = context.Shell };
 
         const string sql = @"
-            SELECT fatura_no, fatura_tarihi, fatura_turu, fatura_alici_unvan, genel_toplam, fatura_durumu
+            SELECT TOP (100) fatura_no, fatura_tarihi, fatura_turu, fatura_alici_unvan, genel_toplam, fatura_durumu
             FROM faturalar
             WHERE firma_id = @firmaId
-            ORDER BY fatura_tarihi DESC, id DESC
-            LIMIT 100;";
+            ORDER BY fatura_tarihi DESC, id DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", context.FirmaId);
@@ -275,11 +274,11 @@ public class FirmaService : IFirmaService
         var model = new FirmaSpendingReportsPageViewModel { Shell = context.Shell };
 
         const string sql = @"
-            SELECT DATE_FORMAT(olusturulma_tarihi, '%b') AS ay, COALESCE(SUM(toplam_tutar), 0) AS toplam, COUNT(*) AS rezervasyon_sayisi
+            SELECT FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR') AS ay, COALESCE(SUM(toplam_tutar), 0) AS toplam, COUNT(*) AS rezervasyon_sayisi
             FROM rezervasyonlar
             WHERE firma_id = @firmaId
-              AND olusturulma_tarihi >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
-            GROUP BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi), DATE_FORMAT(olusturulma_tarihi, '%b')
+              AND olusturulma_tarihi >= DATEADD(MONTH, -5, CAST(SYSUTCDATETIME() AS date))
+            GROUP BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi), FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR')
             ORDER BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi);";
 
         await using (var command = new SqlCommand(sql, connection))
@@ -378,11 +377,11 @@ public class FirmaService : IFirmaService
                 )
                 VALUES
                 (
-                    @fullName, @email, @phone, SHA2('1585', 256), @role, @firmaId, @department, @title,
+                    @fullName, @email, @phone, LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), '1585')), 2)), @role, @firmaId, @department, @title,
                     @nightlyLimit, @approvalRequired, @personelCode, @isManager,
-                    1, 'tr', 'TRY', 'Türkiye', NOW()
+                    1, 'tr', 'TRY', 'Türkiye', CURRENT_TIMESTAMP
                 );
-                SELECT LAST_INSERT_ID();";
+                SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
             long createdUserId;
             await using (var insertUserCommand = new SqlCommand(insertUserSql, connection, (SqlTransaction)transaction))
@@ -410,7 +409,7 @@ public class FirmaService : IFirmaService
                     )
                     VALUES
                     (
-                        @firmaId, @userId, @department, @nightlyLimit, @approvalRequired, 1, NOW()
+                        @firmaId, @userId, @department, @nightlyLimit, @approvalRequired, 1, CURRENT_TIMESTAMP
                     );";
 
                 await using var limitCommand = new SqlCommand(limitSql, connection, (SqlTransaction)transaction);
@@ -475,7 +474,7 @@ public class FirmaService : IFirmaService
                     OR (@userId IS NULL AND @department IS NOT NULL AND departman = @department)
                     OR (@userId IS NULL AND @department IS NULL AND kullanici_id IS NULL AND departman IS NULL))
                 ORDER BY id DESC
-                LIMIT 1;";
+                OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
             long? existingId = null;
             await using (var findCommand = new SqlCommand(findSql, connection, (SqlTransaction)transaction))
@@ -524,7 +523,7 @@ public class FirmaService : IFirmaService
                     VALUES
                     (
                         @firmaId, @department, @userId, @nightlyLimit, @reservationLimit, @monthlyLimit,
-                        @approvalRequired, 1, NOW()
+                        @approvalRequired, 1, CURRENT_TIMESTAMP
                     );";
 
                 await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
@@ -585,7 +584,7 @@ public class FirmaService : IFirmaService
             UPDATE rezervasyonlar
             SET firma_onay_durumu = @approvalStatus,
                 firma_onaylayan_kullanici_id = @userId,
-                firma_onay_tarihi = NOW(),
+                firma_onay_tarihi = CURRENT_TIMESTAMP,
                 durum = @reservationStatus,
                 iptal_nedeni = @cancelReason
             WHERE id = @reservationId
@@ -617,7 +616,8 @@ public class FirmaService : IFirmaService
             FROM users u
             INNER JOIN firmalar f ON f.id = u.firma_id
             WHERE u.id = @userId
-            LIMIT 1;";
+            ORDER BY u.id
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -696,16 +696,16 @@ public class FirmaService : IFirmaService
         const string sql = @"
             SELECT foz.id, ot.otel_adi, od.oda_adi, CONCAT(ot.ilce, ', ', ot.sehir) AS city_text,
                    od.standart_gecelik_fiyat, foz.ozel_fiyat, foz.indirim_orani, foz.minimum_oda_sayisi, ot.id,
-                   CONCAT(DATE_FORMAT(foz.gecerlilik_baslangic, '%d.%m.%Y'), ' - ', DATE_FORMAT(foz.gecerlilik_bitis, '%d.%m.%Y')) AS validity_text
+                   CONCAT(FORMAT(foz.gecerlilik_baslangic, 'dd.MM.yyyy'), ' - ', FORMAT(foz.gecerlilik_bitis, 'dd.MM.yyyy')) AS validity_text
             FROM firma_ozel_fiyatlar foz
             INNER JOIN oteller ot ON ot.id = foz.otel_id
             LEFT JOIN oda_tipleri od ON od.id = foz.oda_tip_id
             WHERE foz.firma_id = @firmaId AND foz.aktif_mi = 1
               AND (@city IS NULL OR ot.sehir = @city)
               AND (@minRoomCount IS NULL OR foz.minimum_oda_sayisi >= @minRoomCount)
-              AND (@search IS NULL OR ot.otel_adi LIKE CONCAT('%', @search, '%') OR ot.sehir LIKE CONCAT('%', @search, '%') OR ot.ilce LIKE CONCAT('%', @search, '%'))
+              AND (@search IS NULL OR ot.otel_adi LIKE '%' + @search + '%' OR ot.sehir LIKE '%' + @search + '%' OR ot.ilce LIKE '%' + @search + '%')
             ORDER BY foz.indirim_orani DESC, foz.ozel_fiyat ASC
-            LIMIT @take;";
+            OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY;";
 
         var items = new List<FirmaPanelDealRowViewModel>();
         await using var command = new SqlCommand(sql, connection);
@@ -748,7 +748,7 @@ public class FirmaService : IFirmaService
             WHERE u.firma_id = @firmaId AND u.rol LIKE 'firma_%'
             GROUP BY u.id, u.ad_soyad, u.departman, u.gorev_unvani, u.eposta, u.harcama_limiti, u.onay_gereksinimi, u.rol, u.firma_yonetici_mi
             ORDER BY u.firma_yonetici_mi DESC, u.ad_soyad ASC
-            LIMIT @take;";
+            OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY;";
 
         var items = new List<FirmaPanelEmployeeRowViewModel>();
         await using var command = new SqlCommand(sql, connection);
@@ -788,7 +788,7 @@ public class FirmaService : IFirmaService
             LEFT JOIN users u ON u.id = r.firma_calisan_id
             WHERE r.firma_id = @firmaId
             ORDER BY r.olusturulma_tarihi DESC, r.id DESC
-            LIMIT @take;";
+            OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY;";
 
         var items = new List<FirmaPanelReservationRowViewModel>();
         await using var command = new SqlCommand(sql, connection);
@@ -825,7 +825,7 @@ public class FirmaService : IFirmaService
             LEFT JOIN users u ON u.id = r.firma_calisan_id
             WHERE r.firma_id = @firmaId AND r.firma_onay_durumu = 'Beklemede'
             ORDER BY r.olusturulma_tarihi DESC, r.id DESC
-            LIMIT 20;";
+            OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY;";
 
         var items = new List<FirmaPanelReservationRowViewModel>();
         await using var command = new SqlCommand(sql, connection);

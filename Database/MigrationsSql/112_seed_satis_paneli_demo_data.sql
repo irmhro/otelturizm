@@ -1,5 +1,3 @@
-SET NAMES utf8mb4;
-
 INSERT INTO users
 (
     ad_soyad,
@@ -35,8 +33,7 @@ SELECT
     'tr',
     'TRY',
     'Türkiye',
-    NOW()
-FROM DUAL
+    SYSDATETIME()
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE eposta = 'merve.sahin@otelturizm.com');
 
 INSERT INTO satis_musterileri
@@ -70,8 +67,7 @@ SELECT
     'Boğaz manzaralı, kahvaltı dahil',
     1,
     'VIP aday müşteri, hızlı teklif dönüşü bekliyor.',
-    (SELECT id FROM users WHERE eposta = 'merve.sahin@otelturizm.com' LIMIT 1)
-FROM DUAL
+    (SELECT TOP (1) id FROM users WHERE eposta = 'merve.sahin@otelturizm.com')
 WHERE NOT EXISTS (SELECT 1 FROM satis_musterileri WHERE musteri_kodu = 'SATMUST-0001');
 
 INSERT INTO satis_musterileri
@@ -105,8 +101,7 @@ SELECT
     'Aile dostu otel, erken giriş talebi',
     1,
     'Fiyat hassasiyeti yüksek, hafta sonu teklifleri seviyor.',
-    (SELECT id FROM users WHERE eposta = 'merve.sahin@otelturizm.com' LIMIT 1)
-FROM DUAL
+    (SELECT TOP (1) id FROM users WHERE eposta = 'merve.sahin@otelturizm.com')
 WHERE NOT EXISTS (SELECT 1 FROM satis_musterileri WHERE musteri_kodu = 'SATMUST-0002');
 
 INSERT INTO satis_musterileri
@@ -140,19 +135,17 @@ SELECT
     'Sessiz oda, transfer hizmeti',
     0,
     'Yüksek harcama potansiyeli, hızlı onay bekliyor.',
-    (SELECT id FROM users WHERE eposta = 'merve.sahin@otelturizm.com' LIMIT 1)
-FROM DUAL
+    (SELECT TOP (1) id FROM users WHERE eposta = 'merve.sahin@otelturizm.com')
 WHERE NOT EXISTS (SELECT 1 FROM satis_musterileri WHERE musteri_kodu = 'SATMUST-0003');
 
 INSERT INTO satis_musteri_notlari
 (satis_musteri_id, sales_user_id, not_turu, not_metni, planlanan_geri_donus_tarihi)
 SELECT
-    (SELECT id FROM satis_musterileri WHERE musteri_kodu = 'SATMUST-0001' LIMIT 1),
-    (SELECT id FROM users WHERE eposta = 'merve.sahin@otelturizm.com' LIMIT 1),
+    (SELECT TOP (1) id FROM satis_musterileri WHERE musteri_kodu = 'SATMUST-0001'),
+    (SELECT TOP (1) id FROM users WHERE eposta = 'merve.sahin@otelturizm.com'),
     'Çağrı',
     'Müşteri bugün için Boğaz manzaralı alternatifleri sordu. 3 gece için teklif çalışılacak.',
-    DATE_ADD(NOW(), INTERVAL 2 HOUR)
-FROM DUAL
+    DATEADD(HOUR, 2, SYSDATETIME())
 WHERE NOT EXISTS (
     SELECT 1 FROM satis_musteri_notlari
     WHERE not_metni LIKE 'Müşteri bugün için Boğaz manzaralı alternatifleri sordu.%'

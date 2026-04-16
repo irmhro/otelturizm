@@ -31,6 +31,8 @@
     var overallBarWidth = Math.Min(100m, Model.Rating * 20m).ToString(System.Globalization.CultureInfo.InvariantCulture);
     var locationBarWidth = Math.Min(100m, Model.Rating > 0 ? Model.Rating * 20m + 4m : 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
     var comfortBarWidth = Math.Min(100m, Model.Rating > 0 ? Model.Rating * 20m - 2m : 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var featuredAmenities = Model.Amenities.Take(4).ToList();
+    var hiddenAmenities = Model.Amenities.Skip(4).ToList();
     var initialNightCount = Math.Max(1, reservationForm.CheckOutDate.DayNumber - reservationForm.CheckInDate.DayNumber);
     var initialSubtotal = roomPriceSeed * initialNightCount * Math.Max(1, reservationForm.RoomCount);
     var initialTax = Math.Round(initialSubtotal * 0.08m, 0);
@@ -93,13 +95,25 @@
     </div>
     @if (gallery.Count > 1)
     {
-        <div class="gallery-mobile-track" aria-label="Mobil galeri">
-            @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
-            {
-                <button type="button" class="gallery-mobile-slide" data-image="@gallery[imageIndex]" data-gallery-index="@imageIndex" aria-label="Gorsel @(imageIndex + 1)">
-                    <img src="@gallery[imageIndex]" alt="@Model.Name mobil galeri @(imageIndex + 1)" />
-                </button>
-            }
+        <div class="gallery-mobile-strip" id="galleryMobileStrip" aria-label="Mobil galeri slider">
+            <div class="gallery-mobile-track" id="galleryMobileTrack">
+                @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
+                {
+                    <button type="button" class="gallery-mobile-slide" data-image="@gallery[imageIndex]" data-gallery-index="@imageIndex" aria-label="Gorsel @(imageIndex + 1)">
+                        <img src="@gallery[imageIndex]" alt="@Model.Name mobil galeri @(imageIndex + 1)" />
+                    </button>
+                }
+            </div>
+            <div class="gallery-mobile-dots" id="galleryMobileDots" role="tablist" aria-label="Galeri gezinme">
+                @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
+                {
+                    <button type="button"
+                            class="gallery-mobile-dot @(imageIndex == 0 ? "active" : string.Empty)"
+                            data-gallery-dot-index="@imageIndex"
+                            aria-label="Gorsel @(imageIndex + 1)"
+                            aria-selected="@(imageIndex == 0 ? "true" : "false")"></button>
+                }
+            </div>
         </div>
     }
 </section>
@@ -242,11 +256,17 @@
                 <p>@(string.IsNullOrWhiteSpace(Model.ShortDescription) ? "Tesisin veritabanindaki one cikan olanaklari." : Model.ShortDescription)</p>
             </div>
             <div class="amenities-grid amenities-grid-lux">
-                @foreach (var item in Model.Amenities)
+                @foreach (var item in featuredAmenities)
                 {
                     <div class="amenity-item amenity-item-lux"><i class="fas @item.IconClass"></i> @item.Name</div>
                 }
             </div>
+            @if (hiddenAmenities.Count > 0)
+            {
+                <button type="button" class="amenities-more-btn" id="openAmenitiesModal">
+                    Diger ozellikler (@hiddenAmenities.Count)
+                </button>
+            }
         </article>
 
         <article class="content-card">
@@ -452,7 +472,7 @@
                     <input type="hidden" name="ChildCount" id="childCountInput" value="@reservationForm.ChildCount" />
                 </div>
 
-                <input type="hidden" name="RoomCount" value="@reservationForm.RoomCount" />
+                <input type="hidden" name="RoomCount" id="roomCountInput" value="@reservationForm.RoomCount" />
 
                 <label>
                     <span>Oda Tipi</span>
@@ -464,6 +484,9 @@
                                 <option value="@room.RoomTypeId"
                                         data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
                                         data-room-name="@room.Name"
+                                        data-max-guests="@room.MaxGuestCount"
+                                        data-max-adults="@room.MaxAdultCount"
+                                        data-max-children="@room.MaxChildCount"
                                         selected="selected">
                                     @room.Name
                                 </option>
@@ -472,7 +495,10 @@
                             {
                                 <option value="@room.RoomTypeId"
                                         data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-room-name="@room.Name">
+                                        data-room-name="@room.Name"
+                                        data-max-guests="@room.MaxGuestCount"
+                                        data-max-adults="@room.MaxAdultCount"
+                                        data-max-children="@room.MaxChildCount">
                                     @room.Name
                                 </option>
                             }
@@ -611,6 +637,25 @@
     </section>
 }
 
+@if (hiddenAmenities.Count > 0)
+{
+    <section class="detail-modal" id="amenitiesModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="amenitiesModalTitle">
+        <div class="detail-modal-head">
+            <div>
+                <span class="detail-modal-kicker">Tesis Olanaklari</span>
+                <h3 id="amenitiesModalTitle">Tum one cikan ozellikler</h3>
+            </div>
+            <button type="button" class="detail-modal-close" data-close-modal="amenitiesModal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="amenities-modal-grid">
+            @foreach (var item in hiddenAmenities)
+            {
+                <div class="amenity-item amenity-item-lux"><i class="fas @item.IconClass"></i> @item.Name</div>
+            }
+        </div>
+    </section>
+}
+
 @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
 {
     <div class="weather-popup-backdrop" id="weatherPopupBackdrop" hidden></div>
@@ -724,10 +769,103 @@
             const activeDraftResumeLink = document.querySelector('.active-draft-link');
             const activeDraftMessage = document.querySelector('.active-draft-message');
             const openProfileCompletionFromBanner = document.getElementById('openProfileCompletionFromBanner');
+            const openAmenitiesModal = document.getElementById('openAmenitiesModal');
+            const amenitiesModal = document.getElementById('amenitiesModal');
+            const galleryMobileTrack = document.getElementById('galleryMobileTrack');
+            const galleryMobileDots = Array.from(document.querySelectorAll('[data-gallery-dot-index]'));
             let adults = parseInt(document.getElementById('adultCountInput')?.value || '2', 10);
             let children = parseInt(document.getElementById('childCountInput')?.value || '0', 10);
+            const roomCountInput = document.getElementById('roomCountInput');
             let latestQuoteRequest = null;
             let activeGalleryIndex = 0;
+            let galleryScrollTicking = false;
+
+            function syncGuestInputs() {
+                document.getElementById('adultCount').textContent = adults;
+                document.getElementById('adultCountInput').value = adults;
+                document.getElementById('childCount').textContent = children;
+                document.getElementById('childCountInput').value = children;
+            }
+
+            function getSelectedRoomCapacity() {
+                const selectedOption = roomTypeSelect?.options[roomTypeSelect.selectedIndex];
+                const roomName = selectedOption?.dataset.roomName || selectedOption?.textContent?.trim() || 'Seçilen oda';
+                const maxGuests = Math.max(1, parseInt(selectedOption?.dataset.maxGuests || '1', 10) || 1);
+                const maxAdults = Math.max(1, parseInt(selectedOption?.dataset.maxAdults || String(maxGuests), 10) || maxGuests);
+                const maxChildren = Math.max(0, parseInt(selectedOption?.dataset.maxChildren || '0', 10) || 0);
+                return { roomName, maxGuests, maxAdults, maxChildren };
+            }
+
+            function getRoomCountValue() {
+                return Math.max(1, parseInt(roomCountInput?.value || '1', 10) || 1);
+            }
+
+            function buildRoomCapacityMessage(capacity, totalAdults, totalChildren, roomCountValue) {
+                const allowedGuestsTotal = capacity.maxGuests * roomCountValue;
+                const allowedAdultsTotal = capacity.maxAdults * roomCountValue;
+                const allowedChildrenTotal = capacity.maxChildren * roomCountValue;
+                const totalGuests = totalAdults + totalChildren;
+
+                if (totalAdults > allowedAdultsTotal) {
+                    const requiredRooms = Math.ceil(totalAdults / capacity.maxAdults);
+                    return `${capacity.roomName} odası kişi kapasitesi: en fazla ${capacity.maxAdults} yetişkin. ${totalAdults} yetişkin için en az ${requiredRooms} oda kiralamanız gerekmektedir.`;
+                }
+
+                if (totalChildren > allowedChildrenTotal) {
+                    const requiredRooms = capacity.maxChildren > 0
+                        ? Math.ceil(totalChildren / capacity.maxChildren)
+                        : roomCountValue + 1;
+                    return `${capacity.roomName} odası kişi kapasitesi: en fazla ${capacity.maxChildren} çocuk. ${totalChildren} çocuk için en az ${requiredRooms} oda kiralamanız gerekmektedir.`;
+                }
+
+                if (totalGuests > allowedGuestsTotal) {
+                    const requiredRooms = Math.ceil(totalGuests / capacity.maxGuests);
+                    return `${capacity.roomName} odası ${capacity.maxGuests} kişiliktir. Toplam ${totalGuests} misafir için en az ${requiredRooms} oda kiralamanız gerekmektedir.`;
+                }
+
+                return null;
+            }
+
+            function ensureGuestCapacity(showWarning) {
+                const capacity = getSelectedRoomCapacity();
+                const roomCountValue = getRoomCountValue();
+                const roomCapacityMessage = buildRoomCapacityMessage(capacity, adults, children, roomCountValue);
+                if (!roomCapacityMessage) {
+                    return true;
+                }
+
+                if (showWarning) {
+                    showInfoModal(roomCapacityMessage, false);
+                }
+
+                return false;
+            }
+
+            function setActiveMobileDot(index) {
+                if (!galleryMobileDots.length) {
+                    return;
+                }
+
+                galleryMobileDots.forEach(function (dot) {
+                    const dotIndex = parseInt(dot.getAttribute('data-gallery-dot-index') || '0', 10);
+                    const isActive = dotIndex === index;
+                    dot.classList.toggle('active', isActive);
+                    dot.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                });
+            }
+
+            function scrollMobileTrackTo(index) {
+                if (!galleryMobileTrack) {
+                    return;
+                }
+
+                const slide = galleryMobileTrack.querySelector('[data-gallery-index="' + index + '"]');
+                if (!slide) {
+                    return;
+                }
+
+                slide.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
 
             function syncMainImage(index) {
                 if (!Array.isArray(galleryImages) || !galleryImages.length || !mainImage) {
@@ -737,6 +875,7 @@
                 const safeIndex = Math.min(Math.max(index, 0), galleryImages.length - 1);
                 activeGalleryIndex = safeIndex;
                 mainImage.src = galleryImages[safeIndex];
+                setActiveMobileDot(safeIndex);
             }
 
             function openLightbox(index) {
@@ -775,6 +914,7 @@
                     lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
                 }
                 syncMainImage(activeGalleryIndex);
+                scrollMobileTrackTo(activeGalleryIndex);
             }
 
             document.querySelectorAll('.gallery-thumb').forEach(function (button) {
@@ -788,7 +928,54 @@
                 button.addEventListener('click', function () {
                     const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
                     syncMainImage(index);
+                    scrollMobileTrackTo(index);
                     openLightbox(index);
+                });
+            });
+
+            galleryMobileDots.forEach(function (dot) {
+                dot.addEventListener('click', function () {
+                    const index = parseInt(dot.getAttribute('data-gallery-dot-index') || '0', 10);
+                    syncMainImage(index);
+                    scrollMobileTrackTo(index);
+                });
+            });
+
+            galleryMobileTrack?.addEventListener('scroll', function () {
+                if (galleryScrollTicking) {
+                    return;
+                }
+
+                galleryScrollTicking = true;
+                window.requestAnimationFrame(function () {
+                    const slides = Array.from(galleryMobileTrack.querySelectorAll('.gallery-mobile-slide'));
+                    if (!slides.length) {
+                        galleryScrollTicking = false;
+                        return;
+                    }
+
+                    const trackRect = galleryMobileTrack.getBoundingClientRect();
+                    const trackCenter = trackRect.left + (trackRect.width / 2);
+                    let nearestIndex = activeGalleryIndex;
+                    let nearestDistance = Number.POSITIVE_INFINITY;
+
+                    slides.forEach(function (slide) {
+                        const rect = slide.getBoundingClientRect();
+                        const center = rect.left + (rect.width / 2);
+                        const distance = Math.abs(center - trackCenter);
+                        if (distance < nearestDistance) {
+                            nearestDistance = distance;
+                            nearestIndex = parseInt(slide.getAttribute('data-gallery-index') || '0', 10);
+                        }
+                    });
+
+                    if (nearestIndex !== activeGalleryIndex) {
+                        syncMainImage(nearestIndex);
+                    } else {
+                        setActiveMobileDot(nearestIndex);
+                    }
+
+                    galleryScrollTicking = false;
                 });
             });
 
@@ -814,20 +1001,32 @@
                 button.addEventListener('click', function () {
                     const target = button.getAttribute('data-target');
                     const action = button.getAttribute('data-action');
+                    const nextAdults = target === 'adult'
+                        ? (action === 'plus' ? Math.min(adults + 1, 6) : Math.max(adults - 1, 1))
+                        : adults;
+                    const nextChildren = target === 'child'
+                        ? (action === 'plus' ? Math.min(children + 1, 4) : Math.max(children - 1, 0))
+                        : children;
+                    const capacity = getSelectedRoomCapacity();
+                    const roomCountValue = getRoomCountValue();
+                    const roomCapacityMessage = buildRoomCapacityMessage(capacity, nextAdults, nextChildren, roomCountValue);
+                    if (roomCapacityMessage) {
+                        showInfoModal(roomCapacityMessage, false);
+                        return;
+                    }
 
                     if (target === 'adult') {
-                        adults = action === 'plus' ? Math.min(adults + 1, 6) : Math.max(adults - 1, 1);
-                        document.getElementById('adultCount').textContent = adults;
-                        document.getElementById('adultCountInput').value = adults;
+                        adults = nextAdults;
                     } else {
-                        children = action === 'plus' ? Math.min(children + 1, 4) : Math.max(children - 1, 0);
-                        document.getElementById('childCount').textContent = children;
-                        document.getElementById('childCountInput').value = children;
+                        children = nextChildren;
                     }
+
+                    syncGuestInputs();
                 });
             });
 
             roomTypeSelect.addEventListener('change', function () {
+                ensureGuestCapacity(true);
                 refreshPriceQuote();
             });
 
@@ -1135,6 +1334,12 @@
                 const rows = items.map(function (item) {
                     const label = item.dateText || item.dateLabel || item.date || '';
                     const nightlyPrice = Number(item.price ?? item.effectivePrice ?? 0);
+                    const basePrice = Number(item.basePrice ?? nightlyPrice);
+                    const hasDiscount = item.isDiscounted === true && basePrice > nightlyPrice;
+                    if (hasDiscount) {
+                        return '<div class="price-breakdown-item price-breakdown-item-discount"><span>' + label + '</span><strong><small>' + formatMoney(basePrice) + '</small>' + formatMoney(nightlyPrice) + '</strong></div>';
+                    }
+
                     return '<div class="price-breakdown-item"><span>' + label + '</span><strong>' + formatMoney(nightlyPrice) + '</strong></div>';
                 }).join('');
 
@@ -1291,6 +1496,9 @@
                 hydrateProfileAddressSelectors();
                 openModal(profileModal);
             });
+            openAmenitiesModal?.addEventListener('click', function () {
+                openModal(amenitiesModal);
+            });
 
             activeDraftResumeLink?.addEventListener('click', function (event) {
                 event.preventDefault();
@@ -1298,6 +1506,22 @@
             });
 
             bookingForm?.addEventListener('submit', function (event) {
+                const hasMissingRequiredInfo = !roomTypeSelect?.value
+                    || !checkInInput?.value
+                    || !checkOutInput?.value
+                    || adults < 1
+                    || new Date(checkOutInput.value).getTime() <= new Date(checkInInput.value).getTime();
+                if (hasMissingRequiredInfo) {
+                    event.preventDefault();
+                    showInfoModal('Rezervasyon oncesi tarih, misafir ve oda bilgilerini kontrol edip tamamlayiniz.', false);
+                    return;
+                }
+
+                if (!ensureGuestCapacity(true)) {
+                    event.preventDefault();
+                    return;
+                }
+
                 if (isOnlinePaymentSelected()) {
                     event.preventDefault();
                     showInfoModal('Online ödeme altyapısı şu anda geliştirme aşamasında. Şimdilik kapıda ödeme / nakit seçeneği ile rezervasyon tamamlayabilirsiniz.', false);
@@ -1396,6 +1620,8 @@
             }
 
             normalizeBookingDates();
+            syncGuestInputs();
+            ensureGuestCapacity(false);
             syncPaymentMethodState();
             refreshPriceQuote();
             paymentMethodSelect?.addEventListener('change', syncPaymentMethodState);

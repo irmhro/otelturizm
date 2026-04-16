@@ -107,6 +107,9 @@ public class HotelRoomViewModel
     public string Name { get; set; } = string.Empty;
     public string Specs { get; set; } = string.Empty;
     public decimal Price { get; set; }
+    public byte MaxGuestCount { get; set; }
+    public byte MaxAdultCount { get; set; }
+    public byte MaxChildCount { get; set; }
     public string? ImageUrl { get; set; }
     public List<HotelRoomFeatureViewModel> Features { get; set; } = new();
     public string CancellationText { get; set; } = "Ucretsiz iptal";

@@ -1,6 +1,6 @@
 CREATE TABLE kullanici_bildirim_cihazlari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    kullanici_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    kullanici_id BIGINT  NOT NULL,
     
     cihaz_turu ENUM('iOS', 'Android', 'Web', 'Huawei') NOT NULL,
     cihaz_token VARCHAR(255) NOT NULL,
@@ -9,14 +9,14 @@ CREATE TABLE kullanici_bildirim_cihazlari (
     isletim_sistemi_surumu VARCHAR(20) NULL,
     uygulama_surumu VARCHAR(10) NULL,
     
-    bildirim_izinleri JSON NULL COMMENT '{"rezervasyon": true, "kampanya": false, "mesaj": true}',
+    bildirim_izinleri JSON NULL,
     
-    son_kullanim_tarihi TIMESTAMP NULL,
-    aktif_mi TINYINT(1) DEFAULT 1,
+    son_kullanim_tarihi DATETIME2 NULL,
+    aktif_mi BIT DEFAULT 1,
     
-    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    son_bildirim_tarihi TIMESTAMP NULL,
+    olusturulma_tarihi DATETIME2 DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NULL,
+    son_bildirim_tarihi DATETIME2 NULL,
     
     UNIQUE KEY uk_kullanici_token (kullanici_id, cihaz_token),
     INDEX idx_token (cihaz_token),
@@ -24,6 +24,5 @@ CREATE TABLE kullanici_bildirim_cihazlari (
     INDEX idx_aktif (aktif_mi),
     
     FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Push notification tokenları';
+);
 

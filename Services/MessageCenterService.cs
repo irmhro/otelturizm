@@ -65,13 +65,12 @@ public class MessageCenterService : IMessageCenterService
         }
 
         const string existingSql = @"
-            SELECT id
+            SELECT TOP (1) id
             FROM mesaj_konusmalari
             WHERE misafir_kullanici_id = @userId
               AND otel_id = @hotelId
               AND durum <> 'Arşivlendi'
-            ORDER BY COALESCE(son_mesaj_tarihi, olusturulma_tarihi) DESC, id DESC
-            LIMIT 1;";
+            ORDER BY COALESCE(son_mesaj_tarihi, olusturulma_tarihi) DESC, id DESC;";
 
         await using (var existingCommand = new SqlCommand(existingSql, connection))
         {
@@ -172,13 +171,14 @@ public class MessageCenterService : IMessageCenterService
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = @"
-            UPDATE mesajlar m
-            INNER JOIN mesaj_konusmalari mk ON mk.id = m.konusma_id
+            UPDATE m
             SET m.durum = 'Silindi',
                 m.silinme_tarihi = CURRENT_TIMESTAMP,
                 m.silinme_nedeni = 'Kullanici tarafindan silindi',
                 m.silinme_gorunum_metni = 'Bu mesaj silindi.',
                 m.misafir_gizlendi_mi = 1
+            FROM mesajlar m
+            INNER JOIN mesaj_konusmalari mk ON mk.id = m.konusma_id
             WHERE m.id = @messageId
               AND m.konusma_id = @conversationId
               AND mk.misafir_kullanici_id = @userId
@@ -199,13 +199,14 @@ public class MessageCenterService : IMessageCenterService
         await using var connection = await OpenConnectionAsync(cancellationToken);
         var firmaId = await ResolveFirmaIdAsync(connection, userId, cancellationToken);
         const string sql = @"
-            UPDATE mesajlar m
-            INNER JOIN mesaj_konusmalari mk ON mk.id = m.konusma_id
+            UPDATE m
             SET m.durum = 'Silindi',
                 m.silinme_tarihi = CURRENT_TIMESTAMP,
                 m.silinme_nedeni = 'Firma tarafindan silindi',
                 m.silinme_gorunum_metni = 'Bu mesaj silindi.',
                 m.firma_gizlendi_mi = 1
+            FROM mesajlar m
+            INNER JOIN mesaj_konusmalari mk ON mk.id = m.konusma_id
             WHERE m.id = @messageId
               AND m.konusma_id = @conversationId
               AND mk.firma_id = @firmaId
@@ -280,15 +281,14 @@ public class MessageCenterService : IMessageCenterService
         }
 
         const string titleSql = @"
-            SELECT COALESCE(f.firma_adi, o.otel_adi, 'Otelturizm') AS title_text,
+            SELECT TOP (1) COALESCE(f.firma_adi, o.otel_adi, 'Otelturizm') AS title_text,
                    COALESCE(mk.konu_basligi, 'Mesaj detayı') AS subtitle_text
             FROM mesaj_konusmalari mk
             LEFT JOIN oteller o ON o.id = mk.otel_id
             LEFT JOIN firmalar f ON f.id = mk.firma_id
             WHERE mk.id = @conversationId
               AND ((@viewerType = 'user' AND mk.misafir_kullanici_id = @userId)
-               OR  (@viewerType = 'firma' AND mk.firma_id = @firmaId))
-            LIMIT 1;";
+               OR  (@viewerType = 'firma' AND mk.firma_id = @firmaId));";
 
         await using (var titleCommand = new SqlCommand(titleSql, connection))
         {
@@ -359,13 +359,12 @@ public class MessageCenterService : IMessageCenterService
     private static async Task<long> ResolveEligibleReservationIdAsync(SqlConnection connection, long userId, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id
+            SELECT TOP (1) id
             FROM rezervasyonlar
             WHERE kullanici_id = @userId
               AND otel_id = @hotelId
               AND durum NOT IN ('İptal Edildi', 'Reddedildi')
-            ORDER BY COALESCE(cikis_tarihi, giris_tarihi) DESC, id DESC
-            LIMIT 1;";
+            ORDER BY COALESCE(cikis_tarihi, giris_tarihi) DESC, id DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -379,7 +378,7 @@ public class MessageCenterService : IMessageCenterService
     private static async Task<(string HotelName, long ManagerUserId)> LoadHotelConversationContextAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT
+            SELECT TOP (1)
                 o.otel_adi,
                 COALESCE(oks.user_id, o.user_id, 0) AS manager_user_id
             FROM oteller o
@@ -388,8 +387,7 @@ public class MessageCenterService : IMessageCenterService
                AND oks.aktif_mi = 1
                AND oks.ana_sorumlu_mu = 1
             WHERE o.id = @hotelId
-            ORDER BY oks.id ASC
-            LIMIT 1;";
+            ORDER BY oks.id ASC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -589,7 +587,7 @@ public class MessageCenterService : IMessageCenterService
 
     private static async Task<long> ResolveFirmaIdAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand("SELECT COALESCE(firma_id, 0) FROM users WHERE id = @userId LIMIT 1;", connection);
+        await using var command = new SqlCommand("SELECT TOP (1) COALESCE(firma_id, 0) FROM users WHERE id = @userId;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         var scalar = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt64(scalar ?? 0L, CultureInfo.InvariantCulture);

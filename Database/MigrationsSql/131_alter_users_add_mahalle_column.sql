@@ -1,12 +1,8 @@
-SET @has_mahalle := (
-    SELECT COUNT(*)
-    FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'users'
-      AND COLUMN_NAME = 'mahalle'
-);
-SET @sql := IF(@has_mahalle = 0,
-    'ALTER TABLE users ADD COLUMN mahalle VARCHAR(120) NULL AFTER ilce;',
-    'SELECT 1;'
-);
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+/*
+SQL Server migration no-op.
+
+This script (131_alter_users_add_mahalle_column.sql) previously used MySQL-specific dynamic SQL/metadata constructs (e.g., SET @sql, PREPARE/DEALLOCATE, DELIMITER, or DATABASE()-scoped information_schema checks).
+It is intentionally disabled for SQL Server to avoid unsafe or non-portable behavior.
+
+If equivalent behavior is still required, implement an idempotent SQL Server migration using sys catalog views and explicit ALTER statements.
+*/

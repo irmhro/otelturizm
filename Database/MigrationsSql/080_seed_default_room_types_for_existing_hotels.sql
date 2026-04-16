@@ -44,10 +44,10 @@ SELECT
         WHEN o.otel_turu = 'Apart Otel' THEN 3100.00
         ELSE 3600.00
     END,
-    GREATEST(IFNULL(o.toplam_oda_sayisi, 20), 8),
+    GREATEST(ISNULL(o.toplam_oda_sayisi, 20), 8),
     1,
     1,
-    NOW()
+    GETDATE()
 FROM oteller o
 LEFT JOIN oda_tipleri ot
     ON ot.otel_id = o.id

@@ -1,5 +1,5 @@
-INSERT INTO kampanyalar
-(kampanya_kodu, kampanya_adi, seo_slug, sayfa_url, kampanya_aciklamasi, kisa_aciklama, detay_aciklama, tur, indirim_orani, indirim_tutari, maksimum_indirim_tutari, minimum_sepet_tutari, baslangic_tarihi, bitis_tarihi, minimum_geceleme, maksimum_geceleme, aktif_mi, gorunurluk_durumu, one_cikan_kampanya, siralama, aktif_sayfa_vitrini, kampanya_etiketi, promo_badge, kampanya_renk_kodu, listeleme_basligi, listeleme_aciklamasi, meta_title, meta_description, canonical_url, partner_katilim_acik, partner_katilim_baslangic, partner_katilim_bitis)
+MERGE kampanyalar AS target
+USING (
 VALUES
 ('KMP-2026-YILBASI', 'Yılbaşı Özel', 'yilbasi-ozel', '/kampanyalar/yilbasi-ozel', 'Yılbaşı Özel için özel kampanya görünürlüğü.', 'Yılbaşı dönemine özel avantajlı otelleri keşfedin.', 'Yılbaşı Özel kampanyasının detaylı vitrin kaydı.', 'Yüzde İndirim', 18.00, NULL, 5000.00, 0.00, '2026-04-01 00:00:00', '2026-12-31 23:59:59', 1, 7, 1, 'Yayında', 1, 10, 1, 'Yılbaşı', 'Popüler', '#e11d48', 'Yılbaşı Özel Kampanyalı Oteller', 'Yılbaşı dönemine özel avantajlı otelleri keşfedin.', 'Yılbaşı Özel Kampanyalı Oteller | Otelturizm', 'Yılbaşı dönemine özel avantajlı otelleri keşfedin.', 'https://localhost:7223/kampanyalar/yilbasi-ozel', 1, '2026-04-01 00:00:00', '2026-12-31 23:59:59'),
 ('KMP-2026-ANNELER', 'Anneler Günü Kaçamağı', 'anneler-gunu-kacamagi', '/kampanyalar/anneler-gunu-kacamagi', 'Anneler Günü Kaçamağı için özel kampanya görünürlüğü.', 'Kısa tatil ve hediye konaklama seçeneklerini değerlendirin.', 'Anneler Günü Kaçamağı kampanyasının detaylı vitrin kaydı.', 'Yüzde İndirim', 15.00, NULL, 5000.00, 0.00, '2026-04-01 00:00:00', '2026-12-31 23:59:59', 1, 4, 1, 'Yayında', 0, 20, 1, 'Anneler Günü', 'Sınırlı', '#db2777', 'Anneler Günü İçin Öne Çıkan Oteller', 'Kısa tatil ve hediye konaklama seçeneklerini değerlendirin.', 'Anneler Günü İçin Öne Çıkan Oteller | Otelturizm', 'Kısa tatil ve hediye konaklama seçeneklerini değerlendirin.', 'https://localhost:7223/kampanyalar/anneler-gunu-kacamagi', 1, '2026-04-01 00:00:00', '2026-12-31 23:59:59'),
@@ -23,31 +23,37 @@ VALUES
 ('KMP-2026-SEYAHATPLAN', 'Seyahat Planlama Asistanı Seçkisi', 'seyahat-planlama-asistani-seckisi', '/kampanyalar/seyahat-planlama-asistani-seckisi', 'Seyahat Planlama Asistanı Seçkisi için özel kampanya görünürlüğü.', 'Kişiselleştirilmiş gezi planları için uygun oteller.', 'Seyahat Planlama Asistanı Seçkisi kampanyasının detaylı vitrin kaydı.', 'Yüzde İndirim', 7.00, NULL, 5000.00, 0.00, '2026-04-01 00:00:00', '2026-12-31 23:59:59', 1, 8, 1, 'Yayında', 0, 200, 1, 'Planlama', 'Asistan', '#2563eb', 'Seyahat Planlama İçin Öne Çıkan Oteller', 'Kişiselleştirilmiş gezi planları için uygun oteller.', 'Seyahat Planlama İçin Öne Çıkan Oteller | Otelturizm', 'Kişiselleştirilmiş gezi planları için uygun oteller.', 'https://localhost:7223/kampanyalar/seyahat-planlama-asistani-seckisi', 1, '2026-04-01 00:00:00', '2026-12-31 23:59:59'),
 ('KMP-2026-KURUMSAL', 'Kurumsal Konaklama Fırsatı', 'kurumsal-konaklama-firsati', '/kampanyalar/kurumsal-konaklama-firsati', 'Kurumsal Konaklama Fırsatı için özel kampanya görünürlüğü.', 'Firma kullanıcılarına uygun tesisleri görün.', 'Kurumsal Konaklama Fırsatı kampanyasının detaylı vitrin kaydı.', 'Yüzde İndirim', 12.00, NULL, 5000.00, 0.00, '2026-04-01 00:00:00', '2026-12-31 23:59:59', 1, 14, 1, 'Yayında', 0, 210, 1, 'Kurumsal', 'B2B', '#0f766e', 'Kurumsal Konaklama Otelleri', 'Firma kullanıcılarına uygun tesisleri görün.', 'Kurumsal Konaklama Otelleri | Otelturizm', 'Firma kullanıcılarına uygun tesisleri görün.', 'https://localhost:7223/kampanyalar/kurumsal-konaklama-firsati', 1, '2026-04-01 00:00:00', '2026-12-31 23:59:59'),
 ('KMP-2026-SONDAKIKA', 'Son Dakika Rezervasyon', 'son-dakika-rezervasyon', '/kampanyalar/son-dakika-rezervasyon', 'Son Dakika Rezervasyon için özel kampanya görünürlüğü.', 'Aynı gün ve yakın tarihli fırsatları görün.', 'Son Dakika Rezervasyon kampanyasının detaylı vitrin kaydı.', 'Son Dakika', 11.00, NULL, 5000.00, 0.00, '2026-04-01 00:00:00', '2026-12-31 23:59:59', 1, 2, 1, 'Yayında', 0, 220, 1, 'Son Dakika', 'Last Minute', '#dc2626', 'Son Dakika Rezervasyon Otelleri', 'Aynı gün ve yakın tarihli fırsatları görün.', 'Son Dakika Rezervasyon Otelleri | Otelturizm', 'Aynı gün ve yakın tarihli fırsatları görün.', 'https://localhost:7223/kampanyalar/son-dakika-rezervasyon', 1, '2026-04-01 00:00:00', '2026-12-31 23:59:59')
-ON DUPLICATE KEY UPDATE
-    kampanya_adi = VALUES(kampanya_adi),
-    seo_slug = VALUES(seo_slug),
-    sayfa_url = VALUES(sayfa_url),
-    kampanya_aciklamasi = VALUES(kampanya_aciklamasi),
-    kisa_aciklama = VALUES(kisa_aciklama),
-    detay_aciklama = VALUES(detay_aciklama),
-    tur = VALUES(tur),
-    indirim_orani = VALUES(indirim_orani),
-    indirim_tutari = VALUES(indirim_tutari),
-    baslangic_tarihi = VALUES(baslangic_tarihi),
-    bitis_tarihi = VALUES(bitis_tarihi),
-    aktif_mi = VALUES(aktif_mi),
-    gorunurluk_durumu = VALUES(gorunurluk_durumu),
-    one_cikan_kampanya = VALUES(one_cikan_kampanya),
-    siralama = VALUES(siralama),
-    aktif_sayfa_vitrini = VALUES(aktif_sayfa_vitrini),
-    kampanya_etiketi = VALUES(kampanya_etiketi),
-    promo_badge = VALUES(promo_badge),
-    kampanya_renk_kodu = VALUES(kampanya_renk_kodu),
-    listeleme_basligi = VALUES(listeleme_basligi),
-    listeleme_aciklamasi = VALUES(listeleme_aciklamasi),
-    meta_title = VALUES(meta_title),
-    meta_description = VALUES(meta_description),
-    canonical_url = VALUES(canonical_url),
-    partner_katilim_acik = VALUES(partner_katilim_acik),
-    partner_katilim_baslangic = VALUES(partner_katilim_baslangic),
-    partner_katilim_bitis = VALUES(partner_katilim_bitis);
+) AS source (kampanya_kodu, kampanya_adi, seo_slug, sayfa_url, kampanya_aciklamasi, kisa_aciklama, detay_aciklama, tur, indirim_orani, indirim_tutari, maksimum_indirim_tutari, minimum_sepet_tutari, baslangic_tarihi, bitis_tarihi, minimum_geceleme, maksimum_geceleme, aktif_mi, gorunurluk_durumu, one_cikan_kampanya, siralama, aktif_sayfa_vitrini, kampanya_etiketi, promo_badge, kampanya_renk_kodu, listeleme_basligi, listeleme_aciklamasi, meta_title, meta_description, canonical_url, partner_katilim_acik, partner_katilim_baslangic, partner_katilim_bitis)
+ON target.kampanya_kodu = source.kampanya_kodu
+WHEN MATCHED THEN
+    UPDATE SET
+        kampanya_adi = source.kampanya_adi,
+        seo_slug = source.seo_slug,
+        sayfa_url = source.sayfa_url,
+        kampanya_aciklamasi = source.kampanya_aciklamasi,
+        kisa_aciklama = source.kisa_aciklama,
+        detay_aciklama = source.detay_aciklama,
+        tur = source.tur,
+        indirim_orani = source.indirim_orani,
+        indirim_tutari = source.indirim_tutari,
+        baslangic_tarihi = source.baslangic_tarihi,
+        bitis_tarihi = source.bitis_tarihi,
+        aktif_mi = source.aktif_mi,
+        gorunurluk_durumu = source.gorunurluk_durumu,
+        one_cikan_kampanya = source.one_cikan_kampanya,
+        siralama = source.siralama,
+        aktif_sayfa_vitrini = source.aktif_sayfa_vitrini,
+        kampanya_etiketi = source.kampanya_etiketi,
+        promo_badge = source.promo_badge,
+        kampanya_renk_kodu = source.kampanya_renk_kodu,
+        listeleme_basligi = source.listeleme_basligi,
+        listeleme_aciklamasi = source.listeleme_aciklamasi,
+        meta_title = source.meta_title,
+        meta_description = source.meta_description,
+        canonical_url = source.canonical_url,
+        partner_katilim_acik = source.partner_katilim_acik,
+        partner_katilim_baslangic = source.partner_katilim_baslangic,
+        partner_katilim_bitis = source.partner_katilim_bitis
+WHEN NOT MATCHED THEN
+    INSERT (kampanya_kodu, kampanya_adi, seo_slug, sayfa_url, kampanya_aciklamasi, kisa_aciklama, detay_aciklama, tur, indirim_orani, indirim_tutari, maksimum_indirim_tutari, minimum_sepet_tutari, baslangic_tarihi, bitis_tarihi, minimum_geceleme, maksimum_geceleme, aktif_mi, gorunurluk_durumu, one_cikan_kampanya, siralama, aktif_sayfa_vitrini, kampanya_etiketi, promo_badge, kampanya_renk_kodu, listeleme_basligi, listeleme_aciklamasi, meta_title, meta_description, canonical_url, partner_katilim_acik, partner_katilim_baslangic, partner_katilim_bitis)
+    VALUES (source.kampanya_kodu, source.kampanya_adi, source.seo_slug, source.sayfa_url, source.kampanya_aciklamasi, source.kisa_aciklama, source.detay_aciklama, source.tur, source.indirim_orani, source.indirim_tutari, source.maksimum_indirim_tutari, source.minimum_sepet_tutari, source.baslangic_tarihi, source.bitis_tarihi, source.minimum_geceleme, source.maksimum_geceleme, source.aktif_mi, source.gorunurluk_durumu, source.one_cikan_kampanya, source.siralama, source.aktif_sayfa_vitrini, source.kampanya_etiketi, source.promo_badge, source.kampanya_renk_kodu, source.listeleme_basligi, source.listeleme_aciklamasi, source.meta_title, source.meta_description, source.canonical_url, source.partner_katilim_acik, source.partner_katilim_baslangic, source.partner_katilim_bitis);

@@ -4,10 +4,10 @@ ALTER TABLE users
 MODIFY COLUMN rol VARCHAR(64) NOT NULL DEFAULT 'user';
 
 ALTER TABLE users
-ADD COLUMN satis_ekibi VARCHAR(100) NULL AFTER gorev_unvani,
-ADD COLUMN gunluk_satis_hedefi DECIMAL(12,2) NULL AFTER satis_ekibi,
-ADD COLUMN aylik_satis_hedefi DECIMAL(12,2) NULL AFTER gunluk_satis_hedefi,
-ADD COLUMN dahili_numara VARCHAR(20) NULL AFTER aylik_satis_hedefi;
+ADD satis_ekibi VARCHAR(100) NULL,
+ADD gunluk_satis_hedefi DECIMAL(12,2) NULL,
+ADD aylik_satis_hedefi DECIMAL(12,2) NULL,
+ADD dahili_numara VARCHAR(20) NULL;
 
 ALTER TABLE users
 ADD INDEX idx_users_sales_team (satis_ekibi),

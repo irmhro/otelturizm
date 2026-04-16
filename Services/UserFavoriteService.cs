@@ -104,8 +104,8 @@ public class UserFavoriteService : IUserFavoriteService
                 o.otel_adi,
                 o.sehir,
                 o.ilce,
-                IFNULL(o.ortalama_puan, 0) AS ortalama_puan,
-                IFNULL(o.toplam_yorum_sayisi, 0) AS toplam_yorum_sayisi,
+                COALESCE(o.ortalama_puan, 0) AS ortalama_puan,
+                COALESCE(o.toplam_yorum_sayisi, 0) AS toplam_yorum_sayisi,
                 COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
                 pf.baslangic_fiyat,
                 a.hedef_maksimum_fiyat,
@@ -119,16 +119,21 @@ public class UserFavoriteService : IUserFavoriteService
                     WHERE r.kullanici_id = @userId
                       AND r.otel_id = f.otel_id
                       AND r.durum <> 'İptal Edildi'
-                      AND r.cikis_tarihi < CURDATE()
+                      AND CAST(r.cikis_tarihi AS date) < CAST(SYSUTCDATETIME() AS date)
                 ) AS past_stay_count
             FROM user_favori_oteller f
             JOIN oteller o ON o.id = f.otel_id
             LEFT JOIN (
-                SELECT g.otel_id,
-                       SUBSTRING_INDEX(GROUP_CONCAT(g.gorsel_url ORDER BY g.kapak_fotografi_mi DESC, g.one_cikan DESC, g.siralama ASC SEPARATOR '||'),'||',1) AS gorsel_url
-                FROM otel_gorselleri g
-                WHERE g.onay_durumu = 'Onaylandı'
-                GROUP BY g.otel_id
+                SELECT g1.otel_id, g1.gorsel_url
+                FROM (
+                    SELECT
+                        g.otel_id,
+                        g.gorsel_url,
+                        ROW_NUMBER() OVER (PARTITION BY g.otel_id ORDER BY g.kapak_fotografi_mi DESC, g.one_cikan DESC, g.siralama ASC, g.id ASC) AS rn
+                    FROM otel_gorselleri g
+                    WHERE g.onay_durumu = 'Onaylandı'
+                ) g1
+                WHERE g1.rn = 1
             ) og ON og.otel_id = o.id
             LEFT JOIN (
                 SELECT ot.otel_id,
@@ -145,7 +150,7 @@ public class UserFavoriteService : IUserFavoriteService
                 FROM oda_tipleri ot
                 LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
                     AND ofm.otel_id = ot.otel_id
-                    AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 120 DAY)
+                    AND ofm.tarih BETWEEN CAST(SYSUTCDATETIME() AS date) AND DATEADD(DAY, 120, CAST(SYSUTCDATETIME() AS date))
                 WHERE ot.aktif_mi = 1
                 GROUP BY ot.otel_id
             ) pf ON pf.otel_id = o.id
@@ -259,7 +264,7 @@ public class UserFavoriteService : IUserFavoriteService
             return new HotelFavoriteToggleResponse { Success = false, Message = "Favorilere eklenecek otel bulunamadı." };
         }
 
-        const string selectSql = @"SELECT id, COALESCE(aktif_mi, 1) AS aktif_mi FROM user_favori_oteller WHERE user_id = @userId AND otel_id = @hotelId LIMIT 1;";
+        const string selectSql = @"SELECT TOP (1) id, COALESCE(aktif_mi, 1) AS aktif_mi FROM user_favori_oteller WHERE user_id = @userId AND otel_id = @hotelId ORDER BY id DESC;";
         await using var selectCommand = new SqlCommand(selectSql, connection);
         selectCommand.Parameters.AddWithValue("@userId", userId);
         selectCommand.Parameters.AddWithValue("@hotelId", hotelId);
@@ -421,16 +426,19 @@ public class UserFavoriteService : IUserFavoriteService
         }
 
         const string upsertSql = @"
-            INSERT INTO user_favorite_price_alerts
-            (user_id, otel_id, hedef_maksimum_fiyat, baslangic_tarihi, bitis_tarihi, aktif_mi, olusturulma_tarihi, guncellenme_tarihi)
-            VALUES
-            (@userId, @hotelId, @targetPrice, @startDate, @endDate, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            ON DUPLICATE KEY UPDATE
-                hedef_maksimum_fiyat = VALUES(hedef_maksimum_fiyat),
-                baslangic_tarihi = VALUES(baslangic_tarihi),
-                bitis_tarihi = VALUES(bitis_tarihi),
-                aktif_mi = VALUES(aktif_mi),
-                guncellenme_tarihi = CURRENT_TIMESTAMP;";
+            MERGE user_favorite_price_alerts AS target
+            USING (SELECT @userId AS user_id, @hotelId AS otel_id) AS source
+            ON target.user_id = source.user_id AND target.otel_id = source.otel_id
+            WHEN MATCHED THEN
+                UPDATE SET
+                    hedef_maksimum_fiyat = @targetPrice,
+                    baslangic_tarihi = @startDate,
+                    bitis_tarihi = @endDate,
+                    aktif_mi = 1,
+                    guncellenme_tarihi = CURRENT_TIMESTAMP
+            WHEN NOT MATCHED THEN
+                INSERT (user_id, otel_id, hedef_maksimum_fiyat, baslangic_tarihi, bitis_tarihi, aktif_mi, olusturulma_tarihi, guncellenme_tarihi)
+                VALUES (@userId, @hotelId, @targetPrice, @startDate, @endDate, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);";
         await using var command = new SqlCommand(upsertSql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@hotelId", form.HotelId);

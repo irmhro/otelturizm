@@ -88,6 +88,8 @@ public class PublicReservationNightlyBreakdownItemViewModel
     public DateOnly Date { get; set; }
     public string DateText { get; set; } = string.Empty;
     public decimal Price { get; set; }
+    public decimal BasePrice { get; set; }
+    public decimal? DiscountPrice { get; set; }
     public string PriceText { get; set; } = string.Empty;
     public bool IsDiscounted { get; set; }
     public bool IsClosed { get; set; }

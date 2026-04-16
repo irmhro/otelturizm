@@ -905,6 +905,8 @@ public class HotelService : IHotelService
                 ot.id,
                 ot.oda_adi,
                 ot.maksimum_kisi_sayisi,
+                ot.maksimum_yetiskin_sayisi,
+                COALESCE(ot.maksimum_cocuk_sayisi, 0),
                 ot.yatak_tipi,
                 ot.oda_metrekare,
                 COALESCE(ot.standart_gecelik_fiyat, 0) AS standart_gecelik_fiyat
@@ -922,9 +924,11 @@ public class HotelService : IHotelService
                 var roomId = roomsReader.GetInt64(0);
                 var roomName = roomsReader.GetString(1);
                 var maxGuests = roomsReader.GetByte(2);
-                var bedType = roomsReader.IsDBNull(3) ? "Yatak bilgisi yok" : roomsReader.GetString(3);
-                ushort? squareMeter = roomsReader.IsDBNull(4) ? null : Convert.ToUInt16(roomsReader.GetValue(4), CultureInfo.InvariantCulture);
-                var roomPrice = roomsReader.GetDecimal(5);
+                var maxAdults = roomsReader.GetByte(3);
+                var maxChildren = roomsReader.GetByte(4);
+                var bedType = roomsReader.IsDBNull(5) ? "Yatak bilgisi yok" : roomsReader.GetString(5);
+                ushort? squareMeter = roomsReader.IsDBNull(6) ? null : Convert.ToUInt16(roomsReader.GetValue(6), CultureInfo.InvariantCulture);
+                var roomPrice = roomsReader.GetDecimal(7);
 
                 model.Rooms.Add(new HotelRoomViewModel
                 {
@@ -932,6 +936,9 @@ public class HotelService : IHotelService
                     Name = roomName,
                     Specs = $"{bedType} · {(squareMeter.HasValue ? $"{squareMeter.Value} m2" : "Metrekare bilgisi bekleniyor")} · Max {maxGuests} Kisi",
                     Price = roomPrice,
+                    MaxGuestCount = maxGuests,
+                    MaxAdultCount = maxAdults,
+                    MaxChildCount = maxChildren,
                     Features = new List<HotelRoomFeatureViewModel>(),
                     CancellationText = "Ucretsiz iptal"
                 });

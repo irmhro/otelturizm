@@ -14,14 +14,11 @@ namespace otelturizmnew.Services;
 public class CampaignService : ICampaignService
 {
     private readonly string _connectionString;
-    private readonly bool _isSqlServer;
 
     public CampaignService(IConfiguration configuration)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
-        var configuredProvider = configuration["Database:Provider"];
-        _isSqlServer = string.Equals(configuredProvider, "SqlServer", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<CampaignListingPageViewModel> GetCampaignListingPageAsync(CancellationToken cancellationToken = default)
@@ -30,8 +27,7 @@ public class CampaignService : ICampaignService
 
         await using var connection = await CreateOpenConnectionAsync(cancellationToken);
 
-        var sql = _isSqlServer
-            ? @"
+        const string sql = @"
             SELECT
                 k.id,
                 k.kampanya_kodu,
@@ -60,36 +56,6 @@ public class CampaignService : ICampaignService
             WHERE k.aktif_mi = 1
               AND k.gorunurluk_durumu = 'Yayında'
               AND SYSUTCDATETIME() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
-            ORDER BY k.one_cikan_kampanya DESC, k.aktif_sayfa_vitrini DESC, k.siralama ASC, k.id ASC;"
-            : @"
-            SELECT
-                k.id,
-                k.kampanya_kodu,
-                k.kampanya_adi,
-                k.seo_slug,
-                k.sayfa_url,
-                COALESCE(NULLIF(k.kisa_aciklama, ''), LEFT(k.kampanya_aciklamasi, 220)) AS kisa_aciklama,
-                k.baslangic_tarihi,
-                k.bitis_tarihi,
-                k.kampanya_etiketi,
-                k.promo_badge,
-                COALESCE(NULLIF(k.kampanya_renk_kodu, ''), '#003B95') AS kampanya_renk_kodu,
-                COALESCE(NULLIF(k.kart_gorseli, ''), NULLIF(k.hero_gorseli, ''), NULLIF(k.banner_gorseli, '')) AS gorsel_url,
-                COALESCE(k.one_cikan_kampanya, 0) AS one_cikan_kampanya,
-                (
-                    SELECT COUNT(*)
-                    FROM kampanya_oteller ko
-                    JOIN oteller o ON o.id = ko.otel_id
-                    WHERE ko.kampanya_id = k.id
-                      AND ko.katilim_durumu = 'Aktif'
-                      AND NOW() BETWEEN ko.baslangic_tarihi AND ko.bitis_tarihi
-                      AND o.yayin_durumu = 'Yayında'
-                      AND o.onay_durumu = 'Onaylandı'
-                ) AS hotel_count
-            FROM kampanyalar k
-            WHERE k.aktif_mi = 1
-              AND k.gorunurluk_durumu = 'Yayında'
-              AND NOW() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
             ORDER BY k.one_cikan_kampanya DESC, k.aktif_sayfa_vitrini DESC, k.siralama ASC, k.id ASC;";
 
         await using var command = CreateCommand(connection, sql);
@@ -133,8 +99,7 @@ public class CampaignService : ICampaignService
 
         await using var connection = await CreateOpenConnectionAsync(cancellationToken);
 
-        var campaignSql = _isSqlServer
-            ? @"
+        const string campaignSql = @"
             SELECT
                 k.id,
                 k.kampanya_kodu,
@@ -164,46 +129,14 @@ public class CampaignService : ICampaignService
                     OR k.sayfa_url LIKE '%' + @slashSlug
                   )
             ORDER BY k.id
-            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;"
-            : @"
-            SELECT
-                k.id,
-                k.kampanya_kodu,
-                k.kampanya_adi,
-                k.seo_slug,
-                COALESCE(NULLIF(k.canonical_url, ''), NULLIF(k.sayfa_url, ''), CONCAT('/kampanyalar/', k.seo_slug)) AS canonical_url,
-                COALESCE(NULLIF(k.kisa_aciklama, ''), LEFT(k.kampanya_aciklamasi, 220)) AS kisa_aciklama,
-                COALESCE(NULLIF(k.detay_aciklama, ''), k.kampanya_aciklamasi) AS detay_aciklama,
-                COALESCE(NULLIF(k.listeleme_basligi, ''), k.kampanya_adi) AS listeleme_basligi,
-                COALESCE(NULLIF(k.listeleme_aciklamasi, ''), COALESCE(NULLIF(k.kisa_aciklama, ''), LEFT(k.kampanya_aciklamasi, 220))) AS listeleme_aciklamasi,
-                k.baslangic_tarihi,
-                k.bitis_tarihi,
-                k.kullanim_kosullari,
-                k.kampanya_etiketi,
-                k.promo_badge,
-                COALESCE(NULLIF(k.hero_gorseli, ''), NULLIF(k.banner_gorseli, ''), NULLIF(k.kart_gorseli, '')) AS hero_gorseli,
-                COALESCE(NULLIF(k.kart_gorseli, ''), NULLIF(k.hero_gorseli, ''), NULLIF(k.banner_gorseli, '')) AS kart_gorseli,
-                COALESCE(NULLIF(k.kampanya_renk_kodu, ''), '#003B95') AS kampanya_renk_kodu,
-                COALESCE(k.one_cikan_kampanya, 0) AS one_cikan_kampanya
-            FROM kampanyalar k
-            WHERE k.aktif_mi = 1
-              AND k.gorunurluk_durumu = 'Yayında'
-              AND NOW() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
-              AND (
-                    k.seo_slug = @slug
-                    OR SUBSTRING_INDEX(TRIM(BOTH '/' FROM IFNULL(k.sayfa_url, '')), '/', -1) = @slug
-                  )
-            LIMIT 1;";
+            OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
         CampaignDetailPageViewModel? model = null;
 
         await using (var command = CreateCommand(connection, campaignSql))
         {
             AddParameter(command, "@slug", slug.Trim());
-            if (_isSqlServer)
-            {
-                AddParameter(command, "@slashSlug", $"%/{slug.Trim()}");
-            }
+            AddParameter(command, "@slashSlug", $"%/{slug.Trim()}");
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
@@ -235,8 +168,7 @@ public class CampaignService : ICampaignService
             return null;
         }
 
-        var hotelsSql = _isSqlServer
-            ? @"
+        const string hotelsSql = @"
             SELECT
                 o.id,
                 o.otel_kodu,
@@ -302,67 +234,6 @@ public class CampaignService : ICampaignService
             WHERE ko.kampanya_id = @campaignId
               AND ko.katilim_durumu = 'Aktif'
               AND SYSUTCDATETIME() BETWEEN ko.baslangic_tarihi AND ko.bitis_tarihi
-              AND o.yayin_durumu = 'Yayında'
-              AND o.onay_durumu = 'Onaylandı'
-            ORDER BY ko.one_cikan DESC, ko.siralama ASC, o.one_cikan_otel DESC, o.ortalama_puan DESC, o.id DESC;"
-            : @"
-            SELECT
-                o.id,
-                o.otel_kodu,
-                o.otel_adi,
-                o.sehir,
-                o.ilce,
-                IFNULL(o.ortalama_puan, 0) AS ortalama_puan,
-                IFNULL(o.toplam_yorum_sayisi, 0) AS toplam_yorum_sayisi,
-                COALESCE(ko.ozel_kampanyali_fiyat, pf.baslangic_fiyat) AS baslangic_fiyat,
-                COALESCE(NULLIF(o.kisa_aciklama, ''), @campaignName) AS kisa_aciklama,
-                COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
-                IFNULL(o.one_cikan_otel, 0) AS one_cikan_otel,
-                COALESCE(NULLIF(ko.kampanya_etiketi, ''), NULLIF(k.kampanya_etiketi, '')) AS kampanya_etiketi,
-                oz.ozellikler
-            FROM kampanya_oteller ko
-            JOIN kampanyalar k ON k.id = ko.kampanya_id
-            JOIN oteller o ON o.id = ko.otel_id
-            LEFT JOIN (
-                SELECT
-                    ot.otel_id,
-                    MIN(
-                        COALESCE(
-                            CASE
-                                WHEN ofm.kapali_satis = 1 THEN NULL
-                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                                ELSE COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))
-                            END,
-                            NULLIF(ot.standart_gecelik_fiyat, 0)
-                        )
-                    ) AS baslangic_fiyat
-                FROM oda_tipleri ot
-                LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
-                    AND ofm.otel_id = ot.otel_id
-                    AND ofm.tarih BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 45 DAY)
-                WHERE ot.aktif_mi = 1
-                GROUP BY ot.otel_id
-            ) pf ON pf.otel_id = o.id
-            LEFT JOIN (
-                SELECT
-                    g.otel_id,
-                    SUBSTRING_INDEX(GROUP_CONCAT(g.gorsel_url ORDER BY g.kapak_fotografi_mi DESC, g.one_cikan DESC, g.siralama ASC SEPARATOR '||'),'||',1) AS gorsel_url
-                FROM otel_gorselleri g
-                WHERE g.onay_durumu = 'Onaylandı'
-                  AND g.gorsel_url NOT LIKE '/uploads/logo/%'
-                GROUP BY g.otel_id
-            ) og ON og.otel_id = o.id
-            LEFT JOIN (
-                SELECT
-                    oi.otel_id,
-                    GROUP_CONCAT(oo.ozellik_adi ORDER BY oo.one_cikan_ozellik DESC, oo.siralama ASC SEPARATOR '||') AS ozellikler
-                FROM otel_ozellik_iliskileri oi
-                JOIN otel_ozellikleri oo ON oo.id = oi.ozellik_id AND oo.aktif_mi = 1
-                GROUP BY oi.otel_id
-            ) oz ON oz.otel_id = o.id
-            WHERE ko.kampanya_id = @campaignId
-              AND ko.katilim_durumu = 'Aktif'
-              AND NOW() BETWEEN ko.baslangic_tarihi AND ko.bitis_tarihi
               AND o.yayin_durumu = 'Yayında'
               AND o.onay_durumu = 'Onaylandı'
             ORDER BY ko.one_cikan DESC, ko.siralama ASC, o.one_cikan_otel DESC, o.ortalama_puan DESC, o.id DESC;";
@@ -509,9 +380,7 @@ public class CampaignService : ICampaignService
 
     private async Task<DbConnection> CreateOpenConnectionAsync(CancellationToken cancellationToken)
     {
-        DbConnection connection = _isSqlServer
-            ? new SqlConnection(_connectionString)
-            : new SqlConnection(_connectionString);
+        DbConnection connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         return connection;
     }

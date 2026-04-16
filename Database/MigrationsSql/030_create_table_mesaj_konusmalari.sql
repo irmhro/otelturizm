@@ -1,14 +1,14 @@
 CREATE TABLE mesaj_konusmalari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    konusma_kodu VARCHAR(20) NOT NULL UNIQUE COMMENT 'MSG-XXXXXXXX',
+    id BIGINT  NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    konusma_kodu VARCHAR(20) NOT NULL UNIQUE,
     
     -- İlişkiler
-    rezervasyon_id BIGINT UNSIGNED NULL COMMENT 'Rezervasyon ile ilgiliyse',
-    otel_id BIGINT UNSIGNED NOT NULL,
+    rezervasyon_id BIGINT  NULL,
+    otel_id BIGINT  NOT NULL,
     
     -- Katılımcılar
-    misafir_kullanici_id BIGINT UNSIGNED NOT NULL,
-    otel_yetkilisi_kullanici_id BIGINT UNSIGNED NULL COMMENT 'Otel adına yanıt veren kişi',
+    misafir_kullanici_id BIGINT  NOT NULL,
+    otel_yetkilisi_kullanici_id BIGINT  NULL,
     
     -- Konuşma Detayları
     konu_basligi VARCHAR(200) NOT NULL,
@@ -17,24 +17,24 @@ CREATE TABLE mesaj_konusmalari (
     durum ENUM('Açık', 'Kapalı', 'Çözüldü', 'Spam', 'Arşivlendi') DEFAULT 'Açık',
     oncelik ENUM('Düşük', 'Normal', 'Yüksek', 'Acil') DEFAULT 'Normal',
     
-    son_mesaj_tarihi TIMESTAMP NULL,
+    son_mesaj_tarihi DATETIME2 NULL,
     son_mesaj_gonderen ENUM('Misafir', 'Otel', 'Sistem') NULL,
     son_mesaj_onizleme VARCHAR(100) NULL,
     
     -- Okunma Durumları
-    misafir_okunmamis_sayisi INT UNSIGNED DEFAULT 0,
-    otel_okunmamis_sayisi INT UNSIGNED DEFAULT 0,
-    misafir_son_okuma_tarihi TIMESTAMP NULL,
-    otel_son_okuma_tarihi TIMESTAMP NULL,
+    misafir_okunmamis_sayisi INT  DEFAULT 0,
+    otel_okunmamis_sayisi INT  DEFAULT 0,
+    misafir_son_okuma_tarihi DATETIME2 NULL,
+    otel_son_okuma_tarihi DATETIME2 NULL,
     
     -- Ek Bilgiler
-    etiketler JSON NULL COMMENT '["önemli", "bekleyen"]',
-    atanan_destek_ekibi_kullanici_id BIGINT UNSIGNED NULL COMMENT 'Platform desteği atandıysa',
+    etiketler JSON NULL,
+    atanan_destek_ekibi_kullanici_id BIGINT  NULL,
     
     -- Zaman Damgaları
-    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-    kapatilma_tarihi TIMESTAMP NULL,
+    olusturulma_tarihi DATETIME2 DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NULL,
+    kapatilma_tarihi DATETIME2 NULL,
     kapatma_nedeni VARCHAR(255) NULL,
     
     -- İndeksler
@@ -54,6 +54,5 @@ CREATE TABLE mesaj_konusmalari (
     FOREIGN KEY (misafir_kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE,
     FOREIGN KEY (otel_yetkilisi_kullanici_id) REFERENCES kullanicilar(id) ON DELETE SET NULL,
     FOREIGN KEY (atanan_destek_ekibi_kullanici_id) REFERENCES kullanicilar(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Misafir-Otel arası mesajlaşma konuşmaları';
+);
 

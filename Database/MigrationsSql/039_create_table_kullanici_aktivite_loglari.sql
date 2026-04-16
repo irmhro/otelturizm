@@ -1,6 +1,6 @@
 CREATE TABLE kullanici_aktivite_loglari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    kullanici_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    kullanici_id BIGINT  NOT NULL,
     
     aktivite_turu ENUM(
         'Giriş', 'Çıkış', 'Başarısız Giriş', 'Şifre Değiştirme', 'Şifre Sıfırlama',
@@ -15,11 +15,11 @@ CREATE TABLE kullanici_aktivite_loglari (
         'Hesap Silme Talebi', 'KVKK Onayı', 'KVKK Reddi'
     ) NOT NULL,
     
-    aktivite_detayi JSON NULL COMMENT '{"otel_id": 123, "arama_kriterleri": {...}}',
+    aktivite_detayi JSON NULL,
     
     -- Cihaz ve Konum
     ip_adresi VARCHAR(45) NOT NULL,
-    user_agent TEXT NULL,
+    user_agent NVARCHAR(MAX) NULL,
     cihaz_turu ENUM('Mobil', 'Tablet', 'Masaüstü', 'Bot', 'Bilinmiyor') DEFAULT 'Bilinmiyor',
     isletim_sistemi VARCHAR(50) NULL,
     tarayici VARCHAR(50) NULL,
@@ -30,10 +30,10 @@ CREATE TABLE kullanici_aktivite_loglari (
     session_id VARCHAR(100) NULL,
     
     -- Durum
-    basarili_mi TINYINT(1) DEFAULT 1,
+    basarili_mi BIT DEFAULT 1,
     hata_nedeni VARCHAR(255) NULL,
     
-    olusma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    olusma_tarihi DATETIME2 DEFAULT GETDATE(),
     
     PRIMARY KEY (id),
     INDEX idx_kullanici_id (kullanici_id),
@@ -43,7 +43,5 @@ CREATE TABLE kullanici_aktivite_loglari (
     INDEX idx_basarili (basarili_mi),
     
     FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Kullanıcıların tüm aktiviteleri - Aylık partition zorunlu';
-
+);
 

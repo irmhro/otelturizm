@@ -7,6 +7,6 @@ INSERT INTO partner_detaylari (
     1, 'Lüks Otelcilik A.Ş.', 'Anonim Şirketi', 'Turizm Vergi Dairesi', '1234567890',
     'Lara Cad. No:123 Muratpaşa', 'Antalya', 'Muratpaşa', 'Ahmet Yılmaz', '12345678901',
     '+905301234567', 'ahmet@luksotel.com', 'İş Bankası', 'TR320006200123456789000123', 'Lüks Otelcilik A.Ş.',
-    'Onaylandi', NOW()
+    'Onaylandi', GETDATE()
 );
 

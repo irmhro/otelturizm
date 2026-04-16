@@ -1,7 +1,7 @@
 CREATE TABLE bildirim_loglari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    kullanici_id BIGINT UNSIGNED NOT NULL,
-    bildirim_sablon_id SMALLINT UNSIGNED NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    kullanici_id BIGINT  NOT NULL,
+    bildirim_sablon_id SMALLINT  NULL,
     
     tur ENUM('E-posta', 'SMS', 'Push Notification', 'Sistem İçi') NOT NULL,
     
@@ -10,8 +10,8 @@ CREATE TABLE bildirim_loglari (
     cihaz_token VARCHAR(255) NULL,
     
     konu VARCHAR(200) NULL,
-    icerik TEXT NOT NULL,
-    gonderilen_icerik TEXT NULL COMMENT 'Değişkenler işlenmiş son hali',
+    icerik NVARCHAR(MAX) NOT NULL,
+    gonderilen_icerik NVARCHAR(MAX) NULL,
     
     durum ENUM('Beklemede', 'Gönderildi', 'İletildi', 'Okundu', 'Başarısız', 'İptal Edildi') DEFAULT 'Beklemede',
     
@@ -20,16 +20,16 @@ CREATE TABLE bildirim_loglari (
     hata_kodu VARCHAR(20) NULL,
     hata_mesaji VARCHAR(500) NULL,
     
-    gonderme_denemesi TINYINT UNSIGNED DEFAULT 1,
-    maksimum_deneme TINYINT UNSIGNED DEFAULT 3,
+    gonderme_denemesi TINYINT  DEFAULT 1,
+    maksimum_deneme TINYINT  DEFAULT 3,
     
-    gonderim_tarihi TIMESTAMP NULL,
-    okunma_tarihi TIMESTAMP NULL,
-    olusturulma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    gonderim_tarihi DATETIME2 NULL,
+    okunma_tarihi DATETIME2 NULL,
+    olusturulma_tarihi DATETIME2 DEFAULT GETDATE(),
     
     -- İlişkili Kayıt
-    ilgili_tablo VARCHAR(50) NULL COMMENT 'rezervasyonlar, mesajlar',
-    ilgili_kayit_id BIGINT UNSIGNED NULL,
+    ilgili_tablo VARCHAR(50) NULL,
+    ilgili_kayit_id BIGINT  NULL,
     
     PRIMARY KEY (id),
     INDEX idx_kullanici_id (kullanici_id),
@@ -40,7 +40,5 @@ CREATE TABLE bildirim_loglari (
     
     FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id) ON DELETE CASCADE,
     FOREIGN KEY (bildirim_sablon_id) REFERENCES bildirim_sablonlari(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Tüm bildirim gönderim logları - Aylık partition zorunlu';
-
+);
 

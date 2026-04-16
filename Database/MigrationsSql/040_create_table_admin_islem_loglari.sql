@@ -1,6 +1,6 @@
 CREATE TABLE admin_islem_loglari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    admin_kullanici_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    admin_kullanici_id BIGINT  NOT NULL,
     
     islem_turu ENUM(
         'Oluşturma', 'Güncelleme', 'Silme', 'Onaylama', 'Reddetme',
@@ -17,22 +17,22 @@ CREATE TABLE admin_islem_loglari (
     
     -- Etkilenen Kayıt
     hedef_tablo VARCHAR(50) NOT NULL,
-    hedef_kayit_id BIGINT UNSIGNED NULL,
+    hedef_kayit_id BIGINT  NULL,
     
     -- Değişiklik Detayı
     onceki_deger JSON NULL,
     yeni_deger JSON NULL,
-    degisiklik_ozeti TEXT NULL,
+    degisiklik_ozeti NVARCHAR(MAX) NULL,
     
     -- Açıklama
     islem_nedeni VARCHAR(500) NULL,
-    islem_notu TEXT NULL,
+    islem_notu NVARCHAR(MAX) NULL,
     
     -- IP ve Konum
     ip_adresi VARCHAR(45) NOT NULL,
     
     -- Zaman
-    islem_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    islem_tarihi DATETIME2 DEFAULT GETDATE(),
     
     PRIMARY KEY (id),
     INDEX idx_admin_id (admin_kullanici_id),
@@ -42,7 +42,5 @@ CREATE TABLE admin_islem_loglari (
     INDEX idx_ip (ip_adresi),
     
     FOREIGN KEY (admin_kullanici_id) REFERENCES kullanicilar(id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Admin panelinde yapılan tüm işlemlerin kaydı - Aylık partition';
-
+);
 

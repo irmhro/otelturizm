@@ -1,65 +1,65 @@
 CREATE TABLE IF NOT EXISTS sadakat_seviyeleri (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGINT  NOT NULL IDENTITY(1,1),
     kod VARCHAR(40) NOT NULL,
     ad VARCHAR(100) NOT NULL,
     minimum_puan INT NOT NULL DEFAULT 0,
     maximum_puan INT NULL,
     renk_kodu VARCHAR(20) NULL,
     ikon VARCHAR(120) NULL,
-    avantajlar_metin TEXT NULL,
+    avantajlar_metin NVARCHAR(MAX) NULL,
     sira_no INT NOT NULL DEFAULT 0,
-    aktif_mi TINYINT(1) NOT NULL DEFAULT 1,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    aktif_mi BIT NOT NULL DEFAULT 1,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     UNIQUE KEY uq_sadakat_seviyeleri_kod (kod),
     KEY idx_sadakat_seviyeleri_aktif_sira (aktif_mi, sira_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE IF NOT EXISTS kullanici_sadakat_hesaplari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    kullanici_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    kullanici_id BIGINT  NOT NULL,
     toplam_puan INT NOT NULL DEFAULT 0,
     kullanilabilir_puan INT NOT NULL DEFAULT 0,
     bu_yil_kazanilan_puan INT NOT NULL DEFAULT 0,
     bu_yil_kullanilan_puan INT NOT NULL DEFAULT 0,
-    mevcut_seviye_id BIGINT UNSIGNED NULL,
-    sonraki_seviye_id BIGINT UNSIGNED NULL,
-    son_seviye_guncelleme_tarihi DATETIME NULL,
+    mevcut_seviye_id BIGINT  NULL,
+    sonraki_seviye_id BIGINT  NULL,
+    son_seviye_guncelleme_tarihi DATETIME2 NULL,
     puan_gecerlilik_tarihi DATE NULL,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     UNIQUE KEY uq_kullanici_sadakat_hesaplari_kullanici (kullanici_id),
     KEY idx_kullanici_sadakat_seviye (mevcut_seviye_id),
     CONSTRAINT fk_kullanici_sadakat_hesaplari_user FOREIGN KEY (kullanici_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_kullanici_sadakat_hesaplari_mevcut_seviye FOREIGN KEY (mevcut_seviye_id) REFERENCES sadakat_seviyeleri(id) ON DELETE SET NULL,
     CONSTRAINT fk_kullanici_sadakat_hesaplari_sonraki_seviye FOREIGN KEY (sonraki_seviye_id) REFERENCES sadakat_seviyeleri(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE IF NOT EXISTS kullanici_puan_hareketleri (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    kullanici_id BIGINT UNSIGNED NOT NULL,
-    sadakat_hesap_id BIGINT UNSIGNED NULL,
-    rezervasyon_id BIGINT UNSIGNED NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    kullanici_id BIGINT  NOT NULL,
+    sadakat_hesap_id BIGINT  NULL,
+    rezervasyon_id BIGINT  NULL,
     hareket_tipi VARCHAR(60) NOT NULL,
     baslik VARCHAR(180) NOT NULL,
     aciklama VARCHAR(500) NULL,
     puan_degisim INT NOT NULL,
     puan_bakiye_sonrasi INT NULL,
     durum VARCHAR(30) NOT NULL DEFAULT 'Tamamlandi',
-    islem_tarihi DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    gecerlilik_tarihi DATETIME NULL,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    islem_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
+    gecerlilik_tarihi DATETIME2 NULL,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     KEY idx_kullanici_puan_hareketleri_user_date (kullanici_id, islem_tarihi DESC),
     CONSTRAINT fk_kullanici_puan_hareketleri_user FOREIGN KEY (kullanici_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_kullanici_puan_hareketleri_hesap FOREIGN KEY (sadakat_hesap_id) REFERENCES kullanici_sadakat_hesaplari(id) ON DELETE SET NULL,
     CONSTRAINT fk_kullanici_puan_hareketleri_rez FOREIGN KEY (rezervasyon_id) REFERENCES rezervasyonlar(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE IF NOT EXISTS rozet_tanimlari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGINT  NOT NULL IDENTITY(1,1),
     kod VARCHAR(60) NOT NULL,
     ad VARCHAR(120) NOT NULL,
     aciklama VARCHAR(255) NULL,
@@ -68,46 +68,46 @@ CREATE TABLE IF NOT EXISTS rozet_tanimlari (
     rozet_rengi VARCHAR(20) NULL,
     hedef_deger INT NOT NULL DEFAULT 1,
     siralama INT NOT NULL DEFAULT 0,
-    aktif_mi TINYINT(1) NOT NULL DEFAULT 1,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aktif_mi BIT NOT NULL DEFAULT 1,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     UNIQUE KEY uq_rozet_tanimlari_kod (kod)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE IF NOT EXISTS kullanici_rozetleri (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    kullanici_id BIGINT UNSIGNED NOT NULL,
-    rozet_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    kullanici_id BIGINT  NOT NULL,
+    rozet_id BIGINT  NOT NULL,
     durum VARCHAR(30) NOT NULL DEFAULT 'Kilitli',
     ilerleme_degeri INT NOT NULL DEFAULT 0,
-    kazanilma_tarihi DATETIME NULL,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    kazanilma_tarihi DATETIME2 NULL,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     UNIQUE KEY uq_kullanici_rozetleri_user_rozet (kullanici_id, rozet_id),
     CONSTRAINT fk_kullanici_rozetleri_user FOREIGN KEY (kullanici_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_kullanici_rozetleri_rozet FOREIGN KEY (rozet_id) REFERENCES rozet_tanimlari(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE IF NOT EXISTS kullanici_dijital_pasaportlari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    kullanici_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    kullanici_id BIGINT  NOT NULL,
     sehir VARCHAR(120) NOT NULL,
     ulke VARCHAR(120) NULL,
     ilk_konaklama_tarihi DATE NULL,
     son_konaklama_tarihi DATE NULL,
     toplam_konaklama_sayisi INT NOT NULL DEFAULT 0,
     damga_kodu VARCHAR(80) NULL,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     UNIQUE KEY uq_kullanici_pasaport_sehir (kullanici_id, sehir),
     CONSTRAINT fk_kullanici_pasaport_user FOREIGN KEY (kullanici_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE IF NOT EXISTS kullanici_seyahat_planlari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    olusturan_kullanici_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    olusturan_kullanici_id BIGINT  NOT NULL,
     plan_kodu VARCHAR(80) NOT NULL,
     plan_adi VARCHAR(180) NOT NULL,
     hedef_sehir VARCHAR(120) NOT NULL,
@@ -117,32 +117,32 @@ CREATE TABLE IF NOT EXISTS kullanici_seyahat_planlari (
     para_birimi VARCHAR(10) NOT NULL DEFAULT 'TRY',
     davet_kodu VARCHAR(40) NULL,
     durum VARCHAR(30) NOT NULL DEFAULT 'Taslak',
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     UNIQUE KEY uq_kullanici_seyahat_planlari_plan_kodu (plan_kodu),
     KEY idx_kullanici_seyahat_planlari_user (olusturan_kullanici_id, durum),
     CONSTRAINT fk_kullanici_seyahat_planlari_user FOREIGN KEY (olusturan_kullanici_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE IF NOT EXISTS kullanici_seyahat_plan_otel_secimleri (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    plan_id BIGINT UNSIGNED NOT NULL,
-    otel_id BIGINT UNSIGNED NOT NULL,
-    ekleyen_kullanici_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    plan_id BIGINT  NOT NULL,
+    otel_id BIGINT  NOT NULL,
+    ekleyen_kullanici_id BIGINT  NOT NULL,
     oy_puani INT NOT NULL DEFAULT 0,
     notlar VARCHAR(255) NULL,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     UNIQUE KEY uq_seyahat_plan_otel (plan_id, otel_id),
     CONSTRAINT fk_seyahat_plan_otel_plan FOREIGN KEY (plan_id) REFERENCES kullanici_seyahat_planlari(id) ON DELETE CASCADE,
     CONSTRAINT fk_seyahat_plan_otel_otel FOREIGN KEY (otel_id) REFERENCES oteller(id) ON DELETE CASCADE,
     CONSTRAINT fk_seyahat_plan_otel_user FOREIGN KEY (ekleyen_kullanici_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE IF NOT EXISTS kullanici_ozel_teklifleri (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    kullanici_id BIGINT UNSIGNED NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    kullanici_id BIGINT  NULL,
     teklif_tipi VARCHAR(60) NOT NULL DEFAULT 'Kampanya',
     baslik VARCHAR(180) NOT NULL,
     aciklama VARCHAR(500) NULL,
@@ -152,43 +152,43 @@ CREATE TABLE IF NOT EXISTS kullanici_ozel_teklifleri (
     gecerlilik_baslangic DATE NOT NULL,
     gecerlilik_bitis DATE NOT NULL,
     buton_url VARCHAR(255) NULL,
-    aktif_mi TINYINT(1) NOT NULL DEFAULT 1,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    aktif_mi BIT NOT NULL DEFAULT 1,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     KEY idx_kullanici_ozel_teklifleri_user_dates (kullanici_id, aktif_mi, gecerlilik_baslangic, gecerlilik_bitis),
     CONSTRAINT fk_kullanici_ozel_teklifleri_user FOREIGN KEY (kullanici_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE IF NOT EXISTS kullanici_butce_planlari (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    kullanici_id BIGINT UNSIGNED NOT NULL,
+    id BIGINT  NOT NULL IDENTITY(1,1),
+    kullanici_id BIGINT  NOT NULL,
     hedef_sehir VARCHAR(120) NOT NULL,
     hedef_butce DECIMAL(12,2) NOT NULL,
     gece_sayisi INT NOT NULL DEFAULT 1,
     kisi_sayisi INT NOT NULL DEFAULT 1,
     para_birimi VARCHAR(10) NOT NULL DEFAULT 'TRY',
     notlar VARCHAR(255) NULL,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    guncellenme_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
+    guncellenme_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     KEY idx_kullanici_butce_planlari_user (kullanici_id, guncellenme_tarihi DESC),
     CONSTRAINT fk_kullanici_butce_planlari_user FOREIGN KEY (kullanici_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 CREATE TABLE IF NOT EXISTS sadakat_odulleri (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGINT  NOT NULL IDENTITY(1,1),
     kod VARCHAR(60) NOT NULL,
     ad VARCHAR(120) NOT NULL,
     aciklama VARCHAR(255) NULL,
     gerekli_puan INT NOT NULL,
     ikon VARCHAR(120) NULL,
     ton VARCHAR(30) NULL,
-    aktif_mi TINYINT(1) NOT NULL DEFAULT 1,
-    olusturulma_tarihi TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aktif_mi BIT NOT NULL DEFAULT 1,
+    olusturulma_tarihi DATETIME2 NOT NULL DEFAULT GETDATE(),
     PRIMARY KEY (id),
     UNIQUE KEY uq_sadakat_odulleri_kod (kod)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 INSERT IGNORE INTO sadakat_seviyeleri (kod, ad, minimum_puan, maximum_puan, renk_kodu, ikon, avantajlar_metin, sira_no, aktif_mi)
 VALUES
@@ -215,6 +215,6 @@ VALUES
 
 INSERT IGNORE INTO kullanici_ozel_teklifleri (kullanici_id, teklif_tipi, baslik, aciklama, kampanya_kodu, indirim_orani, minimum_sepet_tutari, gecerlilik_baslangic, gecerlilik_bitis, buton_url, aktif_mi)
 VALUES
-(NULL, 'Kampanya', 'Istanbul City Break', 'Sehir otellerinde hafta ici indirim.', 'CITYWEEK15', 15.00, 2500.00, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 45 DAY), '/oteller?q=istanbul', 1),
-(NULL, 'Kampanya', 'Sahil Kasifi Firsati', 'Yaz rotalari icin sahil konseptli secili oteller.', 'SAHIL10', 10.00, 3000.00, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 60 DAY), '/oteller?q=antalya', 1),
-(NULL, 'Sadakat', 'Gold Uye Bonus Kodu', 'Gold seviyesine ulasan kullanicilar icin ek kupon.', 'GOLDPLUS', 12.50, 2000.00, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), '/oteller', 1);
+(NULL, 'Kampanya', 'Istanbul City Break', 'Sehir otellerinde hafta ici indirim.', 'CITYWEEK15', 15.00, 2500.00, CAST(GETDATE() AS DATE), DATEADD(DAY, 45, CAST(GETDATE() AS DATE)), '/oteller?q=istanbul', 1),
+(NULL, 'Kampanya', 'Sahil Kasifi Firsati', 'Yaz rotalari icin sahil konseptli secili oteller.', 'SAHIL10', 10.00, 3000.00, CAST(GETDATE() AS DATE), DATEADD(DAY, 60, CAST(GETDATE() AS DATE)), '/oteller?q=antalya', 1),
+(NULL, 'Sadakat', 'Gold Uye Bonus Kodu', 'Gold seviyesine ulasan kullanicilar icin ek kupon.', 'GOLDPLUS', 12.50, 2000.00, CAST(GETDATE() AS DATE), DATEADD(DAY, 30, CAST(GETDATE() AS DATE)), '/oteller', 1);

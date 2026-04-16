@@ -80,14 +80,7 @@ INSERT INTO iller (id, plaka_kodu, il_adi, seo_slug, bolge, enlem, boylam, nufus
 (79, 79, 'Kilis', 'kilis', 'Güneydoğu Anadolu', 36.71667, 37.11667, 155179, 1),
 (80, 80, 'Osmaniye', 'osmaniye', 'Akdeniz', 37.06667, 36.25, 557666, 1),
 (81, 81, 'Düzce', 'duzce', 'Karadeniz', 40.83333, 31.16667, 409865, 1)
-ON DUPLICATE KEY UPDATE
-    il_adi = VALUES(il_adi),
-    seo_slug = VALUES(seo_slug),
-    bolge = VALUES(bolge),
-    enlem = VALUES(enlem),
-    boylam = VALUES(boylam),
-    nufus = VALUES(nufus),
-    aktif_mi = VALUES(aktif_mi);
+;
 
 INSERT INTO ilceler (il_id, dis_kod, api_kodu, ilce_adi, seo_slug, merkez_mi, enlem, boylam, nufus, aktif_mi) VALUES
 (1, NULL, 1757, 'Aladağ', 'aladag', 0, NULL, NULL, 16954, 1),
@@ -1063,12 +1056,4 @@ INSERT INTO ilceler (il_id, dis_kod, api_kodu, ilce_adi, seo_slug, merkez_mi, en
 (81, NULL, 2031, 'Kaynaşlı', 'kaynasli', 0, NULL, NULL, 20679, 1),
 (81, NULL, 1292, 'Merkez', 'merkez', 1, NULL, NULL, 259527, 1),
 (81, NULL, 1730, 'Yığılca', 'yigilca', 0, NULL, NULL, 14948, 1)
-ON DUPLICATE KEY UPDATE
-    api_kodu = VALUES(api_kodu),
-    ilce_adi = VALUES(ilce_adi),
-    seo_slug = VALUES(seo_slug),
-    merkez_mi = VALUES(merkez_mi),
-    enlem = COALESCE(VALUES(enlem), enlem),
-    boylam = COALESCE(VALUES(boylam), boylam),
-    nufus = VALUES(nufus),
-    aktif_mi = VALUES(aktif_mi);
+;

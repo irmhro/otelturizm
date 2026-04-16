@@ -47,7 +47,7 @@ SELECT
     'tr',
     'TRY',
     'Turkiye',
-    NOW()
+    GETDATE()
 FROM (
     SELECT 'Super Admin Root' AS ad_soyad, 'root@otelturizm.com' AS eposta, NULL AS telefon, 'super_admin' AS rol_kodu, 'YK' AS departman_kodu
     UNION ALL SELECT 'Genel Mudur', 'genelmudur@otelturizm.com', NULL, 'genel_mudur', 'GM'
@@ -72,7 +72,7 @@ INSERT INTO kullanici_rolleri (kullanici_id, rol_id, atama_tarihi)
 SELECT
     u.id,
     r.id,
-    NOW()
+    GETDATE()
 FROM (
     SELECT 'root@otelturizm.com' AS eposta, 'super_admin' AS rol_kodu
     UNION ALL SELECT 'genelmudur@otelturizm.com', 'genel_mudur'
@@ -100,7 +100,7 @@ SELECT
     u.id,
     d.id,
     r.rol_adi,
-    CURDATE(),
+    CAST(GETDATE() AS DATE),
     CASE WHEN r.seviye >= 70 THEN 1 ELSE 0 END
 FROM (
     SELECT 'root@otelturizm.com' AS eposta, 'YK' AS departman_kodu, 'super_admin' AS rol_kodu

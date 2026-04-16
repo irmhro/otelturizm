@@ -1,10 +1,10 @@
 SET NAMES utf8mb4;
 
 ALTER TABLE rezervasyonlar
-ADD COLUMN satis_temsilcisi_id BIGINT UNSIGNED NULL AFTER firma_calisan_id,
-ADD COLUMN satis_musteri_id BIGINT UNSIGNED NULL AFTER satis_temsilcisi_id,
-ADD COLUMN rezervasyon_kanali ENUM('Web','Mobil App','Telefon','Acente','Kurumsal','Satış Paneli') NULL AFTER kaynak,
-ADD COLUMN musteri_talep_notu TEXT NULL AFTER ozel_istekler;
+ADD satis_temsilcisi_id BIGINT  NULL,
+ADD satis_musteri_id BIGINT  NULL,
+ADD rezervasyon_kanali ENUM('Web','Mobil App','Telefon','Acente','Kurumsal','Satış Paneli') NULL,
+ADD musteri_talep_notu NVARCHAR(MAX) NULL;
 
 ALTER TABLE rezervasyonlar
 ADD INDEX idx_rez_sales_user (satis_temsilcisi_id, olusturulma_tarihi),

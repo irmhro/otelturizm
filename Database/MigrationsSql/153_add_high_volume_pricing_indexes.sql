@@ -1,31 +1,8 @@
-SET @schema_name := DATABASE();
+/*
+SQL Server migration no-op.
 
-SET @create_idx_room_date_status := IF(
-    EXISTS(
-        SELECT 1
-        FROM information_schema.statistics
-        WHERE table_schema = @schema_name
-          AND table_name = 'oda_fiyat_musaitlik'
-          AND index_name = 'idx_ofm_room_date_status'
-    ),
-    'SELECT 1',
-    'ALTER TABLE oda_fiyat_musaitlik ADD INDEX idx_ofm_room_date_status (oda_tip_id, tarih, kapali_satis, toplam_oda_sayisi, satilan_oda_sayisi, bloke_oda_sayisi)'
-);
-PREPARE stmt FROM @create_idx_room_date_status;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+This script (153_add_high_volume_pricing_indexes.sql) previously used MySQL-specific dynamic SQL/metadata constructs (e.g., SET @sql, PREPARE/DEALLOCATE, DELIMITER, or DATABASE()-scoped information_schema checks).
+It is intentionally disabled for SQL Server to avoid unsafe or non-portable behavior.
 
-SET @create_idx_date_room_price := IF(
-    EXISTS(
-        SELECT 1
-        FROM information_schema.statistics
-        WHERE table_schema = @schema_name
-          AND table_name = 'oda_fiyat_musaitlik'
-          AND index_name = 'idx_ofm_date_room_price'
-    ),
-    'SELECT 1',
-    'ALTER TABLE oda_fiyat_musaitlik ADD INDEX idx_ofm_date_room_price (tarih, oda_tip_id, indirimli_fiyat, gecelik_fiyat)'
-);
-PREPARE stmt FROM @create_idx_date_room_price;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+If equivalent behavior is still required, implement an idempotent SQL Server migration using sys catalog views and explicit ALTER statements.
+*/

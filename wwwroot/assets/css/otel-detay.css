@@ -102,8 +102,34 @@
     cursor: pointer;
 }
 
-.gallery-mobile-track {
+.gallery-mobile-strip {
     display: none;
+}
+
+.gallery-mobile-track {
+    display: grid;
+}
+
+.gallery-mobile-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.gallery-mobile-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    border: 0;
+    padding: 0;
+    background: #cbd5e1;
+}
+
+.gallery-mobile-dot.active {
+    width: 20px;
+    background: #1d4ed8;
 }
 
 .gallery-lightbox {
@@ -206,6 +232,10 @@
 .detail-location {
     color: #64748b;
     margin: 0;
+}
+
+.detail-location i {
+    color: #64748b;
 }
 
 .detail-utility-row {
@@ -551,6 +581,10 @@
     font-weight: 700;
     white-space: nowrap;
     box-shadow: 0 14px 28px rgba(29, 78, 216, 0.2);
+}
+
+.detail-weather-assistant-btn {
+    display: none;
 }
 
 .weather-popup-close {
@@ -923,6 +957,16 @@
     position: relative;
     z-index: 1;
     gap: 14px;
+}
+
+.amenities-more-btn {
+    margin-top: 14px;
+    border: 1px solid #dbe4f0;
+    border-radius: 999px;
+    background: #fff;
+    color: #1d4ed8;
+    padding: 10px 14px;
+    font-weight: 800;
 }
 
 .amenity-item-lux {
@@ -1302,7 +1346,7 @@
     border-top: 1px solid #e2e8f0;
 }
 
-.price-breakdown div {
+.price-breakdown > div:not(.price-breakdown-nightly) {
     display: flex;
     justify-content: space-between;
     gap: 16px;
@@ -1338,6 +1382,18 @@
     gap: 12px;
     color: #334155;
     font-size: .95rem;
+}
+
+.price-breakdown-item strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.price-breakdown-item-discount strong small {
+    color: #94a3b8;
+    text-decoration: line-through;
+    font-weight: 700;
 }
 
 .booking-quote-notice {
@@ -1438,6 +1494,28 @@
         align-items: stretch;
     }
 
+    .detail-header {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 22px;
+        padding: 16px;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .detail-header h1 {
+        font-size: 2rem;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+    }
+
+    .detail-stars {
+        margin-bottom: 8px;
+    }
+
+    .detail-location {
+        font-size: 0.98rem;
+    }
+
     .gallery-main-image {
         --detail-gallery-main-height: 253px;
         height: var(--detail-gallery-main-height);
@@ -1445,25 +1523,35 @@
 
     .gallery-side-grid { display: none; }
 
+    .gallery-mobile-strip {
+        display: block;
+        margin-top: 10px;
+    }
+
     .gallery-mobile-track {
-        display: grid;
         grid-auto-flow: column;
-        grid-auto-columns: minmax(210px, 70vw);
+        grid-auto-columns: minmax(78%, 78%);
         gap: 10px;
         overflow-x: auto;
         padding-bottom: 4px;
         scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+    }
+
+    .gallery-mobile-track::-webkit-scrollbar {
+        display: none;
     }
 
     .gallery-mobile-slide {
         border: 0;
         padding: 0;
         margin: 0;
-        height: 150px;
+        height: 158px;
         border-radius: 18px;
         overflow: hidden;
-        scroll-snap-align: start;
         background: #0f172a;
+        scroll-snap-align: center;
+        box-shadow: 0 16px 28px rgba(15, 23, 42, 0.16);
     }
 
     .gallery-mobile-slide img {
@@ -1477,6 +1565,21 @@
         text-align: left;
     }
 
+    .detail-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        gap: 8px;
+    }
+
+    .detail-actions > button {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 12px;
+        font-size: .86rem;
+        min-height: 42px;
+    }
+
     .share-menu {
         right: auto;
         left: 0;
@@ -1488,7 +1591,9 @@
     }
 
     .weather-popup {
-        padding: 20px;
+        padding: 16px;
+        max-height: min(86vh, 760px);
+        overflow-y: auto;
     }
 
     .weather-popup-header,
@@ -1501,10 +1606,19 @@
     .weather-inline-trigger {
         width: 100%;
         justify-content: space-between;
+        padding: 10px 12px 10px 10px;
+        border-radius: 18px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .weather-inline-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
     }
 
     .booking-card {
-        padding: 18px;
+        padding: 14px;
     }
 
     .booking-form {
@@ -1513,12 +1627,30 @@
 
     .booking-form input,
     .booking-form select {
-        padding: 12px 14px;
-        border-radius: 14px;
+        padding: 11px 12px;
+        border-radius: 12px;
     }
 
     .booking-advanced-fields {
         padding: 10px 12px;
+    }
+
+    .booking-price-head strong {
+        font-size: 1.6rem;
+    }
+
+    .discount-pill {
+        font-size: 0.74rem;
+        padding: 6px 9px;
+    }
+
+    .guest-row {
+        padding: 4px 0;
+    }
+
+    .reserve-btn {
+        margin-top: 2px;
+        min-height: 46px;
     }
 
     .gallery-lightbox {
@@ -1549,7 +1681,47 @@
     }
 
     .detail-actions {
-        flex-wrap: wrap;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .detail-header {
+        padding: 14px;
+        border-radius: 20px;
+    }
+
+    .detail-header h1 {
+        font-size: 1.82rem;
+    }
+
+    .detail-stars {
+        font-size: 0.96rem;
+        letter-spacing: 3px;
+    }
+
+    .detail-location {
+        font-size: 0.92rem;
+    }
+
+    .weather-inline-copy strong {
+        font-size: 0.95rem;
+    }
+
+    .weather-inline-copy small {
+        font-size: 0.78rem;
+    }
+
+    .detail-actions > button {
+        min-height: 46px;
+        border-radius: 999px;
+        border-color: #d7e2f0;
+        background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+        font-size: 0.95rem;
+        font-weight: 800;
+    }
+
+    .detail-actions > button i {
+        color: #1d4ed8;
     }
 
     .share-menu {
@@ -1565,6 +1737,14 @@
 
     .gallery-thumb {
         height: 138px;
+    }
+
+    .gallery-mobile-track {
+        grid-auto-columns: minmax(84%, 84%);
+    }
+
+    .gallery-mobile-slide {
+        height: 144px;
     }
 
     .room-card-main {
@@ -1612,6 +1792,54 @@
 
     .detail-weather-assistant-btn {
         width: 100%;
+    }
+
+    .featured-amenities-card .amenities-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .amenity-item-lux:nth-child(n + 5) {
+        display: none;
+    }
+
+    .room-card {
+        padding: 14px;
+        border-radius: 18px;
+    }
+
+    .room-card-main {
+        gap: 12px;
+    }
+
+    .room-price-box strong {
+        font-size: 1.6rem;
+    }
+
+    .review-summary {
+        gap: 14px;
+    }
+
+    .review-score {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .review-score strong {
+        font-size: 2.4rem;
+    }
+
+    .review-bars > div {
+        grid-template-columns: 58px minmax(0, 1fr) 28px;
+        gap: 8px;
+    }
+
+    .price-breakdown-nightly {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .amenities-modal-grid {
+        grid-template-columns: 1fr;
     }
 
     .detail-profile-form {
@@ -1917,3 +2145,9 @@
 
 .detail-modal-feedback.success { color: #047857; }
 .detail-modal-feedback.error { color: #b91c1c; }
+
+.amenities-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}

@@ -1,6 +1,16 @@
-SET @firma_id := (SELECT id FROM firmalar ORDER BY id ASC LIMIT 1);
-SET @firma_user_id := (SELECT id FROM users WHERE firma_id = @firma_id AND rol LIKE 'firma_%' ORDER BY id ASC LIMIT 1);
-SET @user_id := (SELECT id FROM users WHERE eposta = 'reservation.draft.test@otelturizm.com' LIMIT 1);
+DECLARE @firma_id BIGINT = (SELECT TOP (1) id FROM firmalar ORDER BY id ASC);
+DECLARE @firma_user_id BIGINT = (
+    SELECT TOP (1) id
+    FROM users
+    WHERE firma_id = @firma_id
+      AND rol LIKE 'firma_%'
+    ORDER BY id ASC
+);
+DECLARE @user_id BIGINT = (
+    SELECT TOP (1) id
+    FROM users
+    WHERE eposta = 'reservation.draft.test@otelturizm.com'
+);
 
 INSERT INTO mesaj_konusmalari
 (
@@ -17,7 +27,6 @@ SELECT
   'Kurumsal konaklama bilgilendirmesi', 'Firma', 'Firma', 'Açık', 'Normal',
   CURRENT_TIMESTAMP, 'Firma', 'Merhaba, kurumsal konaklama süreciniz için size yardımcı olabiliriz.',
   1, 0
-FROM DUAL
 WHERE @firma_id IS NOT NULL
   AND @user_id IS NOT NULL
   AND NOT EXISTS (
@@ -27,13 +36,13 @@ WHERE @firma_id IS NOT NULL
         AND konusma_turu = 'Firma'
   );
 
-SET @conversation_id := (
-    SELECT id FROM mesaj_konusmalari
+DECLARE @conversation_id BIGINT = (
+    SELECT TOP (1) id
+    FROM mesaj_konusmalari
     WHERE firma_id = @firma_id
       AND misafir_kullanici_id = @user_id
       AND konusma_turu = 'Firma'
     ORDER BY id DESC
-    LIMIT 1
 );
 
 INSERT INTO mesajlar
@@ -45,7 +54,6 @@ SELECT
   @conversation_id, 'Firma', @firma_user_id, @firma_id, @firma_user_id,
   'Merhaba, toplu konaklama veya çalışan rezervasyonları için bu güvenli alandan dosya ve belge paylaşabilirsiniz.',
   'Metin', 0, 'Gönderildi', CURRENT_TIMESTAMP
-FROM DUAL
 WHERE @conversation_id IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM mesajlar

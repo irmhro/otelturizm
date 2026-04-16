@@ -156,14 +156,14 @@
                 <a href="/panel/partner/oda-yonetimi?otelId=@Model.SelectedHotelId#room-form" class="partner-text-link">Yeni kayıt moduna dön</a>
             }
         </div>
-        <form method="post" action="/panel/partner/oda-yonetimi/kaydet" class="partner-form-grid">
+        <form method="post" action="/panel/partner/oda-yonetimi/kaydet" class="partner-form-grid" id="partnerRoomForm">
             @Html.AntiForgeryToken()
             <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
             <input type="hidden" name="RoomId" value="@Model.Form.RoomId" />
 
             <label>
                 <span>Oda adı</span>
-                <input type="text" name="RoomName" value="@Model.Form.RoomName" placeholder="Örn. Deluxe Deniz Manzaralı Oda" />
+                <input type="text" name="RoomName" value="@Model.Form.RoomName" placeholder="Örn. Deluxe Deniz Manzaralı Oda" required />
             </label>
             <label>
                 <span>Oda kategorisi</span>
@@ -183,23 +183,28 @@
             </label>
             <label>
                 <span>Taban fiyat</span>
-                <input type="number" step="0.01" name="BasePrice" value="@Model.Form.BasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                <input type="number" step="0.01" name="BasePrice" value="@Model.Form.BasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)" min="0.01" required />
             </label>
             <label>
                 <span>Toplam oda</span>
-                <input type="number" name="TotalRooms" value="@Model.Form.TotalRooms" min="1" />
+                <input type="number" name="TotalRooms" value="@Model.Form.TotalRooms" min="1" required />
             </label>
             <label>
                 <span>Maks. yetişkin</span>
-                <input type="number" name="MaxAdults" value="@Model.Form.MaxAdults" min="1" />
+                <input type="number" name="MaxAdults" value="@Model.Form.MaxAdults" min="1" max="20" required />
             </label>
             <label>
                 <span>Maks. çocuk</span>
-                <input type="number" name="MaxChildren" value="@Model.Form.MaxChildren" min="0" />
+                <input type="number" name="MaxChildren" value="@Model.Form.MaxChildren" min="0" max="20" required />
             </label>
             <label>
                 <span>Bebek kapasitesi</span>
-                <input type="number" name="MaxBabies" value="@Model.Form.MaxBabies" min="0" />
+                <input type="number" name="MaxBabies" value="@Model.Form.MaxBabies" min="0" max="20" required />
+            </label>
+            <label class="partner-form-span">
+                <span>Kişi kapasitesi özeti</span>
+                <input type="text" id="roomCapacitySummary" value="@(Math.Max(1, Model.Form.MaxAdults + Model.Form.MaxChildren + Model.Form.MaxBabies)) kişi (Yetişkin: @Model.Form.MaxAdults, Çocuk: @Model.Form.MaxChildren, Bebek: @Model.Form.MaxBabies)" readonly />
+                <small>Toplam kişi kapasitesi otomatik hesaplanır ve rezervasyon tarafında bu sınır uygulanır.</small>
             </label>
             <label>
                 <span>Oda büyüklüğü (m²)</span>
@@ -351,3 +356,81 @@
         }
     </article>
 </section>
+
+<script>
+    (function () {
+        const roomForm = document.getElementById('partnerRoomForm');
+        if (!roomForm) {
+            return;
+        }
+
+        const maxAdultsInput = roomForm.querySelector('input[name="MaxAdults"]');
+        const maxChildrenInput = roomForm.querySelector('input[name="MaxChildren"]');
+        const maxBabiesInput = roomForm.querySelector('input[name="MaxBabies"]');
+        const totalRoomsInput = roomForm.querySelector('input[name="TotalRooms"]');
+        const capacitySummary = document.getElementById('roomCapacitySummary');
+
+        function parseByte(input, fallback) {
+            const value = parseInt(input?.value || String(fallback), 10);
+            if (Number.isNaN(value)) {
+                return fallback;
+            }
+
+            return Math.max(0, value);
+        }
+
+        function refreshCapacitySummary() {
+            const adults = Math.max(1, parseByte(maxAdultsInput, 1));
+            const children = parseByte(maxChildrenInput, 0);
+            const babies = parseByte(maxBabiesInput, 0);
+            const total = adults + children + babies;
+
+            if (capacitySummary) {
+                capacitySummary.value = total + ' kişi (Yetişkin: ' + adults + ', Çocuk: ' + children + ', Bebek: ' + babies + ')';
+            }
+        }
+
+        function validateRoomCapacity() {
+            const adults = Math.max(1, parseByte(maxAdultsInput, 1));
+            const children = parseByte(maxChildrenInput, 0);
+            const babies = parseByte(maxBabiesInput, 0);
+            const totalRooms = Math.max(1, parseInt(totalRoomsInput?.value || '1', 10) || 1);
+            const total = adults + children + babies;
+
+            if (totalRooms < 1) {
+                alert('Toplam oda sayısı en az 1 olmalıdır.');
+                totalRoomsInput?.focus();
+                return false;
+            }
+
+            if (adults < 1) {
+                alert('Maksimum yetişkin sayısı en az 1 olmalıdır.');
+                maxAdultsInput?.focus();
+                return false;
+            }
+
+            if (total < 1) {
+                alert('Toplam kişi kapasitesi en az 1 olmalıdır.');
+                maxAdultsInput?.focus();
+                return false;
+            }
+
+            return true;
+        }
+
+        [maxAdultsInput, maxChildrenInput, maxBabiesInput].forEach(function (input) {
+            input?.addEventListener('input', refreshCapacitySummary);
+        });
+
+        roomForm.addEventListener('submit', function (event) {
+            if (!validateRoomCapacity()) {
+                event.preventDefault();
+                return;
+            }
+
+            refreshCapacitySummary();
+        });
+
+        refreshCapacitySummary();
+    })();
+</script>
