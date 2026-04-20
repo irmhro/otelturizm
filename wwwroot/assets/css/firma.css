@@ -655,15 +655,19 @@ body.firma-mobile-open {
 }
 
 .firma-footer {
-    background: #0f172a;
+    background: linear-gradient(135deg, #0b132b 0%, #102544 52%, #2a1638 100%);
     color: #dbe5f4;
-    padding: 38px 0;
+    padding: 38px 0 22px;
 }
 
 .firma-footer-shell {
     display: grid;
-    grid-template-columns: 1.3fr .7fr .7fr;
+    grid-template-columns: 1.2fr .8fr .8fr .8fr;
     gap: 24px;
+}
+
+.firma-footer-col p {
+    color: #b9c8df;
 }
 
 .firma-footer-logo {
@@ -682,6 +686,50 @@ body.firma-mobile-open {
     margin-bottom: 8px;
     color: #dbe5f4;
     text-decoration: none;
+}
+
+.firma-footer-shell a:hover {
+    color: #ffffff;
+}
+
+.firma-footer-bottom {
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(148, 163, 184, .28);
+    display: grid;
+    gap: 10px;
+}
+
+.firma-footer-meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.firma-footer-copyright {
+    color: #b4c2d8;
+    font-size: 14px;
+}
+
+.firma-footer-agency {
+    color: #f7d36b;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .03em;
+    text-align: right;
+}
+
+.firma-footer-legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.firma-footer-legal-links a {
+    color: #a7d4ff;
+    text-decoration: none;
+    font-size: 13px;
 }
 
 .mobile-menu-overlay,
@@ -712,6 +760,16 @@ body.firma-mobile-open {
     .firma-benefits-grid,
     .firma-footer-shell {
         grid-template-columns: 1fr;
+    }
+
+    .firma-footer-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 10px;
+    }
+
+    .firma-footer-agency {
+        text-align: left;
     }
 
     .mobile-menu-overlay {

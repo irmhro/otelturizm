@@ -1,19 +1,38 @@
 @model otelturizmnew.Models.Firma.FirmaLandingPageViewModel
 <footer class="firma-footer">
     <div class="site-shell firma-footer-shell">
-        <div>
+        <div class="firma-footer-col firma-footer-col-brand">
             <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="firma-footer-logo" />
             <p>Kurumsal konaklama, özel fiyat ve raporlama altyapısı ile otel-firma operasyonunu tek platformda birleştirir.</p>
         </div>
-        <div>
+        <div class="firma-footer-col">
             <h4>Firma Alanları</h4>
             <a href="/firma">Firma Anasayfa</a>
             <a href="/panel/firma">Firma Paneli</a>
+            <a href="/oteller">Tüm Oteller</a>
         </div>
-        <div>
+        <div class="firma-footer-col">
             <h4>Destek</h4>
             <a href="/yardim-merkezi">Yardım Merkezi</a>
             <a href="/sss">SSS</a>
+            <a asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>
+        </div>
+        <div class="firma-footer-col">
+            <h4>Kurumsal</h4>
+            <a href="/kurumsal">Hakkımızda</a>
+            <a href="/partner-giris">Partner Girişi</a>
+            <a href="/yardim-merkezi#destek-kanallari">İletişim</a>
+        </div>
+    </div>
+    <div class="site-shell firma-footer-bottom">
+        <div class="firma-footer-meta">
+            <span class="firma-footer-copyright">&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</span>
+            <span class="firma-footer-agency">216 SPECİAL KARTAL TURİZM SEYEHAT ACENTASI</span>
+        </div>
+        <div class="firma-footer-legal-links">
+            <a asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>
+            <a href="/yardim-merkezi#destek-kanallari">Kullanım Koşulları</a>
+            <a href="/yardim-merkezi#destek-kanallari">KVKK</a>
         </div>
     </div>
 </footer>

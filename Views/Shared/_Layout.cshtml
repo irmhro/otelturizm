@@ -96,7 +96,9 @@
     <div class="drawer-scroll">
         <div class="drawer-header">
             <div class="drawer-user">
-                <div class="user-avatar">OT</div>
+                <div class="drawer-brand-mark">
+                    <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="drawer-brand-logo" />
+                </div>
                 <div>
                     <h4>Otelturizm</h4>
                     <p class="drawer-sub">Her aramada size özel fırsatlar. Hemen keşfetmeye başlayın.</p>
@@ -172,15 +174,6 @@
     </div>
 </div>
 
-<nav class="mobile-bottom-nav">
-    <div class="bottom-nav-items">
-        <a href="/" class="bottom-nav-item bottom-nav-home"><i class="fas fa-house"></i><span>Anasayfa</span></a>
-        <a href="/oteller/istanbul" class="bottom-nav-item bottom-nav-oteller active"><i class="fas fa-hotel"></i><span>Oteller</span></a>
-        <a href="/oteller/istanbul?filter=campaign" class="bottom-nav-item bottom-nav-kampanya"><i class="fas fa-badge-percent"></i><span>Kampanyalar</span></a>
-        <a href="/kullanici-giris" class="bottom-nav-item bottom-nav-giris"><i class="fas fa-right-to-bracket"></i><span>Giriş Yap</span></a>
-    </div>
-</nav>
-
 <main class="site-main">@RenderBody()</main>
 
 <footer class="site-footer compact-footer">
@@ -230,15 +223,17 @@
         </div>
 
         <div class="footer-bottom">
+            <div class="footer-bottom-top">
+                <small class="footer-copyright">&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</small>
+                <div class="footer-agency-note">216 SPECİAL KARTAL TURİZM SEYEHAT ACENTASI</div>
+            </div>
             <div class="footer-copy-links">
-                <small>&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</small>
                 <div class="footer-legal-links">
                     <a asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>
                     <a href="/yardim-merkezi#destek-kanallari">Kullanım Koşulları</a>
                     <a href="/yardim-merkezi#destek-kanallari">KVKK</a>
                 </div>
             </div>
-            <div class="footer-agency-note">216 SPECİAL KARTAL TURİZM SEYEHAT ACENTASI</div>
         </div>
     </div>
 </footer>

@@ -5,10 +5,14 @@
         <span>Otelturizm Business</span>
     </div>
     <div class="firma-footer-legal">
-        <span>&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</span>
-        <a asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>
-        <a href="/yardim-merkezi#destek-kanallari">Kullanım Koşulları</a>
-        <a href="/yardim-merkezi#destek-kanallari">KVKK</a>
-        <span class="firma-footer-agency">216 SPECİAL KARTAL TURİZM SEYEHAT ACENTASI</span>
+        <div class="firma-footer-meta">
+            <span class="firma-footer-copyright">&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</span>
+            <span class="firma-footer-agency">216 SPECİAL KARTAL TURİZM SEYEHAT ACENTASI</span>
+        </div>
+        <div class="firma-footer-links">
+            <a asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>
+            <a href="/yardim-merkezi#destek-kanallari">Kullanım Koşulları</a>
+            <a href="/yardim-merkezi#destek-kanallari">KVKK</a>
+        </div>
     </div>
 </footer>
