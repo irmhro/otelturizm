@@ -11,61 +11,104 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <title>@title - Otelturizm</title>
-    
-    
-    <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
-    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/vendor/AdminLTE-3.2.0/plugins/fontawesome-free/css/all.min.css" />
+    <link rel="stylesheet" href="~/vendor/AdminLTE-3.2.0/plugins/icheck-bootstrap/icheck-bootstrap.min.css" />
+    <link rel="stylesheet" href="~/vendor/AdminLTE-3.2.0/dist/css/adminlte.min.css" />
     <link rel="stylesheet" href="~/assets/css/panel-admin-shell.css" asp-append-version="true" />
     @if (!string.IsNullOrWhiteSpace(pageCss))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
     }
 </head>
-<body>
-    <div class="admin-dashboard-shell">
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
+    <div class="wrapper">
         @if (shell is not null)
         {
+            <partial name="~/Views/Paneller/Admin/_AdminTopNav.cshtml" model="shell" />
             <partial name="~/Views/Paneller/Admin/_AdminSidebar.cshtml" model="shell" />
         }
 
-        <main class="admin-dashboard-main">
+        <div class="content-wrapper">
             @if (shell is not null)
             {
-                <header class="admin-page-header">
-                    <div>
-                        <p class="admin-page-kicker">ADMIN PANEL</p>
-                        <h1>@shell.PanelTitle</h1>
-                        <p class="admin-page-subtitle">@shell.PanelSubtitle</p>
-                    </div>
-                    <div class="admin-header-tools">
-                        <div class="admin-search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" placeholder="Admin panel icinde ara..." />
+                <section class="content-header">
+                    <div class="container-fluid">
+                        <div class="row mb-2">
+                            <div class="col-sm-12">
+                                <h1 class="m-0">@shell.PanelTitle</h1>
+                                <small class="text-muted">@shell.PanelSubtitle</small>
+                            </div>
                         </div>
-                        <div class="admin-notify-pill"><i class="far fa-bell"></i><span>@shell.UnreadNotifications</span></div>
-                        <form method="post" action="/cikis-yap" class="panel-header-logout-form">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="panel-header-logout-btn">
-                                <i class="fas fa-right-from-bracket"></i>
-                                <span>Cikis Yap</span>
-                            </button>
-                        </form>
                     </div>
-                </header>
+                </section>
             }
 
-            @RenderBody()
-        </main>
+            <section class="content">
+                <div class="container-fluid">
+                    @RenderBody()
+                </div>
+            </section>
+        </div>
+
+        @if (shell is not null)
+        {
+            <partial name="~/Views/Paneller/Admin/_AdminFooter.cshtml" />
+        }
     </div>
 
-    @if (shell is not null)
-    {
-        <partial name="~/Views/Paneller/Admin/_AdminMobileNav.cshtml" model="shell" />
-    }
+    <script src="~/vendor/AdminLTE-3.2.0/plugins/jquery/jquery.min.js"></script>
+    <script src="~/vendor/AdminLTE-3.2.0/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/vendor/AdminLTE-3.2.0/dist/js/adminlte.min.js"></script>
+    <script>
+        (function () {
+            var content = document.querySelector('.content-wrapper');
+            if (!content) {
+                return;
+            }
+
+            content.querySelectorAll('input').forEach(function (el) {
+                var type = (el.getAttribute('type') || 'text').toLowerCase();
+                if (type === 'checkbox' || type === 'radio') {
+                    if (!el.classList.contains('form-check-input')) {
+                        el.classList.add('form-check-input');
+                    }
+                    return;
+                }
+                if (type === 'file') {
+                    if (!el.classList.contains('form-control-file')) {
+                        el.classList.add('form-control-file');
+                    }
+                    return;
+                }
+                if (!el.classList.contains('form-control')) {
+                    el.classList.add('form-control');
+                }
+                if (!el.classList.contains('form-control-sm')) {
+                    el.classList.add('form-control-sm');
+                }
+            });
+
+            content.querySelectorAll('select, textarea').forEach(function (el) {
+                if (!el.classList.contains('form-control')) {
+                    el.classList.add('form-control');
+                }
+                if (!el.classList.contains('form-control-sm')) {
+                    el.classList.add('form-control-sm');
+                }
+            });
+
+            content.querySelectorAll('button').forEach(function (el) {
+                if (el.classList.contains('btn')) {
+                    return;
+                }
+                el.classList.add('btn', 'btn-primary', 'btn-sm');
+            });
+
+            content.querySelectorAll('table.admin-table').forEach(function (el) {
+                el.classList.add('table', 'table-striped', 'table-hover', 'text-nowrap');
+            });
+        })();
+    </script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>
-
-
-
-

@@ -1,3 +1,5 @@
 <Solution>
-  <Project Path="otelturizmnew.csproj" />
+  <Project Path="otelturizmnew.csproj">
+    <BuildType Project="Release" />
+  </Project>
 </Solution>

@@ -5,82 +5,77 @@
     ViewData["AdminShell"] = Model.Shell;
 }
 
-<section class="admin-summary-grid">
+<div class="row">
     @foreach (var card in Model.SummaryCards)
     {
-        <article class="admin-summary-card @card.ToneClass">
-            <div class="summary-icon"><i class="fas @card.IconClass"></i></div>
-            <div>
-                <p>@card.Label</p>
-                <h2>@card.Value</h2>
-                <span>@card.Description</span>
+        <div class="col-lg-3 col-md-6 col-12">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h3>@card.Value</h3>
+                    <p>@card.Label</p>
+                    <small>@card.Description</small>
+                </div>
+                <div class="icon"><i class="fas @card.IconClass"></i></div>
             </div>
-        </article>
+        </div>
     }
-</section>
+</div>
 
 @if (TempData["AdminHotelMessage"] is string successMessage)
 {
-    <div class="admin-alert is-success"><i class="fas fa-circle-check"></i><span>@successMessage</span></div>
+    <div class="alert alert-success">@successMessage</div>
 }
 @if (TempData["AdminHotelError"] is string errorMessage)
 {
-    <div class="admin-alert is-error"><i class="fas fa-triangle-exclamation"></i><span>@errorMessage</span></div>
+    <div class="alert alert-danger">@errorMessage</div>
 }
 
-<section class="admin-section-card admin-hotel-listing-card">
-    <div class="admin-section-head admin-hotel-listing-head">
-        <div>
-            <p class="mini-caption">MERKEZI OTEL YONETIMI</p>
-            <h2>Otel kayitlari</h2>
-            <p>Her otel icin oda, otel gorseli, oda gorseli ve temel operasyon bilgilerini tek tikla yonetin.</p>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Merkezi otel yönetimi</h3>
+        <div class="card-tools">
+            <form method="get" action="/admin/oteller" class="input-group input-group-sm" style="width: 280px;">
+                <input type="text" name="q" value="@Model.SearchTerm" class="form-control float-right" placeholder="Otel adı, kodu, şehir..." />
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
+                </div>
+            </form>
         </div>
-        <form method="get" action="/admin/oteller" class="admin-hotel-search-form">
-            <input type="text" name="q" value="@Model.SearchTerm" placeholder="Otel adi, kodu, sehir veya ilce ile ara" />
-            <button type="submit" class="admin-action-btn primary"><i class="fas fa-magnifying-glass"></i> Filtrele</button>
-        </form>
     </div>
-
-    @if (Model.Hotels.Count == 0)
-    {
-        <div class="admin-empty-state">Arama kriterlerine uygun otel bulunamadi.</div>
-    }
-    else
-    {
-        <div class="admin-hotel-card-grid">
-            @foreach (var hotel in Model.Hotels)
-            {
-                <article class="admin-hotel-card">
-                    <div class="admin-hotel-card-head">
-                        <div>
-                            <span class="admin-chip muted">@hotel.HotelCode</span>
-                            @if (hotel.IsFeatured)
-                            {
-                                <span class="admin-chip success">One Cikan</span>
-                            }
-                            <h3>@hotel.HotelName</h3>
-                            <p>@hotel.LocationText</p>
+    <div class="card-body">
+        @if (Model.Hotels.Count == 0)
+        {
+            <div class="alert alert-secondary mb-0">Arama kriterlerine uygun otel bulunamadı.</div>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var hotel in Model.Hotels)
+                {
+                    <div class="col-lg-4 col-md-6">
+                        <div class="card card-outline card-info">
+                            <div class="card-header">
+                                <h3 class="card-title">@hotel.HotelName</h3>
+                                <div class="card-tools">
+                                    <span class="badge badge-light">@hotel.HotelCode</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2 text-muted">@hotel.LocationText</p>
+                                <div class="mb-2"><i class="fas fa-hotel mr-1"></i>@hotel.HotelType</div>
+                                <div class="mb-2"><i class="fas fa-bed mr-1"></i>@hotel.RoomCount oda tipi</div>
+                                <div class="mb-2"><i class="fas fa-image mr-1"></i>@hotel.HotelPhotoCount otel görseli</div>
+                                <div class="mb-2"><i class="fas fa-camera mr-1"></i>@hotel.RoomPhotoCount oda görseli</div>
+                                <div class="mb-2"><span class="badge badge-info">Yayın: @hotel.PublishStatus</span></div>
+                                <div class="mb-3"><span class="badge badge-warning">Onay: @hotel.ApprovalStatus</span></div>
+                                <a class="btn btn-primary btn-sm" href="/admin/oteller/duzenle/@hotel.HotelId">
+                                    <i class="fas fa-pen mr-1"></i>Oteli Düzenle
+                                </a>
+                            </div>
                         </div>
-                        <div class="admin-hotel-score">@hotel.ScoreText</div>
                     </div>
-                    <div class="admin-hotel-card-meta">
-                        <span><i class="fas fa-hotel"></i> @hotel.HotelType</span>
-                        <span><i class="fas fa-bed"></i> @hotel.RoomCount oda tipi</span>
-                        <span><i class="fas fa-image"></i> @hotel.HotelPhotoCount otel gorseli</span>
-                        <span><i class="fas fa-camera-retro"></i> @hotel.RoomPhotoCount oda gorseli</span>
-                    </div>
-                    <div class="admin-hotel-card-statuses">
-                        <span class="admin-chip">Yayin: @hotel.PublishStatus</span>
-                        <span class="admin-chip warning">Onay: @hotel.ApprovalStatus</span>
-                    </div>
-                    <div class="admin-hotel-card-actions">
-                        <a class="admin-action-btn primary" href="/admin/oteller/duzenle/@hotel.HotelId">
-                            <i class="fas fa-pen-to-square"></i>
-                            Oteli Duzenle
-                        </a>
-                    </div>
-                </article>
-            }
-        </div>
-    }
-</section>
+                }
+            </div>
+        }
+    </div>
+</div>

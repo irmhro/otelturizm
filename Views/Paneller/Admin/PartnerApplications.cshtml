@@ -4,83 +4,79 @@
     ViewData["AdminShell"] = Model.Shell;
 }
 
-<section class="admin-section-grid">
+<div class="row">
     @foreach (var card in Model.SummaryCards)
     {
-        <article class="admin-summary-card">
-            <div class="admin-summary-card__icon"><i class="fas @card.IconClass"></i></div>
-            <div>
-                <span>@card.Label</span>
-                <strong>@card.Value</strong>
-                <p>@card.Description</p>
+        <div class="col-lg-3 col-md-6 col-12">
+            <div class="small-box bg-info">
+                <div class="inner">
+                    <h3>@card.Value</h3>
+                    <p>@card.Label</p>
+                    <small>@card.Description</small>
+                </div>
+                <div class="icon"><i class="fas @card.IconClass"></i></div>
             </div>
-        </article>
-    }
-</section>
-
-<section class="admin-section-card">
-    <div class="admin-section-header">
-        <div>
-            <h2>Partner basvuru listesi</h2>
-            <p>E-posta dogrulama, belge yukleme ve admin kararini tek ekrandan yonetin.</p>
         </div>
+    }
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Partner başvuru listesi</h3>
     </div>
-
-    @if (Model.Applications.Count == 0)
-    {
-        <div class="admin-empty-state">
-            <strong>Bekleyen partner basvurusu bulunmuyor.</strong>
-            <span>Yeni bir partner basvurusu geldikce bu alanda listelenecek.</span>
-        </div>
-    }
-    else
-    {
-        <div class="admin-partner-application-list">
+    <div class="card-body">
+        @if (Model.Applications.Count == 0)
+        {
+            <div class="alert alert-secondary mb-0">Bekleyen partner başvurusu bulunmuyor.</div>
+        }
+        else
+        {
             @foreach (var application in Model.Applications)
             {
-                <article class="admin-partner-application-card">
-                    <div class="admin-partner-application-main">
-                        <div>
-                            <span class="admin-eyebrow">PARTNER #@application.PartnerId</span>
-                            <h3>@application.CompanyName</h3>
-                            <p>@application.HotelName</p>
+                <div class="card card-outline card-primary mb-3">
+                    <div class="card-header">
+                        <h3 class="card-title">@application.CompanyName</h3>
+                        <div class="card-tools">
+                            <span class="badge @(application.StatusToneClass?.Contains("danger") == true ? "badge-danger" : "badge-warning")">@application.StatusText</span>
                         </div>
-                        <span class="admin-status-chip @application.StatusToneClass">@application.StatusText</span>
                     </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6"><strong>Otel:</strong> @application.HotelName</div>
+                            <div class="col-md-6"><strong>Yetkili:</strong> @application.ContactName</div>
+                            <div class="col-md-6"><strong>E-posta:</strong> @application.Email</div>
+                            <div class="col-md-6"><strong>Vergi No:</strong> @application.TaxNumber</div>
+                            <div class="col-md-6"><strong>Kayıt:</strong> @application.RegistrationDateText</div>
+                            <div class="col-md-6"><strong>E-posta Onayı:</strong> @(application.EmailVerified ? "Tamamlandı" : "Bekleniyor")</div>
+                        </div>
 
-                    <div class="admin-partner-meta">
-                        <span><strong>Yetkili:</strong> @application.ContactName</span>
-                        <span><strong>E-posta:</strong> @application.Email</span>
-                        <span><strong>Vergi No:</strong> @application.TaxNumber</span>
-                        <span><strong>Kayit:</strong> @application.RegistrationDateText</span>
-                        <span><strong>E-posta Onayi:</strong> @(application.EmailVerified ? "Tamamlandi" : "Bekleniyor")</span>
-                        <span><strong>Belge:</strong> @application.DocumentCount</span>
+                        @if (!string.IsNullOrWhiteSpace(application.ReviewNote))
+                        {
+                            <div class="alert alert-light border">@application.ReviewNote</div>
+                        }
+
+                        <form method="post" action="/admin/partner-basvurulari/durum">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="PartnerId" value="@application.PartnerId" />
+                            <div class="row">
+                                <div class="col-md-4 form-group">
+                                    <label>Karar</label>
+                                    <select name="TargetStatus" class="form-control">
+                                        <option value="Onaylandi" selected="@(application.StatusText == "Onaylandi" ? "selected" : null)">Onayla</option>
+                                        <option value="Askida" selected="@(application.StatusText == "Askida" ? "selected" : null)">Askıya al</option>
+                                        <option value="Reddedildi" selected="@(application.StatusText == "Reddedildi" ? "selected" : null)">Reddet</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8 form-group">
+                                    <label>Not</label>
+                                    <textarea name="Note" rows="2" class="form-control" placeholder="Partnera gösterilecek not">@application.ReviewNote</textarea>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Kararı Kaydet</button>
+                        </form>
                     </div>
-
-                    @if (!string.IsNullOrWhiteSpace(application.ReviewNote))
-                    {
-                        <div class="admin-partner-note">@application.ReviewNote</div>
-                    }
-
-                    <form method="post" action="/admin/partner-basvurulari/durum" class="admin-partner-decision-form">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="PartnerId" value="@application.PartnerId" />
-                        <label>
-                            <span>Karar</span>
-                            <select name="TargetStatus">
-                                <option value="Onaylandi" selected="@(application.StatusText == "Onaylandi" ? "selected" : null)">Onayla</option>
-                                <option value="Askida" selected="@(application.StatusText == "Askida" ? "selected" : null)">Askıya Al</option>
-                                <option value="Reddedildi" selected="@(application.StatusText == "Reddedildi" ? "selected" : null)">Reddet</option>
-                            </select>
-                        </label>
-                        <label class="full-span">
-                            <span>Not</span>
-                            <textarea name="Note" rows="3" placeholder="Partnera gorunecek aciklama veya ic not.">@application.ReviewNote</textarea>
-                        </label>
-                        <button type="submit" class="admin-primary-btn">Karari Kaydet</button>
-                    </form>
-                </article>
+                </div>
             }
-        </div>
-    }
-</section>
+        }
+    </div>
+</div>
