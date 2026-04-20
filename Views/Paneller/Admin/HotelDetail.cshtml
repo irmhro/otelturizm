@@ -8,6 +8,10 @@
         || string.Equals(currentUserRole, "superadmin", StringComparison.OrdinalIgnoreCase)
         || User.IsInRole("admin")
         || User.IsInRole("superadmin");
+    var isHotelPassive = string.Equals(Model.HotelForm.PublishStatus, "Kapatıldı", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Model.HotelForm.PublishStatus, "Kapal\u0131", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Model.HotelForm.PublishStatus, "Askıda", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Model.HotelForm.PublishStatus, "Askida", StringComparison.OrdinalIgnoreCase);
     var hotelTypes = new[] { "Hotel", "Otel", "Butik Otel", "Apart Otel", "Villa", "Pansiyon", "Tatil Köyü", "Hostel", "Kamping", "Apartman Dairesi", "Resort Hotel", "City Hotel", "Business Hotel", "Airport Hotel", "Boutique Hotel", "Bungalow", "Glamping", "Residence", "Motel", "Thermal Hotel", "Ski Hotel", "Beach Hotel", "Luxury Hotel" };
     var tourismTypes = new[] { "Turizm İşletme Belgeli", "Turizm Yatırım Belgeli", "Belediye Belgeli", "Basit Konaklama Belgeli", "Belgesiz" };
     var publishStatuses = new[] { "Taslak", "Yayında", "Bakımda", "Sezon Dışı", "Kapatıldı", "Askıda" };
@@ -59,11 +63,22 @@
     <div class="admin-hotel-command-actions">
         @if (canDeactivateHotel)
         {
-            <form method="post" action="/admin/oteller/pasife-al" onsubmit="return confirm('Oteli pasif duruma almak istediginize emin misiniz?');">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" />
-                <button type="submit" class="admin-action-btn danger"><i class="fas fa-ban"></i> Oteli Pasife Al</button>
-            </form>
+            @if (isHotelPassive)
+            {
+                <form method="post" action="/admin/oteller/aktive-et" onsubmit="return confirm('Oteli tekrar aktif duruma almak istediginize emin misiniz?');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" />
+                    <button type="submit" class="admin-action-btn primary"><i class="fas fa-power-off"></i> Oteli Aktif Et</button>
+                </form>
+            }
+            else
+            {
+                <form method="post" action="/admin/oteller/pasife-al" onsubmit="return confirm('Oteli pasif duruma almak istediginize emin misiniz?');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" />
+                    <button type="submit" class="admin-action-btn danger"><i class="fas fa-ban"></i> Oteli Pasife Al</button>
+                </form>
+            }
         }
         else
         {

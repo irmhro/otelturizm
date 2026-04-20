@@ -145,6 +145,26 @@ public class AdminPanelController : Controller
         return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
     }
 
+    [HttpPost("oteller/aktive-et")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ActivateHotel(long hotelId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!CanPerformCriticalAdminActions())
+        {
+            TempData["AdminHotelError"] = "Bu islem yalnizca admin yetkisi ile yapilabilir.";
+            return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+        }
+
+        var result = await _adminHotelManagementService.ActivateHotelAsync(hotelId, GetUserId(), cancellationToken);
+        TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+    }
+
     [HttpPost("oteller/otel-fotograf-yukle")]
     [ValidateAntiForgeryToken]
     [RequestFormLimits(MultipartBodyLengthLimit = 314572800)]

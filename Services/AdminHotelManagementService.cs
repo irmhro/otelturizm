@@ -386,6 +386,30 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 : (false, "Otel bulunamadi veya guncellenemedi.");
         }
 
+        public async Task<(bool Success, string Message)> ActivateHotelAsync(long hotelId, long adminUserId, CancellationToken cancellationToken = default)
+        {
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+            await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
+
+            const string sql = @"
+                UPDATE oteller
+                SET yayin_durumu = CASE
+                        WHEN onay_durumu IN ('Onaylandı', 'Onaylandi') THEN 'Yayında'
+                        ELSE 'Taslak'
+                    END,
+                    onaylayan_admin_id = @adminUserId,
+                    guncellenme_tarihi = SYSUTCDATETIME()
+                WHERE id = @hotelId;";
+            await using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@hotelId", hotelId);
+            command.Parameters.AddWithValue("@adminUserId", adminUserId);
+            var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+            return affectedRows > 0
+                ? (true, "Otel tekrar aktif duruma alindi.")
+                : (false, "Otel bulunamadi veya guncellenemedi.");
+        }
+
         public async Task<(bool Success, string Message)> DeactivateRoomAsync(long hotelId, long roomId, CancellationToken cancellationToken = default)
         {
             await using var connection = new SqlConnection(_connectionString);
