@@ -30,7 +30,7 @@
         @if (Model.RevenueTrend.Count == 0)
         {
             <div class="partner-empty-state">
-                <strong>Henuz gelir verisi yok</strong>
+                <strong>Henüz gelir verisi yok</strong>
                 <p>Rezervasyon ve odeme verileri geldikce grafikler burada dolacak.</p>
             </div>
         }
@@ -91,7 +91,7 @@
                                     <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
                                     <input type="hidden" name="ReservationId" value="@item.ReservationId" />
                                     <input type="hidden" name="ActionType" value="reject" />
-                                    <input type="hidden" name="Reason" value="Dashboard hizli aksiyonundan reddedildi." />
+                                    <input type="hidden" name="Reason" value="Panel hızlı aksiyonundan reddedildi." />
                                     <button type="submit" class="partner-dashboard-action-btn is-danger">
                                         <i class="fas fa-circle-xmark"></i>
                                         Reddet
@@ -107,12 +107,12 @@
 </section>
 <section class="partner-two-column">
     <article class="partner-section-card">
-        <h2>Musaitlik Uyarilari</h2>
+        <h2>Müsaitlik Uyarıları</h2>
         @if (Model.InventoryAlerts.Count == 0)
         {
             <div class="partner-empty-state">
-                <strong>Kritik stok uyarisi yok</strong>
-                <p>Dusuk stok veya kapali satis gunleri burada listelenecek.</p>
+                <strong>Kritik stok uyarısı yok</strong>
+                <p>Düşük stok veya kapalı satış günleri burada listelenecek.</p>
             </div>
         }
         else
@@ -131,7 +131,7 @@
         {
             <div class="partner-empty-state">
                 <strong>Yorum bulunmuyor</strong>
-                <p>Onayli veya bekleyen yorumlar bu alanda hizlica gorunur.</p>
+                <p>Onaylı veya bekleyen yorumlar bu alanda hızlıca görünür.</p>
             </div>
         }
         else

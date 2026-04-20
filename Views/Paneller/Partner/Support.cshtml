@@ -8,11 +8,11 @@
 </section>
 <section class="partner-two-column">
     <article class="partner-section-card">
-        <h2>Acik Destek Talepleri</h2>
+        <h2>Açık Destek Talepleri</h2>
         @if (Model.Tickets.Count == 0)
         {
             <div class="partner-empty-state">
-                <strong>Henuz acik talep yok</strong>
+                <strong>Henüz açık talep yok</strong>
                 <p>Yeni destek talepleriniz bu alanda listelenecek.</p>
             </div>
         }
@@ -32,12 +32,12 @@
         }
     </article>
     <article class="partner-section-card">
-        <h2>Bilgi Bankasi</h2>
+        <h2>Bilgi Bankası</h2>
         @if (Model.KnowledgeBaseArticles.Count == 0)
         {
             <div class="partner-empty-state">
-                <strong>Bilgi bankasi makalesi bulunamadi</strong>
-                <p>Destek icerikleri eklendikce burada hizli baglantilar goreceksiniz.</p>
+                <strong>Bilgi bankası makalesi bulunamadı</strong>
+                <p>Destek içerikleri eklendikçe burada hızlı bağlantılar göreceksiniz.</p>
             </div>
         }
         else
@@ -55,7 +55,7 @@
     </article>
 </section>
 <section class="partner-section-card">
-    <h2>Destek Kanallari</h2>
+        <h2>Destek Kanalları</h2>
     <div class="partner-support-channels">
         @foreach (var channel in Model.Channels)
         {
@@ -72,56 +72,56 @@
                     <span>@channel.Value</span>
                     <p>@channel.Description</p>
                 </div>
-                <a href="@actionHref" class="partner-secondary-btn partner-inline-btn">Baglan</a>
+                <a href="@actionHref" class="partner-secondary-btn partner-inline-btn">Bağlan</a>
             </article>
         }
     </div>
 </section>
 <section class="partner-two-column">
     <article class="partner-section-card">
-        <h2>Hizli destek aksiyonlari</h2>
+        <h2>Hızlı destek aksiyonları</h2>
         <div class="partner-list">
             <a href="#destek-talebi" class="partner-list-row partner-inline-link">
-                <strong>Teknik destek talebi ac</strong>
-                <span>Panel, fiyat veya medya akislarindaki sorunlari aninda iletin.</span>
+                <strong>Teknik destek talebi aç</strong>
+                <span>Panel, fiyat veya medya akışlarındaki sorunları anında iletin.</span>
             </a>
             <a href="#destek-talebi" class="partner-list-row partner-inline-link">
                 <strong>Demo randevusu iste</strong>
-                <span>Operasyon ekibinden panel kullanim demosu talep edin.</span>
+                <span>Operasyon ekibinden panel kullanım demosu talep edin.</span>
             </a>
             <a href="/yardim-merkezi" class="partner-list-row partner-inline-link">
-                <strong>Yardim merkezine git</strong>
-                <span>SSS, fiyat guncelleme ve entegrasyon rehberlerine ulasin.</span>
+                <strong>Yardım merkezine git</strong>
+                <span>SSS, fiyat güncelleme ve entegrasyon rehberlerine ulaşın.</span>
             </a>
         </div>
     </article>
     <article class="partner-section-card">
-        <h2>Hizli SSS</h2>
+        <h2>Hızlı SSS</h2>
         <div class="partner-list">
             <div class="partner-list-row">
-                <strong>Fiyatlari toplu nasil guncellerim?</strong>
-                <span>Takvim ve Fiyatlar ekranindaki coklu fiyat guncelleme panelinden tarih ve oda secerek.</span>
+                <strong>Fiyatları toplu nasıl güncellerim?</strong>
+                <span>Takvim ve Fiyatlar ekranındaki çoklu fiyat güncelleme panelinden tarih ve oda seçerek.</span>
             </div>
             <div class="partner-list-row">
-                <strong>Kapak fotografini nasil degistiririm?</strong>
-                <span>Fotograflar ekraninda ilgili gorsel kartindan Kapak yap aksiyonunu kullanarak.</span>
+                <strong>Kapak fotoğrafını nasıl değiştiririm?</strong>
+                <span>Fotoğraflar ekranında ilgili görsel kartından Kapak yap aksiyonunu kullanarak.</span>
             </div>
             <div class="partner-list-row">
-                <strong>Misafire nasil mesaj gonderirim?</strong>
-                <span>Rezervasyonlar ekranindaki zarf ikonundan rezervasyon bazli mesaj panelini acarak.</span>
+                <strong>Misafire nasıl mesaj gönderirim?</strong>
+                <span>Rezervasyonlar ekranındaki zarf ikonundan rezervasyon bazlı mesaj panelini açarak.</span>
             </div>
         </div>
     </article>
 </section>
 <section id="destek-talebi" class="partner-section-card">
-    <h2>Destek Talebi Olustur</h2>
+    <h2>Destek Talebi Oluştur</h2>
     <form method="post" action="/panel/partner/724-destek/talep-olustur" class="partner-form-grid">
         @Html.AntiForgeryToken()
         <input type="hidden" name="HotelId" value="@Model.CreateTicketForm.HotelId" />
         <input type="text" name="Subject" placeholder="Konu" />
         <input type="text" name="Category" placeholder="Kategori" value="Operasyon" />
-        <input type="text" name="Priority" placeholder="Oncelik" value="Normal" />
-        <textarea name="Message" placeholder="Mesajiniz"></textarea>
-        <button type="submit" class="partner-primary-btn">Talep Ac</button>
+        <input type="text" name="Priority" placeholder="Öncelik" value="Normal" />
+        <textarea name="Message" placeholder="Mesajınız"></textarea>
+        <button type="submit" class="partner-primary-btn">Talep Aç</button>
     </form>
 </section>

@@ -485,7 +485,7 @@ public class AdminService : IAdminService
                     CommissionText = $"%{commissionRate:0.##} komisyon / %{commissionIncomeTaxRate:0.##} gelir vergisi",
                     TaxText = $"KDV %{vatRate:0.##} + Konaklama %{accommodationTaxRate:0.##}",
                     NetText = $"{grossCommissionAmount:0.##} brüt / {netCommissionAmount:0.##} net",
-                    IsActive = !reader.IsDBNull(11) && reader.GetBoolean(11),
+                    IsActive = SafeBool(reader, 11),
                     Note = reader.IsDBNull(12) ? null : reader.GetString(12)
                 });
             }
@@ -791,6 +791,11 @@ public class AdminService : IAdminService
     private static int SafeInt(SqlDataReader reader, int ordinal)
     {
         return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
+    }
+
+    private static bool SafeBool(SqlDataReader reader, int ordinal)
+    {
+        return !reader.IsDBNull(ordinal) && Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture) == 1;
     }
 
     private static decimal SafeDecimal(SqlDataReader reader, int ordinal)

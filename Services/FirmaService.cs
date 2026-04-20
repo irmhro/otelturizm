@@ -224,7 +224,7 @@ public class FirmaService : IFirmaService
                     NightlyLimitText = reader.IsDBNull(2) ? "-" : FormatMoney(reader.GetDecimal(2)),
                     ReservationLimitText = reader.IsDBNull(3) ? "-" : FormatMoney(reader.GetDecimal(3)),
                     MonthlyLimitText = reader.IsDBNull(4) ? "-" : FormatMoney(reader.GetDecimal(4)),
-                    ApprovalText = !reader.IsDBNull(5) && reader.GetBoolean(5) ? "Onay gerekli" : "Otomatik onay"
+                    ApprovalText = SafeBool(reader, 5) ? "Onay gerekli" : "Otomatik onay"
                 });
             }
         }
@@ -766,10 +766,10 @@ public class FirmaService : IFirmaService
                 Title = reader.GetString(3),
                 Email = reader.GetString(4),
                 LimitText = reader.IsDBNull(5) ? "-" : FormatMoney(reader.GetDecimal(5)),
-                ApprovalText = !reader.IsDBNull(6) && reader.GetBoolean(6) ? "Onaylı akış" : "Serbest rezervasyon",
+                ApprovalText = SafeBool(reader, 6) ? "Onaylı akış" : "Serbest rezervasyon",
                 Initials = GetInitials(fullName),
                 RoleText = GetRoleLabel(reader.IsDBNull(7) ? string.Empty : reader.GetString(7)),
-                IsManager = !reader.IsDBNull(8) && reader.GetBoolean(8),
+                IsManager = SafeBool(reader, 8),
                 ReservationCountText = SafeInt(reader, 9).ToString(CultureInfo.InvariantCulture),
                 SpendText = FormatMoney(SafeDecimal(reader, 10))
             });
@@ -870,6 +870,9 @@ public class FirmaService : IFirmaService
 
     private static int SafeInt(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+
+    private static bool SafeBool(SqlDataReader reader, int ordinal)
+        => !reader.IsDBNull(ordinal) && Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture) == 1;
 
     private static decimal SafeDecimal(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0m : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);

@@ -24,7 +24,7 @@ public class PartnerPanelController : Controller
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
         var model = await _partnerService.GetDashboardAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Dashboard";
+        ViewData["Title"] = "Partner Paneli";
         ViewData["PageCssPath"] = "paneller/partner/dashboard";
         return View("~/Views/Paneller/Partner/Dashboard.cshtml", model);
     }
@@ -134,7 +134,7 @@ public class PartnerPanelController : Controller
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
         var model = await _partnerService.GetRoomsAsync(GetUserId(), otelId, roomId, cancellationToken);
-        ViewData["Title"] = "Partner Oda Yonetimi";
+        ViewData["Title"] = "Partner Oda Yönetimi";
         ViewData["PageCssPath"] = "paneller/partner/rooms";
         return View("~/Views/Paneller/Partner/Rooms.cshtml", model);
     }
@@ -215,7 +215,7 @@ public class PartnerPanelController : Controller
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
         var model = await _partnerService.GetPhotosAsync(GetUserId(), otelId, photoId, cancellationToken);
-        ViewData["Title"] = "Partner Fotograflar";
+        ViewData["Title"] = "Partner Fotoğraflar";
         ViewData["PageCssPath"] = "paneller/partner/photos";
         return View("~/Views/Paneller/Partner/Photos.cshtml", model);
     }
@@ -320,7 +320,7 @@ public class PartnerPanelController : Controller
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
         var model = await _partnerService.GetReviewsAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Degerlendirmeler";
+        ViewData["Title"] = "Partner Değerlendirmeler";
         ViewData["PageCssPath"] = "paneller/partner/reviews";
         return View("~/Views/Paneller/Partner/Reviews.cshtml", model);
     }
@@ -391,7 +391,7 @@ public class PartnerPanelController : Controller
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
         var model = await _partnerService.GetApplicationAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Basvuru ve Evraklar";
+        ViewData["Title"] = "Partner Başvuru ve Evraklar";
         ViewData["PageCssPath"] = "paneller/partner/preferences";
         return View("~/Views/Paneller/Partner/Preferences.cshtml", model);
     }

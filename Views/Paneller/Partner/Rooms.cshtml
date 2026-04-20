@@ -17,7 +17,7 @@
     <div>
         <p class="partner-room-kicker">Oda envanteri</p>
         <h2>Oda tipleri, stok ve fiyat özeti</h2>
-        <p>216 SILVER SUITE için tüm oda tiplerini tek yerden düzenleyebilir, pasife alabilir ve fiyat akışını kontrol edebilirsiniz.</p>
+        <p>@Model.Shell.SelectedHotelName için tüm oda tiplerini tek yerden düzenleyebilir, pasife alabilir ve fiyat akışını kontrol edebilirsiniz.</p>
     </div>
     <a class="partner-primary-btn partner-toolbar-link" href="/panel/partner/oda-yonetimi?otelId=@Model.SelectedHotelId">
         <i class="fas fa-plus"></i>
@@ -70,7 +70,7 @@
                     {
                         <div class="partner-room-selected-badge">
                             <i class="fas fa-circle-check"></i>
-                            Duzenlenen oda tipi
+                            Düzenlenen oda tipi
                         </div>
                     }
                     <div class="partner-room-actions">
@@ -82,7 +82,7 @@
                             <i class="fas fa-calendar-days"></i>
                             Takvim
                         </a>
-                        <form method="post" action="/panel/partner/oda-yonetimi/sil" onsubmit="return confirm('Bu oda tipini silmek istediginize emin misiniz? Odaya bagli fiyat, takvim, gorsel ve iliski verileri temizlenecektir.');">
+                        <form method="post" action="/panel/partner/oda-yonetimi/sil" onsubmit="return confirm('Bu oda tipini silmek istediğinize emin misiniz? Odaya bağlı fiyat, takvim, görsel ve ilişki verileri temizlenecektir.');">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
                             <input type="hidden" name="roomId" value="@room.RoomId" />

@@ -261,7 +261,7 @@ public class PartnerService : IPartnerService
             if (await policyReader.ReadAsync(cancellationToken))
             {
                 model.RejectCountLast30Days = SafeInt(policyReader, 0);
-                model.PenaltyActive = !policyReader.IsDBNull(1) && policyReader.GetBoolean(1);
+                model.PenaltyActive = SafeBool(policyReader, 1);
                 if (!policyReader.IsDBNull(2))
                 {
                     model.PenaltyEndText = policyReader.GetDateTime(2).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"));
@@ -823,7 +823,7 @@ public class PartnerService : IPartnerService
             {
                 rooms.Add(new RoomPricingSeed(
                     roomReader.GetInt64(0),
-                    roomReader.GetInt16(1),
+                    SafeShort(roomReader, 1),
                     roomReader.GetDecimal(2)));
             }
         }
@@ -1473,7 +1473,7 @@ public class PartnerService : IPartnerService
             if (await reader.ReadAsync(cancellationToken))
             {
                 relativePath = reader.IsDBNull(0) ? null : reader.GetString(0);
-                wasCover = !reader.IsDBNull(1) && reader.GetBoolean(1);
+                wasCover = SafeBool(reader, 1);
             }
         }
 
@@ -1699,10 +1699,10 @@ public class PartnerService : IPartnerService
                 Url = photoReader.GetString(1),
                 Title = photoReader.GetString(2),
                 Type = photoReader.GetString(3),
-                SortText = $"Sira {photoReader.GetInt16(4)}",
+                SortText = $"Sira {SafeShort(photoReader, 4)}",
                 Description = photoReader.IsDBNull(5) ? null : photoReader.GetString(5),
-                DisplayOrder = photoReader.GetFieldValue<ushort>(4),
-                IsCover = photoReader.GetBoolean(6),
+                DisplayOrder = Convert.ToUInt16(photoReader.GetValue(4), CultureInfo.InvariantCulture),
+                IsCover = SafeBool(photoReader, 6),
                 IsApproved = string.Equals(photoReader.GetString(7), "Onaylandı", StringComparison.OrdinalIgnoreCase)
             });
         }
@@ -1876,7 +1876,7 @@ public class PartnerService : IPartnerService
             if (await reader.ReadAsync(cancellationToken))
             {
                 relativePath = reader.GetString(0);
-                wasCover = reader.GetBoolean(1);
+                wasCover = SafeBool(reader, 1);
             }
         }
 
@@ -1942,7 +1942,7 @@ public class PartnerService : IPartnerService
             while (await reader.ReadAsync(cancellationToken))
             {
                 actualIds.Add(reader.GetInt64(0));
-                anyCover |= reader.GetBoolean(2);
+                anyCover |= SafeBool(reader, 2);
                 var normalizedPath = reader.GetString(1).TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
                 physicalPaths.Add(Path.Combine(_environment.WebRootPath, normalizedPath));
             }
@@ -2997,21 +2997,20 @@ public class PartnerService : IPartnerService
     }
 
     private static bool IsUnknownColumnError(SqlException ex, string columnName)
-        => ex.Number == 1054 && ex.Message.Contains(columnName, StringComparison.OrdinalIgnoreCase);
+        => ex.Number == 207 && ex.Message.Contains(columnName, StringComparison.OrdinalIgnoreCase);
 
     private static async Task EnsurePartnerPenaltyColumnAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string existsSql = @"
             SELECT COUNT(*)
             FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DB_NAME()
-              AND TABLE_NAME = 'oteller'
+            WHERE TABLE_NAME = 'oteller'
               AND COLUMN_NAME = 'partner_ceza_bitis_tarihi';";
         await using var existsCommand = new SqlCommand(existsSql, connection);
         var exists = Convert.ToInt32(await existsCommand.ExecuteScalarAsync(cancellationToken) ?? 0) > 0;
         if (!exists)
         {
-            const string alterSql = "ALTER TABLE oteller ADD COLUMN partner_ceza_bitis_tarihi DATETIME NULL;";
+            const string alterSql = "ALTER TABLE oteller ADD partner_ceza_bitis_tarihi DATETIME NULL;";
             await using var alterCommand = new SqlCommand(alterSql, connection);
             await alterCommand.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -3033,13 +3032,13 @@ public class PartnerService : IPartnerService
         while (await reader.ReadAsync(cancellationToken))
         {
             hotels.Add(new PartnerHotelContext(
-                reader.GetInt64(0),
-                reader.GetInt64(1),
+                Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture),
+                Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture),
                 reader.GetString(2),
                 reader.GetString(3),
                 "Otel",
                 reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
-                !reader.IsDBNull(5) && reader.GetBoolean(5)));
+                SafeBool(reader, 5)));
         }
 
         return hotels;
@@ -3076,7 +3075,7 @@ public class PartnerService : IPartnerService
                 AND ofm.tarih BETWEEN CAST(GETDATE() AS date) AND DATEADD(DAY, 60, CAST(GETDATE() AS date))
                 AND ofm.indirimli_fiyat IS NOT NULL
             WHERE ot.otel_id = @hotelId
-            GROUP BY ot.id, ot.oda_adi, ot.oda_kategorisi, ot.maksimum_yetiskin_sayisi, ot.maksimum_cocuk_sayisi, ot.toplam_oda_sayisi, ot.standart_gecelik_fiyat, ot.kapak_fotografi, ot.aktif_mi
+            GROUP BY ot.id, ot.oda_adi, ot.oda_kategorisi, ot.maksimum_yetiskin_sayisi, ot.maksimum_cocuk_sayisi, ot.toplam_oda_sayisi, ot.standart_gecelik_fiyat, ot.kapak_fotografi, ot.aktif_mi, ot.siralama
             ORDER BY ot.aktif_mi DESC, ot.siralama ASC, ot.id ASC;";
 
         var rooms = new List<PartnerRoomSummaryViewModel>();
@@ -3096,7 +3095,7 @@ public class PartnerService : IPartnerService
                 BasePriceText = FormatMoney(SafeDecimal(reader, 6)),
                 DiscountPriceText = discountPrice.HasValue ? FormatMoney(discountPrice.Value) : "-",
                 CoverPhotoUrl = reader.IsDBNull(7) ? null : reader.GetString(7),
-                IsActive = reader.GetBoolean(8)
+                IsActive = SafeBool(reader, 8)
             });
         }
 
@@ -3140,12 +3139,12 @@ public class PartnerService : IPartnerService
                 SafeDecimal(reader, 2),
                 reader.IsDBNull(3) ? null : reader.GetDecimal(3),
                 reader.IsDBNull(4) ? null : reader.GetInt64(4),
-                reader.IsDBNull(5) ? null : reader.GetInt16(5),
-                reader.IsDBNull(6) ? (short)0 : reader.GetInt16(6),
-                reader.IsDBNull(7) ? (short)0 : reader.GetInt16(7),
-                reader.IsDBNull(8) ? null : reader.GetByte(8),
-                reader.IsDBNull(9) ? null : reader.GetInt16(9),
-                !reader.IsDBNull(10) && reader.GetBoolean(10),
+                reader.IsDBNull(5) ? null : SafeShort(reader, 5),
+                reader.IsDBNull(6) ? (short)0 : SafeShort(reader, 6),
+                reader.IsDBNull(7) ? (short)0 : SafeShort(reader, 7),
+                reader.IsDBNull(8) ? null : SafeByte(reader, 8),
+                reader.IsDBNull(9) ? null : SafeShort(reader, 9),
+                SafeBool(reader, 10),
                 reader.IsDBNull(11) ? null : reader.GetString(11),
                 reader.IsDBNull(12) ? null : reader.GetString(12));
         }
@@ -3194,12 +3193,12 @@ public class PartnerService : IPartnerService
                 SafeDecimal(reader, 2),
                 reader.IsDBNull(3) ? null : reader.GetDecimal(3),
                 reader.IsDBNull(4) ? null : reader.GetInt64(4),
-                reader.IsDBNull(5) ? null : reader.GetInt16(5),
-                reader.IsDBNull(6) ? (short)0 : reader.GetInt16(6),
-                reader.IsDBNull(7) ? (short)0 : reader.GetInt16(7),
-                reader.IsDBNull(8) ? null : reader.GetByte(8),
-                reader.IsDBNull(9) ? null : reader.GetInt16(9),
-                !reader.IsDBNull(10) && reader.GetBoolean(10),
+                reader.IsDBNull(5) ? null : SafeShort(reader, 5),
+                reader.IsDBNull(6) ? (short)0 : SafeShort(reader, 6),
+                reader.IsDBNull(7) ? (short)0 : SafeShort(reader, 7),
+                reader.IsDBNull(8) ? null : SafeByte(reader, 8),
+                reader.IsDBNull(9) ? null : SafeShort(reader, 9),
+                SafeBool(reader, 10),
                 reader.IsDBNull(11) ? null : reader.GetString(11),
                 reader.IsDBNull(12) ? null : reader.GetString(12));
         }
@@ -3353,11 +3352,11 @@ public class PartnerService : IPartnerService
                 CampaignType = reader.GetString(3),
                 DiscountText = discountText,
                 DateText = $"{reader.GetDateTime(6):dd.MM.yyyy} - {reader.GetDateTime(7):dd.MM.yyyy}",
-                BadgeText = reader.GetBoolean(8) ? "Öne Çıkan" : (reader.IsDBNull(12) ? null : reader.GetString(12)),
+                BadgeText = SafeBool(reader, 8) ? "Öne Çıkan" : (reader.IsDBNull(12) ? null : reader.GetString(12)),
                 Description = reader.IsDBNull(9) ? null : reader.GetString(9),
                 PromoBadge = reader.IsDBNull(10) ? null : reader.GetString(10),
                 ColorCode = reader.IsDBNull(11) ? "#003B95" : reader.GetString(11),
-                IsHighlighted = reader.GetBoolean(8)
+                IsHighlighted = SafeBool(reader, 8)
             });
         }
 
@@ -3432,7 +3431,7 @@ public class PartnerService : IPartnerService
                 DateText = $"{reader.GetDateTime(5):dd.MM.yyyy} - {reader.GetDateTime(6):dd.MM.yyyy}",
                 CampaignLabel = reader.IsDBNull(7) ? null : reader.GetString(7),
                 PartnerNote = reader.IsDBNull(8) ? null : reader.GetString(8),
-                IsFeatured = !reader.IsDBNull(9) && reader.GetBoolean(9),
+                IsFeatured = SafeBool(reader, 9),
                 DiscountText = discountText
             });
         }
@@ -3637,21 +3636,21 @@ public class PartnerService : IPartnerService
             model.Fax = reader.IsDBNull(18) ? null : reader.GetString(18);
             model.CheckInTime = reader.IsDBNull(19) ? null : reader.GetTimeSpan(19).ToString(@"hh\:mm");
             model.CheckOutTime = reader.IsDBNull(20) ? null : reader.GetTimeSpan(20).ToString(@"hh\:mm");
-            model.LateCheckoutAvailable = !reader.IsDBNull(21) && reader.GetBoolean(21);
+            model.LateCheckoutAvailable = SafeBool(reader, 21);
             model.LateCheckoutFee = reader.IsDBNull(22) ? null : reader.GetDecimal(22);
-            model.EarlyCheckinAvailable = !reader.IsDBNull(23) && reader.GetBoolean(23);
+            model.EarlyCheckinAvailable = SafeBool(reader, 23);
             model.EarlyCheckinFee = reader.IsDBNull(24) ? null : reader.GetDecimal(24);
-            model.MinStay = reader.IsDBNull(25) ? (byte)1 : reader.GetByte(25);
-            model.MaxStay = reader.IsDBNull(26) ? (short)30 : reader.GetInt16(26);
-            model.StarCount = reader.IsDBNull(27) ? null : reader.GetByte(27);
-            model.TotalRoomCount = reader.IsDBNull(28) ? (short)0 : reader.GetInt16(28);
-            model.TotalBedCapacity = reader.IsDBNull(29) ? null : reader.GetInt16(29);
-            model.FloorCount = reader.IsDBNull(30) ? null : reader.GetByte(30);
-            model.ElevatorAvailable = !reader.IsDBNull(31) && reader.GetBoolean(31);
-            model.ElevatorCount = reader.IsDBNull(32) ? (byte)0 : reader.GetByte(32);
+            model.MinStay = reader.IsDBNull(25) ? (byte)1 : SafeByte(reader, 25);
+            model.MaxStay = reader.IsDBNull(26) ? (short)30 : SafeShort(reader, 26);
+            model.StarCount = reader.IsDBNull(27) ? null : SafeByte(reader, 27);
+            model.TotalRoomCount = reader.IsDBNull(28) ? (short)0 : SafeShort(reader, 28);
+            model.TotalBedCapacity = reader.IsDBNull(29) ? null : SafeShort(reader, 29);
+            model.FloorCount = reader.IsDBNull(30) ? null : SafeByte(reader, 30);
+            model.ElevatorAvailable = SafeBool(reader, 31);
+            model.ElevatorCount = reader.IsDBNull(32) ? (byte)0 : SafeByte(reader, 32);
             model.DefaultCommissionRate = reader.IsDBNull(33) ? 0m : reader.GetDecimal(33);
             model.DepositAmount = reader.IsDBNull(34) ? null : reader.GetDecimal(34);
-            model.DepositReturnDays = reader.IsDBNull(35) ? null : reader.GetByte(35);
+            model.DepositReturnDays = reader.IsDBNull(35) ? null : SafeByte(reader, 35);
             model.SpokenLanguages = reader.IsDBNull(36) ? null : reader.GetString(36);
             model.VideoUrl = reader.IsDBNull(37) ? null : reader.GetString(37);
             model.VirtualTourUrl = reader.IsDBNull(38) ? null : reader.GetString(38);
@@ -3710,7 +3709,7 @@ public class PartnerService : IPartnerService
                AND ofm.otel_id = ot.otel_id
                AND ofm.tarih BETWEEN CAST(GETDATE() AS date) AND DATEADD(DAY, 30, CAST(GETDATE() AS date))
             WHERE ot.otel_id = @hotelId
-            GROUP BY ot.id, ot.oda_adi, ot.toplam_oda_sayisi, ot.standart_gecelik_fiyat, ot.aktif_mi
+            GROUP BY ot.id, ot.oda_adi, ot.toplam_oda_sayisi, ot.standart_gecelik_fiyat, ot.aktif_mi, ot.siralama
             ORDER BY ot.aktif_mi DESC, ot.siralama ASC, ot.id ASC;";
 
         var items = new List<PartnerRoomInventoryRowViewModel>();
@@ -3728,7 +3727,7 @@ public class PartnerService : IPartnerService
                 MaintenanceRooms = Convert.ToInt16(reader.GetValue(4), CultureInfo.InvariantCulture),
                 MinPriceText = FormatMoney(SafeDecimal(reader, 5)),
                 MaxPriceText = FormatMoney(SafeDecimal(reader, 6)),
-                IsActive = reader.GetBoolean(7)
+                IsActive = SafeBool(reader, 7)
             });
         }
 
@@ -3757,13 +3756,13 @@ public class PartnerService : IPartnerService
             model.BedType = reader.IsDBNull(3) ? null : reader.GetString(3);
             model.ViewType = reader.IsDBNull(4) ? null : reader.GetString(4);
             model.RoomSize = reader.IsDBNull(5) ? null : Convert.ToInt16(reader.GetValue(5), CultureInfo.InvariantCulture);
-            model.MaxAdults = reader.IsDBNull(6) ? (byte)2 : (byte)Math.Max(1, (int)reader.GetByte(6));
-            model.MaxChildren = reader.IsDBNull(7) ? (byte)0 : reader.GetByte(7);
-            model.MaxBabies = !reader.IsDBNull(8) && reader.GetBoolean(8) ? (byte)1 : (byte)0;
-            model.TotalRooms = reader.IsDBNull(9) ? (short)1 : reader.GetInt16(9);
+            model.MaxAdults = reader.IsDBNull(6) ? (byte)2 : (byte)Math.Max(1, (int)SafeByte(reader, 6));
+            model.MaxChildren = reader.IsDBNull(7) ? (byte)0 : SafeByte(reader, 7);
+            model.MaxBabies = SafeBool(reader, 8) ? (byte)1 : (byte)0;
+            model.TotalRooms = reader.IsDBNull(9) ? (short)1 : SafeShort(reader, 9);
             model.BasePrice = reader.IsDBNull(10) ? 0m : reader.GetDecimal(10);
             model.CoverPhotoPath = reader.IsDBNull(11) ? null : reader.GetString(11);
-            model.IsActive = !reader.IsDBNull(13) && reader.GetBoolean(13);
+            model.IsActive = SafeBool(reader, 13);
 
             if (!reader.IsDBNull(12))
             {
@@ -3801,7 +3800,7 @@ public class PartnerService : IPartnerService
             model.Title = reader.IsDBNull(2) ? null : reader.GetString(2);
             model.Description = reader.IsDBNull(3) ? null : reader.GetString(3);
             model.DisplayOrder = Convert.ToUInt16(reader.GetValue(4), CultureInfo.InvariantCulture);
-            model.MarkAsFeatured = !reader.IsDBNull(5) && reader.GetBoolean(5);
+            model.MarkAsFeatured = SafeBool(reader, 5);
         }
 
         return model;
@@ -3837,7 +3836,7 @@ public class PartnerService : IPartnerService
                 Title = reader.IsDBNull(2) ? "Oda Görseli" : reader.GetString(2),
                 Description = reader.IsDBNull(3) ? null : reader.GetString(3),
                 DisplayOrder = Convert.ToUInt16(reader.GetValue(4), CultureInfo.InvariantCulture),
-                IsCover = !reader.IsDBNull(5) && reader.GetBoolean(5),
+                IsCover = SafeBool(reader, 5),
                 IsApproved = string.Equals(reader.IsDBNull(6) ? "Beklemede" : reader.GetString(6), "Onaylandı", StringComparison.OrdinalIgnoreCase)
             });
         }
@@ -4218,8 +4217,8 @@ public class PartnerService : IPartnerService
                 RequestNote = reader.IsDBNull(15) ? null : reader.GetString(15),
                 CancellationReason = reader.IsDBNull(16) || string.IsNullOrWhiteSpace(reader.GetString(16)) ? null : reader.GetString(16),
                 CancellationTimeText = reader.IsDBNull(17) ? null : reader.GetDateTime(17).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
-                AdultCount = reader.IsDBNull(18) ? (byte)0 : reader.GetByte(18),
-                ChildCount = reader.IsDBNull(19) ? (byte)0 : reader.GetByte(19),
+                AdultCount = reader.IsDBNull(18) ? (byte)0 : SafeByte(reader, 18),
+                ChildCount = reader.IsDBNull(19) ? (byte)0 : SafeByte(reader, 19),
                 NightCount = reader.IsDBNull(20) ? (short)0 : Convert.ToInt16(reader.GetValue(20), CultureInfo.InvariantCulture),
                 CanApprove = canApprove,
                 CanReject = canReject,
@@ -4345,7 +4344,7 @@ public class PartnerService : IPartnerService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            var isClosed = !reader.IsDBNull(4) && reader.GetBoolean(4);
+            var isClosed = SafeBool(reader, 4);
             var remaining = SafeInt(reader, 3);
             alerts.Add(new PartnerInventoryAlertViewModel
             {
@@ -4381,7 +4380,7 @@ public class PartnerService : IPartnerService
                 ReviewId = reader.GetInt64(0),
                 GuestName = reader.GetString(1),
                 Title = reader.GetString(2),
-                ScoreText = $"{reader.GetByte(3)} / 5",
+                ScoreText = $"{SafeByte(reader, 3)} / 5",
                 StatusText = reader.GetString(4),
                 CreatedText = FormatDateTime(reader.IsDBNull(5) ? null : reader.GetDateTime(5)),
                 Comment = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
@@ -4394,6 +4393,15 @@ public class PartnerService : IPartnerService
 
     private static int SafeInt(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+
+    private static short SafeShort(SqlDataReader reader, int ordinal)
+        => reader.IsDBNull(ordinal) ? (short)0 : Convert.ToInt16(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+
+    private static byte SafeByte(SqlDataReader reader, int ordinal)
+        => reader.IsDBNull(ordinal) ? (byte)0 : Convert.ToByte(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+
+    private static bool SafeBool(SqlDataReader reader, int ordinal)
+        => !reader.IsDBNull(ordinal) && Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture) == 1;
 
     private static decimal SafeDecimal(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0m : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);

@@ -48,17 +48,17 @@
                     <div class="partner-header-badges">
                         <span><i class="fas fa-hourglass-half"></i> @shell.PendingReservations bekleyen</span>
                         <span><i class="fas fa-bell"></i> @shell.OpenSupportTickets destek</span>
-                        <span><i class="fas fa-box-open"></i> @shell.LowStockAlerts stok uyarisi</span>
+                        <span><i class="fas fa-box-open"></i> @shell.LowStockAlerts stok uyarısı</span>
                         @if (headerBildiri.UnreadCount > 0)
                         {
-                            <span class="partner-unread-chip"><i class="fas fa-circle-exclamation"></i> @headerBildiri.UnreadCount okunmamis bildiri</span>
+                            <span class="partner-unread-chip"><i class="fas fa-circle-exclamation"></i> @headerBildiri.UnreadCount okunmamış bildiri</span>
                         }
                         <partial name="~/Views/Shared/_HeaderBildiri.cshtml" model="headerBildiri" />
                         <form method="post" action="/cikis-yap" class="panel-header-logout-form">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="panel-header-logout-btn">
                                 <i class="fas fa-right-from-bracket"></i>
-                                <span>Cikis Yap</span>
+                                <span>Çıkış Yap</span>
                             </button>
                         </form>
                     </div>

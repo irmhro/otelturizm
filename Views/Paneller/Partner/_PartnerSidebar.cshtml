@@ -11,17 +11,17 @@
     var selectedHotelCode = selectedHotel?.HotelCode;
     var items = new[]
     {
-        new { Action = "Index", Label = "Dashboard", Icon = "fa-grid-2", Route = "/panel/partner/dashboard" },
+        new { Action = "Index", Label = "Panel", Icon = "fa-grid-2", Route = "/panel/partner/dashboard" },
         new { Action = "Reservations", Label = "Rezervasyonlar", Icon = "fa-calendar-check", Route = "/panel/partner/rezervasyonlar" },
         new { Action = "Pricing", Label = "Takvim & Fiyatlar", Icon = "fa-calendar-days", Route = "/panel/partner/takvim-fiyatlar" },
         new { Action = "Campaigns", Label = "Kampanyalar", Icon = "fa-bullhorn", Route = "/panel/partner/kampanyalar" },
-        new { Action = "Rooms", Label = "Oda Yonetimi", Icon = "fa-bed", Route = "/panel/partner/oda-yonetimi" },
+        new { Action = "Rooms", Label = "Oda Yönetimi", Icon = "fa-bed", Route = "/panel/partner/oda-yonetimi" },
         new { Action = "HotelInfo", Label = "Otel Bilgileri", Icon = "fa-hotel", Route = "/panel/partner/otel-bilgileri" },
-        new { Action = "Photos", Label = "Fotograflar", Icon = "fa-images", Route = "/panel/partner/fotograflar" },
+        new { Action = "Photos", Label = "Fotoğraflar", Icon = "fa-images", Route = "/panel/partner/fotograflar" },
         new { Action = "Performance", Label = "Performans", Icon = "fa-chart-line", Route = "/panel/partner/performans" },
-        new { Action = "Reviews", Label = "Degerlendirmeler", Icon = "fa-star", Route = "/panel/partner/degerlendirmeler" },
+        new { Action = "Reviews", Label = "Değerlendirmeler", Icon = "fa-star", Route = "/panel/partner/degerlendirmeler" },
         new { Action = "Finance", Label = "Finans", Icon = "fa-credit-card", Route = "/panel/partner/finans" },
-        new { Action = "Preferences", Label = "Basvuru & Evraklar", Icon = "fa-file-shield", Route = "/panel/partner/basvuru-ve-evraklar" },
+        new { Action = "Preferences", Label = "Başvuru & Evraklar", Icon = "fa-file-shield", Route = "/panel/partner/basvuru-ve-evraklar" },
         new { Action = "Support", Label = "7/24 Destek", Icon = "fa-headset", Route = "/panel/partner/724-destek" }
     };
 }
@@ -66,10 +66,10 @@
     </div>
 
     <div class="partner-sidebar-footer">
-        <a href="/" class="secondary-link"><i class="fas fa-arrow-left"></i> Ana Sayfaya Don</a>
+        <a href="/" class="secondary-link"><i class="fas fa-arrow-left"></i> Ana Sayfaya Dön</a>
         <form method="post" action="/cikis-yap" class="panel-logout-form">
             @Html.AntiForgeryToken()
-            <button type="submit" class="logout-link"><i class="fas fa-right-from-bracket"></i> Cikis Yap</button>
+            <button type="submit" class="logout-link"><i class="fas fa-right-from-bracket"></i> Çıkış Yap</button>
         </form>
     </div>
 </aside>

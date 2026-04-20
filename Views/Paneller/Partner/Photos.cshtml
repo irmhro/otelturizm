@@ -21,19 +21,19 @@
     <article id="fotograf-yukle" class="partner-section-card">
         <div class="partner-section-head">
             <div>
-                <h2>Fotograf yukle</h2>
-                <p>Yeni galeri gorsellerini aninda yukleyin, kapaga alin ve referans sablondaki medya alanlarini doldurun.</p>
+                <h2>Fotoğraf yükle</h2>
+                <p>Yeni galeri görsellerini anında yükleyin, kapağa alın ve referans şablondaki medya alanlarını doldurun.</p>
             </div>
         </div>
         <form id="partner-photo-upload-form" method="post" action="/panel/partner/fotograflar/yukle" enctype="multipart/form-data" class="partner-form-grid">
             @Html.AntiForgeryToken()
             <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
             <label>
-                <span>Baslik</span>
-                <input type="text" name="Title" value="@Model.UploadForm.Title" placeholder="Orn. Giris cephesi gun batimi cekimi" />
+                <span>Başlık</span>
+                <input type="text" name="Title" value="@Model.UploadForm.Title" placeholder="Örn. Giriş cephesi gün batımı çekimi" />
             </label>
             <label>
-                <span>Gorsel tipi</span>
+                <span>Görsel tipi</span>
                 <select name="PhotoType">
                     @foreach (var photoType in photoTypes)
                     {
@@ -42,11 +42,11 @@
                 </select>
             </label>
             <label class="partner-form-span">
-                <span>Aciklama</span>
-                <textarea name="Description" placeholder="Misafirlerin galeride gorecegi kisa aciklama">@Model.UploadForm.Description</textarea>
+                <span>Açıklama</span>
+                <textarea name="Description" placeholder="Misafirlerin galeride göreceği kısa açıklama">@Model.UploadForm.Description</textarea>
             </label>
             <label>
-                <span>Siralama</span>
+                <span>Sıralama</span>
                 <input type="number" name="DisplayOrder" value="@Model.UploadForm.DisplayOrder" min="0" />
             </label>
             <label class="partner-file-input">
@@ -55,21 +55,21 @@
             </label>
             <div class="partner-upload-meta partner-form-span" id="partner-upload-meta" hidden>
                 <div class="partner-upload-meta-row">
-                    <strong id="partner-upload-count">0 dosya secildi</strong>
+                    <strong id="partner-upload-count">0 dosya seçildi</strong>
                     <span id="partner-upload-size">0 MB</span>
                 </div>
                 <div class="partner-upload-progress-shell" hidden id="partner-upload-progress-shell">
                     <div class="partner-upload-progress-bar" id="partner-upload-progress-bar"></div>
                 </div>
-                <p class="partner-upload-help" id="partner-upload-help">Secilen gorseller yuklenmeye hazir.</p>
+                <p class="partner-upload-help" id="partner-upload-help">Seçilen görseller yüklenmeye hazır.</p>
             </div>
             <label class="partner-checkbox-inline partner-form-span">
                 <input type="checkbox" name="MakeCover" value="true" checked="@(Model.UploadForm.MakeCover)" />
-                <span>Ilk yuklenen gorseli kapak fotografi yap</span>
+                <span>İlk yüklenen görseli kapak fotoğrafı yap</span>
             </label>
             <button type="submit" class="partner-primary-btn partner-form-span" id="partner-upload-submit">
                 <i class="fas fa-cloud-arrow-up"></i>
-                Fotograflari yukle
+                Fotoğrafları yükle
             </button>
         </form>
     </article>
@@ -77,12 +77,12 @@
     <article class="partner-section-card">
         <div class="partner-section-head">
             <div>
-                <h2>@(Model.IsEditingPhoto ? "Fotografi duzenle" : "Galeri karti secin")</h2>
-                <p>@(Model.IsEditingPhoto ? "Secili gorselin baslik, aciklama ve one cikan ayarlarini duzenleyin." : "Galeriden bir gorsel sectiginizde duzenleme formu burada dolacaktir.")</p>
+                <h2>@(Model.IsEditingPhoto ? "Fotoğrafı düzenle" : "Galeri kartı seçin")</h2>
+                <p>@(Model.IsEditingPhoto ? "Seçili görselin başlık, açıklama ve öne çıkan ayarlarını düzenleyin." : "Galeriden bir görsel seçtiğinizde düzenleme formu burada dolacaktır.")</p>
             </div>
             @if (Model.IsEditingPhoto)
             {
-                <a href="/panel/partner/fotograflar?otelId=@Model.SelectedHotelId" class="partner-text-link">Secimi temizle</a>
+                <a href="/panel/partner/fotograflar?otelId=@Model.SelectedHotelId" class="partner-text-link">Seçimi temizle</a>
             }
         </div>
         <form method="post" action="/panel/partner/fotograflar/guncelle" class="partner-form-grid">
@@ -90,11 +90,11 @@
             <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
             <input type="hidden" name="PhotoId" value="@Model.EditForm.PhotoId" />
             <label>
-                <span>Baslik</span>
-                <input type="text" name="Title" value="@Model.EditForm.Title" placeholder="Galeri basligi" />
+                <span>Başlık</span>
+                <input type="text" name="Title" value="@Model.EditForm.Title" placeholder="Galeri başlığı" />
             </label>
             <label>
-                <span>Gorsel tipi</span>
+                <span>Görsel tipi</span>
                 <select name="PhotoType">
                     @foreach (var photoType in photoTypes)
                     {
@@ -103,20 +103,20 @@
                 </select>
             </label>
             <label>
-                <span>Siralama</span>
+                <span>Sıralama</span>
                 <input type="number" name="DisplayOrder" value="@Model.EditForm.DisplayOrder" min="0" />
             </label>
             <label class="partner-checkbox-inline">
                 <input type="checkbox" name="MarkAsFeatured" value="true" checked="@(Model.EditForm.MarkAsFeatured)" />
-                <span>One cikan gorsel olarak isaretle</span>
+                <span>Öne çıkan görsel olarak işaretle</span>
             </label>
             <label class="partner-form-span">
-                <span>Aciklama</span>
-                <textarea name="Description" placeholder="Kisa aciklama">@Model.EditForm.Description</textarea>
+                <span>Açıklama</span>
+                <textarea name="Description" placeholder="Kısa açıklama">@Model.EditForm.Description</textarea>
             </label>
             <button type="submit" class="partner-primary-btn partner-form-span" @(Model.IsEditingPhoto ? null : "disabled")>
                 <i class="fas fa-floppy-disk"></i>
-                Fotografi guncelle
+                Fotoğrafı güncelle
             </button>
         </form>
     </article>
@@ -126,18 +126,18 @@
     <div class="partner-section-head">
         <div>
             <h2>Galeri</h2>
-            <p>Kapak, one cikan ve kategori bazli tum gorselleri tek ekranda yonetin.</p>
+            <p>Kapak, öne çıkan ve kategori bazlı tüm görselleri tek ekranda yönetin.</p>
         </div>
         <button type="button" class="partner-secondary-btn" id="partner-photo-bulk-toggle">
             <i class="fas fa-check-double"></i>
-            Toplu secim
+            Toplu seçim
         </button>
     </div>
     @if (Model.Photos.Count == 0)
     {
         <div class="partner-empty-state">
-            <strong>Henuz galeri gorseli yok</strong>
-            <p>Yuklediginiz tum otel fotograflari bu alanda kart duzeninde listelenecek.</p>
+            <strong>Henüz galeri görseli yok</strong>
+            <p>Yüklediğiniz tüm otel fotoğrafları bu alanda kart düzeninde listelenecek.</p>
         </div>
     }
     else
@@ -146,10 +146,10 @@
             @Html.AntiForgeryToken()
             <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
             <div class="partner-photo-bulk-bar" hidden>
-                <strong id="partner-photo-bulk-count">0 gorsel secildi</strong>
-                <button type="submit" class="partner-danger-btn" onclick="return confirm('Secilen gorseller kalici olarak silinsin mi?');">
+                <strong id="partner-photo-bulk-count">0 görsel seçildi</strong>
+                <button type="submit" class="partner-danger-btn" onclick="return confirm('Seçilen görseller kalıcı olarak silinsin mi?');">
                     <i class="fas fa-trash"></i>
-                    Secilenleri sil
+                    Seçilenleri sil
                 </button>
             </div>
             <div class="partner-photo-gallery">
@@ -169,7 +169,7 @@
                                 }
                                 @if (photo.IsApproved)
                                 {
-                                    <span class="partner-chip is-approved">Onayli</span>
+                                    <span class="partner-chip is-approved">Onaylı</span>
                                 }
                                 <span class="partner-chip">@photo.Type</span>
                             </div>
@@ -181,11 +181,11 @@
                                     <p>@photo.SortText</p>
                                 </div>
                             </div>
-                            <p class="partner-photo-description">@(string.IsNullOrWhiteSpace(photo.Description) ? "Bu gorsel icin aciklama eklenmemis." : photo.Description)</p>
+                            <p class="partner-photo-description">@(string.IsNullOrWhiteSpace(photo.Description) ? "Bu görsel için açıklama eklenmemiş." : photo.Description)</p>
                             <div class="partner-photo-card-actions">
                                 <a href="/panel/partner/fotograflar?otelId=@Model.SelectedHotelId&photoId=@photo.PhotoId" class="partner-secondary-btn">
                                     <i class="fas fa-pen"></i>
-                                    Duzenle
+                                    Düzenle
                                 </a>
                                 <form method="post" action="/panel/partner/fotograflar/kapak-yap">
                                     @Html.AntiForgeryToken()
@@ -196,7 +196,7 @@
                                         Kapak yap
                                     </button>
                                 </form>
-                                <form method="post" action="/panel/partner/fotograflar/sil" onsubmit="return confirm('Bu fotograf galeriden kalici olarak silinsin mi?');">
+                                <form method="post" action="/panel/partner/fotograflar/sil" onsubmit="return confirm('Bu fotoğraf galeriden kalıcı olarak silinsin mi?');">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
                                     <input type="hidden" name="photoId" value="@photo.PhotoId" />
@@ -301,7 +301,7 @@
 
             if (xhr.status >= 200 && xhr.status < 300 && payload?.success) {
                 progressBar.style.width = '100%';
-                helpText.textContent = payload.message || 'Fotograflar basariyla yuklendi.';
+                helpText.textContent = payload.message || 'Fotoğraflar başarıyla yüklendi.';
                 window.location.href = payload.redirectUrl || `/panel/partner/fotograflar?otelId=@Model.SelectedHotelId`;
                 return;
             }

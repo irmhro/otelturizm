@@ -4,21 +4,21 @@
     Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
     ViewData["PartnerShell"] = Model.Shell;
     var culture = CultureInfo.GetCultureInfo("tr-TR");
-    var weekdays = new[] { "Pzt", "Sal", "Car", "Per", "Cum", "Cmt", "Paz" };
+    var weekdays = new[] { "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz" };
     var hotelQuery = $"otelId={Model.SelectedHotelId}";
     var roomQuery = Model.SelectedRoomId.HasValue ? $"&roomId={Model.SelectedRoomId.Value}" : string.Empty;
 }
 
 <section class="partner-pricing-toolbar">
     <div>
-        <p class="partner-room-kicker">Gelismis fiyat yonetimi</p>
-        <h2>Takvim uzerinden fiyat, kampanya ve satis durumu yonetin</h2>
-        <p>Oda secin, ayi degistirin ve secili tarih araliginda birden fazla oda tipi icin tek seferde guncelleme yapin.</p>
+        <p class="partner-room-kicker">Gelişmiş fiyat yönetimi</p>
+        <h2>Takvim üzerinden fiyat, kampanya ve satış durumu yönetin</h2>
+        <p>Oda seçin, ayı değiştirin ve seçili tarih aralığında birden fazla oda tipi için tek seferde güncelleme yapın.</p>
     </div>
     <div class="partner-pricing-month-nav">
         <a class="partner-secondary-btn" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.PreviousMonthKey">
             <i class="fas fa-chevron-left"></i>
-            Onceki ay
+            Önceki ay
         </a>
         <div class="partner-pricing-month-pill">@Model.MonthLabel</div>
         <a class="partner-secondary-btn" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.NextMonthKey">
@@ -31,7 +31,7 @@
             {
                 <input type="hidden" name="roomId" value="@Model.SelectedRoomId" />
             }
-            <label for="partnerMonthPicker">Ayi sec</label>
+            <label for="partnerMonthPicker">Ayı seç</label>
             <select id="partnerMonthPicker" name="month" onchange="this.form.submit()">
                 @foreach (var monthOption in Model.MonthOptions)
                 {
@@ -57,8 +57,8 @@
 <section class="partner-section-card partner-pricing-room-filter">
     <div class="partner-section-head">
         <div>
-            <h2>Goruntulenen oda tipi</h2>
-            <p>Takvim gridi tek odanin detayini gosterir; toplu guncelleme alttaki secim listesiyle birden fazla odaya uygulanabilir.</p>
+            <h2>Görüntülenen oda tipi</h2>
+            <p>Takvim gridi tek odanın detayını gösterir; toplu güncelleme alttaki seçim listesiyle birden fazla odaya uygulanabilir.</p>
         </div>
     </div>
     <div class="partner-room-chip-list">
@@ -77,25 +77,25 @@
     <article class="partner-section-card partner-calendar-panel">
         <div class="partner-section-head partner-calendar-head">
             <div>
-                <h2>Aylik fiyat takvimi</h2>
-                <p>@(Model.SelectedRoomId.HasValue ? Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId.Value)?.RoomName : "Oda seciniz")</p>
+                <h2>Aylık fiyat takvimi</h2>
+                <p>@(Model.SelectedRoomId.HasValue ? Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId.Value)?.RoomName : "Oda seçiniz")</p>
             </div>
             <div class="partner-calendar-legend">
-                <span><i class="fas fa-circle legend-discount"></i> Kampanyali</span>
+                <span><i class="fas fa-circle legend-discount"></i> Kampanyalı</span>
                 <span><i class="fas fa-circle legend-warning"></i> Son odalar</span>
-                <span><i class="fas fa-circle legend-closed"></i> Satisa kapali</span>
+                <span><i class="fas fa-circle legend-closed"></i> Satışa kapalı</span>
             </div>
         </div>
         <div class="partner-calendar-insight">
             <i class="fas fa-circle-info"></i>
-            <p>Anasayfa, favoriler ve detay fiyatlari bu takvimdeki acik satis gunlerinin en dusuk efektif fiyatina gore hesaplanir (kampanyali fiyat varsa once o kullanilir).</p>
+            <p>Anasayfa, favoriler ve detay fiyatları bu takvimdeki açık satış günlerinin en düşük efektif fiyatına göre hesaplanır (kampanyalı fiyat varsa önce o kullanılır).</p>
         </div>
 
         @if (Model.CalendarDays.Count == 0)
         {
             <div class="partner-empty-state">
-                <strong>Takvim verisi hazir degil</strong>
-                <p>Bu otel icin once oda tipi secin veya aktif oda tipleri tanimlayin.</p>
+                <strong>Takvim verisi hazır değil</strong>
+                <p>Bu otel için önce oda tipi seçin veya aktif oda tipleri tanımlayın.</p>
             </div>
         }
         else
@@ -191,7 +191,7 @@
     <aside class="partner-section-card partner-bulk-panel">
         <div class="partner-section-head">
             <div>
-                <h2>Coklu fiyat guncelleme</h2>
+                <h2>Çoklu fiyat güncelleme</h2>
                 <p>Secili tarih araliginda bir veya birden fazla oda tipine ayni anda fiyat, kampanya ve stok kurali uygulayin.</p>
             </div>
         </div>

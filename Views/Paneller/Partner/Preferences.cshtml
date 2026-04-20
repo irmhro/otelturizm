@@ -7,7 +7,7 @@
 <section class="partner-section-card partner-application-hero">
     <div>
         <span class="partner-eyebrow">PARTNER ONBOARDING</span>
-        <h2>Basvuru, evrak ve yayin durumu</h2>
+        <h2>Başvuru, evrak ve yayın durumu</h2>
         <p>
             Partner hesabiniz e-posta onayindan sonra panele girebilir. Admin onayi tamamlanana kadar tesisiniz
             duzenlenebilir, oda ve gorsel eklenebilir; ancak yayina alinmaz.
@@ -33,7 +33,7 @@
             }
             @if (!string.IsNullOrWhiteSpace(Model.Status.RejectionReason))
             {
-                <li><strong>Aciklama:</strong> @Model.Status.RejectionReason</li>
+                <li><strong>Açıklama:</strong> @Model.Status.RejectionReason</li>
             }
         </ul>
     </article>
@@ -78,7 +78,7 @@
             @if (Model.Documents.Count == 0)
             {
                 <div class="partner-empty-state">
-                    <strong>Henuz belge yuklenmedi</strong>
+                    <strong>Henüz belge yüklenmedi</strong>
                     <span>Vergi, banka ve yasal evraklarinizi yukleyerek inceleme surecini hizlandirin.</span>
                 </div>
             }
@@ -100,7 +100,7 @@
                             <span class="partner-chip @document.StatusToneClass">@document.StatusText</span>
                             @if (!string.IsNullOrWhiteSpace(document.AccessUrl))
                             {
-                                <a class="secondary-link" href="@document.AccessUrl" target="_blank" rel="noopener">Goruntule</a>
+                                <a class="secondary-link" href="@document.AccessUrl" target="_blank" rel="noopener">Görüntüle</a>
                             }
                             <form method="post" action="/panel/partner/basvuru-ve-evraklar/evrak-sil">
                                 @Html.AntiForgeryToken()
@@ -119,8 +119,8 @@
 <section class="partner-section-card">
     <div class="section-heading">
         <div>
-            <span class="partner-eyebrow">BASVURU DETAYLARI</span>
-            <h3>Partner bilgilerini guncelle</h3>
+            <span class="partner-eyebrow">BAŞVURU DETAYLARI</span>
+            <h3>Partner bilgilerini güncelle</h3>
         </div>
     </div>
 
@@ -129,8 +129,8 @@
         <input type="hidden" name="HotelId" value="@Model.Form.HotelId" />
         <input type="hidden" name="PartnerId" value="@Model.Form.PartnerId" />
 
-        <label><span>Tesis / Otel Adi</span><input type="text" name="HotelName" value="@Model.Form.HotelName" /></label>
-        <label><span>Firma Unvani</span><input type="text" name="CompanyName" value="@Model.Form.CompanyName" /></label>
+        <label><span>Tesis / Otel Adı</span><input type="text" name="HotelName" value="@Model.Form.HotelName" /></label>
+        <label><span>Firma Unvanı</span><input type="text" name="CompanyName" value="@Model.Form.CompanyName" /></label>
         <label>
             <span>Firma Turu</span>
             <select name="CompanyType">
@@ -144,22 +144,22 @@
             </select>
         </label>
         <label><span>Yetkili Ad Soyad</span><input type="text" name="ContactName" value="@Model.Form.ContactName" /></label>
-        <label><span>Yetkili Unvani</span><input type="text" name="ContactTitle" value="@Model.Form.ContactTitle" /></label>
+        <label><span>Yetkili Unvanı</span><input type="text" name="ContactTitle" value="@Model.Form.ContactTitle" /></label>
         <label><span>E-posta</span><input type="email" name="Email" value="@Model.Form.Email" /></label>
         <label><span>Telefon</span><input type="text" name="Phone" value="@Model.Form.Phone" /></label>
         <label><span>Vergi Dairesi</span><input type="text" name="TaxOffice" value="@Model.Form.TaxOffice" /></label>
-        <label><span>Vergi Numarasi</span><input type="text" name="TaxNumber" value="@Model.Form.TaxNumber" /></label>
+        <label><span>Vergi Numarası</span><input type="text" name="TaxNumber" value="@Model.Form.TaxNumber" /></label>
         <label><span>Yetkili TC No</span><input type="text" name="ContactTcNo" value="@Model.Form.ContactTcNo" /></label>
-        <label><span>Sehir</span><input type="text" name="City" value="@Model.Form.City" /></label>
-        <label><span>Ilce</span><input type="text" name="District" value="@Model.Form.District" /></label>
+        <label><span>Şehir</span><input type="text" name="City" value="@Model.Form.City" /></label>
+        <label><span>İlçe</span><input type="text" name="District" value="@Model.Form.District" /></label>
         <label><span>Mahalle</span><input type="text" name="Neighborhood" value="@Model.Form.Neighborhood" /></label>
         <label><span>Banka</span><input type="text" name="BankName" value="@Model.Form.BankName" /></label>
-        <label><span>Sube</span><input type="text" name="BankBranch" value="@Model.Form.BankBranch" /></label>
+        <label><span>Şube</span><input type="text" name="BankBranch" value="@Model.Form.BankBranch" /></label>
         <label><span>IBAN</span><input type="text" name="Iban" value="@Model.Form.Iban" /></label>
         <label><span>Web Sitesi</span><input type="text" name="Website" value="@Model.Form.Website" /></label>
-        <label class="full-span"><span>Acik Adres</span><textarea name="Address" rows="3">@Model.Form.Address</textarea></label>
-        <label class="full-span"><span>Aciklama</span><textarea name="Description" rows="4">@Model.Form.Description</textarea></label>
+        <label class="full-span"><span>Açık Adres</span><textarea name="Address" rows="3">@Model.Form.Address</textarea></label>
+        <label class="full-span"><span>Açıklama</span><textarea name="Description" rows="4">@Model.Form.Description</textarea></label>
 
-        <button type="submit" class="partner-primary-btn">Basvuru Bilgilerini Kaydet</button>
+        <button type="submit" class="partner-primary-btn">Başvuru Bilgilerini Kaydet</button>
     </form>
 </section>

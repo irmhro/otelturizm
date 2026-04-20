@@ -90,7 +90,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 RoomCount = SafeInt(reader, 8),
                 HotelPhotoCount = SafeInt(reader, 9),
                 RoomPhotoCount = SafeInt(reader, 10),
-                IsFeatured = !reader.IsDBNull(11) && reader.GetBoolean(11)
+                IsFeatured = SafeBool(reader, 11)
             });
         }
 
@@ -555,7 +555,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             if (await reader.ReadAsync(cancellationToken))
             {
                 relativePath = reader.GetString(0);
-                wasCover = reader.GetBoolean(1);
+                wasCover = SafeBool(reader, 1);
             }
         }
 
@@ -733,7 +733,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             if (await reader.ReadAsync(cancellationToken))
             {
                 relativePath = reader.GetString(0);
-                wasCover = reader.GetBoolean(1);
+                wasCover = SafeBool(reader, 1);
             }
         }
 
@@ -897,7 +897,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return new AdminHotelEditForm
         {
             HotelId = reader.GetInt64(0), HotelCode = reader.GetString(1), PartnerId = reader.GetInt64(2), UserId = reader.IsDBNull(3) ? null : reader.GetInt64(3), HotelName = reader.GetString(4), HotelType = reader.GetString(5),
-            StarCount = reader.IsDBNull(6) ? null : reader.GetByte(6), TourismDocumentNo = SafeString(reader, 7), TourismDocumentType = SafeString(reader, 8), Country = SafeString(reader, 9) ?? "Türkiye", City = reader.GetString(10), District = reader.GetString(11),
+            StarCount = reader.IsDBNull(6) ? null : Convert.ToByte(reader.GetValue(6), CultureInfo.InvariantCulture), TourismDocumentNo = SafeString(reader, 7), TourismDocumentType = SafeString(reader, 8), Country = SafeString(reader, 9) ?? "Türkiye", City = reader.GetString(10), District = reader.GetString(11),
             Neighborhood = SafeString(reader, 12), Address = reader.GetString(13), PostalCode = SafeString(reader, 14), Latitude = SafeDecimalNullable(reader, 15), Longitude = SafeDecimalNullable(reader, 16), Phone1 = reader.GetString(17), Phone2 = SafeString(reader, 18), Fax = SafeString(reader, 19),
             ContactEmail = reader.GetString(20), Website = SafeString(reader, 21), ReservationPhone = SafeString(reader, 22), SalesContactName = SafeString(reader, 23), SalesContactPhone = SafeString(reader, 24), SalesContactEmail = SafeString(reader, 25), SalesNotes = SafeString(reader, 26),
             CheckInTime = SafeTime(reader, 27), CheckOutTime = SafeTime(reader, 28), LateCheckoutAvailable = SafeBool(reader, 29), LateCheckoutFee = SafeDecimalNullable(reader, 30), EarlyCheckInAvailable = SafeBool(reader, 31), EarlyCheckInFee = SafeDecimalNullable(reader, 32),
@@ -1173,7 +1173,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     }
 
     private static string? SafeString(SqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
-    private static bool SafeBool(SqlDataReader reader, int ordinal) => !reader.IsDBNull(ordinal) && reader.GetBoolean(ordinal);
+    private static bool SafeBool(SqlDataReader reader, int ordinal) => !reader.IsDBNull(ordinal) && Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture) == 1;
     private static int SafeInt(SqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
     private static int? SafeNullableInt(SqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
     private static decimal? SafeDecimalNullable(SqlDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);

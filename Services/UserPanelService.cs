@@ -407,13 +407,13 @@ public class UserPanelService : IUserPanelService
             {
                 model.Form = new UserNotificationPreferencesForm
                 {
-                    ReservationEmail = reader.GetBoolean(0),
-                    ReservationPush = reader.GetBoolean(1),
-                    CheckInReminder = reader.GetBoolean(2),
-                    CancellationChanges = reader.GetBoolean(3),
-                    CampaignEmail = reader.GetBoolean(4),
-                    CampaignSms = reader.GetBoolean(5),
-                    SystemNotifications = reader.GetBoolean(6)
+                    ReservationEmail = SafeBool(reader, 0),
+                    ReservationPush = SafeBool(reader, 1),
+                    CheckInReminder = SafeBool(reader, 2),
+                    CancellationChanges = SafeBool(reader, 3),
+                    CampaignEmail = SafeBool(reader, 4),
+                    CampaignSms = SafeBool(reader, 5),
+                    SystemNotifications = SafeBool(reader, 6)
                 };
             }
         }
@@ -502,7 +502,7 @@ public class UserPanelService : IUserPanelService
             model.Sessions.Add(new UserSessionRowViewModel
             {
                 DeviceLabel = reader.GetString(0),
-                RememberText = !reader.IsDBNull(1) && reader.GetBoolean(1) ? "Beni hatırla açık" : "Standart oturum",
+                RememberText = SafeBool(reader, 1) ? "Beni hatırla açık" : "Standart oturum",
                 ActivityText = lastActive.HasValue ? $"{lastActive.Value:dd.MM.yyyy HH:mm} · {Math.Max(1, duration / 60)} dk toplam" : "Henüz aktivite yok"
             });
         }
@@ -578,8 +578,8 @@ public class UserPanelService : IUserPanelService
                 {
                     PaymentMethodId = reader.GetInt64(0),
                     Label = $"{reader.GetString(1)} · {reader.GetString(2)} •••• {reader.GetString(3)}",
-                    DetailText = $"Son kullanim {SafeInt(reader, 4):00}/{SafeInt(reader, 5)}" + (!reader.IsDBNull(6) && reader.GetBoolean(6) ? " · Varsayilan kart" : string.Empty),
-                    IsDefault = !reader.IsDBNull(6) && reader.GetBoolean(6)
+                    DetailText = $"Son kullanim {SafeInt(reader, 4):00}/{SafeInt(reader, 5)}" + (SafeBool(reader, 6) ? " · Varsayilan kart" : string.Empty),
+                    IsDefault = SafeBool(reader, 6)
                 });
             }
         }
@@ -1555,6 +1555,9 @@ public class UserPanelService : IUserPanelService
 
     private static int SafeInt(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+
+    private static bool SafeBool(SqlDataReader reader, int ordinal)
+        => !reader.IsDBNull(ordinal) && Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture) == 1;
 
     private static decimal SafeDecimal(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0m : reader.GetDecimal(ordinal);

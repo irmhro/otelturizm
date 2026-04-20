@@ -272,7 +272,17 @@ public class UserFavoriteService : IUserFavoriteService
             return new HotelFavoriteToggleResponse { Success = false, Message = "Favorilere eklenecek otel bulunamadı." };
         }
 
-        const string selectSql = @"SELECT TOP (1) id, COALESCE(aktif_mi, 1) AS aktif_mi FROM user_favori_oteller WHERE user_id = @userId AND otel_id = @hotelId ORDER BY id DESC;";
+        const string selectSql = @"
+            SELECT TOP (1)
+                id,
+                CASE
+                    WHEN COALESCE(CONVERT(int, aktif_mi), 1) = 1 THEN 1
+                    ELSE 0
+                END AS aktif_mi
+            FROM user_favori_oteller
+            WHERE user_id = @userId
+              AND otel_id = @hotelId
+            ORDER BY id DESC;";
         await using var selectCommand = new SqlCommand(selectSql, connection);
         selectCommand.Parameters.AddWithValue("@userId", userId);
         selectCommand.Parameters.AddWithValue("@hotelId", hotelId);
@@ -284,7 +294,7 @@ public class UserFavoriteService : IUserFavoriteService
             if (await reader.ReadAsync(cancellationToken))
             {
                 recordId = reader.GetInt64(reader.GetOrdinal("id"));
-                isActive = reader.GetBoolean(reader.GetOrdinal("aktif_mi"));
+                isActive = Convert.ToInt32(reader.GetValue(reader.GetOrdinal("aktif_mi")), CultureInfo.InvariantCulture) == 1;
             }
         }
 

@@ -20,29 +20,29 @@
     <div class="partner-section-head partner-finance-toolbar">
         <div>
             <h2>Finans merkezi</h2>
-            <p>Tahsilatlar, faturalar ve banka aktarim bilgileri tek akista yonetilir.</p>
+            <p>Tahsilatlar, faturalar ve banka aktarım bilgileri tek akışta yönetilir.</p>
         </div>
         <a href="/panel/partner/finans/disa-aktar?otelId=@Model.Shell.SelectedHotelId" class="partner-secondary-btn">
             <i class="fas fa-file-export"></i>
-            Finans disa aktar
+            Finans dışa aktar
         </a>
     </div>
 </section>
 
 <section class="partner-two-column">
     <article class="partner-section-card">
-        <h2>Aktif komisyon ve vergi kurali</h2>
+        <h2>Aktif komisyon ve vergi kuralı</h2>
         <div class="partner-finance-callout">
             <i class="fas fa-percent"></i>
-            <span>@(string.IsNullOrWhiteSpace(Model.ActiveRuleCommissionText) ? "Bu otel icin henuz aktif bir komisyon kurali tanimlanmamis." : Model.ActiveRuleCommissionText)</span>
+            <span>@(string.IsNullOrWhiteSpace(Model.ActiveRuleCommissionText) ? "Bu otel için henüz aktif bir komisyon kuralı tanımlanmamış." : Model.ActiveRuleCommissionText)</span>
         </div>
         <div class="partner-finance-callout">
             <i class="fas fa-receipt"></i>
-            <span>@(string.IsNullOrWhiteSpace(Model.ActiveRuleTaxText) ? "Vergi ayarlari bulunamadi." : Model.ActiveRuleTaxText)</span>
+            <span>@(string.IsNullOrWhiteSpace(Model.ActiveRuleTaxText) ? "Vergi ayarları bulunamadı." : Model.ActiveRuleTaxText)</span>
         </div>
         <div class="partner-finance-callout">
             <i class="fas fa-calendar-days"></i>
-            <span>@(string.IsNullOrWhiteSpace(Model.ActiveRuleDateText) ? "Tarih araligi tanimli degil." : Model.ActiveRuleDateText)</span>
+            <span>@(string.IsNullOrWhiteSpace(Model.ActiveRuleDateText) ? "Tarih aralığı tanımlı değil." : Model.ActiveRuleDateText)</span>
         </div>
     </article>
     <article class="partner-section-card">
@@ -50,8 +50,8 @@
         @if (Model.Transactions.Count == 0)
         {
             <div class="partner-empty-state">
-                <strong>Henuz finans hareketi yok</strong>
-                <p>Rezervasyon odemeleri geldikce tahsilat ve net odeme akisi burada listelenecek.</p>
+                <strong>Henüz finans hareketi yok</strong>
+                <p>Rezervasyon ödemeleri geldikçe tahsilat ve net ödeme akışı burada listelenecek.</p>
             </div>
         }
         else
@@ -60,7 +60,7 @@
                 <table class="partner-table">
                     <thead>
                         <tr>
-                            <th>Kayit</th>
+                            <th>Kayıt</th>
                             <th>Tarih</th>
                             <th>Durum</th>
                             <th>Tutar</th>
@@ -84,13 +84,13 @@
         }
     </article>
     <article class="partner-section-card">
-        <h2>Vergi ve komisyon ozeti</h2>
+        <h2>Vergi ve komisyon özeti</h2>
         <p>@Model.PayoutNote</p>
         @if (Model.TaxRows.Count == 0)
         {
             <div class="partner-empty-state">
-                <strong>Vergi ozeti henuz hazir degil</strong>
-                <p>Rezervasyonlar geldikce bu alanda komisyon ve vergi toplamlari listelenecek.</p>
+                <strong>Vergi özeti henüz hazır değil</strong>
+                <p>Rezervasyonlar geldikçe bu alanda komisyon ve vergi toplamları listelenecek.</p>
             </div>
         }
         else
@@ -119,14 +119,14 @@
         <div class="partner-section-head">
             <div>
                 <h2>Faturalar</h2>
-                <p>Kesilen faturalari indirip donem bazli takip edebilirsiniz.</p>
+                <p>Kesilen faturaları indirip dönem bazlı takip edebilirsiniz.</p>
             </div>
         </div>
         @if (Model.Invoices.Count == 0)
         {
             <div class="partner-empty-state">
-                <strong>Fatura kaydi bulunmuyor</strong>
-                <p>Fatura olustukca bu alanda indirilebilir dokumanlar listelenecek.</p>
+                <strong>Fatura kaydı bulunmuyor</strong>
+                <p>Fatura oluştukça bu alanda indirilebilir dokümanlar listelenecek.</p>
             </div>
         }
         else
@@ -204,7 +204,7 @@
             </label>
             <button type="submit" class="partner-primary-btn partner-form-span">
                 <i class="fas fa-building-columns"></i>
-                Banka bilgilerini guncelle
+                Banka bilgilerini güncelle
             </button>
         </form>
     </article>

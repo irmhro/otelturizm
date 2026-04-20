@@ -22,44 +22,44 @@
     <div class="partner-section-head partner-reservation-toolbar">
         <div>
             <h2>Rezervasyon Listesi</h2>
-            <p>Onay, red, detay ve misafir mesaji aksiyonlarini tek ekranda yonetin.</p>
+            <p>Onay, red, detay ve misafir mesajı aksiyonlarını tek ekranda yönetin.</p>
         </div>
         <div class="partner-reservation-toolbar-actions">
             <a href="/panel/partner/rezervasyonlar/disa-aktar?otelId=@Model.Shell.SelectedHotelId" class="partner-secondary-btn">
                 <i class="fas fa-download"></i>
-                Disa aktar
+                Dışa aktar
             </a>
         </div>
     </div>
     <form method="get" action="/panel/partner/rezervasyonlar" class="partner-reservation-filters">
         <input type="hidden" name="otelId" value="@Model.Shell.SelectedHotelId" />
         <label>
-            <span>Giris tarihi (baslangic)</span>
+            <span>Giriş tarihi (başlangıç)</span>
             <input type="date" name="dateFrom" value="@Model.Filters.DateFrom" />
         </label>
         <label>
-            <span>Cikis tarihi (bitis)</span>
+            <span>Çıkış tarihi (bitiş)</span>
             <input type="date" name="dateTo" value="@Model.Filters.DateTo" />
         </label>
         <label>
             <span>Durum</span>
             <select name="status">
-                <option value="all" selected="@(Model.Filters.Status == "all")">Tum durumlar</option>
+                <option value="all" selected="@(Model.Filters.Status == "all")">Tüm durumlar</option>
                 <option value="pending" selected="@(Model.Filters.Status == "pending")">Bekleyen</option>
-                <option value="approved" selected="@(Model.Filters.Status == "approved")">Onayli</option>
-                <option value="rejected" selected="@(Model.Filters.Status == "rejected")">Red / Iptal</option>
+                <option value="approved" selected="@(Model.Filters.Status == "approved")">Onaylı</option>
+                <option value="rejected" selected="@(Model.Filters.Status == "rejected")">Red / İptal</option>
             </select>
         </label>
         <label>
-            <span>Odeme tipi</span>
+            <span>Ödeme tipi</span>
             <select name="paymentMethod">
                 <option value="all" selected="@(Model.Filters.PaymentMethod == "all")">Tumu</option>
                 <option value="card" selected="@(Model.Filters.PaymentMethod == "card")">Kart ile ode</option>
-                <option value="cash" selected="@(Model.Filters.PaymentMethod == "cash")">Kapida odeme / nakit</option>
+                <option value="cash" selected="@(Model.Filters.PaymentMethod == "cash")">Kapıda ödeme / nakit</option>
             </select>
         </label>
         <label>
-            <span>Sayfa basi</span>
+            <span>Sayfa başı</span>
             <select name="pageSize">
                 <option value="10" selected="@(Model.PageSize == 10)">10</option>
                 <option value="20" selected="@(Model.PageSize == 20)">20</option>
@@ -73,16 +73,16 @@
         </button>
     </form>
     <div class="partner-policy-alert @(Model.PenaltyActive ? "is-critical" : Model.RejectCountLast30Days >= 3 ? "is-warning" : string.Empty)">
-        <h4>Rezervasyon onay ve red politikasi</h4>
-        <p>Son 30 gundeki red sayiniz: <strong>@Model.RejectCountLast30Days</strong>. Her red icin nedeni detayli ve aydinlatici sekilde yazmaniz zorunludur.</p>
+        <h4>Rezervasyon onay ve red politikası</h4>
+        <p>Son 30 gündeki red sayınız: <strong>@Model.RejectCountLast30Days</strong>. Her red için nedeni detaylı ve aydınlatıcı şekilde yazmanız zorunludur.</p>
         <ul>
-            <li>3 red ve uzeri: sistem tesisi 3 gun sureyle listelemeden otomatik kapatir.</li>
-            <li>5 red ve uzeri: kontenjan ve fiyat stratejisinin tekrar yapilandirilmasi onerilir.</li>
-            <li>Onay ve red islemlerinde misafire e-posta bildirimi otomatik gonderilir.</li>
+            <li>3 red ve üzeri: sistem tesisi 3 gün süreyle listelemeden otomatik kapatır.</li>
+            <li>5 red ve üzeri: kontenjan ve fiyat stratejisinin tekrar yapılandırılması önerilir.</li>
+            <li>Onay ve red işlemlerinde misafire e-posta bildirimi otomatik gönderilir.</li>
         </ul>
         @if (Model.PenaltyActive && !string.IsNullOrWhiteSpace(Model.PenaltyEndText))
         {
-            <p class="partner-policy-meta">Cezai kapatma bitis tarihi: <strong>@Model.PenaltyEndText</strong></p>
+            <p class="partner-policy-meta">Cezai kapatma bitiş tarihi: <strong>@Model.PenaltyEndText</strong></p>
         }
     </div>
     <div class="partner-table-wrap">
@@ -229,7 +229,7 @@
     @if (Model.Conversations.Count == 0)
     {
         <div class="partner-empty-state">
-            <strong>Henuz mesaj konusmasi yok</strong>
+            <strong>Henüz mesaj konuşması yok</strong>
             <p>Misafir bir mesaj gonderdiginde veya siz rezervasyondan mesaj attiginizda bu alanda sohbet gorunur.</p>
         </div>
     }
