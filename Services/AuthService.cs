@@ -1575,9 +1575,38 @@ public class AuthService : IAuthService
             ? "MIN(COALESCE(up.id, 0))"
             : "0";
 
+        var partnerHotelOwnershipClause = authSchema.HasHotelOwnershipTable
+            ? """
+                (
+                    EXISTS
+                    (
+                        SELECT 1
+                        FROM otel_kullanici_sahiplikleri oku
+                        WHERE oku.user_id = u.id
+                          AND oku.aktif_mi = 1
+                    )
+                    OR EXISTS
+                    (
+                        SELECT 1
+                        FROM oteller o
+                        WHERE o.user_id = u.id
+                    )
+                )
+                """
+            : """
+                (
+                    EXISTS
+                    (
+                        SELECT 1
+                        FROM oteller o
+                        WHERE o.user_id = u.id
+                    )
+                )
+                """;
+
         var partnerRequirementClause = authSchema.HasUserRoleColumn
-            ? $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL OR u.rol LIKE 'partner_%')"
-            : $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL)";
+            ? $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL OR u.rol LIKE 'partner_%' OR {partnerHotelOwnershipClause})"
+            : $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL OR {partnerHotelOwnershipClause})";
 
         var managedHotelSelect = authSchema.HasHotelOwnershipTable
             ? """
@@ -1778,8 +1807,8 @@ public class AuthService : IAuthService
             return null;
         }
 
-        var normalized = identity.Trim().ToUpperInvariant();
-        return normalized.StartsWith("OTL", StringComparison.OrdinalIgnoreCase)
+        var normalized = NormalizeCodeInput(identity);
+        return normalized.StartsWith("OTLTRZM-", StringComparison.Ordinal)
             ? normalized
             : null;
     }
@@ -2161,9 +2190,38 @@ public class AuthService : IAuthService
                     """)
             : string.Empty;
 
+        var partnerHotelOwnershipClause = authSchema.HasHotelOwnershipTable
+            ? """
+                (
+                    EXISTS
+                    (
+                        SELECT 1
+                        FROM otel_kullanici_sahiplikleri oku
+                        WHERE oku.user_id = u.id
+                          AND oku.aktif_mi = 1
+                    )
+                    OR EXISTS
+                    (
+                        SELECT 1
+                        FROM oteller o
+                        WHERE o.user_id = u.id
+                    )
+                )
+                """
+            : """
+                (
+                    EXISTS
+                    (
+                        SELECT 1
+                        FROM oteller o
+                        WHERE o.user_id = u.id
+                    )
+                )
+                """;
+
         var partnerRequirementClause = authSchema.HasUserRoleColumn
-            ? $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL OR u.rol LIKE 'partner_%')"
-            : $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL)";
+            ? $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL OR u.rol LIKE 'partner_%' OR {partnerHotelOwnershipClause})"
+            : $"(@requirePartner = 0 OR {partnerIdSelect} IS NOT NULL OR {partnerHotelOwnershipClause})";
 
         var sql = $"""
             SELECT TOP (1)
@@ -2451,19 +2509,53 @@ public class AuthService : IAuthService
 
     private static async Task<string> GenerateHotelCodeAsync(SqlConnection connection, SqlTransaction transaction, string city, CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT COALESCE(MAX(id), 0) + 1
-            FROM oteller;
-            """;
-
-        await using var command = transaction is null
-            ? new SqlCommand(sql, connection)
-            : new SqlCommand(sql, connection, transaction!);
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        var nextId = Convert.ToInt64(result, CultureInfo.InvariantCulture);
         var cityCode = NormalizeAscii(city).ToUpperInvariant();
         cityCode = string.IsNullOrWhiteSpace(cityCode) ? "TR" : cityCode[..Math.Min(3, cityCode.Length)];
-        return $"OTLTRZM-{cityCode}-{nextId:0000}";
+
+        const string existsSql = """
+            SELECT COUNT(*)
+            FROM oteller
+            WHERE UPPER(otel_kodu) = @hotelCode;
+            """;
+
+        for (var attempt = 0; attempt < 32; attempt++)
+        {
+            var uniquePart = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6", CultureInfo.InvariantCulture);
+            var candidate = $"OTLTRZM-{cityCode}-{uniquePart}";
+
+            await using var command = transaction is null
+                ? new SqlCommand(existsSql, connection)
+                : new SqlCommand(existsSql, connection, transaction!);
+            command.Parameters.AddWithValue("@hotelCode", candidate);
+
+            var exists = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) > 0;
+            if (!exists)
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException("Benzersiz otel kodu olusturulamadi. Lutfen tekrar deneyin.");
+    }
+
+    private static string NormalizeCodeInput(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return value
+            .Trim()
+            .Replace(" ", string.Empty, StringComparison.Ordinal)
+            .Replace("ç", "c", StringComparison.OrdinalIgnoreCase)
+            .Replace("ğ", "g", StringComparison.OrdinalIgnoreCase)
+            .Replace("ı", "i", StringComparison.OrdinalIgnoreCase)
+            .Replace("İ", "I", StringComparison.Ordinal)
+            .Replace("ö", "o", StringComparison.OrdinalIgnoreCase)
+            .Replace("ş", "s", StringComparison.OrdinalIgnoreCase)
+            .Replace("ü", "u", StringComparison.OrdinalIgnoreCase)
+            .ToUpperInvariant();
     }
 
     private static async Task<bool> TableExistsAsync(

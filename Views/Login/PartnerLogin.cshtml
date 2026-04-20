@@ -65,10 +65,10 @@
                 <form class="auth-form" id="partnerLoginForm" method="post" asp-controller="Auth" asp-action="PartnerLogin">
                     @Html.AntiForgeryToken()
                     <div class="form-group">
-                        <label for="partnerIdentity">Otel Kodu veya E-posta</label>
+                        <label for="partnerIdentity">Partner Kodu veya E-posta</label>
                         <div class="input-wrap">
                             <i class="fas fa-hotel"></i>
-                            <input id="partnerIdentity" name="partnerIdentity" type="text" class="form-control" placeholder="Orn: OTLTRZM-IST-8EAF0101 veya email@otel.com" value="@resendVerifyEmail" required />
+                            <input id="partnerIdentity" name="partnerIdentity" type="text" class="form-control" placeholder="Orn: OTLTRZM-IST-123456 veya email@otel.com" value="@resendVerifyEmail" required />
                         </div>
                     </div>
 
