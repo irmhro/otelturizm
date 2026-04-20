@@ -46,6 +46,8 @@ Server=(localdb)\MSSQLLocalDB;Database=otelturizm_2026db;Trusted_Connection=True
 - Hedef IIS uygulaması: `otelturizm.com`
 - Web Deploy sunucusu: `185.111.244.246`
 - AppOffline: `aktif`
+- Build yapılandırması: `Release`
+- Runtime: `win-x64`
 
 ## Not
 - Operasyon ve yayın adımları için ana rehber:

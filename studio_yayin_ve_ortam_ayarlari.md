@@ -68,6 +68,8 @@ Aktif önemli ayarlar:
 - `EnableMSDeployAppOffline`: `true`
 - `SelfContained`: `false`
 - `UseAppHost`: `true`
+- `LastUsedBuildConfiguration`: `Release`
+- `RuntimeIdentifier`: `win-x64`
 
 Önemli düzeltme:
 - Publish sırasında `otelturizmnew.dll` lock hatası alınmaması için doğru property adı kullanılmaktadır:
@@ -96,6 +98,11 @@ dotnet build --no-restore
 
 4. Eğer çalışan local process varsa kapatılır.
 5. Visual Studio üzerinden publish başlatılır.
+   - CLI eşdeğeri:
+
+```powershell
+dotnet publish -c Release /p:PublishProfile="Properties\PublishProfiles\IISProfile.pubxml"
+```
 6. Yayın sonrası canlı site kontrol edilir.
 
 ## Publish Öncesi Kontrol Listesi
