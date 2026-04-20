@@ -2,37 +2,13 @@
 @model AdminShellViewModel
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Dashboard";
-    var items = new[]
-    {
-        new { Action = "Dashboard", Label = "Dashboard", Icon = "fa-tachometer-alt", Badge = "" },
-        new { Action = "Hotels", Label = "Oteller", Icon = "fa-hotel", Badge = "" },
-        new { Action = "Reservations", Label = "Rezervasyonlar", Icon = "fa-calendar-check", Badge = "" },
-        new { Action = "Payments", Label = "Ödemeler", Icon = "fa-credit-card", Badge = "" },
-        new { Action = "Users", Label = "Kullanıcılar", Icon = "fa-users", Badge = "" },
-        new { Action = "Managers", Label = "Yöneticiler", Icon = "fa-user-tie", Badge = "" },
-        new { Action = "PartnerApplications", Label = "Partner Başvuruları", Icon = "fa-handshake", Badge = Model.PendingPartnerApplications > 0 ? Model.PendingPartnerApplications.ToString() : "" },
-        new { Action = "Reviews", Label = "Değerlendirmeler", Icon = "fa-star", Badge = Model.PendingReviews > 0 ? Model.PendingReviews.ToString() : "" },
-        new { Action = "Campaigns", Label = "Kampanyalar", Icon = "fa-bullhorn", Badge = "" },
-        new { Action = "Invoices", Label = "Faturalar", Icon = "fa-file-invoice", Badge = "" },
-        new { Action = "Commissions", Label = "Komisyonlar", Icon = "fa-percent", Badge = "" },
-        new { Action = "Contracts", Label = "Sözleşmeler", Icon = "fa-file-contract", Badge = "" },
-        new { Action = "Notifications", Label = "Bildirimler", Icon = "fa-bell", Badge = Model.UnreadNotifications > 0 ? Model.UnreadNotifications.ToString() : "" },
-        new { Action = "EmailTemplates", Label = "E-posta Şablonları", Icon = "fa-envelope", Badge = "" },
-        new { Action = "Logs", Label = "Log Kayıtları", Icon = "fa-clipboard-list", Badge = Model.CriticalLogs > 0 ? Model.CriticalLogs.ToString() : "" },
-        new { Action = "Reports", Label = "Raporlar", Icon = "fa-chart-line", Badge = "" },
-        new { Action = "Blog", Label = "Blog Yönetimi", Icon = "fa-blog", Badge = "" },
-        new { Action = "Faq", Label = "SSS Yönetimi", Icon = "fa-question-circle", Badge = "" },
-        new { Action = "Settings", Label = "Ayarlar", Icon = "fa-cog", Badge = "" },
-        new { Action = "Security", Label = "Güvenlik", Icon = "fa-shield-alt", Badge = "" },
-        new { Action = "Complaints", Label = "Şikayetler", Icon = "fa-exclamation-triangle", Badge = "" },
-        new { Action = "Backups", Label = "Yedekleme", Icon = "fa-database", Badge = "" }
-    };
+
+    string Active(string action) => currentAction == action ? "active" : string.Empty;
 }
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <a asp-controller="AdminPanel" asp-action="Dashboard" class="brand-link">
-        <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="brand-image img-circle elevation-3" style="opacity: .8" />
-        <span class="brand-text font-weight-light">Otelturizm Admin</span>
+    <a asp-controller="AdminPanel" asp-action="Dashboard" class="brand-link justify-content-center">
+        <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="brand-image img-circle elevation-3 admin-brand-logo" />
     </a>
 
     <div class="sidebar">
@@ -48,22 +24,47 @@
 
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column nav-compact text-sm" data-widget="treeview" role="menu" data-accordion="false">
-                @foreach (var item in items)
-                {
-                    var active = currentAction == item.Action;
-                    <li class="nav-item">
-                        <a asp-controller="AdminPanel" asp-action="@item.Action" class="nav-link @(active ? "active" : string.Empty)">
-                            <i class="nav-icon fas @item.Icon"></i>
-                            <p>
-                                @item.Label
-                                @if (!string.IsNullOrWhiteSpace(item.Badge))
-                                {
-                                    <span class="right badge badge-warning">@item.Badge</span>
-                                }
-                            </p>
-                        </a>
-                    </li>
-                }
+                <li class="nav-item">
+                    <a asp-controller="AdminPanel" asp-action="Dashboard" class="nav-link @Active("Dashboard")">
+                        <i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p>
+                    </a>
+                </li>
+
+                <li class="nav-header">CORE</li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Hotels" class="nav-link @Active("Hotels")"><i class="nav-icon fas fa-hotel"></i><p>Oteller</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Reservations" class="nav-link @Active("Reservations")"><i class="nav-icon fas fa-calendar-check"></i><p>Rezervasyonlar</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Payments" class="nav-link @Active("Payments")"><i class="nav-icon fas fa-credit-card"></i><p>Ödemeler</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Users" class="nav-link @Active("Users")"><i class="nav-icon fas fa-users"></i><p>Kullanıcılar</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Managers" class="nav-link @Active("Managers")"><i class="nav-icon fas fa-user-tie"></i><p>Yöneticiler</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="PartnerApplications" class="nav-link @Active("PartnerApplications")"><i class="nav-icon fas fa-handshake"></i><p>Partner Başvuruları <span class="right badge badge-warning">@(Model.PendingPartnerApplications)</span></p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Reviews" class="nav-link @Active("Reviews")"><i class="nav-icon fas fa-star"></i><p>Değerlendirmeler <span class="right badge badge-info">@(Model.PendingReviews)</span></p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Campaigns" class="nav-link @Active("Campaigns")"><i class="nav-icon fas fa-bullhorn"></i><p>Kampanyalar</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Invoices" class="nav-link @Active("Invoices")"><i class="nav-icon fas fa-file-invoice"></i><p>Faturalar</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Commissions" class="nav-link @Active("Commissions")"><i class="nav-icon fas fa-percent"></i><p>Komisyonlar</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Contracts" class="nav-link @Active("Contracts")"><i class="nav-icon fas fa-file-contract"></i><p>Sözleşmeler</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Notifications" class="nav-link @Active("Notifications")"><i class="nav-icon fas fa-bell"></i><p>Bildirimler <span class="right badge badge-warning">@(Model.UnreadNotifications)</span></p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="EmailTemplates" class="nav-link @Active("EmailTemplates")"><i class="nav-icon fas fa-envelope"></i><p>E-posta Şablonları</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Logs" class="nav-link @Active("Logs")"><i class="nav-icon fas fa-clipboard-list"></i><p>Log Kayıtları <span class="right badge badge-danger">@(Model.CriticalLogs)</span></p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Reports" class="nav-link @Active("Reports")"><i class="nav-icon fas fa-chart-line"></i><p>Raporlar</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Blog" class="nav-link @Active("Blog")"><i class="nav-icon fas fa-blog"></i><p>Blog Yönetimi</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Faq" class="nav-link @Active("Faq")"><i class="nav-icon fas fa-question-circle"></i><p>SSS Yönetimi</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Settings" class="nav-link @Active("Settings")"><i class="nav-icon fas fa-cog"></i><p>Ayarlar</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Security" class="nav-link @Active("Security")"><i class="nav-icon fas fa-shield-alt"></i><p>Güvenlik</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Complaints" class="nav-link @Active("Complaints")"><i class="nav-icon fas fa-exclamation-triangle"></i><p>Şikayetler</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Backups" class="nav-link @Active("Backups")"><i class="nav-icon fas fa-database"></i><p>Yedekleme</p></a></li>
+
+                <li class="nav-header">ADMINLTE ROADMAP</li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Widgets New</p></a></li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Layout Options</p></a></li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Charts</p></a></li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Forms</p></a></li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Tables</p></a></li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Calendar</p></a></li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Gallery</p></a></li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Kanban Board</p></a></li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Mailbox</p></a></li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Pages & Extras</p></a></li>
+                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Documentation</p></a></li>
             </ul>
         </nav>
 

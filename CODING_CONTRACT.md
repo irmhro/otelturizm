@@ -14,6 +14,14 @@ UI / Tasarım Kuralları
 - Mobil öncelikli: mobil görünümü düşünerek grid/stack tasarımları kullanın.
 - Erişilebilirlik: semantic HTML, alt metin, label, kontrast ve klavye erişilebilirliği zorunlu.
 
+Admin Panel (AdminLTE v3) Zorunlu Standardı
+- Tüm admin panel sayfaları AdminLTE v3 bileşen diliyle geliştirilmelidir.
+- Header, sidebar, kart, tablo, form, badge, buton ve icon yapıları AdminLTE sınıfları üzerinden kullanılmalıdır.
+- Dashboard ve yönetim sayfaları aşağıdaki AdminLTE bilgi mimarisine göre ilerletilecektir: Dashboard, Widgets, Layout Options, Charts, UI Elements, Forms, Tables, Calendar, Gallery, Kanban, Mailbox, Pages, Extras, Documentation.
+- Sidebar’da platform logosu tek başına görünür olmalıdır; logo yanında ekstra marka metni kullanılmaz.
+- Admin panelinde harici CDN bağımlılığı kullanılmaz; tüm tema dosyaları proje içindeki `wwwroot/vendor/AdminLTE-3.2.0` dizininden yüklenir.
+- Yeni sayfa/özellik geliştirirken AdminLTE başlık hiyerarşisi, spacing, font boyutu ve responsive davranışları korunur.
+
 Bileşenler ve CSS
 - Tek sorumluluk: bileşenler küçük ve yeniden kullanılabilir olsun.
 - Tasarım token'ları: renk, radius, spacing gibi sabitler `:root` değişkenlerinde tutulsun.

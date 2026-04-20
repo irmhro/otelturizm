@@ -2334,7 +2334,7 @@ public class AuthService : IAuthService
             (kullanici_id, eposta, token, dogrulama_kodu, kullanildi_mi, deneme_sayisi, maksimum_deneme, ip_adresi, user_agent, gecerlilik_suresi, olusturulma_tarihi)
             VALUES
             (@userId, @email, @token, @code, 0, 0, 5, @ipAddress, @userAgent, DATEADD(HOUR, 24, SYSUTCDATETIME()), SYSUTCDATETIME());
-            """, connection, (SqlTransaction)transaction))
+            """, connection, transaction))
         {
             insertCommand.Parameters.AddWithValue("@userId", userId);
             insertCommand.Parameters.AddWithValue("@email", email);
@@ -2349,7 +2349,7 @@ public class AuthService : IAuthService
             UPDATE users
             SET email_dogrulama_son_gonderim_tarihi = SYSUTCDATETIME()
             WHERE id = @userId;
-            """, connection, (SqlTransaction)transaction))
+            """, connection, transaction))
         {
             updateUserCommand.Parameters.AddWithValue("@userId", userId);
             await updateUserCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -2441,7 +2441,9 @@ public class AuthService : IAuthService
             FROM firmalar;
             """;
 
-        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
+        await using var command = transaction is null
+            ? new SqlCommand(sql, connection)
+            : new SqlCommand(sql, connection, transaction!);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         var nextId = Convert.ToInt64(result);
         return $"OTLTRZM-FRM-{nextId:0000}";
@@ -2454,7 +2456,9 @@ public class AuthService : IAuthService
             FROM oteller;
             """;
 
-        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
+        await using var command = transaction is null
+            ? new SqlCommand(sql, connection)
+            : new SqlCommand(sql, connection, transaction!);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         var nextId = Convert.ToInt64(result, CultureInfo.InvariantCulture);
         var cityCode = NormalizeAscii(city).ToUpperInvariant();
@@ -2475,7 +2479,9 @@ public class AuthService : IAuthService
               AND TABLE_NAME = @tableName;
             """;
 
-        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
+        await using var command = transaction is null
+            ? new SqlCommand(sql, connection)
+            : new SqlCommand(sql, connection, transaction!);
         command.Parameters.AddWithValue("@tableName", tableName);
         return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) > 0;
     }

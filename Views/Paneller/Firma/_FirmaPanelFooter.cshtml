@@ -1,5 +1,14 @@
 @model otelturizmnew.Models.Paneller.Firma.FirmaPanelShellViewModel
 <footer class="firma-panel-footer">
-    <span>@Model.CompanyName · Kurumsal seyahat yönetimi</span>
-    <span>Otelturizm Business</span>
+    <div class="firma-footer-main">
+        <span>@Model.CompanyName · Kurumsal seyahat yönetimi</span>
+        <span>Otelturizm Business</span>
+    </div>
+    <div class="firma-footer-legal">
+        <span>&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</span>
+        <a asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>
+        <a href="/yardim-merkezi#destek-kanallari">Kullanım Koşulları</a>
+        <a href="/yardim-merkezi#destek-kanallari">KVKK</a>
+        <span class="firma-footer-agency">216 SPECİAL KARTAL TURİZM SEYEHAT ACENTASI</span>
+    </div>
 </footer>

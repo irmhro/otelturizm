@@ -3521,7 +3521,9 @@ public class PartnerService : IPartnerService
                 (@campaignId, @hotelId, @partnerId, 'Aktif', @startDate, @endDate, @userId, @userId);
             END;";
 
-        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
+        await using var command = transaction is null
+            ? new SqlCommand(sql, connection)
+            : new SqlCommand(sql, connection, transaction!);
         command.Parameters.AddWithValue("@campaignId", campaign.CampaignId);
         command.Parameters.AddWithValue("@hotelId", hotel.HotelId);
         command.Parameters.AddWithValue("@partnerId", hotel.PartnerId);
@@ -3541,7 +3543,9 @@ public class PartnerService : IPartnerService
         var sql = $@"
             DELETE FROM {tableName}
             WHERE oda_tip_id = @roomId;";
-        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
+        await using var command = transaction is null
+            ? new SqlCommand(sql, connection)
+            : new SqlCommand(sql, connection, transaction!);
         command.Parameters.AddWithValue("@roomId", roomId);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
@@ -3557,7 +3561,9 @@ public class PartnerService : IPartnerService
             WHERE TABLE_SCHEMA = DB_NAME()
               AND TABLE_NAME = @tableName;";
 
-        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
+        await using var command = transaction is null
+            ? new SqlCommand(sql, connection)
+            : new SqlCommand(sql, connection, transaction!);
         command.Parameters.AddWithValue("@tableName", tableName);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;

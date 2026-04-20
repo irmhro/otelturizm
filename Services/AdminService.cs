@@ -853,7 +853,7 @@ public class AdminService : IAdminService
               AND TABLE_NAME = @tableName;
             """;
 
-        await using var command = new SqlCommand(sql, connection, (SqlTransaction)transaction);
+        await using var command = new SqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("@tableName", tableName);
         return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) > 0;
     }

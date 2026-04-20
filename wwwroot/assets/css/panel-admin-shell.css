@@ -383,3 +383,46 @@ body {
         color: #2563eb;
     }
 }
+
+/* AdminLTE v3 visual parity refinements */
+.main-header.navbar .nav-link {
+    font-size: 0.9rem;
+}
+
+.main-header .navbar-badge {
+    font-size: 0.65rem;
+}
+
+.main-sidebar .brand-link {
+    min-height: 58px;
+    padding: 0.55rem 0.5rem;
+}
+
+.main-sidebar .brand-link .admin-brand-logo {
+    margin: 0;
+    float: none;
+    position: static;
+    height: 34px;
+    max-height: 34px;
+    width: auto;
+    opacity: 1;
+}
+
+.main-sidebar .user-panel .image {
+    min-width: 2.2rem;
+    text-align: center;
+}
+
+.main-sidebar .user-panel .info small {
+    font-size: 0.75rem;
+}
+
+.main-sidebar .nav-header {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+}
+
+.main-sidebar .nav-sidebar .nav-link p {
+    font-size: 0.98rem;
+}

@@ -469,3 +469,16 @@
   - Local `MSSQLLocalDB` ve canlı MSSQL ayarları tek referans altında toplandı.
   - Publish kontrol listesi ve kilit çözüm akışı dokümana işlendi.
   - Publish tarafında AppOffline kullanımı standart hale getirildi.
+# 2026-04-20 - Publish ve DB aktarım düzeltmesi
+
+- `IISProfile.pubxml` içinde publish ayarları sıkılaştırıldı:
+  - `UseAppHost=true`
+  - `PublishSingleFile=false`
+  - `PublishReadyToRun=false`
+- `NETSDK1067` publish hatası için publish profili düzeltildi.
+- Dokümantasyon LocalDB + canlı MSSQL ayrımına göre güncellendi.
+- Demo partner/firma/kullanıcı hesap bilgileri `canli_baglanti_bilgileri.md` içine işlendi.
+- Visual Studio `Entity Framework Geçişleri` penceresinin bu projede neden çalışmadığı not edildi:
+  - proje `DbContext` tabanlı değil
+  - ADO.NET / `Microsoft.Data.SqlClient` kullanıyor
+  - DB aktarımı EF sihirbazıyla değil SQL Server araçlarıyla yapılmalı
