@@ -77,3 +77,14 @@
 - MySQL, MariaDB, HeidiSQL ve Laragon referansları yalnızca tarihsel not veya arşiv dosyalarında tutulabilir; aktif runtime için geçerli değildir.
 - Yeni migration ve sorgular SQL Server söz dizimi ile yazılacaktır.
 
+## Studio ve Yayın Referansı
+- Local geliştirme ve yayın akışı için ana operasyon dosyası:
+  - `studio_yayin_ve_ortam_ayarlari.md`
+- Local test adresi:
+  - `https://localhost:7223`
+- Local geliştirme veritabanı:
+  - `185.111.244.246`
+  - `otelturizm_2026db`
+- `Development` ve `Production` connection stringleri canlı MSSQL hedefi ile eşitlenmiştir.
+- Canlı yayımlama öncesi local doğrulama tamamlanmadan publish yapılmaz.
+

@@ -69,6 +69,13 @@
                         <h3>@hotel.Name</h3>
                         <p>@hotel.District, @hotel.City</p>
                         <small class="favorite-added-date">@hotel.AddedDateText</small>
+                        @if (!string.IsNullOrWhiteSpace(hotel.AvailabilityNote))
+                        {
+                            <div class="favorite-alert-meta">
+                                <strong>Durum bilgisi</strong>
+                                <span>@hotel.AvailabilityNote</span>
+                            </div>
+                        }
                         @if (hotel.ReviewCount > 0)
                         {
                             <div class="rating-row">

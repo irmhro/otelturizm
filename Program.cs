@@ -19,6 +19,7 @@ builder.Services.AddScoped<IAddressLookupService, AddressLookupService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAdminHotelManagementService, AdminHotelManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
+builder.Services.AddScoped<IContractContentService, ContractContentService>();
 builder.Services.AddScoped<IFirmaService, FirmaService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
 builder.Services.AddScoped<IHotelPricingReadService, HotelPricingReadService>();
@@ -165,5 +166,4 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.Run();
-
 

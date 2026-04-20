@@ -1,0 +1,130 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminContractManagementPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+}
+
+<section class="admin-contracts-page">
+    <div class="admin-contracts-hero">
+        <div>
+            <p class="admin-contracts-kicker">SÖZLEŞME MERKEZİ</p>
+            <h1>@Model.Shell.PanelTitle</h1>
+            <p>@Model.Shell.PanelSubtitle</p>
+        </div>
+    </div>
+
+    <div class="admin-contract-summary-grid">
+        @foreach (var item in Model.SummaryCards)
+        {
+            <article class="admin-contract-summary-card @item.ToneClass">
+                <span>@item.Label</span>
+                <strong>@item.Value</strong>
+                <p>@item.Description</p>
+            </article>
+        }
+    </div>
+
+    <div class="admin-contract-layout">
+        <section class="admin-contract-list-card">
+            <header>
+                <h2>Kayıtlı sözleşmeler</h2>
+                <p>Her hedef kitle için aktif sürümleri, kabul sayılarını ve e-posta geçmişini izleyin.</p>
+            </header>
+            <div class="admin-contract-table-wrap">
+                <table class="admin-contract-table">
+                    <thead>
+                        <tr>
+                            <th>Başlık</th>
+                            <th>Kitle</th>
+                            <th>Tür</th>
+                            <th>Versiyon</th>
+                            <th>Yürürlük</th>
+                            <th>Kabuller</th>
+                            <th>Gönderim</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Contracts)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@item.Title</strong>
+                                    <span>@item.Slug</span>
+                                </td>
+                                <td>@item.Audience</td>
+                                <td>@item.ContractType</td>
+                                <td>@item.VersionText</td>
+                                <td>@item.EffectiveRangeText</td>
+                                <td>@item.AcceptanceText</td>
+                                <td>@item.DeliveryText</td>
+                                <td>
+                                    <div class="admin-contract-actions">
+                                        <a class="secondary-btn" href="/admin/sozlesmeler?contractId=@item.ContractId">Düzenle</a>
+                                        <form method="post" action="/admin/sozlesmeler/yeniden-gonder">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="contractId" value="@item.ContractId" />
+                                            <button type="submit" class="ghost-btn">Tekrar Gönder</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="admin-contract-form-card">
+            <header>
+                <h2>@(Model.Form.ContractId.HasValue ? "Sözleşmeyi Düzenle" : "Yeni Sözleşme Oluştur")</h2>
+                <p>Sözleşme içerikleri HTML olarak kaydedilir ve sonraki kayıt süreçlerine otomatik uygulanır.</p>
+            </header>
+
+            <form method="post" action="/admin/sozlesmeler/kaydet" class="admin-contract-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ContractId" value="@Model.Form.ContractId" />
+                <div class="admin-contract-grid two">
+                    <label>
+                        <span>Hedef Kitle</span>
+                        <select name="Audience">
+                            <option value="user" selected="@(Model.Form.Audience == "user")">Kullanıcı</option>
+                            <option value="partner" selected="@(Model.Form.Audience == "partner")">Partner</option>
+                            <option value="firma" selected="@(Model.Form.Audience == "firma")">Firma</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Sözleşme Türü</span>
+                        <select name="ContractType">
+                            <option value="agreement" selected="@(Model.Form.ContractType == "agreement")">Ana sözleşme</option>
+                            <option value="kvkk" selected="@(Model.Form.ContractType == "kvkk")">KVKK</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="admin-contract-grid two">
+                    <label><span>Başlık</span><input type="text" name="Title" value="@Model.Form.Title" required /></label>
+                    <label><span>Slug</span><input type="text" name="Slug" value="@Model.Form.Slug" required /></label>
+                </div>
+                <label><span>Alt Başlık</span><input type="text" name="Subtitle" value="@Model.Form.Subtitle" /></label>
+                <label><span>Özet HTML</span><textarea name="SummaryHtml" rows="4">@Model.Form.SummaryHtml</textarea></label>
+                <label><span>İçerik HTML</span><textarea name="ContentHtml" rows="16" required>@Model.Form.ContentHtml</textarea></label>
+                <div class="admin-contract-grid two">
+                    <label><span>Görsel URL</span><input type="text" name="HeroImageUrl" value="@Model.Form.HeroImageUrl" /></label>
+                    <label><span>Dış sözleşme linki</span><input type="text" name="ContractUrl" value="@Model.Form.ContractUrl" /></label>
+                </div>
+                <div class="admin-contract-grid three">
+                    <label><span>Versiyon</span><input type="number" name="VersionNo" min="1" value="@Model.Form.VersionNo" /></label>
+                    <label><span>Başlangıç</span><input type="date" name="EffectiveStartDate" value="@Model.Form.EffectiveStartDate.ToString("yyyy-MM-dd")" /></label>
+                    <label><span>Bitiş</span><input type="date" name="EffectiveEndDate" value="@(Model.Form.EffectiveEndDate?.ToString("yyyy-MM-dd"))" /></label>
+                </div>
+                <label><span>Not</span><textarea name="Note" rows="3">@Model.Form.Note</textarea></label>
+                <div class="admin-contract-checks">
+                    <label><input type="checkbox" name="RequiresAcceptance" value="true" @(Model.Form.RequiresAcceptance ? "checked" : null) /> Kabul zorunlu</label>
+                    <label><input type="checkbox" name="SendOnEmailVerification" value="true" @(Model.Form.SendOnEmailVerification ? "checked" : null) /> E-posta onayında gönder</label>
+                    <label><input type="checkbox" name="IsActive" value="true" @(Model.Form.IsActive ? "checked" : null) /> Aktif</label>
+                    <label><input type="checkbox" name="ForceResendAfterSave" value="true" /> Kaydettikten sonra mevcut kitleye tekrar gönder</label>
+                </div>
+                <button type="submit" class="primary-btn">Kaydet</button>
+            </form>
+        </section>
+    </div>
+</section>

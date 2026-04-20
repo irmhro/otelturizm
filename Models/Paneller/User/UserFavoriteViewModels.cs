@@ -21,6 +21,7 @@ public class UserFavoriteHotelCardViewModel
     public string PriceText { get; set; } = string.Empty;
     public string RatingText { get; set; } = string.Empty;
     public string AddedDateText { get; set; } = string.Empty;
+    public string? AvailabilityNote { get; set; }
     public int PastStayCount { get; set; }
     public bool PriceAlertEnabled { get; set; }
     public string? PriceAlertTargetText { get; set; }

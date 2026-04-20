@@ -13,11 +13,13 @@ public class AdminPanelController : Controller
 {
     private readonly IAdminService _adminService;
     private readonly IAdminHotelManagementService _adminHotelManagementService;
+    private readonly IContractContentService _contractContentService;
 
-    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService)
+    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService)
     {
         _adminService = adminService;
         _adminHotelManagementService = adminHotelManagementService;
+        _contractContentService = contractContentService;
     }
 
     [HttpGet("")]
@@ -269,7 +271,74 @@ public class AdminPanelController : Controller
     public Task<IActionResult> Invoices(CancellationToken cancellationToken) => RenderSectionAsync("invoices", "Invoices", cancellationToken);
 
     [HttpGet("komisyonlar")]
-    public Task<IActionResult> Commissions(CancellationToken cancellationToken) => RenderSectionAsync("commissions", "Commissions", cancellationToken);
+    public async Task<IActionResult> Commissions([FromQuery] long? hotelId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetCommissionManagementAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCss"] = "panel-admin-commissions";
+        return View("~/Views/Paneller/Admin/Commissions.cshtml", model);
+    }
+
+    [HttpGet("sozlesmeler")]
+    public async Task<IActionResult> Contracts([FromQuery] long? contractId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _contractContentService.GetAdminContractManagementAsync(GetFullName(), GetEmail(), GetUserRole(), contractId, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCss"] = "panel-admin-contracts";
+        return View("~/Views/Paneller/Admin/Contracts.cshtml", model);
+    }
+
+    [HttpPost("sozlesmeler/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveContract(AdminContractForm request, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _contractContentService.SaveContractAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(Contracts), new { contractId = request.ContractId });
+    }
+
+    [HttpPost("sozlesmeler/yeniden-gonder")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendContract(long contractId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _contractContentService.ResendContractBundleAsync(GetUserId(), contractId, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(Contracts), new { contractId });
+    }
+
+    [HttpPost("komisyonlar/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveCommissionRule(AdminCommissionRuleForm request, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.SaveCommissionRuleAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(Commissions), new { hotelId = request.HotelId });
+    }
 
     [HttpGet("partner-basvurulari")]
     public async Task<IActionResult> PartnerApplications(CancellationToken cancellationToken)
@@ -388,5 +457,3 @@ public class AdminPanelController : Controller
         return long.TryParse(rawValue, out var userId) ? userId : 0;
     }
 }
-
-

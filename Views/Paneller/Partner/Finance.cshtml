@@ -31,6 +31,21 @@
 
 <section class="partner-two-column">
     <article class="partner-section-card">
+        <h2>Aktif komisyon ve vergi kurali</h2>
+        <div class="partner-finance-callout">
+            <i class="fas fa-percent"></i>
+            <span>@(string.IsNullOrWhiteSpace(Model.ActiveRuleCommissionText) ? "Bu otel icin henuz aktif bir komisyon kurali tanimlanmamis." : Model.ActiveRuleCommissionText)</span>
+        </div>
+        <div class="partner-finance-callout">
+            <i class="fas fa-receipt"></i>
+            <span>@(string.IsNullOrWhiteSpace(Model.ActiveRuleTaxText) ? "Vergi ayarlari bulunamadi." : Model.ActiveRuleTaxText)</span>
+        </div>
+        <div class="partner-finance-callout">
+            <i class="fas fa-calendar-days"></i>
+            <span>@(string.IsNullOrWhiteSpace(Model.ActiveRuleDateText) ? "Tarih araligi tanimli degil." : Model.ActiveRuleDateText)</span>
+        </div>
+    </article>
+    <article class="partner-section-card">
         <h2>Son finans hareketleri</h2>
         @if (Model.Transactions.Count == 0)
         {
@@ -69,12 +84,33 @@
         }
     </article>
     <article class="partner-section-card">
-        <h2>Finans notu</h2>
+        <h2>Vergi ve komisyon ozeti</h2>
         <p>@Model.PayoutNote</p>
-        <div class="partner-finance-callout">
-            <i class="fas fa-circle-info"></i>
-            <span>Partner panelindeki banka bilgileri guncel tutulursa odeme operasyonlari hizlanir.</span>
-        </div>
+        @if (Model.TaxRows.Count == 0)
+        {
+            <div class="partner-empty-state">
+                <strong>Vergi ozeti henuz hazir degil</strong>
+                <p>Rezervasyonlar geldikce bu alanda komisyon ve vergi toplamlari listelenecek.</p>
+            </div>
+        }
+        else
+        {
+            <div class="partner-finance-tax-list">
+                @foreach (var row in Model.TaxRows)
+                {
+                    <div class="partner-finance-tax-row">
+                        <div>
+                            <strong>@row.Label</strong>
+                            <small>@row.Description</small>
+                        </div>
+                        <div class="partner-finance-tax-meta">
+                            <span>@row.RateText</span>
+                            <strong>@row.AmountText</strong>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </article>
 </section>
 

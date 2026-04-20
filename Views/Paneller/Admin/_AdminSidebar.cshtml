@@ -15,6 +15,7 @@
         new { Action = "Campaigns", Label = "Kampanyalar", Icon = "fa-bullhorn", Badge = "", Route = "kampanyalar" },
         new { Action = "Invoices", Label = "Faturalar", Icon = "fa-file-invoice", Badge = "", Route = "faturalar" },
         new { Action = "Commissions", Label = "Komisyonlar", Icon = "fa-percent", Badge = "", Route = "komisyonlar" },
+        new { Action = "Contracts", Label = "Sözleşmeler", Icon = "fa-file-contract", Badge = "", Route = "sozlesmeler" },
         new { Action = "Notifications", Label = "Bildirimler", Icon = "fa-bell", Badge = Model.UnreadNotifications > 0 ? Model.UnreadNotifications.ToString() : "", Route = "bildirimler" },
         new { Action = "EmailTemplates", Label = "E-posta Sablonlari", Icon = "fa-envelope", Badge = "", Route = "eposta-sablonlari" },
         new { Action = "Logs", Label = "Log Kayıtları", Icon = "fa-clipboard-list", Badge = Model.CriticalLogs > 0 ? Model.CriticalLogs.ToString() : "", Route = "log-kayitlari" },
@@ -63,5 +64,4 @@
         </form>
     </div>
 </aside>
-
 

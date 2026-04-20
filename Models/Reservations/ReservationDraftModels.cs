@@ -21,6 +21,11 @@ public class ReservationDraftUpsertRequest
     public int ChildCount { get; set; }
     public int RoomCount { get; set; } = 1;
     public decimal? NightlyPrice { get; set; }
+    public decimal? NetRoomAmount { get; set; }
+    public decimal? VatRate { get; set; }
+    public decimal? VatAmount { get; set; }
+    public decimal? AccommodationTaxRate { get; set; }
+    public decimal? AccommodationTaxAmount { get; set; }
     public decimal? TaxAmount { get; set; }
     public decimal? TotalAmount { get; set; }
     public string Currency { get; set; } = "TRY";
@@ -76,6 +81,11 @@ public class PublicReservationPriceQuoteViewModel
     public int NightCount { get; set; }
     public decimal NightlyPrice { get; set; }
     public decimal RoomTotal { get; set; }
+    public decimal NetRoomAmount { get; set; }
+    public decimal VatRate { get; set; }
+    public decimal VatAmount { get; set; }
+    public decimal AccommodationTaxRate { get; set; }
+    public decimal AccommodationTaxAmount { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal TotalAmount { get; set; }
     public bool IsAvailable { get; set; } = true;

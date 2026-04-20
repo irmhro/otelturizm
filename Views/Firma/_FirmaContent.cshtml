@@ -23,37 +23,40 @@
 
         <div class="firma-hero-visual">
             <span class="firma-visual-badge"><i class="fas fa-chart-line"></i> Canlı Fiyat Karşılaştırması</span>
-            @if (Model.FeaturedDeals.Count > 0)
-            {
-                var deal = Model.FeaturedDeals[0];
-                <p class="firma-visual-title">📊 Örnek Kurumsal Konaklama Senaryosu · @deal.MinRoomText</p>
-                <div class="firma-price-comparison-mini">
-                    <div class="firma-price-row">
-                        <span>🏨 Standart Fiyat (Bireysel)</span>
-                        <span class="firma-price-standard">@deal.StandardPriceText</span>
-                    </div>
-                    <div class="firma-price-row">
-                        <span>📉 Firma Fiyatı (@deal.MinRoomText)</span>
-                        <span class="firma-price-corporate">@deal.CorporatePriceText <b class="firma-savings-tag"><i class="fas fa-arrow-down"></i> @deal.DiscountRateText</b></span>
-                    </div>
-                    <div class="firma-price-row">
-                        <span>💰 Toplam Tasarruf</span>
-                        <span class="firma-price-savings">@deal.SavingsText</span>
-                    </div>
+            <p class="firma-visual-title">📊 Örnek Kurumsal Konaklama Senaryosu · 5 oda</p>
+            <div class="firma-price-comparison-mini">
+                <div class="firma-price-row">
+                    <span>🏨 Standart Fiyat (Bireysel)</span>
+                    <span class="firma-price-standard">₺3.600</span>
                 </div>
-                <div class="firma-info-note">
-                    <i class="fas fa-circle-info"></i>
-                    <strong>Firma paneline sahip olmanız durumunda</strong>, otellerin firmalar için özel belirlediği toplu konaklama fiyatlarından yararlanırsınız.
+                <div class="firma-price-row">
+                    <span>📉 Firma Fiyatı (5 oda)</span>
+                    <span class="firma-price-corporate">₺2.880 <b class="firma-savings-tag"><i class="fas fa-arrow-down"></i> %20</b></span>
                 </div>
-            }
+                <div class="firma-price-row">
+                    <span>💰 Toplam Tasarruf</span>
+                    <span class="firma-price-savings">₺720</span>
+                </div>
+            </div>
+            <div class="firma-info-note">
+                <i class="fas fa-circle-info"></i>
+                Bu fiyatlandırma <strong>örnek gösterimdir</strong>; gerçek otel verisi kullanılmaz. Panelde firmalara özel tekliflerle güncel fiyatları görüntülersiniz.
+            </div>
         </div>
     </section>
 
     <section class="site-shell firma-trust-bar">
         <div class="firma-trust-item"><i class="fas fa-shield-alt"></i><span>Firma Güvencesi</span></div>
         <div class="firma-trust-item"><i class="fas fa-headset"></i><span>7/24 Öncelikli Destek</span></div>
-        <div class="firma-trust-item"><i class="fas fa-file-invoice"></i><span>Otomatik E-Fatura</span></div>
+        <div class="firma-trust-item"><i class="fas fa-file-arrow-up"></i><span>Fatura Yükleme ve Takip</span></div>
         <div class="firma-trust-item"><i class="fas fa-chart-bar"></i><span>Harcama Raporları</span></div>
+    </section>
+
+    <section class="site-shell">
+        <div class="firma-info-note">
+            <i class="fas fa-file-invoice"></i>
+            Oteller faturaları kendi tarafında keser ve rezervasyon sonrasında sisteme yükler. Firmalar, paneldeki <strong>Faturalar</strong> ekranından tüm faturalarını görüntüler.
+        </div>
     </section>
 
     <section class="site-shell firma-section">

@@ -35,7 +35,9 @@
     var hiddenAmenities = Model.Amenities.Skip(4).ToList();
     var initialNightCount = Math.Max(1, reservationForm.CheckOutDate.DayNumber - reservationForm.CheckInDate.DayNumber);
     var initialSubtotal = roomPriceSeed * initialNightCount * Math.Max(1, reservationForm.RoomCount);
-    var initialTax = Math.Round(initialSubtotal * 0.08m, 0);
+    var initialVat = Math.Round(initialSubtotal * 0.10m, 0);
+    var initialAccommodationTax = Math.Round(initialSubtotal * 0.02m, 0);
+    var initialTax = initialVat + initialAccommodationTax;
     var initialTotal = initialSubtotal + initialTax;
     var todayWeather = Model.Weather?.Days.FirstOrDefault();
     var weatherThemeClass = "weather-theme-cloudy";
@@ -532,6 +534,8 @@
             <div class="booking-quote-notice" id="bookingQuoteNotice" hidden></div>
             <div class="price-breakdown" id="priceBreakdown">
                 <div><span>₺@roomPriceSeed.ToString("N0") x @initialNightCount gece</span><strong>₺@initialSubtotal.ToString("N0")</strong></div>
+                <div><span>KDV</span><strong>₺@initialVat.ToString("N0")</strong></div>
+                <div><span>Konaklama Vergisi</span><strong>₺@initialAccommodationTax.ToString("N0")</strong></div>
                 <div><span>Vergi ve Harclar</span><strong>₺@initialTax.ToString("N0")</strong></div>
                 <div class="total"><span>Toplam</span><strong>₺@initialTotal.ToString("N0")</strong></div>
             </div>
@@ -1400,6 +1404,8 @@
                     breakdown.innerHTML =
                         nightlyHtml +
                         '<div><span>' + formatMoney(quote.nightlyPrice) + ' x ' + quote.nightCount + ' gece</span><strong>' + formatMoney(quote.roomTotal) + '</strong></div>' +
+                        '<div><span>KDV (%' + Number(quote.vatRate || 0).toFixed(2).replace(/\\.00$/, '') + ')</span><strong>' + formatMoney(quote.vatAmount || 0) + '</strong></div>' +
+                        '<div><span>Konaklama Vergisi (%' + Number(quote.accommodationTaxRate || 0).toFixed(2).replace(/\\.00$/, '') + ')</span><strong>' + formatMoney(quote.accommodationTaxAmount || 0) + '</strong></div>' +
                         '<div><span>Vergi ve Harçlar</span><strong>' + formatMoney(quote.taxAmount) + '</strong></div>' +
                         '<div class="total"><span>Toplam</span><strong>' + formatMoney(quote.totalAmount) + '</strong></div>';
 
@@ -1416,13 +1422,17 @@
                     const diffMs = new Date(checkOut).getTime() - new Date(checkIn).getTime();
                     const nights = Math.max(1, Math.round(diffMs / 86400000));
                     const subtotal = fallbackNightly * nights * roomCount;
-                    const tax = Math.round(subtotal * 0.08);
+                    const vat = Math.round(subtotal * 0.10);
+                    const accommodationTax = Math.round(subtotal * 0.02);
+                    const tax = vat + accommodationTax;
                     const total = subtotal + tax;
                     bookingPrice.textContent = formatMoney(fallbackNightly);
                     setQuoteNotice('Günlük fiyat dökümü alınamadı, varsayılan oda fiyatı gösteriliyor.', 'info');
                     bookingForm?.querySelector('.reserve-btn')?.removeAttribute('disabled');
                     breakdown.innerHTML =
                         '<div><span>' + formatMoney(fallbackNightly) + ' x ' + nights + ' gece</span><strong>' + formatMoney(subtotal) + '</strong></div>' +
+                        '<div><span>KDV</span><strong>' + formatMoney(vat) + '</strong></div>' +
+                        '<div><span>Konaklama Vergisi</span><strong>' + formatMoney(accommodationTax) + '</strong></div>' +
                         '<div><span>Vergi ve Harçlar</span><strong>' + formatMoney(tax) + '</strong></div>' +
                         '<div class="total"><span>Toplam</span><strong>' + formatMoney(total) + '</strong></div>';
                 }

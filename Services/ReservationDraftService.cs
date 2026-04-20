@@ -73,6 +73,11 @@ public class ReservationDraftService : IReservationDraftService
                 rt.cocuk_sayisi,
                 rt.oda_sayisi,
                 COALESCE(rt.toplam_tutar, 0),
+                COALESCE(rt.net_oda_tutari, 0),
+                COALESCE(rt.kdv_orani, 0),
+                COALESCE(rt.kdv_tutari, 0),
+                COALESCE(rt.konaklama_vergisi_orani, 0),
+                COALESCE(rt.konaklama_vergisi_tutari, 0),
                 o.otel_kodu
             FROM rezervasyon_taslaklari rt
             INNER JOIN oteller o ON o.id = rt.otel_id
@@ -95,7 +100,7 @@ public class ReservationDraftService : IReservationDraftService
         var hotelId = reader.GetInt64(1);
         long? roomTypeId = reader.IsDBNull(2) ? null : reader.GetInt64(2);
         var hotelName = reader.GetString(3);
-        var hotelCode = reader.GetString(12);
+        var hotelCode = reader.GetString(17);
         var roomName = reader.GetString(4);
         var status = reader.GetString(5);
         var checkInDate = DateOnly.FromDateTime(reader.GetDateTime(6));
@@ -226,6 +231,11 @@ public class ReservationDraftService : IReservationDraftService
                     cocuk_sayisi = @childCount,
                     oda_sayisi = @roomCount,
                     gecelik_fiyat = @nightlyPrice,
+                    net_oda_tutari = @netRoomAmount,
+                    kdv_orani = @vatRate,
+                    kdv_tutari = @vatAmount,
+                    konaklama_vergisi_orani = @accommodationTaxRate,
+                    konaklama_vergisi_tutari = @accommodationTaxAmount,
                     vergi_tutari = @taxAmount,
                     toplam_tutar = @totalAmount,
                     para_birimi = @currency,
@@ -248,7 +258,8 @@ public class ReservationDraftService : IReservationDraftService
                 taslak_kodu, user_id, session_anahtari, kaynak, durum, otel_id, oda_tip_id,
                 misafir_ad_soyad, misafir_eposta, misafir_telefon, misafir_sehir, misafir_ilce, misafir_mahalle, misafir_adres,
                 giris_tarihi, cikis_tarihi, yetiskin_sayisi, cocuk_sayisi, oda_sayisi,
-                gecelik_fiyat, vergi_tutari, toplam_tutar, para_birimi, donus_url, profil_tamamlanma_url, notlar,
+                gecelik_fiyat, net_oda_tutari, kdv_orani, kdv_tutari, konaklama_vergisi_orani, konaklama_vergisi_tutari,
+                vergi_tutari, toplam_tutar, para_birimi, donus_url, profil_tamamlanma_url, notlar,
                 gecerlilik_tarihi
             )
             VALUES
@@ -256,7 +267,8 @@ public class ReservationDraftService : IReservationDraftService
                 @draftCode, @userId, @sessionKey, @source, @status, @hotelId, @roomTypeId,
                 @guestFullName, @guestEmail, @guestPhone, @guestCity, @guestDistrict, @guestNeighborhood, @guestAddress,
                 @checkIn, @checkOut, @adultCount, @childCount, @roomCount,
-                @nightlyPrice, @taxAmount, @totalAmount, @currency, @returnUrl, @profileCompletionUrl, @notes,
+                @nightlyPrice, @netRoomAmount, @vatRate, @vatAmount, @accommodationTaxRate, @accommodationTaxAmount,
+                @taxAmount, @totalAmount, @currency, @returnUrl, @profileCompletionUrl, @notes,
                 DATEADD(DAY, 30, SYSUTCDATETIME())
             );
             SELECT CAST(SCOPE_IDENTITY() AS bigint);";
@@ -299,6 +311,11 @@ public class ReservationDraftService : IReservationDraftService
         command.Parameters.AddWithValue("@childCount", request.ChildCount);
         command.Parameters.AddWithValue("@roomCount", request.RoomCount);
         command.Parameters.AddWithValue("@nightlyPrice", request.NightlyPrice.HasValue ? request.NightlyPrice.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@netRoomAmount", request.NetRoomAmount.HasValue ? request.NetRoomAmount.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@vatRate", request.VatRate.HasValue ? request.VatRate.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@vatAmount", request.VatAmount.HasValue ? request.VatAmount.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@accommodationTaxRate", request.AccommodationTaxRate.HasValue ? request.AccommodationTaxRate.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@accommodationTaxAmount", request.AccommodationTaxAmount.HasValue ? request.AccommodationTaxAmount.Value : DBNull.Value);
         command.Parameters.AddWithValue("@taxAmount", request.TaxAmount.HasValue ? request.TaxAmount.Value : DBNull.Value);
         command.Parameters.AddWithValue("@totalAmount", request.TotalAmount.HasValue ? request.TotalAmount.Value : DBNull.Value);
         command.Parameters.AddWithValue("@currency", request.Currency);

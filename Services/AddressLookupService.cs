@@ -11,14 +11,11 @@ namespace otelturizmnew.Services;
 public class AddressLookupService : IAddressLookupService
 {
     private readonly string _connectionString;
-    private readonly bool _isSqlServer;
 
     public AddressLookupService(IConfiguration configuration)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
-        var configuredProvider = configuration["Database:Provider"];
-        _isSqlServer = string.Equals(configuredProvider, "SqlServer", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<IReadOnlyList<AddressProvinceOption>> GetProvincesAsync(CancellationToken cancellationToken = default)
@@ -50,19 +47,12 @@ public class AddressLookupService : IAddressLookupService
 
     public async Task<IReadOnlyList<AddressCountryOption>> GetCountriesAsync(CancellationToken cancellationToken = default)
     {
-        var tableCheckSql = _isSqlServer
-            ? """
-              SELECT COUNT(*)
-              FROM INFORMATION_SCHEMA.TABLES
-              WHERE TABLE_CATALOG = DB_NAME()
-                AND TABLE_NAME = 'ulkeler';
-              """
-            : """
-              SELECT COUNT(*)
-              FROM information_schema.TABLES
-              WHERE TABLE_SCHEMA = DATABASE()
-                AND TABLE_NAME = 'ulkeler';
-              """;
+        const string tableCheckSql = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_CATALOG = DB_NAME()
+              AND TABLE_NAME = 'ulkeler';
+            """;
 
         await using var connection = await CreateOpenConnectionAsync(cancellationToken);
 

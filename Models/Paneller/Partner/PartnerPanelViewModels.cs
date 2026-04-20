@@ -602,6 +602,10 @@ public class PartnerFinancePageViewModel
     public List<PartnerFinanceInvoiceViewModel> Invoices { get; set; } = new();
     public PartnerBankInfoForm BankInfoForm { get; set; } = new();
     public string PayoutNote { get; set; } = string.Empty;
+    public string ActiveRuleDateText { get; set; } = string.Empty;
+    public string ActiveRuleTaxText { get; set; } = string.Empty;
+    public string ActiveRuleCommissionText { get; set; } = string.Empty;
+    public List<PartnerFinanceTaxRowViewModel> TaxRows { get; set; } = new();
 }
 
 public class PartnerFinanceTransactionViewModel
@@ -612,6 +616,14 @@ public class PartnerFinanceTransactionViewModel
     public string StatusText { get; set; } = string.Empty;
     public string AmountText { get; set; } = string.Empty;
     public string DetailText { get; set; } = string.Empty;
+}
+
+public class PartnerFinanceTaxRowViewModel
+{
+    public string Label { get; set; } = string.Empty;
+    public string RateText { get; set; } = string.Empty;
+    public string AmountText { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 }
 
 public class PartnerFinanceInvoiceViewModel

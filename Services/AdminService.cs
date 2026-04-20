@@ -242,7 +242,7 @@ public class AdminService : IAdminService
                 RegistrationDateText = reader.GetDateTime(9).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
                 ApprovalDateText = reader.IsDBNull(10) ? null : reader.GetDateTime(10).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
                 EmailVerified = !reader.IsDBNull(11),
-                DocumentCount = reader.IsDBNull(12) ? 0 : reader.GetInt32(12),
+                DocumentCount = SafeInt(reader, 12),
                 ReviewNote = reader.IsDBNull(13) ? null : reader.GetString(13)
             });
         }
@@ -381,6 +381,190 @@ public class AdminService : IAdminService
             await transaction.RollbackAsync(cancellationToken);
             throw;
         }
+    }
+
+    public async Task<AdminCommissionManagementPageViewModel> GetCommissionManagementAsync(string fullName, string email, string userRole, long? hotelId = null, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var model = new AdminCommissionManagementPageViewModel
+        {
+            Shell = await GetShellAsync(connection, "Komisyon ve Vergi Ayarlari", "Otel bazli komisyon, KDV ve konaklama vergisi kurallarini tarih bazli yonetin.", fullName, email, userRole, cancellationToken)
+        };
+
+        const string hotelsSql = @"
+            SELECT o.id, o.otel_adi, o.otel_kodu, CONCAT(o.ilce, ', ', o.sehir) AS sehir_label
+            FROM oteller o
+            ORDER BY o.otel_adi ASC;";
+
+        await using (var hotelCommand = new SqlCommand(hotelsSql, connection))
+        await using (var hotelReader = await hotelCommand.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await hotelReader.ReadAsync(cancellationToken))
+            {
+                model.Hotels.Add(new AdminCommissionHotelOptionViewModel
+                {
+                    HotelId = hotelReader.GetInt64(0),
+                    HotelName = hotelReader.GetString(1),
+                    HotelCode = hotelReader.IsDBNull(2) ? string.Empty : hotelReader.GetString(2),
+                    CityLabel = hotelReader.IsDBNull(3) ? string.Empty : hotelReader.GetString(3),
+                    IsSelected = hotelId.HasValue && hotelId.Value == hotelReader.GetInt64(0)
+                });
+            }
+        }
+
+        model.Form.HotelId = hotelId ?? model.Hotels.FirstOrDefault()?.HotelId ?? 0;
+
+        const string summarySql = @"
+            SELECT
+                (SELECT COUNT(*) FROM komisyon_vergiler) AS total_rule_count,
+                (SELECT COUNT(DISTINCT otel_id) FROM komisyon_vergiler WHERE aktif_mi = 1) AS active_hotel_count,
+                (SELECT COALESCE(AVG(komisyon_orani), 0) FROM komisyon_vergiler WHERE aktif_mi = 1) AS avg_commission_rate,
+                (
+                    SELECT COALESCE(SUM(COALESCE(kdv_orani, 0) + COALESCE(konaklama_vergisi_orani, 0)), 0)
+                    FROM komisyon_vergiler
+                    WHERE aktif_mi = 1
+                ) AS total_tax_rate_sum;";
+
+        await using (var summaryCommand = new SqlCommand(summarySql, connection))
+        await using (var summaryReader = await summaryCommand.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await summaryReader.ReadAsync(cancellationToken))
+            {
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Toplam Kural", Value = SafeInt(summaryReader, 0).ToString(), Description = "Tarih bazli komisyon ve vergi setleri", ToneClass = "info", IconClass = "fa-layer-group" });
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Aktif Otel", Value = SafeInt(summaryReader, 1).ToString(), Description = "En az bir aktif kural tanimli oteller", ToneClass = "success", IconClass = "fa-hotel" });
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Ort. Komisyon", Value = $"{SafeDecimal(summaryReader, 2):0.##}%", Description = "Aktif kurallarin ortalama komisyon orani", ToneClass = "warning", IconClass = "fa-percent" });
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Toplam Vergi Oranlari", Value = $"{SafeDecimal(summaryReader, 3):0.##}%", Description = "KDV + konaklama vergisi toplamlari", ToneClass = "danger", IconClass = "fa-receipt" });
+            }
+        }
+
+        const string rulesSql = @"
+            SELECT TOP (100)
+                kv.id,
+                kv.otel_id,
+                o.otel_adi,
+                o.otel_kodu,
+                CONCAT(o.ilce, ', ', o.sehir) AS sehir_label,
+                kv.baslangic_tarihi,
+                kv.bitis_tarihi,
+                kv.komisyon_orani,
+                kv.komisyon_gelir_vergisi_orani,
+                kv.kdv_orani,
+                kv.konaklama_vergisi_orani,
+                kv.aktif_mi,
+                kv.aciklama
+            FROM komisyon_vergiler kv
+            INNER JOIN oteller o ON o.id = kv.otel_id
+            WHERE (@hotelId IS NULL OR kv.otel_id = @hotelId)
+            ORDER BY kv.otel_id ASC, kv.baslangic_tarihi DESC, kv.id DESC;";
+
+        await using (var rulesCommand = new SqlCommand(rulesSql, connection))
+        {
+            rulesCommand.Parameters.AddWithValue("@hotelId", hotelId.HasValue ? hotelId.Value : DBNull.Value);
+            await using var reader = await rulesCommand.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var commissionRate = SafeDecimal(reader, 7);
+                var commissionIncomeTaxRate = SafeDecimal(reader, 8);
+                var vatRate = SafeDecimal(reader, 9);
+                var accommodationTaxRate = SafeDecimal(reader, 10);
+                var grossCommissionAmount = Math.Round(3500m * commissionRate / 100m, 2, MidpointRounding.AwayFromZero);
+                var netCommissionAmount = grossCommissionAmount - Math.Round(grossCommissionAmount * commissionIncomeTaxRate / 100m, 2, MidpointRounding.AwayFromZero);
+
+                model.Rules.Add(new AdminCommissionRuleRowViewModel
+                {
+                    RuleId = reader.GetInt64(0),
+                    HotelId = reader.GetInt64(1),
+                    HotelName = reader.GetString(2),
+                    HotelCode = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                    CityLabel = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                    DateRangeText = reader.IsDBNull(6)
+                        ? $"{reader.GetDateTime(5):dd.MM.yyyy} - Acik Uclu"
+                        : $"{reader.GetDateTime(5):dd.MM.yyyy} - {reader.GetDateTime(6):dd.MM.yyyy}",
+                    CommissionText = $"%{commissionRate:0.##} komisyon / %{commissionIncomeTaxRate:0.##} gelir vergisi",
+                    TaxText = $"KDV %{vatRate:0.##} + Konaklama %{accommodationTaxRate:0.##}",
+                    NetText = $"{grossCommissionAmount:0.##} brüt / {netCommissionAmount:0.##} net",
+                    IsActive = !reader.IsDBNull(11) && reader.GetBoolean(11),
+                    Note = reader.IsDBNull(12) ? null : reader.GetString(12)
+                });
+            }
+        }
+
+        if (hotelId.HasValue)
+        {
+            var selectedRule = model.Rules.FirstOrDefault(static item => item.IsActive);
+            if (selectedRule is not null)
+            {
+                model.Form.HotelId = selectedRule.HotelId;
+            }
+        }
+
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> SaveCommissionRuleAsync(long adminUserId, AdminCommissionRuleForm request, CancellationToken cancellationToken = default)
+    {
+        if (request.HotelId <= 0)
+        {
+            return (false, "Komisyon tanimi icin otel secilmelidir.");
+        }
+
+        if (request.EndDate.HasValue && request.EndDate.Value.Date < request.StartDate.Date)
+        {
+            return (false, "Bitis tarihi baslangic tarihinden once olamaz.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = @"
+            IF EXISTS (SELECT 1 FROM komisyon_vergiler WHERE id = @ruleId)
+            BEGIN
+                UPDATE komisyon_vergiler
+                SET otel_id = @hotelId,
+                    baslangic_tarihi = @startDate,
+                    bitis_tarihi = @endDate,
+                    komisyon_orani = @commissionRate,
+                    komisyon_gelir_vergisi_orani = @commissionIncomeTaxRate,
+                    kdv_orani = @vatRate,
+                    konaklama_vergisi_orani = @accommodationTaxRate,
+                    para_birimi = @currency,
+                    aktif_mi = 1,
+                    aciklama = @note,
+                    guncelleyen_kullanici_id = @adminUserId,
+                    guncellenme_tarihi = SYSUTCDATETIME()
+                WHERE id = @ruleId;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO komisyon_vergiler
+                (
+                    otel_id, baslangic_tarihi, bitis_tarihi, komisyon_orani, komisyon_gelir_vergisi_orani,
+                    kdv_orani, konaklama_vergisi_orani, para_birimi, aktif_mi, aciklama, olusturan_kullanici_id, guncelleyen_kullanici_id
+                )
+                VALUES
+                (
+                    @hotelId, @startDate, @endDate, @commissionRate, @commissionIncomeTaxRate,
+                    @vatRate, @accommodationTaxRate, @currency, 1, @note, @adminUserId, @adminUserId
+                );
+            END;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@ruleId", request.RuleId.HasValue ? request.RuleId.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@hotelId", request.HotelId);
+        command.Parameters.AddWithValue("@startDate", request.StartDate.Date);
+        command.Parameters.AddWithValue("@endDate", request.EndDate.HasValue ? request.EndDate.Value.Date : DBNull.Value);
+        command.Parameters.AddWithValue("@commissionRate", request.CommissionRate);
+        command.Parameters.AddWithValue("@commissionIncomeTaxRate", request.CommissionIncomeTaxRate);
+        command.Parameters.AddWithValue("@vatRate", request.VatRate);
+        command.Parameters.AddWithValue("@accommodationTaxRate", request.AccommodationTaxRate);
+        command.Parameters.AddWithValue("@currency", string.IsNullOrWhiteSpace(request.Currency) ? "TRY" : request.Currency.Trim().ToUpperInvariant());
+        command.Parameters.AddWithValue("@note", string.IsNullOrWhiteSpace(request.Note) ? DBNull.Value : request.Note.Trim());
+        command.Parameters.AddWithValue("@adminUserId", adminUserId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+
+        return (true, "Komisyon ve vergi kurali kaydedildi.");
     }
 
     private async Task<AdminShellViewModel> GetShellAsync(SqlConnection connection, string title, string subtitle, string fullName, string email, string userRole, CancellationToken cancellationToken)
@@ -607,6 +791,11 @@ public class AdminService : IAdminService
     private static int SafeInt(SqlDataReader reader, int ordinal)
     {
         return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
+    }
+
+    private static decimal SafeDecimal(SqlDataReader reader, int ordinal)
+    {
+        return reader.IsDBNull(ordinal) ? 0m : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
     }
 
     private static string FormatScalar(object? value)

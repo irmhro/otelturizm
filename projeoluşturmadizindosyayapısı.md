@@ -775,3 +775,27 @@ Bu sozlesme tum yeni ekranlar icin baglayicidir.
 - Admin partner karari yalniz `partner_detaylari`ni degil, partnere bagli `oteller` kaydinin `onay_durumu` / `yayin_durumu` alanlarini da sema kurallarina gore gunceller.
 - Partner ve admin transaction iceren servislerde `INFORMATION_SCHEMA` gibi yan sorgular ayni aktif transaction ile calistirilir; transaction'li `SqlConnection` uzerinde transaction'siz komut acmak yasaktir.
 - `appsettings.Development.json` yerel gelistirme veritabanina bakar; production benzeri hostlar development profilinde kullanilmaz.
+
+MSSQL komisyon/vergi altyapisi:
+- Database/MigrationsSql/161_create_komisyon_vergiler_and_reservation_finance.sql
+- Database/MigrationsSql/162_sqlserver_prevent_rezervasyon_delete.sql
+- Database/MigrationsSql/163_alter_rezervasyon_taslaklari_add_finance_breakdown.sql
+- Views/Paneller/Admin/Commissions.cshtml admin komisyon kurali yonetimi
+- Views/Paneller/Partner/Finance.cshtml partner komisyon/vergi ozeti
+- Services/PublicReservationService.cs rezervasyon toplamlarini komisyon_vergiler kurallarina gore hesaplar
+- Services/HotelService.cs anasayfa/header ve /oteller aramasinda typo toleransli MSSQL arama kullanir
+
+## Sözleşme Merkezi
+- Public sözleşme sayfaları: `Views/Legal/ContractDetail.cshtml`
+- E-posta şablonu: `Views/Email/Sozlesme Bildirimi.cshtml`
+- Servis katmanı: `Services/ContractContentService.cs`
+- Arayüz: `Services/Abstractions/IContractContentService.cs`
+- Migration: `Database/MigrationsSql/164_create_contract_center_tables.sql`
+- Admin yönetimi: `Views/Paneller/Admin/Contracts.cshtml`
+- Admin stil: `wwwroot/assets/css/panel-admin-contracts.css`
+- Veri tabloları:
+  - `sozlesmeler`
+  - `sozlesme_kabulleri`
+  - `sozlesme_gonderim_loglari`
+- Kayıt formlarında kullanıcı/partner/firma sözleşme ve KVKK linkleri doğrudan bu merkezden yönetilir.
+- E-posta doğrulama tamamlandığında ilgili modül sözleşme paketi otomatik kuyruklanır.

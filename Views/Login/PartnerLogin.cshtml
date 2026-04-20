@@ -15,21 +15,15 @@
             <div class="auth-sidebar-content">
                 <p class="auth-kicker">Extranet yönetimi</p>
                 <h1>Tesisinizi milyonlarca gezginle buluşturun</h1>
-                <p class="auth-lead">Partner paneline giris yapin veya yeni tesis başvurunuzu oluşturun. Rezervasyon, fiyat ve operasyon akisini tek panelden yönetin.</p>
+                <p class="auth-lead">Partner paneline giriş yapın veya yeni tesis başvurunuzu oluşturun. Rezervasyon, fiyat ve operasyon akışını tek panelden yönetin.</p>
 
                 <ul class="auth-feature-list">
                     <li><i class="fas fa-chart-line"></i> Doluluk ve performans takibi</li>
                     <li><i class="fas fa-calendar-check"></i> Anlık rezervasyon yönetimi</li>
-                    <li><i class="fas fa-wallet"></i> Komisyon ve odeme takibi</li>
+                    <li><i class="fas fa-wallet"></i> Komisyon ve ödeme takibi</li>
                     <li><i class="fas fa-headset"></i> 7/24 partner destek hattı</li>
                 </ul>
 
-                <div class="partner-stats">
-                    <div><strong>500K+</strong><span>Aktif kullanıcı</span></div>
-                    <div><strong>24s</strong><span>Onay süresi</span></div>
-                    <div><strong>%12</strong><span>Komisyon yapisi</span></div>
-                    <div><strong>0 TL</strong><span>Kayıt ücreti</span></div>
-                </div>
             </div>
 
             <div class="auth-sidebar-bottom">
@@ -50,7 +44,7 @@
             <div class="auth-panel active" id="partnerLoginPanel">
                 <div class="info-banner">
                     <i class="fas fa-info-circle"></i>
-                    <span>Extranet uzerinden rezervasyon, fiyat, oda ve operasyon kayitlarini yönetebilirsiniz.</span>
+                    <span>Extranet üzerinden rezervasyon, fiyat, oda ve operasyon kayıtlarını yönetebilirsiniz.</span>
                 </div>
 
                 @if (TempData["PartnerLoginError"] is string partnerLoginError)
@@ -100,7 +94,7 @@
                     <button type="submit" class="auth-submit-btn partner-submit-btn">Extranet'e Giriş Yap <i class="fas fa-arrow-right"></i></button>
                 </form>
 
-                <p class="auth-helper">Henuz partner degil misiniz? <button type="button" class="text-button" data-switch-tab="partnerRegisterPanel">Hemen basvurun</button></p>
+                <p class="auth-helper">Henüz partner değil misiniz? <button type="button" class="text-button" data-switch-tab="partnerRegisterPanel">Hemen başvurun</button></p>
             </div>
 
             <div class="auth-panel" id="partnerRegisterPanel">
@@ -162,7 +156,7 @@
                 const submitButton = this.querySelector('.auth-submit-btn');
                 if (submitButton) {
                     submitButton.disabled = true;
-                    submitButton.innerHTML = 'Giriş yapiliyor <i class="fas fa-spinner fa-spin"></i>';
+                    submitButton.innerHTML = 'Giriş yapılıyor <i class="fas fa-spinner fa-spin"></i>';
                 }
             });
 
@@ -171,7 +165,7 @@
                 const submitButton = this.querySelector('.auth-submit-btn');
                 if (submitButton) {
                     submitButton.disabled = true;
-                    submitButton.innerHTML = 'Partner hesabi olusturuluyor <i class="fas fa-spinner fa-spin"></i>';
+                    submitButton.innerHTML = 'Partner hesabı oluşturuluyor <i class="fas fa-spinner fa-spin"></i>';
                 }
             });
 

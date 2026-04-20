@@ -2206,7 +2206,10 @@ public class PartnerService : IPartnerService
             SELECT
                 COALESCE(SUM(r.toplam_tutar), 0) AS gross_revenue,
                 COALESCE(SUM(r.komisyon_tutari), 0) AS commission_total,
+                COALESCE(SUM(r.platform_net_komisyon_tutari), 0) AS platform_net_commission_total,
                 COALESCE(SUM(r.otele_odenecek_tutar), 0) AS payout_total,
+                COALESCE(SUM(r.kdv_tutari), 0) AS vat_total,
+                COALESCE(SUM(r.konaklama_vergisi_tutari), 0) AS accommodation_tax_total,
                 SUM(CASE WHEN r.odeme_durumu IN ('Beklemede','Ön Ödeme Alındı') THEN 1 ELSE 0 END) AS pending_payments
             FROM rezervasyonlar r
             WHERE r.otel_id = @hotelId;";
@@ -2219,13 +2222,103 @@ public class PartnerService : IPartnerService
             {
                 model.SummaryCards.Add(new PartnerStatCardViewModel { Label = "Brut Ciro", Value = FormatMoney(SafeDecimal(reader, 0)), Description = "Tum rezervasyon toplam tutari", IconClass = "fa-money-bill-wave", ToneClass = "info" });
                 model.SummaryCards.Add(new PartnerStatCardViewModel { Label = "Platform Komisyonu", Value = FormatMoney(SafeDecimal(reader, 1)), Description = "Rezervasyon bazli kesilen komisyon", IconClass = "fa-percent", ToneClass = "warning" });
-                model.SummaryCards.Add(new PartnerStatCardViewModel { Label = "Net Odeme", Value = FormatMoney(SafeDecimal(reader, 2)), Description = "Otele aktarilacak toplu bakiye", IconClass = "fa-building-columns", ToneClass = "success" });
-                model.SummaryCards.Add(new PartnerStatCardViewModel { Label = "Bekleyen Odeme", Value = SafeInt(reader, 3).ToString(), Description = "Odeme durumu kapanmamis islem", IconClass = "fa-hourglass-half", ToneClass = "danger" });
+                model.SummaryCards.Add(new PartnerStatCardViewModel { Label = "Platform Net Komisyon", Value = FormatMoney(SafeDecimal(reader, 2)), Description = "Komisyon gelir vergisi sonrasi net platform tutari", IconClass = "fa-chart-pie", ToneClass = "danger" });
+                model.SummaryCards.Add(new PartnerStatCardViewModel { Label = "Net Odeme", Value = FormatMoney(SafeDecimal(reader, 3)), Description = "Otele aktarilacak toplu bakiye", IconClass = "fa-building-columns", ToneClass = "success" });
+                model.SummaryCards.Add(new PartnerStatCardViewModel { Label = "KDV", Value = FormatMoney(SafeDecimal(reader, 4)), Description = "Misafire yansitilan KDV toplami", IconClass = "fa-file-invoice-dollar", ToneClass = "warning" });
+                model.SummaryCards.Add(new PartnerStatCardViewModel { Label = "Konaklama Vergisi", Value = FormatMoney(SafeDecimal(reader, 5)), Description = "Misafire yansitilan konaklama vergisi", IconClass = "fa-receipt", ToneClass = "info" });
+                model.SummaryCards.Add(new PartnerStatCardViewModel { Label = "Bekleyen Odeme", Value = SafeInt(reader, 6).ToString(), Description = "Odeme durumu kapanmamis islem", IconClass = "fa-hourglass-half", ToneClass = "danger" });
+            }
+        }
+
+        const string activeRuleSql = @"
+            SELECT TOP (1)
+                kv.baslangic_tarihi,
+                kv.bitis_tarihi,
+                kv.komisyon_orani,
+                kv.komisyon_gelir_vergisi_orani,
+                kv.kdv_orani,
+                kv.konaklama_vergisi_orani
+            FROM komisyon_vergiler kv
+            WHERE kv.otel_id = @hotelId
+              AND kv.aktif_mi = 1
+            ORDER BY
+                CASE
+                    WHEN kv.baslangic_tarihi <= CAST(GETDATE() AS date)
+                         AND (kv.bitis_tarihi IS NULL OR kv.bitis_tarihi >= CAST(GETDATE() AS date)) THEN 0
+                    ELSE 1
+                END,
+                kv.baslangic_tarihi DESC,
+                kv.id DESC;";
+
+        await using (var ruleCommand = new SqlCommand(activeRuleSql, connection))
+        {
+            ruleCommand.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
+            await using var reader = await ruleCommand.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                var startDate = reader.GetDateTime(0);
+                var endDateText = reader.IsDBNull(1) ? "Acik uclu" : reader.GetDateTime(1).ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR"));
+                var commissionRate = SafeDecimal(reader, 2);
+                var commissionIncomeTaxRate = SafeDecimal(reader, 3);
+                var vatRate = SafeDecimal(reader, 4);
+                var accommodationTaxRate = SafeDecimal(reader, 5);
+                model.ActiveRuleDateText = $"{startDate:dd.MM.yyyy} - {endDateText}";
+                model.ActiveRuleCommissionText = $"%{commissionRate:0.##} komisyon / %{commissionIncomeTaxRate:0.##} gelir vergisi";
+                model.ActiveRuleTaxText = $"KDV %{vatRate:0.##} + Konaklama Vergisi %{accommodationTaxRate:0.##}";
+            }
+        }
+
+        const string taxSummarySql = @"
+            SELECT
+                COALESCE(AVG(r.kdv_orani), 0) AS avg_vat_rate,
+                COALESCE(SUM(r.kdv_tutari), 0) AS vat_amount,
+                COALESCE(AVG(r.konaklama_vergisi_orani), 0) AS avg_accommodation_rate,
+                COALESCE(SUM(r.konaklama_vergisi_tutari), 0) AS accommodation_amount,
+                COALESCE(AVG(r.komisyon_gelir_vergisi_orani), 0) AS avg_commission_income_tax_rate,
+                COALESCE(SUM(r.komisyon_gelir_vergisi_tutari), 0) AS commission_income_tax_amount
+            FROM rezervasyonlar r
+            WHERE r.otel_id = @hotelId;";
+
+        await using (var taxCommand = new SqlCommand(taxSummarySql, connection))
+        {
+            taxCommand.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
+            await using var reader = await taxCommand.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                model.TaxRows.Add(new PartnerFinanceTaxRowViewModel
+                {
+                    Label = "KDV",
+                    RateText = $"%{SafeDecimal(reader, 0):0.##}",
+                    AmountText = FormatMoney(SafeDecimal(reader, 1)),
+                    Description = "Rezervasyonlarin net oda tutari uzerinden hesaplanan KDV toplami"
+                });
+                model.TaxRows.Add(new PartnerFinanceTaxRowViewModel
+                {
+                    Label = "Konaklama Vergisi",
+                    RateText = $"%{SafeDecimal(reader, 2):0.##}",
+                    AmountText = FormatMoney(SafeDecimal(reader, 3)),
+                    Description = "Misafir toplamina eklenen konaklama vergisi toplami"
+                });
+                model.TaxRows.Add(new PartnerFinanceTaxRowViewModel
+                {
+                    Label = "Komisyon Gelir Vergisi",
+                    RateText = $"%{SafeDecimal(reader, 4):0.##}",
+                    AmountText = FormatMoney(SafeDecimal(reader, 5)),
+                    Description = "Platform komisyonundan ayrilan gelir vergisi snapshot toplami"
+                });
             }
         }
 
         const string transactionsSql = @"
-            SELECT TOP (12) rezervasyon_no, COALESCE(odeme_tarihi, olusturulma_tarihi) AS hareket_tarihi, odeme_durumu, otele_odenecek_tutar, misafir_ad_soyad
+            SELECT TOP (12)
+                rezervasyon_no,
+                COALESCE(odeme_tarihi, olusturulma_tarihi) AS hareket_tarihi,
+                odeme_durumu,
+                otele_odenecek_tutar,
+                misafir_ad_soyad,
+                toplam_tutar,
+                komisyon_tutari,
+                toplam_vergi_tutari
             FROM rezervasyonlar
             WHERE otel_id = @hotelId
             ORDER BY COALESCE(odeme_tarihi, olusturulma_tarihi) DESC, id DESC;";
@@ -2242,12 +2335,12 @@ public class PartnerService : IPartnerService
                     DateText = FormatDateTime(reader.IsDBNull(1) ? null : reader.GetDateTime(1)),
                     StatusText = reader.IsDBNull(2) ? "Beklemede" : reader.GetString(2),
                     AmountText = FormatMoney(SafeDecimal(reader, 3)),
-                    DetailText = reader.IsDBNull(4) ? "Misafir bilgisi yok" : reader.GetString(4)
+                    DetailText = $"{(reader.IsDBNull(4) ? "Misafir bilgisi yok" : reader.GetString(4))} | Brut {FormatMoney(SafeDecimal(reader, 5))} | Komisyon {FormatMoney(SafeDecimal(reader, 6))} | Vergi {FormatMoney(SafeDecimal(reader, 7))}"
                 });
             }
         }
 
-        model.PayoutNote = "Komisyon ve net odeme hesaplari rezervasyon anindaki kayitli komisyon oranlari uzerinden uretilir.";
+        model.PayoutNote = "Komisyon ve vergi hesaplari rezervasyon aninda aktif olan komisyon_vergiler kuralindan snapshot olarak alinir. Sonradan oran degisse bile eski rezervasyon finans kayitlari korunur.";
         return model;
     }
 
@@ -3588,7 +3681,7 @@ public class PartnerService : IPartnerService
                 AmenityId = reader.GetInt64(0),
                 Name = reader.GetString(1),
                 IconClass = reader.GetString(2),
-                IsSelected = reader.GetInt32(3) == 1
+                IsSelected = SafeInt(reader, 3) == 1
             });
         }
 

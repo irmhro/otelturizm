@@ -84,7 +84,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         {
             items.Add(new QueuedEmailItem
             {
-                Id = reader.GetInt64(0),
+                Id = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture),
                 RecipientEmail = reader.GetString(1),
                 Subject = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
                 HtmlBody = reader.GetString(3),
@@ -122,7 +122,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             Username = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
             Password = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
             SecurityType = reader.IsDBNull(7) ? "SSL" : reader.GetString(7),
-            TimeoutSeconds = reader.IsDBNull(8) ? 30 : Convert.ToInt32(reader.GetValue(8), CultureInfo.InvariantCulture),
+            TimeoutSeconds = Math.Max(30, reader.IsDBNull(8) ? 60 : Convert.ToInt32(reader.GetValue(8), CultureInfo.InvariantCulture)),
             TestMode = !reader.IsDBNull(9) && reader.GetBoolean(9)
         };
     }
@@ -149,25 +149,44 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             Timeout = smtp.TimeoutSeconds * 1000
         };
 
-        var socketOptions = ResolveSocketOptions(smtp);
-
-        _logger.LogInformation(
-            "SMTP gonderimi baslatiliyor. Host={Host}, Port={Port}, Guvenlik={Security}, Alici={Recipient}, KuyrukId={QueueId}",
-            smtp.Host,
-            smtp.Port,
-            socketOptions,
-            item.RecipientEmail,
-            item.Id);
-
-        await client.ConnectAsync(smtp.Host, smtp.Port, socketOptions, cancellationToken);
-
-        if (!string.IsNullOrWhiteSpace(smtp.Username))
+        var socketCandidates = BuildSocketOptions(smtp);
+        Exception? lastError = null;
+        for (var i = 0; i < socketCandidates.Count; i++)
         {
-            await client.AuthenticateAsync(smtp.Username, smtp.Password, cancellationToken);
+            var socketOptions = socketCandidates[i];
+            try
+            {
+                _logger.LogInformation(
+                    "SMTP gonderimi baslatiliyor. Host={Host}, Port={Port}, Guvenlik={Security}, Alici={Recipient}, KuyrukId={QueueId}, Deneme={TryIndex}",
+                    smtp.Host,
+                    smtp.Port,
+                    socketOptions,
+                    item.RecipientEmail,
+                    item.Id,
+                    i + 1);
+
+                await client.ConnectAsync(smtp.Host, smtp.Port, socketOptions, cancellationToken);
+
+                if (!string.IsNullOrWhiteSpace(smtp.Username))
+                {
+                    await client.AuthenticateAsync(smtp.Username, smtp.Password, cancellationToken);
+                }
+
+                await client.SendAsync(message, cancellationToken);
+                await client.DisconnectAsync(true, cancellationToken);
+                return;
+            }
+            catch (Exception ex)
+            {
+                lastError = ex;
+                if (client.IsConnected)
+                {
+                    await client.DisconnectAsync(true, cancellationToken);
+                }
+            }
         }
 
-        await client.SendAsync(message, cancellationToken);
-        await client.DisconnectAsync(true, cancellationToken);
+        throw lastError ?? new InvalidOperationException("SMTP gonderimi basarisiz oldu.");
     }
 
     private static SecureSocketOptions ResolveSocketOptions(SmtpConfig smtp)
@@ -187,6 +206,20 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             "NONE" => SecureSocketOptions.None,
             _ => SecureSocketOptions.Auto
         };
+    }
+
+    private static IReadOnlyList<SecureSocketOptions> BuildSocketOptions(SmtpConfig smtp)
+    {
+        var primary = ResolveSocketOptions(smtp);
+        var options = new List<SecureSocketOptions>
+        {
+            primary,
+            SecureSocketOptions.Auto,
+            SecureSocketOptions.SslOnConnect,
+            SecureSocketOptions.StartTls
+        };
+
+        return options.Distinct().ToList();
     }
 
     private static async Task MarkEmailSentAsync(SqlConnection connection, long notificationId, CancellationToken cancellationToken)

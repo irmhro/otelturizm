@@ -104,6 +104,8 @@ public class UserFavoriteService : IUserFavoriteService
                 o.otel_adi,
                 o.sehir,
                 o.ilce,
+                COALESCE(o.onay_durumu, '') AS onay_durumu,
+                COALESCE(o.yayin_durumu, '') AS yayin_durumu,
                 COALESCE(o.ortalama_puan, 0) AS ortalama_puan,
                 COALESCE(o.toplam_yorum_sayisi, 0) AS toplam_yorum_sayisi,
                 COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
@@ -160,8 +162,6 @@ public class UserFavoriteService : IUserFavoriteService
                AND COALESCE(a.aktif_mi, 1) = 1
             WHERE f.user_id = @userId
               AND COALESCE(f.aktif_mi, 1) = 1
-              AND o.yayin_durumu = 'Yayında'
-              AND o.onay_durumu = 'Onaylandı'
             ORDER BY f.olusturulma_tarihi DESC, f.id DESC;";
 
         await using var connection = new SqlConnection(connectionString);
@@ -181,7 +181,14 @@ public class UserFavoriteService : IUserFavoriteService
             var createdAt = reader.GetDateTime(reader.GetOrdinal("olusturulma_tarihi"));
             var hotelCode = reader.GetString(reader.GetOrdinal("otel_kodu"));
             var hotelName = reader.GetString(reader.GetOrdinal("otel_adi"));
-            var alertActive = !reader.IsDBNull(reader.GetOrdinal("alert_aktif_mi")) && reader.GetBoolean(reader.GetOrdinal("alert_aktif_mi"));
+            var approvalStatus = reader.GetString(reader.GetOrdinal("onay_durumu"));
+            var publishStatus = reader.GetString(reader.GetOrdinal("yayin_durumu"));
+            var alertActive = false;
+            var alertActiveOrdinal = reader.GetOrdinal("alert_aktif_mi");
+            if (!reader.IsDBNull(alertActiveOrdinal))
+            {
+                alertActive = Convert.ToInt32(reader.GetValue(alertActiveOrdinal), CultureInfo.InvariantCulture) == 1;
+            }
             decimal? alertTarget = null;
             if (!reader.IsDBNull(reader.GetOrdinal("hedef_maksimum_fiyat")))
             {
@@ -199,6 +206,7 @@ public class UserFavoriteService : IUserFavoriteService
                 Slug = BuildSlug(hotelName, hotelCode),
                 City = reader.GetString(reader.GetOrdinal("sehir")),
                 District = reader.GetString(reader.GetOrdinal("ilce")),
+                AvailabilityNote = BuildAvailabilityNote(approvalStatus, publishStatus),
                 ImageUrl = NormalizeImageUrl(reader.IsDBNull(reader.GetOrdinal("gorsel_url")) ? string.Empty : reader.GetString(reader.GetOrdinal("gorsel_url"))),
                 Rating = rating,
                 ReviewCount = reviewCount,
@@ -482,11 +490,35 @@ public class UserFavoriteService : IUserFavoriteService
 
     private static async Task<bool> HotelExistsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
-        const string sql = @"SELECT COUNT(*) FROM oteller WHERE id = @hotelId AND yayin_durumu = 'Yayında' AND onay_durumu = 'Onaylandı';";
+        const string sql = @"SELECT COUNT(*) FROM oteller WHERE id = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;
+    }
+
+    private static string? BuildAvailabilityNote(string? approvalStatus, string? publishStatus)
+    {
+        var normalizedApproval = (approvalStatus ?? string.Empty).Trim();
+        var normalizedPublish = (publishStatus ?? string.Empty).Trim();
+
+        if (string.Equals(normalizedApproval, "Onaylandı", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(normalizedPublish, "Yayında", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        if (!string.Equals(normalizedApproval, "Onaylandı", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Bu otel şu anda onay sürecinde. Favorinizde kalır, yayına alındığında tekrar inceleyebilirsiniz.";
+        }
+
+        if (!string.Equals(normalizedPublish, "Yayında", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Bu otel şu anda yayında değil. Favorinizde saklanmaya devam eder.";
+        }
+
+        return null;
     }
 
     private static object DbValue(string? value) => string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();

@@ -434,3 +434,38 @@
   - partner evrak yukleme `200`
   - `/admin/partner-basvurulari` `200`
   - admin onay karari DB'ye yazildi
+[2026-04-20 12:15] MSSQL komisyon/vergi fazi
+- komisyon_vergiler tablosu ve rezervasyon finansal snapshot alanlari eklendi
+- rezervasyon_taslaklari icin net oda, KDV ve konaklama vergisi kirilimi eklendi
+- admin /admin/komisyonlar sayfasi gercek veriyle baglandi
+- partner /panel/partner/finans sayfasi aktif komisyon ve vergi ozetiyle guncellendi
+- public otel fiyat teklifi JSON'u net_oda_tutari, kdv ve konaklama vergisi alanlarini dondurur hale getirildi
+- anasayfa/header otel aramasi typo toleransli hale getirildi; 'pendis' -> Pendik onerisi ve listeleme fallback'i dogrulandi
+
+## 2026-04-20
+
+### Sözleşme merkezi ve e-posta doğrulama sonrası gönderim
+- Sorun: Kullanıcı, partner ve firma kayıtlarında sözleşme/KVKK onayları sadece checkbox düzeyindeydi; sürüm takibi, kabul kaydı ve e-posta doğrulama sonrası resmi sözleşme paketi gönderimi yoktu.
+- Kök neden: Sözleşme içerikleri veritabanında tutulmuyordu ve güncellenebilir bir sözleşme merkezi bulunmuyordu.
+- Nihai düzeltme:
+  - `164_create_contract_center_tables.sql` ile `sozlesmeler`, `sozlesme_kabulleri`, `sozlesme_gonderim_loglari` tabloları kuruldu.
+  - Public sözleşme route'u `/sozlesmeler/{slug}` açıldı.
+  - Kayıt formları gerçek sözleşme linkleriyle güncellendi.
+  - `AuthService` kayıt akışları artık kabul kayıtlarını DB'ye yazıyor.
+  - E-posta doğrulaması tamamlandığında ilgili kullanıcı/partner/firma sözleşme paketi `contract_delivery` şablonu ile kuyruklanıyor.
+  - Admin paneline `/admin/sozlesmeler` yönetim ekranı eklendi.
+- Canlı doğrulama:
+  - `/sozlesmeler/kullanici-kullanim-kosullari` -> `200`
+  - `/admin/sozlesmeler` oturumsuz istekte auth redirect verdi
+  - DB seed doğrulaması: `6` sözleşme, `1` sözleşme e-posta şablonu
+
+### LocalDB ve publish operasyon standardı
+- Sorun: local düzeltme sonrası yayımlama akışında bağlantı ve hedef ayarları dağınık kalıyordu; Visual Studio publish sırasında DLL lock hatası yaşanıyordu.
+- Kök neden:
+  - Local ve canlı ayarlar tek bir operasyon dokümanında toplanmamıştı.
+  - Publish profilindeki `EnableMSDeployAppOffline` ayarı daha önce yanlış property adıyla yazılmıştı.
+- Nihai düzeltme:
+  - `studio_yayin_ve_ortam_ayarlari.md` oluşturuldu.
+  - Local `MSSQLLocalDB` ve canlı MSSQL ayarları tek referans altında toplandı.
+  - Publish kontrol listesi ve kilit çözüm akışı dokümana işlendi.
+  - Publish tarafında AppOffline kullanımı standart hale getirildi.

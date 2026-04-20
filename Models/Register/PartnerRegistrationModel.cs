@@ -24,5 +24,6 @@ public class PartnerRegistrationModel
     public string Password { get; set; } = string.Empty;
     public string ConfirmPassword { get; set; } = string.Empty;
     public bool AcceptAgreement { get; set; }
+    public bool AcceptKvkk { get; set; }
     public bool DeclareAccurate { get; set; }
 }

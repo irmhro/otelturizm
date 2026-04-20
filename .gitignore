@@ -367,6 +367,7 @@ FodyWeavers.xsd
 temp_*.ps1
 tmp_*.txt
 tmp_*.log
+.dotnet-cli/
 
 # Local duplicate/copy assets (Windows)
 * - Kopya.*

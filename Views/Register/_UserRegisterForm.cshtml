@@ -65,15 +65,20 @@
 
     <label class="checkbox-stack">
         <input type="checkbox" name="acceptTerms" value="true" required />
-        <span>Kullanım Koşulları ve Gizlilik Politikasıni kabul ediyorum.</span>
+        <span><a href="/sozlesmeler/kullanici-kullanim-kosullari" target="_blank" rel="noopener">Kullanım Koşulları</a> sözleşmesini kabul ediyorum.</span>
+    </label>
+
+    <label class="checkbox-stack">
+        <input type="checkbox" name="acceptKvkk" value="true" required />
+        <span><a href="/sozlesmeler/kullanici-kvkk-aydinlatma" target="_blank" rel="noopener">KVKK Aydınlatma Metni</a> kapsamında verilerimin işlenmesini onaylıyorum.</span>
     </label>
 
     <label class="checkbox-stack">
         <input type="checkbox" name="acceptMarketing" value="true" checked />
-        <span>Fırsat ve kampanya e-postalari almak istiyorum.</span>
+        <span>Fırsat ve kampanya e-postaları almak istiyorum.</span>
     </label>
 
     <button type="submit" class="auth-submit-btn">Kayıt Ol ve Keşfet <i class="fas fa-arrow-right"></i></button>
 </form>
 
-<p class="auth-helper">Zaten uye misin? <button type="button" class="text-button" data-switch-tab="loginPanel">Giriş yap</button></p>
+<p class="auth-helper">Zaten üye misin? <button type="button" class="text-button" data-switch-tab="loginPanel">Giriş yap</button></p>

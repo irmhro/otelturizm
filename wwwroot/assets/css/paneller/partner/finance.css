@@ -24,8 +24,52 @@
     font-size: 13px;
 }
 
+.partner-finance-tax-list {
+    margin-top: 16px;
+    display: grid;
+    gap: 12px;
+}
+
+.partner-finance-tax-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 1px solid var(--partner-border);
+    border-radius: 18px;
+    background: #fff;
+}
+
+.partner-finance-tax-row strong {
+    display: block;
+}
+
+.partner-finance-tax-row small {
+    color: var(--partner-muted);
+}
+
+.partner-finance-tax-meta {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.partner-finance-tax-meta span {
+    display: block;
+    color: var(--partner-muted);
+    font-size: 13px;
+}
+
 @media (max-width: 700px) {
     .partner-finance-toolbar {
         align-items: flex-start;
+    }
+
+    .partner-finance-tax-row {
+        flex-direction: column;
+    }
+
+    .partner-finance-tax-meta {
+        text-align: left;
     }
 }

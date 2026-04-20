@@ -1,6 +1,6 @@
 <div class="info-banner subtle">
     <i class="fas fa-building-circle-check"></i>
-    <span>Partner basvurunuz kaydedilir, e-posta dogrulamasi tamamlandiginda panele giris acilir. Admin onayi gelene kadar tesisinizi duzenleyebilirsiniz ancak yayina alinmaz.</span>
+    <span>Partner başvurunuz kaydedilir, e-posta doğrulaması tamamlandığında panele giriş açılır. Admin onayı gelene kadar tesisinizi düzenleyebilirsiniz ancak yayına alınmaz.</span>
 </div>
 
 @if (TempData["PartnerRegisterError"] is string partnerRegisterError)
@@ -11,7 +11,7 @@
 <form class="auth-form" id="partnerRegisterForm" method="post" asp-controller="Register" asp-action="Partner">
     @Html.AntiForgeryToken()
     <div class="form-group">
-        <label for="hotelName">Tesis / Otel Adi</label>
+        <label for="hotelName">Tesis / Otel Adı</label>
         <div class="input-wrap">
             <i class="fas fa-hotel"></i>
             <input id="hotelName" name="hotelName" type="text" class="form-control" placeholder="Orn: OTELTURİZM OTEL" autocomplete="organization" required />
@@ -20,7 +20,7 @@
 
     <div class="double-field">
         <div class="form-group">
-            <label for="companyName">Firma Unvani</label>
+            <label for="companyName">Firma Unvanı</label>
             <div class="input-wrap">
                 <i class="fas fa-building"></i>
                 <input id="companyName" name="companyName" type="text" class="form-control" placeholder="Firma / sirket unvani" required />
@@ -28,16 +28,16 @@
         </div>
 
         <div class="form-group">
-            <label for="companyType">Firma Turu</label>
+            <label for="companyType">Firma Türü</label>
             <div class="input-wrap select-wrap">
                 <i class="fas fa-landmark"></i>
                 <select id="companyType" name="companyType" class="form-control form-select" required>
-                    <option value="">Seciniz</option>
+                    <option value="">Seçiniz</option>
                     <option value="Limited Şirketi">Limited Şirketi</option>
                     <option value="Anonim Şirketi">Anonim Şirketi</option>
-                    <option value="Şahıs Firması">Sahis Firmasi</option>
-                    <option value="Adi Ortaklık">Adi Ortaklik</option>
-                    <option value="Vakıf">Vakif</option>
+                    <option value="Şahıs Firması">Şahıs Firması</option>
+                    <option value="Adi Ortaklık">Adi Ortaklık</option>
+                    <option value="Vakıf">Vakıf</option>
                     <option value="Dernek">Dernek</option>
                 </select>
             </div>
@@ -49,7 +49,7 @@
             <label for="contactName">Yetkili Ad Soyad</label>
         <div class="input-wrap">
                 <i class="far fa-user"></i>
-                <input id="contactName" name="contactName" type="text" class="form-control" placeholder="Yetkili kisi" autocomplete="name" required />
+                <input id="contactName" name="contactName" type="text" class="form-control" placeholder="Yetkili kişi" autocomplete="name" required />
             </div>
         </div>
 
@@ -84,13 +84,13 @@
         <label for="partnerAddress">Tesis Adresi</label>
         <div class="input-wrap">
             <i class="fas fa-map-pin"></i>
-            <input id="partnerAddress" name="address" type="text" class="form-control" placeholder="Acik adres bilgisi" autocomplete="street-address" required />
+            <input id="partnerAddress" name="address" type="text" class="form-control" placeholder="Açık adres bilgisi" autocomplete="street-address" required />
         </div>
     </div>
 
     <div class="double-field">
         <div class="form-group">
-            <label for="partnerCity">Sehir</label>
+            <label for="partnerCity">Şehir</label>
             <div class="input-wrap select-wrap">
                 <i class="fas fa-location-dot"></i>
                 <select id="partnerCity" name="city" class="form-control form-select" data-address-province required>
@@ -100,7 +100,7 @@
         </div>
 
         <div class="form-group">
-            <label for="partnerDistrict">Ilce</label>
+            <label for="partnerDistrict">İlçe</label>
             <div class="input-wrap select-wrap">
                 <i class="fas fa-location-arrow"></i>
                 <select id="partnerDistrict" name="district" class="form-control form-select" data-address-district required disabled>
@@ -134,7 +134,7 @@
         </div>
 
         <div class="form-group">
-            <label for="taxNumber">Vergi Numarasi</label>
+            <label for="taxNumber">Vergi Numarası</label>
             <div class="input-wrap">
                 <i class="fas fa-hashtag"></i>
                 <input id="taxNumber" name="taxNumber" type="text" class="form-control" placeholder="1234567890" required />
@@ -152,7 +152,7 @@
         </div>
 
         <div class="form-group">
-            <label for="roomCount">Oda Sayisi</label>
+            <label for="roomCount">Oda Sayısı</label>
             <div class="input-wrap">
                 <i class="fas fa-door-open"></i>
                 <input id="roomCount" name="roomCount" type="number" class="form-control" placeholder="50" />
@@ -162,18 +162,18 @@
 
     <div class="double-field">
         <div class="form-group">
-            <label for="bankName">Banka Adi</label>
+            <label for="bankName">Banka Adı</label>
             <div class="input-wrap">
                 <i class="fas fa-building-columns"></i>
-                <input id="bankName" name="bankName" type="text" class="form-control" placeholder="Orn: Is Bankasi" required />
+                <input id="bankName" name="bankName" type="text" class="form-control" placeholder="Örn: İş Bankası" required />
             </div>
         </div>
 
         <div class="form-group">
-            <label for="bankBranch">Banka Subesi</label>
+            <label for="bankBranch">Banka Şubesi</label>
             <div class="input-wrap">
                 <i class="fas fa-code-branch"></i>
-                <input id="bankBranch" name="bankBranch" type="text" class="form-control" placeholder="Sube adi" />
+                <input id="bankBranch" name="bankBranch" type="text" class="form-control" placeholder="Şube adı" />
             </div>
         </div>
     </div>
@@ -220,15 +220,20 @@
 
     <label class="checkbox-stack">
         <input type="checkbox" name="acceptAgreement" value="true" required />
-        <span>Partner sozlesmesi ve komisyon politikasini kabul ediyorum.</span>
+        <span><a href="/sozlesmeler/partner-basvuru-sozlesmesi" target="_blank" rel="noopener">Partner sözleşmesi ve komisyon politikasını</a> kabul ediyorum.</span>
+    </label>
+
+    <label class="checkbox-stack">
+        <input type="checkbox" name="acceptKvkk" value="true" required />
+        <span><a href="/sozlesmeler/partner-kvkk-aydinlatma" target="_blank" rel="noopener">KVKK aydınlatma metnini</a> okudum, başvuru bilgilerimin incelenmesini onaylıyorum.</span>
     </label>
 
     <label class="checkbox-stack">
         <input type="checkbox" name="declareAccurate" value="true" required />
-        <span>Tesis bilgilerinin dogru ve resmi kayitlarla uyumlu oldugunu beyan ederim.</span>
+        <span>Tesis bilgilerinin doğru ve resmi kayıtlarla uyumlu olduğunu beyan ederim.</span>
     </label>
 
-    <button type="submit" class="auth-submit-btn partner-submit-btn">Partner Basvurusu Yap <i class="fas fa-arrow-right"></i></button>
+    <button type="submit" class="auth-submit-btn partner-submit-btn">Partner Başvurusu Yap <i class="fas fa-arrow-right"></i></button>
 </form>
 
-<p class="auth-helper">Zaten partner misiniz? <button type="button" class="text-button" data-switch-tab="partnerLoginPanel">Extranet'e giris yapin</button></p>
+<p class="auth-helper">Zaten partner misiniz? <button type="button" class="text-button" data-switch-tab="partnerLoginPanel">Extranet'e giriş yapın</button></p>

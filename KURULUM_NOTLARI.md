@@ -55,15 +55,15 @@ Bu projeye alinan tam yedek:
 
 ```json
 "ConnectionStrings": {
-  "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=otelturizm_2026db;Trusted_Connection=True;TrustServerCertificate=True;"
+  "DefaultConnection": "Data Source=185.111.244.246;Initial Catalog=otelturizm_2026db;User ID=sa;Password=Nusret.34.34.-;Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=True;",
+  "MssqlLocalConnection": "Data Source=185.111.244.246;Initial Catalog=otelturizm_2026db;User ID=sa;Password=Nusret.34.34.-;Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=True;",
+  "dbbaglan": "Data Source=185.111.244.246;Initial Catalog=otelturizm_2026db;User ID=sa;Password=Nusret.34.34.-;Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=True;"
 }
 ```
 
-Eger LocalDB yerine SQL Express kullanilacaksa:
-
-```json
-"DefaultConnection": "Server=.\\SQLEXPRESS;Database=otelturizm_2026db;Trusted_Connection=True;TrustServerCertificate=True;"
-```
+Not:
+- Bu projede local ve canli ortam baglantisi birebir ayni tutulur.
+- Gelistirme sirasinda da MSSQL canli hedefi kullanilir.
 
 ## 7) Projeyi Calistirma
 

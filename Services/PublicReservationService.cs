@@ -45,6 +45,11 @@ public class PublicReservationService : IPublicReservationService
             NightCount = Math.Max(1, checkOutDate.DayNumber - checkInDate.DayNumber),
             NightlyPrice = pricing.NightlyPrice,
             RoomTotal = pricing.RoomTotal,
+            NetRoomAmount = pricing.NetRoomAmount,
+            VatRate = pricing.VatRate,
+            VatAmount = pricing.VatAmount,
+            AccommodationTaxRate = pricing.AccommodationTaxRate,
+            AccommodationTaxAmount = pricing.AccommodationTaxAmount,
             TaxAmount = pricing.TaxAmount,
             TotalAmount = pricing.TotalAmount,
             IsAvailable = pricing.IsAvailable,
@@ -125,6 +130,11 @@ public class PublicReservationService : IPublicReservationService
             ChildCount = form.ChildCount,
             RoomCount = form.RoomCount,
             NightlyPrice = pricing.NightlyPrice,
+            NetRoomAmount = pricing.NetRoomAmount,
+            VatRate = pricing.VatRate,
+            VatAmount = pricing.VatAmount,
+            AccommodationTaxRate = pricing.AccommodationTaxRate,
+            AccommodationTaxAmount = pricing.AccommodationTaxAmount,
             TaxAmount = pricing.TaxAmount,
             TotalAmount = pricing.TotalAmount,
             ReturnUrl = $"/oteller/{hotel.Slug}?continueDraft=1",
@@ -188,8 +198,13 @@ public class PublicReservationService : IPublicReservationService
                     misafir_ad_soyad, misafir_eposta, misafir_telefon, misafir_notu,
                     misafir_sehir, misafir_ilce, misafir_mahalle, misafir_adres,
                     giris_tarihi, cikis_tarihi, yetiskin_sayisi, cocuk_sayisi, oda_sayisi,
-                    gecelik_fiyat, toplam_oda_tutari, vergi_tutari, toplam_tutar,
-                    komisyon_orani, durum, odeme_durumu, odeme_yontemi, otel_onay_durumu, firma_onay_durumu,
+                    gecelik_fiyat, net_oda_tutari, toplam_oda_tutari, vergi_tutari, toplam_vergi_tutari, kdv_orani, kdv_tutari,
+                    konaklama_vergisi_orani, konaklama_vergisi_tutari, toplam_tutar, vergiler_dahil_toplam_tutar,
+                    komisyon_vergi_kural_id, komisyon_orani, komisyon_tutari, komisyon_gelir_vergisi_orani, komisyon_gelir_vergisi_tutari,
+                    platform_net_komisyon_tutari, otele_odenecek_tutar,
+                    durum, odeme_durumu, odeme_yontemi, kapida_odeme_tutari, kapida_odeme_durumu, online_odeme_tutari, online_odeme_durumu,
+                    tahsil_edilen_tutar, kalan_tahsil_edilecek_tutar, on_odeme_tutari, kalan_odeme_tutari,
+                    otel_onay_durumu, firma_onay_durumu,
                     kaynak, rezervasyon_kanali, ozel_istekler, rezervasyon_taslagi_id
                 )
                 VALUES
@@ -198,8 +213,13 @@ public class PublicReservationService : IPublicReservationService
                     @fullName, @email, @phone, @note,
                     @city, @district, @neighborhood, @address,
                     @checkIn, @checkOut, @adultCount, @childCount, @roomCount,
-                    @nightlyPrice, @roomTotal, @taxAmount, @totalAmount,
-                    @commissionRate, 'Onay Bekliyor', 'Beklemede', @paymentMethod, 'Beklemede', 'Onay Gerekmiyor',
+                    @nightlyPrice, @netRoomAmount, @roomTotal, @taxAmount, @taxAmount, @vatRate, @vatAmount,
+                    @accommodationTaxRate, @accommodationTaxAmount, @totalAmount, @totalAmount,
+                    @commissionRuleId, @commissionRate, @commissionAmount, @commissionIncomeTaxRate, @commissionIncomeTaxAmount,
+                    @platformNetCommissionAmount, @hotelPayoutAmount,
+                    'Onay Bekliyor', 'Beklemede', @paymentMethod, @cashAtHotelAmount, @cashAtHotelStatus, @onlinePaymentAmount, @onlinePaymentStatus,
+                    0, @remainingCollectionAmount, 0, @remainingCollectionAmount,
+                    'Beklemede', 'Onay Gerekmiyor',
                     'Web', 'Web', @note, @draftId
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS bigint);";
@@ -225,11 +245,27 @@ public class PublicReservationService : IPublicReservationService
                 insertCommand.Parameters.AddWithValue("@childCount", form.ChildCount);
                 insertCommand.Parameters.AddWithValue("@roomCount", form.RoomCount);
                 insertCommand.Parameters.AddWithValue("@nightlyPrice", pricing.NightlyPrice);
+                insertCommand.Parameters.AddWithValue("@netRoomAmount", pricing.NetRoomAmount);
                 insertCommand.Parameters.AddWithValue("@roomTotal", pricing.RoomTotal);
                 insertCommand.Parameters.AddWithValue("@taxAmount", pricing.TaxAmount);
+                insertCommand.Parameters.AddWithValue("@vatRate", pricing.VatRate);
+                insertCommand.Parameters.AddWithValue("@vatAmount", pricing.VatAmount);
+                insertCommand.Parameters.AddWithValue("@accommodationTaxRate", pricing.AccommodationTaxRate);
+                insertCommand.Parameters.AddWithValue("@accommodationTaxAmount", pricing.AccommodationTaxAmount);
                 insertCommand.Parameters.AddWithValue("@totalAmount", pricing.TotalAmount);
-                insertCommand.Parameters.AddWithValue("@commissionRate", hotel.CommissionRate);
+                insertCommand.Parameters.AddWithValue("@commissionRuleId", pricing.CommissionRuleId.HasValue ? pricing.CommissionRuleId.Value : DBNull.Value);
+                insertCommand.Parameters.AddWithValue("@commissionRate", pricing.CommissionRate);
+                insertCommand.Parameters.AddWithValue("@commissionAmount", pricing.CommissionAmount);
+                insertCommand.Parameters.AddWithValue("@commissionIncomeTaxRate", pricing.CommissionIncomeTaxRate);
+                insertCommand.Parameters.AddWithValue("@commissionIncomeTaxAmount", pricing.CommissionIncomeTaxAmount);
+                insertCommand.Parameters.AddWithValue("@platformNetCommissionAmount", pricing.PlatformNetCommissionAmount);
+                insertCommand.Parameters.AddWithValue("@hotelPayoutAmount", pricing.HotelPayoutAmount);
                 insertCommand.Parameters.AddWithValue("@paymentMethod", paymentMethod);
+                insertCommand.Parameters.AddWithValue("@cashAtHotelAmount", paymentMethod == "Kapıda Ödeme" ? pricing.TotalAmount : 0m);
+                insertCommand.Parameters.AddWithValue("@cashAtHotelStatus", paymentMethod == "Kapıda Ödeme" ? "Odenmedi" : "Uygulanmiyor");
+                insertCommand.Parameters.AddWithValue("@onlinePaymentAmount", paymentMethod == "Sanal POS" ? pricing.TotalAmount : 0m);
+                insertCommand.Parameters.AddWithValue("@onlinePaymentStatus", paymentMethod == "Sanal POS" ? "Beklemede" : "Uygulanmiyor");
+                insertCommand.Parameters.AddWithValue("@remainingCollectionAmount", pricing.TotalAmount);
                 insertCommand.Parameters.AddWithValue("@draftId", draftId);
                 var reservationIdRaw = await insertCommand.ExecuteScalarAsync(cancellationToken);
                 reservationId = Convert.ToInt64(reservationIdRaw ?? 0L, CultureInfo.InvariantCulture);
@@ -449,6 +485,104 @@ public class PublicReservationService : IPublicReservationService
         return (1L, "partner@otelturizm.com", "Partner Yetkilisi");
     }
 
+    private async Task<CommissionTaxRuleSnapshot> LoadActiveCommissionRuleAsync(SqlConnection connection, long roomTypeId, DateOnly effectiveDate, CancellationToken cancellationToken)
+    {
+        const string tableCheckSql = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_CATALOG = DB_NAME()
+              AND TABLE_NAME = 'komisyon_vergiler';
+            """;
+
+        await using (var tableCheckCommand = new SqlCommand(tableCheckSql, connection))
+        {
+            var exists = Convert.ToInt32(await tableCheckCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) > 0;
+            if (!exists)
+            {
+                return await LoadFallbackCommissionRuleAsync(connection, roomTypeId, cancellationToken);
+            }
+        }
+
+        const string sql = @"
+            SELECT TOP (1)
+                o.id,
+                kv.id,
+                COALESCE(kv.komisyon_orani, o.varsayilan_komisyon_orani, 0),
+                COALESCE(kv.komisyon_gelir_vergisi_orani, 20),
+                COALESCE(kv.kdv_orani, 10),
+                COALESCE(kv.konaklama_vergisi_orani, 2),
+                COALESCE(kv.para_birimi, N'TRY')
+            FROM oda_tipleri ot
+            INNER JOIN oteller o ON o.id = ot.otel_id
+            OUTER APPLY
+            (
+                SELECT TOP (1) *
+                FROM komisyon_vergiler kv
+                WHERE kv.otel_id = o.id
+                  AND kv.aktif_mi = 1
+                  AND kv.baslangic_tarihi <= @effectiveDate
+                  AND (kv.bitis_tarihi IS NULL OR kv.bitis_tarihi >= @effectiveDate)
+                ORDER BY kv.baslangic_tarihi DESC, kv.id DESC
+            ) kv
+            WHERE ot.id = @roomTypeId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
+        command.Parameters.AddWithValue("@effectiveDate", effectiveDate.ToDateTime(TimeOnly.MinValue));
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            return new CommissionTaxRuleSnapshot
+            {
+                HotelId = reader.GetInt64(0),
+                RuleId = reader.IsDBNull(1) ? null : reader.GetInt64(1),
+                CommissionRate = SafeGetDecimal(reader, 2),
+                CommissionIncomeTaxRate = SafeGetDecimal(reader, 3),
+                VatRate = SafeGetDecimal(reader, 4),
+                AccommodationTaxRate = SafeGetDecimal(reader, 5),
+                Currency = reader.IsDBNull(6) ? "TRY" : reader.GetString(6)
+            };
+        }
+
+        return await LoadFallbackCommissionRuleAsync(connection, roomTypeId, cancellationToken);
+    }
+
+    private static async Task<CommissionTaxRuleSnapshot> LoadFallbackCommissionRuleAsync(SqlConnection connection, long roomTypeId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP (1)
+                o.id,
+                COALESCE(o.varsayilan_komisyon_orani, 0)
+            FROM oda_tipleri ot
+            INNER JOIN oteller o ON o.id = ot.otel_id
+            WHERE ot.id = @roomTypeId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            return new CommissionTaxRuleSnapshot
+            {
+                HotelId = reader.GetInt64(0),
+                CommissionRate = SafeGetDecimal(reader, 1),
+                CommissionIncomeTaxRate = 20m,
+                VatRate = 10m,
+                AccommodationTaxRate = 2m,
+                Currency = "TRY"
+            };
+        }
+
+        return new CommissionTaxRuleSnapshot
+        {
+            CommissionRate = 0m,
+            CommissionIncomeTaxRate = 20m,
+            VatRate = 10m,
+            AccommodationTaxRate = 2m,
+            Currency = "TRY"
+        };
+    }
+
     private async Task<PriceSummary> BuildPriceSummaryAsync(SqlConnection connection, long roomTypeId, DateOnly checkIn, DateOnly checkOut, int roomCount, CancellationToken cancellationToken)
     {
         var nightlyBreakdown = await _hotelPricingReadService.GetRoomNightlyBreakdownAsync(roomTypeId, checkIn, checkOut, cancellationToken);
@@ -466,17 +600,35 @@ public class PublicReservationService : IPublicReservationService
         var effectiveRoomCount = Math.Max(1, roomCount);
         var averageNightly = nightlyBreakdown.Average(static item => item.EffectivePrice);
         var roomTotal = nightlyBreakdown.Sum(static item => item.EffectivePrice) * effectiveRoomCount;
-        var tax = Math.Round(roomTotal * 0.08m, 2, MidpointRounding.AwayFromZero);
+        var commissionRule = await LoadActiveCommissionRuleAsync(connection, roomTypeId, checkIn, cancellationToken);
+        var netRoomAmount = roomTotal;
+        var vatAmount = Math.Round(netRoomAmount * commissionRule.VatRate / 100m, 2, MidpointRounding.AwayFromZero);
+        var accommodationTaxAmount = Math.Round(netRoomAmount * commissionRule.AccommodationTaxRate / 100m, 2, MidpointRounding.AwayFromZero);
+        var tax = vatAmount + accommodationTaxAmount;
+        var commissionAmount = Math.Round(netRoomAmount * commissionRule.CommissionRate / 100m, 2, MidpointRounding.AwayFromZero);
+        var commissionIncomeTaxAmount = Math.Round(commissionAmount * commissionRule.CommissionIncomeTaxRate / 100m, 2, MidpointRounding.AwayFromZero);
         return new PriceSummary
         {
             NightlyPrice = averageNightly,
             RoomTotal = roomTotal,
+            NetRoomAmount = netRoomAmount,
+            VatRate = commissionRule.VatRate,
+            VatAmount = vatAmount,
+            AccommodationTaxRate = commissionRule.AccommodationTaxRate,
+            AccommodationTaxAmount = accommodationTaxAmount,
             TaxAmount = tax,
             TotalAmount = roomTotal + tax,
+            CommissionRuleId = commissionRule.RuleId,
+            CommissionRate = commissionRule.CommissionRate,
+            CommissionAmount = commissionAmount,
+            CommissionIncomeTaxRate = commissionRule.CommissionIncomeTaxRate,
+            CommissionIncomeTaxAmount = commissionIncomeTaxAmount,
+            PlatformNetCommissionAmount = commissionAmount - commissionIncomeTaxAmount,
+            HotelPayoutAmount = netRoomAmount - commissionAmount,
             IsAvailable = isAvailable,
             AvailabilityMessage = isAvailable
                 ? null
-                : unavailableDays.Any(static item => item.IsClosed)
+                    : unavailableDays.Any(static item => item.IsClosed)
                     ? "Seçilen tarih aralığında satışa kapalı günler bulunuyor."
                     : "Seçilen tarih aralığında yeterli oda bulunmuyor.",
             NightlyBreakdown = nightlyBreakdown.ToList()
@@ -577,6 +729,11 @@ public class PublicReservationService : IPublicReservationService
             ChildCount = source.ChildCount,
             RoomCount = source.RoomCount,
             NightlyPrice = source.NightlyPrice,
+            NetRoomAmount = source.NetRoomAmount,
+            VatRate = source.VatRate,
+            VatAmount = source.VatAmount,
+            AccommodationTaxRate = source.AccommodationTaxRate,
+            AccommodationTaxAmount = source.AccommodationTaxAmount,
             TaxAmount = source.TaxAmount,
             TotalAmount = source.TotalAmount,
             Currency = source.Currency,
@@ -633,10 +790,43 @@ public class PublicReservationService : IPublicReservationService
     {
         public decimal NightlyPrice { get; set; }
         public decimal RoomTotal { get; set; }
+        public decimal NetRoomAmount { get; set; }
+        public decimal VatRate { get; set; }
+        public decimal VatAmount { get; set; }
+        public decimal AccommodationTaxRate { get; set; }
+        public decimal AccommodationTaxAmount { get; set; }
         public decimal TaxAmount { get; set; }
         public decimal TotalAmount { get; set; }
+        public long? CommissionRuleId { get; set; }
+        public decimal CommissionRate { get; set; }
+        public decimal CommissionAmount { get; set; }
+        public decimal CommissionIncomeTaxRate { get; set; }
+        public decimal CommissionIncomeTaxAmount { get; set; }
+        public decimal PlatformNetCommissionAmount { get; set; }
+        public decimal HotelPayoutAmount { get; set; }
         public bool IsAvailable { get; set; }
         public string? AvailabilityMessage { get; set; }
         public List<RoomNightlyPricePoint> NightlyBreakdown { get; set; } = new();
+    }
+
+    private sealed class CommissionTaxRuleSnapshot
+    {
+        public long HotelId { get; set; }
+        public long? RuleId { get; set; }
+        public decimal CommissionRate { get; set; }
+        public decimal CommissionIncomeTaxRate { get; set; }
+        public decimal VatRate { get; set; }
+        public decimal AccommodationTaxRate { get; set; }
+        public string Currency { get; set; } = "TRY";
+    }
+
+    private static decimal SafeGetDecimal(SqlDataReader reader, int ordinal)
+    {
+        if (reader.IsDBNull(ordinal))
+        {
+            return 0m;
+        }
+
+        return Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
     }
 }

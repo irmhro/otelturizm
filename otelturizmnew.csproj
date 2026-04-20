@@ -8,10 +8,11 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateMvcApplicationPartsAssemblyAttributes>false</GenerateMvcApplicationPartsAssemblyAttributes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;artifacts/**;.codex_obj\**;.codex_obj/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKit" Version="4.15.1" />
+    <PackageReference Include="MailKit" Version="4.16.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
   </ItemGroup>
@@ -22,8 +23,14 @@
     <Compile Remove="artifacts\\**\\*.cs" />
     <Compile Remove=".codex_obj\\**\\*.cs" />
     <Content Remove="tools\\**\\*" />
+    <Content Remove="artifacts\\**\\*" />
+    <Content Remove=".codex_obj\\**\\*" />
     <EmbeddedResource Remove="tools\\**\\*" />
+    <EmbeddedResource Remove="artifacts\\**\\*" />
+    <EmbeddedResource Remove=".codex_obj\\**\\*" />
     <None Include="tools\\**\\*" />
+    <None Remove="artifacts\\**\\*" />
+    <None Remove=".codex_obj\\**\\*" />
   </ItemGroup>
 
 </Project>

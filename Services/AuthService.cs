@@ -9,6 +9,7 @@ using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
 using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Giris;
+using otelturizmnew.Models.Legal;
 using otelturizmnew.Models.Register;
 using otelturizmnew.Services.Abstractions;
 
@@ -21,26 +22,32 @@ public class AuthService : IAuthService
     private const string FirmaLoginPath = "/firma-giris";
     private const string AdminLoginPath = "/admin-giris";
     private const string PasswordHashSql = "LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2))";
+    private const string LegacySha1HashSql = "LOWER(CONVERT(VARCHAR(40), HASHBYTES('SHA1', CONVERT(nvarchar(max), @password)), 2))";
+    private const string LegacyMd5HashSql = "LOWER(CONVERT(VARCHAR(32), HASHBYTES('MD5', CONVERT(nvarchar(max), @password)), 2))";
     private const string CurrentUtcSql = "SYSUTCDATETIME()";
+    private const int FailedLoginLockoutThreshold = 3;
+    private const int FailedLoginLockoutMinutes = 10;
 
     private readonly string _connectionString;
     private readonly IEmailQueueService _emailQueueService;
+    private readonly IContractContentService _contractContentService;
     private readonly string _publicBaseUrl;
 
-    public AuthService(IConfiguration configuration, IEmailQueueService emailQueueService)
+    public AuthService(IConfiguration configuration, IEmailQueueService emailQueueService, IContractContentService contractContentService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _emailQueueService = emailQueueService;
+        _contractContentService = contractContentService;
         _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://localhost:7223").TrimEnd('/');
     }
 
     public async Task<UserSessionModel?> AuthenticateUserAsync(string identity, string password, CancellationToken cancellationToken = default)
     {
         var candidate = await FindAuthCandidateAsync(identity, false, cancellationToken);
-        if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.UtcNow)
+        if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.Now)
         {
-            throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value.ToLocalTime():HH:mm} sonrasinda tekrar deneyin.");
+            throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value:HH:mm} sonrasinda tekrar deneyin.");
         }
 
         var user = await GetUserAsync(identity, password, false, cancellationToken);
@@ -49,15 +56,16 @@ public class AuthService : IAuthService
             if (candidate is not null)
             {
                 var lockoutEnd = await RegisterFailedLoginAttemptAsync(candidate.UserId, cancellationToken);
-                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.UtcNow)
+                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.Now)
                 {
-                    throw new AuthFlowException("Arka arkaya 5 hatali deneme algilandi. Hesap 10 dakika kilitlendi.");
+                    throw new AuthFlowException(CreateLockoutTriggeredMessage());
                 }
             }
 
             return null;
         }
 
+        await UpgradePasswordHashIfNeededAsync(user.UserId, password, cancellationToken);
         await ResetFailedLoginAttemptAsync(user.UserId, cancellationToken);
 
         if (user.AccountType == "partner")
@@ -108,9 +116,9 @@ public class AuthService : IAuthService
     public async Task<UserSessionModel?> AuthenticatePartnerAsync(string identity, string password, CancellationToken cancellationToken = default)
     {
         var candidate = await FindAuthCandidateAsync(identity, true, cancellationToken);
-        if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.UtcNow)
+        if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.Now)
         {
-            throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value.ToLocalTime():HH:mm} sonrasinda tekrar deneyin.");
+            throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value:HH:mm} sonrasinda tekrar deneyin.");
         }
 
         var user = await GetUserAsync(identity, password, true, cancellationToken);
@@ -119,14 +127,15 @@ public class AuthService : IAuthService
             if (candidate is not null)
             {
                 var lockoutEnd = await RegisterFailedLoginAttemptAsync(candidate.UserId, cancellationToken);
-                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.UtcNow)
+                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.Now)
                 {
-                    throw new AuthFlowException("Arka arkaya 5 hatali deneme algilandi. Hesap 10 dakika kilitlendi.");
+                    throw new AuthFlowException(CreateLockoutTriggeredMessage());
                 }
             }
             return null;
         }
 
+        await UpgradePasswordHashIfNeededAsync(user.UserId, password, cancellationToken);
         await ResetFailedLoginAttemptAsync(user.UserId, cancellationToken);
         if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
         {
@@ -143,9 +152,9 @@ public class AuthService : IAuthService
     public async Task<UserSessionModel?> AuthenticateFirmaAsync(string identity, string password, CancellationToken cancellationToken = default)
     {
         var candidate = await FindAuthCandidateAsync(identity, false, cancellationToken);
-        if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.UtcNow)
+        if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.Now)
         {
-            throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value.ToLocalTime():HH:mm} sonrasinda tekrar deneyin.");
+            throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value:HH:mm} sonrasinda tekrar deneyin.");
         }
 
         var user = await GetUserAsync(identity, password, false, cancellationToken);
@@ -154,14 +163,15 @@ public class AuthService : IAuthService
             if (candidate is not null)
             {
                 var lockoutEnd = await RegisterFailedLoginAttemptAsync(candidate.UserId, cancellationToken);
-                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.UtcNow)
+                if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.Now)
                 {
-                    throw new AuthFlowException("Arka arkaya 5 hatali deneme algilandi. Hesap 10 dakika kilitlendi.");
+                    throw new AuthFlowException(CreateLockoutTriggeredMessage());
                 }
             }
             return null;
         }
 
+        await UpgradePasswordHashIfNeededAsync(user.UserId, password, cancellationToken);
         await ResetFailedLoginAttemptAsync(user.UserId, cancellationToken);
         if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
         {
@@ -197,9 +207,9 @@ public class AuthService : IAuthService
             return (false, "E-posta zorunludur.", null);
         }
 
-        if (!model.AcceptTerms)
+        if (!model.AcceptTerms || !model.AcceptKvkk)
         {
-            return (false, "Kayit icin kullanim kosullari ve gizlilik onayi zorunludur.", null);
+            return (false, "Kayit icin kullanim kosullari ve KVKK onayi zorunludur.", null);
         }
 
         if (!IsPasswordPolicyValid(model.Password))
@@ -311,9 +321,10 @@ public class AuthService : IAuthService
             """;
 
         long newUserId;
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            await using var insertCommand = new SqlCommand(insertSql, connection);
+            await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
             insertCommand.Parameters.AddWithValue("@fullName", $"{firstName} {lastName}".Trim());
             insertCommand.Parameters.AddWithValue("@email", email);
             insertCommand.Parameters.AddWithValue("@phone", (object?)phone ?? DBNull.Value);
@@ -322,10 +333,32 @@ public class AuthService : IAuthService
 
             var result = await insertCommand.ExecuteScalarAsync(cancellationToken);
             newUserId = Convert.ToInt64(result);
+
+            await _contractContentService.RecordRegistrationAcceptancesAsync(
+                connection,
+                (SqlTransaction)transaction,
+                new ContractAcceptanceRegistrationRequest
+                {
+                    UserId = newUserId,
+                    Audience = "user",
+                    Email = email,
+                    IncludePrimaryAgreement = true,
+                    IncludeKvkk = true,
+                    Source = "web_user_register"
+                },
+                cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
         }
         catch (SqlException ex)
         {
+            await transaction.RollbackAsync(cancellationToken);
             return (false, $"Kayit veritabani hatasi: {ex.Message}", null);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
         }
 
         var user = await GetUserByIdAsync(connection, newUserId, cancellationToken);
@@ -398,9 +431,9 @@ public class AuthService : IAuthService
             return (false, "Yetkili TC, banka adi ve IBAN zorunludur.", null);
         }
 
-        if (!model.AcceptAgreement || !model.DeclareAccurate)
+        if (!model.AcceptAgreement || !model.AcceptKvkk || !model.DeclareAccurate)
         {
-            return (false, "Partner kaydi icin sozlesme ve beyan onaylari zorunludur.", null);
+            return (false, "Partner kaydi icin sözleşme, KVKK ve beyan onaylari zorunludur.", null);
         }
 
         if (!IsPasswordPolicyValid(model.Password))
@@ -778,6 +811,21 @@ public class AuthService : IAuthService
                 await updateOwnershipCommand.ExecuteNonQueryAsync(cancellationToken);
             }
 
+            await _contractContentService.RecordRegistrationAcceptancesAsync(
+                connection,
+                (SqlTransaction)transaction,
+                new ContractAcceptanceRegistrationRequest
+                {
+                    UserId = userId,
+                    PartnerId = partnerId,
+                    Audience = "partner",
+                    Email = email,
+                    IncludePrimaryAgreement = true,
+                    IncludeKvkk = true,
+                    Source = "web_partner_register"
+                },
+                cancellationToken);
+
             await transaction.CommitAsync(cancellationToken);
             await CreateAndQueueEmailVerificationAsync(
                 connection,
@@ -1054,6 +1102,21 @@ public class AuthService : IAuthService
                 userId = Convert.ToInt64(userIdResult);
             }
 
+            await _contractContentService.RecordRegistrationAcceptancesAsync(
+                connection,
+                (SqlTransaction)transaction,
+                new ContractAcceptanceRegistrationRequest
+                {
+                    UserId = userId,
+                    FirmaId = firmaId,
+                    Audience = "firma",
+                    Email = contactEmail,
+                    IncludePrimaryAgreement = true,
+                    IncludeKvkk = true,
+                    Source = "web_firma_register"
+                },
+                cancellationToken);
+
             await transaction.CommitAsync(cancellationToken);
             await CreateAndQueueEmailVerificationAsync(
                 connection,
@@ -1159,6 +1222,15 @@ public class AuthService : IAuthService
             verifyUserCommand.Parameters.AddWithValue("@userId", userId);
             await verifyUserCommand.ExecuteNonQueryAsync(cancellationToken);
         }
+
+        await _contractContentService.FinalizeEmailVerificationAsync(
+            connection,
+            (SqlTransaction)transaction,
+            userId,
+            normalizedEmail,
+            ipAddress,
+            userAgent,
+            cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
         return (true, "E-posta adresiniz başarıyla onaylandı. Artık giriş yapabilirsiniz.");
@@ -1464,6 +1536,14 @@ public class AuthService : IAuthService
             ? "u.rol"
             : "'user'";
 
+        var firmaIdSelect = authSchema.HasFirmaIdColumn
+            ? "u.firma_id"
+            : "NULL";
+
+        var salesTeamSelect = authSchema.HasSalesTeamColumn
+            ? "u.satis_ekibi"
+            : "NULL";
+
         var ownershipPartnerSelect = authSchema.HasOwnershipPartnerColumn
             ? "u.sahiplik_partner_id"
             : "NULL";
@@ -1536,6 +1616,8 @@ public class AuthService : IAuthService
                 u.eposta,
                 {partnerIdSelect} AS partner_id,
                 {roleSelect} AS user_role,
+                {firmaIdSelect} AS firma_id,
+                {salesTeamSelect} AS sales_team,
                 {ownershipPartnerSelect} AS sahiplik_partner_id,
                 {managedHotelSelect} AS managed_hotel_ids,
                 {partnerSortOrderSelect} AS ana_hesap_mi_order,
@@ -1544,9 +1626,14 @@ public class AuthService : IAuthService
             FROM users u
             {usersPartnerJoinClause}
             WHERE u.hesap_durumu = 1
-              AND u.sifre = LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2))
               AND (
-                    u.eposta = @identity
+                    LOWER(COALESCE(u.sifre, '')) = {PasswordHashSql}
+                 OR LOWER(COALESCE(u.sifre, '')) = {LegacySha1HashSql}
+                 OR LOWER(COALESCE(u.sifre, '')) = {LegacyMd5HashSql}
+                 OR COALESCE(u.sifre, '') = @password
+              )
+              AND (
+                    LOWER(u.eposta) = LOWER(@identity)
                  OR u.telefon = @identity
                  OR (@partnerIdentity IS NOT NULL AND {partnerIdSelect} = @partnerIdentity)
                  OR (
@@ -1574,7 +1661,7 @@ public class AuthService : IAuthService
                  )
               )
               AND {partnerRequirementClause}
-            GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}, {roleSelect}, {ownershipPartnerSelect}
+            GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}, {roleSelect}, {firmaIdSelect}, {salesTeamSelect}, {ownershipPartnerSelect}
             ORDER BY ana_hesap_mi_order DESC, user_partner_row_id ASC
             """;
 
@@ -1614,6 +1701,8 @@ public class AuthService : IAuthService
         var emailOrdinal = reader.GetOrdinal("eposta");
         var partnerIdOrdinal = reader.GetOrdinal("partner_id");
         var userRoleOrdinal = reader.GetOrdinal("user_role");
+        var firmaIdOrdinal = reader.GetOrdinal("firma_id");
+        var salesTeamOrdinal = reader.GetOrdinal("sales_team");
         var ownershipPartnerOrdinal = reader.GetOrdinal("sahiplik_partner_id");
         var managedHotelIdsOrdinal = reader.GetOrdinal("managed_hotel_ids");
         var roleCodesOrdinal = reader.GetOrdinal("role_codes");
@@ -1645,11 +1734,11 @@ public class AuthService : IAuthService
         {
             session.AccountType = "admin";
         }
-        else if (session.UserRole.StartsWith("firma_", StringComparison.OrdinalIgnoreCase))
+        else if (!reader.IsDBNull(firmaIdOrdinal) || session.UserRole.StartsWith("firma_", StringComparison.OrdinalIgnoreCase))
         {
             session.AccountType = "firma";
         }
-        else if (session.UserRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase))
+        else if (!reader.IsDBNull(salesTeamOrdinal) || session.UserRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase))
         {
             session.AccountType = "sales";
         }
@@ -1702,6 +1791,14 @@ public class AuthService : IAuthService
         var roleSelect = authSchema.HasUserRoleColumn
             ? "u.rol"
             : "'user'";
+
+        var firmaIdSelect = authSchema.HasFirmaIdColumn
+            ? "u.firma_id"
+            : "NULL";
+
+        var salesTeamSelect = authSchema.HasSalesTeamColumn
+            ? "u.satis_ekibi"
+            : "NULL";
 
         var ownershipPartnerSelect = authSchema.HasOwnershipPartnerColumn
             ? "u.sahiplik_partner_id"
@@ -1771,6 +1868,8 @@ public class AuthService : IAuthService
                 u.eposta,
                 {partnerIdSelect} AS partner_id,
                 {roleSelect} AS user_role,
+                {firmaIdSelect} AS firma_id,
+                {salesTeamSelect} AS sales_team,
                 {ownershipPartnerSelect} AS sahiplik_partner_id,
                 {managedHotelSelect} AS managed_hotel_ids,
                 {partnerSortOrderSelect} AS ana_hesap_mi_order,
@@ -1779,7 +1878,7 @@ public class AuthService : IAuthService
             FROM users u
             {usersPartnerJoinClause}
             WHERE u.id = @userId
-            GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}, {roleSelect}, {ownershipPartnerSelect}
+            GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}, {roleSelect}, {firmaIdSelect}, {salesTeamSelect}, {ownershipPartnerSelect}
             ORDER BY ana_hesap_mi_order DESC, user_partner_row_id ASC
             """;
 
@@ -1797,6 +1896,8 @@ public class AuthService : IAuthService
         var emailOrdinal = reader.GetOrdinal("eposta");
         var partnerIdOrdinal = reader.GetOrdinal("partner_id");
         var userRoleOrdinal = reader.GetOrdinal("user_role");
+        var firmaIdOrdinal = reader.GetOrdinal("firma_id");
+        var salesTeamOrdinal = reader.GetOrdinal("sales_team");
         var ownershipPartnerOrdinal = reader.GetOrdinal("sahiplik_partner_id");
         var managedHotelIdsOrdinal = reader.GetOrdinal("managed_hotel_ids");
         var roleCodesOrdinal = reader.GetOrdinal("role_codes");
@@ -1824,9 +1925,9 @@ public class AuthService : IAuthService
             RoleCodes = roles,
             AccountType = IsAdminAccount(userRole, roles)
                 ? "admin"
-                : (userRole.StartsWith("firma_", StringComparison.OrdinalIgnoreCase)
+                : (!reader.IsDBNull(firmaIdOrdinal) || userRole.StartsWith("firma_", StringComparison.OrdinalIgnoreCase)
                     ? "firma"
-                    : (userRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase)
+                    : (!reader.IsDBNull(salesTeamOrdinal) || userRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase)
                         ? "sales"
                     : (!reader.IsDBNull(partnerIdOrdinal) || userRole.StartsWith("partner_", StringComparison.OrdinalIgnoreCase) ? "partner" : "user"))
                   )
@@ -1882,6 +1983,8 @@ public class AuthService : IAuthService
             SELECT
                 SUM(CASE WHEN c.TABLE_NAME = 'users' AND c.COLUMN_NAME = 'rol' THEN 1 ELSE 0 END) AS has_user_role_column,
                 SUM(CASE WHEN c.TABLE_NAME = 'users' AND c.COLUMN_NAME = 'sahiplik_partner_id' THEN 1 ELSE 0 END) AS has_ownership_partner_column,
+                SUM(CASE WHEN c.TABLE_NAME = 'users' AND c.COLUMN_NAME = 'firma_id' THEN 1 ELSE 0 END) AS has_firma_id_column,
+                SUM(CASE WHEN c.TABLE_NAME = 'users' AND c.COLUMN_NAME = 'satis_ekibi' THEN 1 ELSE 0 END) AS has_sales_team_column,
                 MAX(CASE WHEN t.TABLE_NAME = 'otel_kullanici_sahiplikleri' THEN 1 ELSE 0 END) AS has_hotel_ownership_table,
                 MAX(CASE WHEN t.TABLE_NAME = 'users_partner' THEN 1 ELSE 0 END) AS has_users_partner_table,
                 SUM(CASE WHEN c.TABLE_NAME = 'users_partner' AND c.COLUMN_NAME = 'partner_id' THEN 1 ELSE 0 END) AS has_users_partner_partner_id_column,
@@ -1908,12 +2011,14 @@ public class AuthService : IAuthService
         {
             HasUserRoleColumn = !reader.IsDBNull(0) && Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture) > 0,
             HasOwnershipPartnerColumn = !reader.IsDBNull(1) && Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture) > 0,
-            HasHotelOwnershipTable = !reader.IsDBNull(2) && Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture) > 0,
-            HasUsersPartnerTable = !reader.IsDBNull(3) && Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture) > 0,
-            HasUsersPartnerPartnerIdColumn = !reader.IsDBNull(4) && Convert.ToInt64(reader.GetValue(4), CultureInfo.InvariantCulture) > 0,
-            HasUsersPartnerActiveColumn = !reader.IsDBNull(5) && Convert.ToInt64(reader.GetValue(5), CultureInfo.InvariantCulture) > 0,
-            HasUsersPartnerMainAccountColumn = !reader.IsDBNull(6) && Convert.ToInt64(reader.GetValue(6), CultureInfo.InvariantCulture) > 0,
-            HasUsersPartnerIdColumn = !reader.IsDBNull(7) && Convert.ToInt64(reader.GetValue(7), CultureInfo.InvariantCulture) > 0
+            HasFirmaIdColumn = !reader.IsDBNull(2) && Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture) > 0,
+            HasSalesTeamColumn = !reader.IsDBNull(3) && Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture) > 0,
+            HasHotelOwnershipTable = !reader.IsDBNull(4) && Convert.ToInt64(reader.GetValue(4), CultureInfo.InvariantCulture) > 0,
+            HasUsersPartnerTable = !reader.IsDBNull(5) && Convert.ToInt64(reader.GetValue(5), CultureInfo.InvariantCulture) > 0,
+            HasUsersPartnerPartnerIdColumn = !reader.IsDBNull(6) && Convert.ToInt64(reader.GetValue(6), CultureInfo.InvariantCulture) > 0,
+            HasUsersPartnerActiveColumn = !reader.IsDBNull(7) && Convert.ToInt64(reader.GetValue(7), CultureInfo.InvariantCulture) > 0,
+            HasUsersPartnerMainAccountColumn = !reader.IsDBNull(8) && Convert.ToInt64(reader.GetValue(8), CultureInfo.InvariantCulture) > 0,
+            HasUsersPartnerIdColumn = !reader.IsDBNull(9) && Convert.ToInt64(reader.GetValue(9), CultureInfo.InvariantCulture) > 0
         };
     }
 
@@ -2019,7 +2124,7 @@ public class AuthService : IAuthService
             WHERE u.id = @userId
               AND u.hesap_durumu = 1
               AND f.aktif_mi = 1
-              AND f.onay_durumu = 'Onaylandı'
+              AND UPPER(COALESCE(CONVERT(nvarchar(100), f.onay_durumu), N'')) COLLATE Turkish_CI_AI LIKE N'ONAY%'
               AND COALESCE(f.giris_izni_aktif_mi, 0) = 1;
             """;
 
@@ -2073,7 +2178,7 @@ public class AuthService : IAuthService
             {usersPartnerJoinClause}
             WHERE u.hesap_durumu = 1
               AND (
-                    u.eposta = @identity
+                    LOWER(u.eposta) = LOWER(@identity)
                  OR u.telefon = @identity
                  OR (@partnerIdentity IS NOT NULL AND {partnerIdSelect} = @partnerIdentity)
                  OR (
@@ -2134,12 +2239,12 @@ public class AuthService : IAuthService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        const string sql = """
+        var sql = $"""
             UPDATE users
             SET basarisiz_giris_sayisi = COALESCE(basarisiz_giris_sayisi, 0) + 1,
-                son_basarisiz_giris_tarihi = SYSUTCDATETIME(),
+                son_basarisiz_giris_tarihi = SYSDATETIME(),
                 giris_kilit_bitis_tarihi = CASE
-                    WHEN COALESCE(basarisiz_giris_sayisi, 0) + 1 >= 5 THEN DATEADD(MINUTE, 10, SYSUTCDATETIME())
+                    WHEN COALESCE(basarisiz_giris_sayisi, 0) + 1 >= {FailedLoginLockoutThreshold} THEN DATEADD(MINUTE, {FailedLoginLockoutMinutes}, SYSDATETIME())
                     ELSE giris_kilit_bitis_tarihi
                 END
             WHERE id = @userId;
@@ -2157,6 +2262,9 @@ public class AuthService : IAuthService
         return result is DBNull or null ? null : Convert.ToDateTime(result, CultureInfo.InvariantCulture);
     }
 
+    private static string CreateLockoutTriggeredMessage()
+        => $"Arka arkaya {FailedLoginLockoutThreshold} hatali deneme algilandi. Hesap {FailedLoginLockoutMinutes} dakika kilitlendi.";
+
     private async Task ResetFailedLoginAttemptAsync(long userId, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(_connectionString);
@@ -2171,6 +2279,28 @@ public class AuthService : IAuthService
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@userId", userId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private async Task UpgradePasswordHashIfNeededAsync(long userId, string rawPassword, CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = """
+            UPDATE users
+            SET sifre = LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2)),
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE id = @userId
+              AND (
+                    sifre IS NULL
+                 OR LOWER(sifre) <> LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2))
+              );
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@password", rawPassword);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -2374,6 +2504,8 @@ public class AuthService : IAuthService
     {
         public bool HasUserRoleColumn { get; init; }
         public bool HasOwnershipPartnerColumn { get; init; }
+        public bool HasFirmaIdColumn { get; init; }
+        public bool HasSalesTeamColumn { get; init; }
         public bool HasHotelOwnershipTable { get; init; }
         public bool HasUsersPartnerTable { get; init; }
         public bool HasUsersPartnerPartnerIdColumn { get; init; }

@@ -137,7 +137,13 @@
                     })
                 });
 
-                const payload = await response.json().catch(function () { return null; });
+                const responseText = await response.text();
+                let payload = null;
+                try {
+                    payload = responseText ? JSON.parse(responseText) : null;
+                } catch (parseError) {
+                    payload = null;
+                }
 
                 if (response.status === 401 || response.status === 403) {
                     showLoginPrompt(
@@ -149,6 +155,11 @@
                 }
 
                 if (!response.ok || !payload || payload.success !== true) {
+                    if (!payload && response.status === 400) {
+                        window.alert('Favori işlemi güvenlik doğrulamasından geçemedi. Sayfayı yenileyip tekrar deneyin.');
+                        return;
+                    }
+
                     window.alert(payload && payload.message ? payload.message : 'Favori işlemi sırasında bir sorun oluştu.');
                     return;
                 }

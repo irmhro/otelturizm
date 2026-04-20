@@ -213,7 +213,11 @@ public class WeatherService : IWeatherService
 
             if (districtName == normalizedDistrict && (string.IsNullOrWhiteSpace(normalizedCity) || cityName == normalizedCity))
             {
-                return (reader.GetDouble(2), reader.GetDouble(3));
+                var latitudeValue = reader.GetValue(2);
+                var longitudeValue = reader.GetValue(3);
+                return (
+                    Convert.ToDouble(latitudeValue, CultureInfo.InvariantCulture),
+                    Convert.ToDouble(longitudeValue, CultureInfo.InvariantCulture));
             }
         }
 

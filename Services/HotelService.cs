@@ -511,7 +511,7 @@ public class HotelService : IHotelService
         return await GetHotelDetailPageForSqlServerAsync(slug, cancellationToken);
     }
 
-    private async Task<HotelListingPageViewModel> GetHotelListingPageForSqlServerAsync(string? searchTerm, string? campaignTag, CancellationToken cancellationToken)
+    private async Task<HotelListingPageViewModel> GetHotelListingPageForSqlServerAsync(string? searchTerm, string? campaignTag, CancellationToken cancellationToken, bool allowFuzzyFallback = true)
     {
         var normalizedSearchTerm = string.IsNullOrWhiteSpace(searchTerm) ? string.Empty : searchTerm.Trim();
         var normalizedSearchKeyword = NormalizeSearchKeyword(normalizedSearchTerm);
@@ -680,6 +680,8 @@ public class HotelService : IHotelService
             });
         }
 
+        await reader.DisposeAsync();
+
         model.ActiveTag = NormalizeCampaignTag(campaignTag);
         model.Hotels = ApplyCampaignFilter(model.Hotels, model.ActiveTag).ToList();
         model.TotalCount = model.Hotels.Count;
@@ -691,6 +693,34 @@ public class HotelService : IHotelService
         model.CampaignTitle = campaignMeta.Title;
         model.CampaignDescription = campaignMeta.Description;
         model.QuickLinks = BuildListingQuickLinks(displayLabel, model.ActiveTag);
+
+        if (allowFuzzyFallback
+            && model.Hotels.Count == 0
+            && !string.IsNullOrWhiteSpace(normalizedSearchKeyword))
+        {
+            var fuzzyMatches = await LoadFuzzySearchCandidatesAsync(connection, normalizedSearchKeyword, cancellationToken);
+            var bestMatch = fuzzyMatches
+                .OrderByDescending(x => x.Score)
+                .ThenBy(x => x.Item.Type)
+                .ThenBy(x => x.Item.Label, StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.Item)
+                .FirstOrDefault();
+
+            if (bestMatch is not null)
+            {
+                var fallbackValue = bestMatch.Value;
+                var fallbackKeyword = NormalizeSearchKeyword(fallbackValue);
+                if (!string.Equals(fallbackKeyword, normalizedSearchKeyword, StringComparison.OrdinalIgnoreCase))
+                {
+                    var fallbackModel = await GetHotelListingPageForSqlServerAsync(fallbackValue, campaignTag, cancellationToken, false);
+                    fallbackModel.SearchTerm = normalizedSearchTerm;
+                    fallbackModel.SearchLabel = $"{normalizedSearchTerm} için {bestMatch.Label}";
+                    fallbackModel.City = fallbackModel.SearchLabel;
+                    return fallbackModel;
+                }
+            }
+        }
+
         return model;
     }
 
@@ -769,6 +799,31 @@ public class HotelService : IHotelService
             });
         }
 
+        await reader.DisposeAsync();
+
+        if (result.Count < 8 && !string.IsNullOrWhiteSpace(normalizedQueryKeyword))
+        {
+            var fuzzyMatches = await LoadFuzzySearchCandidatesAsync(connection, normalizedQueryKeyword, cancellationToken);
+            foreach (var fuzzyMatch in fuzzyMatches
+                         .OrderByDescending(x => x.Score)
+                         .ThenBy(x => x.Item.Type)
+                         .ThenBy(x => x.Item.Label, StringComparer.OrdinalIgnoreCase))
+            {
+                if (result.Any(existing =>
+                        string.Equals(existing.Type, fuzzyMatch.Item.Type, StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(existing.Value, fuzzyMatch.Item.Value, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                result.Add(fuzzyMatch.Item);
+                if (result.Count >= 8)
+                {
+                    break;
+                }
+            }
+        }
+
         return result;
     }
 
@@ -834,7 +889,7 @@ public class HotelService : IHotelService
                 ShortDescription = reader.GetString(reader.GetOrdinal("kisa_aciklama")),
                 LongDescription = reader.GetString(reader.GetOrdinal("uzun_aciklama")),
                 LocationDescription = reader.GetString(reader.GetOrdinal("konum_aciklamasi")),
-                StarCount = reader.IsDBNull(reader.GetOrdinal("yildiz_sayisi")) ? (byte?)null : reader.GetByte(reader.GetOrdinal("yildiz_sayisi")),
+                StarCount = reader.IsDBNull(reader.GetOrdinal("yildiz_sayisi")) ? (byte?)null : Convert.ToByte(reader.GetValue(reader.GetOrdinal("yildiz_sayisi")), CultureInfo.InvariantCulture),
                 Rating = reader.GetDecimal(reader.GetOrdinal("ortalama_puan")),
                 RatingText = BuildRatingText(reader.GetDecimal(reader.GetOrdinal("ortalama_puan"))),
                 ReviewCount = reader.GetInt32(reader.GetOrdinal("toplam_yorum_sayisi")),
@@ -923,9 +978,9 @@ public class HotelService : IHotelService
             {
                 var roomId = roomsReader.GetInt64(0);
                 var roomName = roomsReader.GetString(1);
-                var maxGuests = roomsReader.GetByte(2);
-                var maxAdults = roomsReader.GetByte(3);
-                var maxChildren = roomsReader.GetByte(4);
+                var maxGuests = Convert.ToByte(roomsReader.GetValue(2), CultureInfo.InvariantCulture);
+                var maxAdults = Convert.ToByte(roomsReader.GetValue(3), CultureInfo.InvariantCulture);
+                var maxChildren = Convert.ToByte(roomsReader.GetValue(4), CultureInfo.InvariantCulture);
                 var bedType = roomsReader.IsDBNull(5) ? "Yatak bilgisi yok" : roomsReader.GetString(5);
                 ushort? squareMeter = roomsReader.IsDBNull(6) ? null : Convert.ToUInt16(roomsReader.GetValue(6), CultureInfo.InvariantCulture);
                 var roomPrice = roomsReader.GetDecimal(7);
@@ -987,7 +1042,7 @@ public class HotelService : IHotelService
             while (await reviewsReader.ReadAsync(cancellationToken))
             {
                 var reviewName = reviewsReader.IsDBNull(0) ? "Misafir" : reviewsReader.GetString(0);
-                var reviewScore = reviewsReader.GetByte(1) * 2m;
+                var reviewScore = Convert.ToDecimal(reviewsReader.GetValue(1), CultureInfo.InvariantCulture) * 2m;
                 var reviewDate = reviewsReader.GetDateTime(3);
                 model.Reviews.Add(new HotelReviewViewModel
                 {

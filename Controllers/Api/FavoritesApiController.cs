@@ -21,6 +21,15 @@ public class FavoritesApiController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Toggle([FromBody] HotelFavoriteToggleRequest request, CancellationToken cancellationToken)
     {
+        if (request is null || request.HotelId <= 0)
+        {
+            return BadRequest(new HotelFavoriteToggleResponse
+            {
+                Success = false,
+                Message = "Favori islemi icin gecerli otel bilgisi alinamadi."
+            });
+        }
+
         var userId = GetUserId();
         if (userId <= 0)
         {

@@ -1,9 +1,153 @@
-@using otelturizmnew.Models.Paneller.Admin
-@model AdminSectionPageViewModel
+@model otelturizmnew.Models.Paneller.Admin.AdminCommissionManagementPageViewModel
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
 }
-<partial name="~/Views/Paneller/Admin/_AdminSectionPage.cshtml" model="Model" />
 
+<section class="admin-grid">
+@foreach (var card in Model.SummaryCards)
+{
+    <article class="admin-summary-card @card.ToneClass">
+        <i class="fas @card.IconClass"></i>
+        <div>
+            <strong>@card.Value</strong>
+            <span>@card.Label</span>
+            <small>@card.Description</small>
+        </div>
+    </article>
+}
+</section>
 
+<section class="admin-two-column">
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <h2>Komisyon ve vergi kurali tanimla</h2>
+                <p>Secilen otel icin rezervasyonlardan alinacak komisyon ve misafire yansiyacak vergileri tarih bazli belirleyin.</p>
+            </div>
+        </div>
+
+        <form method="post" action="/admin/komisyonlar/kaydet" class="admin-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="RuleId" value="@Model.Form.RuleId" />
+
+            <label class="admin-form-span">
+                <span>Otel</span>
+                <select name="HotelId">
+                    @foreach (var hotel in Model.Hotels)
+                    {
+                        <option value="@hotel.HotelId" selected="@(hotel.HotelId == Model.Form.HotelId)">@hotel.HotelName (@hotel.HotelCode) - @hotel.CityLabel</option>
+                    }
+                </select>
+            </label>
+
+            <label>
+                <span>Baslangic</span>
+                <input type="date" name="StartDate" value="@Model.Form.StartDate.ToString("yyyy-MM-dd")" />
+            </label>
+            <label>
+                <span>Bitis</span>
+                <input type="date" name="EndDate" value="@(Model.Form.EndDate?.ToString("yyyy-MM-dd"))" />
+            </label>
+            <label>
+                <span>Komisyon %</span>
+                <input type="number" step="0.01" min="0" name="CommissionRate" value="@Model.Form.CommissionRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+            </label>
+            <label>
+                <span>Komisyon gelir vergisi %</span>
+                <input type="number" step="0.01" min="0" name="CommissionIncomeTaxRate" value="@Model.Form.CommissionIncomeTaxRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+            </label>
+            <label>
+                <span>KDV %</span>
+                <input type="number" step="0.01" min="0" name="VatRate" value="@Model.Form.VatRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+            </label>
+            <label>
+                <span>Konaklama vergisi %</span>
+                <input type="number" step="0.01" min="0" name="AccommodationTaxRate" value="@Model.Form.AccommodationTaxRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+            </label>
+            <label>
+                <span>Para birimi</span>
+                <select name="Currency">
+                    <option value="TRY" selected="@(Model.Form.Currency == "TRY")">TRY</option>
+                    <option value="USD" selected="@(Model.Form.Currency == "USD")">USD</option>
+                    <option value="EUR" selected="@(Model.Form.Currency == "EUR")">EUR</option>
+                </select>
+            </label>
+            <label class="admin-form-span">
+                <span>Not</span>
+                <textarea name="Note" rows="3" placeholder="Oran degisim nedenini veya mutabakat notunu yazin.">@Model.Form.Note</textarea>
+            </label>
+
+            <button type="submit" class="admin-primary-btn admin-form-span">
+                <i class="fas fa-percent"></i>
+                Kurali kaydet
+            </button>
+        </form>
+    </article>
+
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <h2>Kurgu ozeti</h2>
+                <p>Net oda fiyati uzerine vergi eklenir; komisyon net oda tutari uzerinden hesaplanir.</p>
+            </div>
+        </div>
+        <div class="admin-callout-list">
+            <div class="admin-callout info">Misafir toplami = net oda tutari + KDV + konaklama vergisi</div>
+            <div class="admin-callout warning">Platform komisyonu = net oda tutari x komisyon orani</div>
+            <div class="admin-callout success">Otele net odeme = net oda tutari - platform komisyonu</div>
+            <div class="admin-callout danger">Komisyon gelir vergisi, platform komisyonundan ayrica snapshot olarak kaydedilir</div>
+        </div>
+    </article>
+</section>
+
+<section class="admin-section-card">
+    <div class="admin-section-head">
+        <div>
+            <h2>Kayitli komisyon kurallari</h2>
+            <p>Otel bazli aktif ve gecmis komisyon/vergi kurallarini tek listede izleyin.</p>
+        </div>
+    </div>
+
+    @if (Model.Rules.Count == 0)
+    {
+        <div class="admin-empty-state">
+            <strong>Komisyon kurali bulunmuyor</strong>
+            <p>Bu otel icin henuz tarih bazli bir komisyon ve vergi kuralı eklenmemis.</p>
+        </div>
+    }
+    else
+    {
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Otel</th>
+                        <th>Tarih Araligi</th>
+                        <th>Komisyon</th>
+                        <th>Vergiler</th>
+                        <th>Ornek Net</th>
+                        <th>Not</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.Rules)
+                {
+                    <tr>
+                        <td>
+                            <strong>@item.HotelName</strong>
+                            <div>@item.HotelCode</div>
+                            <small>@item.CityLabel</small>
+                        </td>
+                        <td>@item.DateRangeText</td>
+                        <td>@item.CommissionText</td>
+                        <td>@item.TaxText</td>
+                        <td>@item.NetText</td>
+                        <td>@(string.IsNullOrWhiteSpace(item.Note) ? "-" : item.Note)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

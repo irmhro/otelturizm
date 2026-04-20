@@ -578,7 +578,7 @@ public class UserPanelService : IUserPanelService
                 {
                     PaymentMethodId = reader.GetInt64(0),
                     Label = $"{reader.GetString(1)} · {reader.GetString(2)} •••• {reader.GetString(3)}",
-                    DetailText = $"Son kullanim {reader.GetInt32(4):00}/{reader.GetInt32(5)}" + (!reader.IsDBNull(6) && reader.GetBoolean(6) ? " · Varsayilan kart" : string.Empty),
+                    DetailText = $"Son kullanim {SafeInt(reader, 4):00}/{SafeInt(reader, 5)}" + (!reader.IsDBNull(6) && reader.GetBoolean(6) ? " · Varsayilan kart" : string.Empty),
                     IsDefault = !reader.IsDBNull(6) && reader.GetBoolean(6)
                 });
             }
@@ -1321,6 +1321,8 @@ public class UserPanelService : IUserPanelService
             var status = reader.GetString(12);
             var isCancelled = string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase);
             var isUpcoming = checkOut >= DateTime.Today;
+            var adultCount = SafeInt(reader, 9);
+            var childCount = SafeInt(reader, 10);
             list.Add(new UserReservationCardViewModel
             {
                 ReservationId = reader.GetInt64(0),
@@ -1333,7 +1335,7 @@ public class UserPanelService : IUserPanelService
                 StayDateText = $"{checkIn:dd MMM} - {checkOut:dd MMM yyyy}",
                 CheckInDate = DateOnly.FromDateTime(checkIn),
                 CheckOutDate = DateOnly.FromDateTime(checkOut),
-                GuestText = $"{reader.GetInt32(9)} Yetiskin" + (reader.GetInt32(10) > 0 ? $", {reader.GetInt32(10)} Cocuk" : string.Empty),
+                GuestText = $"{adultCount} Yetiskin" + (childCount > 0 ? $", {childCount} Cocuk" : string.Empty),
                 MealOrRoomText = reader.GetString(6),
                 StatusText = status,
                 StatusTone = GetReservationStatusTone(status, reader.GetString(14), checkIn),
@@ -1410,6 +1412,8 @@ public class UserPanelService : IUserPanelService
             var status = reader.GetString(12);
             var isCancelled = string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase);
             var isUpcoming = checkOut >= DateTime.Today;
+            var adultCount = SafeInt(reader, 9);
+            var childCount = SafeInt(reader, 10);
             list.Add(new UserReservationCardViewModel
             {
                 ReservationId = reader.GetInt64(0),
@@ -1422,7 +1426,7 @@ public class UserPanelService : IUserPanelService
                 StayDateText = $"{checkIn:dd MMM} - {checkOut:dd MMM yyyy}",
                 CheckInDate = DateOnly.FromDateTime(checkIn),
                 CheckOutDate = DateOnly.FromDateTime(checkOut),
-                GuestText = $"{reader.GetInt32(9)} Yetiskin" + (reader.GetInt32(10) > 0 ? $", {reader.GetInt32(10)} Cocuk" : string.Empty),
+                GuestText = $"{adultCount} Yetiskin" + (childCount > 0 ? $", {childCount} Cocuk" : string.Empty),
                 MealOrRoomText = reader.GetString(6),
                 StatusText = status,
                 StatusTone = GetReservationStatusTone(status, reader.GetString(14), checkIn),

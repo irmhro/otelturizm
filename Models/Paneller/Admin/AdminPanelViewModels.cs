@@ -115,3 +115,50 @@ public class AdminPartnerApplicationDecisionRequest
     public string? Note { get; set; }
 }
 
+public class AdminCommissionRuleRowViewModel
+{
+    public long RuleId { get; set; }
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public string HotelCode { get; set; } = string.Empty;
+    public string CityLabel { get; set; } = string.Empty;
+    public string DateRangeText { get; set; } = string.Empty;
+    public string CommissionText { get; set; } = string.Empty;
+    public string TaxText { get; set; } = string.Empty;
+    public string NetText { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public string? Note { get; set; }
+}
+
+public class AdminCommissionManagementPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public List<AdminCommissionRuleRowViewModel> Rules { get; set; } = new();
+    public AdminCommissionRuleForm Form { get; set; } = new();
+    public List<AdminCommissionHotelOptionViewModel> Hotels { get; set; } = new();
+}
+
+public class AdminCommissionHotelOptionViewModel
+{
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public string HotelCode { get; set; } = string.Empty;
+    public string CityLabel { get; set; } = string.Empty;
+    public bool IsSelected { get; set; }
+}
+
+public class AdminCommissionRuleForm
+{
+    public long? RuleId { get; set; }
+    public long HotelId { get; set; }
+    public DateTime StartDate { get; set; } = DateTime.Today;
+    public DateTime? EndDate { get; set; }
+    public decimal CommissionRate { get; set; }
+    public decimal CommissionIncomeTaxRate { get; set; }
+    public decimal VatRate { get; set; }
+    public decimal AccommodationTaxRate { get; set; }
+    public string Currency { get; set; } = "TRY";
+    public string? Note { get; set; }
+}
+
