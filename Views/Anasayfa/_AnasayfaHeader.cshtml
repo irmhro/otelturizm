@@ -146,7 +146,12 @@
 
 <script>
     (function(){
-        const languageStorageKey = 'site:language';
+        const languageStorageKey = 'site:language:v1';
+        const legacyLanguageStorageKey = 'site:language';
+        const languageSessionKey = 'site:language:session:v1';
+        const languageCookieKey = 'site_language_v1';
+        const languageExplicitKey = 'site:language:explicit:v1';
+        const languageExplicitCookieKey = 'site_language_explicit_v1';
         const defaultLanguage = 'tr';
         const supportedLanguages = ['tr', 'en', 'fr', 'ru', 'ar'];
         const languageToFlagCode = { tr: 'tr', en: 'gb', fr: 'fr', ru: 'ru', ar: 'sa' };
@@ -156,13 +161,91 @@
             return supportedLanguages.includes(lang) ? lang : defaultLanguage;
         }
 
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires.toUTCString() + '; path=/; SameSite=Lax';
+        }
+
+        function getCookie(name) {
+            const search = name + '=';
+            const parts = document.cookie.split(';');
+            for (let i = 0; i < parts.length; i += 1) {
+                const item = parts[i].trim();
+                if (item.indexOf(search) === 0) {
+                    return decodeURIComponent(item.substring(search.length));
+                }
+            }
+            return '';
+        }
+
+        function persistLanguagePreference(lang) {
+            const normalized = normalizeLanguage(lang);
+            localStorage.setItem(languageStorageKey, normalized);
+            sessionStorage.setItem(languageSessionKey, normalized);
+            setCookie(languageCookieKey, normalized, 365);
+            return normalized;
+        }
+
+        function setExplicitSelection(enabled) {
+            const value = enabled ? '1' : '0';
+            localStorage.setItem(languageExplicitKey, value);
+            sessionStorage.setItem(languageExplicitKey, value);
+            setCookie(languageExplicitCookieKey, value, 365);
+        }
+
+        function hasExplicitSelection() {
+            const localValue = localStorage.getItem(languageExplicitKey);
+            const sessionValue = sessionStorage.getItem(languageExplicitKey);
+            const cookieValue = getCookie(languageExplicitCookieKey);
+            return localValue === '1' || sessionValue === '1' || cookieValue === '1';
+        }
+
+        function getPreferredLanguage() {
+            const fromLocal = localStorage.getItem(languageStorageKey);
+            const fromLegacy = localStorage.getItem(legacyLanguageStorageKey);
+            const fromSession = sessionStorage.getItem(languageSessionKey);
+            const fromCookie = getCookie(languageCookieKey);
+            const resolved = normalizeLanguage(fromLocal || fromSession || fromCookie || fromLegacy || defaultLanguage);
+            return hasExplicitSelection() ? resolved : defaultLanguage;
+        }
+
         function setGoogleTranslateCookie(lang) {
             const normalized = normalizeLanguage(lang);
             const cookieValue = '/tr/' + normalized;
             const expires = new Date();
             expires.setFullYear(expires.getFullYear() + 1);
-            document.cookie = 'googtrans=' + cookieValue + '; expires=' + expires.toUTCString() + '; path=/';
-            document.cookie = 'googtrans=' + cookieValue + '; expires=' + expires.toUTCString() + '; path=/; domain=' + window.location.hostname;
+            const expiresText = expires.toUTCString();
+            const baseCookie = 'googtrans=' + encodeURIComponent(cookieValue) + '; expires=' + expiresText + '; path=/; SameSite=Lax';
+            document.cookie = baseCookie;
+
+            const host = window.location.hostname;
+            if (host) {
+                document.cookie = baseCookie + '; domain=' + host;
+                if (!host.startsWith('.')) {
+                    document.cookie = baseCookie + '; domain=.' + host;
+                }
+            }
+        }
+
+        function clearGoogleTranslateCookie() {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+            if (host) {
+                document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=' + host;
+                if (!host.startsWith('.')) {
+                    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.' + host;
+                }
+            }
+        }
+
+        function clearGoogleTranslateHashIfNeeded(lang) {
+            if (normalizeLanguage(lang) !== defaultLanguage) {
+                return;
+            }
+            if (window.location.hash && window.location.hash.indexOf('googtrans') > -1) {
+                history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            }
         }
 
         function applyGoogleTranslation(lang) {
@@ -177,8 +260,6 @@
             if (combo.value !== normalized) {
                 combo.value = normalized;
                 combo.dispatchEvent(new Event('change'));
-            } else if (normalized === defaultLanguage && window.location.hash.indexOf('googtrans') > -1) {
-                window.location.reload();
             }
 
             return true;
@@ -200,13 +281,67 @@
             document.head.appendChild(script);
         }
 
-        function getPreferredLanguage() {
-            return normalizeLanguage(localStorage.getItem(languageStorageKey) || defaultLanguage);
+        function syncLanguageUi(lang) {
+            const normalized = normalizeLanguage(lang);
+            const desktopRoot = document.getElementById('languageDropdown');
+            if (desktopRoot) {
+                const toggle = desktopRoot.querySelector('.dropdown-toggle');
+                const label = desktopRoot.querySelector('.dropdown-label');
+                const flag = desktopRoot.querySelector('.toggle-flag');
+                if (label) {
+                    label.textContent = normalized.toUpperCase();
+                }
+                if (flag) {
+                    const code = languageToFlagCode[normalized] || 'tr';
+                    flag.className = 'toggle-flag flag-icon flag-icon-' + code;
+                }
+                if (toggle) {
+                    toggle.setAttribute('data-language-id', normalized);
+                }
+            }
+
+            document.querySelectorAll('[data-mobile-language-value]').forEach(function (button) {
+                const isActive = normalizeLanguage(button.getAttribute('data-mobile-language-value')) === normalized;
+                button.classList.toggle('active', isActive);
+                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
         }
 
-        function applyPreferredLanguage() {
-            const preferredLanguage = getPreferredLanguage();
-            applyGoogleTranslation(preferredLanguage);
+        function scheduleTranslationApply(lang, attempt) {
+            const currentAttempt = attempt || 0;
+            if (applyGoogleTranslation(lang)) {
+                return;
+            }
+            if (currentAttempt >= 12) {
+                return;
+            }
+            ensureGoogleTranslateScript();
+            window.setTimeout(function () {
+                scheduleTranslationApply(lang, currentAttempt + 1);
+            }, 250);
+        }
+
+        function setLanguage(lang, applyNow, isExplicitChange) {
+            const normalized = persistLanguagePreference(lang);
+            if (isExplicitChange) {
+                setExplicitSelection(true);
+            }
+            syncLanguageUi(normalized);
+            document.documentElement.lang = normalized;
+            clearGoogleTranslateHashIfNeeded(normalized);
+
+            if (applyNow !== false) {
+                if (hasExplicitSelection()) {
+                    if (normalized === defaultLanguage) {
+                        setGoogleTranslateCookie(defaultLanguage);
+                    }
+                    scheduleTranslationApply(normalized, 0);
+                } else {
+                    clearGoogleTranslateCookie();
+                }
+            }
+
+            return normalized;
         }
 
         window.otelturizmGoogleTranslateInit = function () {
@@ -216,7 +351,7 @@
 
             const container = document.getElementById('google_translate_element');
             if (!container || container.childElementCount > 0) {
-                applyPreferredLanguage();
+                scheduleTranslationApply(getPreferredLanguage(), 0);
                 return;
             }
 
@@ -229,8 +364,20 @@
                 'google_translate_element'
             );
 
-            window.setTimeout(applyPreferredLanguage, 150);
+            window.setTimeout(function () {
+                scheduleTranslationApply(getPreferredLanguage(), 0);
+            }, 150);
         };
+
+        // Apply preference as early as possible on every page.
+        const startupLanguage = persistLanguagePreference(getPreferredLanguage());
+        if (hasExplicitSelection()) {
+            setGoogleTranslateCookie(startupLanguage);
+        } else {
+            clearGoogleTranslateCookie();
+        }
+        document.documentElement.lang = startupLanguage;
+        clearGoogleTranslateHashIfNeeded(startupLanguage);
 
         function setupDropdown(id, storageKey){
             const root = document.getElementById(id);
@@ -240,12 +387,12 @@
             const label = btn.querySelector('.dropdown-label');
 
             // restore from localStorage
-            const saved = localStorage.getItem(storageKey);
+            const saved = getPreferredLanguage();
             if(saved){
                 // find matching item label
                 const item = menu.querySelector(`.dropdown-item[data-value="${saved}"]`);
                 if(item) {
-                    label.textContent = item.textContent.trim();
+                    label.textContent = saved.toUpperCase();
                     if(id === 'languageDropdown'){
                         const code = languageToFlagCode[normalizeLanguage(saved)] || 'tr';
                         const toggleFlag = btn.querySelector('.toggle-flag');
@@ -266,8 +413,8 @@
                 item.addEventListener('click', function(ev){
                     ev.stopPropagation();
                     const value = item.getAttribute('data-value');
-                    label.textContent = item.textContent.trim();
-                    localStorage.setItem(storageKey, value);
+                    label.textContent = normalizeLanguage(value).toUpperCase();
+                    localStorage.setItem(storageKey, normalizeLanguage(value));
 
                     // update toggle icon for language or currency
                     if(id === 'languageDropdown'){
@@ -276,12 +423,7 @@
                         if(toggleFlag){
                             toggleFlag.className = 'toggle-flag flag-icon flag-icon-' + code;
                         }
-                        window.setTimeout(function() {
-                            if (!applyGoogleTranslation(value)) {
-                                ensureGoogleTranslateScript();
-                                window.setTimeout(function () { applyGoogleTranslation(value); }, 250);
-                            }
-                        }, 0);
+                        setLanguage(value, true, true);
                     }
                     if(id === 'currencyDropdown'){
                         // update currency badge on toggle
@@ -308,10 +450,37 @@
             });
         }
 
+        function setupMobileLanguageSelector() {
+            const buttons = document.querySelectorAll('[data-mobile-language-value]');
+            if (!buttons.length) {
+                return;
+            }
+
+            buttons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const selected = button.getAttribute('data-mobile-language-value') || defaultLanguage;
+                    setLanguage(selected, true);
+                });
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function(){
             setupDropdown('languageDropdown', languageStorageKey);
-            ensureGoogleTranslateScript();
-            window.setTimeout(applyPreferredLanguage, 120);
+            setupMobileLanguageSelector();
+            const preferredLanguage = persistLanguagePreference(getPreferredLanguage());
+            syncLanguageUi(preferredLanguage);
+            if (hasExplicitSelection()) {
+                setGoogleTranslateCookie(preferredLanguage);
+            } else {
+                clearGoogleTranslateCookie();
+            }
+            clearGoogleTranslateHashIfNeeded(preferredLanguage);
+            if (hasExplicitSelection()) {
+                ensureGoogleTranslateScript();
+                window.setTimeout(function () {
+                    scheduleTranslationApply(preferredLanguage, 0);
+                }, 120);
+            }
 
             const searchForm = document.querySelector('.public-header-search-form');
             const searchInput = document.getElementById('publicHeaderSearchInput');
@@ -402,6 +571,20 @@
                 }
             });
         });
+
+        window.addEventListener('pageshow', function () {
+            const preferred = persistLanguagePreference(getPreferredLanguage());
+            if (hasExplicitSelection()) {
+                setGoogleTranslateCookie(preferred);
+            } else {
+                clearGoogleTranslateCookie();
+            }
+            clearGoogleTranslateHashIfNeeded(preferred);
+            syncLanguageUi(preferred);
+            if (hasExplicitSelection()) {
+                scheduleTranslationApply(preferred, 0);
+            }
+        });
     })();
 </script>
 
@@ -464,6 +647,27 @@
         <div class="drawer-corp-row">
             <a asp-controller="Home" asp-action="Kurumsal" class="drawer-action ghost"><i class="fas fa-building"></i> Kurumsal</a>
             <a href="/firma" class="drawer-action ghost"><i class="fas fa-briefcase"></i> Firma</a>
+        </div>
+
+        <div class="drawer-language-section">
+            <div class="drawer-section-title">Dil Seçimi</div>
+            <div class="drawer-language-list">
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="tr" aria-pressed="false">
+                    <span class="flag-icon flag-icon-tr"></span><span>Türkçe</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="en" aria-pressed="false">
+                    <span class="flag-icon flag-icon-gb"></span><span>English</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="fr" aria-pressed="false">
+                    <span class="flag-icon flag-icon-fr"></span><span>Français</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="ru" aria-pressed="false">
+                    <span class="flag-icon flag-icon-ru"></span><span>Русский</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="ar" aria-pressed="false">
+                    <span class="flag-icon flag-icon-sa"></span><span>العربية</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>

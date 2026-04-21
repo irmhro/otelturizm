@@ -1300,6 +1300,11 @@ public class HotelService : IHotelService
     {
         var hotelList = hotels.ToList();
 
+        if (string.IsNullOrWhiteSpace(activeTag))
+        {
+            return hotelList;
+        }
+
         IEnumerable<HotelListingCardViewModel> Filter(Func<HotelListingCardViewModel, bool> predicate, Func<IEnumerable<HotelListingCardViewModel>, IOrderedEnumerable<HotelListingCardViewModel>>? orderBy = null)
         {
             var filtered = hotelList.Where(predicate);
@@ -1371,7 +1376,7 @@ public class HotelService : IHotelService
                     x => x.Tags.Any(tag => tag.Contains("Fiyat", StringComparison.OrdinalIgnoreCase)) || (x.StartingPrice ?? decimal.MaxValue) <= 3600m,
                     items => items.OrderBy(x => x.StartingPrice ?? decimal.MaxValue))
                 .Take(12),
-            _ => hotelList.Take(12)
+            _ => hotelList
         };
     }
 
@@ -1379,7 +1384,7 @@ public class HotelService : IHotelService
     {
         if (string.IsNullOrWhiteSpace(campaignTag))
         {
-            return "havuzlu-oteller";
+            return string.Empty;
         }
 
         return campaignTag.Trim().ToLowerInvariant() switch
@@ -1400,12 +1405,17 @@ public class HotelService : IHotelService
             "flash-indirim" => "flash-indirim",
             "erken-rezervasyon" => "erken-rezervasyon",
             "akilli-fiyat" => "akilli-fiyat",
-            _ => "havuzlu-oteller"
+            _ => string.Empty
         };
     }
 
     private static (string Title, string Description) GetCampaignMeta(string activeTag)
     {
+        if (string.IsNullOrWhiteSpace(activeTag))
+        {
+            return ("Tum Oteller", "Veritabanindaki yayinda ve onayli tum tesisleri listeleyin, filtreleyin ve karsilastirin.");
+        }
+
         return activeTag switch
         {
             "havuzlu-oteller" => ("Havuzlu Oteller", "Havuz keyfini öne çıkaran tesisleri filtrelenmiş şekilde keşfedin."),
@@ -1423,7 +1433,7 @@ public class HotelService : IHotelService
             "flash-indirim" => ("Flash İndirim", "Anlık indirimli, fiyat avantajı güçlü ve hızlı rezervasyona uygun oteller."),
             "erken-rezervasyon" => ("Erken Rezervasyon", "Ön planlama yapan kullanıcılar için güçlü fiyat dengesi sunan oteller."),
             "akilli-fiyat" => ("Akıllı Fiyat", "Fiyat-performans oranı güçlü otelleri algoritmik sıralama ile gösteriyoruz."),
-            _ => ("Otel Kategorileri", "Kurumsal ve stilistik kart yapısıyla kategori bazlı otel keşfi yapın.")
+            _ => ("Tum Oteller", "Veritabanindaki yayinda ve onayli tum tesisleri listeleyin, filtreleyin ve karsilastirin.")
         };
     }
 

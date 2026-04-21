@@ -990,6 +990,43 @@ body {
   padding: 12px 2px 4px;
 }
 
+.drawer-language-section {
+  padding: 12px 2px 6px;
+}
+
+.drawer-language-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.drawer-language-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(148,163,184,.34);
+  background: rgba(255,255,255,.94);
+  color: var(--text-dark);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 8px 10px;
+}
+
+.drawer-language-btn .flag-icon {
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(148,163,184,.35);
+}
+
+.drawer-language-btn.active {
+  border-color: rgba(29,78,216,.45);
+  color: #1d4ed8;
+  background: rgba(219,234,254,.8);
+  box-shadow: 0 8px 16px rgba(37,99,235,.18);
+}
+
 .mobile-bottom-nav {
   display: none;
 }
