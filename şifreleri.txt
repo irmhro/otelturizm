@@ -1,44 +1,45 @@
-Kullanıcı
+Son aktif test hesaplari
 
-E-posta: sales.test.175455@otelturizm.com
-Şifre: 1585
+Tum asagidaki hesaplarin sifresi: 1585
+
 Admin
 
-E-posta: root@otelturizm.com
-Şifre: 1585
-Alternatif adminler:
+- admin@otelturizm.com
+- genelmudur@otelturizm.com
+- finans.yonetici@otelturizm.com
+- operasyon.yonetici@otelturizm.com
+- destek.yonetici@otelturizm.com
+- destek.uzmani@otelturizm.com
+- pazarlama.yonetici@otelturizm.com
+- teknik.lider@otelturizm.com
+- yazilim.uzmani@otelturizm.com
+- dba@otelturizm.com
+- hukuk.musaviri@otelturizm.com
+- ik.yonetici@otelturizm.com
 
-genelmudur@otelturizm.com / 1585
-finans.yonetici@otelturizm.com / 1585
-operasyon.yonetici@otelturizm.com / 1585
-teknik.lider@otelturizm.com / 1585
-Partner
+Satis
 
-E-posta: 216bosphorus@gmail.com
-Şifre: 1585
-Alternatif partnerler:
+- satis@otelturizm.com
 
-216castlehotel@gmail.com / 1585
-comforttsuite@gmail.com / 1585
-eaglepalaceonline@gmail.com / 1585
-rhisshotelmaltepe21@gmail.com / 1585
-Firma / Kurumsal
+Kullanici
 
-E-posta: ahmet.yilmaz@abcteknoloji.com
-Şifre: 1585
-Alternatif firma hesapları:
+- kullanici@otelturizm.com
 
-seyma.kaya@abcteknoloji.com / 1585
-emre.demir@abcteknoloji.com / 1585
-test.firma.141718@abcteknoloji.com / 1585
-Giriş URL’leri
+Firma
 
-Kullanıcı: https://localhost:7223/kullanici-giris
-Partner: https://localhost:7223/partner-giris
-Admin: https://localhost:7223/admin-giris
-Firma: https://localhost:7223/kullanici-giris
-satış departmanıda kullanıcı panelinden giriş yapacak
-Ek not:
+- firma@otelturizm.com
 
-Kontrolde şu an SHA2('1585',256) ile eşleşen 40 aktif test hesabı var.
-İsterseniz bir sonraki adımda size temiz, karışmayacak şekilde sadece test için 1 kullanıcı + 1 partner + 1 admin + 1 firma özel demo hesap seti de ayırayım.
+Kurumsal / Partner
+
+- kurumsal@otelturizm.com
+
+Giris URL'leri
+
+- Kullanici / Firma / Satis: https://localhost:7223/kullanici-giris
+- Partner / Kurumsal: https://localhost:7223/partner-giris
+- Admin: https://localhost:7223/admin-giris
+
+Notlar
+
+- Bu liste 2026-04-22 tarihinde canli veritabanindaki aktif hesaplar kontrol edilerek guncellendi.
+- `users` tablosunda aktif durumda dogrulanan son hesaplar kullanildi.
