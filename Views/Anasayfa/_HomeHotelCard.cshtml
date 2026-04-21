@@ -26,7 +26,19 @@
 
         <div class="card-content">
             <div class="hotel-name-row">
-                <h3 class="hotel-name">@Model.Name</h3>
+                <h3 class="hotel-name hotel-name-inline-title">
+                    @Model.Name
+                    @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+                    {
+                        <span class="home-hotel-stars-inline" aria-hidden="true">
+                            @for (var i = 0; i < Model.StarCount.Value; i++)
+                            {
+                                <text>★</text>
+                            }
+                        </span>
+                        <span class="sr-only">@($"{Model.StarCount.Value} yıldızlı otel")</span>
+                    }
+                </h3>
             </div>
 
             <div class="hotel-location">

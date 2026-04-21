@@ -40,6 +40,16 @@
             });
         }
 
+        function isGenericLoginMessage(text) {
+            const t = (text || '').trim();
+            if (!t) {
+                return true;
+            }
+            return /giri[sş]/i.test(t) && /favori/i.test(t);
+        }
+
+        const defaultLoginBody = 'Kullanıcı hesabınızla giriş yaptığınızda otelleri favorilere ekleyebilir, Favorilerim sayfasından takip edebilirsiniz. İndirim olduğunda haberdar olmak için giriş sonrası ilgili otelde \"İndirime düşünce bildir\" seçeneğini açabilirsiniz.';
+
         function ensureLoginPrompt() {
             let backdrop = document.getElementById('favoriteLoginPrompt');
             if (backdrop) {
@@ -57,12 +67,11 @@
                     </button>
                     <div class="favorite-login-prompt__icon"><i class="fas fa-heart"></i></div>
                     <strong id="favoritePromptTitle">Favorilere eklemek için giriş yapın</strong>
-                    <p id="favoritePromptMessage">Kaydetmek istediğiniz otelleri profilinizde görmek ve daha sonra hızlıca ulaşmak için kullanıcı hesabınızla giriş yapabilirsiniz.</p>
+                    <p id="favoritePromptMessage">${defaultLoginBody}</p>
                     <div class="favorite-login-prompt__hint">
                         <span class="favorite-login-prompt__hint-label">Neden favoriye eklemeliyim?</span>
-                        <button type="button" class="favorite-login-prompt__hint-info" aria-label="Favori avantajı bilgisi">
+                        <button type="button" class="favorite-login-prompt__hint-info" aria-expanded="false" aria-controls="favoriteHintSheetCard" id="favoriteHintOpenBtn">
                             <i class="fas fa-circle-info"></i>
-                            <span class="favorite-login-prompt__hint-tooltip">Favoriye eklediğiniz otellerde fiyat indirimi olursa sizi haberdar edebiliriz. Bu ayarı giriş yaptıktan sonra Favorilerim sayfasındaki "İndirime düşünce bildir" butonundan açabilirsiniz.</span>
                         </button>
                     </div>
                     <div class="favorite-login-prompt__actions">
@@ -70,12 +79,65 @@
                         <a class="favorite-login-prompt__secondary" id="favoritePromptRegisterButton" href="/kullanici-giris?sekme=kayit">Kayıt Ol</a>
                     </div>
                 </div>
+                <div class="favorite-hint-sheet" id="favoriteHintSheet" hidden>
+                    <div class="favorite-hint-sheet__backdrop" data-hint-close></div>
+                    <div class="favorite-hint-sheet__card" id="favoriteHintSheetCard" role="dialog" aria-modal="true" aria-labelledby="favoriteHintTitle">
+                        <strong id="favoriteHintTitle" class="favorite-hint-sheet__title">Favorilerin faydası</strong>
+                        <p class="favorite-hint-sheet__text">Favoriye eklediğiniz otellerde fiyat indirimi olursa sizi haberdar edebiliriz. Bu ayarı giriş yaptıktan sonra Favorilerim sayfasındaki \"İndirime düşünce bildir\" butonundan açabilirsiniz.</p>
+                        <button type="button" class="favorite-hint-sheet__ok" data-hint-close>Tamam</button>
+                    </div>
+                </div>
             `;
 
             document.body.appendChild(backdrop);
 
+            const hintSheet = backdrop.querySelector('#favoriteHintSheet');
+            const hintOpen = backdrop.querySelector('#favoriteHintOpenBtn');
+
+            function closeHintSheet() {
+                if (!hintSheet) {
+                    return;
+                }
+                hintSheet.hidden = true;
+                hintSheet.classList.remove('is-visible');
+                if (hintOpen) {
+                    hintOpen.setAttribute('aria-expanded', 'false');
+                }
+            }
+
+            function openHintSheet() {
+                if (!hintSheet) {
+                    return;
+                }
+                hintSheet.hidden = false;
+                hintSheet.classList.add('is-visible');
+                if (hintOpen) {
+                    hintOpen.setAttribute('aria-expanded', 'true');
+                }
+                const okBtn = hintSheet.querySelector('.favorite-hint-sheet__ok');
+                if (okBtn) {
+                    okBtn.focus();
+                }
+            }
+
+            if (hintOpen) {
+                hintOpen.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openHintSheet();
+                });
+            }
+
+            hintSheet.querySelectorAll('[data-hint-close]').forEach(function (el) {
+                el.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    closeHintSheet();
+                });
+            });
+
             backdrop.querySelectorAll('[data-favorite-modal-close]').forEach(function (element) {
                 element.addEventListener('click', function () {
+                    closeHintSheet();
                     backdrop.classList.remove('is-visible');
                     document.body.classList.remove('favorite-modal-open');
                 });
@@ -83,6 +145,11 @@
 
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
+                    if (hintSheet && hintSheet.classList.contains('is-visible')) {
+                        closeHintSheet();
+                        event.stopPropagation();
+                        return;
+                    }
                     backdrop.classList.remove('is-visible');
                     document.body.classList.remove('favorite-modal-open');
                 }
@@ -98,7 +165,8 @@
             const registerButton = modal.querySelector('#favoritePromptRegisterButton');
 
             if (messageNode) {
-                messageNode.textContent = message || 'Favori özelliğini kullanabilmek için lütfen giriş yapınız.';
+                const m = (message || '').trim();
+                messageNode.textContent = isGenericLoginMessage(m) ? defaultLoginBody : m;
             }
 
             if (loginButton) {
@@ -154,7 +222,7 @@
 
                 if (response.status === 401 || response.status === 403) {
                     showLoginPrompt(
-                        payload && payload.message ? payload.message : 'Favori eklemek için lütfen giriş yapınız.',
+                        payload && payload.message ? payload.message : '',
                         payload && payload.loginUrl ? payload.loginUrl : '/kullanici-giris',
                         payload && payload.registerUrl ? payload.registerUrl : '/kullanici-giris?sekme=kayit'
                     );
@@ -206,10 +274,13 @@
         inset: 0;
         z-index: 4000;
         display: none;
+        align-items: center;
+        justify-content: center;
+        padding: max(16px, env(safe-area-inset-bottom));
     }
 
     .favorite-login-prompt.is-visible {
-        display: block;
+        display: flex;
     }
 
     .favorite-login-prompt__backdrop {
@@ -221,8 +292,11 @@
 
     .favorite-login-prompt__dialog {
         position: relative;
+        z-index: 1;
         width: min(92vw, 420px);
-        margin: 10vh auto 0;
+        max-height: min(88vh, 640px);
+        overflow-y: auto;
+        margin: 0;
         background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
         border-radius: 24px;
         border: 1px solid rgba(0, 59, 149, 0.10);
@@ -267,6 +341,7 @@
         margin: 0;
         color: #475569;
         line-height: 1.6;
+        text-align: left;
     }
 
     .favorite-login-prompt__actions {
@@ -277,19 +352,20 @@
     }
 
     .favorite-login-prompt__hint {
-        margin-top: 12px;
-        display: inline-flex;
+        margin-top: 14px;
+        display: flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
         color: #334155;
         font-size: 0.84rem;
         font-weight: 700;
+        flex-wrap: wrap;
     }
 
     .favorite-login-prompt__hint-info {
-        position: relative;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         border: 0;
         border-radius: 999px;
         display: inline-flex;
@@ -298,33 +374,65 @@
         background: rgba(0, 59, 149, 0.08);
         color: #0f5bd7;
         cursor: pointer;
-        font-size: 0.88rem;
+        font-size: 0.95rem;
     }
 
-    .favorite-login-prompt__hint-tooltip {
+    .favorite-hint-sheet {
+        position: fixed;
+        inset: 0;
+        z-index: 4200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .favorite-hint-sheet.is-visible {
+        display: flex;
+    }
+
+    .favorite-hint-sheet__backdrop {
         position: absolute;
-        left: 50%;
-        bottom: calc(100% + 8px);
-        transform: translateX(-50%);
-        width: min(280px, calc(100vw - 40px));
-        padding: 10px 12px;
-        border-radius: 12px;
-        background: #0f172a;
-        color: #f8fafc;
-        font-size: 0.76rem;
-        font-weight: 600;
-        line-height: 1.5;
-        text-align: left;
-        opacity: 0;
-        pointer-events: none;
-        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.3);
-        transition: opacity .18s ease;
-        z-index: 2;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
     }
 
-    .favorite-login-prompt__hint-info:hover .favorite-login-prompt__hint-tooltip,
-    .favorite-login-prompt__hint-info:focus-visible .favorite-login-prompt__hint-tooltip {
-        opacity: 1;
+    .favorite-hint-sheet__card {
+        position: relative;
+        z-index: 1;
+        width: min(100%, 360px);
+        padding: 20px 18px 16px;
+        border-radius: 18px;
+        background: #fff;
+        border: 1px solid rgba(0, 59, 149, 0.12);
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.28);
+        text-align: left;
+    }
+
+    .favorite-hint-sheet__title {
+        display: block;
+        font-size: 1rem;
+        color: #0f172a;
+        margin-bottom: 10px;
+    }
+
+    .favorite-hint-sheet__text {
+        margin: 0 0 14px;
+        color: #475569;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        font-weight: 600;
+    }
+
+    .favorite-hint-sheet__ok {
+        width: 100%;
+        min-height: 44px;
+        border: 0;
+        border-radius: 999px;
+        background: #003b95;
+        color: #fff;
+        font-weight: 800;
+        cursor: pointer;
     }
 
     .favorite-login-prompt__primary,
@@ -352,7 +460,6 @@
 
     @@media (max-width: 600px) {
         .favorite-login-prompt__dialog {
-            margin-top: 8vh;
             padding: 24px 18px 18px;
             border-radius: 20px;
         }

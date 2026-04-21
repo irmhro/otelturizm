@@ -1,21 +1,11 @@
+@using System.Globalization
 @model otelturizmnew.Models.Oteller.HotelListingPageViewModel
 
 @{
     ViewData["PageCss"] = "otel-listeleme";
 
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
-    var resultCount = hotels.Count;
-    var districtCounts = hotels
-        .Where(x => !string.IsNullOrWhiteSpace(x.District))
-        .GroupBy(x => x.District)
-        .OrderByDescending(x => x.Count())
-        .ThenBy(x => x.Key)
-        .ToList();
-    var starCounts = hotels
-        .Where(x => x.StarCount.HasValue && x.StarCount.Value > 0)
-        .GroupBy(x => x.StarCount!.Value)
-        .OrderByDescending(x => x.Key)
-        .ToDictionary(x => x.Key, x => x.Count());
+    var visibleCount = hotels.Count;
     var amenityCounts = hotels
         .SelectMany(x => x.Amenities)
         .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -23,35 +13,16 @@
         .OrderByDescending(x => x.Count())
         .ThenBy(x => x.Key)
         .ToList();
-    var topAmenities = amenityCounts.Take(5).ToList();
+    var topAmenities = amenityCounts.Take(10).ToList();
     var minPrice = Model.MinPrice > 0 ? Model.MinPrice : 0;
     var maxPrice = Model.MaxPrice > 0 ? Model.MaxPrice : 15000;
-    var activeFilters = new List<string>();
-    if (!string.IsNullOrWhiteSpace(Model.ActiveTag))
-    {
-        activeFilters.Add(Model.CampaignTitle);
-    }
-    if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
-    {
-        activeFilters.Add(Model.SearchLabel);
-    }
-    if (minPrice > 0 || maxPrice > 0)
-    {
-        activeFilters.Add($"₺{minPrice:N0} - ₺{maxPrice:N0}");
-    }
-
-    var quickFilterConfigs = new[]
-    {
-        new { Label = "WiFi", Icon = "fa-wifi", Match = "wifi" },
-        new { Label = "Havuz", Icon = "fa-person-swimming", Match = "havuz" },
-        new { Label = "Otopark", Icon = "fa-square-parking", Match = "otopark" },
-        new { Label = "Kahvaltı", Icon = "fa-mug-hot", Match = "kahvalt" },
-        new { Label = "Spa", Icon = "fa-spa", Match = "spa" }
-    };
+    var activeHeading = !string.IsNullOrWhiteSpace(Model.CampaignSlug) || !string.IsNullOrWhiteSpace(Model.ActiveTag)
+        ? Model.CampaignTitle
+        : "Oteller";
 
     string NormalizeToken(string value)
     {
-        return value
+        return (value ?? string.Empty)
             .Replace("ı", "i", StringComparison.OrdinalIgnoreCase)
             .Replace("İ", "i", StringComparison.OrdinalIgnoreCase)
             .Replace("ö", "o", StringComparison.OrdinalIgnoreCase)
@@ -64,136 +35,149 @@
             .Replace("Ç", "c", StringComparison.OrdinalIgnoreCase)
             .Replace("ğ", "g", StringComparison.OrdinalIgnoreCase)
             .Replace("Ğ", "g", StringComparison.OrdinalIgnoreCase)
-            .ToLowerInvariant();
+            .ToLowerInvariant()
+            .Trim();
     }
 
-    string GetAmenityIconClass(string amenity)
+    string BuildPageUrl(int targetPage)
     {
-        var normalized = NormalizeToken(amenity);
-        if (normalized.Contains("wifi")) return "fa-wifi";
-        if (normalized.Contains("havuz")) return "fa-person-swimming";
-        if (normalized.Contains("otopark")) return "fa-square-parking";
-        if (normalized.Contains("spa")) return "fa-spa";
-        if (normalized.Contains("kahvalt")) return "fa-mug-hot";
-        if (normalized.Contains("restoran")) return "fa-utensils";
-        return "fa-circle-check";
-    }
-
-    var quickFilterItems = quickFilterConfigs
-        .Select(config => new
+        var queryItems = new List<string>();
+        foreach (var item in Context.Request.Query)
         {
-            config.Label,
-            config.Icon,
-            Token = config.Match,
-            Count = hotels.Count(h => h.Amenities.Any(a => NormalizeToken(a).Contains(config.Match, StringComparison.OrdinalIgnoreCase)))
-        })
-        .Where(x => x.Count > 0)
-        .ToList();
+            if (string.Equals(item.Key, "page", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
 
-    var guestScoreFilters = new[]
-    {
-        "9+ Muhtesem",
-        "8+ Cok Iyi",
-        "7+ Iyi"
-    };
+            var value = item.Value.ToString();
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
 
-    var mealOptions = new[]
-    {
-        "Oda Kahvalti",
-        "Her Sey Dahil",
-        "Yarim Pansiyon"
-    };
+            queryItems.Add($"{Uri.EscapeDataString(item.Key)}={Uri.EscapeDataString(value)}");
+        }
 
-    var specialConcepts = new[]
-    {
-        "En Iyi Fiyat",
-        "Hafta Sonu Indirimi",
-        "Yildiz Yagmuru",
-        "Kampanyali"
-    };
-
-    var infoLine = resultCount > 0
-        ? $"{resultCount} tesis • {districtCounts.Count} bolge"
-        : "Veritabani kriterlerine uygun sonuc bulunamadi";
+        queryItems.Add($"page={targetPage.ToString(CultureInfo.InvariantCulture)}");
+        return $"{Context.Request.Path}?{string.Join("&", queryItems)}";
+    }
 }
 
-<section class="hotel-listing-shell listing-template-v41">
+<section class="hotel-listing-shell listing-template-v41 listing-template-v52">
     <div class="listing-container">
-        <header class="listing-sticky-header sticky-header">
-            <div class="listing-search-summary search-summary-bar">
-                <a asp-controller="Home" asp-action="Index" class="listing-back-btn back-btn" aria-label="Anasayfaya don">
+        <header class="listing-hero-panel">
+            <div class="listing-hero-copy">
+                <a asp-controller="Home" asp-action="Index" class="listing-back-link">
                     <i class="fas fa-arrow-left"></i>
+                    <span>Anasayfaya don</span>
                 </a>
-
-                <div class="listing-search-copy search-content">
-                    <h1>@Model.SearchLabel</h1>
-                    <p id="listingInfoLine">
-                        <i class="fas fa-hotel"></i>
-                        <span>@infoLine</span>
-                    </p>
-                </div>
-
-                <a asp-controller="Home" asp-action="Index" class="listing-edit-search edit-search" aria-label="Aramayi duzenle">
-                    <i class="fas fa-sliders-h"></i>
-                </a>
+                <span class="listing-hero-eyebrow">Canli veritabani listeleme</span>
+                <h1>@activeHeading</h1>
+                <p>@Model.CampaignDescription</p>
             </div>
 
-            <div class="listing-toolbar filter-sort-bar">
-                <div class="listing-quick-filters quick-filters" aria-label="Hizli filtreler">
-                    @foreach (var quickFilter in quickFilterItems)
-                    {
-                        <button type="button" class="quick-filter-chip quick-filter-btn" data-chip-filter="@quickFilter.Token">
-                            <i class="fas @quickFilter.Icon"></i>
-                            <span>@quickFilter.Label</span>
-                            <small>@quickFilter.Count</small>
-                        </button>
-                    }
-
-                    <button type="button" class="quick-filter-chip quick-filter-chip-ghost quick-filter-btn" data-open-mobile-filters>
-                        <i class="fas fa-filter"></i>
-                        <span>Tum Filtreler</span>
-                    </button>
+            <div class="listing-hero-stats">
+                <div class="listing-stat-card">
+                    <strong>@Model.TotalCount</strong>
+                    <span>Toplam tesis</span>
                 </div>
+                <div class="listing-stat-card">
+                    <strong>@Math.Max(Model.TotalPages, 1)</strong>
+                    <span>Sayfa adedi</span>
+                </div>
+                <div class="listing-stat-card">
+                    <strong>@Model.CurrentPage / @Math.Max(Model.TotalPages, 1)</strong>
+                    <span>Aktif sayfa</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="listing-toolbar-bar">
+            <div>
+                <h2>@(string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Tum bolgeler" : Model.SearchLabel)</h2>
+                <p id="listingResultsSummary">@Model.TotalCount tesis bulundu. Sayfa basi @Model.PageSize tesis gosteriliyor.</p>
+            </div>
+
+            <div class="listing-toolbar-actions">
+                <button type="button" class="listing-toolbar-filter-btn" data-open-mobile-filters>
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Filtreler</span>
+                </button>
 
                 <label class="listing-sortbox" for="listingSortSelect">
                     <span>Sirala</span>
                     <select id="listingSortSelect" class="sort-select">
                         <option value="recommended">Onerilen</option>
-                        <option value="price-asc">En Dusuk Fiyat</option>
-                        <option value="rating-desc">En Yuksek Puan</option>
+                        <option value="price-asc">En dusuk fiyat</option>
+                        <option value="price-desc">En yuksek fiyat</option>
+                        <option value="rating-desc">En yuksek puan</option>
+                        <option value="name-asc">A-Z</option>
                     </select>
                 </label>
             </div>
+        </section>
 
-            @if (activeFilters.Count > 0)
-            {
-                <div class="listing-active-filters active-filters">
-                    @foreach (var filter in activeFilters)
-                    {
-                        <span class="active-filter-pill active-filter-tag">@filter <i class="fas fa-times"></i></span>
-                    }
-                    <a asp-controller="Oteller" asp-action="OtelListeleme" class="clear-filter-link clear-all">Tumunu Temizle</a>
-                </div>
-            }
-        </header>
-
-        <div class="listing-view-switch view-toggle" role="tablist" aria-label="Gorunum secimi">
-            <button type="button" class="view-switch-btn view-btn active" id="listingListViewBtn" data-view-mode="list">
-                <i class="fas fa-list"></i>
-                <span>Liste</span>
-            </button>
-            <button type="button" class="view-switch-btn view-btn" id="listingMapViewBtn" data-view-mode="map">
-                <i class="fas fa-map-location-dot"></i>
-                <span>Harita</span>
-            </button>
-        </div>
-
-        <div class="listing-results-grid results-container" id="listingResultsGrid">
+        <div class="listing-results-grid listing-results-grid-v52">
             <aside class="listing-filter-sidebar filter-sidebar" id="listingFilterSidebar">
                 <div class="filter-panel filter-card">
                     <div class="filter-panel-section filter-section">
                         <div class="filter-panel-head">
-                            <h3>Fiyat Araligi</h3>
+                            <h3>Hizli arama</h3>
+                        </div>
+                        <input type="search" id="listingKeywordFilter" class="listing-text-filter" placeholder="Otel, ilce, mahalle veya kampanya ara" value="@Model.SearchTerm" />
+                    </div>
+
+                    <div class="filter-panel-section filter-section">
+                        <div class="filter-panel-head">
+                            <h3>Konum</h3>
+                        </div>
+                        <div class="listing-filter-stack">
+                            <select id="listingCityFilter" class="listing-select-filter">
+                                <option value="">Tum iller</option>
+                                @foreach (var city in Model.Cities)
+                                {
+                                    <option value="@NormalizeToken(city)">@city</option>
+                                }
+                            </select>
+
+                            <select id="listingDistrictFilter" class="listing-select-filter">
+                                <option value="">Tum ilceler</option>
+                                @foreach (var district in Model.Districts)
+                                {
+                                    <option value="@NormalizeToken(district)">@district</option>
+                                }
+                            </select>
+
+                            <select id="listingNeighborhoodFilter" class="listing-select-filter">
+                                <option value="">Tum mahalleler</option>
+                                @foreach (var neighborhood in Model.Neighborhoods)
+                                {
+                                    <option value="@NormalizeToken(neighborhood)">@neighborhood</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="filter-panel-section filter-section">
+                        <div class="filter-panel-head">
+                            <h3>Kampanyalar</h3>
+                            <span>@Model.Campaigns.Count</span>
+                        </div>
+                        <div class="filter-option-list filter-options">
+                            @foreach (var campaign in Model.Campaigns.Take(8))
+                            {
+                                <label class="filter-option-row filter-check">
+                                    <input type="checkbox" class="listing-campaign-filter" value="@NormalizeToken(campaign.Slug)" @(campaign.IsActive ? "checked" : null) />
+                                    <span>@campaign.Name</span>
+                                    <strong>@campaign.HotelCount</strong>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="filter-panel-section filter-section">
+                        <div class="filter-panel-head">
+                            <h3>Fiyat araligi</h3>
                             <span>Gecelik</span>
                         </div>
                         <input type="range" min="0" max="@(Math.Max(maxPrice, 15000))" value="@maxPrice" class="filter-range" id="listingPriceMaxRange" />
@@ -211,16 +195,29 @@
 
                     <div class="filter-panel-section filter-section">
                         <div class="filter-panel-head">
-                            <h3>Yildiz Sayisi</h3>
-                            <span>@starCounts.Values.Sum()</span>
+                            <h3>Konaklama tipi</h3>
+                        </div>
+                        <div class="filter-option-list filter-options">
+                            @foreach (var propertyType in Model.PropertyTypes)
+                            {
+                                <label class="filter-option-row filter-check">
+                                    <input type="checkbox" class="listing-property-filter" value="@NormalizeToken(propertyType)" />
+                                    <span>@propertyType</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="filter-panel-section filter-section">
+                        <div class="filter-panel-head">
+                            <h3>Yildiz sayisi</h3>
                         </div>
                         <div class="filter-option-list filter-options">
                             @foreach (var star in Model.StarOptions)
                             {
                                 <label class="filter-option-row filter-check">
-                                    <input type="checkbox" class="listing-star-filter" value="@star" @(starCounts.ContainsKey(star) ? "checked" : null) />
-                                    <span>@star Yildiz</span>
-                                    <strong>@(starCounts.TryGetValue(star, out var total) ? total : 0)</strong>
+                                    <input type="checkbox" class="listing-star-filter" value="@star" />
+                                    <span>@star yildiz</span>
                                 </label>
                             }
                         </div>
@@ -228,77 +225,45 @@
 
                     <div class="filter-panel-section filter-section">
                         <div class="filter-panel-head">
-                            <h3>Misafir Puani</h3>
+                            <h3>Misafir puani</h3>
                         </div>
                         <div class="rating-chip-list">
-                            @foreach (var score in guestScoreFilters)
-                            {
-                                var normalizedScore = score.StartsWith("9") ? "9" : score.StartsWith("8") ? "8" : "7";
-                                <span class="rating-chip" data-min-score="@normalizedScore">@score</span>
-                            }
+                            <button type="button" class="rating-chip" data-min-score="9">9+ Muhtesem</button>
+                            <button type="button" class="rating-chip" data-min-score="8">8+ Cok iyi</button>
+                            <button type="button" class="rating-chip" data-min-score="7">7+ Iyi</button>
                         </div>
                     </div>
 
                     <div class="filter-panel-section filter-section">
                         <div class="filter-panel-head">
-                            <h3>Populer Filtreler</h3>
+                            <h3>Otel ozellikleri</h3>
                             <span>@topAmenities.Count</span>
                         </div>
                         <div class="filter-option-list filter-options">
                             @foreach (var amenity in topAmenities)
                             {
-                                var amenityToken = NormalizeToken(amenity.Key);
                                 <label class="filter-option-row filter-check">
-                                    <input type="checkbox" class="listing-amenity-filter" value="@amenityToken" />
+                                    <input type="checkbox" class="listing-amenity-filter" value="@NormalizeToken(amenity.Key)" />
                                     <span>@amenity.Key</span>
                                     <strong>@amenity.Count()</strong>
                                 </label>
                             }
                         </div>
-                        <span class="filter-more-link">+@Math.Max(0, amenityCounts.Count - topAmenities.Count) filtre daha</span>
                     </div>
 
-                    <div class="filter-panel-section filter-section">
-                        <div class="filter-panel-head">
-                            <h3>Yemek Secenekleri</h3>
-                        </div>
-                        <div class="filter-option-list filter-options">
-                            @foreach (var meal in mealOptions)
-                            {
-                                <label class="filter-option-row filter-check">
-                                    <input type="checkbox" />
-                                    <span>@meal</span>
-                                </label>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="filter-panel-section filter-section">
-                        <div class="filter-panel-head">
-                            <h3>Ozel Konseptler</h3>
-                        </div>
-                        <div class="filter-option-list filter-options">
-                            @foreach (var concept in specialConcepts)
-                            {
-                                <label class="filter-option-row filter-check">
-                                    <input type="checkbox" />
-                                    <span>@concept</span>
-                                </label>
-                            }
-                        </div>
-                    </div>
+                    <button type="button" class="listing-reset-btn" id="listingResetFiltersBtn">Tum filtreleri sifirla</button>
                 </div>
             </aside>
 
             <div class="listing-results-column">
-                @if (resultCount == 0)
+                @if (Model.TotalCount == 0)
                 {
                     <div class="listing-empty-state">
                         <div class="listing-empty-icon">
                             <i class="fas fa-bed"></i>
                         </div>
-                        <h2>@Model.SearchLabel icin sonuc bulunamadi</h2>
-                        <p>Listeleme ekraninin dolmasi icin `oteller`, `oda_tipleri`, `oda_fiyat_musaitlik` ve `otel_gorselleri` tablolarinda aktif veri olmasi gerekir.</p>
+                        <h2>Filtreye uygun tesis bulunamadi</h2>
+                        <p>`oteller`, `kampanyalar`, `kampanya_oteller`, `oda_tipleri`, `oda_fiyat_musaitlik` ve `otel_gorselleri` verileri ile tekrar deneyin.</p>
                     </div>
                 }
                 else
@@ -306,28 +271,24 @@
                     <div class="hotel-card-list hotel-list" id="hotelListView">
                         @foreach (var hotel in hotels)
                         {
-                            var cardFilterValue = string.Join(' ', hotel.Amenities.Select(x => NormalizeToken(x)));
-                            var cardRating = hotel.Rating > 0 ? hotel.Rating : 0m;
-                            var cardStars = hotel.StarCount ?? 0;
-                            var districtToken = NormalizeToken($"{hotel.District} {hotel.City}");
-                            var displayAmenities = hotel.Amenities
-                                .Where(x => !string.IsNullOrWhiteSpace(x))
-                                .Take(3)
-                                .ToList();
-                            var oldPrice = hotel.StartingPrice.HasValue
-                                ? Math.Round(hotel.StartingPrice.Value * 1.24m, 0)
-                                : (decimal?)null;
-                            if (displayAmenities.Count == 0)
-                            {
-                                displayAmenities = new List<string> { "Ücretsiz WiFi", "Merkezi Konum" };
-                            }
+                            var amenityTokens = string.Join(' ', hotel.Amenities.Select(NormalizeToken));
+                            var campaignTokens = string.Join(' ', hotel.CampaignSlugs.Select(NormalizeToken));
+                            var locationText = string.IsNullOrWhiteSpace(hotel.Neighborhood)
+                                ? $"{hotel.District}, {hotel.City}"
+                                : $"{hotel.Neighborhood}, {hotel.District}, {hotel.City}";
 
                             <article class="hotel-card listing-hotel-card"
-                                     data-amenities="@cardFilterValue"
+                                     data-keywords="@NormalizeToken($"{hotel.Name} {hotel.City} {hotel.District} {hotel.Neighborhood} {string.Join(' ', hotel.CampaignNames)}")"
+                                     data-city="@NormalizeToken(hotel.City)"
+                                     data-district="@NormalizeToken(hotel.District)"
+                                     data-neighborhood="@NormalizeToken(hotel.Neighborhood)"
+                                     data-property="@NormalizeToken(hotel.PropertyType)"
+                                     data-campaigns="@campaignTokens"
+                                     data-amenities="@amenityTokens"
+                                     data-featured="@(hotel.IsFeatured ? "1" : "0")"
                                      data-price="@(hotel.StartingPrice ?? 0m)"
-                                     data-rating="@cardRating.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                     data-stars="@cardStars"
-                                     data-district="@districtToken">
+                                     data-rating="@hotel.Rating.ToString(CultureInfo.InvariantCulture)"
+                                     data-stars="@(hotel.StarCount ?? 0)">
                                 <div class="card-image hotel-card-media">
                                     @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
                                     {
@@ -344,16 +305,16 @@
                                     <div class="hotel-card-badges card-badges">
                                         @if (hotel.IsFeatured)
                                         {
-                                            <span class="hotel-badge hotel-badge-highlight badge badge-guest">
-                                                <i class="fas fa-trophy"></i>
-                                                Misafir Favorisi
+                                            <span class="hotel-badge hotel-badge-highlight">
+                                                <i class="fas fa-bolt"></i>
+                                                One cikan
                                             </span>
                                         }
-                                        @if (hotel.StartingPrice.HasValue && hotel.StartingPrice.Value == minPrice && minPrice > 0)
+                                        @if (hotel.CampaignNames.Count > 0)
                                         {
-                                            <span class="hotel-badge hotel-badge-discount badge badge-discount">
-                                                <i class="fas fa-bolt"></i>
-                                                %25
+                                            <span class="hotel-badge hotel-badge-discount">
+                                                <i class="fas fa-tag"></i>
+                                                @hotel.CampaignNames.First()
                                             </span>
                                         }
                                     </div>
@@ -368,62 +329,91 @@
                                 </div>
 
                                 <div class="card-content hotel-card-content">
-                                    <div>
-                                        <div class="hotel-header hotel-card-header">
-                                            <h3 class="hotel-name">@hotel.Name</h3>
-                                            <span class="hotel-rating">
-                                                @(hotel.Rating > 0 ? hotel.Rating.ToString("0.0") : "0.0")
-                                                <i class="fas fa-star"></i>
-                                            </span>
+                                    <div class="hotel-card-main">
+                                        <div class="hotel-card-header">
+                                            <div>
+                                                <div class="hotel-card-meta">
+                                                    @hotel.PropertyType
+                                                </div>
+                                                <h2 class="hotel-card-title-with-stars">
+                                                    @hotel.Name
+                                                    @if (hotel.StarCount.HasValue && hotel.StarCount.Value > 0)
+                                                    {
+                                                        <span class="hotel-card-stars-inline" aria-hidden="true">
+                                                            @for (var i = 0; i < hotel.StarCount.Value; i++)
+                                                            {
+                                                                <text>★</text>
+                                                            }
+                                                        </span>
+                                                        <span class="sr-only">@($"{hotel.StarCount.Value} yıldızlı otel")</span>
+                                                    }
+                                                </h2>
+                                                <p class="hotel-card-location">
+                                                    <i class="fas fa-location-dot"></i>
+                                                    @locationText
+                                                </p>
+                                            </div>
+
+                                            <div class="hotel-score-box">
+                                                <strong>@(hotel.Rating > 0 ? hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) : "0.0")</strong>
+                                                <span>@hotel.RatingText</span>
+                                                <small>@hotel.ReviewCount yorum</small>
+                                            </div>
                                         </div>
-                                        <div class="hotel-location hotel-card-location">
-                                            <i class="fas fa-map-pin"></i>
-                                            @hotel.District, @hotel.City
-                                        </div>
+
+                                        <p class="hotel-card-summary">@hotel.Summary</p>
+
                                         <div class="features hotel-feature-list">
-                                            @foreach (var amenity in displayAmenities)
+                                            @foreach (var amenity in hotel.Amenities.Take(4))
                                             {
-                                                <span class="feature-tag hotel-feature-chip">
-                                                    <i class="fas @GetAmenityIconClass(amenity)"></i>
-                                                    @amenity
-                                                </span>
+                                                <span class="feature-tag hotel-feature-chip">@amenity</span>
                                             }
                                         </div>
+
+                                        @if (hotel.CampaignNames.Count > 0)
+                                        {
+                                            <div class="hotel-campaign-strip">
+                                                @foreach (var campaignName in hotel.CampaignNames.Take(3))
+                                                {
+                                                    <span class="hotel-tag-pill">@campaignName</span>
+                                                }
+                                            </div>
+                                        }
                                     </div>
+
                                     <div class="price-section hotel-card-footer">
                                         <div class="price-info hotel-price-area">
-                                            <span class="current-price">@(hotel.StartingPrice.HasValue ? $"₺{hotel.StartingPrice.Value:N0}" : "Teklif Al")</span>
-                                            @if (oldPrice.HasValue)
-                                            {
-                                                <span class="old-price">₺@oldPrice.Value.ToString("N0")</span>
-                                            }
-                                            <span class="per-night">/ gece</span>
+                                            <span class="hotel-price-caption">@hotel.PriceNote</span>
+                                            <div class="hotel-price-row">
+                                                <strong>@(hotel.StartingPrice.HasValue ? $"₺{hotel.StartingPrice.Value:N0}" : "Teklif Al")</strong>
+                                            </div>
                                         </div>
-                                        <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="btn-detail hotel-link-btn">Incele</a>
+
+                                        <div class="hotel-card-actions">
+                                            <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="btn-detail hotel-link-btn">Oteli incele</a>
+                                        </div>
                                     </div>
                                 </div>
                             </article>
                         }
                     </div>
+
                     <div class="listing-filter-empty" id="listingFilterEmpty" hidden>
                         <i class="fas fa-filter-circle-xmark"></i>
-                        <strong>Filtrelere uygun tesis bulunamadi</strong>
-                        <span>Kriterleri biraz esnetip tekrar deneyebilirsiniz.</span>
+                        <strong>Secili filtrelere uygun tesis bulunamadi</strong>
+                        <span>Kriterleri yumusatip tekrar deneyebilirsiniz.</span>
                     </div>
-                }
 
-                <div class="listing-map-panel map-view" id="hotelMapView" hidden>
-                    <div class="listing-map-card">
-                        <iframe
-                            title="@Model.SearchLabel harita gorunumu"
-                            src="https://www.openstreetmap.org/export/embed.html?bbox=28.9%2C40.98%2C29.22%2C41.15&layer=mapnik"
-                            loading="lazy"></iframe>
-                        <div class="listing-map-overlay">
-                            <strong>@resultCount tesis</strong>
-                            <span>@Model.SearchLabel icin harita gorunumu</span>
-                        </div>
-                    </div>
-                </div>
+                    @if (Model.TotalPages > 1)
+                    {
+                        <nav class="listing-pagination" aria-label="Sayfalama">
+                            @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
+                            {
+                                <a href="@BuildPageUrl(pageIndex)" class="listing-page-link @(pageIndex == Model.CurrentPage ? "active" : string.Empty)">@pageIndex</a>
+                            }
+                        </nav>
+                    }
+                }
             </div>
         </div>
     </div>
@@ -434,10 +424,6 @@
         <i class="fas fa-sliders-h"></i>
         <span>Filtrele</span>
     </button>
-    <button type="button" class="listing-mobile-btn" id="listingMobileViewToggle">
-        <i class="fas fa-map-location-dot"></i>
-        <span>Harita</span>
-    </button>
 </div>
 
 <div class="listing-mobile-filter-modal" id="listingMobileFilterModal" hidden>
@@ -445,115 +431,72 @@
     <div class="listing-mobile-filter-sheet">
         <div class="listing-mobile-filter-head">
             <div>
-                <h3>Filtrele</h3>
-                <p>@resultCount tesisi veri tabanindan listeliyoruz</p>
+                <h3>Gelismis filtreler</h3>
+                <p>@Model.TotalCount tesisi hizlica daraltin</p>
             </div>
-            <button type="button" class="listing-mobile-close" data-close-mobile-filters aria-label="Filtreleri kapat">
+            <button type="button" class="listing-mobile-close" data-close-mobile-filters aria-label="Kapat">
                 <i class="fas fa-times"></i>
             </button>
         </div>
 
         <div class="listing-mobile-filter-body">
-            <div class="filter-panel-section">
-                <div class="filter-panel-head">
-                    <h3>Yildiz Sayisi</h3>
-                    <span>@starCounts.Values.Sum()</span>
-                </div>
-                <div class="filter-option-list">
-                    @foreach (var star in Model.StarOptions)
-                    {
-                        <label class="filter-option-row">
-                            <input type="checkbox" @(starCounts.ContainsKey(star) ? "checked" : null) />
-                            <span>@star Yildiz</span>
-                            <strong>@(starCounts.TryGetValue(star, out var total) ? total : 0)</strong>
-                        </label>
-                    }
-                </div>
-            </div>
+            <input type="search" id="listingKeywordFilterMobile" class="listing-text-filter" placeholder="Otel, ilce, mahalle veya kampanya ara" value="@Model.SearchTerm" />
 
-            <div class="filter-panel-section">
-                <div class="filter-panel-head">
-                    <h3>Populer Olanaklar</h3>
-                    <span>@topAmenities.Count</span>
-                </div>
-                <div class="filter-option-list">
-                    @foreach (var amenity in topAmenities)
-                    {
-                        <label class="filter-option-row">
-                            <input type="checkbox" />
-                            <span>@amenity.Key</span>
-                            <strong>@amenity.Count()</strong>
-                        </label>
-                    }
-                </div>
-            </div>
+            <select id="listingCityFilterMobile" class="listing-select-filter">
+                <option value="">Tum iller</option>
+                @foreach (var city in Model.Cities)
+                {
+                    <option value="@NormalizeToken(city)">@city</option>
+                }
+            </select>
 
-            <div class="filter-panel-section">
-                <div class="filter-panel-head">
-                    <h3>Misafir Puani</h3>
-                </div>
-                <div class="rating-chip-list">
-                    @foreach (var score in guestScoreFilters)
-                    {
-                        <span class="rating-chip">@score</span>
-                    }
-                </div>
-            </div>
+            <select id="listingDistrictFilterMobile" class="listing-select-filter">
+                <option value="">Tum ilceler</option>
+                @foreach (var district in Model.Districts)
+                {
+                    <option value="@NormalizeToken(district)">@district</option>
+                }
+            </select>
+
+            <select id="listingNeighborhoodFilterMobile" class="listing-select-filter">
+                <option value="">Tum mahalleler</option>
+                @foreach (var neighborhood in Model.Neighborhoods)
+                {
+                    <option value="@NormalizeToken(neighborhood)">@neighborhood</option>
+                }
+            </select>
         </div>
 
-        <button type="button" class="listing-mobile-apply" data-close-mobile-filters>@resultCount tesisi goster</button>
+        <button type="button" class="listing-mobile-apply" data-close-mobile-filters>Sonuclari goster</button>
     </div>
 </div>
 
 @section Scripts {
     <script>
         (function () {
-            const listButton = document.getElementById('listingListViewBtn');
-            const mapButton = document.getElementById('listingMapViewBtn');
-            const mobileToggleButton = document.getElementById('listingMobileViewToggle');
-            const listView = document.getElementById('hotelListView');
-            const mapView = document.getElementById('hotelMapView');
             const mobileFilterModal = document.getElementById('listingMobileFilterModal');
-            const chipButtons = document.querySelectorAll('[data-chip-filter]');
-            const ratingChips = document.querySelectorAll('.rating-chip');
+            const cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
+            const cardList = document.getElementById('hotelListView');
+            const emptyState = document.getElementById('listingFilterEmpty');
+            const summary = document.getElementById('listingResultsSummary');
             const sortSelect = document.getElementById('listingSortSelect');
+            const desktopKeyword = document.getElementById('listingKeywordFilter');
+            const mobileKeyword = document.getElementById('listingKeywordFilterMobile');
+            const desktopCity = document.getElementById('listingCityFilter');
+            const mobileCity = document.getElementById('listingCityFilterMobile');
+            const desktopDistrict = document.getElementById('listingDistrictFilter');
+            const mobileDistrict = document.getElementById('listingDistrictFilterMobile');
+            const desktopNeighborhood = document.getElementById('listingNeighborhoodFilter');
+            const mobileNeighborhood = document.getElementById('listingNeighborhoodFilterMobile');
             const minPriceInput = document.getElementById('listingMinPriceInput');
             const maxPriceInput = document.getElementById('listingMaxPriceInput');
             const maxPriceRange = document.getElementById('listingPriceMaxRange');
             const starFilters = document.querySelectorAll('.listing-star-filter');
             const amenityFilters = document.querySelectorAll('.listing-amenity-filter');
-            const cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
-            const cardList = document.getElementById('hotelListView');
-            const emptyState = document.getElementById('listingFilterEmpty');
-            const listingInfoLine = document.getElementById('listingInfoLine');
-
-            function showListView() {
-                listButton?.classList.add('active');
-                mapButton?.classList.remove('active');
-                if (listView) {
-                    listView.hidden = false;
-                }
-                if (mapView) {
-                    mapView.hidden = true;
-                }
-                if (mobileToggleButton) {
-                    mobileToggleButton.innerHTML = '<i class="fas fa-map-location-dot"></i><span>Harita</span>';
-                }
-            }
-
-            function showMapView() {
-                mapButton?.classList.add('active');
-                listButton?.classList.remove('active');
-                if (listView) {
-                    listView.hidden = true;
-                }
-                if (mapView) {
-                    mapView.hidden = false;
-                }
-                if (mobileToggleButton) {
-                    mobileToggleButton.innerHTML = '<i class="fas fa-list"></i><span>Liste</span>';
-                }
-            }
+            const propertyFilters = document.querySelectorAll('.listing-property-filter');
+            const campaignFilters = document.querySelectorAll('.listing-campaign-filter');
+            const ratingChips = document.querySelectorAll('.rating-chip');
+            const resetButton = document.getElementById('listingResetFiltersBtn');
 
             function openFilters() {
                 if (!mobileFilterModal) {
@@ -573,33 +516,36 @@
                 document.body.classList.remove('listing-modal-open');
             }
 
-            function normalizeToken(value) {
-                return (value || '')
-                    .toString()
-                    .toLowerCase()
-                    .replace(/ı/g, 'i')
-                    .replace(/ö/g, 'o')
-                    .replace(/ü/g, 'u')
-                    .replace(/ş/g, 's')
-                    .replace(/ç/g, 'c')
-                    .replace(/ğ/g, 'g');
+            function syncInput(source, target) {
+                if (!source || !target) {
+                    return;
+                }
+
+                target.value = source.value;
             }
 
-            function updateInfoLine(visibleCount) {
-                if (!listingInfoLine) {
+            function updateSummary(visibleCount) {
+                if (!summary) {
                     return;
                 }
 
-                const textNode = listingInfoLine.querySelector('span');
-                if (!textNode) {
-                    return;
+                summary.textContent = visibleCount + ' tesis gosteriliyor. Sayfa basi ' + @Model.PageSize + ' tesis planlandi.';
+            }
+
+            function getNormalizedValue(primary, secondary) {
+                if (primary && primary.value) {
+                    return primary.value.toLowerCase();
                 }
 
-                textNode.textContent = visibleCount + ' tesis • filtrelenmis gorunum';
+                if (secondary && secondary.value) {
+                    return secondary.value.toLowerCase();
+                }
+
+                return '';
             }
 
             function sortVisibleCards(visibleCards) {
-                if (!cardList || !sortSelect || visibleCards.length === 0) {
+                if (!cardList || !sortSelect) {
                     return;
                 }
 
@@ -609,15 +555,13 @@
                     const priceB = Number(b.dataset.price || '0');
                     const ratingA = Number(a.dataset.rating || '0');
                     const ratingB = Number(b.dataset.rating || '0');
+                    const nameA = (a.querySelector('h2')?.textContent || '').trim();
+                    const nameB = (b.querySelector('h2')?.textContent || '').trim();
 
-                    if (mode === 'price-asc') {
-                        return priceA - priceB;
-                    }
-
-                    if (mode === 'rating-desc') {
-                        return ratingB - ratingA;
-                    }
-
+                    if (mode === 'price-asc') return priceA - priceB;
+                    if (mode === 'price-desc') return priceB - priceA;
+                    if (mode === 'rating-desc') return ratingB - ratingA;
+                    if (mode === 'name-asc') return nameA.localeCompare(nameB, 'tr');
                     return ratingB - ratingA;
                 });
 
@@ -627,43 +571,58 @@
             }
 
             function applyFilters() {
-                if (cards.length === 0) {
+                if (!cards.length) {
                     return;
                 }
 
+                const keyword = getNormalizedValue(desktopKeyword, mobileKeyword);
+                const city = getNormalizedValue(desktopCity, mobileCity);
+                const district = getNormalizedValue(desktopDistrict, mobileDistrict);
+                const neighborhood = getNormalizedValue(desktopNeighborhood, mobileNeighborhood);
                 const minPrice = Number(minPriceInput?.value || '0');
                 const maxPrice = Number(maxPriceInput?.value || maxPriceRange?.value || '0');
-                const selectedStars = Array.from(starFilters)
-                    .filter(function (checkbox) { return checkbox.checked; })
-                    .map(function (checkbox) { return Number(checkbox.value || '0'); });
-                const selectedAmenities = Array.from(amenityFilters)
-                    .filter(function (checkbox) { return checkbox.checked; })
-                    .map(function (checkbox) { return normalizeToken(checkbox.value); });
-                const activeChipTokens = Array.from(chipButtons)
-                    .filter(function (chip) { return chip.classList.contains('active'); })
-                    .map(function (chip) { return normalizeToken(chip.getAttribute('data-chip-filter')); });
-                const activeRatingThresholds = Array.from(ratingChips)
-                    .filter(function (chip) { return chip.classList.contains('active'); })
-                    .map(function (chip) { return Number(chip.getAttribute('data-min-score') || '0'); })
-                    .filter(function (score) { return score > 0; });
-                const minimumScore = activeRatingThresholds.length > 0 ? Math.max.apply(Math, activeRatingThresholds) : 0;
+                const selectedStars = Array.from(starFilters).filter(x => x.checked).map(x => x.value);
+                const selectedAmenities = Array.from(amenityFilters).filter(x => x.checked).map(x => x.value.toLowerCase());
+                const selectedProperties = Array.from(propertyFilters).filter(x => x.checked).map(x => x.value.toLowerCase());
+                const selectedCampaigns = Array.from(campaignFilters).filter(x => x.checked).map(x => x.value.toLowerCase());
+                const minScore = Array.from(ratingChips)
+                    .filter(x => x.classList.contains('active'))
+                    .map(x => Number(x.dataset.minScore || '0'))
+                    .reduce((max, value) => Math.max(max, value), 0);
 
                 const visibleCards = [];
+
                 cards.forEach(function (card) {
-                    const price = Number(card.dataset.price || '0');
-                    const rating = Number(card.dataset.rating || '0');
-                    const stars = Number(card.dataset.stars || '0');
-                    const amenities = normalizeToken(card.dataset.amenities || '');
+                    const cardPrice = Number(card.dataset.price || '0');
+                    const cardStars = String(card.dataset.stars || '0');
+                    const cardRating = Number(card.dataset.rating || '0');
+                    const keywords = (card.dataset.keywords || '').toLowerCase();
+                    const amenities = (card.dataset.amenities || '').toLowerCase();
+                    const campaigns = (card.dataset.campaigns || '').toLowerCase();
+                    const property = (card.dataset.property || '').toLowerCase();
 
-                    const priceMatch = price >= minPrice && (maxPrice <= 0 || price <= maxPrice);
-                    const starMatch = selectedStars.length === 0 || selectedStars.includes(stars);
-                    const amenityFilterTokens = selectedAmenities.concat(activeChipTokens);
-                    const amenityMatch = amenityFilterTokens.length === 0 || amenityFilterTokens.every(function (token) {
-                        return amenities.indexOf(token) > -1;
-                    });
-                    const ratingMatch = minimumScore <= 0 || rating >= minimumScore;
+                    const matchesKeyword = !keyword || keywords.indexOf(keyword) > -1;
+                    const matchesCity = !city || (card.dataset.city || '') === city;
+                    const matchesDistrict = !district || (card.dataset.district || '') === district;
+                    const matchesNeighborhood = !neighborhood || (card.dataset.neighborhood || '') === neighborhood;
+                    const matchesPrice = cardPrice >= minPrice && (maxPrice <= 0 || cardPrice <= maxPrice);
+                    const matchesStars = !selectedStars.length || selectedStars.includes(cardStars);
+                    const matchesAmenities = !selectedAmenities.length || selectedAmenities.every(x => amenities.indexOf(x) > -1);
+                    const matchesProperty = !selectedProperties.length || selectedProperties.includes(property);
+                    const matchesCampaigns = !selectedCampaigns.length || selectedCampaigns.every(x => campaigns.indexOf(x) > -1);
+                    const matchesRating = minScore <= 0 || cardRating >= minScore;
 
-                    const shouldShow = priceMatch && starMatch && amenityMatch && ratingMatch;
+                    const shouldShow = matchesKeyword
+                        && matchesCity
+                        && matchesDistrict
+                        && matchesNeighborhood
+                        && matchesPrice
+                        && matchesStars
+                        && matchesAmenities
+                        && matchesProperty
+                        && matchesCampaigns
+                        && matchesRating;
+
                     card.hidden = !shouldShow;
                     if (shouldShow) {
                         visibleCards.push(card);
@@ -674,20 +633,8 @@
                 if (emptyState) {
                     emptyState.hidden = visibleCards.length !== 0;
                 }
-                updateInfoLine(visibleCards.length);
+                updateSummary(visibleCards.length);
             }
-
-            listButton?.addEventListener('click', showListView);
-            mapButton?.addEventListener('click', showMapView);
-            mobileToggleButton?.addEventListener('click', function () {
-                const mapIsVisible = mapView && !mapView.hidden;
-                if (mapIsVisible) {
-                    showListView();
-                    return;
-                }
-
-                showMapView();
-            });
 
             document.querySelectorAll('[data-open-mobile-filters]').forEach(function (button) {
                 button.addEventListener('click', openFilters);
@@ -697,43 +644,41 @@
                 button.addEventListener('click', closeFilters);
             });
 
-            chipButtons.forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const activate = !button.classList.contains('active');
-
-                    chipButtons.forEach(function (item) {
-                        item.classList.remove('active');
-                    });
-
-                    if (!activate) {
-                        applyFilters();
-                        return;
-                    }
-
-                    button.classList.add('active');
-                    applyFilters();
-                });
-            });
-
-            ratingChips.forEach(function (chip) {
-                chip.addEventListener('click', function () {
-                    chip.classList.toggle('active');
-                    applyFilters();
-                });
-            });
-
-            starFilters.forEach(function (checkbox) {
-                checkbox.addEventListener('change', applyFilters);
-            });
-
-            amenityFilters.forEach(function (checkbox) {
-                checkbox.addEventListener('change', applyFilters);
-            });
-
             sortSelect?.addEventListener('change', applyFilters);
-            minPriceInput?.addEventListener('input', function () {
+            desktopKeyword?.addEventListener('input', function () {
+                syncInput(desktopKeyword, mobileKeyword);
                 applyFilters();
             });
+            mobileKeyword?.addEventListener('input', function () {
+                syncInput(mobileKeyword, desktopKeyword);
+                applyFilters();
+            });
+            desktopCity?.addEventListener('change', function () {
+                syncInput(desktopCity, mobileCity);
+                applyFilters();
+            });
+            mobileCity?.addEventListener('change', function () {
+                syncInput(mobileCity, desktopCity);
+                applyFilters();
+            });
+            desktopDistrict?.addEventListener('change', function () {
+                syncInput(desktopDistrict, mobileDistrict);
+                applyFilters();
+            });
+            mobileDistrict?.addEventListener('change', function () {
+                syncInput(mobileDistrict, desktopDistrict);
+                applyFilters();
+            });
+            desktopNeighborhood?.addEventListener('change', function () {
+                syncInput(desktopNeighborhood, mobileNeighborhood);
+                applyFilters();
+            });
+            mobileNeighborhood?.addEventListener('change', function () {
+                syncInput(mobileNeighborhood, desktopNeighborhood);
+                applyFilters();
+            });
+
+            minPriceInput?.addEventListener('input', applyFilters);
             maxPriceInput?.addEventListener('input', function () {
                 if (maxPriceRange) {
                     maxPriceRange.value = maxPriceInput.value;
@@ -747,7 +692,37 @@
                 applyFilters();
             });
 
-            showListView();
+            starFilters.forEach(function (item) { item.addEventListener('change', applyFilters); });
+            amenityFilters.forEach(function (item) { item.addEventListener('change', applyFilters); });
+            propertyFilters.forEach(function (item) { item.addEventListener('change', applyFilters); });
+            campaignFilters.forEach(function (item) { item.addEventListener('change', applyFilters); });
+            ratingChips.forEach(function (item) {
+                item.addEventListener('click', function () {
+                    item.classList.toggle('active');
+                    applyFilters();
+                });
+            });
+
+            resetButton?.addEventListener('click', function () {
+                desktopKeyword.value = '';
+                if (mobileKeyword) mobileKeyword.value = '';
+                if (desktopCity) desktopCity.value = '';
+                if (mobileCity) mobileCity.value = '';
+                if (desktopDistrict) desktopDistrict.value = '';
+                if (mobileDistrict) mobileDistrict.value = '';
+                if (desktopNeighborhood) desktopNeighborhood.value = '';
+                if (mobileNeighborhood) mobileNeighborhood.value = '';
+                if (minPriceInput) minPriceInput.value = '0';
+                if (maxPriceInput) maxPriceInput.value = '@maxPrice';
+                if (maxPriceRange) maxPriceRange.value = '@maxPrice';
+                starFilters.forEach(function (item) { item.checked = false; });
+                amenityFilters.forEach(function (item) { item.checked = false; });
+                propertyFilters.forEach(function (item) { item.checked = false; });
+                campaignFilters.forEach(function (item) { item.checked = false; });
+                ratingChips.forEach(function (item) { item.classList.remove('active'); });
+                applyFilters();
+            });
+
             applyFilters();
         })();
     </script>

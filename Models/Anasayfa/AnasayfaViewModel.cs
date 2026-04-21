@@ -5,6 +5,7 @@ public class AnasayfaViewModel
     public string HeroTitle { get; set; } = "Hayalindeki Oteli Kesfet";
     public string HeroDescription { get; set; } = "Turkiye'nin en iyi sehir otelleri, butik tesisleri ve haftasonu kacamaklari tek platformda.";
     public List<HomeHeroSlideViewModel> HeroSlides { get; set; } = new();
+    public List<HomeCampaignSlideViewModel> CampaignSlides { get; set; } = new();
     public List<HomeDestinationCardViewModel> PopularDestinations { get; set; } = new();
     public List<HomeHotelCardViewModel> PopularHotels { get; set; } = new();
     public List<HomeHotelCardViewModel> WeekendHotels { get; set; } = new();
@@ -19,6 +20,15 @@ public class HomeHeroSlideViewModel
     // Optional weather info for the hero slide (icon class & temperature string)
     public string WeatherIcon { get; set; } = string.Empty; // e.g. "fa-cloud-sun"
     public string Temperature { get; set; } = string.Empty; // e.g. "18°C"
+}
+
+public class HomeCampaignSlideViewModel
+{
+    public string CampaignName { get; set; } = string.Empty;
+    public string Slogan { get; set; } = string.Empty;
+    public string ImageUrl { get; set; } = string.Empty;
+    public string TargetUrl { get; set; } = string.Empty;
+    public string BadgeText { get; set; } = string.Empty;
 }
 
 public class HomeDestinationCardViewModel
@@ -48,13 +58,14 @@ public class HomeHotelCardViewModel
     public int DiscountPercent { get; set; }
     public bool HasDiscount { get; set; }
     public string PriceText { get; set; } = "Fiyat icin detay sayfasina bakin";
-    public string PriceNote { get; set; } = "Vergiler dahil";
+    public string PriceNote { get; set; } = "Gecelik taban · vergi öncesi";
     public string ImageUrl { get; set; } = string.Empty;
     public string DetailSlug { get; set; } = string.Empty;
     public List<HomeAmenityViewModel> Amenities { get; set; } = new();
     public List<string> Tags { get; set; } = new();
     public bool IsSmartPrice { get; set; }
     public bool IsFavorite { get; set; }
+    public byte? StarCount { get; set; }
     // Weather info for display on card
     public string WeatherIcon { get; set; } = ""; // font-awesome icon class e.g. 'fa-cloud-sun'
     public string Temperature { get; set; } = ""; // e.g. '18°C'

@@ -204,6 +204,17 @@ public class HotelService : IHotelService
                 ? Math.Clamp((int)Math.Round(((originalPrice!.Value - discountedPrice!.Value) / originalPrice.Value) * 100m, MidpointRounding.AwayFromZero), 1, 95)
                 : 0;
 
+            byte? starCount = null;
+            var starOrd = reader.GetOrdinal("yildiz_sayisi");
+            if (!reader.IsDBNull(starOrd))
+            {
+                var rawStar = Convert.ToInt32(reader.GetValue(starOrd), CultureInfo.InvariantCulture);
+                if (rawStar is > 0 and <= 7)
+                {
+                    starCount = (byte)rawStar;
+                }
+            }
+
             hotels.Add(new HomeHotelCardViewModel
             {
                 Id = reader.GetInt64(reader.GetOrdinal("id")),
@@ -228,7 +239,8 @@ public class HotelService : IHotelService
                 DetailSlug = BuildSlug(reader.GetString(reader.GetOrdinal("otel_adi")), reader.GetString(reader.GetOrdinal("otel_kodu"))),
                 Amenities = amenities,
                 Tags = tags,
-                IsSmartPrice = isFeatured || isRecommended || (startingPrice.HasValue && startingPrice.Value <= 3500m)
+                IsSmartPrice = isFeatured || isRecommended || (startingPrice.HasValue && startingPrice.Value <= 3500m),
+                StarCount = starCount
             });
         }
 

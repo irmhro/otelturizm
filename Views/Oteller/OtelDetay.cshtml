@@ -204,16 +204,17 @@
 <section class="detail-header hotel-title-section">
     <div class="hotel-name">
         <h1>
+            @Model.Name
             @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
             {
-                <span class="detail-stars">
+                <span class="detail-stars" aria-hidden="true">
                     @for (var i = 0; i < Model.StarCount.Value; i++)
                     {
                         <text>★</text>
                     }
                 </span>
+                <span class="sr-only">@($"{Model.StarCount.Value} yıldızlı otel")</span>
             }
-            @Model.Name
         </h1>
         <p class="detail-location"><i class="fas fa-location-dot"></i> @Model.Address</p>
 
