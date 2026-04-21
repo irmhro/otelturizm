@@ -14,11 +14,13 @@ public class UserPanelController : Controller
 {
     private readonly IUserFavoriteService _userFavoriteService;
     private readonly IUserPanelService _userPanelService;
+    private readonly IPhoneVerificationService _phoneVerificationService;
 
-    public UserPanelController(IUserFavoriteService userFavoriteService, IUserPanelService userPanelService)
+    public UserPanelController(IUserFavoriteService userFavoriteService, IUserPanelService userPanelService, IPhoneVerificationService phoneVerificationService)
     {
         _userFavoriteService = userFavoriteService;
         _userPanelService = userPanelService;
+        _phoneVerificationService = phoneVerificationService;
     }
 
     [HttpGet("")]
@@ -197,7 +199,7 @@ public class UserPanelController : Controller
     }
 
     [HttpGet("profil-bilgilerim")]
-    public async Task<IActionResult> Profile([FromQuery] bool openCompletion = false, [FromQuery] string? returnUrl = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Profile([FromQuery] bool openCompletion = false, [FromQuery] bool openPhoneVerification = false, [FromQuery] string? returnUrl = null, CancellationToken cancellationToken = default)
     {
         if (!CanAccessUserPanel())
         {
@@ -206,6 +208,8 @@ public class UserPanelController : Controller
 
         var model = await _userPanelService.GetProfileAsync(GetCurrentUserId(), cancellationToken);
         model.OpenCompletionModal = openCompletion;
+        model.OpenPhoneVerification = openPhoneVerification;
+        model.PhoneVerification = await _phoneVerificationService.GetUserStatusAsync(GetCurrentUserId(), cancellationToken);
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
             model.ReturnUrl = returnUrl;
@@ -278,6 +282,50 @@ public class UserPanelController : Controller
         }
 
         return RedirectToAction(nameof(Profile));
+    }
+
+    [HttpPost("profil-bilgilerim/telefon-kodu-gonder")]
+    public async Task<IActionResult> SendPhoneVerificationCode(string? phoneNumber, string? returnUrl, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _phoneVerificationService.SendVerificationCodeAsync(
+                GetCurrentUserId(),
+                phoneNumber,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString(),
+                cancellationToken);
+            TempData[result.Success ? "UserProfileSuccess" : "UserProfileError"] = result.Message;
+        }
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        return RedirectToAction(nameof(Profile), new { openPhoneVerification = true });
+    }
+
+    [HttpPost("profil-bilgilerim/telefon-kodu-dogrula")]
+    public async Task<IActionResult> VerifyPhoneVerificationCode(string verificationCode, string? returnUrl, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _phoneVerificationService.VerifyCodeAsync(
+                GetCurrentUserId(),
+                verificationCode,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString(),
+                cancellationToken);
+            TempData[result.Success ? "UserProfileSuccess" : "UserProfileError"] = result.Message;
+        }
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        return RedirectToAction(nameof(Profile), new { openPhoneVerification = true });
     }
 
     [HttpPost("mesajlarim/gonder")]
@@ -377,5 +425,4 @@ public class UserPanelController : Controller
         return long.TryParse(raw, out var userId) ? userId : 0;
     }
 }
-
 

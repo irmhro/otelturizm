@@ -13,6 +13,7 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
+builder.Services.AddDataProtection();
 builder.Services.AddScoped<SqlMigrationRunner>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAddressLookupService, AddressLookupService>();
@@ -25,6 +26,7 @@ builder.Services.AddScoped<IHotelService, HotelService>();
 builder.Services.AddScoped<IHotelPricingReadService, HotelPricingReadService>();
 builder.Services.AddScoped<IHeaderBildiriService, HeaderBildiriService>();
 builder.Services.AddScoped<IFavoritePriceAlertService, FavoritePriceAlertService>();
+builder.Services.AddScoped<IPhoneVerificationService, PhoneVerificationService>();
 builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
 builder.Services.AddHostedService<EmailDeliveryBackgroundService>();
@@ -42,6 +44,7 @@ builder.Services.AddScoped<ISessionSecurityService, SessionSecurityService>();
 builder.Services.AddScoped<ISupportService, SupportService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IWeatherService, WeatherService>();
+builder.Services.AddHttpClient<IWhatsAppCloudApiService, WhatsAppCloudApiService>();
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 300 * 1024 * 1024;
@@ -166,4 +169,3 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.Run();
-

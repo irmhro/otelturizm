@@ -16,6 +16,7 @@ public class PublicReservationService : IPublicReservationService
     private readonly IHotelPricingReadService _hotelPricingReadService;
     private readonly IReservationDraftService _reservationDraftService;
     private readonly IEmailQueueService _emailQueueService;
+    private readonly IPhoneVerificationService _phoneVerificationService;
     private readonly ILogger<PublicReservationService> _logger;
 
     public PublicReservationService(
@@ -23,6 +24,7 @@ public class PublicReservationService : IPublicReservationService
         IHotelPricingReadService hotelPricingReadService,
         IReservationDraftService reservationDraftService,
         IEmailQueueService emailQueueService,
+        IPhoneVerificationService phoneVerificationService,
         ILogger<PublicReservationService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
@@ -30,6 +32,7 @@ public class PublicReservationService : IPublicReservationService
         _hotelPricingReadService = hotelPricingReadService;
         _reservationDraftService = reservationDraftService;
         _emailQueueService = emailQueueService;
+        _phoneVerificationService = phoneVerificationService;
         _logger = logger;
     }
 
@@ -173,6 +176,30 @@ public class PublicReservationService : IPublicReservationService
             {
                 Message = "Rezervasyon taslak olarak kaydedildi. Lutfen profil bilgilerinizi tamamlayin.",
                 RedirectUrl = $"/oteller/{hotel.Slug}?continueDraft=1&openProfile=1"
+            };
+        }
+
+        var phoneVerificationRequirement = await _phoneVerificationService.GetReservationRequirementAsync(
+            authenticatedUserId,
+            $"/oteller/{hotel.Slug}?continueDraft=1",
+            cancellationToken);
+        if (!phoneVerificationRequirement.IsAllowed)
+        {
+            var verificationDraft = CloneDraftRequest(draftRequest);
+            verificationDraft.Status = "Telefon Dogrulamasi Bekleniyor";
+            verificationDraft.GuestFullName = userProfile.FullName;
+            verificationDraft.GuestEmail = userProfile.Email;
+            verificationDraft.GuestPhone = userProfile.Phone;
+            verificationDraft.GuestCity = userProfile.City;
+            verificationDraft.GuestDistrict = userProfile.District;
+            verificationDraft.GuestNeighborhood = userProfile.Neighborhood;
+            verificationDraft.GuestAddress = userProfile.Address;
+            await _reservationDraftService.SaveOrUpdateAsync(verificationDraft, cancellationToken);
+
+            return new PublicReservationResult
+            {
+                Message = phoneVerificationRequirement.Message,
+                RedirectUrl = phoneVerificationRequirement.RedirectUrl
             };
         }
 

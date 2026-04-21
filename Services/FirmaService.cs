@@ -368,27 +368,31 @@ public class FirmaService : IFirmaService
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            const string insertUserSql = @"
-                INSERT INTO users
-                (
-                    ad_soyad, eposta, telefon, sifre, rol, firma_id, departman, gorev_unvani,
-                    harcama_limiti, onay_gereksinimi, personel_kodu, firma_yonetici_mi,
-                    hesap_durumu, dil_tercihi, para_birimi, ulke, olusturulma_tarihi
-                )
-                VALUES
-                (
-                    @fullName, @email, @phone, LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), '1585')), 2)), @role, @firmaId, @department, @title,
-                    @nightlyLimit, @approvalRequired, @personelCode, @isManager,
-                    1, 'tr', 'TRY', 'Türkiye', CURRENT_TIMESTAMP
-                );
-                SELECT CAST(SCOPE_IDENTITY() AS bigint);";
+                const string insertUserSql = @"
+                    INSERT INTO users
+                    (
+                        ad_soyad, eposta, telefon, telefon_e164, telefon_dogrulama_kanali, telefon_dogrulama_durumu, sifre, rol, firma_id, departman, gorev_unvani,
+                        harcama_limiti, onay_gereksinimi, personel_kodu, firma_yonetici_mi,
+                        hesap_durumu, dil_tercihi, para_birimi, ulke, olusturulma_tarihi
+                    )
+                    VALUES
+                    (
+                        @fullName, @email, @phone, @phoneE164, @phoneVerificationChannel, @phoneVerificationStatus, LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), '1585')), 2)), @role, @firmaId, @department, @title,
+                        @nightlyLimit, @approvalRequired, @personelCode, @isManager,
+                        1, 'tr', 'TRY', 'Türkiye', CURRENT_TIMESTAMP
+                    );
+                    SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
             long createdUserId;
             await using (var insertUserCommand = new SqlCommand(insertUserSql, connection, (SqlTransaction)transaction))
             {
+                var normalizedPhone = PhoneVerificationService.NormalizePhoneNumber(model.Phone);
                 insertUserCommand.Parameters.AddWithValue("@fullName", model.FullName.Trim());
                 insertUserCommand.Parameters.AddWithValue("@email", normalizedEmail);
                 insertUserCommand.Parameters.AddWithValue("@phone", string.IsNullOrWhiteSpace(model.Phone) ? DBNull.Value : (object)model.Phone.Trim());
+                insertUserCommand.Parameters.AddWithValue("@phoneE164", string.IsNullOrWhiteSpace(normalizedPhone) ? DBNull.Value : (object)normalizedPhone);
+                insertUserCommand.Parameters.AddWithValue("@phoneVerificationChannel", string.IsNullOrWhiteSpace(normalizedPhone) ? DBNull.Value : (object)"whatsapp");
+                insertUserCommand.Parameters.AddWithValue("@phoneVerificationStatus", string.IsNullOrWhiteSpace(normalizedPhone) ? DBNull.Value : (object)"Dogrulanmadi");
                 insertUserCommand.Parameters.AddWithValue("@role", role);
                 insertUserCommand.Parameters.AddWithValue("@firmaId", context.FirmaId);
                 insertUserCommand.Parameters.AddWithValue("@department", string.IsNullOrWhiteSpace(model.Department) ? DBNull.Value : (object)model.Department.Trim());
@@ -742,11 +746,13 @@ public class FirmaService : IFirmaService
         const string sql = @"
             SELECT u.id, u.ad_soyad, COALESCE(u.departman, 'Tanımsız'), COALESCE(u.gorev_unvani, u.rol), u.eposta,
                    u.harcama_limiti, u.onay_gereksinimi, u.rol, u.firma_yonetici_mi,
+                   u.telefon_dogrulama_tarihi, u.telefon_son_sahiplik_teyit_tarihi, COALESCE(u.telefon_dogrulama_durumu, ''),
                    COUNT(r.id) AS rezervasyon_sayisi, COALESCE(SUM(r.toplam_tutar), 0) AS harcama_toplami
             FROM users u
             LEFT JOIN rezervasyonlar r ON r.firma_calisan_id = u.id
             WHERE u.firma_id = @firmaId AND u.rol LIKE 'firma_%'
-            GROUP BY u.id, u.ad_soyad, u.departman, u.gorev_unvani, u.eposta, u.harcama_limiti, u.onay_gereksinimi, u.rol, u.firma_yonetici_mi
+            GROUP BY u.id, u.ad_soyad, u.departman, u.gorev_unvani, u.eposta, u.harcama_limiti, u.onay_gereksinimi, u.rol, u.firma_yonetici_mi,
+                     u.telefon_dogrulama_tarihi, u.telefon_son_sahiplik_teyit_tarihi, u.telefon_dogrulama_durumu
             ORDER BY u.firma_yonetici_mi DESC, u.ad_soyad ASC
             OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY;";
 
@@ -758,6 +764,11 @@ public class FirmaService : IFirmaService
         while (await reader.ReadAsync(cancellationToken))
         {
             var fullName = reader.GetString(1);
+            var verifiedAt = reader.IsDBNull(9) ? (DateTime?)null : reader.GetDateTime(9);
+            var ownershipAt = reader.IsDBNull(10) ? (DateTime?)null : reader.GetDateTime(10);
+            var phoneStatus = reader.IsDBNull(11) ? string.Empty : reader.GetString(11);
+            var isPhoneVerified = verifiedAt.HasValue
+                && (!ownershipAt.HasValue || ownershipAt.Value >= DateTime.UtcNow.AddDays(-180));
             items.Add(new FirmaPanelEmployeeRowViewModel
             {
                 UserId = reader.GetInt64(0),
@@ -770,8 +781,15 @@ public class FirmaService : IFirmaService
                 Initials = GetInitials(fullName),
                 RoleText = GetRoleLabel(reader.IsDBNull(7) ? string.Empty : reader.GetString(7)),
                 IsManager = SafeBool(reader, 8),
-                ReservationCountText = SafeInt(reader, 9).ToString(CultureInfo.InvariantCulture),
-                SpendText = FormatMoney(SafeDecimal(reader, 10))
+                IsPhoneVerified = isPhoneVerified,
+                PhoneVerificationText = isPhoneVerified
+                    ? $"Telefon doğrulandı · {verifiedAt!.Value.ToLocalTime():dd.MM.yyyy}"
+                    : string.Equals(phoneStatus, "Beklemede", StringComparison.OrdinalIgnoreCase)
+                        ? "Telefon doğrulaması bekleniyor"
+                        : "Telefon doğrulanmadı",
+                PhoneVerificationToneClass = isPhoneVerified ? "success" : string.Equals(phoneStatus, "Beklemede", StringComparison.OrdinalIgnoreCase) ? "warning" : "secondary",
+                ReservationCountText = SafeInt(reader, 12).ToString(CultureInfo.InvariantCulture),
+                SpendText = FormatMoney(SafeDecimal(reader, 13))
             });
         }
         return items;

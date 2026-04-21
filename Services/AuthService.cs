@@ -196,6 +196,7 @@ public class AuthService : IAuthService
         var lastName = model.LastName.Trim();
         var email = model.Email.Trim().ToLowerInvariant();
         var phone = string.IsNullOrWhiteSpace(model.PhoneNumber) ? null : model.PhoneNumber.Trim();
+        var normalizedPhone = PhoneVerificationService.NormalizePhoneNumber(phone);
 
         if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
         {
@@ -307,6 +308,24 @@ public class AuthService : IAuthService
             insertValues.Add("'web_user_register'");
         }
 
+        if (userColumns.Contains("telefon_e164"))
+        {
+            insertColumns.Add("telefon_e164");
+            insertValues.Add("@phoneE164");
+        }
+
+        if (userColumns.Contains("telefon_dogrulama_kanali"))
+        {
+            insertColumns.Add("telefon_dogrulama_kanali");
+            insertValues.Add("'whatsapp'");
+        }
+
+        if (userColumns.Contains("telefon_dogrulama_durumu"))
+        {
+            insertColumns.Add("telefon_dogrulama_durumu");
+            insertValues.Add("@phoneVerificationStatus");
+        }
+
         var insertSql = $"""
             INSERT INTO users
             (
@@ -328,6 +347,8 @@ public class AuthService : IAuthService
             insertCommand.Parameters.AddWithValue("@fullName", $"{firstName} {lastName}".Trim());
             insertCommand.Parameters.AddWithValue("@email", email);
             insertCommand.Parameters.AddWithValue("@phone", (object?)phone ?? DBNull.Value);
+            insertCommand.Parameters.AddWithValue("@phoneE164", (object?)normalizedPhone ?? DBNull.Value);
+            insertCommand.Parameters.AddWithValue("@phoneVerificationStatus", string.IsNullOrWhiteSpace(normalizedPhone) ? DBNull.Value : "Beklemede");
             insertCommand.Parameters.AddWithValue("@password", model.Password);
             insertCommand.Parameters.AddWithValue("@marketing", model.AcceptMarketing ? 1 : 0);
 
@@ -388,6 +409,7 @@ public class AuthService : IAuthService
         var contactTitle = model.ContactTitle.Trim();
         var email = model.Email.Trim().ToLowerInvariant();
         var phone = model.PhoneNumber.Trim();
+        var normalizedPhone = PhoneVerificationService.NormalizePhoneNumber(phone);
         var address = model.Address.Trim();
         var city = model.City.Trim();
         var district = model.District.Trim();
@@ -546,6 +568,24 @@ public class AuthService : IAuthService
                 insertValues.Add("'web_partner_register'");
             }
 
+            if (userColumns.Contains("telefon_e164"))
+            {
+                insertColumns.Add("telefon_e164");
+                insertValues.Add("@phoneE164");
+            }
+
+            if (userColumns.Contains("telefon_dogrulama_kanali"))
+            {
+                insertColumns.Add("telefon_dogrulama_kanali");
+                insertValues.Add("'whatsapp'");
+            }
+
+            if (userColumns.Contains("telefon_dogrulama_durumu"))
+            {
+                insertColumns.Add("telefon_dogrulama_durumu");
+                insertValues.Add("'Beklemede'");
+            }
+
             var insertUserSql = $"""
                 INSERT INTO users
                 (
@@ -565,6 +605,7 @@ public class AuthService : IAuthService
                 insertUserCommand.Parameters.AddWithValue("@fullName", contactName);
                 insertUserCommand.Parameters.AddWithValue("@email", email);
                 insertUserCommand.Parameters.AddWithValue("@phone", phone);
+                insertUserCommand.Parameters.AddWithValue("@phoneE164", (object?)normalizedPhone ?? DBNull.Value);
                 insertUserCommand.Parameters.AddWithValue("@password", model.Password);
 
                 var result = await insertUserCommand.ExecuteScalarAsync(cancellationToken);
@@ -1077,6 +1118,24 @@ public class AuthService : IAuthService
                 insertValues.Add("@personelCode");
             }
 
+            if (userColumns.Contains("telefon_e164"))
+            {
+                insertColumns.Add("telefon_e164");
+                insertValues.Add("@contactPhoneE164");
+            }
+
+            if (userColumns.Contains("telefon_dogrulama_kanali"))
+            {
+                insertColumns.Add("telefon_dogrulama_kanali");
+                insertValues.Add("'whatsapp'");
+            }
+
+            if (userColumns.Contains("telefon_dogrulama_durumu"))
+            {
+                insertColumns.Add("telefon_dogrulama_durumu");
+                insertValues.Add("'Beklemede'");
+            }
+
             var insertUserSql = $"""
                 INSERT INTO users
                 (
@@ -1094,6 +1153,7 @@ public class AuthService : IAuthService
                 insertUserCommand.Parameters.AddWithValue("@fullName", contactName);
                 insertUserCommand.Parameters.AddWithValue("@contactEmail", contactEmail);
                 insertUserCommand.Parameters.AddWithValue("@contactPhone", contactPhone);
+                insertUserCommand.Parameters.AddWithValue("@contactPhoneE164", (object?)PhoneVerificationService.NormalizePhoneNumber(contactPhone) ?? DBNull.Value);
                 insertUserCommand.Parameters.AddWithValue("@password", model.Password);
                 insertUserCommand.Parameters.AddWithValue("@firmaId", firmaId);
                 insertUserCommand.Parameters.AddWithValue("@contactTitle", contactTitle);
@@ -1663,7 +1723,6 @@ public class AuthService : IAuthService
               )
               AND (
                     LOWER(u.eposta) = LOWER(@identity)
-                 OR u.telefon = @identity
                  OR (@partnerIdentity IS NOT NULL AND {partnerIdSelect} = @partnerIdentity)
                  OR (
                         @hotelCode IS NOT NULL
@@ -2237,7 +2296,6 @@ public class AuthService : IAuthService
             WHERE u.hesap_durumu = 1
               AND (
                     LOWER(u.eposta) = LOWER(@identity)
-                 OR u.telefon = @identity
                  OR (@partnerIdentity IS NOT NULL AND {partnerIdSelect} = @partnerIdentity)
                  OR (
                         @hotelCode IS NOT NULL

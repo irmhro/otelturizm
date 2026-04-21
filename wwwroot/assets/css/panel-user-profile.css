@@ -1,3 +1,84 @@
 .form-stack {
     max-width: 980px;
 }
+
+.phone-verification-card {
+    max-width: 980px;
+    margin-bottom: 20px;
+}
+
+.phone-verification-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+.phone-verification-summary {
+    display: grid;
+    gap: 8px;
+    padding: 18px;
+    border-radius: 18px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.phone-verification-summary strong {
+    font-size: 1.05rem;
+    color: #0f172a;
+}
+
+.phone-verification-summary span,
+.phone-verification-summary p {
+    margin: 0;
+    color: #475569;
+}
+
+.phone-verification-form {
+    display: grid;
+    gap: 12px;
+}
+
+.phone-verification-form label {
+    display: grid;
+    gap: 8px;
+}
+
+.phone-verification-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+.phone-verification-badge.tone-success {
+    background: rgba(5, 150, 105, 0.12);
+    color: #047857;
+}
+
+.phone-verification-badge.tone-warning {
+    background: rgba(217, 119, 6, 0.14);
+    color: #b45309;
+}
+
+.phone-verification-badge.tone-info {
+    background: rgba(37, 99, 235, 0.12);
+    color: #1d4ed8;
+}
+
+.phone-verification-badge.tone-secondary {
+    background: rgba(100, 116, 139, 0.12);
+    color: #475569;
+}
+
+.primary-btn.secondary-tone {
+    background: #0f172a;
+}
+
+@media (max-width: 900px) {
+    .phone-verification-grid {
+        grid-template-columns: 1fr;
+    }
+}

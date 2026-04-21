@@ -28,6 +28,7 @@
             <div class="firma-card-footer">
                 <span class="firma-pill">@item.LimitText</span>
                 <span class="firma-pill @(item.ApprovalText.Contains("Onaylı") ? "is-warning" : "is-success")">@item.ApprovalText</span>
+                <span class="firma-pill @item.PhoneVerificationToneClass">@item.PhoneVerificationText</span>
             </div>
         </div>
     </article>

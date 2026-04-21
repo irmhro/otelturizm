@@ -1,4 +1,5 @@
 using otelturizmnew.Models.Messages;
+using otelturizmnew.Models.TelefonDogrulama;
 
 namespace otelturizmnew.Models.Paneller.Firma;
 
@@ -73,6 +74,9 @@ public class FirmaPanelEmployeeRowViewModel
     public string SpendText { get; set; } = "₺0";
     public string RoleText { get; set; } = string.Empty;
     public bool IsManager { get; set; }
+    public bool IsPhoneVerified { get; set; }
+    public string PhoneVerificationText { get; set; } = "Telefon doğrulaması bekleniyor";
+    public string PhoneVerificationToneClass { get; set; } = "is-warning";
 }
 
 public class FirmaPanelLimitRowViewModel
@@ -118,6 +122,7 @@ public class FirmaHotelReportRowViewModel
 public class FirmaDashboardPageViewModel
 {
     public FirmaPanelShellViewModel Shell { get; set; } = new();
+    public UserPhoneVerificationStatusViewModel PhoneVerification { get; set; } = new();
     public List<FirmaPanelStatCardViewModel> SummaryCards { get; set; } = new();
     public List<FirmaPanelDealRowViewModel> HighlightDeals { get; set; } = new();
     public List<FirmaPanelEmployeeRowViewModel> FeaturedEmployees { get; set; } = new();

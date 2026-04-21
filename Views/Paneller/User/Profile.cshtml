@@ -4,6 +4,42 @@
     ViewData["Title"] = "Profil Bilgilerim";
 }
 
+<article class="panel-card phone-verification-card @(Model.OpenPhoneVerification ? "phone-verification-open" : string.Empty)">
+    <div class="section-head">
+        <div>
+            <h2>WhatsApp Telefon Doğrulaması</h2>
+            <p>Rezervasyon oluşturabilmek için telefon numaranızın WhatsApp kodu ile doğrulanmış olması gerekir.</p>
+        </div>
+        <span class="phone-verification-badge tone-@Model.PhoneVerification.StatusToneClass">@Model.PhoneVerification.StatusText</span>
+    </div>
+    <div class="phone-verification-grid">
+        <div class="phone-verification-summary">
+            <strong>@(string.IsNullOrWhiteSpace(Model.PhoneVerification.PhoneNumberE164) ? "Telefon eklenmedi" : Model.PhoneVerification.PhoneNumberE164)</strong>
+            <span>Son doğrulama: @Model.PhoneVerification.VerifiedAtText</span>
+            <span>Son kod gönderimi: @Model.PhoneVerification.LastSentAtText</span>
+            <p>@Model.PhoneVerification.HelpText</p>
+        </div>
+        <form method="post" asp-action="SendPhoneVerificationCode" class="phone-verification-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+            <label>
+                <span>Telefon</span>
+                <input type="text" name="phoneNumber" value="@(string.IsNullOrWhiteSpace(Model.PhoneVerification.PhoneNumber) ? Model.Form.Phone : Model.PhoneVerification.PhoneNumber)" placeholder="05xx xxx xx xx" />
+            </label>
+            <button type="submit" class="primary-btn">WhatsApp Kodu Gönder</button>
+        </form>
+        <form method="post" asp-action="VerifyPhoneVerificationCode" class="phone-verification-form verify-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+            <label>
+                <span>Doğrulama Kodu</span>
+                <input type="text" name="verificationCode" inputmode="numeric" maxlength="8" placeholder="WhatsApp kodu" />
+            </label>
+            <button type="submit" class="primary-btn secondary-tone">Kodu Doğrula</button>
+        </form>
+    </div>
+</article>
+
 <form method="post" asp-action="SaveProfile" class="form-stack">
     @Html.AntiForgeryToken()
     <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />

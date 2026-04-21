@@ -13,19 +13,26 @@ namespace otelturizmnew.Controllers.Paneller.Firma;
 public class FirmaPanelController : Controller
 {
     private readonly IFirmaService _firmaService;
+    private readonly IPhoneVerificationService _phoneVerificationService;
 
-    public FirmaPanelController(IFirmaService firmaService)
+    public FirmaPanelController(IFirmaService firmaService, IPhoneVerificationService phoneVerificationService)
     {
         _firmaService = firmaService;
+        _phoneVerificationService = phoneVerificationService;
     }
 
     [HttpGet("")]
     [HttpGet("dashboard")]
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index([FromQuery] bool openPhoneVerification = false, [FromQuery] string? returnUrl = null, CancellationToken cancellationToken = default)
     {
         if (!IsFirmaUser()) return Redirect("/kullanici-giris");
         var model = await _firmaService.GetDashboardAsync(GetUserId(), cancellationToken);
+        model.PhoneVerification = await _phoneVerificationService.GetUserStatusAsync(GetUserId(), cancellationToken);
         ApplyFeedback(model.Shell);
+        if (openPhoneVerification && !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            TempData["FirmaSuccess"] = "Telefon doğrulamanızı tamamladıktan sonra rezervasyon akışına dönebilirsiniz.";
+        }
         ViewData["Title"] = "Firma Dashboard";
         ViewData["PageCssPath"] = "paneller/firma/dashboard";
         return View("~/Views/Paneller/Firma/Dashboard.cshtml", model);
@@ -167,6 +174,46 @@ public class FirmaPanelController : Controller
         var result = await _firmaService.UpdateReservationApprovalAsync(GetUserId(), model, cancellationToken);
         SetFeedback(result.Success, result.Message);
         return Redirect("/panel/firma/limitler-onaylar");
+    }
+
+    [HttpPost("telefon-kodu-gonder")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendPhoneVerificationCode(string? phoneNumber, string? returnUrl, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        var result = await _phoneVerificationService.SendVerificationCodeAsync(
+            GetUserId(),
+            phoneNumber,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        SetFeedback(result.Success, result.Message);
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        return Redirect("/panel/firma/dashboard?openPhoneVerification=1");
+    }
+
+    [HttpPost("telefon-kodu-dogrula")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyPhoneVerificationCode(string verificationCode, string? returnUrl, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        var result = await _phoneVerificationService.VerifyCodeAsync(
+            GetUserId(),
+            verificationCode,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        SetFeedback(result.Success, result.Message);
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        return Redirect("/panel/firma/dashboard?openPhoneVerification=1");
     }
 
     private bool IsFirmaUser()

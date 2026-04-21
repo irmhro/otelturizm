@@ -1,4 +1,5 @@
 using otelturizmnew.Models.Messages;
+using otelturizmnew.Models.TelefonDogrulama;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Models.Paneller.User;
@@ -247,6 +248,7 @@ public class UserLoyaltyTravelPlanForm
 public class UserProfilePageViewModel
 {
     public UserProfileForm Form { get; set; } = new();
+    public UserPhoneVerificationStatusViewModel PhoneVerification { get; set; } = new();
     public List<AddressCountryOption> Countries { get; set; } = new();
     public List<AddressProvinceOption> Provinces { get; set; } = new();
     public long? SelectedCountryId { get; set; }
@@ -254,6 +256,7 @@ public class UserProfilePageViewModel
     public long? SelectedDistrictId { get; set; }
     public long? SelectedNeighborhoodId { get; set; }
     public bool OpenCompletionModal { get; set; }
+    public bool OpenPhoneVerification { get; set; }
     public string ReturnUrl { get; set; } = string.Empty;
 }
 

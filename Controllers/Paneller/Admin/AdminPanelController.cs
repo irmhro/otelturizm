@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Paneller.Admin;
+using otelturizmnew.Models.TelefonDogrulama;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Controllers.Paneller.Admin;
@@ -14,12 +15,14 @@ public class AdminPanelController : Controller
     private readonly IAdminService _adminService;
     private readonly IAdminHotelManagementService _adminHotelManagementService;
     private readonly IContractContentService _contractContentService;
+    private readonly IPhoneVerificationService _phoneVerificationService;
 
-    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService)
+    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IPhoneVerificationService phoneVerificationService)
     {
         _adminService = adminService;
         _adminHotelManagementService = adminHotelManagementService;
         _contractContentService = contractContentService;
+        _phoneVerificationService = phoneVerificationService;
     }
 
     [HttpGet("")]
@@ -402,6 +405,48 @@ public class AdminPanelController : Controller
 
     [HttpGet("ayarlar")]
     public Task<IActionResult> Settings(CancellationToken cancellationToken) => RenderSectionAsync("settings", "Settings", cancellationToken);
+
+    [HttpGet("whatsapp-cloud-api")]
+    public async Task<IActionResult> WhatsAppCloudApi(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var shell = await _adminService.GetSectionPageAsync("settings", GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        var model = await _phoneVerificationService.GetAdminSettingsPageAsync(shell.Shell, cancellationToken);
+        ViewData["Title"] = "WhatsApp Cloud API";
+        return View("~/Views/Paneller/Admin/WhatsAppCloudApi.cshtml", model);
+    }
+
+    [HttpPost("whatsapp-cloud-api/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveWhatsAppCloudApi(AdminWhatsAppCloudApiSettingsForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _phoneVerificationService.SaveAdminSettingsAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(WhatsAppCloudApi));
+    }
+
+    [HttpPost("whatsapp-cloud-api/test-gonder")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendWhatsAppCloudApiTest(string phoneNumber, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _phoneVerificationService.SendAdminTestMessageAsync(GetUserId(), phoneNumber, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(WhatsAppCloudApi));
+    }
 
     [HttpGet("guvenlik")]
     public Task<IActionResult> Security(CancellationToken cancellationToken) => RenderSectionAsync("security", "Security", cancellationToken);

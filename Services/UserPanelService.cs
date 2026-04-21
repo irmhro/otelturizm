@@ -326,6 +326,8 @@ public class UserPanelService : IUserPanelService
     public async Task<bool> SaveProfileAsync(long userId, UserProfileForm form, CancellationToken cancellationToken = default)
     {
         var email = form.Email?.Trim() ?? string.Empty;
+        var phone = form.Phone?.Trim() ?? string.Empty;
+        var normalizedPhone = PhoneVerificationService.NormalizePhoneNumber(phone);
         if (string.IsNullOrWhiteSpace(email))
         {
             return false;
@@ -343,6 +345,23 @@ public class UserPanelService : IUserPanelService
             }
         }
 
+        string existingPhone = string.Empty;
+        string existingPhoneE164 = string.Empty;
+        await using (var snapshotCommand = new SqlCommand("SELECT TOP (1) COALESCE(telefon, ''), COALESCE(telefon_e164, '') FROM users WHERE id = @userId;", connection))
+        {
+            snapshotCommand.Parameters.AddWithValue("@userId", userId);
+            await using var snapshotReader = await snapshotCommand.ExecuteReaderAsync(cancellationToken);
+            if (await snapshotReader.ReadAsync(cancellationToken))
+            {
+                existingPhone = snapshotReader.IsDBNull(0) ? string.Empty : snapshotReader.GetString(0);
+                existingPhoneE164 = snapshotReader.IsDBNull(1) ? string.Empty : snapshotReader.GetString(1);
+            }
+        }
+
+        var phoneChanged = !string.Equals(existingPhone, phone, StringComparison.Ordinal)
+            || !string.Equals(existingPhoneE164, normalizedPhone ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
             await using var command = new SqlCommand(@"
@@ -350,6 +369,16 @@ public class UserPanelService : IUserPanelService
                 SET ad_soyad = @fullName,
                     eposta = @email,
                     telefon = NULLIF(@phone, ''),
+                    telefon_e164 = NULLIF(@phoneE164, ''),
+                    telefon_dogrulama_kanali = CASE WHEN NULLIF(@phoneE164, '') IS NULL THEN NULL ELSE 'whatsapp' END,
+                    telefon_dogrulama_durumu = CASE
+                        WHEN NULLIF(@phoneE164, '') IS NULL THEN NULL
+                        WHEN @phoneChanged = 1 THEN 'Dogrulanmadi'
+                        ELSE telefon_dogrulama_durumu
+                    END,
+                    telefon_degistirilme_tarihi = CASE WHEN @phoneChanged = 1 THEN SYSUTCDATETIME() ELSE telefon_degistirilme_tarihi END,
+                    telefon_dogrulama_tarihi = CASE WHEN @phoneChanged = 1 THEN NULL ELSE telefon_dogrulama_tarihi END,
+                    telefon_son_sahiplik_teyit_tarihi = CASE WHEN @phoneChanged = 1 THEN NULL ELSE telefon_son_sahiplik_teyit_tarihi END,
                     tc_kimlik_no = NULLIF(@identityNumber, ''),
                     dogum_tarihi = @birthDate,
                     cinsiyet = NULLIF(@gender, ''),
@@ -364,11 +393,14 @@ public class UserPanelService : IUserPanelService
                     konusulan_diller = NULLIF(@spokenLanguages, ''),
                     seyahat_amaci = NULLIF(@travelPurpose, ''),
                     ozel_istekler = NULLIF(@specialRequests, ''),
-                    profil_tamamlanma_tarihi = CURRENT_TIMESTAMP
-                WHERE id = @userId;", connection);
+                    profil_tamamlanma_tarihi = CURRENT_TIMESTAMP,
+                    guncellenme_tarihi = SYSUTCDATETIME()
+                WHERE id = @userId;", connection, (SqlTransaction)transaction);
             command.Parameters.AddWithValue("@fullName", $"{form.FirstName} {form.LastName}".Trim());
             command.Parameters.AddWithValue("@email", email);
-            command.Parameters.AddWithValue("@phone", form.Phone?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@phone", phone);
+            command.Parameters.AddWithValue("@phoneE164", string.IsNullOrWhiteSpace(normalizedPhone) ? DBNull.Value : (object)normalizedPhone);
+            command.Parameters.AddWithValue("@phoneChanged", phoneChanged ? 1 : 0);
             command.Parameters.AddWithValue("@identityNumber", form.IdentityNumber?.Trim() ?? string.Empty);
             command.Parameters.AddWithValue("@birthDate", DateTime.TryParse(form.BirthDateText, out var birthDate) ? birthDate : DBNull.Value);
             command.Parameters.AddWithValue("@gender", form.Gender?.Trim() ?? string.Empty);
@@ -384,10 +416,36 @@ public class UserPanelService : IUserPanelService
             command.Parameters.AddWithValue("@travelPurpose", form.TravelPurpose?.Trim() ?? string.Empty);
             command.Parameters.AddWithValue("@specialRequests", form.SpecialRequests?.Trim() ?? string.Empty);
             command.Parameters.AddWithValue("@userId", userId);
-            return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+            var affected = await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+
+            if (affected && phoneChanged && (!string.IsNullOrWhiteSpace(existingPhone) || !string.IsNullOrWhiteSpace(existingPhoneE164)))
+            {
+                await using var historyCommand = new SqlCommand(@"
+                    INSERT INTO kullanici_telefon_gecmisi
+                    (
+                        kullanici_id, onceki_telefon_raw, onceki_telefon_e164, yeni_telefon_raw, yeni_telefon_e164,
+                        dogrulama_durumu, degisim_nedeni, olusturulma_tarihi
+                    )
+                    VALUES
+                    (
+                        @userId, NULLIF(@oldPhone, ''), NULLIF(@oldPhoneE164, ''), NULLIF(@newPhone, ''), NULLIF(@newPhoneE164, ''),
+                        @status, N'Profil ekranından telefon güncellendi', SYSUTCDATETIME()
+                    );", connection, (SqlTransaction)transaction);
+                historyCommand.Parameters.AddWithValue("@userId", userId);
+                historyCommand.Parameters.AddWithValue("@oldPhone", existingPhone);
+                historyCommand.Parameters.AddWithValue("@oldPhoneE164", existingPhoneE164);
+                historyCommand.Parameters.AddWithValue("@newPhone", phone);
+                historyCommand.Parameters.AddWithValue("@newPhoneE164", normalizedPhone ?? string.Empty);
+                historyCommand.Parameters.AddWithValue("@status", string.IsNullOrWhiteSpace(existingPhoneE164) ? "Dogrulanmadi" : "DogrulamaGuncellendi");
+                await historyCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return affected;
         }
         catch (SqlException)
         {
+            await transaction.RollbackAsync(cancellationToken);
             return false;
         }
     }

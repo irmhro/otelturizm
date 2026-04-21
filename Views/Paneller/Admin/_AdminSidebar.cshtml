@@ -44,6 +44,7 @@
                 <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Contracts" class="nav-link @Active("Contracts")"><i class="nav-icon fas fa-file-contract"></i><p>Sözleşmeler</p></a></li>
                 <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Notifications" class="nav-link @Active("Notifications")"><i class="nav-icon fas fa-bell"></i><p>Bildirimler <span class="right badge badge-warning">@(Model.UnreadNotifications)</span></p></a></li>
                 <li class="nav-item"><a asp-controller="AdminPanel" asp-action="EmailTemplates" class="nav-link @Active("EmailTemplates")"><i class="nav-icon fas fa-envelope"></i><p>E-posta Şablonları</p></a></li>
+                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="WhatsAppCloudApi" class="nav-link @Active("WhatsAppCloudApi")"><i class="nav-icon fab fa-whatsapp"></i><p>WhatsApp Cloud API</p></a></li>
                 <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Logs" class="nav-link @Active("Logs")"><i class="nav-icon fas fa-clipboard-list"></i><p>Log Kayıtları <span class="right badge badge-danger">@(Model.CriticalLogs)</span></p></a></li>
                 <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Reports" class="nav-link @Active("Reports")"><i class="nav-icon fas fa-chart-line"></i><p>Raporlar</p></a></li>
                 <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Blog" class="nav-link @Active("Blog")"><i class="nav-icon fas fa-blog"></i><p>Blog Yönetimi</p></a></li>
