@@ -8,14 +8,22 @@ public class HotelListingPageViewModel
     public string SearchTerm { get; set; } = string.Empty;
     public string SearchLabel { get; set; } = string.Empty;
     public string ActiveTag { get; set; } = string.Empty;
+    public string CampaignSlug { get; set; } = string.Empty;
     public string CampaignTitle { get; set; } = string.Empty;
     public string CampaignDescription { get; set; } = string.Empty;
     public int TotalCount { get; set; }
+    public int CurrentPage { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public int TotalPages { get; set; }
     public List<HotelListingCardViewModel> Hotels { get; set; } = new();
+    public List<string> Cities { get; set; } = new();
     public decimal MinPrice { get; set; }
     public decimal MaxPrice { get; set; }
     public List<string> Districts { get; set; } = new();
+    public List<string> Neighborhoods { get; set; } = new();
     public List<int> StarOptions { get; set; } = new();
+    public List<string> PropertyTypes { get; set; } = new();
+    public List<HotelListingCampaignFilterViewModel> Campaigns { get; set; } = new();
     public List<HotelListingQuickLinkViewModel> QuickLinks { get; set; } = new();
 }
 
@@ -35,6 +43,14 @@ public class HotelListingQuickLinkViewModel
     public bool IsActive { get; set; }
 }
 
+public class HotelListingCampaignFilterViewModel
+{
+    public string Slug { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public int HotelCount { get; set; }
+    public bool IsActive { get; set; }
+}
+
 public class HotelListingCardViewModel
 {
     public long Id { get; set; }
@@ -45,6 +61,7 @@ public class HotelListingCardViewModel
     public string Slug { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
+    public string Neighborhood { get; set; } = string.Empty;
     public decimal Rating { get; set; }
     public string RatingText { get; set; } = string.Empty;
     public int ReviewCount { get; set; }
@@ -55,6 +72,8 @@ public class HotelListingCardViewModel
     public bool IsFavorite { get; set; }
     public List<string> Amenities { get; set; } = new();
     public List<string> Tags { get; set; } = new();
+    public List<string> CampaignNames { get; set; } = new();
+    public List<string> CampaignSlugs { get; set; } = new();
     public string Summary { get; set; } = string.Empty;
 }
 
@@ -74,6 +93,16 @@ public class HotelDetailPageViewModel
     public decimal Rating { get; set; }
     public string RatingText { get; set; } = "Yorum Bekleniyor";
     public int ReviewCount { get; set; }
+    /// <summary>Konum ortalamasi (1-10 vitrin).</summary>
+    public decimal ReviewLocationScore { get; set; }
+    /// <summary>Oda / konaklama kalitesi ortalamasi (1-10 vitrin).</summary>
+    public decimal ReviewRoomScore { get; set; }
+    /// <summary>Konfor ortalamasi; yeni modelde oda puanina esler (geriye donuk).</summary>
+    public decimal ReviewComfortScore { get; set; }
+    /// <summary>Fiyat/performans ortalamasi (1-10 vitrin).</summary>
+    public decimal ReviewValueScore { get; set; }
+    /// <summary>Personel ortalamasi (1-10 vitrin).</summary>
+    public decimal ReviewStaffScore { get; set; }
     public TimeSpan? CheckInTime { get; set; }
     public TimeSpan? CheckOutTime { get; set; }
     public decimal? Latitude { get; set; }
@@ -145,6 +174,8 @@ public class HotelReviewViewModel
     public string DateText { get; set; } = string.Empty;
     public decimal Score { get; set; }
     public string Text { get; set; } = string.Empty;
+    public string? TravelProfile { get; set; }
+    public string? SatisfactionLabel { get; set; }
 }
 
 public class HotelSimilarCardViewModel

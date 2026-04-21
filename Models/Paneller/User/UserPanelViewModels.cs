@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.TelefonDogrulama;
 using otelturizmnew.Services.Abstractions;
@@ -63,6 +64,41 @@ public class UserReservationCardViewModel
     public bool IsCancelled { get; set; }
     public string? CancellationReason { get; set; }
     public string? CancellationTimeText { get; set; }
+    public long HotelId { get; set; }
+    public string OtelOnayDurumu { get; set; } = string.Empty;
+    public bool CanSubmitReview { get; set; }
+}
+
+public class UserReservationReviewPageViewModel
+{
+    public long ReservationId { get; set; }
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public string District { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string StayDateText { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
+    public UserReservationReviewForm Form { get; set; } = new();
+}
+
+public class UserReservationReviewForm
+{
+    public long ReservationId { get; set; }
+    public string TravelProfile { get; set; } = string.Empty;
+    [Range(1, 5)]
+    public int SatisfactionLevel { get; set; } = 3;
+    [Range(1, 10)]
+    public int PuanOda { get; set; } = 8;
+    [Range(1, 10)]
+    public int PuanKonum { get; set; } = 8;
+    [Range(1, 10)]
+    public int PuanFiyat { get; set; } = 8;
+    [Range(1, 10)]
+    public int PuanPersonel { get; set; } = 8;
+    [Required]
+    [MinLength(20)]
+    public string Comment { get; set; } = string.Empty;
+    public bool Anonymous { get; set; }
 }
 
 public class UserReservationCancelForm

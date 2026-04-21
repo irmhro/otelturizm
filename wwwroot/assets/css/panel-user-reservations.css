@@ -191,3 +191,80 @@
     .user-reservation-filter-actions { align-items: stretch; }
     .user-reservation-pager { flex-direction: column; align-items: flex-start; }
 }
+
+.user-review-form {
+    display: grid;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.user-review-field {
+    display: grid;
+    gap: 8px;
+}
+
+.user-review-field span {
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.user-review-field select,
+.user-review-field textarea {
+    width: 100%;
+    border: 1px solid #d6e2f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font: inherit;
+    background: #fff;
+    color: #0f172a;
+}
+
+.user-review-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.user-review-grid label {
+    display: grid;
+    gap: 6px;
+}
+
+.user-review-grid span {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.user-review-grid input {
+    min-height: 40px;
+    border: 1px solid #d6e2f0;
+    border-radius: 12px;
+    padding: 8px 10px;
+    font: inherit;
+}
+
+.user-review-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.user-review-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ghost-btn.primary {
+    background: #1d4ed8;
+    color: #fff;
+    border-color: #1d4ed8;
+}
+
+@media (max-width: 640px) {
+    .user-review-grid { grid-template-columns: 1fr 1fr; }
+}

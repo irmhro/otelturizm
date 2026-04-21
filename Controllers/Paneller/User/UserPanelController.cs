@@ -102,6 +102,49 @@ public class UserPanelController : Controller
         return RedirectToAction(nameof(Reservations));
     }
 
+    [HttpGet("rezervasyonlarim/yorum/{reservationId:long}")]
+    public async Task<IActionResult> ReservationReview(long reservationId, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var userId = GetCurrentUserId();
+        var model = await _userPanelService.GetReservationReviewPageAsync(userId, reservationId, cancellationToken);
+        if (model is null)
+        {
+            TempData["UserReservationError"] = "Bu rezervasyon icin yorum formu acilamiyor (otel onayi, konaklama tamami veya mevcut yorum).";
+            return RedirectToAction(nameof(Reservations));
+        }
+
+        ViewData["FavoriteCount"] = await _userFavoriteService.GetFavoriteCountAsync(userId, cancellationToken);
+        ViewData["PageCss"] = "panel-user-reservations";
+        ViewData["PanelTitle"] = "Konaklama degerlendirmesi";
+        ViewData["PanelSubtitle"] = "Konakladiginiz tesis hakkinda geri bildirim verin.";
+        return View("~/Views/Paneller/User/ReservationReview.cshtml", model);
+    }
+
+    [HttpPost("rezervasyonlarim/yorum")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReservationReviewPosted([Bind(Prefix = "Form")] UserReservationReviewForm form, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            TempData["UserReservationError"] = "Formu kontrol edin.";
+            return RedirectToAction(nameof(Reservations));
+        }
+
+        var result = await _userPanelService.SubmitReservationReviewAsync(GetCurrentUserId(), form, cancellationToken);
+        TempData[result.Success ? "UserReservationSuccess" : "UserReservationError"] = result.Message;
+        return RedirectToAction(nameof(Reservations));
+    }
+
     [HttpGet("favorilerim")]
     public async Task<IActionResult> Favorites(CancellationToken cancellationToken)
     {

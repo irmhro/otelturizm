@@ -1,0 +1,67 @@
+@model otelturizmnew.Models.Paneller.User.UserReservationReviewPageViewModel
+@{
+    Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
+    ViewData["Title"] = "Konaklama değerlendirmesi";
+}
+
+<section class="panel-card">
+    <div class="section-head">
+        <div>
+            <p class="mini-label">GERİ BİLDİRİM</p>
+            <h2>@Model.HotelName</h2>
+            <p>@Model.District, @Model.City · @Model.StayDateText · @Model.RoomName</p>
+        </div>
+    </div>
+
+    <p class="sub-note info">Konakladığınız yeri 1–10 arası kategorilerde değerlendirin; genel memnuniyet derecenizi seçin.</p>
+
+    <form method="post" asp-action="ReservationReviewPosted" class="user-review-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Form.ReservationId" value="@Model.ReservationId" />
+
+        <label class="user-review-field">
+            <span>Seyahat profiliniz</span>
+            <select asp-for="Form.TravelProfile" required>
+                <option value="">Seçin</option>
+                <option value="Aileler">Aileler</option>
+                <option value="Çiftler">Çiftler</option>
+                <option value="Arkadaş grubu">Arkadaş grubu</option>
+                <option value="Yalnız gezgin">Yalnız gezgin</option>
+                <option value="İş seyahati">İş seyahati</option>
+            </select>
+        </label>
+
+        <label class="user-review-field">
+            <span>Genel memnuniyet</span>
+            <select asp-for="Form.SatisfactionLevel" required>
+                <option value="1">Çok kötü</option>
+                <option value="2">Kötü</option>
+                <option value="3">İdare eder</option>
+                <option value="4">İyi</option>
+                <option value="5">Çok iyi</option>
+            </select>
+        </label>
+
+        <div class="user-review-grid">
+            <label><span>Oda</span><input asp-for="Form.PuanOda" type="number" min="1" max="10" required /></label>
+            <label><span>Konum</span><input asp-for="Form.PuanKonum" type="number" min="1" max="10" required /></label>
+            <label><span>Fiyat / değer</span><input asp-for="Form.PuanFiyat" type="number" min="1" max="10" required /></label>
+            <label><span>Personel</span><input asp-for="Form.PuanPersonel" type="number" min="1" max="10" required /></label>
+        </div>
+
+        <label class="user-review-field">
+            <span>Yorumunuz (en az 20 karakter)</span>
+            <textarea asp-for="Form.Comment" rows="5" maxlength="4000" placeholder="Konaklamanızla ilgili deneyiminizi paylaşın." required></textarea>
+        </label>
+
+        <label class="user-review-checkbox">
+            <input asp-for="Form.Anonymous" type="checkbox" />
+            <span>Adımı “Misafir” olarak göster</span>
+        </label>
+
+        <div class="user-review-actions">
+            <button type="submit" class="ghost-btn primary">Yorumu gönder</button>
+            <a asp-action="Reservations" class="ghost-btn">Vazgeç</a>
+        </div>
+    </form>
+</section>

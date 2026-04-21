@@ -22,6 +22,8 @@ public interface IUserPanelService
         int pageSize = 5,
         CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> CancelReservationAsync(long userId, long reservationId, string cancellationReason, CancellationToken cancellationToken = default);
+    Task<UserReservationReviewPageViewModel?> GetReservationReviewPageAsync(long userId, long reservationId, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SubmitReservationReviewAsync(long userId, UserReservationReviewForm form, CancellationToken cancellationToken = default);
     Task<UserMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default);
     Task<UserLoyaltyPageViewModel> GetLoyaltyAsync(long userId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveBudgetPlanAsync(long userId, UserLoyaltyBudgetPlanForm form, CancellationToken cancellationToken = default);

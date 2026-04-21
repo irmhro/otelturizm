@@ -251,6 +251,247 @@ public class UserPanelService : IUserPanelService
         return (true, "Rezervasyonunuz iptal edildi.");
     }
 
+    public async Task<UserReservationReviewPageViewModel?> GetReservationReviewPageAsync(long userId, long reservationId, CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0 || reservationId <= 0)
+        {
+            return null;
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        const string sql = @"
+            SELECT TOP (1)
+                r.id,
+                r.otel_id,
+                o.otel_adi,
+                COALESCE(o.ilce, ''),
+                COALESCE(o.sehir, ''),
+                COALESCE(ot.oda_adi, 'Oda'),
+                r.giris_tarihi,
+                r.cikis_tarihi,
+                r.durum,
+                COALESCE(r.otel_onay_durumu, ''),
+                CAST(CASE WHEN EXISTS (
+                    SELECT 1 FROM yorumlar y WHERE y.rezervasyon_id = r.id AND y.kullanici_id = @userId
+                ) THEN 1 ELSE 0 END AS INT)
+            FROM rezervasyonlar r
+            INNER JOIN oteller o ON o.id = r.otel_id
+            LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
+            WHERE r.id = @reservationId AND r.kullanici_id = @userId;";
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@reservationId", reservationId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        var checkIn = reader.GetDateTime(6);
+        var checkOut = reader.GetDateTime(7);
+        var status = reader.GetString(8);
+        var otelOnay = reader.IsDBNull(9) ? string.Empty : reader.GetString(9);
+        var hasReview = SafeInt(reader, 10) != 0;
+        var isCancelled = string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase);
+        var checkoutDate = DateOnly.FromDateTime(checkOut);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var partnerApproved = string.Equals(otelOnay, "Onaylandı", StringComparison.OrdinalIgnoreCase);
+        var stayEnded = checkoutDate < today;
+        var statusAllowsReview = string.Equals(status, "Tamamlandı", StringComparison.OrdinalIgnoreCase)
+                                 || string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase);
+        var canSubmitReview = !isCancelled && partnerApproved && stayEnded && statusAllowsReview && !hasReview;
+        if (!canSubmitReview)
+        {
+            return null;
+        }
+
+        return new UserReservationReviewPageViewModel
+        {
+            ReservationId = reader.GetInt64(0),
+            HotelId = reader.GetInt64(1),
+            HotelName = reader.GetString(2),
+            District = reader.GetString(3),
+            City = reader.GetString(4),
+            RoomName = reader.GetString(5),
+            StayDateText = $"{checkIn:dd MMM yyyy} – {checkOut:dd MMM yyyy}",
+            Form = new UserReservationReviewForm { ReservationId = reservationId }
+        };
+    }
+
+    public async Task<(bool Success, string Message)> SubmitReservationReviewAsync(long userId, UserReservationReviewForm form, CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0 || form.ReservationId <= 0)
+        {
+            return (false, "Gecersiz talep.");
+        }
+
+        var comment = (form.Comment ?? string.Empty).Trim();
+        if (comment.Length < 20)
+        {
+            return (false, "Yorum metni en az 20 karakter olmalidir.");
+        }
+
+        if (form.PuanOda is < 1 or > 10 || form.PuanKonum is < 1 or > 10 || form.PuanFiyat is < 1 or > 10 || form.PuanPersonel is < 1 or > 10)
+        {
+            return (false, "Puanlar 1 ile 10 arasinda olmalidir.");
+        }
+
+        if (form.SatisfactionLevel is < 1 or > 5)
+        {
+            return (false, "Genel memnuniyet seciminizi kontrol edin.");
+        }
+
+        var profile = (form.TravelProfile ?? string.Empty).Trim();
+        if (!AllowedTravelProfiles.Contains(profile))
+        {
+            return (false, "Seyahat profili seciminizi kontrol edin.");
+        }
+
+        var page = await GetReservationReviewPageAsync(userId, form.ReservationId, cancellationToken);
+        if (page is null)
+        {
+            return (false, "Bu rezervasyon icin yorum gonderemezsiniz (otel onayi, konaklama tamami veya mevcut yorum).");
+        }
+
+        var genel10 = (byte)Math.Clamp(
+            (int)Math.Round((form.PuanOda + form.PuanKonum + form.PuanFiyat + form.PuanPersonel) / 4.0, MidpointRounding.AwayFromZero),
+            1,
+            10);
+        var genelLegacy = MapTenToLegacyFive(genel10);
+        var odaLegacy = MapTenToLegacyFive(form.PuanOda);
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            const string insertSql = @"
+                INSERT INTO yorumlar (
+                    otel_id, kullanici_id, rezervasyon_id,
+                    genel_puan, temizlik_puani, konfor_puani, konum_puani, personel_puani, fiyat_performans_puani,
+                    yorum_metni,
+                    onay_durumu, onay_tarihi, dogrulanmis_konaklama, anonim_mi,
+                    seyahat_profili, memnuniyet_seviyesi,
+                    genel_puan_10, puan_oda_10, puan_konum_10, puan_fiyat_10, puan_personel_10,
+                    olusturulma_tarihi
+                )
+                VALUES (
+                    @otelId, @userId, @rezId,
+                    @genelLegacy, @temizLegacy, @konforLegacy, @konumLegacy, @personelLegacy, @fiyatLegacy,
+                    @comment,
+                    N'Onaylandı', SYSUTCDATETIME(), 1, @anon,
+                    @profil, @memnuniyet,
+                    @genel10, @oda10, @konum10, @fiyat10, @personel10,
+                    SYSUTCDATETIME()
+                );";
+
+            await using (var cmd = new SqlCommand(insertSql, connection, (SqlTransaction)transaction))
+            {
+                cmd.Parameters.AddWithValue("@otelId", page.HotelId);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@rezId", form.ReservationId);
+                cmd.Parameters.AddWithValue("@genelLegacy", genelLegacy);
+                cmd.Parameters.AddWithValue("@temizLegacy", odaLegacy);
+                cmd.Parameters.AddWithValue("@konforLegacy", odaLegacy);
+                cmd.Parameters.AddWithValue("@konumLegacy", MapTenToLegacyFive(form.PuanKonum));
+                cmd.Parameters.AddWithValue("@personelLegacy", MapTenToLegacyFive(form.PuanPersonel));
+                cmd.Parameters.AddWithValue("@fiyatLegacy", MapTenToLegacyFive(form.PuanFiyat));
+                cmd.Parameters.AddWithValue("@comment", comment);
+                cmd.Parameters.AddWithValue("@anon", form.Anonymous ? 1 : 0);
+                cmd.Parameters.AddWithValue("@profil", profile);
+                cmd.Parameters.AddWithValue("@memnuniyet", form.SatisfactionLevel);
+                cmd.Parameters.AddWithValue("@genel10", genel10);
+                cmd.Parameters.AddWithValue("@oda10", form.PuanOda);
+                cmd.Parameters.AddWithValue("@konum10", form.PuanKonum);
+                cmd.Parameters.AddWithValue("@fiyat10", form.PuanFiyat);
+                cmd.Parameters.AddWithValue("@personel10", form.PuanPersonel);
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await RefreshHotelAggregatesFromApprovedReviewsAsync(connection, (SqlTransaction)transaction, page.HotelId, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            if (ex is SqlException sql)
+            {
+                return (false, sql.Number == 547
+                    ? "Yorum kaydedilemedi. Veritabani kisitlamasi."
+                    : "Yorum kaydedilemedi. Yonetici sutunlari (migration 170) uygulanmis mi kontrol edin.");
+            }
+
+            throw;
+        }
+
+        return (true, "Yorumunuz kaydedildi ve yayina alindi. Tesekkur ederiz.");
+    }
+
+    private static readonly HashSet<string> AllowedTravelProfiles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Aileler",
+        "Çiftler",
+        "Arkadaş grubu",
+        "Yalnız gezgin",
+        "İş seyahati"
+    };
+
+    private static byte MapTenToLegacyFive(int ten) =>
+        (byte)Math.Clamp((int)Math.Round(ten / 2.0, MidpointRounding.AwayFromZero), 1, 5);
+
+    private static async Task RefreshHotelAggregatesFromApprovedReviewsAsync(
+        SqlConnection connection,
+        SqlTransaction transaction,
+        long hotelId,
+        CancellationToken cancellationToken)
+    {
+        const string sql = @"
+;WITH agg AS (
+    SELECT
+        y.otel_id,
+        COUNT(*) AS cnt,
+        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.genel_puan_10 AS DECIMAL(9, 4)),
+            CASE
+                WHEN y.genel_puan <= 5 THEN CAST(y.genel_puan AS DECIMAL(9, 4)) * 2
+                WHEN y.genel_puan <= 10 THEN CAST(y.genel_puan AS DECIMAL(9, 4))
+                ELSE 10
+            END) AS DECIMAL(9, 4))), 2) AS DECIMAL(5, 2)) AS avg_genel,
+        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.puan_konum_10 AS DECIMAL(9, 4)),
+            CASE
+                WHEN y.konum_puani <= 5 THEN CAST(y.konum_puani AS DECIMAL(9, 4)) * 2
+                WHEN y.konum_puani <= 10 THEN CAST(y.konum_puani AS DECIMAL(9, 4))
+                ELSE 10
+            END) AS DECIMAL(9, 4))), 2) AS DECIMAL(5, 2)) AS avg_konum,
+        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.puan_oda_10 AS DECIMAL(9, 4)),
+            CASE
+                WHEN y.konfor_puani <= 5 THEN CAST(y.konfor_puani AS DECIMAL(9, 4)) * 2
+                WHEN y.konfor_puani <= 10 THEN CAST(y.konfor_puani AS DECIMAL(9, 4))
+                ELSE 10
+            END) AS DECIMAL(9, 4))), 2) AS DECIMAL(5, 2)) AS avg_konfor,
+        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.puan_fiyat_10 AS DECIMAL(9, 4)),
+            CASE
+                WHEN y.fiyat_performans_puani <= 5 THEN CAST(y.fiyat_performans_puani AS DECIMAL(9, 4)) * 2
+                WHEN y.fiyat_performans_puani <= 10 THEN CAST(y.fiyat_performans_puani AS DECIMAL(9, 4))
+                ELSE 10
+            END) AS DECIMAL(9, 4))), 2) AS DECIMAL(5, 2)) AS avg_fp
+    FROM yorumlar AS y
+    WHERE y.otel_id = @hotelId
+      AND y.onay_durumu LIKE N'Onaylan%'
+    GROUP BY y.otel_id
+)
+UPDATE o
+SET
+    o.toplam_yorum_sayisi = agg.cnt,
+    o.ortalama_puan = agg.avg_genel,
+    o.konum_puani = agg.avg_konum,
+    o.konfor_puani = agg.avg_konfor,
+    o.fiyat_performans_puani = agg.avg_fp
+FROM oteller AS o
+INNER JOIN agg ON agg.otel_id = o.id;";
+        await using var cmd = new SqlCommand(sql, connection, transaction);
+        cmd.Parameters.AddWithValue("@hotelId", hotelId);
+        await cmd.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     public async Task<UserMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default)
     {
         var inbox = await _messageCenterService.GetUserInboxAsync(userId, conversationId, cancellationToken);
@@ -1343,11 +1584,29 @@ public class UserPanelService : IUserPanelService
     {
         var list = new List<UserReservationCardViewModel>();
         const string sql = @"
-            SELECT TOP (@take) r.id, r.rezervasyon_no, o.otel_adi, o.otel_kodu, COALESCE(o.ilce, ''), COALESCE(o.sehir, ''),
-                   COALESCE(ot.oda_adi, 'Oda'), r.giris_tarihi, r.cikis_tarihi, r.yetiskin_sayisi, r.cocuk_sayisi,
-                   r.toplam_tutar, r.durum, COALESCE(og.gorsel_url, ''), COALESCE(r.otel_onay_durumu, ''),
+            SELECT TOP (@take)
+                   r.id,
+                   r.otel_id,
+                   r.rezervasyon_no,
+                   o.otel_adi,
+                   o.otel_kodu,
+                   COALESCE(o.ilce, ''),
+                   COALESCE(o.sehir, ''),
+                   COALESCE(ot.oda_adi, 'Oda'),
+                   r.giris_tarihi,
+                   r.cikis_tarihi,
+                   r.yetiskin_sayisi,
+                   r.cocuk_sayisi,
+                   r.toplam_tutar,
+                   r.durum,
+                   COALESCE(og.gorsel_url, ''),
+                   COALESCE(r.otel_onay_durumu, ''),
                    COALESCE(NULLIF(r.iptal_nedeni, ''), '') AS iptal_nedeni,
-                   r.iptal_tarihi
+                   r.iptal_tarihi,
+                   CAST(CASE WHEN EXISTS (
+                       SELECT 1 FROM yorumlar y
+                       WHERE y.rezervasyon_id = r.id AND y.kullanici_id = @userId
+                   ) THEN 1 ELSE 0 END AS INT) AS has_review
             FROM rezervasyonlar r
             INNER JOIN oteller o ON o.id = r.otel_id
             LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
@@ -1374,38 +1633,50 @@ public class UserPanelService : IUserPanelService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            var checkIn = reader.GetDateTime(7);
-            var checkOut = reader.GetDateTime(8);
-            var status = reader.GetString(12);
+            var checkIn = reader.GetDateTime(8);
+            var checkOut = reader.GetDateTime(9);
+            var status = reader.GetString(13);
             var isCancelled = string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase);
             var isUpcoming = checkOut >= DateTime.Today;
-            var adultCount = SafeInt(reader, 9);
-            var childCount = SafeInt(reader, 10);
+            var adultCount = SafeInt(reader, 10);
+            var childCount = SafeInt(reader, 11);
+            var otelOnay = reader.IsDBNull(15) ? string.Empty : reader.GetString(15);
+            var hasReview = SafeInt(reader, 18) != 0;
+            var checkoutDate = DateOnly.FromDateTime(checkOut);
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var partnerApproved = string.Equals(otelOnay, "Onaylandı", StringComparison.OrdinalIgnoreCase);
+            var stayEnded = checkoutDate < today;
+            var statusAllowsReview = string.Equals(status, "Tamamlandı", StringComparison.OrdinalIgnoreCase)
+                                     || string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase);
+            var canSubmitReview = !isCancelled && partnerApproved && stayEnded && statusAllowsReview && !hasReview;
             list.Add(new UserReservationCardViewModel
             {
                 ReservationId = reader.GetInt64(0),
-                ReservationNo = reader.GetString(1),
-                HotelName = reader.GetString(2),
-                HotelSlug = BuildSlug(reader.GetString(2), reader.GetString(3)),
-                District = reader.GetString(4),
-                City = reader.GetString(5),
-                RoomName = reader.GetString(6),
+                HotelId = reader.GetInt64(1),
+                ReservationNo = reader.GetString(2),
+                HotelName = reader.GetString(3),
+                HotelSlug = BuildSlug(reader.GetString(3), reader.GetString(4)),
+                District = reader.GetString(5),
+                City = reader.GetString(6),
+                RoomName = reader.GetString(7),
                 StayDateText = $"{checkIn:dd MMM} - {checkOut:dd MMM yyyy}",
                 CheckInDate = DateOnly.FromDateTime(checkIn),
                 CheckOutDate = DateOnly.FromDateTime(checkOut),
                 GuestText = $"{adultCount} Yetiskin" + (childCount > 0 ? $", {childCount} Cocuk" : string.Empty),
-                MealOrRoomText = reader.GetString(6),
+                MealOrRoomText = reader.GetString(7),
                 StatusText = status,
-                StatusTone = GetReservationStatusTone(status, reader.GetString(14), checkIn),
+                StatusTone = GetReservationStatusTone(status, otelOnay, checkIn),
                 SubNote = BuildReservationNote(status, checkIn, checkOut),
                 SubNoteTone = isCancelled ? "danger" : isUpcoming ? "info" : "success",
-                TotalText = FormatMoney(SafeDecimal(reader, 11)),
-                ImageUrl = string.IsNullOrWhiteSpace(reader.GetString(13)) ? null : reader.GetString(13),
+                TotalText = FormatMoney(SafeDecimal(reader, 12)),
+                ImageUrl = string.IsNullOrWhiteSpace(reader.GetString(14)) ? null : reader.GetString(14),
                 CanCancel = isUpcoming && !isCancelled,
                 IsUpcoming = isUpcoming,
                 IsCancelled = isCancelled,
-                CancellationReason = reader.IsDBNull(15) || string.IsNullOrWhiteSpace(reader.GetString(15)) ? null : reader.GetString(15),
-                CancellationTimeText = reader.IsDBNull(16) ? null : reader.GetDateTime(16).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"))
+                CancellationReason = reader.IsDBNull(16) || string.IsNullOrWhiteSpace(reader.GetString(16)) ? null : reader.GetString(16),
+                CancellationTimeText = reader.IsDBNull(17) ? null : reader.GetDateTime(17).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                OtelOnayDurumu = otelOnay,
+                CanSubmitReview = canSubmitReview
             });
         }
         return list;
@@ -1423,11 +1694,28 @@ public class UserPanelService : IUserPanelService
     {
         var list = new List<UserReservationCardViewModel>();
         const string sql = @"
-            SELECT r.id, r.rezervasyon_no, o.otel_adi, o.otel_kodu, COALESCE(o.ilce, ''), COALESCE(o.sehir, ''),
-                   COALESCE(ot.oda_adi, 'Oda'), r.giris_tarihi, r.cikis_tarihi, r.yetiskin_sayisi, r.cocuk_sayisi,
-                   r.toplam_tutar, r.durum, COALESCE(og.gorsel_url, ''), COALESCE(r.otel_onay_durumu, ''),
+            SELECT r.id,
+                   r.otel_id,
+                   r.rezervasyon_no,
+                   o.otel_adi,
+                   o.otel_kodu,
+                   COALESCE(o.ilce, ''),
+                   COALESCE(o.sehir, ''),
+                   COALESCE(ot.oda_adi, 'Oda'),
+                   r.giris_tarihi,
+                   r.cikis_tarihi,
+                   r.yetiskin_sayisi,
+                   r.cocuk_sayisi,
+                   r.toplam_tutar,
+                   r.durum,
+                   COALESCE(og.gorsel_url, ''),
+                   COALESCE(r.otel_onay_durumu, ''),
                    COALESCE(NULLIF(r.iptal_nedeni, ''), '') AS iptal_nedeni,
-                   r.iptal_tarihi
+                   r.iptal_tarihi,
+                   CAST(CASE WHEN EXISTS (
+                       SELECT 1 FROM yorumlar y
+                       WHERE y.rezervasyon_id = r.id AND y.kullanici_id = @userId
+                   ) THEN 1 ELSE 0 END AS INT) AS has_review
             FROM rezervasyonlar r
             INNER JOIN oteller o ON o.id = r.otel_id
             LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
@@ -1465,38 +1753,50 @@ public class UserPanelService : IUserPanelService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            var checkIn = reader.GetDateTime(7);
-            var checkOut = reader.GetDateTime(8);
-            var status = reader.GetString(12);
+            var checkIn = reader.GetDateTime(8);
+            var checkOut = reader.GetDateTime(9);
+            var status = reader.GetString(13);
             var isCancelled = string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase);
             var isUpcoming = checkOut >= DateTime.Today;
-            var adultCount = SafeInt(reader, 9);
-            var childCount = SafeInt(reader, 10);
+            var adultCount = SafeInt(reader, 10);
+            var childCount = SafeInt(reader, 11);
+            var otelOnay = reader.IsDBNull(15) ? string.Empty : reader.GetString(15);
+            var hasReview = SafeInt(reader, 18) != 0;
+            var checkoutDate = DateOnly.FromDateTime(checkOut);
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var partnerApproved = string.Equals(otelOnay, "Onaylandı", StringComparison.OrdinalIgnoreCase);
+            var stayEnded = checkoutDate < today;
+            var statusAllowsReview = string.Equals(status, "Tamamlandı", StringComparison.OrdinalIgnoreCase)
+                                     || string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase);
+            var canSubmitReview = !isCancelled && partnerApproved && stayEnded && statusAllowsReview && !hasReview;
             list.Add(new UserReservationCardViewModel
             {
                 ReservationId = reader.GetInt64(0),
-                ReservationNo = reader.GetString(1),
-                HotelName = reader.GetString(2),
-                HotelSlug = BuildSlug(reader.GetString(2), reader.GetString(3)),
-                District = reader.GetString(4),
-                City = reader.GetString(5),
-                RoomName = reader.GetString(6),
+                HotelId = reader.GetInt64(1),
+                ReservationNo = reader.GetString(2),
+                HotelName = reader.GetString(3),
+                HotelSlug = BuildSlug(reader.GetString(3), reader.GetString(4)),
+                District = reader.GetString(5),
+                City = reader.GetString(6),
+                RoomName = reader.GetString(7),
                 StayDateText = $"{checkIn:dd MMM} - {checkOut:dd MMM yyyy}",
                 CheckInDate = DateOnly.FromDateTime(checkIn),
                 CheckOutDate = DateOnly.FromDateTime(checkOut),
                 GuestText = $"{adultCount} Yetiskin" + (childCount > 0 ? $", {childCount} Cocuk" : string.Empty),
-                MealOrRoomText = reader.GetString(6),
+                MealOrRoomText = reader.GetString(7),
                 StatusText = status,
-                StatusTone = GetReservationStatusTone(status, reader.GetString(14), checkIn),
+                StatusTone = GetReservationStatusTone(status, otelOnay, checkIn),
                 SubNote = BuildReservationNote(status, checkIn, checkOut),
                 SubNoteTone = isCancelled ? "danger" : isUpcoming ? "info" : "success",
-                TotalText = FormatMoney(SafeDecimal(reader, 11)),
-                ImageUrl = string.IsNullOrWhiteSpace(reader.GetString(13)) ? null : reader.GetString(13),
+                TotalText = FormatMoney(SafeDecimal(reader, 12)),
+                ImageUrl = string.IsNullOrWhiteSpace(reader.GetString(14)) ? null : reader.GetString(14),
                 CanCancel = isUpcoming && !isCancelled,
                 IsUpcoming = isUpcoming,
                 IsCancelled = isCancelled,
-                CancellationReason = reader.IsDBNull(15) || string.IsNullOrWhiteSpace(reader.GetString(15)) ? null : reader.GetString(15),
-                CancellationTimeText = reader.IsDBNull(16) ? null : reader.GetDateTime(16).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"))
+                CancellationReason = reader.IsDBNull(16) || string.IsNullOrWhiteSpace(reader.GetString(16)) ? null : reader.GetString(16),
+                CancellationTimeText = reader.IsDBNull(17) ? null : reader.GetDateTime(17).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                OtelOnayDurumu = otelOnay,
+                CanSubmitReview = canSubmitReview
             });
         }
         return list;

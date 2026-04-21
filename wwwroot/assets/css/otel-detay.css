@@ -1091,10 +1091,39 @@
     color: #0f172a;
 }
 
-.room-price-box span {
+.room-price-tax-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+    max-width: 100%;
+    margin: 8px 0 12px;
+    margin-left: auto;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.25;
+    color: #92400e;
+    background: linear-gradient(135deg, rgba(254, 243, 199, 0.98) 0%, rgba(253, 230, 138, 0.65) 100%);
+    border: 1px solid rgba(217, 119, 6, 0.4);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+}
+
+.room-price-tax-label i {
+    font-size: 0.95rem;
+    color: #d97706;
+}
+
+.room-price-unavailable {
     display: block;
     margin: 6px 0 12px;
-    color: #64748b;
+    color: #94a3b8;
+    font-size: 0.88rem;
+    font-weight: 600;
 }
 
 .select-room-btn,
@@ -1218,6 +1247,22 @@
     font-weight: 700;
 }
 
+.review-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 10px;
+}
+
+.review-tags span {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(29, 78, 216, .08);
+    color: #1e3a8a;
+    font-weight: 600;
+}
+
 .map-card {
     overflow: hidden;
     min-height: 320px;
@@ -1320,6 +1365,39 @@
     color: #64748b;
 }
 
+.booking-tax-banner {
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(217, 119, 6, 0.42);
+    background: linear-gradient(145deg, rgba(254, 249, 195, 0.98) 0%, rgba(254, 215, 170, 0.55) 100%);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+.booking-tax-banner-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1rem;
+    color: #92400e;
+    line-height: 1.35;
+}
+
+.booking-tax-banner-title i {
+    margin-top: 3px;
+    color: #d97706;
+    font-size: 1.05rem;
+}
+
+.booking-tax-banner-text {
+    margin: 10px 0 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #78350f;
+    line-height: 1.5;
+}
+
 .discount-pill {
     padding: 8px 12px;
     border-radius: 999px;
@@ -1408,8 +1486,100 @@
 .price-breakdown > div:not(.price-breakdown-nightly) {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
     gap: 16px;
     color: #64748b;
+}
+
+.price-row-label-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    flex: 1;
+    min-width: 0;
+}
+
+.price-row-label-stack .price-row-primary {
+    font-weight: 700;
+    color: #334155;
+    line-height: 1.25;
+}
+
+.price-row-label-stack small {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.tax-rate-hint {
+    font-weight: 600;
+    color: #94a3b8;
+    margin-left: 2px;
+}
+
+.price-row.total .total-hint {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(15, 23, 42, 0.55);
+    margin-left: 6px;
+}
+
+.price-row-footnote {
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px dashed #dbe4f0;
+    font-size: 0.88rem !important;
+}
+
+.price-row-footnote strong {
+    font-weight: 700;
+    color: #475569 !important;
+}
+
+.booking-price-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 10px;
+}
+
+.booking-price-unit {
+    font-size: 0.95rem;
+    color: #64748b;
+}
+
+.booking-price-inclusive-hint {
+    margin: 8px 0 0;
+    padding: 0;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #047857;
+    letter-spacing: 0.01em;
+}
+
+.room-price-inclusive-label {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #047857;
+}
+
+.booking-price-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+}
+
+.booking-tax-inline-note {
+    margin-top: -4px;
+    margin-bottom: 14px;
 }
 
 .price-breakdown .total {
@@ -1484,6 +1654,27 @@
     font-size: .88rem;
     font-weight: 700;
     line-height: 1.5;
+}
+
+.booking-payment-mix {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(29, 78, 216, .15);
+    background: rgba(37, 99, 235, .06);
+}
+
+.booking-payment-mix-title {
+    margin: 0;
+    font-size: .82rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.booking-payment-mix label span {
+    font-weight: 600;
 }
 
 .booking-advanced-fields {
@@ -2027,6 +2218,25 @@ body.room-gallery-open {
     background: #fff;
     color: #0f172a;
     font-weight: 700;
+}
+
+.active-draft-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: #fff;
+    color: #b91c1c;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.92rem;
+}
+
+.active-draft-cancel:hover {
+    background: rgba(254, 226, 226, 0.65);
 }
 
 .room-card {
@@ -2769,8 +2979,21 @@ body.room-gallery-open {
     letter-spacing: -0.02em;
 }
 
-.otel-detail-template-v41 .room-price-box span {
-    font-size: 0.82rem;
+.otel-detail-template-v41 .room-price-tax-label {
+    font-size: 0.74rem;
+    padding: 9px 12px;
+}
+
+.otel-detail-template-v41 .booking-tax-banner {
+    margin-bottom: 14px;
+}
+
+.otel-detail-template-v41 .booking-tax-banner-title {
+    font-size: 1.02rem;
+}
+
+.otel-detail-template-v41 .booking-tax-banner-text {
+    font-size: 0.86rem;
 }
 
 .otel-detail-template-v41 .select-room-btn {
@@ -2926,9 +3149,14 @@ body.room-gallery-open {
 
 .otel-detail-template-v41 .booking-calm-note {
     margin: 12px 0 0;
-    color: #5b6d86;
-    font-size: 0.82rem;
-    line-height: 1.45;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #dbe4f0;
+    background: rgba(248, 250, 252, 0.95);
+    color: #334155;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.5;
 }
 
 .otel-detail-template-v41 .price-breakdown {
@@ -2985,6 +3213,21 @@ body.room-gallery-open {
 
 .otel-detail-template-v41 .price-row.total strong {
     color: #123a76;
+}
+
+.otel-detail-template-v41 .price-row.total span {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.otel-detail-template-v41 .price-row-footnote {
+    font-size: 0.86rem !important;
+}
+
+.otel-detail-template-v41 .booking-price-main {
+    width: 100%;
 }
 
 @media (max-width: 900px) {

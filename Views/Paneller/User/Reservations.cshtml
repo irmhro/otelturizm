@@ -111,6 +111,14 @@
                         <div class="reservation-footer">
                             <strong>@reservation.TotalText</strong>
                             <div class="action-row">
+                                @if (reservation.CanSubmitReview)
+                                {
+                                    <a asp-action="ReservationReview"
+                                       asp-route-reservationId="@reservation.ReservationId"
+                                       class="ghost-btn">
+                                        Konaklamayı değerlendir
+                                    </a>
+                                }
                                 <button type="button"
                                         class="ghost-btn"
                                         data-reservation-detail
