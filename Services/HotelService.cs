@@ -7,6 +7,7 @@ using otelturizmnew.Models.Anasayfa;
 using otelturizmnew.Models.Oteller;
 using otelturizmnew.Services.Abstractions;
 using System.Globalization;
+using System.Text.Json;
 using System.Text;
 
 namespace otelturizmnew.Services;
@@ -121,7 +122,7 @@ public class HotelService : IHotelService
                         g.gorsel_url,
                         ROW_NUMBER() OVER (PARTITION BY g.otel_id ORDER BY g.kapak_fotografi_mi DESC, g.one_cikan DESC, g.siralama ASC) AS rn
                     FROM otel_gorselleri g
-                    WHERE g.onay_durumu = N'Onaylandı'
+                    WHERE g.onay_durumu LIKE N'Onaylan%'
                       AND g.gorsel_url NOT LIKE '/uploads/logo/%'
                 ) g1
                 WHERE g1.rn = 1
@@ -156,7 +157,7 @@ public class HotelService : IHotelService
             var isFeatured = ReadFlag(reader, "one_cikan_otel");
             var isRecommended = ReadFlag(reader, "tavsiye_edilen_otel");
             var rating = reader.GetDecimal(reader.GetOrdinal("ortalama_puan"));
-            var reviewCount = reader.GetInt32(reader.GetOrdinal("toplam_yorum_sayisi"));
+            var reviewCount = ReadInt(reader, "toplam_yorum_sayisi");
             var imageUrl = reader.IsDBNull(reader.GetOrdinal("gorsel_url"))
                 ? string.Empty
                 : reader.GetString(reader.GetOrdinal("gorsel_url"));
@@ -587,7 +588,7 @@ public class HotelService : IHotelService
                         g.gorsel_url,
                         ROW_NUMBER() OVER (PARTITION BY g.otel_id ORDER BY g.kapak_fotografi_mi DESC, g.one_cikan DESC, g.siralama ASC) AS rn
                     FROM otel_gorselleri g
-                    WHERE g.onay_durumu = N'Onaylandı'
+                    WHERE g.onay_durumu LIKE N'Onaylan%'
                       AND g.gorsel_url NOT LIKE '/uploads/logo/%'
                 ) g1
                 WHERE g1.rn = 1
@@ -639,7 +640,7 @@ public class HotelService : IHotelService
             var district = reader.GetString(reader.GetOrdinal("ilce"));
             var hotelType = reader.GetString(reader.GetOrdinal("otel_turu"));
             var rating = reader.GetDecimal(reader.GetOrdinal("ortalama_puan"));
-            var reviewCount = reader.GetInt32(reader.GetOrdinal("toplam_yorum_sayisi"));
+            var reviewCount = ReadInt(reader, "toplam_yorum_sayisi");
             var summary = reader.GetString(reader.GetOrdinal("kisa_aciklama"));
             var isFeatured = ReadFlag(reader, "one_cikan_otel");
             var imageUrl = reader.IsDBNull(reader.GetOrdinal("gorsel_url")) ? string.Empty : reader.GetString(reader.GetOrdinal("gorsel_url"));
@@ -661,6 +662,7 @@ public class HotelService : IHotelService
                 Id = id,
                 HotelCode = hotelCode,
                 PropertyType = hotelType,
+                StarCount = reader.IsDBNull(reader.GetOrdinal("yildiz_sayisi")) ? null : reader.GetByte(reader.GetOrdinal("yildiz_sayisi")),
                 Name = name,
                 Slug = BuildSlug(name, hotelCode),
                 City = hotelCity,
@@ -892,7 +894,7 @@ public class HotelService : IHotelService
                 StarCount = reader.IsDBNull(reader.GetOrdinal("yildiz_sayisi")) ? (byte?)null : Convert.ToByte(reader.GetValue(reader.GetOrdinal("yildiz_sayisi")), CultureInfo.InvariantCulture),
                 Rating = reader.GetDecimal(reader.GetOrdinal("ortalama_puan")),
                 RatingText = BuildRatingText(reader.GetDecimal(reader.GetOrdinal("ortalama_puan"))),
-                ReviewCount = reader.GetInt32(reader.GetOrdinal("toplam_yorum_sayisi")),
+                ReviewCount = ReadInt(reader, "toplam_yorum_sayisi"),
                 CheckInTime = reader.IsDBNull(reader.GetOrdinal("check_in_saati")) ? null : reader.GetTimeSpan(reader.GetOrdinal("check_in_saati")),
                 CheckOutTime = reader.IsDBNull(reader.GetOrdinal("check_out_saati")) ? null : reader.GetTimeSpan(reader.GetOrdinal("check_out_saati")),
                 Latitude = reader.IsDBNull(reader.GetOrdinal("enlem")) ? null : reader.GetDecimal(reader.GetOrdinal("enlem")),
@@ -909,7 +911,7 @@ public class HotelService : IHotelService
             SELECT gorsel_url
             FROM otel_gorselleri
             WHERE otel_id = @hotelId
-              AND onay_durumu = N'Onaylandı'
+              AND onay_durumu LIKE N'Onaylan%'
               AND gorsel_url NOT LIKE '/uploads/logo/%'
             ORDER BY kapak_fotografi_mi DESC, one_cikan DESC, siralama ASC, id ASC;
             """;
@@ -964,7 +966,9 @@ public class HotelService : IHotelService
                 COALESCE(ot.maksimum_cocuk_sayisi, 0),
                 ot.yatak_tipi,
                 ot.oda_metrekare,
-                COALESCE(ot.standart_gecelik_fiyat, 0) AS standart_gecelik_fiyat
+                COALESCE(ot.standart_gecelik_fiyat, 0) AS standart_gecelik_fiyat,
+                COALESCE(ot.kapak_fotografi, '') AS kapak_fotografi,
+                COALESCE(ot.galeri, '') AS galeri
             FROM oda_tipleri ot
             WHERE ot.otel_id = @hotelId
               AND ot.aktif_mi = 1
@@ -984,6 +988,17 @@ public class HotelService : IHotelService
                 var bedType = roomsReader.IsDBNull(5) ? "Yatak bilgisi yok" : roomsReader.GetString(5);
                 ushort? squareMeter = roomsReader.IsDBNull(6) ? null : Convert.ToUInt16(roomsReader.GetValue(6), CultureInfo.InvariantCulture);
                 var roomPrice = roomsReader.GetDecimal(7);
+                var coverPhoto = NormalizeImageUrl(roomsReader.IsDBNull(8) ? string.Empty : roomsReader.GetString(8));
+                var galleryJson = roomsReader.IsDBNull(9) ? string.Empty : roomsReader.GetString(9);
+                var roomGalleryImages = ParseImageList(galleryJson);
+                if (!string.IsNullOrWhiteSpace(coverPhoto))
+                {
+                    roomGalleryImages.Insert(0, coverPhoto);
+                    roomGalleryImages = roomGalleryImages
+                        .Where(static item => !string.IsNullOrWhiteSpace(item))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                }
 
                 model.Rooms.Add(new HotelRoomViewModel
                 {
@@ -994,9 +1009,65 @@ public class HotelService : IHotelService
                     MaxGuestCount = maxGuests,
                     MaxAdultCount = maxAdults,
                     MaxChildCount = maxChildren,
+                    ImageUrl = roomGalleryImages.FirstOrDefault(),
+                    GalleryImages = roomGalleryImages,
                     Features = new List<HotelRoomFeatureViewModel>(),
                     CancellationText = "Ucretsiz iptal"
                 });
+            }
+        }
+
+        if (model.Rooms.Count > 0)
+        {
+            const string roomGallerySql = """
+                SELECT oda_tip_id, gorsel_url
+                FROM oda_gorselleri
+                WHERE oda_tip_id IN (SELECT id FROM oda_tipleri WHERE otel_id = @hotelId AND aktif_mi = 1)
+                  AND onay_durumu LIKE N'Onaylan%'
+                ORDER BY oda_tip_id ASC, kapak_fotografi_mi DESC, siralama ASC, id ASC;
+                """;
+            var roomGalleryMap = new Dictionary<long, List<string>>();
+            await using (var roomGalleryCommand = new SqlCommand(roomGallerySql, connection))
+            {
+                roomGalleryCommand.Parameters.AddWithValue("@hotelId", model.Id);
+                await using var roomGalleryReader = await roomGalleryCommand.ExecuteReaderAsync(cancellationToken);
+                while (await roomGalleryReader.ReadAsync(cancellationToken))
+                {
+                    var roomId = roomGalleryReader.GetInt64(0);
+                    var imageUrl = NormalizeImageUrl(roomGalleryReader.IsDBNull(1) ? string.Empty : roomGalleryReader.GetString(1));
+                    if (string.IsNullOrWhiteSpace(imageUrl))
+                    {
+                        continue;
+                    }
+
+                    if (!roomGalleryMap.TryGetValue(roomId, out var imageList))
+                    {
+                        imageList = new List<string>();
+                        roomGalleryMap[roomId] = imageList;
+                    }
+
+                    if (!imageList.Contains(imageUrl, StringComparer.OrdinalIgnoreCase))
+                    {
+                        imageList.Add(imageUrl);
+                    }
+                }
+            }
+
+            foreach (var room in model.Rooms)
+            {
+                if (roomGalleryMap.TryGetValue(room.RoomTypeId, out var galleryImages))
+                {
+                    room.GalleryImages = room.GalleryImages
+                        .Concat(galleryImages)
+                        .Where(static item => !string.IsNullOrWhiteSpace(item))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                }
+
+                if (string.IsNullOrWhiteSpace(room.ImageUrl))
+                {
+                    room.ImageUrl = room.GalleryImages.FirstOrDefault();
+                }
             }
         }
 
@@ -1093,6 +1164,29 @@ public class HotelService : IHotelService
         return "/" + imageUrl.TrimStart('~', '/').Replace("\\", "/");
     }
 
+    private static List<string> ParseImageList(string? galleryJson)
+    {
+        if (string.IsNullOrWhiteSpace(galleryJson))
+        {
+            return new List<string>();
+        }
+
+        try
+        {
+            var images = JsonSerializer.Deserialize<List<string>>(galleryJson);
+            return images?
+                .Select(NormalizeImageUrl)
+                .Where(static item => !string.IsNullOrWhiteSpace(item))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList()
+                ?? new List<string>();
+        }
+        catch
+        {
+            return new List<string>();
+        }
+    }
+
     private static bool ReadFlag(SqlDataReader reader, string columnName)
     {
         var ordinal = reader.GetOrdinal(columnName);
@@ -1114,6 +1208,17 @@ public class HotelService : IHotelService
                                   || string.Equals(stringValue, "evet", StringComparison.OrdinalIgnoreCase),
             _ => Convert.ToInt32(rawValue, CultureInfo.InvariantCulture) != 0
         };
+    }
+
+    private static int ReadInt(SqlDataReader reader, string columnName)
+    {
+        var ordinal = reader.GetOrdinal(columnName);
+        if (reader.IsDBNull(ordinal))
+        {
+            return 0;
+        }
+
+        return Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
     }
 
     private static List<string> BuildTags(bool isFeatured, decimal rating, int reviewCount, decimal? startingPrice)

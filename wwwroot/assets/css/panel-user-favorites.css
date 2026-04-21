@@ -3,6 +3,20 @@
     color: #64748b;
 }
 
+.favorites-notify-tip {
+    margin: 8px 0 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #475569;
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+
+.favorites-notify-tip i {
+    color: #0f5bd7;
+}
+
 .user-favorite-alert-banner {
     display: flex;
     align-items: center;

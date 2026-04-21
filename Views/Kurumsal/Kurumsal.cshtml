@@ -1,6 +1,7 @@
 @{
     Layout = null;
     ViewData["Title"] = "Kurumsal";
+    ViewData["HeaderContext"] = "corporate";
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -12,12 +13,14 @@
 
             <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/otelturizm-design-system.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/kurumsal.css" asp-append-version="true" />
 </head>
 <body class="corporate-page-body">
-    <partial name="~/Views/Kurumsal/_KurumsalHeader.cshtml" />
+    <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
 
     <main class="corporate-main">
         <partial name="~/Views/Kurumsal/_KurumsalContent.cshtml" />
@@ -30,11 +33,11 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
         (function () {
-            const header = document.getElementById('corporateHeader');
-            const overlay = document.getElementById('corporateMenuOverlay');
-            const drawer = document.getElementById('corporateMenuDrawer');
-            const toggle = document.getElementById('corporateMenuToggle');
-            const closeBtn = document.getElementById('corporateDrawerClose');
+            const header = document.getElementById('mainHeader');
+            const overlay = document.getElementById('mobileMenuOverlay');
+            const drawer = document.getElementById('mobileMenuDrawer');
+            const toggle = document.getElementById('mobileMenuToggle');
+            const closeBtn = document.getElementById('drawerClose');
 
             window.addEventListener('scroll', function () {
                 if (!header) {
@@ -60,59 +63,9 @@
                 document.body.style.overflow = '';
             }
 
-            function setupDropdown(rootId, storageKey) {
-                const root = document.getElementById(rootId);
-                if (!root) return;
-                const toggle = root.querySelector('.dropdown-toggle');
-                const menu = root.querySelector('.dropdown-menu');
-                const items = root.querySelectorAll('.dropdown-item');
-                const label = root.querySelector('.dropdown-label');
-                const flag = root.querySelector('.toggle-flag');
-                if (!toggle || !menu || !items.length || !label || !flag) return;
-
-                const applyItem = (item, save) => {
-                    const value = item.dataset.value || 'tr';
-                    const itemFlag = item.querySelector('.flag-icon');
-                    label.textContent = value.toUpperCase();
-                    if (itemFlag) {
-                        flag.className = itemFlag.className.replace('flag-icon', 'toggle-flag flag-icon').trim();
-                    }
-                    if (save && storageKey) {
-                        localStorage.setItem(storageKey, value);
-                    }
-                };
-
-                const saved = storageKey ? localStorage.getItem(storageKey) : null;
-                if (saved) {
-                    const target = Array.from(items).find(x => x.dataset.value === saved);
-                    if (target) applyItem(target, false);
-                }
-
-                toggle.addEventListener('click', () => {
-                    root.classList.toggle('open');
-                    toggle.setAttribute('aria-expanded', root.classList.contains('open') ? 'true' : 'false');
-                });
-
-                items.forEach(item => {
-                    item.addEventListener('click', () => {
-                        applyItem(item, true);
-                        root.classList.remove('open');
-                        toggle.setAttribute('aria-expanded', 'false');
-                    });
-                });
-
-                document.addEventListener('click', (event) => {
-                    if (!root.contains(event.target)) {
-                        root.classList.remove('open');
-                        toggle.setAttribute('aria-expanded', 'false');
-                    }
-                });
-            }
-
             toggle?.addEventListener('click', openMenu);
             closeBtn?.addEventListener('click', closeMenu);
             overlay?.addEventListener('click', closeMenu);
-            setupDropdown('corporateLanguageDropdown', 'site:language');
         })();
     </script>
 </body>

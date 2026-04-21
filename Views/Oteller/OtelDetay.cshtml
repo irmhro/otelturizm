@@ -31,8 +31,35 @@
     var overallBarWidth = Math.Min(100m, Model.Rating * 20m).ToString(System.Globalization.CultureInfo.InvariantCulture);
     var locationBarWidth = Math.Min(100m, Model.Rating > 0 ? Model.Rating * 20m + 4m : 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
     var comfortBarWidth = Math.Min(100m, Model.Rating > 0 ? Model.Rating * 20m - 2m : 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
-    var featuredAmenities = Model.Amenities.Take(4).ToList();
-    var hiddenAmenities = Model.Amenities.Skip(4).ToList();
+    var featuredAmenities = Model.Amenities
+        .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+        .Take(4)
+        .ToList();
+    var featuredAmenityFallbacks = new List<otelturizmnew.Models.Oteller.HotelAmenityViewModel>
+    {
+        new() { Name = "24 Saat Resepsiyon", IconClass = "fa-clock" },
+        new() { Name = "Ucretsiz WiFi", IconClass = "fa-wifi" },
+        new() { Name = "Restoran", IconClass = "fa-utensils" },
+        new() { Name = "Fitness Merkezi", IconClass = "fa-dumbbell" }
+    };
+    foreach (var fallbackItem in featuredAmenityFallbacks)
+    {
+        if (featuredAmenities.Count >= 4)
+        {
+            break;
+        }
+
+        if (featuredAmenities.Any(x => string.Equals(x.Name, fallbackItem.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            continue;
+        }
+
+        featuredAmenities.Add(fallbackItem);
+    }
+    var hiddenAmenities = Model.Amenities
+        .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+        .Skip(4)
+        .ToList();
     var initialNightCount = Math.Max(1, reservationForm.CheckOutDate.DayNumber - reservationForm.CheckInDate.DayNumber);
     var initialSubtotal = roomPriceSeed * initialNightCount * Math.Max(1, reservationForm.RoomCount);
     var initialVat = Math.Round(initialSubtotal * 0.10m, 0);
@@ -72,8 +99,20 @@
             weatherAccentIcon = "fa-snowflake";
         }
     }
+
+    string GetAmenitySubtext(string amenityName)
+    {
+        var value = amenityName.ToLowerInvariant();
+        if (value.Contains("havuz")) return "Ucretsiz kullanim";
+        if (value.Contains("spa") || value.Contains("hamam") || value.Contains("sauna")) return "Hamam, sauna, masaj";
+        if (value.Contains("restoran") || value.Contains("bar")) return "Gurme mutfak";
+        if (value.Contains("wifi") || value.Contains("wi-fi")) return "Tum odalarda";
+        if (value.Contains("otopark")) return "Vale ve acik otopark";
+        return "Tesis olanağı";
+    }
 }
 
+<div class="otel-detail-template-v41">
 <section class="detail-breadcrumb detail-breadcrumb-with-weather">
     <div class="detail-breadcrumb-left">
         <a asp-controller="Oteller" asp-action="OtelListeleme"><i class="fas fa-arrow-left"></i> Otellere Don</a>
@@ -95,6 +134,23 @@
             </button>
         }
     </div>
+ </section>
+ @if (gallery.Count > 0)
+ {
+    <section class="gallery-filmstrip-wrap" aria-label="Otel galerisi">
+        <div class="gallery-filmstrip">
+            @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
+            {
+                <button type="button"
+                        class="gallery-filmstrip-thumb @(imageIndex == 0 ? "active" : string.Empty)"
+                        data-gallery-index="@imageIndex"
+                        aria-label="Otel gorsel @(imageIndex + 1)">
+                    <img src="@gallery[imageIndex]" alt="@Model.Name gorsel @(imageIndex + 1)" />
+                </button>
+            }
+        </div>
+    </section>
+ }
     @if (gallery.Count > 1)
     {
         <div class="gallery-mobile-strip" id="galleryMobileStrip" aria-label="Mobil galeri slider">
@@ -118,7 +174,6 @@
             </div>
         </div>
     }
-</section>
 
 <div class="gallery-lightbox" id="galleryLightbox" hidden>
     <button type="button" class="gallery-lightbox-close" id="galleryLightboxClose" aria-label="Galeriyi kapat">
@@ -136,90 +191,102 @@
     </button>
 </div>
 
-<section class="detail-header">
-    <div>
-        <h1>@Model.Name</h1>
-        <div class="detail-stars">
+<section class="detail-header hotel-title-section">
+    <div class="hotel-name">
+        <h1>
             @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
             {
-                @for (var i = 0; i < Model.StarCount.Value; i++)
-                {
-                    <text>★</text>
-                }
+                <span class="detail-stars">
+                    @for (var i = 0; i < Model.StarCount.Value; i++)
+                    {
+                        <text>★</text>
+                    }
+                </span>
             }
-            else
-            {
-                <text>Konaklama Tesisi</text>
-            }
-        </div>
+            @Model.Name
+        </h1>
         <p class="detail-location"><i class="fas fa-location-dot"></i> @Model.Address</p>
 
-        @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
-        {
-            <div class="detail-utility-row">
-                <button type="button" class="weather-inline-trigger @weatherThemeClass" id="weatherPopupOpen" aria-haspopup="dialog" aria-controls="weatherPopup">
-                    <span class="weather-inline-icon">
-                        <i class="fas @(todayWeather?.IconClass ?? "fa-cloud-sun")"></i>
-                    </span>
-                    <span class="weather-inline-copy">
-                        <strong>Hava durumunu gor</strong>
-                        <small>@Model.Weather.LocationLabel • @(todayWeather?.ConditionText ?? string.Empty)</small>
-                    </span>
-                    <span class="weather-inline-badge">3 Gunluk</span>
-                </button>
-            </div>
-        }
     </div>
-    <div class="detail-actions">
-        <button type="button"
-                id="startConversationBtn"
-                class="conversation-btn"
-                data-hotel-slug="@Model.Slug"
-                data-authenticated="@(Model.IsLoggedInUser ? "true" : "false")"
-                data-can-start="@(Model.HasCompletedReservationAtHotel ? "true" : "false")"
-                data-info-message="@Model.ConversationInfoMessage">
-            <i class="far fa-comments"></i> Görüşme Başlat
-        </button>
-        <button type="button" id="shareHotelBtn" aria-haspopup="true" aria-expanded="false" aria-controls="shareMenu">
-            <i class="far fa-share-square"></i> Paylas
-        </button>
-        <div class="share-menu" id="shareMenu" hidden>
-            <p class="share-menu-title">Bu oteli paylas</p>
-            <div class="share-menu-grid">
-                <a href="#" data-share-platform="whatsapp" target="_blank" rel="noopener">
-                    <i class="fab fa-whatsapp"></i>
-                    <span>WhatsApp</span>
-                </a>
-                <a href="#" data-share-platform="facebook" target="_blank" rel="noopener">
-                    <i class="fab fa-facebook-f"></i>
-                    <span>Facebook</span>
-                </a>
-                <a href="#" data-share-platform="x" target="_blank" rel="noopener">
-                    <i class="fab fa-x-twitter"></i>
-                    <span>X</span>
-                </a>
-                <a href="#" data-share-platform="instagram" target="_blank" rel="noopener">
-                    <i class="fab fa-instagram"></i>
-                    <span>Instagram</span>
-                </a>
-                <a href="#" data-share-platform="telegram" target="_blank" rel="noopener">
-                    <i class="fab fa-telegram-plane"></i>
-                    <span>Telegram</span>
-                </a>
-                <button type="button" data-share-platform="copy">
-                    <i class="fas fa-link"></i>
-                    <span>Link Kopyala</span>
+    <div class="header-right-stack">
+        <div class="header-top-metrics">
+            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+            {
+                <div class="detail-utility-row">
+                    <button type="button" class="weather-inline-trigger @weatherThemeClass" id="weatherPopupOpen" aria-haspopup="dialog" aria-controls="weatherPopup">
+                        <span class="weather-inline-icon">
+                            <i class="fas @(todayWeather?.IconClass ?? "fa-cloud-sun")"></i>
+                        </span>
+                        <span class="weather-inline-copy">
+                            <strong>Hava durumunu gor</strong>
+                            <small>@Model.Weather.LocationLabel • @(todayWeather?.ConditionText ?? string.Empty)</small>
+                        </span>
+                        <span class="weather-inline-badge">3 Gunluk</span>
+                    </button>
+                </div>
+            }
+            <div class="rating-summary">
+                <div class="rating-big">
+                    <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
+                    <span class="rating-max">/10</span>
+                </div>
+                <div class="rating-text">
+                    <strong>@Model.RatingText</strong><br />
+                    <span>@(Model.ReviewCount > 0 ? $"{Model.ReviewCount} yorum" : "Henuz yorum yok")</span>
+                </div>
+            </div>
+        </div>
+        <div class="detail-actions">
+            <button type="button"
+                    id="startConversationBtn"
+                    class="conversation-btn"
+                    data-hotel-slug="@Model.Slug"
+                    data-authenticated="@(Model.IsLoggedInUser ? "true" : "false")"
+                    data-can-start="@(Model.HasCompletedReservationAtHotel ? "true" : "false")"
+                    data-info-message="@Model.ConversationInfoMessage">
+                <i class="far fa-comments"></i> Görüşme Başlat
+            </button>
+            <button type="button" id="shareHotelBtn" aria-haspopup="true" aria-expanded="false" aria-controls="shareMenu">
+                <i class="far fa-share-square"></i> Paylas
+            </button>
+            <div class="share-menu" id="shareMenu" hidden>
+                <p class="share-menu-title">Bu oteli paylas</p>
+                <div class="share-menu-grid">
+                    <a href="#" data-share-platform="whatsapp" target="_blank" rel="noopener">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>WhatsApp</span>
+                    </a>
+                    <a href="#" data-share-platform="facebook" target="_blank" rel="noopener">
+                        <i class="fab fa-facebook-f"></i>
+                        <span>Facebook</span>
+                    </a>
+                    <a href="#" data-share-platform="x" target="_blank" rel="noopener">
+                        <i class="fab fa-x-twitter"></i>
+                        <span>X</span>
+                    </a>
+                    <a href="#" data-share-platform="instagram" target="_blank" rel="noopener">
+                        <i class="fab fa-instagram"></i>
+                        <span>Instagram</span>
+                    </a>
+                    <a href="#" data-share-platform="telegram" target="_blank" rel="noopener">
+                        <i class="fab fa-telegram-plane"></i>
+                        <span>Telegram</span>
+                    </a>
+                    <button type="button" data-share-platform="copy">
+                        <i class="fas fa-link"></i>
+                        <span>Link Kopyala</span>
+                    </button>
+                </div>
+                <button type="button" class="share-more-btn" data-share-platform="more">
+                    <i class="fas fa-share-nodes"></i>
+                    Diger Platformlar
                 </button>
             </div>
-            <button type="button" class="share-more-btn" data-share-platform="more">
-                <i class="fas fa-share-nodes"></i>
-                Diger Platformlar
+            <button type="button" id="saveHotelBtn" class="favorite-btn @(Model.IsFavorite ? "active" : string.Empty)" data-hotel-id="@Model.Id" data-source-page="OtelDetay">
+                <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart"></i>
+                <span data-favorite-label>@(Model.IsFavorite ? "Kaydedildi" : "Kaydet")</span>
             </button>
         </div>
-        <button type="button" id="saveHotelBtn" class="favorite-btn @(Model.IsFavorite ? "active" : string.Empty)" data-hotel-id="@Model.Id" data-source-page="OtelDetay">
-            <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart"></i>
-            <span data-favorite-label>@(Model.IsFavorite ? "Kaydedildi" : "Kaydet")</span>
-        </button>
     </div>
 </section>
 
@@ -260,15 +327,25 @@
             <div class="amenities-grid amenities-grid-lux">
                 @foreach (var item in featuredAmenities)
                 {
-                    <div class="amenity-item amenity-item-lux"><i class="fas @item.IconClass"></i> @item.Name</div>
+                    <div class="amenity-item amenity-item-lux">
+                        <i class="fas @item.IconClass"></i>
+                        <span class="amenity-copy">
+                            <strong>@item.Name</strong>
+                            <small>@GetAmenitySubtext(item.Name)</small>
+                        </span>
+                    </div>
+                }
+                @if (hiddenAmenities.Count > 0)
+                {
+                    <button type="button" class="amenity-item amenity-item-lux amenities-action-item" id="openAmenitiesModal">
+                        <i class="fas fa-plus"></i>
+                        <span class="amenity-copy">
+                            <strong>Diger ozellikler</strong>
+                            <small>@hiddenAmenities.Count ozellik daha</small>
+                        </span>
+                    </button>
                 }
             </div>
-            @if (hiddenAmenities.Count > 0)
-            {
-                <button type="button" class="amenities-more-btn" id="openAmenitiesModal">
-                    Diger ozellikler (@hiddenAmenities.Count)
-                </button>
-            }
         </article>
 
         <article class="content-card">
@@ -291,12 +368,52 @@
             <div class="room-list">
                 @foreach (var room in Model.Rooms)
                 {
+                    var roomGallery = room.GalleryImages.Count > 0
+                        ? room.GalleryImages
+                        : (!string.IsNullOrWhiteSpace(room.ImageUrl) ? new List<string> { room.ImageUrl } : new List<string>());
+                    var roomGalleryJson = System.Text.Json.JsonSerializer.Serialize(roomGallery);
+                    var roomCoverImage = !string.IsNullOrWhiteSpace(room.ImageUrl)
+                        ? room.ImageUrl
+                        : roomGallery.FirstOrDefault();
+
                     <div class="room-card">
                         <div class="room-card-main">
                             <div class="room-card-media">
-                                @if (!string.IsNullOrWhiteSpace(room.ImageUrl))
+                                @if (!string.IsNullOrWhiteSpace(roomCoverImage))
                                 {
-                                    <img src="@room.ImageUrl" alt="@room.Name" />
+                                    <div class="room-card-cover">
+                                        <button type="button"
+                                                class="room-gallery-trigger"
+                                                data-room-name="@room.Name"
+                                                data-room-gallery='@roomGalleryJson'
+                                                data-room-gallery-start="0"
+                                                aria-label="@room.Name galerisi">
+                                            <img src="@roomCoverImage" alt="@room.Name" />
+                                            @if (roomGallery.Count > 1)
+                                            {
+                                                <span class="room-gallery-count">
+                                                    <i class="fas fa-images"></i>
+                                                    @roomGallery.Count gorsel
+                                                </span>
+                                            }
+                                        </button>
+                                    </div>
+                                    @if (roomGallery.Count > 1)
+                                    {
+                                        <div class="room-thumb-strip" aria-label="@room.Name gorselleri">
+                                            @for (var imageIndex = 0; imageIndex < roomGallery.Count; imageIndex++)
+                                            {
+                                                <button type="button"
+                                                        class="room-gallery-trigger room-thumb-item @(imageIndex == 0 ? "active" : string.Empty)"
+                                                        data-room-name="@room.Name"
+                                                        data-room-gallery='@roomGalleryJson'
+                                                        data-room-gallery-start="@imageIndex"
+                                                        aria-label="@room.Name gorsel @(imageIndex + 1)">
+                                                    <img src="@roomGallery[imageIndex]" alt="@room.Name gorsel @(imageIndex + 1)" />
+                                                </button>
+                                            }
+                                        </div>
+                                    }
                                 }
                                 else
                                 {
@@ -355,6 +472,28 @@
                         </div>
                     </div>
                 }
+            </div>
+
+            <div class="room-gallery-modal" id="roomGalleryModal" hidden>
+                <div class="room-gallery-backdrop" data-room-gallery-close></div>
+                <div class="room-gallery-dialog" role="dialog" aria-modal="true" aria-labelledby="roomGalleryTitle">
+                    <button type="button" class="room-gallery-close" data-room-gallery-close aria-label="Galeri kapat">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="room-gallery-stage">
+                        <button type="button" class="room-gallery-nav prev" id="roomGalleryPrev" aria-label="Onceki gorsel">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <figure class="room-gallery-figure">
+                            <img src="" alt="" id="roomGalleryMainImage" />
+                            <figcaption id="roomGalleryTitle"></figcaption>
+                        </figure>
+                        <button type="button" class="room-gallery-nav next" id="roomGalleryNext" aria-label="Sonraki gorsel">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="room-gallery-thumbs" id="roomGalleryThumbs"></div>
+                </div>
             </div>
         </article>
 
@@ -439,6 +578,10 @@
                 </div>
                 <span class="discount-pill">Akilli fiyat</span>
             </div>
+            <p class="booking-confidence-note">
+                <i class="fas fa-shield-alt"></i>
+                Fiyatlar seffaf gorunur, odeme oncesi tum vergiler net gosterilir.
+            </p>
 
             <form class="booking-form" id="bookingForm" method="post" action="/oteller/@Model.Slug/rezervasyon">
                 @Html.AntiForgeryToken()
@@ -508,8 +651,8 @@
                     </select>
                 </label>
 
-                <details class="booking-advanced-fields" id="bookingAdvancedFields" open>
-                    <summary>Ek rezervasyon detaylari</summary>
+                <details class="booking-advanced-fields" id="bookingAdvancedFields">
+                    <summary><i class="fas fa-angle-down"></i> Ek rezervasyon detaylari</summary>
                     <div class="booking-advanced-grid">
                         <label>
                             <span>Odeme Tipi</span>
@@ -523,6 +666,9 @@
                             <input type="text" value="@(Model.CheckInTime?.ToString(@"hh\:mm") ?? "14:00") / @(Model.CheckOutTime?.ToString(@"hh\:mm") ?? "12:00")" readonly />
                         </label>
                     </div>
+                    <p class="booking-advanced-tip">
+                        Iptal, tarih ve oda kosullari secilen oda tipine gore rezervasyon adiminda tekrar onaylanir.
+                    </p>
                     <div class="booking-payment-note" id="bookingPaymentNote" hidden>
                         Online ödeme altyapısı geliştiriliyor. Şimdilik rezervasyonlar kapıda ödeme ile tamamlanabiliyor.
                     </div>
@@ -532,12 +678,13 @@
             </form>
 
             <div class="booking-quote-notice" id="bookingQuoteNotice" hidden></div>
+            <p class="booking-calm-note">Sürpriz ücret yok: KDV ve konaklama vergisi toplam fiyatın içinde şeffaf görünür.</p>
             <div class="price-breakdown" id="priceBreakdown">
-                <div><span>₺@roomPriceSeed.ToString("N0") x @initialNightCount gece</span><strong>₺@initialSubtotal.ToString("N0")</strong></div>
-                <div><span>KDV</span><strong>₺@initialVat.ToString("N0")</strong></div>
-                <div><span>Konaklama Vergisi</span><strong>₺@initialAccommodationTax.ToString("N0")</strong></div>
-                <div><span>Vergi ve Harclar</span><strong>₺@initialTax.ToString("N0")</strong></div>
-                <div class="total"><span>Toplam</span><strong>₺@initialTotal.ToString("N0")</strong></div>
+                <div class="price-row price-row-subtotal"><span>₺@roomPriceSeed.ToString("N0") x @initialNightCount gece</span><strong>₺@initialSubtotal.ToString("N0")</strong></div>
+                <div class="price-row price-row-tax"><span>KDV</span><strong>₺@initialVat.ToString("N0")</strong></div>
+                <div class="price-row price-row-tax"><span>Konaklama Vergisi</span><strong>₺@initialAccommodationTax.ToString("N0")</strong></div>
+                <div class="price-row price-row-tax"><span>Vergi ve Harclar</span><strong>₺@initialTax.ToString("N0")</strong></div>
+                <div class="price-row total"><span>Toplam</span><strong>₺@initialTotal.ToString("N0")</strong></div>
             </div>
         </div>
     </aside>
@@ -732,6 +879,7 @@
         </div>
     </section>
 }
+</div>
 
 @section Scripts {
     <script>
@@ -879,6 +1027,10 @@
                 const safeIndex = Math.min(Math.max(index, 0), galleryImages.length - 1);
                 activeGalleryIndex = safeIndex;
                 mainImage.src = galleryImages[safeIndex];
+                document.querySelectorAll('.gallery-thumb, .gallery-filmstrip-thumb').forEach(function (thumb) {
+                    const thumbIndex = parseInt(thumb.getAttribute('data-gallery-index') || '0', 10);
+                    thumb.classList.toggle('active', thumbIndex === safeIndex);
+                });
                 setActiveMobileDot(safeIndex);
             }
 
@@ -925,6 +1077,14 @@
                 button.addEventListener('click', function () {
                     const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
                     syncMainImage(index);
+                });
+            });
+
+            document.querySelectorAll('.gallery-filmstrip-thumb').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
+                    syncMainImage(index);
+                    openLightbox(index);
                 });
             });
 
@@ -1403,11 +1563,11 @@
                     const nightlyHtml = renderNightlyBreakdown(quote.nightlyBreakdown);
                     breakdown.innerHTML =
                         nightlyHtml +
-                        '<div><span>' + formatMoney(quote.nightlyPrice) + ' x ' + quote.nightCount + ' gece</span><strong>' + formatMoney(quote.roomTotal) + '</strong></div>' +
-                        '<div><span>KDV (%' + Number(quote.vatRate || 0).toFixed(2).replace(/\\.00$/, '') + ')</span><strong>' + formatMoney(quote.vatAmount || 0) + '</strong></div>' +
-                        '<div><span>Konaklama Vergisi (%' + Number(quote.accommodationTaxRate || 0).toFixed(2).replace(/\\.00$/, '') + ')</span><strong>' + formatMoney(quote.accommodationTaxAmount || 0) + '</strong></div>' +
-                        '<div><span>Vergi ve Harçlar</span><strong>' + formatMoney(quote.taxAmount) + '</strong></div>' +
-                        '<div class="total"><span>Toplam</span><strong>' + formatMoney(quote.totalAmount) + '</strong></div>';
+                        '<div class="price-row price-row-subtotal"><span>' + formatMoney(quote.nightlyPrice) + ' x ' + quote.nightCount + ' gece</span><strong>' + formatMoney(quote.roomTotal) + '</strong></div>' +
+                        '<div class="price-row price-row-tax"><span>KDV (%' + Number(quote.vatRate || 0).toFixed(2).replace(/\\.00$/, '') + ')</span><strong>' + formatMoney(quote.vatAmount || 0) + '</strong></div>' +
+                        '<div class="price-row price-row-tax"><span>Konaklama Vergisi (%' + Number(quote.accommodationTaxRate || 0).toFixed(2).replace(/\\.00$/, '') + ')</span><strong>' + formatMoney(quote.accommodationTaxAmount || 0) + '</strong></div>' +
+                        '<div class="price-row price-row-tax"><span>Vergi ve Harçlar</span><strong>' + formatMoney(quote.taxAmount) + '</strong></div>' +
+                        '<div class="price-row total"><span>Toplam</span><strong>' + formatMoney(quote.totalAmount) + '</strong></div>';
 
                     const reserveButton = bookingForm?.querySelector('.reserve-btn');
                     if (quote.isAvailable === false) {
@@ -1430,11 +1590,11 @@
                     setQuoteNotice('Günlük fiyat dökümü alınamadı, varsayılan oda fiyatı gösteriliyor.', 'info');
                     bookingForm?.querySelector('.reserve-btn')?.removeAttribute('disabled');
                     breakdown.innerHTML =
-                        '<div><span>' + formatMoney(fallbackNightly) + ' x ' + nights + ' gece</span><strong>' + formatMoney(subtotal) + '</strong></div>' +
-                        '<div><span>KDV</span><strong>' + formatMoney(vat) + '</strong></div>' +
-                        '<div><span>Konaklama Vergisi</span><strong>' + formatMoney(accommodationTax) + '</strong></div>' +
-                        '<div><span>Vergi ve Harçlar</span><strong>' + formatMoney(tax) + '</strong></div>' +
-                        '<div class="total"><span>Toplam</span><strong>' + formatMoney(total) + '</strong></div>';
+                        '<div class="price-row price-row-subtotal"><span>' + formatMoney(fallbackNightly) + ' x ' + nights + ' gece</span><strong>' + formatMoney(subtotal) + '</strong></div>' +
+                        '<div class="price-row price-row-tax"><span>KDV</span><strong>' + formatMoney(vat) + '</strong></div>' +
+                        '<div class="price-row price-row-tax"><span>Konaklama Vergisi</span><strong>' + formatMoney(accommodationTax) + '</strong></div>' +
+                        '<div class="price-row price-row-tax"><span>Vergi ve Harçlar</span><strong>' + formatMoney(tax) + '</strong></div>' +
+                        '<div class="price-row total"><span>Toplam</span><strong>' + formatMoney(total) + '</strong></div>';
                 }
             }
 
@@ -1635,6 +1795,114 @@
             syncPaymentMethodState();
             refreshPriceQuote();
             paymentMethodSelect?.addEventListener('change', syncPaymentMethodState);
+        })();
+    </script>
+    <script>
+        (function () {
+            const modal = document.getElementById('roomGalleryModal');
+            const mainImage = document.getElementById('roomGalleryMainImage');
+            const title = document.getElementById('roomGalleryTitle');
+            const thumbs = document.getElementById('roomGalleryThumbs');
+            const prevButton = document.getElementById('roomGalleryPrev');
+            const nextButton = document.getElementById('roomGalleryNext');
+            const triggers = document.querySelectorAll('.room-gallery-trigger');
+            let galleryItems = [];
+            let currentIndex = 0;
+            let currentRoomName = '';
+
+            function renderGallery() {
+                if (!mainImage || !title || !thumbs || galleryItems.length === 0) {
+                    return;
+                }
+
+                mainImage.src = galleryItems[currentIndex];
+                mainImage.alt = currentRoomName + ' gorsel ' + (currentIndex + 1);
+                title.textContent = currentRoomName + ' · ' + (currentIndex + 1) + '/' + galleryItems.length;
+                thumbs.innerHTML = galleryItems.map(function (item, index) {
+                    const isActive = index === currentIndex ? 'active' : '';
+                    return '<button type="button" class="room-gallery-thumb ' + isActive + '" data-room-thumb-index="' + index + '">' +
+                        '<img src="' + item + '" alt="' + currentRoomName + ' kucuk gorsel ' + (index + 1) + '">' +
+                        '</button>';
+                }).join('');
+
+                thumbs.querySelectorAll('[data-room-thumb-index]').forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        currentIndex = Number(button.getAttribute('data-room-thumb-index') || '0');
+                        renderGallery();
+                    });
+                });
+            }
+
+            function openGallery(items, roomName, startIndex) {
+                if (!modal || !items || items.length === 0) {
+                    return;
+                }
+
+                galleryItems = items;
+                currentRoomName = roomName || 'Oda';
+                currentIndex = Math.max(0, Math.min(startIndex || 0, items.length - 1));
+                renderGallery();
+                modal.hidden = false;
+                document.body.classList.add('room-gallery-open');
+            }
+
+            function closeGallery() {
+                if (!modal) {
+                    return;
+                }
+
+                modal.hidden = true;
+                document.body.classList.remove('room-gallery-open');
+            }
+
+            triggers.forEach(function (trigger) {
+                trigger.addEventListener('click', function () {
+                    const rawGallery = trigger.getAttribute('data-room-gallery') || '[]';
+                    const startIndex = Number(trigger.getAttribute('data-room-gallery-start') || '0');
+                    try {
+                        const items = JSON.parse(rawGallery);
+                        openGallery(Array.isArray(items) ? items : [], trigger.getAttribute('data-room-name') || 'Oda', startIndex);
+                    } catch (_error) {
+                        openGallery([], trigger.getAttribute('data-room-name') || 'Oda', startIndex);
+                    }
+                });
+            });
+
+            document.querySelectorAll('[data-room-gallery-close]').forEach(function (button) {
+                button.addEventListener('click', closeGallery);
+            });
+
+            prevButton?.addEventListener('click', function () {
+                if (galleryItems.length === 0) {
+                    return;
+                }
+
+                currentIndex = (currentIndex - 1 + galleryItems.length) % galleryItems.length;
+                renderGallery();
+            });
+
+            nextButton?.addEventListener('click', function () {
+                if (galleryItems.length === 0) {
+                    return;
+                }
+
+                currentIndex = (currentIndex + 1) % galleryItems.length;
+                renderGallery();
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (!modal || modal.hidden) {
+                    return;
+                }
+
+                if (event.key === 'Escape') {
+                    closeGallery();
+                } else if (event.key === 'ArrowLeft') {
+                    prevButton?.click();
+                } else if (event.key === 'ArrowRight') {
+                    nextButton?.click();
+                }
+            });
         })();
     </script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />

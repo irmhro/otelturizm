@@ -40,6 +40,7 @@ public class HotelListingCardViewModel
     public long Id { get; set; }
     public string HotelCode { get; set; } = string.Empty;
     public string PropertyType { get; set; } = string.Empty;
+    public int? StarCount { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
@@ -111,6 +112,7 @@ public class HotelRoomViewModel
     public byte MaxAdultCount { get; set; }
     public byte MaxChildCount { get; set; }
     public string? ImageUrl { get; set; }
+    public List<string> GalleryImages { get; set; } = new();
     public List<HotelRoomFeatureViewModel> Features { get; set; } = new();
     public string CancellationText { get; set; } = "Ucretsiz iptal";
 }

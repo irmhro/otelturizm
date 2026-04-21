@@ -65,12 +65,12 @@
 
     <label class="checkbox-stack">
         <input type="checkbox" name="acceptTerms" value="true" required />
-        <span><a href="/sozlesmeler/kullanici-kullanim-kosullari" target="_blank" rel="noopener">Kullanım Koşulları</a> sözleşmesini kabul ediyorum.</span>
+        <span><a href="/sozlesmeler/kullanici-kullanim-kosullari" data-contract-popup data-contract-title="Kullanici Kullanim Kosullari">Kullanım Koşulları</a> sözleşmesini kabul ediyorum.</span>
     </label>
 
     <label class="checkbox-stack">
         <input type="checkbox" name="acceptKvkk" value="true" required />
-        <span><a href="/sozlesmeler/kullanici-kvkk-aydinlatma" target="_blank" rel="noopener">KVKK Aydınlatma Metni</a> kapsamında verilerimin işlenmesini onaylıyorum.</span>
+        <span><a href="/sozlesmeler/kullanici-kvkk-aydinlatma" data-contract-popup data-contract-title="Kullanici KVKK Aydinlatma Metni">KVKK Aydınlatma Metni</a> kapsamında verilerimin işlenmesini onaylıyorum.</span>
     </label>
 
     <label class="checkbox-stack">
@@ -82,3 +82,4 @@
 </form>
 
 <p class="auth-helper">Zaten üye misin? <button type="button" class="text-button" data-switch-tab="loginPanel">Giriş yap</button></p>
+<partial name="~/Views/Register/_ContractPopupModal.cshtml" />

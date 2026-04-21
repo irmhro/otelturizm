@@ -81,38 +81,61 @@
 
 <div class="mobile-menu-overlay" id="corporateMenuOverlay"></div>
 <div class="mobile-menu-drawer corporate-menu-drawer" id="corporateMenuDrawer">
-    <div class="drawer-header">
-        <div class="drawer-user">
-            <div class="user-avatar corporate-avatar">
-                <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
+    <div class="drawer-scroll">
+        <div class="drawer-header">
+            <div class="drawer-user">
+                <div class="drawer-brand-mark corporate-drawer-brand">
+                    <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="drawer-brand-logo" />
+                </div>
             </div>
-            <div>
-                <h4>Otelturizm Kurumsal</h4>
-                <p>Kurumsal hızlı erişim menüsü</p>
-            </div>
+            <button class="drawer-close" id="corporateDrawerClose" type="button"><i class="fas fa-times"></i></button>
         </div>
-        <button class="drawer-close" id="corporateDrawerClose" type="button"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="drawer-nav">
-        <div class="drawer-section">
-            <div class="drawer-section-title">Kurumsal Menü</div>
-            <a href="/" class="drawer-link"><i class="fas fa-home"></i> Anasayfa</a>
-            <a href="/kurumsal" class="drawer-link"><i class="fas fa-building"></i> Kurumsal</a>
-            @if (corporateAuthenticated)
-            {
-                <a href="@corporatePanelUrl" class="drawer-link"><i class="fas fa-grid-2"></i> @corporatePanelLabel</a>
-                <form method="post" action="/cikis-yap" class="drawer-inline-form">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="drawer-link drawer-link-button"><i class="fas fa-right-from-bracket"></i> Çıkış</button>
-                </form>
-            }
-            else
-            {
-                <a href="/firma-giris" class="drawer-link"><i class="fas fa-building-user"></i> Firma Girişi</a>
-                <a href="/partner-giris" class="drawer-link"><i class="fas fa-briefcase"></i> Partner Girişi</a>
-                <a href="/kullanici-giris" class="drawer-link"><i class="fas fa-user"></i> Kullanıcı Girişi</a>
-            }
-            <a href="/yardim-merkezi" class="drawer-link"><i class="fas fa-headset"></i> Destek</a>
+
+        <div class="drawer-nav">
+            <div class="drawer-auth-row">
+                @if (corporateAuthenticated)
+                {
+                    <a href="@corporatePanelUrl" class="drawer-action primary"><i class="fas fa-grid-2"></i> @corporatePanelLabel</a>
+                    <form method="post" action="/cikis-yap" class="drawer-inline-form">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="drawer-action outline"><i class="fas fa-right-from-bracket"></i> Çıkış</button>
+                    </form>
+                }
+                else
+                {
+                    <a href="/partner-giris" class="drawer-action primary"><i class="fas fa-briefcase"></i> Partner Girişi</a>
+                    <a href="/kullanici-giris" class="drawer-action outline"><i class="fas fa-user"></i> Kayıt Ol</a>
+                }
+            </div>
+
+            <div class="drawer-quick-features">
+                <a href="/kurumsal" class="feature-tile"><i class="fas fa-building"></i><span>Kurumsal</span></a>
+                <a href="/firma-giris" class="feature-tile"><i class="fas fa-building-user"></i><span>Firma Girişi</span></a>
+                <a href="/partner-giris" class="feature-tile"><i class="fas fa-briefcase"></i><span>Partner Programı</span></a>
+                <a href="/yardim-merkezi" class="feature-tile"><i class="fas fa-headset"></i><span>Canlı Destek</span></a>
+            </div>
+
+            <div class="drawer-section">
+                <div class="drawer-section-title">Öne Çıkan Fırsatlar</div>
+                <div class="drawer-promo-grid">
+                    <a href="/kampanyalar" class="drawer-action outline promo-link"><i class="fas fa-bolt"></i> Kurumsal Kampanya</a>
+                    <a href="/kampanyalar" class="drawer-action outline promo-link"><i class="fas fa-tags"></i> Özel İndirimler</a>
+                    <a href="/yardim-merkezi" class="drawer-action outline promo-link"><i class="fas fa-phone-volume"></i> Hızlı Destek</a>
+                    <a href="/firma" class="drawer-action outline promo-link"><i class="fas fa-briefcase"></i> İş Seyahati</a>
+                </div>
+            </div>
+
+            <div class="drawer-corp-row">
+                <a href="/kurumsal" class="drawer-action ghost"><i class="fas fa-building"></i> Kurumsal</a>
+                <a href="/firma" class="drawer-action ghost"><i class="fas fa-briefcase"></i> Firma</a>
+            </div>
+
+            <div class="drawer-section">
+                <div class="drawer-section-title">Menü</div>
+                <a href="/" class="drawer-link"><i class="fas fa-home"></i> Anasayfa</a>
+                <a href="/kurumsal" class="drawer-link"><i class="fas fa-building"></i> Kurumsal</a>
+                <a href="/yardim-merkezi" class="drawer-link"><i class="fas fa-headset"></i> Destek</a>
+            </div>
         </div>
     </div>
 </div>

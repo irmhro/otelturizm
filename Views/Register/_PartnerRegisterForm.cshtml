@@ -220,12 +220,12 @@
 
     <label class="checkbox-stack">
         <input type="checkbox" name="acceptAgreement" value="true" required />
-        <span><a href="/sozlesmeler/partner-basvuru-sozlesmesi" target="_blank" rel="noopener">Partner sözleşmesi ve komisyon politikasını</a> kabul ediyorum.</span>
+        <span><a href="/sozlesmeler/partner-basvuru-sozlesmesi" data-contract-popup data-contract-title="Partner Basvuru Sozlesmesi">Partner sözleşmesi ve komisyon politikasını</a> kabul ediyorum.</span>
     </label>
 
     <label class="checkbox-stack">
         <input type="checkbox" name="acceptKvkk" value="true" required />
-        <span><a href="/sozlesmeler/partner-kvkk-aydinlatma" target="_blank" rel="noopener">KVKK aydınlatma metnini</a> okudum, başvuru bilgilerimin incelenmesini onaylıyorum.</span>
+        <span><a href="/sozlesmeler/partner-kvkk-aydinlatma" data-contract-popup data-contract-title="Partner KVKK Aydinlatma Metni">KVKK aydınlatma metnini</a> okudum, başvuru bilgilerimin incelenmesini onaylıyorum.</span>
     </label>
 
     <label class="checkbox-stack">
@@ -237,3 +237,4 @@
 </form>
 
 <p class="auth-helper">Zaten partner misiniz? <button type="button" class="text-button" data-switch-tab="partnerLoginPanel">Extranet'e giriş yapın</button></p>
+<partial name="~/Views/Register/_ContractPopupModal.cshtml" />

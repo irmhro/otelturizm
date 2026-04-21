@@ -37,7 +37,7 @@ body.firma-mobile-open {
 }
 
 .site-shell {
-    width: min(1280px, calc(100% - 48px));
+    width: min(var(--page-max-width), calc(100% - 48px));
     margin: 0 auto;
 }
 
@@ -57,7 +57,7 @@ body.firma-mobile-open {
 
 .utility-container,
 .header-container {
-    width: min(1280px, calc(100% - 48px));
+    width: min(var(--page-max-width), calc(100% - 48px));
     margin: 0 auto;
 }
 
@@ -525,6 +525,18 @@ body.firma-mobile-open {
     transform: translateY(-4px);
 }
 
+.firma-tier-card.highlight .firma-tier-name {
+    font-size: clamp(1.05rem, 2.1vw, 1.26rem);
+}
+
+.firma-tier-card.highlight .firma-tier-discount {
+    font-size: clamp(2rem, 3.2vw, 2.36rem);
+}
+
+.firma-tier-card:last-child .firma-tier-discount {
+    font-size: 31px;
+}
+
 .firma-tier-icon {
     font-size: 40px;
     margin-bottom: 14px;
@@ -752,6 +764,21 @@ body.firma-mobile-open {
 
     .mobile-nav-toggle {
         display: inline-flex;
+    }
+
+    .header-container.firma-header-container {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        min-height: 64px;
+        position: relative;
+    }
+
+    .header-container.firma-header-container .logo-area {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        gap: 0;
     }
 
     .firma-hero-section,
@@ -1001,7 +1028,7 @@ body.firma-mobile-open {
     .site-shell,
     .utility-container,
     .header-container {
-        width: min(100% - 28px, 1280px);
+        width: min(100% - 28px, var(--page-max-width));
     }
 
     .utility-left {
@@ -1035,5 +1062,932 @@ body.firma-mobile-open {
     .firma-section-title h2,
     .firma-cta-section h2 {
         font-size: 30px;
+    }
+}
+
+@media (max-width: 980px) {
+    .mobile-menu-drawer.firma-menu-drawer {
+        top: 0;
+        right: -100vw;
+        width: min(100vw, 520px);
+        max-width: 100vw;
+        height: 100vh;
+        padding: 0;
+        background: #fff;
+        box-shadow: -10px 0 30px rgba(15, 23, 42, 0.18);
+        transform: none;
+        transition: right .35s cubic-bezier(.16, 1, .3, 1);
+        overflow-y: auto;
+    }
+
+    .mobile-menu-drawer.firma-menu-drawer.is-visible {
+        right: 0;
+    }
+
+    .firma-menu-drawer .drawer-scroll {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .firma-menu-drawer .drawer-header {
+        padding: 18px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.26);
+        background: #fff;
+    }
+
+    .firma-menu-drawer .drawer-brand-mark.firma-drawer-brand {
+        width: auto;
+        height: 34px;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+    }
+
+    .firma-menu-drawer .drawer-brand-logo {
+        width: auto;
+        height: 34px;
+        object-fit: contain;
+    }
+
+    .firma-menu-drawer .drawer-close {
+        color: var(--text-dark);
+        border: 0;
+        background: transparent;
+    }
+
+    .firma-menu-drawer .drawer-nav {
+        padding: 14px;
+    }
+
+    .firma-menu-drawer .drawer-auth-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 2px 2px 10px;
+    }
+
+    .firma-menu-drawer .drawer-inline-form {
+        margin: 0;
+    }
+
+    .firma-menu-drawer .drawer-inline-form .drawer-action {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.38);
+        background: rgba(255, 255, 255, 0.92);
+        color: #0f172a;
+        cursor: pointer;
+    }
+
+    .firma-menu-drawer .drawer-action {
+        border-radius: 12px;
+        min-height: 46px;
+        font-size: 0.95rem;
+    }
+
+    .firma-menu-drawer .drawer-action.primary {
+        background: linear-gradient(135deg, #0f5bd7, #2563eb);
+        color: #fff;
+        border: 1px solid rgba(147, 197, 253, 0.26);
+    }
+
+    .firma-menu-drawer .drawer-action.outline {
+        border: 1px solid rgba(148, 163, 184, 0.38);
+        background: rgba(255, 255, 255, 0.92);
+        color: #0f172a;
+    }
+
+    .firma-menu-drawer .drawer-action.ghost {
+        background: rgba(15, 23, 42, 0.04);
+        color: var(--text-dark);
+        border: 1px solid rgba(148, 163, 184, 0.42);
+    }
+
+    .firma-menu-drawer .drawer-quick-features {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 8px 2px 14px;
+    }
+
+    .firma-menu-drawer .feature-tile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 10px;
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.97), rgba(226, 232, 240, 0.88));
+        border: 1px solid rgba(148, 163, 184, 0.32);
+        color: #0f172a;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.88rem;
+        box-shadow: 0 8px 18px rgba(2, 32, 71, 0.2);
+    }
+
+    .firma-menu-drawer .feature-tile i {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #003b95, #0c5adb);
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .firma-menu-drawer .drawer-section {
+        padding: 12px 16px;
+        border-top: 1px solid rgba(148, 163, 184, 0.24);
+    }
+
+    .firma-menu-drawer .drawer-section-title {
+        color: var(--text-gray);
+        font-size: 12px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .firma-menu-drawer .drawer-promo-grid,
+    .firma-menu-drawer .drawer-corp-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .firma-menu-drawer .drawer-corp-row {
+        padding: 12px 16px 4px;
+    }
+
+    .firma-menu-drawer .promo-link {
+        min-height: 46px;
+        font-size: 0.82rem;
+    }
+
+    .firma-menu-drawer .drawer-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        color: var(--text-dark);
+        text-decoration: none;
+    }
+
+    .firma-menu-drawer .drawer-link i {
+        width: 28px;
+        text-align: center;
+        color: #1d4ed8;
+    }
+
+    .firma-menu-drawer .drawer-link:hover {
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--text-dark);
+    }
+}
+
+/* Firma Design System v4.1 refresh */
+body.firma-page {
+    font-family: var(--font-main);
+    color: var(--text-dark);
+    background: var(--bg-light);
+}
+
+.site-shell,
+.utility-container,
+.header-container {
+    width: min(var(--page-max-width), calc(100% - 48px));
+}
+
+.firma-main {
+    padding: calc(var(--utility-bar-height) + var(--header-height) + 22px) 0 74px;
+}
+
+.firma-hero-section {
+    gap: 34px;
+}
+
+.firma-hero-copy h1 {
+    font-size: var(--h1-size);
+    letter-spacing: var(--letter-spacing-tight);
+}
+
+.firma-hero-lead {
+    font-size: var(--body-size);
+    color: var(--text-gray);
+    margin-top: 14px;
+}
+
+.firma-hero-story {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid #dbe7ff;
+    border-radius: var(--radius-md);
+    background: #f8fbff;
+}
+
+.firma-hero-story h3 {
+    margin: 0 0 6px;
+    font-size: var(--h3-size);
+    color: var(--primary);
+}
+
+.firma-hero-story p {
+    margin: 0;
+    color: #4d627d;
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.firma-process-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.firma-process-card {
+    position: relative;
+    border: 1px solid #dbe7ff;
+    border-radius: 12px;
+    background: #fff;
+    padding: 10px 10px 10px 12px;
+}
+
+.firma-process-step {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.74rem;
+    font-weight: 800;
+}
+
+.firma-process-card h4 {
+    margin: 0 0 4px;
+    font-size: 0.86rem;
+    color: var(--text-dark);
+}
+
+.firma-process-card p {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text-gray);
+}
+
+.firma-hero-points {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.firma-hero-point {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--text-gray);
+    font-size: 0.84rem;
+}
+
+.firma-hero-point i {
+    color: var(--success);
+    margin-top: 2px;
+}
+
+.firma-hero-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 18px 0 22px;
+}
+
+.firma-hero-stat {
+    border: 1px solid var(--border-light);
+    background: #fff;
+    border-radius: 14px;
+    padding: 10px 12px;
+}
+
+.firma-hero-stat strong {
+    font-size: clamp(1.05rem, 3vw, 1.45rem);
+    color: var(--primary);
+}
+
+.firma-hero-stat span {
+    color: var(--text-gray);
+    font-size: 0.84rem;
+}
+
+.firma-hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.firma-btn {
+    min-height: 42px;
+    padding: 10px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.9rem;
+}
+
+.firma-btn-primary {
+    background: var(--primary);
+}
+
+.firma-btn-primary:hover {
+    background: var(--primary-dark);
+    color: #fff;
+}
+
+.firma-btn-outline:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.firma-hero-visual {
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-lg);
+}
+
+.firma-visual-badge {
+    top: -11px;
+    right: 16px;
+    background: linear-gradient(135deg, var(--secondary), #ff6a86);
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 6px 12px;
+}
+
+.firma-visual-title {
+    margin: 6px 0 12px;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+}
+
+.firma-comparison-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.firma-comparison-kpi {
+    border: 1px solid var(--border-light);
+    background: #f8fbff;
+    border-radius: 10px;
+    padding: 8px;
+}
+
+.firma-comparison-kpi small {
+    display: block;
+    color: var(--text-light);
+    font-size: 0.72rem;
+    margin-bottom: 2px;
+}
+
+.firma-comparison-kpi strong {
+    color: var(--text-dark);
+    font-size: 0.9rem;
+}
+
+.firma-comparison-kpi.positive strong {
+    color: var(--success);
+}
+
+.firma-price-comparison-premium {
+    margin-top: 8px;
+    border: 1px solid #e6edf7;
+    border-radius: 14px;
+    background: #fbfdff;
+    padding: 8px 12px;
+}
+
+.firma-price-row {
+    padding: 12px 2px;
+    border-bottom: 1px solid #e6edf7;
+}
+
+.firma-price-row span:first-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #4d627d;
+    font-weight: 600;
+}
+
+.firma-price-row span:first-child i {
+    color: var(--primary);
+}
+
+.firma-price-row.highlight {
+    background: rgba(0, 59, 149, 0.04);
+    border-radius: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.firma-price-standard {
+    color: #94a3b8;
+}
+
+.firma-price-corporate {
+    font-size: 1.18rem;
+    color: var(--primary);
+}
+
+.firma-price-savings {
+    font-size: 1.16rem;
+    color: var(--success);
+}
+
+.firma-savings-tag {
+    background: rgba(0, 168, 107, 0.12);
+    color: var(--success);
+}
+
+.firma-info-note {
+    border-left: 0;
+    border: 1px solid #dbe7ff;
+    border-radius: 14px;
+    background: #f8fbff;
+}
+
+.firma-info-note i {
+    color: var(--primary);
+}
+
+.firma-section-title h2 {
+    font-size: var(--h2-size);
+    letter-spacing: var(--letter-spacing-tight);
+}
+
+.firma-section-title p {
+    font-size: var(--body-size);
+    color: var(--text-gray);
+}
+
+.firma-steps-grid,
+.firma-tiers-grid,
+.firma-benefits-grid {
+    gap: 14px;
+}
+
+.firma-step-card,
+.firma-tier-card,
+.firma-benefit-card {
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
+    padding: 18px;
+}
+
+.firma-step-card h3,
+.firma-benefit-content h4,
+.firma-tier-name {
+    font-size: var(--h3-size);
+    margin: 12px 0 8px;
+}
+
+.firma-step-card p,
+.firma-benefit-content p,
+.firma-tier-card p {
+    color: var(--text-gray);
+    font-size: 0.9rem;
+}
+
+.firma-cta-section {
+    border-radius: var(--radius-xl);
+    padding: clamp(20px, 4vw, 36px);
+    background: linear-gradient(135deg, var(--secondary) 0%, #7b3fb3 48%, var(--primary) 100%);
+}
+
+.firma-cta-section h2 {
+    font-size: var(--h2-size);
+}
+
+.firma-cta-section p {
+    font-size: var(--body-size);
+}
+
+@media (max-width: 980px) {
+    .firma-hero-section,
+    .firma-steps-grid,
+    .firma-tiers-grid,
+    .firma-benefits-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .firma-pricing-story {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .firma-hero-section {
+        gap: 16px;
+    }
+
+    .firma-main {
+        padding-top: calc(var(--header-height-mobile) + 16px);
+    }
+
+    .firma-hero-copy {
+        grid-column: span 2;
+    }
+
+    .firma-hero-visual {
+        grid-column: span 2;
+    }
+
+    .firma-section-title {
+        margin-bottom: 22px;
+    }
+}
+
+@media (max-width: 640px) {
+    .site-shell,
+    .utility-container,
+    .header-container {
+        width: min(var(--page-max-width), calc(100% - 26px));
+    }
+
+    .firma-main {
+        padding-top: calc(var(--header-height-mobile) + 14px);
+        padding-bottom: 82px;
+    }
+
+    .firma-hero-copy h1,
+    .firma-hero-lead,
+    .firma-section-title {
+        text-align: center;
+    }
+
+    .firma-hero-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .firma-comparison-kpis {
+        grid-template-columns: 1fr;
+    }
+
+    .firma-hero-points {
+        grid-template-columns: 1fr;
+    }
+
+    .firma-process-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .firma-btn,
+    .firma-btn-white,
+    .firma-btn-outline-light {
+        width: 100%;
+    }
+
+    .firma-hero-actions,
+    .firma-cta-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .firma-steps-grid,
+    .firma-tiers-grid,
+    .firma-benefits-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .firma-pricing-story {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .firma-step-card,
+    .firma-tier-card,
+    .firma-benefit-card {
+        padding: 12px;
+    }
+
+    .firma-benefit-card {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+/* Shared frame alignment with common header/footer */
+body.firma-page .site-shell {
+    width: 100%;
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+    padding: 0 var(--space-8);
+}
+
+body.firma-page .utility-container,
+body.firma-page .header-container,
+body.firma-page .footer-container {
+    width: auto;
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+    padding: 0 var(--space-8);
+}
+
+@media (max-width: 1024px) {
+    body.firma-page .site-shell,
+    body.firma-page .utility-container,
+    body.firma-page .header-container,
+    body.firma-page .footer-container {
+        padding: 0 var(--space-6);
+    }
+}
+
+@media (max-width: 560px) {
+    body.firma-page .site-shell,
+    body.firma-page .utility-container,
+    body.firma-page .header-container,
+    body.firma-page .footer-container {
+        padding: 0 var(--space-5);
+    }
+}
+
+/* Keep Firma page on shared global header behavior */
+body.firma-page .header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+body.firma-page .search-wrapper {
+    display: flex;
+    flex: 1;
+    max-width: 620px;
+}
+
+body.firma-page .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+}
+
+/* A small breathing-space touch for textual blocks */
+body.firma-page .firma-hero-lead,
+body.firma-page .firma-section-title p,
+body.firma-page .firma-step-card p,
+body.firma-page .firma-benefit-content p,
+body.firma-page .firma-tier-card p,
+body.firma-page .firma-hero-story p,
+body.firma-page .firma-process-card p,
+body.firma-page .firma-pricing-story-benefits li {
+    line-height: 1.62;
+}
+
+/* Prevent content from sliding under fixed header */
+body.firma-page .firma-main {
+    padding-top: calc(var(--utility-bar-height) + var(--header-height) + 28px);
+}
+
+@media (max-width: 980px) {
+    body.firma-page .firma-main {
+        padding-top: calc(var(--utility-bar-height) + var(--header-height-mobile) + 16px);
+    }
+}
+
+@media (max-width: 900px) {
+    body.firma-page .search-wrapper {
+        display: none;
+    }
+
+    body.firma-page .firma-main {
+        padding-top: calc(var(--header-height-mobile) + 18px);
+    }
+}
+
+@media (max-width: 640px) {
+    body.firma-page .firma-main {
+        padding-top: calc(var(--header-height-mobile) + 16px);
+    }
+}
+
+/* Match Kurumsal page top spacing exactly */
+body.firma-page .firma-main {
+    padding-top: calc(var(--header-height-mobile) + 8px);
+}
+
+@media (min-width: 900px) {
+    body.firma-page .firma-main {
+        padding-top: calc(var(--utility-bar-height) + var(--header-height) + 8px);
+    }
+}
+
+/* Final mobile/spacing normalization for Firma page */
+body.firma-page {
+    --firma-mobile-card-gap: 12px;
+}
+
+/* Keep content clearly below fixed header (critical override) */
+body.firma-page .firma-main {
+    position: relative;
+    z-index: 1;
+    padding-top: calc(var(--header-height-mobile) + 24px) !important;
+}
+
+@media (min-width: 900px) {
+    body.firma-page .firma-main {
+        padding-top: calc(var(--utility-bar-height) + var(--header-height) + 30px) !important;
+    }
+}
+
+/* Remove search suggestion overlay over hero title on Firma page */
+body.firma-page .header-search-suggestions {
+    display: none !important;
+}
+
+/* Trust row vertical rhythm */
+body.firma-page .firma-trust-bar {
+    padding-top: 20px;
+    padding-bottom: 20px;
+    margin-top: 14px;
+    margin-bottom: 28px;
+}
+
+@media (max-width: 640px) {
+    body.firma-page .firma-trust-bar {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--firma-mobile-card-gap);
+        padding-top: 14px;
+        padding-bottom: 14px;
+        margin-bottom: 20px;
+    }
+
+    body.firma-page .firma-trust-item {
+        justify-content: center;
+        text-align: center;
+        gap: 8px;
+        min-height: 44px;
+    }
+
+    /* Core requirement: cards and buttons in 2 columns on mobile */
+    body.firma-page .firma-steps-grid,
+    body.firma-page .firma-tiers-grid,
+    body.firma-page .firma-benefits-grid,
+    body.firma-page .firma-process-cards,
+    body.firma-page .firma-hero-points,
+    body.firma-page .firma-comparison-kpis,
+    body.firma-page .firma-hero-actions,
+    body.firma-page .firma-cta-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--firma-mobile-card-gap);
+    }
+
+    /* Keep scenario section readable; prevent card-within-card squeezed look */
+    body.firma-page .firma-pricing-story {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    body.firma-page .firma-pricing-story-card,
+    body.firma-page .firma-pricing-story-benefits,
+    body.firma-page .firma-hero-visual {
+        border-radius: 16px;
+        padding: 14px;
+    }
+
+    body.firma-page .firma-story-grid {
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    body.firma-page .firma-story-row {
+        padding: 10px 12px;
+        border-radius: 12px;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    body.firma-page .firma-story-row span,
+    body.firma-page .firma-story-row strong {
+        line-height: 1.45;
+    }
+
+    /* Avoid cards looking nested by enforcing section rhythm */
+    body.firma-page .firma-section {
+        padding: 28px 0;
+    }
+}
+
+/* ===== Firma spacing standard (desing.md contract) ===== */
+body.firma-page {
+    --firma-section-gap: 24px;
+    --firma-card-gap: 12px;
+}
+
+/* Same vertical rhythm between all top-level blocks */
+body.firma-page .firma-main > .site-shell {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+body.firma-page .firma-main > .site-shell + .site-shell {
+    margin-top: var(--firma-section-gap);
+}
+
+/* Normalize section internals */
+body.firma-page .firma-section {
+    padding: 0;
+}
+
+body.firma-page .firma-section-title {
+    margin-bottom: var(--firma-section-gap);
+}
+
+/* Normalize grid/card spacing */
+body.firma-page .firma-steps-grid,
+body.firma-page .firma-tiers-grid,
+body.firma-page .firma-benefits-grid,
+body.firma-page .firma-process-cards,
+body.firma-page .firma-hero-points,
+body.firma-page .firma-comparison-kpis,
+body.firma-page .firma-pricing-story {
+    gap: var(--firma-card-gap);
+}
+
+/* CTA block should keep same gap as card rhythm */
+body.firma-page .firma-cta-section {
+    margin-top: 0;
+    padding: clamp(20px, 4vw, 34px);
+}
+
+body.firma-page .firma-cta-actions {
+    margin-top: var(--firma-card-gap);
+    gap: var(--firma-card-gap);
+}
+
+/* Trust bar vertical spacing in same system */
+body.firma-page .firma-trust-bar {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+@media (min-width: 900px) {
+    body.firma-page {
+        --firma-section-gap: 28px;
+        --firma-card-gap: 14px;
+    }
+}
+
+/* Keep point cards and CTA buttons with same rhythm */
+body.firma-page .firma-hero-points {
+    gap: var(--firma-card-gap);
+    margin-top: var(--firma-card-gap);
+}
+
+body.firma-page .firma-hero-actions {
+    gap: var(--firma-card-gap);
+    margin-top: var(--firma-card-gap);
+}
+
+/* Firma page spacing normalization */
+body.firma-page .firma-main {
+    padding-top: calc(var(--header-height-mobile) + 12px) !important;
+    padding-bottom: 36px !important;
+}
+
+@media (min-width: 900px) {
+    body.firma-page .firma-main {
+        padding-top: calc(var(--utility-bar-height) + var(--header-height) + 12px) !important;
+        padding-bottom: 36px !important;
+    }
+}
+
+/* Keep first content offset same as Kurumsal page */
+body.firma-page .firma-main > .firma-hero-section {
+    padding-top: calc(var(--space-5) + 12px);
+}
+
+@media (min-width: 900px) {
+    /* Match Kurumsal desktop hero top rhythm */
+    body.firma-page .firma-main > .firma-hero-section {
+        padding-top: 46px;
     }
 }

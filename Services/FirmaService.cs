@@ -88,9 +88,9 @@ public class FirmaService : IFirmaService
 
         model.PricingTiers = new List<FirmaLandingTierViewModel>
         {
-            new() { Name = "Giriş Seviyesi", Range = "Minimum 3-5 Oda", DiscountText = "%10 - %15", ExampleText = "Kısa süreli ekip konaklamaları için" },
-            new() { Name = "Standart Firma", Range = "Minimum 5-10 Oda", DiscountText = "%15 - %25", ExampleText = "En sık kullanılan kurumsal indirim yapısı", Highlighted = true },
-            new() { Name = "Premium Hacim", Range = "Minimum 10+ Oda", DiscountText = "%25 - %35", ExampleText = "Toplu ekip, etkinlik ve saha operasyonları" }
+            new() { Name = "Operasyon Paketi", Range = "Minimum 2+ Oda", DiscountText = "Örnek %20 - %18", ExampleText = "Kısa iş seyahatleri için oranlar otel planlamasına göre değişir; panelde şeffaf olarak gösterilir." },
+            new() { Name = "Büyüme Paketi", Range = "Minimum 5+ Oda", DiscountText = "Örnek %18 - %15", ExampleText = "Düzenli ekip konaklamasında nihai oranlar sezon ve otelin kurumsal planına göre belirlenir.", Highlighted = true },
+            new() { Name = "Kurumsal Plus", Range = "Minimum 10+ Oda", DiscountText = "Örnek %15 - %10", ExampleText = "Yoğun kullanımda nihai indirim, otelin onayladığı özel kurumsal teklife göre netleşir." }
         };
 
         model.Benefits = new List<FirmaLandingBenefitViewModel>

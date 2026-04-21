@@ -23,13 +23,13 @@
     box-sizing: border-box;
 }
 
-body.admin-login-page {
+.admin-login-page {
     margin: 0;
     min-height: 100vh;
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 0 24px 24px;
+    padding: 24px 24px 40px;
     font-family: "Inter", sans-serif;
     background: var(--admin-bg-dark);
     background-image:
@@ -355,8 +355,8 @@ body.admin-login-page {
 }
 
 @media (max-width: 800px) {
-    body.admin-login-page {
-        padding: 0 16px 16px;
+    .admin-login-page {
+        padding: 16px 16px 28px;
     }
 
     .admin-login-page .admin-login-container {

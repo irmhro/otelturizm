@@ -33,6 +33,7 @@ public class OtellerController : Controller
     public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, CancellationToken cancellationToken)
     {
         ViewData["PageCss"] = "otel-listeleme";
+        ViewData["PageCssMobile"] = "otel-listeleme.mobile";
         var searchTerm = !string.IsNullOrWhiteSpace(q) ? q : city;
         var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiket, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);

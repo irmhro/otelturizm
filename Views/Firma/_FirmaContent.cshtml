@@ -5,14 +5,29 @@
             <h1>Firmanız İçin <span>Toplu Konaklama</span> Avantajları</h1>
             <p class="firma-hero-lead">@Model.HeroDescription</p>
 
-            <div class="firma-hero-stats">
-                @foreach (var stat in Model.HeroStats)
-                {
-                    <div class="firma-hero-stat">
-                        <strong>@stat.Value</strong>
-                        <span>@stat.Label</span>
-                    </div>
-                }
+            <div class="firma-process-cards">
+                <article class="firma-process-card">
+                    <span class="firma-process-step">1</span>
+                    <h4>Otel Kuralları Tanımlar</h4>
+                    <p>Her otel, minimum oda adedi ve firma indirim oranını kendi stratejisine göre belirler.</p>
+                </article>
+                <article class="firma-process-card">
+                    <span class="firma-process-step">2</span>
+                    <h4>Firma Panelinde Anlık Görünür</h4>
+                    <p>Sizin hesabınızda bireysel fiyat yerine kurumsal teklif otomatik listelenir.</p>
+                </article>
+                <article class="firma-process-card">
+                    <span class="firma-process-step">3</span>
+                    <h4>Daha Uygun Maliyetle Rezervasyon</h4>
+                    <p>Ekip konaklamalarında toplam harcama düşer, onay ve raporlama tek akışta tamamlanır.</p>
+                </article>
+            </div>
+
+            <div class="firma-hero-points">
+                <div class="firma-hero-point"><i class="fas fa-check-circle"></i> Her otel kendi firma fiyatını ve oda eşiğini belirler</div>
+                <div class="firma-hero-point"><i class="fas fa-check-circle"></i> Firma kullanıcıları bireysel fiyata göre daha avantajlı teklif görür</div>
+                <div class="firma-hero-point"><i class="fas fa-check-circle"></i> Toplu konaklamalarda maliyet, onay ve raporlama merkezi yönetilir</div>
+                <div class="firma-hero-point"><i class="fas fa-check-circle"></i> Satın alma, finans ve operasyon ekipleri tek panelde senkron çalışır</div>
             </div>
 
             <div class="firma-hero-actions">
@@ -24,17 +39,31 @@
         <div class="firma-hero-visual">
             <span class="firma-visual-badge"><i class="fas fa-chart-line"></i> Canlı Fiyat Karşılaştırması</span>
             <p class="firma-visual-title">📊 Örnek Kurumsal Konaklama Senaryosu · 5 oda</p>
-            <div class="firma-price-comparison-mini">
+            <div class="firma-comparison-kpis">
+                <div class="firma-comparison-kpi">
+                    <small>Toplam Oda</small>
+                    <strong>5</strong>
+                </div>
+                <div class="firma-comparison-kpi positive">
+                    <small>İndirim Oranı</small>
+                    <strong>%20</strong>
+                </div>
+                <div class="firma-comparison-kpi">
+                    <small>Geceleme</small>
+                    <strong>2 Gece</strong>
+                </div>
+            </div>
+            <div class="firma-price-comparison-mini firma-price-comparison-premium">
                 <div class="firma-price-row">
-                    <span>🏨 Standart Fiyat (Bireysel)</span>
+                    <span><i class="fas fa-hotel"></i> Standart Fiyat (Bireysel)</span>
                     <span class="firma-price-standard">₺3.600</span>
                 </div>
-                <div class="firma-price-row">
-                    <span>📉 Firma Fiyatı (5 oda)</span>
+                <div class="firma-price-row highlight">
+                    <span><i class="fas fa-building"></i> Firma Fiyatı (5 oda)</span>
                     <span class="firma-price-corporate">₺2.880 <b class="firma-savings-tag"><i class="fas fa-arrow-down"></i> %20</b></span>
                 </div>
                 <div class="firma-price-row">
-                    <span>💰 Toplam Tasarruf</span>
+                    <span><i class="fas fa-piggy-bank"></i> Toplam Tasarruf</span>
                     <span class="firma-price-savings">₺720</span>
                 </div>
             </div>

@@ -58,6 +58,13 @@
                     <div class="favorite-login-prompt__icon"><i class="fas fa-heart"></i></div>
                     <strong id="favoritePromptTitle">Favorilere eklemek için giriş yapın</strong>
                     <p id="favoritePromptMessage">Kaydetmek istediğiniz otelleri profilinizde görmek ve daha sonra hızlıca ulaşmak için kullanıcı hesabınızla giriş yapabilirsiniz.</p>
+                    <div class="favorite-login-prompt__hint">
+                        <span class="favorite-login-prompt__hint-label">Neden favoriye eklemeliyim?</span>
+                        <button type="button" class="favorite-login-prompt__hint-info" aria-label="Favori avantajı bilgisi">
+                            <i class="fas fa-circle-info"></i>
+                            <span class="favorite-login-prompt__hint-tooltip">Favoriye eklediğiniz otellerde fiyat indirimi olursa sizi haberdar edebiliriz. Bu ayarı giriş yaptıktan sonra Favorilerim sayfasındaki "İndirime düşünce bildir" butonundan açabilirsiniz.</span>
+                        </button>
+                    </div>
                     <div class="favorite-login-prompt__actions">
                         <a class="favorite-login-prompt__primary" id="favoritePromptLoginButton" href="/kullanici-giris">Giriş Yap</a>
                         <a class="favorite-login-prompt__secondary" id="favoritePromptRegisterButton" href="/kullanici-giris?sekme=kayit">Kayıt Ol</a>
@@ -267,6 +274,57 @@
         grid-template-columns: 1fr 1fr;
         gap: 12px;
         margin-top: 22px;
+    }
+
+    .favorite-login-prompt__hint {
+        margin-top: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #334155;
+        font-size: 0.84rem;
+        font-weight: 700;
+    }
+
+    .favorite-login-prompt__hint-info {
+        position: relative;
+        width: 24px;
+        height: 24px;
+        border: 0;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 59, 149, 0.08);
+        color: #0f5bd7;
+        cursor: pointer;
+        font-size: 0.88rem;
+    }
+
+    .favorite-login-prompt__hint-tooltip {
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 8px);
+        transform: translateX(-50%);
+        width: min(280px, calc(100vw - 40px));
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #0f172a;
+        color: #f8fafc;
+        font-size: 0.76rem;
+        font-weight: 600;
+        line-height: 1.5;
+        text-align: left;
+        opacity: 0;
+        pointer-events: none;
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.3);
+        transition: opacity .18s ease;
+        z-index: 2;
+    }
+
+    .favorite-login-prompt__hint-info:hover .favorite-login-prompt__hint-tooltip,
+    .favorite-login-prompt__hint-info:focus-visible .favorite-login-prompt__hint-tooltip {
+        opacity: 1;
     }
 
     .favorite-login-prompt__primary,

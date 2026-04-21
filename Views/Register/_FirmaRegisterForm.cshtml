@@ -244,13 +244,14 @@
     <div class="auth-form-checks">
         <label class="checkbox-stack">
             <input type="checkbox" name="AcceptAgreement" value="true" required />
-            <span><a href="/sozlesmeler/firma-kurumsal-kullanim-kosullari" target="_blank" rel="noopener">Firma sözleşmesi ve kurumsal kullanım koşullarını</a> kabul ediyorum.</span>
+            <span><a href="/sozlesmeler/firma-kurumsal-kullanim-kosullari" data-contract-popup data-contract-title="Firma Kurumsal Kullanim Kosullari">Firma sözleşmesi ve kurumsal kullanım koşullarını</a> kabul ediyorum.</span>
         </label>
         <label class="checkbox-stack">
             <input type="checkbox" name="AcceptKvkk" value="true" required />
-            <span><a href="/sozlesmeler/firma-kvkk-aydinlatma" target="_blank" rel="noopener">KVKK aydınlatma metnini</a> okuyup başvuru bilgilerimin incelenmesini onaylıyorum.</span>
+            <span><a href="/sozlesmeler/firma-kvkk-aydinlatma" data-contract-popup data-contract-title="Firma KVKK Aydinlatma Metni">KVKK aydınlatma metnini</a> okuyup başvuru bilgilerimin incelenmesini onaylıyorum.</span>
         </label>
     </div>
 
     <button type="submit" class="auth-submit-btn firma-submit-btn">Firma Hesabı Başvurusu Oluştur <i class="fas fa-arrow-right"></i></button>
 </form>
+<partial name="~/Views/Register/_ContractPopupModal.cshtml" />

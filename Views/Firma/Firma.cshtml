@@ -1,6 +1,7 @@
 @model otelturizmnew.Models.Firma.FirmaLandingPageViewModel
 @{
     Layout = null;
+    ViewData["HeaderContext"] = "firma";
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -9,14 +10,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Firma - Otelturizm</title>
             <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/otelturizm-design-system.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/firma.css" asp-append-version="true" />
 </head>
 <body class="firma-page">
-    <partial name="~/Views/Firma/_FirmaHeader.cshtml" model="Model" />
+    <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
     <partial name="~/Views/Firma/_FirmaContent.cshtml" model="Model" />
     <partial name="~/Views/Anasayfa/_AnasayfaFooter.cshtml" />
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            const header = document.getElementById('mainHeader');
+            const overlay = document.getElementById('mobileMenuOverlay');
+            const drawer = document.getElementById('mobileMenuDrawer');
+            const toggle = document.getElementById('mobileMenuToggle');
+            const closeBtn = document.getElementById('drawerClose');
+
+            window.addEventListener('scroll', function () {
+                if (!header) {
+                    return;
+                }
+
+                if (window.scrollY > 40) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+
+            function openMenu() {
+                overlay?.classList.add('active');
+                drawer?.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeMenu() {
+                overlay?.classList.remove('active');
+                drawer?.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            toggle?.addEventListener('click', openMenu);
+            closeBtn?.addEventListener('click', closeMenu);
+            overlay?.addEventListener('click', closeMenu);
+        })();
+    </script>
 </body>
 </html>
 

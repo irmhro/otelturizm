@@ -3,6 +3,7 @@
 @{
     var homeAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
     var homeAuthenticated = User.Identity?.IsAuthenticated == true;
+    var headerContext = (ViewData["HeaderContext"] as string ?? "home").ToLowerInvariant();
     var homePanelUrl = homeAccountType.ToLowerInvariant() switch
     {
         "partner" => "/panel/partner",
@@ -79,43 +80,66 @@
         </div>
 
         <div class="header-actions">
-            <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
-            <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">Kurumsal</a>
+            @if (headerContext == "corporate")
+            {
+                <a href="/firma" class="action-btn">Firma</a>
+                @if (!homeAuthenticated && !string.Equals(homeAccountType, "partner", StringComparison.OrdinalIgnoreCase))
+                {
+                    <a href="/partner-giris" class="action-btn primary">Partner Girişi</a>
+                }
+            }
+            else if (headerContext == "firma")
+            {
+                <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+                @if (!homeAuthenticated && !string.Equals(homeAccountType, "firma", StringComparison.OrdinalIgnoreCase))
+                {
+                    <a href="/firma-giris" class="action-btn">Firma Girişi</a>
+                    <a href="/firma-giris?sekme=kayit" class="action-btn primary">Firma Hesabı Aç</a>
+                }
+            }
+            else
+            {
+                <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+                <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">Kurumsal</a>
+            }
             <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
             <button class="action-btn mobile-nav-toggle" id="mobileMenuToggle" type="button"><i class="fas fa-bars"></i></button>
         </div>
     </div>
 
-    <div class="home-header-quick-links" aria-label="Öne çıkan bağlantılar">
-        <div class="quick-links-container">
-        <div class="quick-links-pills" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
-            <button type="button" class="quick-link-pill hot-pill">
-                <i class="fas fa-bolt"></i>
-                <span class="rose-gradient-text">Ay Sonu Özel</span>
-            </button>
-            <button type="button" class="quick-link-pill">
-                <i class="fas fa-tag"></i>
-                <span>Flash İndirim</span>
-            </button>
-            <button type="button" class="quick-link-pill">
-                <i class="fas fa-calendar-week"></i>
-                <span>Hafta Sonu Fırsatları</span>
-            </button>
-            <button type="button" class="quick-link-pill">
-                <i class="fas fa-clock"></i>
-                <span>Erken Rezervasyon</span>
-            </button>
-            <button type="button" class="quick-link-pill">
-                <i class="fas fa-wand-magic-sparkles"></i>
-                <span>Akıllı Fiyat</span>
-            </button>
-            <button type="button" class="quick-link-pill subtle-pill">
-                <i class="fas fa-headset"></i>
-                <span>Rezervasyon Desteği</span>
-            </button>
+    @if (headerContext == "home")
+    {
+        <div class="home-header-quick-links" aria-label="Öne çıkan bağlantılar">
+            <div class="quick-links-container">
+            <div class="quick-links-pills" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+                <button type="button" class="quick-link-pill hot-pill">
+                    <i class="fas fa-bolt"></i>
+                    <span class="rose-gradient-text">Ay Sonu Özel</span>
+                </button>
+                <button type="button" class="quick-link-pill">
+                    <i class="fas fa-tag"></i>
+                    <span>Flash İndirim</span>
+                </button>
+                <button type="button" class="quick-link-pill">
+                    <i class="fas fa-calendar-week"></i>
+                    <span>Hafta Sonu Fırsatları</span>
+                </button>
+                <button type="button" class="quick-link-pill">
+                    <i class="fas fa-clock"></i>
+                    <span>Erken Rezervasyon</span>
+                </button>
+                <button type="button" class="quick-link-pill">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                    <span>Akıllı Fiyat</span>
+                </button>
+                <button type="button" class="quick-link-pill subtle-pill">
+                    <i class="fas fa-headset"></i>
+                    <span>Rezervasyon Desteği</span>
+                </button>
+            </div>
         </div>
-    </div>
-    </div>
+        </div>
+    }
 </header>
 
 <script>
@@ -281,14 +305,8 @@
 <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
 <div class="mobile-menu-drawer" id="mobileMenuDrawer">
     <div class="drawer-header">
-        <div class="drawer-user">
-            <div class="drawer-brand-mark">
-                <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="drawer-brand-logo" />
-            </div>
-            <div>
-                <h4>Otelturizm</h4>
-                <p class="drawer-sub">Ultra Hızlı Menü</p>
-            </div>
+        <div class="drawer-user drawer-user-centered">
+            <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="drawer-brand-logo drawer-brand-logo-plain" />
         </div>
         <button class="drawer-close" id="drawerClose" type="button"><i class="fas fa-times"></i></button>
     </div>

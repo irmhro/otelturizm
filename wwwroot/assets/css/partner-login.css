@@ -1,5 +1,5 @@
 .auth-shell {
-    padding: 20px 20px 72px;
+    padding: 24px 20px 64px;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     touch-action: manipulation;
@@ -10,10 +10,10 @@
 }
 
 .auth-stage {
-    max-width: 1180px;
+    max-width: 1000px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: minmax(320px, 460px) minmax(320px, 1fr);
+    grid-template-columns: minmax(320px, 400px) minmax(460px, 1fr);
     align-items: stretch;
     border-radius: 34px;
     overflow: hidden;
@@ -75,6 +75,7 @@
     padding: 8px 16px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     font-size: 0.82rem;
     font-weight: 700;
 }
@@ -89,8 +90,9 @@
 
 .auth-sidebar-content h1 {
     margin: 0 0 14px;
-    font-size: clamp(2rem, 2.4vw, 2.8rem);
-    line-height: 1.08;
+    font-size: clamp(1.72rem, 2.2vw, 2.28rem);
+    line-height: 1.16;
+    letter-spacing: -0.01em;
 }
 
 .auth-sidebar-content {
@@ -100,9 +102,9 @@
 
 .auth-lead {
     margin: 0 0 26px;
-    color: rgba(255, 255, 255, 0.82);
-    font-size: 1rem;
-    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 0.96rem;
+    line-height: 1.62;
 }
 
 .auth-feature-list {
@@ -269,12 +271,12 @@
 .checkbox-inline input,
 .checkbox-stack input {
     margin-top: 3px;
-    accent-color: #0c5adb;
+    accent-color: var(--primary);
 }
 
 .text-link,
 .text-button {
-    color: #003b95;
+    color: var(--primary);
     font-weight: 700;
     text-decoration: none;
 }
@@ -297,7 +299,16 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 16px 30px rgba(0, 59, 149, 0.22);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
     touch-action: manipulation;
+}
+
+.auth-submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 36px rgba(0, 59, 149, 0.28);
+    filter: saturate(1.04);
 }
 
 .auth-tab:active,
@@ -319,7 +330,7 @@
 }
 
 .partner-stage {
-    grid-template-columns: minmax(340px, 500px) minmax(320px, 1fr);
+    grid-template-columns: minmax(320px, 390px) minmax(520px, 1fr);
 }
 
 .partner-sidebar {
@@ -458,7 +469,7 @@
 
 @media (max-width: 768px) {
     .auth-shell {
-        padding: 14px 12px 42px;
+        padding: 16px 12px 48px;
     }
 
     .auth-panel-wrap {
