@@ -151,7 +151,7 @@ public class SecureFileService : ISecureFileService
             contentType = reader.GetString(2);
             accessTokenId = reader.GetInt64(3);
             usageCount = reader.IsDBNull(4) ? 0L : reader.GetInt64(4);
-            maxUsage = reader.IsDBNull(5) ? null : reader.GetInt32(5);
+            maxUsage = reader.IsDBNull(5) ? null : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture);
         }
 
         if (maxUsage.HasValue && usageCount >= maxUsage.Value)

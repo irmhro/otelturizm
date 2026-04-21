@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>İstanbul Otelleri · 847 Tesis · Otelturizm</title>
+  
+  <!-- Satoshi Font -->
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <style>
+    /* ========== OTELTURİZM TASARIM SİSTEMİ v4.1 ========== */
+    :root {
+      --font-main: 'Satoshi', sans-serif;
+      
+      --primary: #003B95;
+      --primary-dark: #002A6B;
+      --secondary: #FF385C;
+      --success: #00A86B;
+      --warning: #FFB800;
+      --error: #EF4444;
+      --gold: #FFD700;
+      
+      --bg-light: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text-dark: #1A1F26;
+      --text-gray: #4a4a4a;
+      --text-light: #94A3B8;
+      --border-light: #E2E8F0;
+      
+      --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+      --space-5: 20px; --space-6: 24px; --space-8: 32px;
+      
+      --radius-sm: 12px; --radius-md: 16px; --radius-lg: 20px;
+      --radius-xl: 24px; --radius-full: 9999px;
+      
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 20px 40px -10px rgba(0, 59, 149, 0.12);
+      
+      --header-height: 65px;
+      --filter-bar-height: 56px;
+      --container-max: 1280px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--font-main);
+      background: var(--bg-light);
+      color: var(--text-dark);
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 80px;
+    }
+    .container {
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: 0 var(--space-4);
+    }
+
+    /* ========== STICKY HEADER ========== */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.5);
+      box-shadow: var(--shadow-sm);
+    }
+    .search-summary-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) 0;
+      height: var(--header-height);
+    }
+    .back-btn {
+      width: 44px; height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      font-size: 22px;
+      color: var(--text-dark);
+      cursor: pointer;
+    }
+    .search-content {
+      flex: 1;
+      text-align: center;
+    }
+    .search-content h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .search-content p {
+      font-size: 13px;
+      color: var(--text-gray);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+    }
+    .edit-search {
+      width: 44px; height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-light);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-light);
+      color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* ========== FİLTRE & SIRALAMA BAR (HIZLI ERİŞİM) ========== */
+    .filter-sort-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: var(--space-3);
+      height: var(--filter-bar-height);
+      gap: var(--space-3);
+    }
+    .quick-filters {
+      display: flex;
+      gap: var(--space-2);
+      overflow-x: auto;
+      scrollbar-width: none;
+      white-space: nowrap;
+      flex: 1;
+      padding: var(--space-1) 0;
+    }
+    .quick-filter-btn {
+      padding: var(--space-2) var(--space-4);
+      background: var(--card-bg);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .quick-filter-btn i { color: var(--primary); font-size: 14px; }
+    .quick-filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .quick-filter-btn.active i { color: white; }
+    
+    .sort-select {
+      padding: var(--space-2) var(--space-4);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      font-size: 14px;
+      background: var(--card-bg);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Aktif Filtreler (Seçili olanları göster) */
+    .active-filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) 0 var(--space-3);
+      border-top: 1px solid var(--border-light);
+    }
+    .active-filter-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary);
+      color: white;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+    }
+    .active-filter-tag i { cursor: pointer; opacity: 0.8; }
+    .clear-all {
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    /* ========== GÖRÜNÜM SEÇİMİ (HARİTA / LİSTE) ========== */
+    .view-toggle {
+      display: flex;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+    .view-btn {
+      flex: 1;
+      padding: var(--space-3);
+      background: var(--card-bg);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .view-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* ========== ANA İÇERİK (LİSTE / HARİTA) ========== */
+    .results-container {
+      display: flex;
+      gap: var(--space-6);
+      margin-top: var(--space-4);
+    }
+    
+    /* FİLTRE SIDEBAR (MASAÜSTÜ) */
+    .filter-sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      display: block;
+    }
+    @media (max-width: 900px) {
+      .filter-sidebar { display: none; }
+    }
+    
+    .filter-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      padding: var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+    .filter-section {
+      margin-bottom: var(--space-6);
+    }
+    .filter-section h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: var(--space-4);
+    }
+    .price-range {
+      display: flex;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+    .price-range input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+    }
+    .filter-options {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .filter-check {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .rating-stars {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+    .rating-chip {
+      padding: 6px 12px;
+      background: var(--bg-light);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .rating-chip.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .more-link {
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      margin-top: var(--space-2);
+      display: inline-block;
+    }
+
+    /* OTEL LİSTESİ */
+    .hotel-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+    }
+    
+    /* OTEL KARTI (AIRBNB + BOOKING HİBRİT) */
+    .hotel-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    @media (min-width: 640px) {
+      .hotel-card {
+        flex-direction: row;
+        height: 240px;
+      }
+    }
+    
+    .card-image {
+      position: relative;
+      flex-shrink: 0;
+    }
+    @media (min-width: 640px) {
+      .card-image { width: 260px; height: 100%; }
+    }
+    @media (max-width: 639px) {
+      .card-image { height: 200px; }
+    }
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .card-badges {
+      position: absolute;
+      top: var(--space-3); left: var(--space-3);
+      display: flex; gap: var(--space-2); z-index: 2;
+    }
+    .badge {
+      padding: 4px 10px; border-radius: var(--radius-full);
+      font-size: 11px; font-weight: 600; backdrop-filter: blur(4px);
+    }
+    .badge-guest { background: var(--gold); color: var(--text-dark); }
+    .badge-discount { background: var(--secondary); color: white; }
+    .wishlist-btn {
+      position: absolute;
+      top: var(--space-3); right: var(--space-3);
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,0.9); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--secondary); cursor: pointer; z-index: 2;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: none;
+    }
+    
+    .card-content {
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+    }
+    .hotel-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .hotel-name { font-size: 18px; font-weight: 700; }
+    .hotel-rating {
+      display: flex; align-items: center; gap: 4px;
+      background: var(--primary); color: white;
+      padding: 2px 8px; border-radius: var(--radius-sm);
+      font-weight: 600; font-size: 14px;
+    }
+    .hotel-location {
+      font-size: 14px; color: var(--text-gray);
+      margin: var(--space-1) 0 var(--space-2);
+    }
+    .features {
+      display: flex; flex-wrap: wrap; gap: var(--space-2);
+      margin-bottom: var(--space-3);
+    }
+    .feature-tag {
+      background: var(--bg-light); padding: 2px 10px;
+      border-radius: var(--radius-full); font-size: 12px;
+      color: var(--text-gray);
+    }
+    .price-section {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-top: auto;
+    }
+    .price-info { display: flex; align-items: baseline; gap: 6px; }
+    .current-price { font-size: 22px; font-weight: 700; color: var(--text-dark); }
+    .old-price { text-decoration: line-through; color: var(--text-light); font-size: 14px; }
+    .btn-detail {
+      background: var(--primary); color: white; padding: 8px 16px;
+      border-radius: var(--radius-full); font-weight: 600; font-size: 14px;
+      border: none; cursor: pointer;
+    }
+
+    /* ========== MOBİL FİLTRE MODAL (BOTTOM SHEET) ========== */
+    .filter-modal {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 1000; display: none;
+    }
+    .filter-modal.active { display: block; }
+    .modal-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: var(--card-bg); border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      padding: var(--space-6); max-height: 85vh; overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: var(--space-6);
+    }
+    .modal-header h3 { font-size: 20px; margin-bottom: 0; }
+    .close-modal { font-size: 24px; cursor: pointer; color: var(--text-gray); }
+    
+    .apply-btn {
+      width: 100%; padding: 16px; background: var(--primary);
+      color: white; border: none; border-radius: var(--radius-full);
+      font-weight: 700; font-size: 16px; cursor: pointer; margin-top: var(--space-4);
+    }
+
+    /* MOBİL ALT NAVİGASYON */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border-light); padding: var(--space-2) var(--space-4);
+      display: flex; justify-content: space-around; z-index: 90;
+    }
+    .nav-tab {
+      display: flex; flex-direction: column; align-items: center;
+      padding: var(--space-2); color: var(--text-gray);
+      text-decoration: none; font-size: 12px; gap: 4px;
+    }
+    .nav-tab i { font-size: 22px; }
+    .nav-tab.active { color: var(--primary); }
+
+    /* HARİTA PLACEHOLDER */
+    .map-view {
+      display: none;
+      background: #D1D5DB;
+      border-radius: var(--radius-lg);
+      min-height: 500px;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-placeholder {
+      text-align: center; color: var(--text-gray);
+    }
+    .map-placeholder i { font-size: 48px; margin-bottom: var(--space-4); color: var(--primary); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- STICKY HEADER -->
+  <div class="sticky-header">
+    <div class="search-summary-bar">
+      <button class="back-btn" onclick="alert('Geri')"><i class="fas fa-arrow-left"></i></button>
+      <div class="search-content">
+        <h2>İstanbul</h2>
+        <p><i class="fas fa-calendar"></i> 15-18 Nis · 2 Yetişkin <span>•</span> <i class="fas fa-map-pin"></i> Tümü</p>
+      </div>
+      <button class="edit-search" onclick="alert('Aramayı düzenle')"><i class="fas fa-sliders-h"></i></button>
+    </div>
+    
+    <!-- HIZLI FİLTRE BUTONLARI (TRIVAGO TARZI) -->
+    <div class="filter-sort-bar">
+      <div class="quick-filters">
+        <span class="quick-filter-btn active" onclick="this.classList.toggle('active')"><i class="fas fa-wifi"></i> WiFi</span>
+        <span class="quick-filter-btn" onclick="this.classList.toggle('active')"><i class="fas fa-swimmer"></i> Havuz</span>
+        <span class="quick-filter-btn" onclick="this.classList.toggle('active')"><i class="fas fa-parking"></i> Otopark</span>
+        <span class="quick-filter-btn" onclick="this.classList.toggle('active')"><i class="fas fa-utensils"></i> Kahvaltı</span>
+        <span class="quick-filter-btn" onclick="this.classList.toggle('active')"><i class="fas fa-spa"></i> Spa</span>
+        <span class="quick-filter-btn" onclick="document.getElementById('filterModal').classList.add('active')"><i class="fas fa-filter"></i> Tüm Filtreler</span>
+      </div>
+      <select class="sort-select">
+        <option>Önerilen</option>
+        <option>En Düşük Fiyat</option>
+        <option>En Yüksek Puan</option>
+      </select>
+    </div>
+
+    <!-- AKTİF FİLTRELER -->
+    <div class="active-filters">
+      <span class="active-filter-tag">5 Yıldız <i class="fas fa-times" onclick="this.parentElement.remove()"></i></span>
+      <span class="active-filter-tag">9+ Puan <i class="fas fa-times" onclick="this.parentElement.remove()"></i></span>
+      <span class="active-filter-tag">₺0 - ₺5.000 <i class="fas fa-times" onclick="this.parentElement.remove()"></i></span>
+      <span class="clear-all" onclick="document.querySelectorAll('.active-filter-tag').forEach(el => el.remove())">Tümünü Temizle</span>
+    </div>
+  </div>
+
+  <!-- GÖRÜNÜM SEÇİMİ -->
+  <div class="view-toggle">
+    <button class="view-btn active" id="listViewBtn"><i class="fas fa-list"></i> Liste</button>
+    <button class="view-btn" id="mapViewBtn"><i class="fas fa-map-marked-alt"></i> Harita</button>
+  </div>
+
+  <!-- ANA İÇERİK -->
+  <div class="results-container">
+    
+    <!-- MASAÜSTÜ FİLTRE SIDEBAR -->
+    <aside class="filter-sidebar">
+      <div class="filter-card">
+        <div class="filter-section">
+          <h4>Fiyat Aralığı</h4>
+          <input type="range" min="0" max="15000" value="5000" style="width:100%;">
+          <div class="price-range">
+            <input type="number" placeholder="Min ₺" value="0">
+            <input type="number" placeholder="Max ₺" value="5000">
+          </div>
+        </div>
+        
+        <div class="filter-section">
+          <h4>Yıldız Sayısı</h4>
+          <div class="filter-options">
+            <label class="filter-check"><input type="checkbox" checked> 5 Yıldız <span style="margin-left:auto; color:var(--text-light);">124</span></label>
+            <label class="filter-check"><input type="checkbox" checked> 4 Yıldız <span>256</span></label>
+            <label class="filter-check"><input type="checkbox" checked> 3 Yıldız <span>312</span></label>
+            <label class="filter-check"><input type="checkbox"> 2 Yıldız <span>98</span></label>
+            <label class="filter-check"><input type="checkbox"> 1 Yıldız <span>57</span></label>
+          </div>
+        </div>
+        
+        <div class="filter-section">
+          <h4>Misafir Puanı</h4>
+          <div class="rating-stars">
+            <span class="rating-chip active">9+ Muhteşem</span>
+            <span class="rating-chip">8+ Çok İyi</span>
+            <span class="rating-chip">7+ İyi</span>
+          </div>
+        </div>
+        
+        <div class="filter-section">
+          <h4>Popüler Filtreler</h4>
+          <div class="filter-options">
+            <label class="filter-check"><input type="checkbox"> Ücretsiz WiFi</label>
+            <label class="filter-check"><input type="checkbox"> Havuz</label>
+            <label class="filter-check"><input type="checkbox"> Spa & Wellness</label>
+            <label class="filter-check"><input type="checkbox"> Otopark</label>
+            <label class="filter-check"><input type="checkbox"> Evcil Hayvan Dostu</label>
+          </div>
+          <a href="#" class="more-link">+12 filtre daha</a>
+        </div>
+        
+        <div class="filter-section">
+          <h4>Yemek Seçenekleri</h4>
+          <div class="filter-options">
+            <label class="filter-check"><input type="checkbox"> Oda Kahvaltı</label>
+            <label class="filter-check"><input type="checkbox"> Her Şey Dahil</label>
+            <label class="filter-check"><input type="checkbox"> Yarım Pansiyon</label>
+          </div>
+        </div>
+        
+        <div class="filter-section">
+          <h4>Özel Konseptler</h4>
+          <div class="filter-options">
+            <label class="filter-check"><input type="checkbox"> En İyi Fiyat</label>
+            <label class="filter-check"><input type="checkbox" checked> Hafta Sonu İndirimi</label>
+            <label class="filter-check"><input type="checkbox"> Yıldız Yağmuru (4.5+)</label>
+            <label class="filter-check"><input type="checkbox"> Kampanyalı</label>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- OTEL LİSTESİ -->
+    <div class="hotel-list" id="hotelListView">
+      
+      <!-- KART 1 -->
+      <div class="hotel-card">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Swissôtel">
+          <div class="card-badges">
+            <span class="badge badge-guest"><i class="fas fa-trophy"></i> Misafir Favorisi</span>
+            <span class="badge badge-discount"><i class="fas fa-tag"></i> %25</span>
+          </div>
+          <button class="wishlist-btn" onclick="this.querySelector('i').classList.toggle('far'); this.querySelector('i').classList.toggle('fas');"><i class="far fa-heart"></i></button>
+        </div>
+        <div class="card-content">
+          <div>
+            <div class="hotel-header">
+              <h3 class="hotel-name">Swissôtel The Bosphorus</h3>
+              <span class="hotel-rating">9.2 <i class="fas fa-star" style="font-size:10px;"></i></span>
+            </div>
+            <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş · Merkeze 2.5 km</div>
+            <div class="features">
+              <span class="feature-tag"><i class="fas fa-wifi"></i> WiFi</span>
+              <span class="feature-tag"><i class="fas fa-swimmer"></i> Havuz</span>
+              <span class="feature-tag"><i class="fas fa-spa"></i> Spa</span>
+            </div>
+          </div>
+          <div class="price-section">
+            <div class="price-info">
+              <span class="current-price">₺3.188</span>
+              <span class="old-price">₺4.250</span>
+              <span style="font-size:13px; color:var(--text-gray);">/ gece</span>
+            </div>
+            <button class="btn-detail" onclick="alert('Detay')">İncele</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KART 2 -->
+      <div class="hotel-card">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/261169/pexels-photo-261169.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Rixos">
+          <div class="card-badges">
+            <span class="badge" style="background:var(--success); color:white;"><i class="fas fa-leaf"></i> Sürdürülebilir</span>
+          </div>
+          <button class="wishlist-btn"><i class="fas fa-heart" style="color:var(--secondary);"></i></button>
+        </div>
+        <div class="card-content">
+          <div>
+            <div class="hotel-header">
+              <h3 class="hotel-name">Rixos Premium Belek</h3>
+              <span class="hotel-rating">9.4 <i class="fas fa-star"></i></span>
+            </div>
+            <div class="hotel-location"><i class="fas fa-map-pin"></i> Belek, Antalya · Sahile 100m</div>
+            <div class="features">
+              <span class="feature-tag"><i class="fas fa-utensils"></i> Her Şey Dahil</span>
+              <span class="feature-tag"><i class="fas fa-swimmer"></i> Aquapark</span>
+            </div>
+          </div>
+          <div class="price-section">
+            <div class="price-info">
+              <span class="current-price">₺4.930</span>
+              <span class="old-price">₺5.800</span>
+            </div>
+            <button class="btn-detail">İncele</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KART 3 -->
+      <div class="hotel-card">
+        <div class="card-image">
+          <img src="https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=600" alt="Four Seasons">
+        </div>
+        <div class="card-content">
+          <div>
+            <div class="hotel-header">
+              <h3 class="hotel-name">Four Seasons Bosphorus</h3>
+              <span class="hotel-rating">9.7 <i class="fas fa-star"></i></span>
+            </div>
+            <div class="hotel-location"><i class="fas fa-map-pin"></i> Beşiktaş · Boğaz Kenarı</div>
+            <div class="features">
+              <span class="feature-tag"><i class="fas fa-spa"></i> Dünya Standartlarında Spa</span>
+            </div>
+          </div>
+          <div class="price-section">
+            <div class="price-info">
+              <span class="current-price">₺10.000</span>
+              <span class="old-price">₺12.500</span>
+            </div>
+            <button class="btn-detail">İncele</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HARİTA GÖRÜNÜMÜ -->
+    <div class="map-view" id="mapViewContainer">
+      <div class="map-placeholder">
+        <i class="fas fa-map-marked-alt"></i>
+        <h3>İnteraktif Harita</h3>
+        <p>847 otel haritada gösteriliyor</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MOBİL FİLTRE MODAL (BOTTOM SHEET) -->
+<div class="filter-modal" id="filterModal">
+  <div class="modal-overlay" onclick="document.getElementById('filterModal').classList.remove('active')"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Filtrele</h3>
+      <span class="close-modal" onclick="document.getElementById('filterModal').classList.remove('active')">&times;</span>
+    </div>
+    
+    <div class="filter-section">
+      <h4>Fiyat Aralığı</h4>
+      <input type="range" min="0" max="15000" value="5000" style="width:100%;">
+      <div class="price-range">
+        <input type="number" placeholder="Min ₺" value="0">
+        <input type="number" placeholder="Max ₺" value="5000">
+      </div>
+    </div>
+    
+    <div class="filter-section">
+      <h4>Yıldız Sayısı</h4>
+      <div class="filter-options">
+        <label class="filter-check"><input type="checkbox" checked> 5 Yıldız (124)</label>
+        <label class="filter-check"><input type="checkbox" checked> 4 Yıldız (256)</label>
+        <label class="filter-check"><input type="checkbox" checked> 3 Yıldız (312)</label>
+        <label class="filter-check"><input type="checkbox"> 2 Yıldız (98)</label>
+      </div>
+    </div>
+    
+    <div class="filter-section">
+      <h4>Misafir Puanı</h4>
+      <div class="rating-stars">
+        <span class="rating-chip active">9+ Muhteşem</span>
+        <span class="rating-chip">8+ Çok İyi</span>
+        <span class="rating-chip">7+ İyi</span>
+      </div>
+    </div>
+    
+    <div class="filter-section">
+      <h4>Olanaklar</h4>
+      <div class="filter-options">
+        <label class="filter-check"><input type="checkbox"> Ücretsiz WiFi</label>
+        <label class="filter-check"><input type="checkbox"> Havuz</label>
+        <label class="filter-check"><input type="checkbox"> Spa</label>
+        <label class="filter-check"><input type="checkbox"> Otopark</label>
+        <label class="filter-check"><input type="checkbox"> Evcil Hayvan Dostu</label>
+      </div>
+    </div>
+    
+    <div class="filter-section">
+      <h4>Özel Konseptler</h4>
+      <div class="filter-options">
+        <label class="filter-check"><input type="checkbox"> En İyi Fiyat</label>
+        <label class="filter-check"><input type="checkbox" checked> Hafta Sonu İndirimi</label>
+        <label class="filter-check"><input type="checkbox"> Yıldız Yağmuru</label>
+      </div>
+    </div>
+    
+    <button class="apply-btn" onclick="document.getElementById('filterModal').classList.remove('active')">847 Oteli Göster</button>
+  </div>
+</div>
+
+<!-- MOBİL ALT NAVİGASYON -->
+<div class="bottom-nav">
+  <a href="#" class="nav-tab active"><i class="fas fa-search"></i><span>Keşfet</span></a>
+  <a href="#" class="nav-tab"><i class="far fa-heart"></i><span>Favoriler</span></a>
+  <a href="#" class="nav-tab"><i class="far fa-calendar-check"></i><span>Rezervasyon</span></a>
+  <a href="#" class="nav-tab"><i class="far fa-user"></i><span>Profil</span></a>
+</div>
+
+<script>
+  (function() {
+    // Harita / Liste Geçişi
+    const listBtn = document.getElementById('listViewBtn');
+    const mapBtn = document.getElementById('mapViewBtn');
+    const listView = document.getElementById('hotelListView');
+    const mapView = document.getElementById('mapViewContainer');
+    
+    listBtn.addEventListener('click', () => {
+      listBtn.classList.add('active'); mapBtn.classList.remove('active');
+      listView.style.display = 'flex'; mapView.style.display = 'none';
+    });
+    mapBtn.addEventListener('click', () => {
+      mapBtn.classList.add('active'); listBtn.classList.remove('active');
+      listView.style.display = 'none'; mapView.style.display = 'flex';
+    });
+    
+    // Rating chipleri
+    document.querySelectorAll('.rating-chip').forEach(chip => {
+      chip.addEventListener('click', function() {
+        this.classList.toggle('active');
+      });
+    });
+    
+    console.log('✅ Ultra Gelişmiş Otel Listeleme Sayfası Yüklendi');
+  })();
+</script>
+
+</body>
+</html>

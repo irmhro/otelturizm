@@ -173,7 +173,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
                 reader.GetDateTime(2),
                 reader.GetDateTime(3),
                 reader.IsDBNull(4) ? 0L : reader.GetInt64(4),
-                reader.IsDBNull(5) ? 0 : reader.GetInt32(5)));
+                    reader.IsDBNull(5) ? 0 : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture)));
         }
 
         return items;

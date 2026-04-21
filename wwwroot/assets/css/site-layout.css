@@ -338,6 +338,24 @@ body {
   background: rgba(255,255,255,0.1);
 }
 
+.google-translate-hidden {
+  position: fixed;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+body > .skiptranslate,
+iframe.goog-te-banner-frame {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
 .header-container {
   display: flex;
   align-items: center;

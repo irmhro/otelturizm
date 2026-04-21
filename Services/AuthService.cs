@@ -243,8 +243,8 @@ public class AuthService : IAuthService
             await using var reader = await existsCommand.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
-                var emailCount = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
-                var phoneCount = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+                var emailCount = reader.IsDBNull(0) ? 0 : Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture);
+                var phoneCount = reader.IsDBNull(1) ? 0 : Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture);
 
                 if (emailCount > 0)
                 {
@@ -492,22 +492,22 @@ public class AuthService : IAuthService
             await using var reader = await existsCommand.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
-                if (!reader.IsDBNull(0) && reader.GetInt32(0) > 0)
+                if (!reader.IsDBNull(0) && Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture) > 0)
                 {
                     return (false, "Bu e-posta ile kayitli partner hesabi bulunuyor.", null);
                 }
 
-                if (!reader.IsDBNull(1) && reader.GetInt32(1) > 0)
+                if (!reader.IsDBNull(1) && Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture) > 0)
                 {
                     return (false, "Bu telefon numarasi zaten kullanimda.", null);
                 }
 
-                if (!reader.IsDBNull(2) && reader.GetInt32(2) > 0)
+                if (!reader.IsDBNull(2) && Convert.ToInt32(reader.GetValue(2), CultureInfo.InvariantCulture) > 0)
                 {
                     return (false, "Bu vergi numarasi ile daha once partner kaydi yapilmis.", null);
                 }
 
-                if (!reader.IsDBNull(3) && reader.GetInt32(3) > 0)
+                if (!reader.IsDBNull(3) && Convert.ToInt32(reader.GetValue(3), CultureInfo.InvariantCulture) > 0)
                 {
                     return (false, "Bu IBAN ile daha once partner kaydi yapilmis.", null);
                 }
@@ -990,17 +990,17 @@ public class AuthService : IAuthService
             await using var reader = await existsCommand.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
-                if (!reader.IsDBNull(0) && reader.GetInt32(0) > 0)
+                if (!reader.IsDBNull(0) && Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture) > 0)
                 {
                     return (false, "Bu vergi numarası ile daha önce firma başvurusu yapılmış.", null);
                 }
 
-                if (!reader.IsDBNull(1) && reader.GetInt32(1) > 0)
+                if (!reader.IsDBNull(1) && Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture) > 0)
                 {
                     return (false, "Bu e-posta ile daha önce firma hesabı açılmış.", null);
                 }
 
-                if (!reader.IsDBNull(2) && reader.GetInt32(2) > 0)
+                if (!reader.IsDBNull(2) && Convert.ToInt32(reader.GetValue(2), CultureInfo.InvariantCulture) > 0)
                 {
                     return (false, "Yetkili e-posta adresi zaten kullanımda.", null);
                 }
@@ -1244,8 +1244,8 @@ public class AuthService : IAuthService
             userId = reader.GetInt64(1);
             expiryUtc = reader.GetDateTime(2);
             used = !reader.IsDBNull(3) && reader.GetBoolean(3);
-            attemptCount = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
-            maxAttempt = reader.IsDBNull(5) ? 5 : reader.GetInt32(5);
+            attemptCount = reader.IsDBNull(4) ? 0 : Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture);
+            maxAttempt = reader.IsDBNull(5) ? 5 : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture);
             storedToken = reader.IsDBNull(6) ? string.Empty : reader.GetString(6);
         }
 

@@ -848,10 +848,10 @@ public class PhoneVerificationService : IPhoneVerificationService
             TemplateName = reader.GetString(7),
             LanguageCode = reader.GetString(8),
             CodeLength = reader.GetByte(9),
-            TtlSeconds = reader.GetInt32(10),
-            ResendCooldownSeconds = reader.GetInt32(11),
+            TtlSeconds = Convert.ToInt32(reader.GetValue(10), CultureInfo.InvariantCulture),
+            ResendCooldownSeconds = Convert.ToInt32(reader.GetValue(11), CultureInfo.InvariantCulture),
             MaxAttemptCount = reader.GetByte(12),
-            PhoneReverifyAfterDays = reader.GetInt32(13),
+            PhoneReverifyAfterDays = Convert.ToInt32(reader.GetValue(13), CultureInfo.InvariantCulture),
             ReservationPhoneVerificationRequired = !reader.IsDBNull(14) && Convert.ToInt32(reader.GetValue(14), CultureInfo.InvariantCulture) == 1,
             IsActive = !reader.IsDBNull(15) && Convert.ToInt32(reader.GetValue(15), CultureInfo.InvariantCulture) == 1,
             TestRecipientPhoneE164 = reader.GetString(16)
@@ -875,9 +875,9 @@ public class PhoneVerificationService : IPhoneVerificationService
             return "Mesaj logu bulunmuyor.";
         }
 
-        var totalCount = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
-        var deliveredCount = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
-        var failedCount = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
+        var totalCount = reader.IsDBNull(0) ? 0 : Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture);
+        var deliveredCount = reader.IsDBNull(1) ? 0 : Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture);
+        var failedCount = reader.IsDBNull(2) ? 0 : Convert.ToInt32(reader.GetValue(2), CultureInfo.InvariantCulture);
         return totalCount <= 0
             ? "Son 7 günde mesaj logu yok."
             : $"Son 7 gün: {totalCount} gönderim, {deliveredCount} başarılı durum, {failedCount} hata kaydı.";

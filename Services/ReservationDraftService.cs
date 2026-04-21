@@ -105,9 +105,9 @@ public class ReservationDraftService : IReservationDraftService
         var status = reader.GetString(5);
         var checkInDate = DateOnly.FromDateTime(reader.GetDateTime(6));
         var checkOutDate = DateOnly.FromDateTime(reader.GetDateTime(7));
-        var adultCount = reader.GetInt32(8);
-        var childCount = reader.GetInt32(9);
-        var roomCount = reader.GetInt32(10);
+        var adultCount = Convert.ToInt32(reader.GetValue(8), CultureInfo.InvariantCulture);
+        var childCount = Convert.ToInt32(reader.GetValue(9), CultureInfo.InvariantCulture);
+        var roomCount = Convert.ToInt32(reader.GetValue(10), CultureInfo.InvariantCulture);
         var totalAmount = ReadDecimal(reader, 11);
         await reader.DisposeAsync();
 

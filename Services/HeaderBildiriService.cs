@@ -309,7 +309,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
-                var pendingCount = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                var pendingCount = reader.IsDBNull(0) ? 0 : Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture);
                 if (pendingCount > 0)
                 {
                     DateTime? timeUtc = reader.IsDBNull(1) ? null : reader.GetDateTime(1);
@@ -373,7 +373,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
-                var unreadCount = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                var unreadCount = reader.IsDBNull(0) ? 0 : Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture);
                 if (unreadCount > 0)
                 {
                     DateTime? timeUtc = reader.IsDBNull(1) ? null : reader.GetDateTime(1);

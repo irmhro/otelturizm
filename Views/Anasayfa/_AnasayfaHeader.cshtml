@@ -142,8 +142,96 @@
     }
 </header>
 
+<div id="google_translate_element" class="google-translate-hidden" aria-hidden="true"></div>
+
 <script>
     (function(){
+        const languageStorageKey = 'site:language';
+        const defaultLanguage = 'tr';
+        const supportedLanguages = ['tr', 'en', 'fr', 'ru', 'ar'];
+        const languageToFlagCode = { tr: 'tr', en: 'gb', fr: 'fr', ru: 'ru', ar: 'sa' };
+
+        function normalizeLanguage(value) {
+            const lang = (value || defaultLanguage).toLowerCase();
+            return supportedLanguages.includes(lang) ? lang : defaultLanguage;
+        }
+
+        function setGoogleTranslateCookie(lang) {
+            const normalized = normalizeLanguage(lang);
+            const cookieValue = '/tr/' + normalized;
+            const expires = new Date();
+            expires.setFullYear(expires.getFullYear() + 1);
+            document.cookie = 'googtrans=' + cookieValue + '; expires=' + expires.toUTCString() + '; path=/';
+            document.cookie = 'googtrans=' + cookieValue + '; expires=' + expires.toUTCString() + '; path=/; domain=' + window.location.hostname;
+        }
+
+        function applyGoogleTranslation(lang) {
+            const normalized = normalizeLanguage(lang);
+            setGoogleTranslateCookie(normalized);
+
+            const combo = document.querySelector('.goog-te-combo');
+            if (!combo) {
+                return false;
+            }
+
+            if (combo.value !== normalized) {
+                combo.value = normalized;
+                combo.dispatchEvent(new Event('change'));
+            } else if (normalized === defaultLanguage && window.location.hash.indexOf('googtrans') > -1) {
+                window.location.reload();
+            }
+
+            return true;
+        }
+
+        function ensureGoogleTranslateScript() {
+            if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+                return;
+            }
+
+            if (document.getElementById('googleTranslateScript')) {
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.id = 'googleTranslateScript';
+            script.src = 'https://translate.google.com/translate_a/element.js?cb=otelturizmGoogleTranslateInit';
+            script.async = true;
+            document.head.appendChild(script);
+        }
+
+        function getPreferredLanguage() {
+            return normalizeLanguage(localStorage.getItem(languageStorageKey) || defaultLanguage);
+        }
+
+        function applyPreferredLanguage() {
+            const preferredLanguage = getPreferredLanguage();
+            applyGoogleTranslation(preferredLanguage);
+        }
+
+        window.otelturizmGoogleTranslateInit = function () {
+            if (!(window.google && window.google.translate && window.google.translate.TranslateElement)) {
+                return;
+            }
+
+            const container = document.getElementById('google_translate_element');
+            if (!container || container.childElementCount > 0) {
+                applyPreferredLanguage();
+                return;
+            }
+
+            new window.google.translate.TranslateElement(
+                {
+                    pageLanguage: 'tr',
+                    includedLanguages: supportedLanguages.join(','),
+                    autoDisplay: false
+                },
+                'google_translate_element'
+            );
+
+            window.setTimeout(applyPreferredLanguage, 150);
+        };
+
         function setupDropdown(id, storageKey){
             const root = document.getElementById(id);
             if(!root) return;
@@ -156,7 +244,16 @@
             if(saved){
                 // find matching item label
                 const item = menu.querySelector(`.dropdown-item[data-value="${saved}"]`);
-                if(item) label.textContent = item.textContent.trim();
+                if(item) {
+                    label.textContent = item.textContent.trim();
+                    if(id === 'languageDropdown'){
+                        const code = languageToFlagCode[normalizeLanguage(saved)] || 'tr';
+                        const toggleFlag = btn.querySelector('.toggle-flag');
+                        if(toggleFlag){
+                            toggleFlag.className = 'toggle-flag flag-icon flag-icon-' + code;
+                        }
+                    }
+                }
             }
 
             btn.addEventListener('click', function(e){
@@ -174,13 +271,17 @@
 
                     // update toggle icon for language or currency
                     if(id === 'languageDropdown'){
-                        // language uses country flags; map data-value to flag code
-                        const map = { tr: 'tr', en: 'gb', fr: 'fr', ru: 'ru', ar: 'sa' };
-                        const code = map[value] || value;
+                        const code = languageToFlagCode[normalizeLanguage(value)] || 'tr';
                         const toggleFlag = btn.querySelector('.toggle-flag');
                         if(toggleFlag){
                             toggleFlag.className = 'toggle-flag flag-icon flag-icon-' + code;
                         }
+                        window.setTimeout(function() {
+                            if (!applyGoogleTranslation(value)) {
+                                ensureGoogleTranslateScript();
+                                window.setTimeout(function () { applyGoogleTranslation(value); }, 250);
+                            }
+                        }, 0);
                     }
                     if(id === 'currencyDropdown'){
                         // update currency badge on toggle
@@ -208,7 +309,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', function(){
-            setupDropdown('languageDropdown', 'site:language');
+            setupDropdown('languageDropdown', languageStorageKey);
+            ensureGoogleTranslateScript();
+            window.setTimeout(applyPreferredLanguage, 120);
 
             const searchForm = document.querySelector('.public-header-search-form');
             const searchInput = document.getElementById('publicHeaderSearchInput');

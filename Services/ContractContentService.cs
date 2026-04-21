@@ -81,7 +81,7 @@ public class ContractContentService : IContractContentService
                 contracts.Add((
                     reader.GetInt64(0),
                     reader.GetString(1),
-                    reader.IsDBNull(2) ? 1 : reader.GetInt32(2),
+                reader.IsDBNull(2) ? 1 : Convert.ToInt32(reader.GetValue(2), CultureInfo.InvariantCulture),
                     reader.GetString(3)));
             }
         }
@@ -253,7 +253,7 @@ public class ContractContentService : IContractContentService
                     ContractType = reader.GetString(2),
                     Title = reader.GetString(3),
                     Slug = reader.GetString(4),
-                    VersionText = $"v{reader.GetInt32(5)}",
+                VersionText = $"v{Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture)}",
                     EffectiveRangeText = reader.GetString(6),
                     AcceptanceText = Convert.ToString(reader.GetValue(7), CultureInfo.InvariantCulture) ?? "0",
                     DeliveryText = Convert.ToString(reader.GetValue(8), CultureInfo.InvariantCulture) ?? "0",
@@ -521,7 +521,7 @@ public class ContractContentService : IContractContentService
                 SummaryHtml = reader.IsDBNull(5) ? null : reader.GetString(5),
                 ContentHtml = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
                 HeroImageUrl = reader.IsDBNull(7) ? null : reader.GetString(7),
-                VersionText = $"Versiyon {reader.GetInt32(8)}",
+                VersionText = $"Versiyon {Convert.ToInt32(reader.GetValue(8), CultureInfo.InvariantCulture)}",
                 EffectiveDateText = reader.GetDateTime(9).ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("tr-TR"))
             };
         }
@@ -582,7 +582,7 @@ public class ContractContentService : IContractContentService
                 Title = reader.GetString(1),
                 Subtitle = reader.GetString(2),
                 Url = $"{_publicBaseUrl}/sozlesmeler/{reader.GetString(3)}",
-                VersionText = $"v{reader.GetInt32(4)}"
+                VersionText = $"v{Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture)}"
             });
         }
 
@@ -661,7 +661,7 @@ public class ContractContentService : IContractContentService
             ContentHtml = reader.IsDBNull(7) ? string.Empty : reader.GetString(7),
             HeroImageUrl = reader.IsDBNull(8) ? null : reader.GetString(8),
             ContractUrl = reader.IsDBNull(9) ? null : reader.GetString(9),
-            VersionNo = reader.GetInt32(10),
+            VersionNo = Convert.ToInt32(reader.GetValue(10), CultureInfo.InvariantCulture),
             EffectiveStartDate = reader.GetDateTime(11),
             EffectiveEndDate = reader.IsDBNull(12) ? null : reader.GetDateTime(12),
             RequiresAcceptance = !reader.IsDBNull(13) && reader.GetBoolean(13),

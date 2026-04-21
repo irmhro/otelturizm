@@ -119,13 +119,13 @@
 
 <section class="hotel-listing-shell listing-template-v41">
     <div class="listing-container">
-        <header class="listing-sticky-header">
-            <div class="listing-search-summary">
-                <a asp-controller="Home" asp-action="Index" class="listing-back-btn" aria-label="Anasayfaya don">
+        <header class="listing-sticky-header sticky-header">
+            <div class="listing-search-summary search-summary-bar">
+                <a asp-controller="Home" asp-action="Index" class="listing-back-btn back-btn" aria-label="Anasayfaya don">
                     <i class="fas fa-arrow-left"></i>
                 </a>
 
-                <div class="listing-search-copy">
+                <div class="listing-search-copy search-content">
                     <h1>@Model.SearchLabel</h1>
                     <p id="listingInfoLine">
                         <i class="fas fa-hotel"></i>
@@ -133,23 +133,23 @@
                     </p>
                 </div>
 
-                <a asp-controller="Home" asp-action="Index" class="listing-edit-search" aria-label="Aramayi duzenle">
+                <a asp-controller="Home" asp-action="Index" class="listing-edit-search edit-search" aria-label="Aramayi duzenle">
                     <i class="fas fa-sliders-h"></i>
                 </a>
             </div>
 
-            <div class="listing-toolbar">
-                <div class="listing-quick-filters" aria-label="Hizli filtreler">
+            <div class="listing-toolbar filter-sort-bar">
+                <div class="listing-quick-filters quick-filters" aria-label="Hizli filtreler">
                     @foreach (var quickFilter in quickFilterItems)
                     {
-                        <button type="button" class="quick-filter-chip" data-chip-filter="@quickFilter.Token">
+                        <button type="button" class="quick-filter-chip quick-filter-btn" data-chip-filter="@quickFilter.Token">
                             <i class="fas @quickFilter.Icon"></i>
                             <span>@quickFilter.Label</span>
                             <small>@quickFilter.Count</small>
                         </button>
                     }
 
-                    <button type="button" class="quick-filter-chip quick-filter-chip-ghost" data-open-mobile-filters>
+                    <button type="button" class="quick-filter-chip quick-filter-chip-ghost quick-filter-btn" data-open-mobile-filters>
                         <i class="fas fa-filter"></i>
                         <span>Tum Filtreler</span>
                     </button>
@@ -167,37 +167,37 @@
 
             @if (activeFilters.Count > 0)
             {
-                <div class="listing-active-filters">
+                <div class="listing-active-filters active-filters">
                     @foreach (var filter in activeFilters)
                     {
-                        <span class="active-filter-pill">@filter <i class="fas fa-times"></i></span>
+                        <span class="active-filter-pill active-filter-tag">@filter <i class="fas fa-times"></i></span>
                     }
-                    <a asp-controller="Oteller" asp-action="OtelListeleme" class="clear-filter-link">Tumunu Temizle</a>
+                    <a asp-controller="Oteller" asp-action="OtelListeleme" class="clear-filter-link clear-all">Tumunu Temizle</a>
                 </div>
             }
         </header>
 
-        <div class="listing-view-switch" role="tablist" aria-label="Gorunum secimi">
-            <button type="button" class="view-switch-btn active" id="listingListViewBtn" data-view-mode="list">
+        <div class="listing-view-switch view-toggle" role="tablist" aria-label="Gorunum secimi">
+            <button type="button" class="view-switch-btn view-btn active" id="listingListViewBtn" data-view-mode="list">
                 <i class="fas fa-list"></i>
                 <span>Liste</span>
             </button>
-            <button type="button" class="view-switch-btn" id="listingMapViewBtn" data-view-mode="map">
+            <button type="button" class="view-switch-btn view-btn" id="listingMapViewBtn" data-view-mode="map">
                 <i class="fas fa-map-location-dot"></i>
                 <span>Harita</span>
             </button>
         </div>
 
-        <div class="listing-results-grid" id="listingResultsGrid">
-            <aside class="listing-filter-sidebar" id="listingFilterSidebar">
-                <div class="filter-panel">
-                    <div class="filter-panel-section">
+        <div class="listing-results-grid results-container" id="listingResultsGrid">
+            <aside class="listing-filter-sidebar filter-sidebar" id="listingFilterSidebar">
+                <div class="filter-panel filter-card">
+                    <div class="filter-panel-section filter-section">
                         <div class="filter-panel-head">
                             <h3>Fiyat Araligi</h3>
                             <span>Gecelik</span>
                         </div>
                         <input type="range" min="0" max="@(Math.Max(maxPrice, 15000))" value="@maxPrice" class="filter-range" id="listingPriceMaxRange" />
-                        <div class="filter-price-grid">
+                        <div class="filter-price-grid price-range">
                             <label>
                                 <span>Min</span>
                                 <input type="number" id="listingMinPriceInput" value="@minPrice" />
@@ -209,15 +209,15 @@
                         </div>
                     </div>
 
-                    <div class="filter-panel-section">
+                    <div class="filter-panel-section filter-section">
                         <div class="filter-panel-head">
                             <h3>Yildiz Sayisi</h3>
                             <span>@starCounts.Values.Sum()</span>
                         </div>
-                        <div class="filter-option-list">
+                        <div class="filter-option-list filter-options">
                             @foreach (var star in Model.StarOptions)
                             {
-                                <label class="filter-option-row">
+                                <label class="filter-option-row filter-check">
                                     <input type="checkbox" class="listing-star-filter" value="@star" @(starCounts.ContainsKey(star) ? "checked" : null) />
                                     <span>@star Yildiz</span>
                                     <strong>@(starCounts.TryGetValue(star, out var total) ? total : 0)</strong>
@@ -226,7 +226,7 @@
                         </div>
                     </div>
 
-                    <div class="filter-panel-section">
+                    <div class="filter-panel-section filter-section">
                         <div class="filter-panel-head">
                             <h3>Misafir Puani</h3>
                         </div>
@@ -239,16 +239,16 @@
                         </div>
                     </div>
 
-                    <div class="filter-panel-section">
+                    <div class="filter-panel-section filter-section">
                         <div class="filter-panel-head">
                             <h3>Populer Filtreler</h3>
                             <span>@topAmenities.Count</span>
                         </div>
-                        <div class="filter-option-list">
+                        <div class="filter-option-list filter-options">
                             @foreach (var amenity in topAmenities)
                             {
                                 var amenityToken = NormalizeToken(amenity.Key);
-                                <label class="filter-option-row">
+                                <label class="filter-option-row filter-check">
                                     <input type="checkbox" class="listing-amenity-filter" value="@amenityToken" />
                                     <span>@amenity.Key</span>
                                     <strong>@amenity.Count()</strong>
@@ -258,14 +258,14 @@
                         <span class="filter-more-link">+@Math.Max(0, amenityCounts.Count - topAmenities.Count) filtre daha</span>
                     </div>
 
-                    <div class="filter-panel-section">
+                    <div class="filter-panel-section filter-section">
                         <div class="filter-panel-head">
                             <h3>Yemek Secenekleri</h3>
                         </div>
-                        <div class="filter-option-list">
+                        <div class="filter-option-list filter-options">
                             @foreach (var meal in mealOptions)
                             {
-                                <label class="filter-option-row">
+                                <label class="filter-option-row filter-check">
                                     <input type="checkbox" />
                                     <span>@meal</span>
                                 </label>
@@ -273,14 +273,14 @@
                         </div>
                     </div>
 
-                    <div class="filter-panel-section">
+                    <div class="filter-panel-section filter-section">
                         <div class="filter-panel-head">
                             <h3>Ozel Konseptler</h3>
                         </div>
-                        <div class="filter-option-list">
+                        <div class="filter-option-list filter-options">
                             @foreach (var concept in specialConcepts)
                             {
-                                <label class="filter-option-row">
+                                <label class="filter-option-row filter-check">
                                     <input type="checkbox" />
                                     <span>@concept</span>
                                 </label>
@@ -303,7 +303,7 @@
                 }
                 else
                 {
-                    <div class="hotel-card-list" id="hotelListView">
+                    <div class="hotel-card-list hotel-list" id="hotelListView">
                         @foreach (var hotel in hotels)
                         {
                             var cardFilterValue = string.Join(' ', hotel.Amenities.Select(x => NormalizeToken(x)));
@@ -341,7 +341,7 @@
                                         </div>
                                     }
 
-                                    <div class="hotel-card-badges">
+                                    <div class="hotel-card-badges card-badges">
                                         @if (hotel.IsFeatured)
                                         {
                                             <span class="hotel-badge hotel-badge-highlight badge badge-guest">
@@ -359,7 +359,7 @@
                                     </div>
 
                                     <button type="button"
-                                            class="favorite-btn @(hotel.IsFavorite ? "active" : string.Empty)"
+                                            class="favorite-btn wishlist-btn @(hotel.IsFavorite ? "active" : string.Empty)"
                                             data-hotel-id="@hotel.Id"
                                             data-source-page="OtelListeleme"
                                             aria-label="Favorilere ekle">
@@ -412,7 +412,7 @@
                     </div>
                 }
 
-                <div class="listing-map-panel" id="hotelMapView" hidden>
+                <div class="listing-map-panel map-view" id="hotelMapView" hidden>
                     <div class="listing-map-card">
                         <iframe
                             title="@Model.SearchLabel harita gorunumu"

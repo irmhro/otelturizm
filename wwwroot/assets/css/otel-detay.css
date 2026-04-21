@@ -2683,7 +2683,7 @@ body.room-gallery-open {
 .otel-detail-template-v41 {
     background: #f4f6fb;
     border-radius: 24px;
-    padding: 10px 0 24px;
+    padding: 0 0 24px;
 }
 
 .otel-detail-template-v41 .detail-breadcrumb,
@@ -2692,6 +2692,10 @@ body.room-gallery-open {
 .otel-detail-template-v41 .detail-header,
 .otel-detail-template-v41 .detail-grid {
     width: min(var(--page-max-width), calc(100% - 40px));
+}
+
+.otel-detail-template-v41 .detail-breadcrumb {
+    padding: 10px 0 14px;
 }
 
 .otel-detail-template-v41 .detail-header.hotel-title-section {
@@ -2822,7 +2826,7 @@ body.room-gallery-open {
 @media (max-width: 900px) {
     .otel-detail-template-v41 {
         border-radius: 0;
-        padding-top: 8px;
+        padding-top: 0;
     }
 
     .otel-detail-template-v41 .detail-breadcrumb,
@@ -2830,6 +2834,10 @@ body.room-gallery-open {
     .otel-detail-template-v41 .detail-header,
     .otel-detail-template-v41 .detail-grid {
         width: min(var(--page-max-width), calc(100% - 24px));
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb {
+        padding: 8px 0 12px;
     }
 
     .otel-detail-template-v41 .detail-grid {
@@ -3095,6 +3103,15 @@ body.room-gallery-open {
     margin-top: 0;
 }
 
+/* Header-content spacing aligned with firma/kurumsal pages */
+.site-main > .otel-detail-template-v41 {
+    margin-top: -8px;
+}
+
+.otel-detail-template-v41 .detail-breadcrumb {
+    padding: 4px 0 12px;
+}
+
 .otel-detail-template-v41 .weather-inline-trigger {
     min-height: 52px;
     padding: 8px 10px 8px 8px;
@@ -3209,6 +3226,14 @@ body.room-gallery-open {
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 8px;
+    }
+
+    .site-main > .otel-detail-template-v41 {
+        margin-top: -6px;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb {
+        padding: 2px 0 10px;
     }
 
     .otel-detail-template-v41 .weather-inline-trigger {

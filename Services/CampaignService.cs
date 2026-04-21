@@ -83,7 +83,7 @@ public class CampaignService : ICampaignService
                 ColorCode = reader.GetString(10),
                 HeroImageUrl = NormalizeImageUrl(reader.IsDBNull(11) ? null : reader.GetString(11)),
                 IsFeatured = !reader.IsDBNull(12) && reader.GetBoolean(12),
-                HotelCount = reader.IsDBNull(13) ? 0 : reader.GetInt32(13)
+                HotelCount = reader.IsDBNull(13) ? 0 : Convert.ToInt32(reader.GetValue(13), CultureInfo.InvariantCulture)
             });
         }
 
@@ -277,7 +277,7 @@ public class CampaignService : ICampaignService
                     District = reader.GetString(4),
                     Rating = rating,
                     RatingText = BuildRatingText(rating),
-                    ReviewCount = reader.GetInt32(6),
+                ReviewCount = reader.IsDBNull(6) ? 0 : Convert.ToInt32(reader.GetValue(6), CultureInfo.InvariantCulture),
                     StartingPrice = price,
                     PriceNote = price.HasValue ? "Kampanyalı fiyat" : "Teklif al",
                     Summary = reader.GetString(8),

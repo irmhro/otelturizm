@@ -175,7 +175,7 @@ public class UserFavoriteService : IUserFavoriteService
         while (await reader.ReadAsync(cancellationToken))
         {
             var rating = reader.GetDecimal(reader.GetOrdinal("ortalama_puan"));
-            var reviewCount = reader.GetInt32(reader.GetOrdinal("toplam_yorum_sayisi"));
+            var reviewCount = Convert.ToInt32(reader.GetValue(reader.GetOrdinal("toplam_yorum_sayisi")), CultureInfo.InvariantCulture);
             var priceOrdinal = reader.GetOrdinal("baslangic_fiyat");
             var price = reader.IsDBNull(priceOrdinal) ? (decimal?)null : reader.GetDecimal(priceOrdinal);
             var createdAt = reader.GetDateTime(reader.GetOrdinal("olusturulma_tarihi"));
@@ -214,7 +214,7 @@ public class UserFavoriteService : IUserFavoriteService
                 PriceText = price.HasValue ? $"TRY {price.Value:N0}" : "Teklif Al",
                 RatingText = rating > 0 ? (rating >= 9 ? "Olağanüstü" : rating >= 8 ? "Çok İyi" : "İyi") : "Yorum Bekleniyor",
                 AddedDateText = $"{createdAt.ToString("dd MMMM yyyy", culture)} tarihinde kaydedildi",
-                PastStayCount = reader.GetInt32(reader.GetOrdinal("past_stay_count")),
+                PastStayCount = Convert.ToInt32(reader.GetValue(reader.GetOrdinal("past_stay_count")), CultureInfo.InvariantCulture),
                 PriceAlertEnabled = alertActive,
                 PriceAlertTargetAmount = alertTarget,
                 PriceAlertTargetText = alertTarget.HasValue ? $"TRY {alertTarget.Value:N0}" : null,

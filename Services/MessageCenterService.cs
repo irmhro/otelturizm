@@ -259,7 +259,7 @@ public class MessageCenterService : IMessageCenterService
                     Title = title,
                     Subtitle = subtitle,
                     Preview = reader.GetString(3),
-                    UnreadCount = reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
+                UnreadCount = reader.IsDBNull(4) ? 0 : Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture),
                     AvatarText = BuildAvatar(title),
                     AvatarTone = result.Threads.Count % 3 == 0 ? "blue" : result.Threads.Count % 3 == 1 ? "green" : string.Empty,
                     RouteUrl = $"{routeBase}?conversationId={reader.GetInt64(0)}"

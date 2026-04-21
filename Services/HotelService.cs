@@ -269,7 +269,7 @@ public class HotelService : IHotelService
         {
             var city = destinationReader.GetString(destinationReader.GetOrdinal("sehir"));
             var district = destinationReader.GetString(destinationReader.GetOrdinal("ilce"));
-            var hotelCount = destinationReader.GetInt32(destinationReader.GetOrdinal("hotel_count"));
+            var hotelCount = Convert.ToInt32(destinationReader.GetValue(destinationReader.GetOrdinal("hotel_count")), CultureInfo.InvariantCulture);
             var leadHotel = destinationReader.IsDBNull(destinationReader.GetOrdinal("lead_hotel"))
                 ? string.Empty
                 : destinationReader.GetString(destinationReader.GetOrdinal("lead_hotel"));
