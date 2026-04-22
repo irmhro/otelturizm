@@ -11,6 +11,7 @@ public class AdminShellViewModel
     public int UnreadNotifications { get; set; }
     public int CriticalLogs { get; set; }
     public int PendingReviews { get; set; }
+    public int PendingCompanyApplications { get; set; }
 }
 
 public class AdminDashboardViewModel
@@ -135,8 +136,19 @@ public class AdminCommissionManagementPageViewModel
     public AdminShellViewModel Shell { get; set; } = new();
     public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
     public List<AdminCommissionRuleRowViewModel> Rules { get; set; } = new();
+    public List<AdminHotelCommissionFinanceRowViewModel> HotelFinanceRows { get; set; } = new();
     public AdminCommissionRuleForm Form { get; set; } = new();
     public List<AdminCommissionHotelOptionViewModel> Hotels { get; set; } = new();
+}
+
+public class AdminHotelCommissionFinanceRowViewModel
+{
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public decimal GrossRevenue { get; set; }
+    public decimal TotalCommission { get; set; }
+    public decimal PaidCommission { get; set; }
+    public decimal PendingCommission => Math.Max(0m, TotalCommission - PaidCommission);
 }
 
 public class AdminCommissionHotelOptionViewModel

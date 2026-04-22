@@ -59,33 +59,28 @@
             </div>
 
             <div class="hero-slider-shell">
-                    @if (Model.HeroSlides.Count == 0)
+                @if (Model.CampaignSlides.Count == 0)
                 {
                     <div class="hero-slide-empty">
-                        <strong>Hero görseli hazır değil</strong>
-                        <span>Kapak fotoğrafı olan oteller geldiğinde bu alan otomatik dolar.</span>
+                        <strong>Kampanya vitrini hazir degil</strong>
+                        <span>Aktif kampanya gorselleri geldikce bu alan otomatik dolar.</span>
                     </div>
                 }
                 else
                 {
                     <div class="swiper hero-swiper">
                         <div class="swiper-wrapper">
-                            @foreach (var slide in Model.HeroSlides)
+                            @foreach (var slide in Model.CampaignSlides)
                             {
                                 <div class="swiper-slide">
-                                    <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@slide.DetailSlug" class="hero-slide-card">
-                                        <img src="@slide.ImageUrl" alt="@slide.Title" />
+                                    <a href="@slide.TargetUrl" class="hero-slide-card campaign-slide-card">
+                                        <img src="@slide.ImageUrl" alt="@slide.CampaignName" />
+                                        <span class="hero-slide-tag">@slide.BadgeText</span>
                                         <div class="hero-slide-overlay">
-                                            <h3>@slide.Title</h3>
-                                            <p>@slide.Subtitle</p>
+                                            <h3>@slide.CampaignName</h3>
+                                            <p>@slide.Slogan</p>
+                                            <span class="hero-slide-cta">Kampanyayi Incele <i class="fas fa-arrow-right"></i></span>
                                         </div>
-                                @if (!string.IsNullOrWhiteSpace(slide.Temperature) || !string.IsNullOrWhiteSpace(slide.WeatherIcon))
-                                {
-                                    <div class="hero-slide-weather">
-                                        <i class="fas @slide.WeatherIcon"></i>
-                                        <span class="hero-slide-temp">@slide.Temperature</span>
-                                    </div>
-                                }
                                     </a>
                                 </div>
                             }

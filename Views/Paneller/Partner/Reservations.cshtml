@@ -56,6 +56,8 @@
                 <option value="all" selected="@(Model.Filters.PaymentMethod == "all")">Tumu</option>
                 <option value="card" selected="@(Model.Filters.PaymentMethod == "card")">Kart ile ode</option>
                 <option value="cash" selected="@(Model.Filters.PaymentMethod == "cash")">Kapıda ödeme / nakit</option>
+                <option value="transfer" selected="@(Model.Filters.PaymentMethod == "transfer")">Havale / EFT</option>
+                <option value="mixed" selected="@(Model.Filters.PaymentMethod == "mixed")">Karma ödeme</option>
             </select>
         </label>
         <label>
@@ -129,7 +131,13 @@
                     </td>
                     <td>
                         <strong>@row.PaymentStatusLabel</strong>
-                        <small>@(row.PaymentMethodLabel ?? "Yontem belirtilmedi")</small>
+                        <small>
+                            @(row.PaymentMethodLabel ?? "Yontem belirtilmedi")
+                            @if (row.PaymentLineCount > 1 && !string.IsNullOrWhiteSpace(row.PaymentMixSummary))
+                            {
+                                <span> · @row.PaymentMixSummary</span>
+                            }
+                        </small>
                     </td>
                     <td>@row.TotalText</td>
                     <td>@row.CreatedText</td>

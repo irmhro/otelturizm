@@ -391,6 +391,18 @@ public class AdminPanelController : Controller
         return RedirectToAction(nameof(PartnerApplications));
     }
 
+    [HttpGet("firma-basvurulari")]
+    public Task<IActionResult> CompanyApplications(CancellationToken cancellationToken) => RenderSectionAsync("company-applications", "CompanyApplications", cancellationToken);
+
+    [HttpGet("platform-yetkilileri")]
+    public Task<IActionResult> PlatformOfficials(CancellationToken cancellationToken) => RenderSectionAsync("platform-officials", "PlatformOfficials", cancellationToken);
+
+    [HttpGet("acik-oteller")]
+    public Task<IActionResult> ActiveHotels(CancellationToken cancellationToken) => RenderSectionAsync("active-hotels", "ActiveHotels", cancellationToken);
+
+    [HttpGet("bekleyen-oteller")]
+    public Task<IActionResult> PendingHotels(CancellationToken cancellationToken) => RenderSectionAsync("pending-hotels", "PendingHotels", cancellationToken);
+
     [HttpGet("degerlendirmeler")]
     public Task<IActionResult> Reviews(CancellationToken cancellationToken) => RenderSectionAsync("reviews", "Reviews", cancellationToken);
 
@@ -478,7 +490,9 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetSectionPageAsync(sectionKey, GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = "panel-admin-section";
+        ViewData["PageCss"] = string.Equals(sectionKey, "users", StringComparison.OrdinalIgnoreCase)
+            ? "panel-admin-users"
+            : "panel-admin-section";
         return View($"~/Views/Paneller/Admin/{viewName}.cshtml", model);
     }
 

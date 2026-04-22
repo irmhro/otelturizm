@@ -21,6 +21,48 @@
 </div>
 
 <div class="row">
+    <div class="col-12">
+        <div class="card card-outline card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">Otel bazlı gelir ve komisyon özeti</h3>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-striped table-hover text-nowrap mb-0">
+                    <thead>
+                        <tr>
+                            <th>Otel</th>
+                            <th>Toplam Gelir</th>
+                            <th>Toplam Komisyon</th>
+                            <th>Ödenen Komisyon</th>
+                            <th>Bekleyen Komisyon</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (Model.HotelFinanceRows.Count == 0)
+                    {
+                        <tr><td colspan="5">Gelir veya komisyon kaydı bulunmuyor.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in Model.HotelFinanceRows)
+                        {
+                            <tr>
+                                <td>@row.HotelName</td>
+                                <td>₺@row.GrossRevenue.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))</td>
+                                <td>₺@row.TotalCommission.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))</td>
+                                <td>₺@row.PaidCommission.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))</td>
+                                <td>₺@row.PendingCommission.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))</td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-lg-5">
         <div class="card card-primary card-outline">
             <div class="card-header">

@@ -818,6 +818,11 @@ public class PhoneVerificationService : IPhoneVerificationService
 
     private async Task<PhoneVerificationSettingsRecord?> GetActiveSettingsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
+        if (!await TableExistsAsync(connection, "whatsapp_cloud_api_ayarlari", cancellationToken))
+        {
+            return null;
+        }
+
         const string sql = """
             SELECT TOP (1)
                 id, COALESCE(app_id, ''), COALESCE(app_secret_encrypted, ''), COALESCE(business_account_id, ''),
@@ -860,6 +865,11 @@ public class PhoneVerificationService : IPhoneVerificationService
 
     private async Task<string> BuildDeliverySummaryAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
+        if (!await TableExistsAsync(connection, "whatsapp_mesaj_loglari", cancellationToken))
+        {
+            return "Mesaj logu tablosu henuz hazir degil.";
+        }
+
         const string sql = """
             SELECT
                 COUNT(*) AS total_count,
@@ -885,6 +895,11 @@ public class PhoneVerificationService : IPhoneVerificationService
 
     private async Task<bool> HasActiveCooldownAsync(SqlConnection connection, long userId, int resendCooldownSeconds, CancellationToken cancellationToken)
     {
+        if (!await TableExistsAsync(connection, "telefon_dogrulama_tokenlari", cancellationToken))
+        {
+            return false;
+        }
+
         const string sql = """
             SELECT TOP (1) olusturulma_tarihi
             FROM telefon_dogrulama_tokenlari
@@ -926,6 +941,11 @@ public class PhoneVerificationService : IPhoneVerificationService
 
     private async Task ExpireTokenAsync(SqlConnection connection, long tokenId, CancellationToken cancellationToken)
     {
+        if (!await TableExistsAsync(connection, "telefon_dogrulama_tokenlari", cancellationToken))
+        {
+            return;
+        }
+
         const string sql = """
             UPDATE telefon_dogrulama_tokenlari
             SET talep_durumu = 'SuresiDoldu',
@@ -976,6 +996,23 @@ public class PhoneVerificationService : IPhoneVerificationService
         {
             return string.Empty;
         }
+    }
+
+    private static async Task<bool> TableExistsAsync(SqlConnection connection, string tableName, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = 'dbo'
+              AND TABLE_NAME = @tableName;
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return result is not null
+            && result != DBNull.Value
+            && Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;
     }
 
     private static string MaskMiddle(string? value)

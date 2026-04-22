@@ -70,6 +70,7 @@ public class HotelListingCardViewModel
     public decimal? StartingPrice { get; set; }
     public string PriceNote { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
+    public List<string> GalleryImages { get; set; } = new();
     public bool IsFeatured { get; set; }
     public bool IsFavorite { get; set; }
     public List<string> Amenities { get; set; } = new();

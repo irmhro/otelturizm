@@ -1202,3 +1202,27 @@ body {
     text-decoration: none;
     font-weight: 700;
 }
+
+.reservation-draft-cancel-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.global-draft-banner-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: #fff;
+    color: #b91c1c;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.92rem;
+}
+
+.global-draft-banner-cancel:hover {
+    background: rgba(254, 226, 226, 0.65);
+}

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using otelturizmnew.Constants;
@@ -30,12 +31,12 @@ public class OtellerController : Controller
 
     [HttpGet("")]
     [HttpGet("istanbul")]
-    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, CancellationToken cancellationToken)
+    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? kampanya, [FromQuery] int page, CancellationToken cancellationToken)
     {
         ViewData["PageCss"] = "otel-listeleme";
         ViewData["PageCssMobile"] = "otel-listeleme.mobile";
         var searchTerm = !string.IsNullOrWhiteSpace(q) ? q : city;
-        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiket, cancellationToken);
+        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiket, kampanya, page <= 0 ? 1 : page, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
         ViewData["Title"] = model.CampaignTitle;
         return View("~/Views/Oteller/OtelListeleme.cshtml", model);
@@ -90,9 +91,9 @@ public class OtellerController : Controller
 
     [HttpPost("{slug}/rezervasyon")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> StartReservation(string slug, PublicHotelReservationForm form, CancellationToken cancellationToken)
+    public async Task<IActionResult> StartReservation(string slug, PublicHotelReservationForm form, IFormFile? BankTransferReceipt, CancellationToken cancellationToken)
     {
-        var result = await _publicReservationService.StartReservationAsync(GetCurrentUserIdOrNull(), EnsureReservationSessionKey(), form, cancellationToken);
+        var result = await _publicReservationService.StartReservationAsync(GetCurrentUserIdOrNull(), EnsureReservationSessionKey(), form, BankTransferReceipt, cancellationToken);
         TempData[result.Success ? "PublicReservationSuccess" : "PublicReservationInfo"] = result.Message;
         if (!string.IsNullOrWhiteSpace(result.RedirectUrl))
         {

@@ -902,6 +902,13 @@ body {
   width: auto;
   height: 34px;
 }
+
+/* Ensure plain header logo stays proportional (avoid width:100% from drawer-brand-logo). */
+.drawer-brand-logo.drawer-brand-logo-plain {
+  width: auto;
+  max-width: 78vw;
+  height: 34px;
+}
 .drawer-brand-mark { width: 52px; height: 52px; border-radius: 14px; background: #f8fafc; border:1px solid rgba(148,163,184,.35); display:grid; place-items:center; padding:8px; }
 .drawer-brand-logo { width:100%; height:auto; object-fit:contain; }
 .drawer-user h4 { margin:0; color:var(--text-dark); font-weight:800; }

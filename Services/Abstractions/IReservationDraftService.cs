@@ -8,4 +8,5 @@ public interface IReservationDraftService
     Task<ReservationDraftSummaryViewModel?> GetActiveDraftAsync(long? userId, string? sessionKey, CancellationToken cancellationToken = default);
     Task<long> SaveOrUpdateAsync(ReservationDraftUpsertRequest request, CancellationToken cancellationToken = default);
     Task MarkCompletedAsync(long draftId, long reservationId, CancellationToken cancellationToken = default);
+    Task CancelDraftAsync(long draftId, long userId, string? sessionKey, CancellationToken cancellationToken = default);
 }

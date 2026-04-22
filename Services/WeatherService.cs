@@ -117,6 +117,14 @@ public class WeatherService : IWeatherService
             queries.Add($"{district}, {city}, Turkey");
         }
 
+        if (!string.IsNullOrWhiteSpace(district))
+        {
+            // Some districts are not returned when combined with city; try district-only lookups.
+            queries.Add($"{district}, Türkiye");
+            queries.Add($"{district}, Turkey");
+            queries.Add(district);
+        }
+
         if (!string.IsNullOrWhiteSpace(city))
         {
             queries.Add($"{city}, Türkiye");
@@ -150,8 +158,14 @@ public class WeatherService : IWeatherService
                 var admin2 = item.TryGetProperty("admin2", out var admin2Prop) ? (admin2Prop.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
                 var admin1 = item.TryGetProperty("admin1", out var admin1Prop) ? (admin1Prop.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
                 var country = item.TryGetProperty("country", out var countryProp) ? (countryProp.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
+                var countryCode = item.TryGetProperty("country_code", out var codeProp) ? (codeProp.GetString() ?? string.Empty) : string.Empty;
 
-                if (!country.Contains("tur", StringComparison.OrdinalIgnoreCase))
+                var isTurkey =
+                    string.Equals(countryCode, "TR", StringComparison.OrdinalIgnoreCase)
+                    || country.Contains("tur", StringComparison.OrdinalIgnoreCase)
+                    || country.Contains("tür", StringComparison.OrdinalIgnoreCase);
+
+                if (!isTurkey)
                 {
                     continue;
                 }

@@ -7,6 +7,8 @@ using otelturizmnew.Models.Anasayfa;
 using otelturizmnew.Models.Oteller;
 using otelturizmnew.Services.Abstractions;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text;
 
@@ -122,7 +124,7 @@ public class HotelService : IHotelService
                         g.gorsel_url,
                         ROW_NUMBER() OVER (PARTITION BY g.otel_id ORDER BY g.kapak_fotografi_mi DESC, g.one_cikan DESC, g.siralama ASC) AS rn
                     FROM otel_gorselleri g
-                    WHERE g.onay_durumu LIKE N'Onaylan%'
+                    WHERE g.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
                       AND g.gorsel_url NOT LIKE '/uploads/logo/%'
                 ) g1
                 WHERE g1.rn = 1
@@ -139,7 +141,7 @@ public class HotelService : IHotelService
                 GROUP BY oi.otel_id
             ) oz ON oz.otel_id = o.id
             WHERE o.yayin_durumu = N'Yayında'
-              AND o.onay_durumu = N'Onaylandı'
+              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
             ORDER BY
                 CASE WHEN o.one_cikan_otel = 1 THEN 0 ELSE 1 END,
                 CASE WHEN o.tavsiye_edilen_otel = 1 THEN 0 ELSE 1 END,
@@ -262,7 +264,7 @@ public class HotelService : IHotelService
                     ) AS rn
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
-                  AND o.onay_durumu = N'Onaylandı'
+                  AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
             )
             SELECT TOP (6)
                 sehir,
@@ -407,20 +409,20 @@ public class HotelService : IHotelService
             FROM (
                 SELECT DISTINCT o.sehir AS suggestion_value, o.sehir AS suggestion_label, 'Sehir' AS suggestion_type
                 FROM oteller o
-                WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu = N'Onaylandı'
+                WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
 
                 UNION
 
                 SELECT DISTINCT o.ilce AS suggestion_value, CONCAT(o.ilce, ' / ', o.sehir) AS suggestion_label, 'Ilce' AS suggestion_type
                 FROM oteller o
-                WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu = N'Onaylandı'
+                WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
 
                 UNION
 
                 SELECT DISTINCT o.mahalle AS suggestion_value, CONCAT(o.mahalle, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Mahalle' AS suggestion_type
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
-                  AND o.onay_durumu = N'Onaylandı'
+                  AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
                   AND o.mahalle IS NOT NULL
                   AND o.mahalle <> ''
 
@@ -428,7 +430,7 @@ public class HotelService : IHotelService
 
                 SELECT DISTINCT o.otel_adi AS suggestion_value, CONCAT(o.otel_adi, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Otel' AS suggestion_type
                 FROM oteller o
-                WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu = N'Onaylandı'
+                WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
             ) AS suggestions;
             """;
 
@@ -613,6 +615,7 @@ public class HotelService : IHotelService
                 COALESCE(o.kisa_aciklama, '') AS kisa_aciklama,
                 COALESCE(o.one_cikan_otel, 0) AS one_cikan_otel,
                 COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
+                COALESCE(og3.gorsel_listesi, '') AS gorsel_listesi,
                 pf.baslangic_fiyat,
                 oz.ozellikler,
                 COALESCE(kc.kampanya_adlari, '') AS kampanya_adlari,
@@ -650,11 +653,26 @@ public class HotelService : IHotelService
                         g.gorsel_url,
                         ROW_NUMBER() OVER (PARTITION BY g.otel_id ORDER BY g.kapak_fotografi_mi DESC, g.one_cikan DESC, g.siralama ASC) AS rn
                     FROM otel_gorselleri g
-                    WHERE g.onay_durumu LIKE N'Onaylan%'
+                    WHERE g.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
                       AND g.gorsel_url NOT LIKE '/uploads/logo/%'
                 ) g1
                 WHERE g1.rn = 1
             ) og ON og.otel_id = o.id
+            LEFT JOIN (
+                SELECT g.otel_id,
+                       STRING_AGG(g.gorsel_url, '||') WITHIN GROUP (ORDER BY g.rn) AS gorsel_listesi
+                FROM (
+                    SELECT
+                        g0.otel_id,
+                        g0.gorsel_url,
+                        ROW_NUMBER() OVER (PARTITION BY g0.otel_id ORDER BY g0.kapak_fotografi_mi DESC, g0.one_cikan DESC, g0.siralama ASC, g0.id ASC) AS rn
+                    FROM otel_gorselleri g0
+                    WHERE g0.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+                      AND g0.gorsel_url NOT LIKE '/uploads/logo/%'
+                ) g
+                WHERE g.rn <= 3
+                GROUP BY g.otel_id
+            ) og3 ON og3.otel_id = o.id
             LEFT JOIN (
                 SELECT
                     c.otel_id,
@@ -684,7 +702,7 @@ public class HotelService : IHotelService
                 GROUP BY oi.otel_id
             ) oz ON oz.otel_id = o.id
             WHERE o.yayin_durumu = N'Yayında'
-              AND o.onay_durumu = N'Onaylandı'
+              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
               AND (
                     @campaignSlug = ''
                     OR EXISTS (
@@ -743,6 +761,16 @@ public class HotelService : IHotelService
             var summary = reader.GetString(reader.GetOrdinal("kisa_aciklama"));
             var isFeatured = ReadFlag(reader, "one_cikan_otel");
             var imageUrl = reader.IsDBNull(reader.GetOrdinal("gorsel_url")) ? string.Empty : reader.GetString(reader.GetOrdinal("gorsel_url"));
+            var galleryRaw = reader.IsDBNull(reader.GetOrdinal("gorsel_listesi")) ? string.Empty : reader.GetString(reader.GetOrdinal("gorsel_listesi"));
+            var galleryImages = string.IsNullOrWhiteSpace(galleryRaw)
+                ? new List<string>()
+                : galleryRaw
+                    .Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(NormalizeImageUrl)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(3)
+                    .ToList();
             var startingPrice = reader.IsDBNull(reader.GetOrdinal("baslangic_fiyat")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("baslangic_fiyat"));
             var rawAmenities = reader.IsDBNull(reader.GetOrdinal("ozellikler")) ? string.Empty : reader.GetString(reader.GetOrdinal("ozellikler"));
             var campaignNames = reader.IsDBNull(reader.GetOrdinal("kampanya_adlari"))
@@ -793,6 +821,7 @@ public class HotelService : IHotelService
                 StartingPrice = startingPrice,
                 PriceNote = startingPrice.HasValue ? "Gecelik taban · vergi öncesi" : "Musait fiyat bilgisi bulunamadi",
                 ImageUrl = NormalizeImageUrl(imageUrl),
+                GalleryImages = galleryImages,
                 IsFeatured = isFeatured,
                 Amenities = amenities,
                 Tags = tags,
@@ -808,6 +837,8 @@ public class HotelService : IHotelService
 
         model.Hotels = ApplyCampaignFilter(model.Hotels, model.ActiveTag).ToList();
         var filteredHotels = model.Hotels.ToList();
+
+        filteredHotels = ApplySponsorPinning(filteredHotels, normalizedSearchKeyword);
         model.TotalCount = filteredHotels.Count;
         model.MinPrice = filteredHotels.Where(x => x.StartingPrice.HasValue).Select(x => x.StartingPrice!.Value).DefaultIfEmpty(0).Min();
         model.MaxPrice = filteredHotels.Where(x => x.StartingPrice.HasValue).Select(x => x.StartingPrice!.Value).DefaultIfEmpty(0).Max();
@@ -885,6 +916,64 @@ public class HotelService : IHotelService
         return model;
     }
 
+    private static List<HotelListingCardViewModel> ApplySponsorPinning(List<HotelListingCardViewModel> hotels, string regionKey)
+    {
+        if (hotels.Count == 0)
+        {
+            return hotels;
+        }
+
+        regionKey ??= string.Empty;
+        var sponsors = hotels.Where(x => x.IsFeatured).ToList();
+        if (sponsors.Count > 0)
+        {
+            DateTime localNow;
+            try
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+                localNow = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
+            }
+            catch
+            {
+                localNow = DateTime.UtcNow;
+            }
+
+            var periodKey = localNow.ToString("yyyyMMddHH", CultureInfo.InvariantCulture);
+            var seed = $"{regionKey}|{periodKey}";
+
+            int StableScore(long hotelId)
+            {
+                var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(seed + "|" + hotelId.ToString(CultureInfo.InvariantCulture)));
+                return BitConverter.ToInt32(bytes, 0);
+            }
+
+            var topSponsors = sponsors
+                .OrderBy(x => StableScore(x.Id))
+                .Take(3)
+                .ToList();
+
+            var pinnedIds = topSponsors.Select(x => x.Id).ToHashSet();
+            var rest = hotels.Where(x => !pinnedIds.Contains(x.Id)).ToList();
+            return topSponsors.Concat(rest).ToList();
+        }
+
+        // No sponsors in this region: ensure the most-starred hotel appears first.
+        var best = hotels
+            .OrderByDescending(x => x.StarCount ?? 0)
+            .ThenByDescending(x => x.Rating)
+            .ThenByDescending(x => x.ReviewCount)
+            .ThenByDescending(x => x.Id)
+            .FirstOrDefault();
+
+        if (best is null)
+        {
+            return hotels;
+        }
+
+        var bestId = best.Id;
+        return new[] { best }.Concat(hotels.Where(x => x.Id != bestId)).ToList();
+    }
+
     private async Task<List<HotelSearchSuggestionViewModel>> GetSearchSuggestionsForSqlServerAsync(string query, CancellationToken cancellationToken)
     {
         var normalizedQuery = string.IsNullOrWhiteSpace(query) ? string.Empty : query.Trim();
@@ -915,7 +1004,7 @@ public class HotelService : IHotelService
                 SELECT DISTINCT o.sehir AS suggestion_value, o.sehir AS suggestion_label, 'Sehir' AS suggestion_type, 1 AS sort_order
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
-                  AND o.onay_durumu = N'Onaylandı'
+              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
                   AND {normalizedCitySql} LIKE @queryNormalized + '%'
 
                 UNION
@@ -923,7 +1012,7 @@ public class HotelService : IHotelService
                 SELECT DISTINCT o.ilce AS suggestion_value, CONCAT(o.ilce, ' / ', o.sehir) AS suggestion_label, 'Ilce' AS suggestion_type, 2 AS sort_order
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
-                  AND o.onay_durumu = N'Onaylandı'
+              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
                   AND {normalizedDistrictSql} LIKE @queryNormalized + '%'
 
                 UNION
@@ -931,7 +1020,7 @@ public class HotelService : IHotelService
                 SELECT DISTINCT o.mahalle AS suggestion_value, CONCAT(o.mahalle, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Mahalle' AS suggestion_type, 3 AS sort_order
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
-                  AND o.onay_durumu = N'Onaylandı'
+              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
                   AND o.mahalle IS NOT NULL
                   AND o.mahalle <> ''
                   AND {normalizedNeighborhoodSql} LIKE @queryNormalized + '%'
@@ -941,7 +1030,7 @@ public class HotelService : IHotelService
                 SELECT DISTINCT o.otel_adi AS suggestion_value, CONCAT(o.otel_adi, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Otel' AS suggestion_type, 4 AS sort_order
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
-                  AND o.onay_durumu = N'Onaylandı'
+              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
                   AND {normalizedHotelNameSql} LIKE '%' + @queryNormalized + '%'
             ) suggestions
             ORDER BY sort_order, suggestion_label;
@@ -1343,7 +1432,7 @@ public class HotelService : IHotelService
         }
 
         const string reviewsSql = """
-            SELECT TOP (6)
+            SELECT TOP (60)
                 CASE WHEN y.anonim_mi = 1 THEN 'Misafir' ELSE u.ad_soyad END AS ad_soyad,
                 y.genel_puan,
                 y.genel_puan_10,
@@ -2036,7 +2125,7 @@ public class HotelService : IHotelService
             SELECT id, otel_kodu, otel_adi
             FROM oteller
             WHERE yayin_durumu = N'Yayında'
-              AND onay_durumu = N'Onaylandı';
+              AND onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli');
             """;
 
         await using var command = new SqlCommand(sql, connection);
@@ -2062,7 +2151,7 @@ public class HotelService : IHotelService
             SELECT id, otel_kodu, otel_adi
             FROM oteller
             WHERE yayin_durumu = N'Yayında'
-              AND onay_durumu = N'Onaylandı';
+              AND onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli');
             """;
 
         await using var command = new SqlCommand(sql, connection);

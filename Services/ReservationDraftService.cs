@@ -290,6 +290,27 @@ public class ReservationDraftService : IReservationDraftService
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Taslagi sil; sadece oturum veya kullaniciya bagli kayitlar iptal edilebilir.
+    /// </summary>
+    public async Task CancelDraftAsync(long draftId, long userId, string? sessionKey, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        const string sql = @"
+            DELETE FROM rezervasyon_taslaklari
+            WHERE id = @draftId
+              AND durum IN ('Taslak','Profil Eksik','Giris Bekliyor')
+              AND (
+                  (@userId > 0 AND user_id = @userId)
+                  OR (@sessionKey <> '' AND session_anahtari = @sessionKey)
+              );";
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@draftId", draftId);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@sessionKey", sessionKey?.Trim() ?? string.Empty);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private static void BindDraftParameters(SqlCommand command, ReservationDraftUpsertRequest request)
     {
         command.Parameters.AddWithValue("@userId", request.UserId.HasValue ? request.UserId.Value : DBNull.Value);

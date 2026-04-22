@@ -127,12 +127,29 @@
 <div class="otel-detail-template-v41">
 <section class="detail-breadcrumb detail-breadcrumb-with-weather">
     <div class="detail-breadcrumb-left">
-        <a asp-controller="Oteller" asp-action="OtelListeleme"><i class="fas fa-arrow-left"></i> Otellere Don</a>
+        <a asp-controller="Oteller" asp-action="OtelListeleme" class="detail-back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>Otellere Dön</span>
+        </a>
+        <span class="detail-breadcrumb-sep" aria-hidden="true">·</span>
+        <span class="detail-breadcrumb-context">
+            <i class="fas fa-location-dot"></i>
+            <strong>@Model.District</strong><span class="detail-breadcrumb-muted">, @Model.City</span>
+        </span>
     </div>
 </section>
 
 <section class="gallery-grid">
     <div class="gallery-main-image">
+        @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+        {
+            <div class="gallery-star-badge" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
+                @for (var i = 0; i < Model.StarCount.Value; i++)
+                {
+                    <i class="fas fa-star" aria-hidden="true"></i>
+                }
+            </div>
+        }
         <button type="button" class="gallery-main-trigger" data-gallery-index="0" aria-label="Galeriyi ac">
             <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" />
         </button>
@@ -166,6 +183,15 @@
     @if (gallery.Count > 1)
     {
         <div class="gallery-mobile-strip" id="galleryMobileStrip" aria-label="Mobil galeri slider">
+            @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+            {
+                <div class="gallery-star-badge gallery-star-badge-mobile" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
+                    @for (var i = 0; i < Model.StarCount.Value; i++)
+                    {
+                        <i class="fas fa-star" aria-hidden="true"></i>
+                    }
+                </div>
+            }
             <div class="gallery-mobile-track" id="galleryMobileTrack">
                 @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
                 {
@@ -207,48 +233,11 @@
     <div class="hotel-name">
         <h1>
             @Model.Name
-            @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
-            {
-                <span class="detail-stars" aria-hidden="true">
-                    @for (var i = 0; i < Model.StarCount.Value; i++)
-                    {
-                        <text>★</text>
-                    }
-                </span>
-                <span class="sr-only">@($"{Model.StarCount.Value} yıldızlı otel")</span>
-            }
         </h1>
         <p class="detail-location"><i class="fas fa-location-dot"></i> @Model.Address</p>
 
     </div>
     <div class="header-right-stack">
-        <div class="header-top-metrics">
-            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
-            {
-                <div class="detail-utility-row">
-                    <button type="button" class="weather-inline-trigger @weatherThemeClass" id="weatherPopupOpen" aria-haspopup="dialog" aria-controls="weatherPopup">
-                        <span class="weather-inline-icon">
-                            <i class="fas @(todayWeather?.IconClass ?? "fa-cloud-sun")"></i>
-                        </span>
-                        <span class="weather-inline-copy">
-                            <strong>Hava durumunu gor</strong>
-                            <small>@Model.Weather.LocationLabel • @(todayWeather?.ConditionText ?? string.Empty)</small>
-                        </span>
-                        <span class="weather-inline-badge">3 Gunluk</span>
-                    </button>
-                </div>
-            }
-            <div class="rating-summary">
-                <div class="rating-big">
-                    <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
-                    <span class="rating-max">/10</span>
-                </div>
-                <div class="rating-text">
-                    <strong>@Model.RatingText</strong><br />
-                    <span>@(Model.ReviewCount > 0 ? $"{Model.ReviewCount} yorum" : "Henuz yorum yok")</span>
-                </div>
-            </div>
-        </div>
         <div class="detail-actions">
             <button type="button"
                     id="startConversationBtn"
@@ -300,6 +289,52 @@
                 <span data-favorite-label>@(Model.IsFavorite ? "Kaydedildi" : "Kaydet")</span>
             </button>
         </div>
+        <div class="header-top-metrics">
+            <div class="detail-utility-row">
+                <button type="button"
+                        class="weather-inline-trigger @(Model.Weather is not null && Model.Weather.Days.Count > 0 ? weatherThemeClass : "weather-theme-cloudy")"
+                        id="weatherPopupOpen"
+                        data-has-weather="@(Model.Weather is not null && Model.Weather.Days.Count > 0 ? "true" : "false")"
+                        aria-haspopup="dialog"
+                        aria-controls="weatherPopup">
+                    <span class="weather-inline-icon">
+                        <i class="fas @(todayWeather?.IconClass ?? "fa-cloud-sun")"></i>
+                    </span>
+                    <span class="weather-inline-copy">
+                        <strong>Hava durumu</strong>
+                        <small>
+                            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+                            {
+                                @Model.Weather.LocationLabel
+                                @if (!string.IsNullOrWhiteSpace(todayWeather?.TemperatureText))
+                                {
+                                    <text> • @todayWeather!.TemperatureText</text>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(todayWeather?.ConditionText))
+                                {
+                                    <text> • @todayWeather!.ConditionText</text>
+                                }
+                            }
+                            else
+                            {
+                                <text>@Model.District, @Model.City • Tahmin yüklenemedi</text>
+                            }
+                        </small>
+                    </span>
+                    <span class="weather-inline-badge">3 Gunluk</span>
+                </button>
+            </div>
+            <div class="rating-summary">
+                <div class="rating-big">
+                    <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
+                    <span class="rating-max">/10</span>
+                </div>
+                <div class="rating-text">
+                    <strong>@Model.RatingText</strong><br />
+                    <span>@(Model.ReviewCount > 0 ? $"{Model.ReviewCount} yorum" : "Henuz yorum yok")</span>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -333,13 +368,75 @@
     </section>
 }
 
+@{
+    string FixMojibake(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+        // Common UTF-8-as-ANSI mojibake fixes for Turkish content.
+        return value
+            .Replace("Ã‡", "Ç", StringComparison.Ordinal)
+            .Replace("Ã§", "ç", StringComparison.Ordinal)
+            .Replace("Ä±", "ı", StringComparison.Ordinal)
+            .Replace("Ä°", "İ", StringComparison.Ordinal)
+            .Replace("Ã–", "Ö", StringComparison.Ordinal)
+            .Replace("Ã¶", "ö", StringComparison.Ordinal)
+            .Replace("Ãœ", "Ü", StringComparison.Ordinal)
+            .Replace("Ã¼", "ü", StringComparison.Ordinal)
+            .Replace("Åž", "Ş", StringComparison.Ordinal)
+            .Replace("ÅŸ", "ş", StringComparison.Ordinal)
+            .Replace("ÄŸ", "ğ", StringComparison.Ordinal)
+            .Replace("Äž", "Ğ", StringComparison.Ordinal)
+            .Replace("Â", "", StringComparison.Ordinal);
+    }
+
+    string MaskName(string? fullName)
+    {
+        var name = (fullName ?? "Misafir").Trim();
+        if (string.IsNullOrWhiteSpace(name) || string.Equals(name, "Misafir", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Misafir";
+        }
+
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        string MaskPart(string p)
+        {
+            if (string.IsNullOrWhiteSpace(p)) return string.Empty;
+            if (p.Length <= 2) return p.Substring(0, 1) + "*";
+            return p.Substring(0, 1) + new string('*', Math.Min(4, p.Length - 1));
+        }
+
+        if (parts.Length == 1) return MaskPart(parts[0]);
+        return $"{MaskPart(parts[0])} {MaskPart(parts[^1])}";
+    }
+
+    var reviewSort = (Context.Request.Query["reviewSort"].ToString() ?? "new").Trim().ToLowerInvariant();
+    var reviewPageRaw = Context.Request.Query["reviewPage"].ToString();
+    var reviewPage = int.TryParse(reviewPageRaw, out var parsedReviewPage) ? Math.Max(1, parsedReviewPage) : 1;
+    const int reviewPageSize = 7;
+
+    var sortedReviews = (Model.Reviews ?? new List<otelturizmnew.Models.Oteller.HotelReviewViewModel>()).ToList();
+    sortedReviews = reviewSort switch
+    {
+        "old" => sortedReviews.OrderBy(r => r.DateText).ToList(),
+        "best" => sortedReviews.OrderByDescending(r => r.Score).ToList(),
+        "worst" => sortedReviews.OrderBy(r => r.Score).ToList(),
+        _ => sortedReviews.ToList()
+    };
+    if (reviewSort == "new")
+    {
+        sortedReviews = sortedReviews.ToList();
+    }
+
+    var totalReviewCount = sortedReviews.Count;
+    var totalReviewPages = (int)Math.Ceiling(totalReviewCount / (double)reviewPageSize);
+    if (totalReviewPages <= 0) totalReviewPages = 1;
+    if (reviewPage > totalReviewPages) reviewPage = totalReviewPages;
+    var pagedReviews = sortedReviews.Skip((reviewPage - 1) * reviewPageSize).Take(reviewPageSize).ToList();
+}
+
 <section class="detail-grid">
     <div class="detail-content">
         <article class="content-card featured-amenities-card">
-            <div class="section-head">
-                <h2>One Cikan Ozellikler</h2>
-                <p>@(string.IsNullOrWhiteSpace(Model.ShortDescription) ? "Tesisin veritabanindaki one cikan olanaklari." : Model.ShortDescription)</p>
-            </div>
             <div class="amenities-grid amenities-grid-lux">
                 @foreach (var item in featuredAmenities)
                 {
@@ -439,40 +536,50 @@
                             <div class="room-card-copy">
                                 <h3>@room.Name</h3>
                                 <p>@room.Specs</p>
-                                <span class="cancellation-badge"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
-                                @if (room.Features.Count > 0)
+                                @{
+                                    var roomFeatureSeed = room.Features ?? new List<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>();
+                                    var roomTopFeatures = roomFeatureSeed.Take(5).ToList();
+                                    if (roomTopFeatures.Count < 5)
+                                    {
+                                        // Oda özellikleri 5'ten azsa, otelin öne çıkan olanaklarından tamamla (tekrarları çıkar).
+                                        var existing = new HashSet<string>(roomTopFeatures.Select(x => x.Name ?? string.Empty), StringComparer.OrdinalIgnoreCase);
+                                        foreach (var amenity in Model.Amenities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
+                                        {
+                                            if (roomTopFeatures.Count >= 5) break;
+                                            if (!existing.Add(amenity.Name)) continue;
+                                            roomTopFeatures.Add(new otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel
+                                            {
+                                                Name = amenity.Name,
+                                                IconClass = string.IsNullOrWhiteSpace(amenity.IconClass) ? "fa-circle-check" : amenity.IconClass
+                                            });
+                                        }
+                                    }
+                                }
+                                @if (roomTopFeatures.Count > 0)
                                 {
                                     <div class="room-feature-preview">
-                                        @foreach (var feature in room.Features.Take(5))
+                                        @foreach (var feature in roomTopFeatures)
                                         {
                                             <span class="room-feature-chip"><i class="fas @feature.IconClass"></i> @feature.Name</span>
                                         }
                                     </div>
-                                    @if (room.Features.Count > 5)
-                                    {
-                                        <details class="room-feature-more">
-                                            <summary>Tümünü gör</summary>
-                                            <div class="room-feature-preview room-feature-preview-all">
-                                                @foreach (var feature in room.Features.Skip(5))
-                                                {
-                                                    <span class="room-feature-chip"><i class="fas @feature.IconClass"></i> @feature.Name</span>
-                                                }
-                                            </div>
-                                        </details>
-                                    }
                                 }
+                                @if ((room.Features?.Count ?? 0) > 5)
+                                {
+                                    <details class="room-feature-more">
+                                        <summary>Tümünü gör</summary>
+                                        <div class="room-feature-preview room-feature-preview-all">
+                                            @foreach (var feature in (room.Features ?? Enumerable.Empty<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>()).Skip(5))
+                                            {
+                                                <span class="room-feature-chip"><i class="fas @feature.IconClass"></i> @feature.Name</span>
+                                            }
+                                        </div>
+                                    </details>
+                                }
+                                <span class="cancellation-badge"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
                             </div>
                         </div>
                         <div class="room-price-box">
-                            <strong>@(room.Price > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(room.Price):N0}" : "Fiyat Yok")</strong>
-                            @if (room.Price > 0m)
-                            {
-                                <span class="room-price-inclusive-label" title="KDV ve konaklama vergisi dahil gece fiyatı">Vergi dahil</span>
-                            }
-                            else
-                            {
-                                <span class="room-price-unavailable">Bu oda icin aktif fiyat bulunamadi</span>
-                            }
                             @if (room.Price > 0m)
                             {
                                 <button type="button"
@@ -491,6 +598,15 @@
                                         disabled>
                                     Fiyat Yok
                                 </button>
+                            }
+                            <strong>@(room.Price > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(room.Price):N0}" : "Fiyat Yok")</strong>
+                            @if (room.Price > 0m)
+                            {
+                                <span class="room-price-inclusive-label" title="KDV ve konaklama vergisi dahil gece fiyatı">Vergi dahil</span>
+                            }
+                            else
+                            {
+                                <span class="room-price-unavailable">Bu oda icin aktif fiyat bulunamadi</span>
                             }
                         </div>
                     </div>
@@ -541,7 +657,7 @@
                 </div>
             </div>
 
-            @if (Model.Reviews.Count == 0)
+            @if ((Model.Reviews?.Count ?? 0) == 0)
             {
                 <div class="review-card">
                     <p>Bu tesis icin onayli misafir yorumu bulunmuyor. Ilk yorumu yapan kullanıcı siz olabilirsiniz.</p>
@@ -549,35 +665,66 @@
             }
             else
             {
+                <div class="review-toolbar">
+                    <div class="review-toolbar-left">
+                        <strong>Yorumlar</strong>
+                        <span class="review-toolbar-count">@totalReviewCount</span>
+                    </div>
+                    <div class="review-toolbar-right">
+                        <label class="review-sort">
+                            <span>Sırala</span>
+                            <select id="reviewSortSelect">
+                                <option value="new" selected="@(reviewSort == "new")">En yeni</option>
+                                <option value="old" selected="@(reviewSort == "old")">En eski</option>
+                                <option value="best" selected="@(reviewSort == "best")">En iyi</option>
+                                <option value="worst" selected="@(reviewSort == "worst")">En kötü</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="review-list">
-                    @foreach (var review in Model.Reviews)
+                    @foreach (var review in pagedReviews)
                     {
                         <article class="review-card">
                             <div class="review-meta">
-                                <div class="review-avatar">@review.Avatar</div>
                                 <div>
-                                    <h4>@review.Name</h4>
+                                    <h4>@MaskName(review.Name)</h4>
                                     <p>@review.DateText</p>
                                 </div>
                                 <span class="review-chip">@review.Score.ToString("0.0")</span>
                             </div>
-                            @if (!string.IsNullOrWhiteSpace(review.TravelProfile) || !string.IsNullOrWhiteSpace(review.SatisfactionLabel))
-                            {
-                                <p class="review-tags">
-                                    @if (!string.IsNullOrWhiteSpace(review.TravelProfile))
-                                    {
-                                        <span>@review.TravelProfile</span>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(review.SatisfactionLabel))
-                                    {
-                                        <span>@review.SatisfactionLabel</span>
-                                    }
-                                </p>
-                            }
-                            <p>@review.Text</p>
+                            <p>@FixMojibake(review.Text)</p>
                         </article>
                     }
                 </div>
+
+                @if (totalReviewPages > 1)
+                {
+                    <nav class="review-pager" aria-label="Yorum sayfalama">
+                        @{
+                            string BuildReviewUrl(int targetPage)
+                            {
+                                var query = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                                foreach (var key in Context.Request.Query.Keys)
+                                {
+                                    query[key] = Context.Request.Query[key].ToString();
+                                }
+                                query["reviewPage"] = targetPage.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                                query["reviewSort"] = reviewSort;
+                                var qs = string.Join("&", query.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value ?? string.Empty)}"));
+                                return Context.Request.Path + (string.IsNullOrWhiteSpace(qs) ? string.Empty : "?" + qs);
+                            }
+                        }
+                        <a class="review-page-btn @(reviewPage <= 1 ? "disabled" : string.Empty)"
+                           href="@(reviewPage <= 1 ? "#" : BuildReviewUrl(reviewPage - 1))"
+                           aria-disabled="@(reviewPage <= 1 ? "true" : "false")">Önceki</a>
+                        <span class="review-page-indicator">@reviewPage / @totalReviewPages</span>
+                        <a class="review-page-btn @(reviewPage >= totalReviewPages ? "disabled" : string.Empty)"
+                           href="@(reviewPage >= totalReviewPages ? "#" : BuildReviewUrl(reviewPage + 1))"
+                           aria-disabled="@(reviewPage >= totalReviewPages ? "true" : "false")">Sonraki</a>
+                    </nav>
+                }
             }
         </article>
 
@@ -609,9 +756,11 @@
     <aside class="booking-sidebar">
         <div class="booking-card">
             <div class="booking-price-head">
-                <div class="booking-price-main">
-                    <strong id="bookingPrice">@(initialInclusiveNightly > 0m ? $"₺{initialInclusiveNightly:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
-                    <span class="booking-price-unit">/ gece</span>
+                <div class="booking-price-row">
+                    <div class="booking-price-main">
+                        <strong id="bookingPrice">@(initialInclusiveNightly > 0m ? $"₺{initialInclusiveNightly:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
+                        <span class="booking-price-unit">/ gece</span>
+                    </div>
                 </div>
                 <p class="booking-price-inclusive-hint" id="bookingPriceHint" title="KDV ve konaklama vergisi dahil">Vergi dahil</p>
             </div>
@@ -620,15 +769,53 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="HotelId" value="@Model.Id" />
                 <input type="hidden" id="profileCompletionRequired" value="@(Model.ProfilePrompt.IsProfileIncomplete && Model.IsLoggedInUser ? "true" : "false")" />
-                <label>
-                    <span>Giriş Tarihi</span>
-                    <input type="date" id="checkInDateInput" name="CheckInDate" value="@checkInDefault" min="@todayDate" />
-                </label>
+                <input type="hidden" name="RoomsJson" id="roomsJsonInput" value="" />
 
-                <label>
-                    <span>Cikis Tarihi</span>
-                    <input type="date" id="checkOutDateInput" name="CheckOutDate" value="@checkOutDefault" min="@todayDate" />
-                </label>
+                <div class="multi-room" id="multiRoomRoot">
+                    <div class="multi-room-head">
+                        <span class="multi-room-title">Oda seçimi</span>
+                        <button type="button" class="multi-room-add" id="addRoomBtn">
+                            <i class="fas fa-plus"></i> Oda ekle
+                        </button>
+                    </div>
+
+                    <div class="multi-room-list" id="roomItems"></div>
+
+                    <template id="roomItemTemplate">
+                        <section class="multi-room-item" data-room-item>
+                            <div class="multi-room-item-head">
+                                <strong class="multi-room-item-title" data-room-title>Oda</strong>
+                                <button type="button" class="multi-room-remove" data-remove-room hidden>Sil</button>
+                            </div>
+                            <div class="multi-room-item-grid">
+                                <label>
+                                    <span>Giriş Tarihi</span>
+                                    <input type="date" data-field="checkIn" min="@todayDate" />
+                                </label>
+                                <label>
+                                    <span>Çıkış Tarihi</span>
+                                    <input type="date" data-field="checkOut" min="@todayDate" />
+                                </label>
+                                <label class="multi-room-item-span">
+                                    <span>Oda Tipi</span>
+                                    <select data-field="roomType">
+                                        @foreach (var room in reservableRoomOptions)
+                                        {
+                                            <option value="@room.RoomTypeId"
+                                                    data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
+                                                    data-room-name="@room.Name"
+                                                    data-max-guests="@room.MaxGuestCount"
+                                                    data-max-adults="@room.MaxAdultCount"
+                                                    data-max-children="@room.MaxChildCount">
+                                                @room.Name
+                                            </option>
+                                        }
+                                    </select>
+                                </label>
+                            </div>
+                        </section>
+                    </template>
+                </div>
 
                 <div class="guest-row">
                     <span>Yetiskin</span>
@@ -650,39 +837,10 @@
                     <input type="hidden" name="ChildCount" id="childCountInput" value="@reservationForm.ChildCount" />
                 </div>
 
-                <input type="hidden" name="RoomCount" id="roomCountInput" value="@reservationForm.RoomCount" />
-
-                <label>
-                    <span>Oda Tipi</span>
-                    <select id="roomTypeSelect" name="RoomTypeId">
-                        @foreach (var room in reservableRoomOptions)
-                        {
-                            if (room.RoomTypeId == reservationForm.RoomTypeId)
-                            {
-                                <option value="@room.RoomTypeId"
-                                        data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-room-name="@room.Name"
-                                        data-max-guests="@room.MaxGuestCount"
-                                        data-max-adults="@room.MaxAdultCount"
-                                        data-max-children="@room.MaxChildCount"
-                                        selected="selected">
-                                    @room.Name
-                                </option>
-                            }
-                            else
-                            {
-                                <option value="@room.RoomTypeId"
-                                        data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
-                                        data-room-name="@room.Name"
-                                        data-max-guests="@room.MaxGuestCount"
-                                        data-max-adults="@room.MaxAdultCount"
-                                        data-max-children="@room.MaxChildCount">
-                                    @room.Name
-                                </option>
-                            }
-                        }
-                    </select>
-                </label>
+                <input type="hidden" name="RoomCount" id="roomCountInput" value="1" />
+                <input type="hidden" name="RoomTypeId" id="roomTypeIdInput" value="@reservationForm.RoomTypeId" />
+                <input type="hidden" name="CheckInDate" id="checkInDateInput" value="@checkInDefault" />
+                <input type="hidden" name="CheckOutDate" id="checkOutDateInput" value="@checkOutDefault" />
 
                 <details class="booking-advanced-fields" id="bookingAdvancedFields">
                     <summary><i class="fas fa-angle-down"></i> Ek rezervasyon detaylari</summary>
@@ -751,15 +909,20 @@
 
 <div class="detail-modal-backdrop" id="detailActionBackdrop" hidden></div>
 
-<section class="detail-modal" id="detailInfoModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="detailInfoModalTitle">
+<section class="detail-modal detail-info-modal" id="detailInfoModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="detailInfoModalTitle">
+    <button type="button" class="detail-modal-close" data-close-modal="detailInfoModal" aria-label="Kapat"><i class="fas fa-times"></i></button>
+    <div class="detail-modal-hero" aria-hidden="true">
+        <div class="detail-modal-hero-icon">
+            <i class="fas fa-circle-info"></i>
+        </div>
+    </div>
     <div class="detail-modal-head">
         <div>
             <span class="detail-modal-kicker">Bilgilendirme</span>
             <h3 id="detailInfoModalTitle">Önce bir adımı tamamlayalım</h3>
         </div>
-        <button type="button" class="detail-modal-close" data-close-modal="detailInfoModal"><i class="fas fa-times"></i></button>
     </div>
-    <p id="detailInfoModalText">Bu işlem için önce uygun koşulların sağlanması gerekiyor.</p>
+    <p class="detail-modal-copy" id="detailInfoModalText">Bu işlem için önce uygun koşulların sağlanması gerekiyor.</p>
     <div class="detail-modal-actions" id="detailInfoModalActions">
         <a href="/kullanici-giris" class="detail-modal-primary">Giriş Yap</a>
         <a href="/kullanici-giris?sekme=kayit" class="detail-modal-secondary">Kayıt Ol</a>
@@ -953,8 +1116,12 @@
             const lightboxNext = document.getElementById('galleryLightboxNext');
             const saveButton = document.getElementById('saveHotelBtn');
             const bookingForm = document.getElementById('bookingForm');
-            const roomTypeSelect = document.getElementById('roomTypeSelect');
             const paymentMethodSelect = document.getElementById('paymentMethodSelect');
+            const roomsJsonInput = document.getElementById('roomsJsonInput');
+            const roomItemsRoot = document.getElementById('roomItems');
+            const roomItemTemplate = document.getElementById('roomItemTemplate');
+            const addRoomBtn = document.getElementById('addRoomBtn');
+            const roomTypeIdInput = document.getElementById('roomTypeIdInput');
             const checkInInput = document.getElementById('checkInDateInput');
             const checkOutInput = document.getElementById('checkOutDateInput');
             const bookingPrice = document.getElementById('bookingPrice');
@@ -999,49 +1166,120 @@
                 document.getElementById('childCountInput').value = children;
             }
 
-            function getSelectedRoomCapacity() {
-                const selectedOption = roomTypeSelect?.options[roomTypeSelect.selectedIndex];
+            function getRoomItemNodes() {
+                if (!roomItemsRoot) {
+                    return [];
+                }
+                return Array.from(roomItemsRoot.querySelectorAll('[data-room-item]'));
+            }
+
+            function getRoomItemData(item) {
+                const roomTypeSelect = item?.querySelector('[data-field="roomType"]');
+                const checkIn = item?.querySelector('[data-field="checkIn"]');
+                const checkOut = item?.querySelector('[data-field="checkOut"]');
+                const selectedOption = roomTypeSelect?.selectedOptions?.[0];
+                const roomTypeId = parseInt(roomTypeSelect?.value || '0', 10) || 0;
                 const roomName = selectedOption?.dataset.roomName || selectedOption?.textContent?.trim() || 'Seçilen oda';
                 const maxGuests = Math.max(1, parseInt(selectedOption?.dataset.maxGuests || '1', 10) || 1);
                 const maxAdults = Math.max(1, parseInt(selectedOption?.dataset.maxAdults || String(maxGuests), 10) || maxGuests);
                 const maxChildren = Math.max(0, parseInt(selectedOption?.dataset.maxChildren || '0', 10) || 0);
-                return { roomName, maxGuests, maxAdults, maxChildren };
+                return {
+                    roomTypeId,
+                    roomName,
+                    checkIn: checkIn?.value || '',
+                    checkOut: checkOut?.value || '',
+                    roomCount: 1,
+                    capacity: { roomName, maxGuests, maxAdults, maxChildren }
+                };
+            }
+
+            function syncLegacyHiddenInputsFromFirstItem() {
+                const items = getRoomItemNodes();
+                const first = items[0];
+                if (!first) {
+                    return;
+                }
+                const data = getRoomItemData(first);
+                if (roomTypeIdInput) {
+                    roomTypeIdInput.value = String(data.roomTypeId || 0);
+                }
+                if (checkInInput) {
+                    checkInInput.value = data.checkIn || '';
+                }
+                if (checkOutInput) {
+                    checkOutInput.value = data.checkOut || '';
+                }
             }
 
             function getRoomCountValue() {
                 return Math.max(1, parseInt(roomCountInput?.value || '1', 10) || 1);
             }
 
-            function buildRoomCapacityMessage(capacity, totalAdults, totalChildren, roomCountValue) {
+            function buildRoomCapacityMessage(capacity, totalAdults, totalChildren, roomCountValue, isMultiRoom) {
                 const allowedGuestsTotal = capacity.maxGuests * roomCountValue;
                 const allowedAdultsTotal = capacity.maxAdults * roomCountValue;
                 const allowedChildrenTotal = capacity.maxChildren * roomCountValue;
                 const totalGuests = totalAdults + totalChildren;
 
                 if (totalAdults > allowedAdultsTotal) {
-                    const requiredRooms = Math.ceil(totalAdults / capacity.maxAdults);
-                    return `${capacity.roomName} odası kişi kapasitesi: en fazla ${capacity.maxAdults} yetişkin. ${totalAdults} yetişkin için en az ${requiredRooms} oda kiralamanız gerekmektedir.`;
+                    if (isMultiRoom) {
+                        const requiredRooms = Math.ceil(totalAdults / capacity.maxAdults);
+                        const missing = Math.max(0, requiredRooms - roomCountValue);
+                        return `Seçilen oda(lar) toplam yetişkin kapasitesi ${allowedAdultsTotal} kişi. ${totalAdults} yetişkin için en az ${requiredRooms} oda gerekir. ${missing > 0 ? `Lütfen ${missing} oda daha ekleyin.` : 'Lütfen oda seçiminizi kontrol edin.'}`;
+                    } else {
+                        const requiredRooms = Math.ceil(totalAdults / capacity.maxAdults);
+                        return `${capacity.roomName} odası kişi kapasitesi: en fazla ${capacity.maxAdults} yetişkin. ${totalAdults} yetişkin için en az ${requiredRooms} oda kiralamanız gerekmektedir.`;
+                    }
                 }
 
                 if (totalChildren > allowedChildrenTotal) {
-                    const requiredRooms = capacity.maxChildren > 0
-                        ? Math.ceil(totalChildren / capacity.maxChildren)
-                        : roomCountValue + 1;
-                    return `${capacity.roomName} odası kişi kapasitesi: en fazla ${capacity.maxChildren} çocuk. ${totalChildren} çocuk için en az ${requiredRooms} oda kiralamanız gerekmektedir.`;
+                    if (isMultiRoom) {
+                        const requiredRooms = capacity.maxChildren > 0
+                            ? Math.ceil(totalChildren / capacity.maxChildren)
+                            : roomCountValue + 1;
+                        const missing = Math.max(0, requiredRooms - roomCountValue);
+                        return `Seçilen oda(lar) toplam çocuk kapasitesi ${allowedChildrenTotal} kişi. ${totalChildren} çocuk için en az ${requiredRooms} oda gerekir. ${missing > 0 ? `Lütfen ${missing} oda daha ekleyin.` : 'Lütfen oda seçiminizi kontrol edin.'}`;
+                    } else {
+                        const requiredRooms = capacity.maxChildren > 0
+                            ? Math.ceil(totalChildren / capacity.maxChildren)
+                            : roomCountValue + 1;
+                        return `${capacity.roomName} odası kişi kapasitesi: en fazla ${capacity.maxChildren} çocuk. ${totalChildren} çocuk için en az ${requiredRooms} oda kiralamanız gerekmektedir.`;
+                    }
                 }
 
                 if (totalGuests > allowedGuestsTotal) {
-                    const requiredRooms = Math.ceil(totalGuests / capacity.maxGuests);
-                    return `${capacity.roomName} odası ${capacity.maxGuests} kişiliktir. Toplam ${totalGuests} misafir için en az ${requiredRooms} oda kiralamanız gerekmektedir.`;
+                    if (isMultiRoom) {
+                        const requiredRooms = Math.ceil(totalGuests / capacity.maxGuests);
+                        const missing = Math.max(0, requiredRooms - roomCountValue);
+                        return `Seçilen oda(lar) toplam kapasitesi ${allowedGuestsTotal} kişi. Toplam ${totalGuests} misafir için en az ${requiredRooms} oda gerekir. ${missing > 0 ? `Lütfen ${missing} oda daha ekleyin.` : 'Lütfen oda seçiminizi kontrol edin.'}`;
+                    } else {
+                        const requiredRooms = Math.ceil(totalGuests / capacity.maxGuests);
+                        return `${capacity.roomName} odası ${capacity.maxGuests} kişiliktir. Toplam ${totalGuests} misafir için en az ${requiredRooms} oda kiralamanız gerekmektedir.`;
+                    }
                 }
 
                 return null;
             }
 
             function ensureGuestCapacity(showWarning) {
-                const capacity = getSelectedRoomCapacity();
-                const roomCountValue = getRoomCountValue();
-                const roomCapacityMessage = buildRoomCapacityMessage(capacity, adults, children, roomCountValue);
+                const items = getRoomItemNodes();
+                if (!items.length) {
+                    return true;
+                }
+
+                const roomCountValue = Math.max(1, items.length);
+                const totalCapacity = items
+                    .map(getRoomItemData)
+                    .reduce(function (acc, item) {
+                        acc.maxGuests += item.capacity.maxGuests;
+                        acc.maxAdults += item.capacity.maxAdults;
+                        acc.maxChildren += item.capacity.maxChildren;
+                        acc.roomName = item.capacity.roomName;
+                        return acc;
+                    }, { roomName: 'Seçilen oda', maxGuests: 0, maxAdults: 0, maxChildren: 0 });
+
+                const isMulti = items.length > 1;
+                const roomCapacityMessage = buildRoomCapacityMessage(totalCapacity, adults, children, roomCountValue, isMulti);
                 if (!roomCapacityMessage) {
                     return true;
                 }
@@ -1215,7 +1453,13 @@
             document.querySelectorAll('.select-room-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
                     const roomId = button.getAttribute('data-room-id');
-                    roomTypeSelect.value = roomId;
+                    const firstItem = getRoomItemNodes()[0];
+                    const select = firstItem?.querySelector('[data-field="roomType"]');
+                    if (select && roomId) {
+                        select.value = roomId;
+                    }
+                    syncRoomsJsonAndHiddenFields();
+                    ensureGuestCapacity(true);
                     refreshPriceQuote();
                     document.querySelector('.booking-sidebar').scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
@@ -1231,9 +1475,18 @@
                     const nextChildren = target === 'child'
                         ? (action === 'plus' ? Math.min(children + 1, 4) : Math.max(children - 1, 0))
                         : children;
-                    const capacity = getSelectedRoomCapacity();
-                    const roomCountValue = getRoomCountValue();
-                    const roomCapacityMessage = buildRoomCapacityMessage(capacity, nextAdults, nextChildren, roomCountValue);
+                    const items = getRoomItemNodes();
+                    const roomCountValue = Math.max(1, items.length);
+                    const totalCapacity = items
+                        .map(getRoomItemData)
+                        .reduce(function (acc, item) {
+                            acc.maxGuests += item.capacity.maxGuests;
+                            acc.maxAdults += item.capacity.maxAdults;
+                            acc.maxChildren += item.capacity.maxChildren;
+                            acc.roomName = item.capacity.roomName;
+                            return acc;
+                        }, { roomName: 'Seçilen oda', maxGuests: 0, maxAdults: 0, maxChildren: 0 });
+                    const roomCapacityMessage = buildRoomCapacityMessage(totalCapacity, nextAdults, nextChildren, roomCountValue, items.length > 1);
                     if (roomCapacityMessage) {
                         showInfoModal(roomCapacityMessage, false);
                         return;
@@ -1249,23 +1502,19 @@
                 });
             });
 
-            roomTypeSelect.addEventListener('change', function () {
-                ensureGuestCapacity(true);
-                refreshPriceQuote();
-            });
-
-            function normalizeBookingDates() {
-                if (!checkInInput || !checkOutInput) {
+            function normalizeRoomItemDates(item) {
+                const todayText = '@todayDate';
+                const checkInEl = item?.querySelector('[data-field="checkIn"]');
+                const checkOutEl = item?.querySelector('[data-field="checkOut"]');
+                if (!checkInEl || !checkOutEl) {
                     return;
                 }
 
-                const todayText = '@todayDate';
-                const currentCheckIn = checkInInput.value;
-                if (!currentCheckIn || currentCheckIn < todayText) {
-                    checkInInput.value = todayText;
+                if (!checkInEl.value || checkInEl.value < todayText) {
+                    checkInEl.value = todayText;
                 }
 
-                const checkInDate = new Date(checkInInput.value + 'T00:00:00');
+                const checkInDate = new Date(checkInEl.value + 'T00:00:00');
                 if (Number.isNaN(checkInDate.getTime())) {
                     return;
                 }
@@ -1273,18 +1522,77 @@
                 const minCheckOutDate = new Date(checkInDate);
                 minCheckOutDate.setDate(minCheckOutDate.getDate() + 1);
                 const minCheckOutText = minCheckOutDate.toISOString().slice(0, 10);
-                checkOutInput.min = minCheckOutText;
-
-                if (!checkOutInput.value || checkOutInput.value <= checkInInput.value) {
-                    checkOutInput.value = minCheckOutText;
+                checkOutEl.min = minCheckOutText;
+                if (!checkOutEl.value || checkOutEl.value <= checkInEl.value) {
+                    checkOutEl.value = minCheckOutText;
                 }
             }
 
-            checkInInput?.addEventListener('change', function () {
-                normalizeBookingDates();
+            function bindRoomItemEvents(item) {
+                if (!item) return;
+                item.querySelectorAll('select, input[type="date"]').forEach(function (el) {
+                    el.addEventListener('change', function () {
+                        normalizeRoomItemDates(item);
+                        syncRoomsJsonAndHiddenFields();
+                        ensureGuestCapacity(false);
+                        refreshPriceQuote();
+                    });
+                });
+
+                const removeBtn = item.querySelector('[data-remove-room]');
+                removeBtn?.addEventListener('click', function () {
+                    item.remove();
+                    renumberRoomItems();
+                    syncRoomsJsonAndHiddenFields();
+                    ensureGuestCapacity(false);
+                    refreshPriceQuote();
+                });
+            }
+
+            function renumberRoomItems() {
+                const nodes = getRoomItemNodes();
+                nodes.forEach(function (node, idx) {
+                    const title = node.querySelector('[data-room-title]');
+                    if (title) {
+                        title.textContent = 'Oda ' + (idx + 1);
+                    }
+                    const removeBtn = node.querySelector('[data-remove-room]');
+                    if (removeBtn) {
+                        removeBtn.hidden = nodes.length <= 1;
+                    }
+                });
+            }
+
+            function addRoomItem(seed) {
+                if (!roomItemsRoot || !roomItemTemplate) {
+                    return;
+                }
+                const fragment = roomItemTemplate.content.cloneNode(true);
+                const item = fragment.querySelector('[data-room-item]');
+                if (!item) {
+                    return;
+                }
+                const checkInEl = item.querySelector('[data-field="checkIn"]');
+                const checkOutEl = item.querySelector('[data-field="checkOut"]');
+                const roomTypeEl = item.querySelector('[data-field="roomType"]');
+                if (checkInEl && seed?.checkIn) checkInEl.value = seed.checkIn;
+                if (checkOutEl && seed?.checkOut) checkOutEl.value = seed.checkOut;
+                if (roomTypeEl && seed?.roomTypeId) roomTypeEl.value = String(seed.roomTypeId);
+                roomItemsRoot.appendChild(fragment);
+                const appended = roomItemsRoot.querySelectorAll('[data-room-item]')[roomItemsRoot.querySelectorAll('[data-room-item]').length - 1];
+                normalizeRoomItemDates(appended);
+                bindRoomItemEvents(appended);
+                renumberRoomItems();
+            }
+
+            addRoomBtn?.addEventListener('click', function () {
+                const first = getRoomItemNodes()[0];
+                const firstData = first ? getRoomItemData(first) : null;
+                addRoomItem(firstData ? { roomTypeId: firstData.roomTypeId, checkIn: firstData.checkIn, checkOut: firstData.checkOut } : null);
+                syncRoomsJsonAndHiddenFields();
                 refreshPriceQuote();
             });
-            checkOutInput?.addEventListener('change', refreshPriceQuote);
+
 
             function closeShareMenu() {
                 if (!shareMenu || !shareButton) {
@@ -1390,7 +1698,9 @@
             }
 
             function openWeatherPopup() {
-                if (!weatherPopup || !weatherPopupBackdrop) {
+                const hasWeather = weatherPopupOpen?.getAttribute('data-has-weather') === 'true';
+                if (!hasWeather || !weatherPopup || !weatherPopupBackdrop) {
+                    showInfoModal('Hava durumu verisi şu an yüklenemedi. Birkaç saniye sonra tekrar deneyin.', false);
                     return;
                 }
 
@@ -1571,8 +1881,8 @@
             }
 
             function buildTaxAndTotalRows(quote) {
-                const vatR = formatRatePct(quote.vatRate);
-                const accR = formatRatePct(quote.accommodationTaxRate);
+                const vatR = typeof quote.vatRate === 'string' ? quote.vatRate : formatRatePct(quote.vatRate);
+                const accR = typeof quote.accommodationTaxRate === 'string' ? quote.accommodationTaxRate : formatRatePct(quote.accommodationTaxRate);
                 return '<div class="price-row price-row-tax"><span>KDV <small class="tax-rate-hint">%' + vatR + '</small></span><strong>' + formatMoney(quote.vatAmount || 0) + '</strong></div>' +
                     '<div class="price-row price-row-tax"><span>Konaklama Vergisi <small class="tax-rate-hint">%' + accR + '</small></span><strong>' + formatMoney(quote.accommodationTaxAmount || 0) + '</strong></div>' +
                     '<div class="price-row price-row-tax"><span>Vergi ve Harçlar</span><strong>' + formatMoney(quote.taxAmount) + '</strong></div>' +
@@ -1600,70 +1910,179 @@
                 bookingQuoteNotice.textContent = message;
             }
 
+            function buildRoomLine(roomName, checkIn, checkOut, amountText, index) {
+                const safeName = roomName || 'Oda';
+                const safeIndex = (index || 0) + 1;
+                const primary = safeIndex + '. ' + safeName;
+                const secondary = (checkIn || '-') + ' → ' + (checkOut || '-');
+                return '<div class="price-row price-row-room">' +
+                    '<span class="price-row-label-stack">' +
+                    '<span class="price-row-primary">' + primary + '</span>' +
+                    '<small>' + secondary + '</small>' +
+                    '</span>' +
+                    '<strong>' + amountText + '</strong>' +
+                    '</div>';
+            }
+
+            function buildMultiRoomBreakdownHtml(items, totals) {
+                const roomLines = items.map(function (x, idx) {
+                    return buildRoomLine(x.roomName, x.checkIn, x.checkOut, formatMoney(x.totalAmount || 0), idx);
+                }).join('');
+                return roomLines + buildTaxAndTotalRows(totals);
+            }
+
+            function syncRoomsJsonAndHiddenFields() {
+                const nodes = getRoomItemNodes();
+                const items = nodes.map(getRoomItemData);
+
+                // legacy hidden inputs: first item
+                syncLegacyHiddenInputsFromFirstItem();
+
+                // room count: item count
+                if (roomCountInput) {
+                    roomCountInput.value = String(Math.max(1, nodes.length));
+                }
+
+                // roomTypeId legacy: first item
+                if (roomTypeIdInput && items[0]) {
+                    roomTypeIdInput.value = String(items[0].roomTypeId || 0);
+                }
+
+                if (roomsJsonInput) {
+                    roomsJsonInput.value = JSON.stringify(items.map(function (x) {
+                        return {
+                            roomTypeId: x.roomTypeId,
+                            checkInDate: x.checkIn,
+                            checkOutDate: x.checkOut,
+                            roomCount: 1
+                        };
+                    }));
+                }
+            }
+
             async function refreshPriceQuote() {
-                if (!roomTypeSelect || !checkInInput || !checkOutInput || !bookingPrice || !breakdown) {
+                if (!bookingPrice || !breakdown) {
                     return;
                 }
 
-                const selectedOption = roomTypeSelect.options[roomTypeSelect.selectedIndex];
-                const roomId = selectedOption?.value;
-                const checkIn = checkInInput.value;
-                const checkOut = checkOutInput.value;
-                const roomCount = parseInt(document.querySelector('input[name="RoomCount"]')?.value || '1', 10);
-
-                if (!roomId || !checkIn || !checkOut) {
+                const roomNodes = getRoomItemNodes();
+                if (!roomNodes.length) {
                     return;
                 }
 
-                latestQuoteRequest = roomId + '|' + checkIn + '|' + checkOut + '|' + roomCount;
+                const items = roomNodes.map(getRoomItemData);
+                const invalid = items.some(function (x) {
+                    return !x.roomTypeId || !x.checkIn || !x.checkOut || new Date(x.checkOut).getTime() <= new Date(x.checkIn).getTime();
+                });
+                if (invalid) {
+                    return;
+                }
+
+                // request-key to avoid race conditions
+                latestQuoteRequest = items.map(function (x) { return x.roomTypeId + '|' + x.checkIn + '|' + x.checkOut; }).join('||');
                 const requestKey = latestQuoteRequest;
 
-                try {
-                    const response = await fetch('/oteller/@Model.Slug/fiyat-teklifi?roomTypeId=' + encodeURIComponent(roomId) + '&checkInDate=' + encodeURIComponent(checkIn) + '&checkOutDate=' + encodeURIComponent(checkOut) + '&roomCount=' + encodeURIComponent(roomCount), {
-                        credentials: 'same-origin',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    });
-                    if (!response.ok) {
-                        throw new Error('Fiyat özeti alınamadı');
-                    }
+                const totals = {
+                    vatRate: detailVatPctLabel,
+                    accommodationTaxRate: detailAccomPctLabel,
+                    vatAmount: 0,
+                    accommodationTaxAmount: 0,
+                    taxAmount: 0,
+                    totalAmount: 0
+                };
 
-                    const quote = await response.json();
-                    if (!quote.success || latestQuoteRequest !== requestKey) {
-                        return;
-                    }
+                const perRoom = [];
+                let anyUnavailable = false;
+                let availabilityMessage = '';
 
-                    const nights = Math.max(1, quote.nightCount || 1);
-                    const rc = Math.max(1, roomCount || 1);
-                    const inclusiveNightly = Number(quote.totalAmount || 0) / nights / rc;
+                for (const item of items) {
+                    try {
+                        const response = await fetch('/oteller/@Model.Slug/fiyat-teklifi?roomTypeId=' + encodeURIComponent(item.roomTypeId) + '&checkInDate=' + encodeURIComponent(item.checkIn) + '&checkOutDate=' + encodeURIComponent(item.checkOut) + '&roomCount=1', {
+                            credentials: 'same-origin',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        if (!response.ok) {
+                            throw new Error('Fiyat özeti alınamadı');
+                        }
+                        const quote = await response.json();
+                        if (!quote.success || latestQuoteRequest !== requestKey) {
+                            return;
+                        }
+
+                        const vat = Number(quote.vatAmount || 0);
+                        const acc = Number(quote.accommodationTaxAmount || 0);
+                        const tax = Number(quote.taxAmount || (vat + acc));
+                        const total = Number(quote.totalAmount || 0);
+
+                        totals.vatAmount += vat;
+                        totals.accommodationTaxAmount += acc;
+                        totals.taxAmount += tax;
+                        totals.totalAmount += total;
+
+                        perRoom.push({
+                            roomName: item.roomName,
+                            checkIn: item.checkIn,
+                            checkOut: item.checkOut,
+                            totalAmount: total
+                        });
+
+                        if (quote.isAvailable === false) {
+                            anyUnavailable = true;
+                            availabilityMessage = quote.availabilityMessage || availabilityMessage;
+                        }
+                    } catch (_error) {
+                        // fallback: use option net price from DOM
+                        const node = roomNodes[perRoom.length] || null;
+                        const opt = node?.querySelector('[data-field="roomType"]')?.selectedOptions?.[0];
+                        const netNightly = parseFloat(opt?.dataset.price || '0');
+                        const diffMs = new Date(item.checkOut).getTime() - new Date(item.checkIn).getTime();
+                        const nights = Math.max(1, Math.round(diffMs / 86400000));
+                        const subtotal = netNightly * nights;
+                        const vat = Math.round(subtotal * detailVatFraction);
+                        const accommodationTax = Math.round(subtotal * detailAccommodationFraction);
+                        const tax = vat + accommodationTax;
+                        const total = subtotal + tax;
+
+                        totals.vatAmount += vat;
+                        totals.accommodationTaxAmount += accommodationTax;
+                        totals.taxAmount += tax;
+                        totals.totalAmount += total;
+
+                        perRoom.push({
+                            roomName: item.roomName,
+                            checkIn: item.checkIn,
+                            checkOut: item.checkOut,
+                            totalAmount: total
+                        });
+                    }
+                }
+
+                if (latestQuoteRequest !== requestKey) {
+                    return;
+                }
+
+                // price head: show total if multiple rooms, otherwise nightly
+                const unitEl = document.querySelector('.booking-price-unit');
+                const itemCount = Math.max(1, roomNodes.length);
+                if (itemCount > 1) {
+                    bookingPrice.textContent = formatMoney(totals.totalAmount);
+                    if (unitEl) unitEl.textContent = 'toplam';
+                } else {
+                    const nights = Math.max(1, Math.round((new Date(items[0].checkOut).getTime() - new Date(items[0].checkIn).getTime()) / 86400000));
+                    const inclusiveNightly = totals.totalAmount / nights;
                     bookingPrice.textContent = formatMoney(inclusiveNightly);
-                    breakdown.innerHTML = buildQuoteBreakdownHtml(quote);
+                    if (unitEl) unitEl.textContent = '/ gece';
+                }
 
-                    const reserveButton = bookingForm?.querySelector('.reserve-btn');
-                    if (quote.isAvailable === false) {
-                        setQuoteNotice(quote.availabilityMessage || 'Seçili tarihler için uygun stok veya satış bulunamadı.', 'warning');
-                        reserveButton?.setAttribute('disabled', 'disabled');
-                    } else {
-                        setQuoteNotice(quote.availabilityMessage || '', 'info');
-                        reserveButton?.removeAttribute('disabled');
-                    }
-                } catch (_error) {
-                    const fallbackNetNightly = parseFloat(selectedOption?.dataset.price || '0');
-                    const diffMs = new Date(checkOut).getTime() - new Date(checkIn).getTime();
-                    const nights = Math.max(1, Math.round(diffMs / 86400000));
-                    const subtotal = fallbackNetNightly * nights * roomCount;
-                    const vat = Math.round(subtotal * detailVatFraction);
-                    const accommodationTax = Math.round(subtotal * detailAccommodationFraction);
-                    const tax = vat + accommodationTax;
-                    const total = subtotal + tax;
-                    const inclNightly = total / nights / Math.max(1, roomCount);
-                    bookingPrice.textContent = formatMoney(inclNightly);
-                    setQuoteNotice('Günlük fiyat dökümü alınamadı, varsayılan oda fiyatı gösteriliyor.', 'info');
-                    bookingForm?.querySelector('.reserve-btn')?.removeAttribute('disabled');
-                    breakdown.innerHTML =
-                        '<div class="price-row price-row-tax"><span>KDV <small class="tax-rate-hint">%' + detailVatPctLabel + '</small></span><strong>' + formatMoney(vat) + '</strong></div>' +
-                        '<div class="price-row price-row-tax"><span>Konaklama Vergisi <small class="tax-rate-hint">%' + detailAccomPctLabel + '</small></span><strong>' + formatMoney(accommodationTax) + '</strong></div>' +
-                        '<div class="price-row price-row-tax"><span>Vergi ve Harçlar</span><strong>' + formatMoney(tax) + '</strong></div>' +
-                        '<div class="price-row total"><span>Toplam</span><strong>' + formatMoney(total) + '</strong></div>';
+                breakdown.innerHTML = buildMultiRoomBreakdownHtml(perRoom, totals);
+
+                const reserveButton = bookingForm?.querySelector('.reserve-btn');
+                if (anyUnavailable) {
+                    setQuoteNotice(availabilityMessage || 'Seçili tarihler için uygun stok veya satış bulunamadı.', 'warning');
+                    reserveButton?.setAttribute('disabled', 'disabled');
+                } else {
+                    setQuoteNotice(availabilityMessage || '', 'info');
+                    reserveButton?.removeAttribute('disabled');
                 }
             }
 
@@ -1745,11 +2164,17 @@
             });
 
             bookingForm?.addEventListener('submit', function (event) {
-                const hasMissingRequiredInfo = !roomTypeSelect?.value
-                    || !checkInInput?.value
-                    || !checkOutInput?.value
-                    || adults < 1
-                    || new Date(checkOutInput.value).getTime() <= new Date(checkInInput.value).getTime();
+                syncRoomsJsonAndHiddenFields();
+                const roomNodes = getRoomItemNodes();
+                const items = roomNodes.map(getRoomItemData);
+                const hasMissingRequiredInfo = roomNodes.length === 0
+                    || items.some(function (x) {
+                        return !x.roomTypeId
+                            || !x.checkIn
+                            || !x.checkOut
+                            || new Date(x.checkOut).getTime() <= new Date(x.checkIn).getTime();
+                    })
+                    || adults < 1;
                 if (hasMissingRequiredInfo) {
                     event.preventDefault();
                     showInfoModal('Rezervasyon oncesi tarih, misafir ve oda bilgilerini kontrol edip tamamlayiniz.', false);
@@ -1858,12 +2283,29 @@
                 resumeDraftFlow();
             }
 
-            normalizeBookingDates();
+            // init first room row (single-room compatible)
+            if (getRoomItemNodes().length === 0) {
+                addRoomItem({
+                    roomTypeId: parseInt(roomTypeIdInput?.value || '@reservationForm.RoomTypeId', 10) || 0,
+                    checkIn: checkInInput?.value || '@checkInDefault',
+                    checkOut: checkOutInput?.value || '@checkOutDefault'
+                });
+            }
+            renumberRoomItems();
+            syncRoomsJsonAndHiddenFields();
             syncGuestInputs();
             ensureGuestCapacity(false);
             syncPaymentMethodState();
             refreshPriceQuote();
             paymentMethodSelect?.addEventListener('change', syncPaymentMethodState);
+
+            const reviewSortSelect = document.getElementById('reviewSortSelect');
+            reviewSortSelect?.addEventListener('change', function () {
+                const url = new URL(window.location.href);
+                url.searchParams.set('reviewSort', reviewSortSelect.value || 'new');
+                url.searchParams.set('reviewPage', '1');
+                window.location.href = url.toString();
+            });
         })();
     </script>
     <script>

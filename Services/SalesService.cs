@@ -6,6 +6,7 @@ using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
 using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Paneller.Satis;
+using otelturizmnew.Models.Reservations;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -278,14 +279,14 @@ public class SalesService : ISalesService
             var publicUserId = await EnsurePublicCustomerUserAsync(connection, (SqlTransaction)transaction, model, cancellationToken);
             var reservationNo = await GenerateReservationNoAsync(connection, (SqlTransaction)transaction, cancellationToken);
 
-            const string insertSql = @"
+            var insertSql = $@"
                 INSERT INTO rezervasyonlar
                 (
                     rezervasyon_no, otel_id, oda_tip_id, kullanici_id, satis_temsilcisi_id, satis_musteri_id,
                     misafir_ad_soyad, misafir_eposta, misafir_telefon, misafir_notu, misafir_sehir, misafir_ilce, misafir_mahalle, misafir_adres,
                     giris_tarihi, cikis_tarihi, yetiskin_sayisi, cocuk_sayisi, oda_sayisi,
                     gecelik_fiyat, toplam_oda_tutari, vergi_tutari, toplam_tutar,
-                    komisyon_orani, durum, odeme_durumu, otel_onay_durumu, firma_onay_durumu,
+                    komisyon_orani, durum, rezervasyon_durumu_id, odeme_durumu, otel_onay_durumu, firma_onay_durumu,
                     kaynak, rezervasyon_kanali, musteri_talep_notu, ozel_istekler
                 )
                 VALUES
@@ -294,7 +295,7 @@ public class SalesService : ISalesService
                     @fullName, @email, @phone, @note, @city, @district, @neighborhood, @address,
                     @checkIn, @checkOut, @adultCount, @childCount, @roomCount,
                     @nightlyPrice, @roomTotal, @taxAmount, @totalAmount,
-                    @commissionRate, 'Onay Bekliyor', 'Beklemede', 'Beklemede', 'Onay Gerekmiyor',
+                    @commissionRate, 'Onay Bekliyor', (SELECT TOP (1) id FROM dbo.rezervasyon_durum_tanimlari WHERE kod = N'{RezervasyonDurumKodlari.OnayBekliyor}'), 'Beklemede', 'Beklemede', 'Onay Gerekmiyor',
                     'Telefon', 'Satış Paneli', @note, @note
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS bigint);";

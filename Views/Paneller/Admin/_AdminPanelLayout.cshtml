@@ -20,30 +20,33 @@
         <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
     }
 </head>
-<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
-    <div class="wrapper">
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed admin-panel-theme">
+    <div class="wrapper admin-shell-wrapper">
         @if (shell is not null)
         {
             <partial name="~/Views/Paneller/Admin/_AdminTopNav.cshtml" model="shell" />
             <partial name="~/Views/Paneller/Admin/_AdminSidebar.cshtml" model="shell" />
         }
 
-        <div class="content-wrapper">
+        <div class="content-wrapper admin-content-wrapper">
             @if (shell is not null)
             {
-                <section class="content-header">
+                <section class="content-header admin-content-header">
                     <div class="container-fluid">
-                        <div class="row mb-2">
+                        <div class="row mb-0">
                             <div class="col-sm-12">
-                                <h1 class="m-0">@shell.PanelTitle</h1>
-                                <small class="text-muted">@shell.PanelSubtitle</small>
+                                <div class="admin-page-heading">
+                                    <p class="admin-page-kicker">Admin Panel</p>
+                                    <h1 class="m-0">@shell.PanelTitle</h1>
+                                    <small class="text-muted">@shell.PanelSubtitle</small>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </section>
             }
 
-            <section class="content">
+            <section class="content admin-content-body">
                 <div class="container-fluid">
                     @RenderBody()
                 </div>
@@ -53,6 +56,7 @@
         @if (shell is not null)
         {
             <partial name="~/Views/Paneller/Admin/_AdminFooter.cshtml" />
+            <partial name="~/Views/Paneller/Admin/_AdminMobileNav.cshtml" model="shell" />
         }
     </div>
 
@@ -60,6 +64,19 @@
     <script src="~/vendor/AdminLTE-3.2.0/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/vendor/AdminLTE-3.2.0/dist/js/adminlte.min.js"></script>
     <script>
+        (function () {
+            document.querySelectorAll('[data-admin-accordion="group"]').forEach(function (toggle) {
+                toggle.addEventListener('click', function () {
+                    var group = toggle.closest('.admin-sidebar-group');
+                    if (!group) {
+                        return;
+                    }
+
+                    group.classList.toggle('open');
+                });
+            });
+        })();
+
         (function () {
             var content = document.querySelector('.content-wrapper');
             if (!content) {
@@ -98,6 +115,9 @@
             });
 
             content.querySelectorAll('button').forEach(function (el) {
+                if ([].slice.call(el.classList).some(function (className) { return className.indexOf('admin-') === 0; })) {
+                    return;
+                }
                 if (el.classList.contains('btn')) {
                     return;
                 }

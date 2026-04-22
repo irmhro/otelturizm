@@ -3,22 +3,21 @@
 
 @{
     ViewData["PageCss"] = "otel-listeleme";
+    ViewData["PageCssMobile"] = "otel-listeleme.mobile";
 
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
-    var visibleCount = hotels.Count;
+    var minPrice = Model.MinPrice > 0 ? Model.MinPrice : 0m;
+    var maxPrice = Model.MaxPrice > 0 ? Model.MaxPrice : 15000m;
+    var titleText = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Oteller" : Model.SearchLabel;
+    var cityText = string.IsNullOrWhiteSpace(Model.City) ? titleText : Model.City;
     var amenityCounts = hotels
-        .SelectMany(x => x.Amenities)
-        .Where(x => !string.IsNullOrWhiteSpace(x))
-        .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
-        .OrderByDescending(x => x.Count())
-        .ThenBy(x => x.Key)
+        .SelectMany(h => h.Amenities ?? new List<string>())
+        .Where(a => !string.IsNullOrWhiteSpace(a))
+        .GroupBy(a => a, StringComparer.OrdinalIgnoreCase)
+        .OrderByDescending(g => g.Count())
+        .ThenBy(g => g.Key)
+        .Take(12)
         .ToList();
-    var topAmenities = amenityCounts.Take(10).ToList();
-    var minPrice = Model.MinPrice > 0 ? Model.MinPrice : 0;
-    var maxPrice = Model.MaxPrice > 0 ? Model.MaxPrice : 15000;
-    var activeHeading = !string.IsNullOrWhiteSpace(Model.CampaignSlug) || !string.IsNullOrWhiteSpace(Model.ActiveTag)
-        ? Model.CampaignTitle
-        : "Oteller";
 
     string NormalizeToken(string value)
     {
@@ -39,691 +38,1066 @@
             .Trim();
     }
 
-    string BuildPageUrl(int targetPage)
-    {
-        var queryItems = new List<string>();
-        foreach (var item in Context.Request.Query)
-        {
-            if (string.Equals(item.Key, "page", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
+    var districtMinPrice = hotels
+        .Where(h => (h.StartingPrice ?? 0m) > 0m && !string.IsNullOrWhiteSpace(h.District))
+        .GroupBy(h => NormalizeToken(h.District))
+        .ToDictionary(g => g.Key, g => g.Min(x => x.StartingPrice ?? decimal.MaxValue), StringComparer.OrdinalIgnoreCase);
 
-            var value = item.Value.ToString();
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                continue;
-            }
-
-            queryItems.Add($"{Uri.EscapeDataString(item.Key)}={Uri.EscapeDataString(value)}");
-        }
-
-        queryItems.Add($"page={targetPage.ToString(CultureInfo.InvariantCulture)}");
-        return $"{Context.Request.Path}?{string.Join("&", queryItems)}";
-    }
+    var neighborhoodMinPrice = hotels
+        .Where(h => (h.StartingPrice ?? 0m) > 0m && !string.IsNullOrWhiteSpace(h.Neighborhood))
+        .GroupBy(h => NormalizeToken(h.Neighborhood))
+        .ToDictionary(g => g.Key, g => g.Min(x => x.StartingPrice ?? decimal.MaxValue), StringComparer.OrdinalIgnoreCase);
 }
 
-<section class="hotel-listing-shell listing-template-v41 listing-template-v52">
+<style>
+  :root {
+    --font-main: 'Satoshi', sans-serif;
+    --primary: #003B95;
+    --primary-dark: #002A6B;
+    --secondary: #FF385C;
+    --success: #00A86B;
+    --warning: #FFB800;
+    --error: #EF4444;
+    --gold: #FFD700;
+    --bg-light: #F8FAFC;
+    --card-bg: #FFFFFF;
+    --text-dark: #1A1F26;
+    --text-gray: #4a4a4a;
+    --text-light: #94A3B8;
+    --border-light: #E2E8F0;
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+    --space-5: 20px; --space-6: 24px; --space-8: 32px;
+    --radius-sm: 12px; --radius-md: 16px; --radius-lg: 20px;
+    --radius-xl: 24px; --radius-full: 9999px;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+    --shadow-lg: 0 20px 40px -10px rgba(0, 59, 149, 0.12);
+    --header-height: 65px;
+    --filter-bar-height: 56px;
+    --container-max: 1280px;
+  }
+
+  .hotel-listing-shell { font-family: var(--font-main); background: var(--bg-light); color: var(--text-dark); padding-bottom: 80px; }
+  .listing-container { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-4); }
+  .sticky-header { position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.5); box-shadow: var(--shadow-sm); }
+  .search-summary-bar { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) 0; height: var(--header-height); }
+  .back-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; font-size: 22px; color: var(--text-dark); cursor: pointer; text-decoration:none; }
+  .search-content { flex: 1; text-align: center; }
+  .search-content h2 { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+  .search-content p { font-size: 13px; color: var(--text-gray); display: flex; align-items: center; justify-content: center; gap: var(--space-2); }
+  .edit-search { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--bg-light); border-radius: var(--radius-full); border: 1px solid var(--border-light); color: var(--primary); cursor: pointer; }
+  .filter-sort-bar { display: flex; align-items: center; justify-content: space-between; padding-bottom: var(--space-3); height: var(--filter-bar-height); gap: var(--space-3); }
+  .quick-filters { display: flex; gap: var(--space-2); overflow-x: auto; scrollbar-width: none; white-space: nowrap; flex: 1; padding: var(--space-1) 0; }
+  .quick-filter-btn { padding: var(--space-2) var(--space-4); background: var(--card-bg); border: 1px solid var(--border-light); border-radius: var(--radius-full); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+  .quick-filter-btn i { color: var(--primary); font-size: 14px; }
+  .quick-filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .quick-filter-btn.active i { color: white; }
+  .sort-select { padding: var(--space-2) var(--space-4); border: 1px solid var(--border-light); border-radius: var(--radius-full); font-size: 14px; background: var(--card-bg); cursor: pointer; flex-shrink: 0; }
+  .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-2) 0 var(--space-3); border-top: 1px solid var(--border-light); }
+  .active-filter-tag { display: flex; align-items: center; gap: 6px; background: var(--primary); color: white; padding: 4px 12px; border-radius: var(--radius-full); font-size: 13px; }
+  .active-filter-tag i { cursor: pointer; opacity: 0.8; }
+  .clear-all { color: var(--primary); font-weight: 600; font-size: 13px; cursor: pointer; margin-left: auto; }
+  .view-toggle { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); margin-top: var(--space-4); }
+  .view-btn { flex: 1; padding: var(--space-3); background: var(--card-bg); border: 1px solid var(--border-light); border-radius: var(--radius-full); font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; }
+  .view-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .results-container { display: flex; gap: var(--space-6); margin-top: var(--space-4); align-items: flex-start; }
+  .filter-sidebar { width: 280px; flex-shrink: 0; display: block; }
+  .filter-card { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light); padding: var(--space-5); margin-bottom: var(--space-4); }
+  .filter-section { margin-bottom: var(--space-6); }
+  .filter-section h4 { font-size: 15px; font-weight: 700; margin-bottom: var(--space-4); }
+  .price-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-4) 0; }
+  .price-range input { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--border-light); border-radius: var(--radius-md); }
+  .filter-options { display: flex; flex-direction: column; gap: var(--space-3); }
+  .filter-options > input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); }
+  .filter-check { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: 14px; }
+  .rating-stars { display: flex; flex-wrap: wrap; gap: 10px; }
+  .rating-chip {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      background: #fff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  }
+  .rating-chip:hover { transform: translateY(-1px); border-color: rgba(0,59,149,0.28); }
+  .rating-chip.active {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 16px 30px rgba(0,59,149,0.18);
+  }
+  .hotel-list { flex: 1; display: flex; flex-direction: column; gap: var(--space-5); }
+  .hotel-card { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light); overflow: hidden; display: flex; flex-direction: column; position: relative; }
+  .card-image { position: relative; flex-shrink: 0; }
+  .card-image-link { display: block; width: 100%; height: 100%; }
+  .card-image-link img { width: 100%; height: 100%; object-fit: cover; display:block; }
+  .card-badge-top-left { position: absolute; top: var(--space-3); left: var(--space-3); z-index: 2; pointer-events: none; display: flex; flex-direction: column; gap: 8px; }
+  .card-badge-bottom-right { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 2; pointer-events: none; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+
+  .listing-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.2px;
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+      border: 1px solid rgba(255,255,255,0.30);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      text-transform: none;
+      background: rgba(255,255,255,0.66);
+      color: #0f172a;
+  }
+
+  .listing-pill i { font-size: 12px; }
+  .listing-pill.fav { box-shadow: 0 14px 28px rgba(250, 204, 21, 0.12); border-color: rgba(250, 204, 21, 0.35); }
+  .listing-pill.flash { box-shadow: 0 14px 28px rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35); }
+  .listing-pill.early { box-shadow: 0 14px 28px rgba(16, 185, 129, 0.10); border-color: rgba(16, 185, 129, 0.30); }
+  .listing-pill.discount { box-shadow: 0 14px 28px rgba(255, 56, 92, 0.12); border-color: rgba(255, 56, 92, 0.35); }
+  .listing-pill.budget { box-shadow: 0 14px 28px rgba(59, 130, 246, 0.10); border-color: rgba(59, 130, 246, 0.30); }
+  .listing-pill.best { box-shadow: 0 14px 28px rgba(16, 185, 129, 0.10); border-color: rgba(16, 185, 129, 0.30); }
+  .listing-pill.weekend { box-shadow: 0 14px 28px rgba(99, 102, 241, 0.12); border-color: rgba(99, 102, 241, 0.35); }
+  .wishlist-btn { position: absolute; top: var(--space-3); right: var(--space-3); width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.96); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; color: var(--secondary); cursor: pointer; z-index: 3; box-shadow: 0 10px 26px rgba(0,0,0,0.14); border: 1px solid rgba(15,23,42,0.08); }
+  .wishlist-btn i { font-size: 18px; line-height: 1; }
+  .wishlist-btn.active,
+  .favorite-btn.active { background: rgba(255, 56, 92, 0.12); border-color: rgba(255, 56, 92, 0.25); }
+  .wishlist-btn.active i,
+  .favorite-btn.active i { color: var(--secondary); }
+  .card-content { padding: var(--space-4); display: flex; flex-direction: column; justify-content: space-between; flex: 1; }
+  .hotel-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .hotel-name { font-size: 18px; font-weight: 700; }
+  .hotel-rating { display: flex; align-items: center; gap: 4px; background: var(--primary); color: white; padding: 2px 8px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; }
+  .hotel-location { font-size: 14px; color: var(--text-gray); margin: var(--space-1) 0 var(--space-2); }
+  .features { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+  .feature-tag { background: var(--bg-light); padding: 2px 10px; border-radius: var(--radius-full); font-size: 12px; color: var(--text-gray); }
+  .features-compact { align-items: center; }
+  .feature-more-btn {
+      min-height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px dashed rgba(0, 59, 149, 0.28);
+      background: rgba(255,255,255,0.85);
+      color: var(--primary);
+      font-weight: 900;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+  }
+  .feature-more-btn:active { transform: translateY(1px); }
+  .price-section { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: auto; }
+  .price-info { display: flex; align-items: baseline; gap: 6px; min-width: 0; flex: 1; }
+  .btn-detail { flex-shrink: 0; }
+  .current-price { font-size: 22px; font-weight: 700; color: var(--text-dark); }
+  .old-price { text-decoration: line-through; color: var(--text-light); font-size: 14px; }
+  .btn-detail { background: var(--primary); color: white; padding: 8px 16px; border-radius: var(--radius-full); font-weight: 600; font-size: 14px; border: none; cursor: pointer; text-decoration:none; }
+  .filter-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; display: none; }
+  .filter-modal.active { display: block; }
+  .modal-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+  .modal-content { position: absolute; bottom: 0; left: 0; right: 0; background: var(--card-bg); border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: var(--space-6); max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease; }
+  .amenity-modal-content { padding-bottom: 18px; }
+  .amenity-modal-list { display: grid; gap: 10px; }
+  .amenity-modal-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(226,232,240,1);
+      background: linear-gradient(180deg, rgba(248,250,252,0.96), rgba(255,255,255,1));
+      color: #0f172a;
+      font-weight: 800;
+  }
+  .amenity-modal-item i { color: var(--primary); }
+  @@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); }
+  .modal-header h3 { font-size: 20px; margin-bottom: 0; }
+  .close-modal { font-size: 24px; cursor: pointer; color: var(--text-gray); }
+  .apply-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: var(--radius-full); font-weight: 700; font-size: 16px; cursor: pointer; margin-top: var(--space-4); }
+
+  .mobile-filter-bar {
+      position: sticky;
+      top: 66px;
+      z-index: 60;
+      margin: 10px 0 12px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(226, 232, 240, 1);
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,250,252,0.88));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 18px 34px rgba(0, 59, 149, 0.10);
+      display: none;
+  }
+
+  .mobile-filter-bar-btn {
+      width: 100%;
+      min-height: 48px;
+      border-radius: 16px;
+      border: 1px solid rgba(0, 59, 149, 0.14);
+      background: linear-gradient(135deg, rgba(0,59,149,0.08), rgba(255,255,255,0.96));
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 14px;
+      font-weight: 900;
+      cursor: pointer;
+  }
+
+  .mobile-filter-bar-btn:active {
+      transform: translateY(1px);
+  }
+
+  .mobile-filter-bar-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+  }
+
+  .mobile-filter-bar-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      box-shadow: 0 14px 28px rgba(0, 59, 149, 0.22);
+  }
+
+  .mobile-filter-bar-meta {
+      display: grid;
+      gap: 2px;
+      text-align: left;
+  }
+
+  .mobile-filter-bar-meta small {
+      color: var(--text-light);
+      font-weight: 800;
+      font-size: 12px;
+  }
+
+  .mobile-filter-bar-count {
+      min-width: 28px;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(255, 56, 92, 0.12);
+      color: #ff385c;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 12px;
+  }
+  .map-view { display: none; background: #D1D5DB; border-radius: var(--radius-lg); min-height: 500px; align-items: center; justify-content: center; flex:1; }
+  .map-placeholder { text-align: center; color: var(--text-gray); }
+  .map-placeholder i { font-size: 48px; margin-bottom: var(--space-4); color: var(--primary); }
+  .listing-hotel-card[hidden] { display: none !important; }
+
+  @@media (min-width: 640px) {
+    .hotel-card { flex-direction: row; height: 240px; }
+    .card-image { width: 260px; height: 100%; }
+  }
+  @@media (max-width: 900px) {
+    .results-container { flex-direction: column; }
+    .filter-sidebar { width: 100%; display: none; }
+    .mobile-filter-bar { display: block; }
+  }
+  @@media (max-width: 639px) { .card-image { height: 200px; } }
+
+  .filter-accordion { border: 0; }
+  .filter-accordion + .filter-accordion { margin-top: var(--space-4); }
+  .filter-accordion-summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      padding: 12px 0;
+  }
+  .filter-accordion-summary::-webkit-details-marker { display: none; }
+  .filter-accordion-summary i { color: var(--text-light); transition: transform 0.2s ease; }
+  .filter-accordion[open] .filter-accordion-summary i { transform: rotate(180deg); }
+  .filter-accordion-body { padding-bottom: var(--space-2); }
+  .filter-help { margin-top: 10px; color: var(--text-light); font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+
+  .listing-search-lux {
+      display: grid;
+      grid-template-columns: 42px 1fr 40px;
+      align-items: center;
+      min-height: 48px;
+      border-radius: 18px;
+      border: 1px solid rgba(226, 232, 240, 1);
+      background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(248,250,252,1) 100%);
+      box-shadow: 0 18px 34px rgba(0, 59, 149, 0.08);
+      padding: 0 8px;
+      gap: 4px;
+  }
+
+  .listing-search-lux > i {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: rgba(0, 59, 149, 0.08);
+      color: var(--primary);
+      font-size: 16px;
+  }
+
+  .listing-search-lux input {
+      border: 0;
+      outline: 0;
+      background: transparent;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 10px 6px;
+      min-width: 0;
+  }
+
+  .listing-search-lux:focus-within {
+      border-color: rgba(0, 59, 149, 0.45);
+      box-shadow: 0 22px 44px rgba(0, 59, 149, 0.14);
+  }
+
+  .listing-search-clear {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      background: rgba(255,255,255,0.95);
+      display: grid;
+      place-items: center;
+      color: #0f172a;
+      cursor: pointer;
+  }
+
+  .price-slider-wrap {
+      --slider-pos: 100%;
+      margin-top: 4px;
+      position: relative;
+      padding-top: 18px;
+  }
+  .price-slider-track {
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(0,59,149,0.25), rgba(0,59,149,0.12));
+      position: relative;
+      margin: 0 0 8px;
+      overflow: hidden;
+      top: 14px;
+  }
+  .price-slider-track::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: var(--slider-pos);
+      background: linear-gradient(90deg, rgba(0,59,149,0.95), rgba(0,59,149,0.55));
+  }
+  .price-slider-dot {
+      position: absolute;
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.9);
+      border: 2px solid rgba(0,59,149,0.55);
+      box-shadow: 0 10px 20px rgba(0,59,149,0.18);
+      z-index: 2;
+  }
+  .price-slider-dot[data-price-dot="0"] { left: 0%; }
+  .price-slider-dot[data-price-dot="1"] { left: 33.333%; }
+  .price-slider-dot[data-price-dot="2"] { left: 66.666%; }
+  .price-slider-dot[data-price-dot="3"] { left: 100%; }
+
+  #listingPriceMaxRange {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 38px;
+      background: transparent;
+      margin: 0;
+      padding: 0;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+  }
+  #listingPriceMaxRange::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #dbeafe 35%, #60a5fa 100%);
+      border: 2px solid rgba(0,59,149,0.55);
+      box-shadow: 0 12px 26px rgba(0,59,149,0.28), 0 0 0 6px rgba(0,59,149,0.12);
+      cursor: pointer;
+  }
+  #listingPriceMaxRange::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #dbeafe 35%, #60a5fa 100%);
+      border: 2px solid rgba(0,59,149,0.55);
+      box-shadow: 0 12px 26px rgba(0,59,149,0.28), 0 0 0 6px rgba(0,59,149,0.12);
+      cursor: pointer;
+  }
+  .price-slider-labels {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 16px;
+      color: var(--text-light);
+      font-size: 12px;
+      font-weight: 700;
+  }
+  .price-slider-labels span:nth-child(1) { text-align: left; }
+  .price-slider-labels span:nth-child(2),
+  .price-slider-labels span:nth-child(3) { text-align: center; }
+  .price-slider-labels span:nth-child(4) { text-align: right; }
+</style>
+
+<section class="hotel-listing-shell listing-template-v41">
     <div class="listing-container">
-        <header class="listing-hero-panel">
-            <div class="listing-hero-copy">
-                <a asp-controller="Home" asp-action="Index" class="listing-back-link">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Anasayfaya don</span>
-                </a>
-                <span class="listing-hero-eyebrow">Canli veritabani listeleme</span>
-                <h1>@activeHeading</h1>
-                <p>@Model.CampaignDescription</p>
-            </div>
-
-            <div class="listing-hero-stats">
-                <div class="listing-stat-card">
-                    <strong>@Model.TotalCount</strong>
-                    <span>Toplam tesis</span>
-                </div>
-                <div class="listing-stat-card">
-                    <strong>@Math.Max(Model.TotalPages, 1)</strong>
-                    <span>Sayfa adedi</span>
-                </div>
-                <div class="listing-stat-card">
-                    <strong>@Model.CurrentPage / @Math.Max(Model.TotalPages, 1)</strong>
-                    <span>Aktif sayfa</span>
-                </div>
-            </div>
-        </header>
-
-        <section class="listing-toolbar-bar">
-            <div>
-                <h2>@(string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Tum bolgeler" : Model.SearchLabel)</h2>
-                <p id="listingResultsSummary">@Model.TotalCount tesis bulundu. Sayfa basi @Model.PageSize tesis gosteriliyor.</p>
-            </div>
-
-            <div class="listing-toolbar-actions">
-                <button type="button" class="listing-toolbar-filter-btn" data-open-mobile-filters>
-                    <i class="fas fa-sliders-h"></i>
-                    <span>Filtreler</span>
-                </button>
-
-                <label class="listing-sortbox" for="listingSortSelect">
-                    <span>Sirala</span>
-                    <select id="listingSortSelect" class="sort-select">
-                        <option value="recommended">Onerilen</option>
-                        <option value="price-asc">En dusuk fiyat</option>
-                        <option value="price-desc">En yuksek fiyat</option>
-                        <option value="rating-desc">En yuksek puan</option>
-                        <option value="name-asc">A-Z</option>
-                    </select>
-                </label>
-            </div>
-        </section>
-
-        <div class="listing-results-grid listing-results-grid-v52">
-            <aside class="listing-filter-sidebar filter-sidebar" id="listingFilterSidebar">
-                <div class="filter-panel filter-card">
-                    <div class="filter-panel-section filter-section">
-                        <div class="filter-panel-head">
-                            <h3>Hizli arama</h3>
+        <div class="mobile-filter-bar" id="mobileFilterBar">
+            <button type="button" class="mobile-filter-bar-btn" id="mobileFilterBarBtn" aria-haspopup="dialog" aria-controls="listingFilterModal">
+                <span class="mobile-filter-bar-left">
+                    <span class="mobile-filter-bar-icon" aria-hidden="true"><i class="fas fa-sliders"></i></span>
+                    <span class="mobile-filter-bar-meta">
+                        <span>Filtreler</span>
+                        <small>Aramayı özelleştir</small>
+                    </span>
+                </span>
+                <span class="mobile-filter-bar-count" id="mobileFilterCount" hidden>0</span>
+            </button>
+        </div>
+        <div class="results-container">
+            <aside class="filter-sidebar">
+                <div class="filter-card" id="listingFilterCard">
+                    <details class="filter-accordion" open>
+                        <summary class="filter-accordion-summary">
+                            <span>Gelişmiş Arama</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="listing-search-lux">
+                                <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                                <input type="text" id="listingKeywordInput" placeholder="Otel adı / il / ilçe / mahalle">
+                                <button type="button" class="listing-search-clear" id="listingKeywordClear" aria-label="Aramayı temizle" hidden>
+                                    <i class="fas fa-xmark" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <p class="filter-help">İl, ilçe, mahalle veya otel adı ile arayabilirsiniz.</p>
                         </div>
-                        <input type="search" id="listingKeywordFilter" class="listing-text-filter" placeholder="Otel, ilce, mahalle veya kampanya ara" value="@Model.SearchTerm" />
-                    </div>
+                    </details>
 
-                    <div class="filter-panel-section filter-section">
-                        <div class="filter-panel-head">
-                            <h3>Konum</h3>
+                    <details class="filter-accordion" open>
+                        <summary class="filter-accordion-summary">
+                            <span>Fiyat Aralığı</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="price-slider-wrap">
+                                <div class="price-slider-track" aria-hidden="true">
+                                    <span class="price-slider-dot" data-price-dot="0"></span>
+                                    <span class="price-slider-dot" data-price-dot="1"></span>
+                                    <span class="price-slider-dot" data-price-dot="2"></span>
+                                    <span class="price-slider-dot" data-price-dot="3"></span>
+                                </div>
+                                <input type="range"
+                                       min="@Math.Floor(minPrice)"
+                                       max="@Math.Ceiling(maxPrice)"
+                                       value="@maxPrice"
+                                       step="1"
+                                       id="listingPriceMaxRange"
+                                       aria-label="Maksimum fiyat" />
+                                <div class="price-slider-labels" aria-hidden="true">
+                                    <span id="priceStep0"></span>
+                                    <span id="priceStep1"></span>
+                                    <span id="priceStep2"></span>
+                                    <span id="priceStep3"></span>
+                                </div>
+                            </div>
+                            <div class="price-range">
+                                <input type="number" placeholder="Min ₺" value="@minPrice" id="listingMinPriceInput">
+                                <input type="number" placeholder="Max ₺" value="@maxPrice" id="listingMaxPriceInput">
+                            </div>
                         </div>
-                        <div class="listing-filter-stack">
-                            <select id="listingCityFilter" class="listing-select-filter">
-                                <option value="">Tum iller</option>
-                                @foreach (var city in Model.Cities)
+                    </details>
+
+                    <details class="filter-accordion">
+                        <summary class="filter-accordion-summary">
+                            <span>Yıldız Sayısı</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="filter-options">
+                                @foreach (var star in Model.StarOptions.OrderByDescending(x => x))
                                 {
-                                    <option value="@NormalizeToken(city)">@city</option>
+                                    var count = hotels.Count(h => (h.StarCount ?? 0) == star);
+                                    <label class="filter-check"><input type="checkbox" class="listing-star-filter" value="@star"> @star Yıldız <span style="margin-left:auto; color:var(--text-light);">@count</span></label>
                                 }
-                            </select>
+                            </div>
+                        </div>
+                    </details>
 
-                            <select id="listingDistrictFilter" class="listing-select-filter">
-                                <option value="">Tum ilceler</option>
-                                @foreach (var district in Model.Districts)
+                    <details class="filter-accordion">
+                        <summary class="filter-accordion-summary">
+                            <span>Misafir Puanı</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="rating-stars">
+                                <span class="rating-chip" data-min-score="9">9+ Muhteşem</span>
+                                <span class="rating-chip" data-min-score="8">8+ Çok İyi</span>
+                                <span class="rating-chip" data-min-score="7">7+ İyi</span>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="filter-accordion">
+                        <summary class="filter-accordion-summary">
+                            <span>Popüler Filtreler</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="filter-options">
+                                @foreach (var amenity in amenityCounts.Take(5))
                                 {
-                                    <option value="@NormalizeToken(district)">@district</option>
+                                    <label class="filter-check"><input type="checkbox" class="listing-amenity-filter" value="@NormalizeToken(amenity.Key)"> @amenity.Key</label>
                                 }
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="filter-accordion">
+                        <summary class="filter-accordion-summary">
+                            <span>Özel Konseptler</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="filter-options">
+                                <label class="filter-check"><input type="checkbox" class="listing-featured-filter" value="1"> En İyi Fiyat</label>
+                                <label class="filter-check"><input type="checkbox" class="listing-featured-filter" value="1"> Kampanyalı</label>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="filter-accordion">
+                        <summary class="filter-accordion-summary">
+                            <span>Sıralama</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <select class="sort-select" id="listingSortSelect" style="width:100%;">
+                                <option value="recommended">Önerilen</option>
+                                <option value="price-asc">En Düşük Fiyat</option>
+                                <option value="rating-desc">En Yüksek Puan</option>
                             </select>
+                        </div>
+                    </details>
 
-                            <select id="listingNeighborhoodFilter" class="listing-select-filter">
-                                <option value="">Tum mahalleler</option>
-                                @foreach (var neighborhood in Model.Neighborhoods)
-                                {
-                                    <option value="@NormalizeToken(neighborhood)">@neighborhood</option>
-                                }
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="filter-panel-section filter-section">
-                        <div class="filter-panel-head">
-                            <h3>Kampanyalar</h3>
-                            <span>@Model.Campaigns.Count</span>
-                        </div>
-                        <div class="filter-option-list filter-options">
-                            @foreach (var campaign in Model.Campaigns.Take(8))
-                            {
-                                <label class="filter-option-row filter-check">
-                                    <input type="checkbox" class="listing-campaign-filter" value="@NormalizeToken(campaign.Slug)" @(campaign.IsActive ? "checked" : null) />
-                                    <span>@campaign.Name</span>
-                                    <strong>@campaign.HotelCount</strong>
-                                </label>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="filter-panel-section filter-section">
-                        <div class="filter-panel-head">
-                            <h3>Fiyat araligi</h3>
-                            <span>Gecelik</span>
-                        </div>
-                        <input type="range" min="0" max="@(Math.Max(maxPrice, 15000))" value="@maxPrice" class="filter-range" id="listingPriceMaxRange" />
-                        <div class="filter-price-grid price-range">
-                            <label>
-                                <span>Min</span>
-                                <input type="number" id="listingMinPriceInput" value="@minPrice" />
-                            </label>
-                            <label>
-                                <span>Max</span>
-                                <input type="number" id="listingMaxPriceInput" value="@maxPrice" />
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="filter-panel-section filter-section">
-                        <div class="filter-panel-head">
-                            <h3>Konaklama tipi</h3>
-                        </div>
-                        <div class="filter-option-list filter-options">
-                            @foreach (var propertyType in Model.PropertyTypes)
-                            {
-                                <label class="filter-option-row filter-check">
-                                    <input type="checkbox" class="listing-property-filter" value="@NormalizeToken(propertyType)" />
-                                    <span>@propertyType</span>
-                                </label>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="filter-panel-section filter-section">
-                        <div class="filter-panel-head">
-                            <h3>Yildiz sayisi</h3>
-                        </div>
-                        <div class="filter-option-list filter-options">
-                            @foreach (var star in Model.StarOptions)
-                            {
-                                <label class="filter-option-row filter-check">
-                                    <input type="checkbox" class="listing-star-filter" value="@star" />
-                                    <span>@star yildiz</span>
-                                </label>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="filter-panel-section filter-section">
-                        <div class="filter-panel-head">
-                            <h3>Misafir puani</h3>
-                        </div>
-                        <div class="rating-chip-list">
-                            <button type="button" class="rating-chip" data-min-score="9">9+ Muhtesem</button>
-                            <button type="button" class="rating-chip" data-min-score="8">8+ Cok iyi</button>
-                            <button type="button" class="rating-chip" data-min-score="7">7+ Iyi</button>
-                        </div>
-                    </div>
-
-                    <div class="filter-panel-section filter-section">
-                        <div class="filter-panel-head">
-                            <h3>Otel ozellikleri</h3>
-                            <span>@topAmenities.Count</span>
-                        </div>
-                        <div class="filter-option-list filter-options">
-                            @foreach (var amenity in topAmenities)
-                            {
-                                <label class="filter-option-row filter-check">
-                                    <input type="checkbox" class="listing-amenity-filter" value="@NormalizeToken(amenity.Key)" />
-                                    <span>@amenity.Key</span>
-                                    <strong>@amenity.Count()</strong>
-                                </label>
-                            }
-                        </div>
-                    </div>
-
-                    <button type="button" class="listing-reset-btn" id="listingResetFiltersBtn">Tum filtreleri sifirla</button>
+                    <button type="button" class="btn-detail" id="clearAllFiltersBtn" style="width:100%;">Tüm Filtreleri Temizle</button>
                 </div>
             </aside>
 
-            <div class="listing-results-column">
-                @if (Model.TotalCount == 0)
+            <div class="hotel-list" id="hotelListView">
+                @if (!hotels.Any())
                 {
-                    <div class="listing-empty-state">
-                        <div class="listing-empty-icon">
-                            <i class="fas fa-bed"></i>
+                    <div class="hotel-card">
+                        <div class="card-content">
+                            <div class="hotel-header">
+                                <h3 class="hotel-name">Filtreye uygun tesis bulunamadı</h3>
+                            </div>
+                            <div class="hotel-location"><i class="fas fa-map-pin"></i> Arama kriterlerini değiştirip tekrar deneyin.</div>
                         </div>
-                        <h2>Filtreye uygun tesis bulunamadi</h2>
-                        <p>`oteller`, `kampanyalar`, `kampanya_oteller`, `oda_tipleri`, `oda_fiyat_musaitlik` ve `otel_gorselleri` verileri ile tekrar deneyin.</p>
                     </div>
                 }
                 else
                 {
-                    <div class="hotel-card-list hotel-list" id="hotelListView">
-                        @foreach (var hotel in hotels)
-                        {
-                            var amenityTokens = string.Join(' ', hotel.Amenities.Select(NormalizeToken));
-                            var campaignTokens = string.Join(' ', hotel.CampaignSlugs.Select(NormalizeToken));
-                            var locationText = string.IsNullOrWhiteSpace(hotel.Neighborhood)
-                                ? $"{hotel.District}, {hotel.City}"
-                                : $"{hotel.Neighborhood}, {hotel.District}, {hotel.City}";
-
-                            <article class="hotel-card listing-hotel-card"
-                                     data-keywords="@NormalizeToken($"{hotel.Name} {hotel.City} {hotel.District} {hotel.Neighborhood} {string.Join(' ', hotel.CampaignNames)}")"
-                                     data-city="@NormalizeToken(hotel.City)"
-                                     data-district="@NormalizeToken(hotel.District)"
-                                     data-neighborhood="@NormalizeToken(hotel.Neighborhood)"
-                                     data-property="@NormalizeToken(hotel.PropertyType)"
-                                     data-campaigns="@campaignTokens"
-                                     data-amenities="@amenityTokens"
-                                     data-featured="@(hotel.IsFeatured ? "1" : "0")"
-                                     data-price="@(hotel.StartingPrice ?? 0m)"
-                                     data-rating="@hotel.Rating.ToString(CultureInfo.InvariantCulture)"
-                                     data-stars="@(hotel.StarCount ?? 0)">
-                                <div class="card-image hotel-card-media">
-                                    @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
-                                    {
-                                        <img src="@hotel.ImageUrl" alt="@hotel.Name" loading="lazy" />
-                                    }
-                                    else
-                                    {
-                                        <div class="hotel-card-placeholder">
-                                            <i class="fas fa-image"></i>
-                                            <span>Gorsel bekleniyor</span>
-                                        </div>
-                                    }
-
-                                    <div class="hotel-card-badges card-badges">
-                                        @if (hotel.IsFeatured)
-                                        {
-                                            <span class="hotel-badge hotel-badge-highlight">
-                                                <i class="fas fa-bolt"></i>
-                                                One cikan
-                                            </span>
-                                        }
-                                        @if (hotel.CampaignNames.Count > 0)
-                                        {
-                                            <span class="hotel-badge hotel-badge-discount">
-                                                <i class="fas fa-tag"></i>
-                                                @hotel.CampaignNames.First()
-                                            </span>
-                                        }
-                                    </div>
-
-                                    <button type="button"
-                                            class="favorite-btn wishlist-btn @(hotel.IsFavorite ? "active" : string.Empty)"
-                                            data-hotel-id="@hotel.Id"
-                                            data-source-page="OtelListeleme"
-                                            aria-label="Favorilere ekle">
-                                        <i class="@(hotel.IsFavorite ? "fas" : "far") fa-heart"></i>
-                                    </button>
-                                </div>
-
-                                <div class="card-content hotel-card-content">
-                                    <div class="hotel-card-main">
-                                        <div class="hotel-card-header">
-                                            <div>
-                                                <div class="hotel-card-meta">
-                                                    @hotel.PropertyType
-                                                </div>
-                                                <h2 class="hotel-card-title-with-stars">
-                                                    @hotel.Name
-                                                    @if (hotel.StarCount.HasValue && hotel.StarCount.Value > 0)
-                                                    {
-                                                        <span class="hotel-card-stars-inline" aria-hidden="true">
-                                                            @for (var i = 0; i < hotel.StarCount.Value; i++)
-                                                            {
-                                                                <text>★</text>
-                                                            }
-                                                        </span>
-                                                        <span class="sr-only">@($"{hotel.StarCount.Value} yıldızlı otel")</span>
-                                                    }
-                                                </h2>
-                                                <p class="hotel-card-location">
-                                                    <i class="fas fa-location-dot"></i>
-                                                    @locationText
-                                                </p>
-                                            </div>
-
-                                            <div class="hotel-score-box">
-                                                <strong>@(hotel.Rating > 0 ? hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) : "0.0")</strong>
-                                                <span>@hotel.RatingText</span>
-                                                <small>@hotel.ReviewCount yorum</small>
-                                            </div>
-                                        </div>
-
-                                        <p class="hotel-card-summary">@hotel.Summary</p>
-
-                                        <div class="features hotel-feature-list">
-                                            @foreach (var amenity in hotel.Amenities.Take(4))
-                                            {
-                                                <span class="feature-tag hotel-feature-chip">@amenity</span>
-                                            }
-                                        </div>
-
-                                        @if (hotel.CampaignNames.Count > 0)
-                                        {
-                                            <div class="hotel-campaign-strip">
-                                                @foreach (var campaignName in hotel.CampaignNames.Take(3))
-                                                {
-                                                    <span class="hotel-tag-pill">@campaignName</span>
-                                                }
-                                            </div>
-                                        }
-                                    </div>
-
-                                    <div class="price-section hotel-card-footer">
-                                        <div class="price-info hotel-price-area">
-                                            <span class="hotel-price-caption">@hotel.PriceNote</span>
-                                            <div class="hotel-price-row">
-                                                <strong>@(hotel.StartingPrice.HasValue ? $"₺{hotel.StartingPrice.Value:N0}" : "Teklif Al")</strong>
-                                            </div>
-                                        </div>
-
-                                        <div class="hotel-card-actions">
-                                            <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="btn-detail hotel-link-btn">Oteli incele</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </article>
-                        }
-                    </div>
-
-                    <div class="listing-filter-empty" id="listingFilterEmpty" hidden>
-                        <i class="fas fa-filter-circle-xmark"></i>
-                        <strong>Secili filtrelere uygun tesis bulunamadi</strong>
-                        <span>Kriterleri yumusatip tekrar deneyebilirsiniz.</span>
-                    </div>
-
-                    @if (Model.TotalPages > 1)
+                    @foreach (var hotel in hotels)
                     {
-                        <nav class="listing-pagination" aria-label="Sayfalama">
-                            @for (var pageIndex = 1; pageIndex <= Model.TotalPages; pageIndex++)
-                            {
-                                <a href="@BuildPageUrl(pageIndex)" class="listing-page-link @(pageIndex == Model.CurrentPage ? "active" : string.Empty)">@pageIndex</a>
-                            }
-                        </nav>
+                        var price = hotel.StartingPrice ?? 0m;
+                        var oldPrice = price > 0m ? Math.Round(price * 1.18m, 0) : 0m;
+                        var discountRate = oldPrice > 0m ? (int)Math.Round((1m - (price / oldPrice)) * 100m, MidpointRounding.AwayFromZero) : 0;
+                        var amenityText = string.Join(" ", hotel.Amenities.Select(NormalizeToken));
+                        var keywords = NormalizeToken($"{hotel.Name} {hotel.City} {hotel.District} {hotel.Neighborhood} {hotel.PropertyType} {string.Join(" ", hotel.CampaignNames)} {string.Join(" ", hotel.Amenities)}");
+                        var locationText = string.IsNullOrWhiteSpace(hotel.Neighborhood)
+                            ? $"{hotel.District} · {hotel.City}"
+                            : $"{hotel.Neighborhood} · {hotel.District}";
+                        <article class="hotel-card listing-hotel-card"
+                                 data-keywords="@keywords"
+                                 data-price="@price.ToString(CultureInfo.InvariantCulture)"
+                                 data-rating="@hotel.Rating.ToString(CultureInfo.InvariantCulture)"
+                                 data-stars="@(hotel.StarCount ?? 0)"
+                                 data-amenities="@amenityText"
+                                 data-featured="@(hotel.IsFeatured ? "1" : "0")">
+                            <div class="card-image">
+                                @{
+                                    var images = (hotel.GalleryImages?.Count ?? 0) > 0
+                                        ? hotel.GalleryImages
+                                        : new List<string> { hotel.ImageUrl };
+                                    var mainCardImage = images.FirstOrDefault();
+                                    var side1 = images.Count > 1 ? images[1] : mainCardImage;
+                                    var side2 = images.Count > 2 ? images[2] : side1;
+                                }
+                                <a asp-controller="Oteller"
+                                   asp-action="OtelDetay"
+                                   asp-route-slug="@hotel.Slug"
+                                   class="card-image-link"
+                                   aria-label="@hotel.Name detay sayfasına git">
+                                    <div class="card-image-grid">
+                                        <img class="card-image-main" src="@(string.IsNullOrWhiteSpace(mainCardImage) ? "/assets/img/placeholder-hotel.jpg" : mainCardImage)" alt="@hotel.Name">
+                                        <div class="card-image-side">
+                                            <img src="@(string.IsNullOrWhiteSpace(side1) ? "/assets/img/placeholder-hotel.jpg" : side1)" alt="@hotel.Name görsel 2">
+                                            <img src="@(string.IsNullOrWhiteSpace(side2) ? "/assets/img/placeholder-hotel.jpg" : side2)" alt="@hotel.Name görsel 3">
+                                        </div>
+                                    </div>
+                                </a>
+                                <span class="image-rating" aria-label="Misafir puanı">
+                                    @hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) <i class="fas fa-star" aria-hidden="true"></i>
+                                </span>
+                                <div class="card-badge-top-left">
+                                    @{
+                                        var pillCount = 0;
+                                        var priceKeyDistrict = NormalizeToken(hotel.District ?? string.Empty);
+                                        var priceKeyNeighborhood = NormalizeToken(hotel.Neighborhood ?? string.Empty);
+                                        var isBestNeighborhood = (price > 0m)
+                                            && !string.IsNullOrWhiteSpace(priceKeyNeighborhood)
+                                            && neighborhoodMinPrice.TryGetValue(priceKeyNeighborhood, out var bestN)
+                                            && price <= bestN;
+                                        var isBestDistrict = (price > 0m)
+                                            && !string.IsNullOrWhiteSpace(priceKeyDistrict)
+                                            && districtMinPrice.TryGetValue(priceKeyDistrict, out var bestD)
+                                            && price <= bestD;
+
+                                        var hasFlash = hotel.CampaignSlugs.Any(x => string.Equals(x, "flash-indirim", StringComparison.OrdinalIgnoreCase));
+                                        var hasEarly = hotel.CampaignSlugs.Any(x => string.Equals(x, "erken-rezervasyon", StringComparison.OrdinalIgnoreCase));
+                                        var hasWeekend = string.Equals(Model.ActiveTag, "hafta-sonu-firsatlari", StringComparison.OrdinalIgnoreCase)
+                                                         || hotel.CampaignSlugs.Any(x => string.Equals(x, "hafta-sonu-firsatlari", StringComparison.OrdinalIgnoreCase));
+                                        var isBudget = string.Equals(Model.ActiveTag, "butceme-uygun-oteller", StringComparison.OrdinalIgnoreCase) || (price > 0m && price <= 4000m);
+                                        var isCampaign = hotel.CampaignSlugs.Count > 0;
+
+                                        if (isBestNeighborhood && pillCount < 4)
+                                        {
+                                            <span class="listing-pill best"><i class="fas fa-location-dot"></i> Mahallede En Uygun</span>;
+                                            pillCount++;
+                                        }
+                                        else if (isBestDistrict && pillCount < 4)
+                                        {
+                                            <span class="listing-pill best"><i class="fas fa-location-dot"></i> İlçede En Uygun</span>;
+                                            pillCount++;
+                                        }
+
+                                        if (hotel.IsFeatured && pillCount < 4)
+                                        {
+                                            <span class="listing-pill fav"><i class="fas fa-award"></i> Misafir Favorisi</span>;
+                                            pillCount++;
+                                        }
+
+                                        if (hasFlash && pillCount < 4)
+                                        {
+                                            <span class="listing-pill flash"><i class="fas fa-bolt"></i> FLASH</span>;
+                                            pillCount++;
+                                        }
+
+                                        if (hasWeekend && pillCount < 4)
+                                        {
+                                            <span class="listing-pill weekend"><i class="fas fa-calendar-week"></i> Hafta Sonu</span>;
+                                            pillCount++;
+                                        }
+
+                                        if (isBudget && pillCount < 4)
+                                        {
+                                            <span class="listing-pill budget"><i class="fas fa-wallet"></i> Bütçe Dostu</span>;
+                                            pillCount++;
+                                        }
+
+                                        if (hasEarly && pillCount < 4)
+                                        {
+                                            <span class="listing-pill early"><i class="fas fa-clock"></i> Erken Rez.</span>;
+                                            pillCount++;
+                                        }
+
+                                        if (discountRate > 0 && pillCount < 4)
+                                        {
+                                            <span class="listing-pill discount"><i class="fas fa-tag"></i> %@discountRate İndirim</span>;
+                                            pillCount++;
+                                        }
+
+                                        if (isCampaign && pillCount < 4)
+                                        {
+                                            <span class="listing-pill"><i class="fas fa-badge-percent"></i> Kampanyalı</span>;
+                                            pillCount++;
+                                        }
+                                    }
+                                </div>
+                                <button type="button"
+                                        class="wishlist-btn favorite-btn @(hotel.IsFavorite ? "active" : string.Empty)"
+                                        data-hotel-id="@hotel.Id"
+                                        data-source-page="OtelListeleme"
+                                        aria-label="Favorilere ekle">
+                                    <i class="@(hotel.IsFavorite ? "fas" : "far") fa-heart"></i>
+                                </button>
+                            </div>
+                            <div class="card-content">
+                                <div>
+                                    <div class="hotel-header">
+                                        <h3 class="hotel-name">@hotel.Name</h3>
+                                        <span class="hotel-rating">@hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) <i class="fas fa-star" style="font-size:10px;"></i></span>
+                                    </div>
+                                    <div class="hotel-location"><i class="fas fa-map-pin"></i> @locationText</div>
+                                    <div class="features features-compact">
+                                        @foreach (var amenity in hotel.Amenities.Take(2))
+                                        {
+                                            <span class="feature-tag"><i class="fas fa-check"></i> @amenity</span>
+                                        }
+                                        @if (hotel.Amenities.Count > 2)
+                                        {
+                                            var amenitiesJson = System.Text.Json.JsonSerializer.Serialize(hotel.Amenities);
+                                            <button type="button"
+                                                    class="feature-more-btn"
+                                                    data-amenities='@Html.Raw(amenitiesJson)'
+                                                    data-hotel-name="@hotel.Name">
+                                                Diğer özellikler
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="price-section">
+                                    <div class="price-info">
+                                        <span class="current-price">@(price > 0m ? $"₺{price:N0}" : "Teklif Al")</span>
+                                        @if (oldPrice > 0m)
+                                        {
+                                            <span class="old-price">₺@oldPrice.ToString("N0", CultureInfo.GetCultureInfo("tr-TR"))</span>
+                                        }
+                                        <span style="font-size:13px; color:var(--text-gray);">/ gece</span>
+                                    </div>
+                                    <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="btn-detail">İncele</a>
+                                </div>
+                            </div>
+                        </article>
                     }
                 }
             </div>
+
         </div>
     </div>
 </section>
 
-<div class="listing-mobile-actions">
-    <button type="button" class="listing-mobile-btn" data-open-mobile-filters>
-        <i class="fas fa-sliders-h"></i>
-        <span>Filtrele</span>
-    </button>
+<div class="filter-modal" id="listingFilterModal" aria-hidden="true" role="dialog" aria-label="Filtreler">
+    <div class="modal-overlay" id="listingFilterModalOverlay"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Filtreler</h3>
+            <button type="button" class="close-modal" id="listingFilterModalClose" aria-label="Kapat">×</button>
+        </div>
+        <div id="listingMobileFilterHost"></div>
+        <button type="button" class="apply-btn" id="listingFilterApplyBtn">Uygula</button>
+    </div>
 </div>
 
-<div class="listing-mobile-filter-modal" id="listingMobileFilterModal" hidden>
-    <div class="listing-mobile-filter-backdrop" data-close-mobile-filters></div>
-    <div class="listing-mobile-filter-sheet">
-        <div class="listing-mobile-filter-head">
-            <div>
-                <h3>Gelismis filtreler</h3>
-                <p>@Model.TotalCount tesisi hizlica daraltin</p>
-            </div>
-            <button type="button" class="listing-mobile-close" data-close-mobile-filters aria-label="Kapat">
-                <i class="fas fa-times"></i>
-            </button>
+<div class="filter-modal" id="listingAmenitiesModal" aria-hidden="true" role="dialog" aria-label="Otel özellikleri">
+    <div class="modal-overlay" id="listingAmenitiesOverlay"></div>
+    <div class="modal-content amenity-modal-content">
+        <div class="modal-header">
+            <h3 id="listingAmenitiesTitle">Özellikler</h3>
+            <button type="button" class="close-modal" id="listingAmenitiesClose" aria-label="Kapat">×</button>
         </div>
-
-        <div class="listing-mobile-filter-body">
-            <input type="search" id="listingKeywordFilterMobile" class="listing-text-filter" placeholder="Otel, ilce, mahalle veya kampanya ara" value="@Model.SearchTerm" />
-
-            <select id="listingCityFilterMobile" class="listing-select-filter">
-                <option value="">Tum iller</option>
-                @foreach (var city in Model.Cities)
-                {
-                    <option value="@NormalizeToken(city)">@city</option>
-                }
-            </select>
-
-            <select id="listingDistrictFilterMobile" class="listing-select-filter">
-                <option value="">Tum ilceler</option>
-                @foreach (var district in Model.Districts)
-                {
-                    <option value="@NormalizeToken(district)">@district</option>
-                }
-            </select>
-
-            <select id="listingNeighborhoodFilterMobile" class="listing-select-filter">
-                <option value="">Tum mahalleler</option>
-                @foreach (var neighborhood in Model.Neighborhoods)
-                {
-                    <option value="@NormalizeToken(neighborhood)">@neighborhood</option>
-                }
-            </select>
-        </div>
-
-        <button type="button" class="listing-mobile-apply" data-close-mobile-filters>Sonuclari goster</button>
+        <div class="amenity-modal-list" id="listingAmenitiesList"></div>
+        <button type="button" class="apply-btn" id="listingAmenitiesOk">Tamam</button>
     </div>
 </div>
 
 @section Scripts {
     <script>
         (function () {
-            const mobileFilterModal = document.getElementById('listingMobileFilterModal');
-            const cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
-            const cardList = document.getElementById('hotelListView');
-            const emptyState = document.getElementById('listingFilterEmpty');
-            const summary = document.getElementById('listingResultsSummary');
+            const listView = document.getElementById('hotelListView');
             const sortSelect = document.getElementById('listingSortSelect');
-            const desktopKeyword = document.getElementById('listingKeywordFilter');
-            const mobileKeyword = document.getElementById('listingKeywordFilterMobile');
-            const desktopCity = document.getElementById('listingCityFilter');
-            const mobileCity = document.getElementById('listingCityFilterMobile');
-            const desktopDistrict = document.getElementById('listingDistrictFilter');
-            const mobileDistrict = document.getElementById('listingDistrictFilterMobile');
-            const desktopNeighborhood = document.getElementById('listingNeighborhoodFilter');
-            const mobileNeighborhood = document.getElementById('listingNeighborhoodFilterMobile');
+            const keywordInput = document.getElementById('listingKeywordInput');
             const minPriceInput = document.getElementById('listingMinPriceInput');
             const maxPriceInput = document.getElementById('listingMaxPriceInput');
             const maxPriceRange = document.getElementById('listingPriceMaxRange');
-            const starFilters = document.querySelectorAll('.listing-star-filter');
-            const amenityFilters = document.querySelectorAll('.listing-amenity-filter');
-            const propertyFilters = document.querySelectorAll('.listing-property-filter');
-            const campaignFilters = document.querySelectorAll('.listing-campaign-filter');
-            const ratingChips = document.querySelectorAll('.rating-chip');
-            const resetButton = document.getElementById('listingResetFiltersBtn');
+            const cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
+            const amenityChecks = Array.from(document.querySelectorAll('.listing-amenity-filter'));
+            const starChecks = Array.from(document.querySelectorAll('.listing-star-filter'));
+            const ratingChips = Array.from(document.querySelectorAll('.rating-chip'));
+            const featuredChecks = Array.from(document.querySelectorAll('.listing-featured-filter'));
+            const clearAllBtn = document.getElementById('clearAllFiltersBtn');
+            const keywordClearBtn = document.getElementById('listingKeywordClear');
 
-            function openFilters() {
-                if (!mobileFilterModal) {
-                    return;
-                }
-
-                mobileFilterModal.hidden = false;
-                document.body.classList.add('listing-modal-open');
+            function normalize(v) {
+                return String(v || '').toLocaleLowerCase('tr-TR');
             }
 
-            function closeFilters() {
-                if (!mobileFilterModal) {
-                    return;
-                }
-
-                mobileFilterModal.hidden = true;
-                document.body.classList.remove('listing-modal-open');
+            function formatTry(amount) {
+                const n = Number(amount || 0);
+                if (!Number.isFinite(n)) return '₺0';
+                return '₺' + Math.round(n).toLocaleString('tr-TR');
             }
 
-            function syncInput(source, target) {
-                if (!source || !target) {
-                    return;
-                }
-
-                target.value = source.value;
+            function syncPriceSteps() {
+                const min = Number(minPriceInput?.value || '0');
+                const max = Number(maxPriceRange?.max || maxPriceInput?.value || '0');
+                if (!Number.isFinite(max) || max <= 0) return;
+                const a = Math.max(0, Math.min(min, max));
+                const b = max;
+                const s1 = a + (b - a) * 0.33;
+                const s2 = a + (b - a) * 0.66;
+                const step0 = document.getElementById('priceStep0');
+                const step1 = document.getElementById('priceStep1');
+                const step2 = document.getElementById('priceStep2');
+                const step3 = document.getElementById('priceStep3');
+                if (step0) step0.textContent = formatTry(a);
+                if (step1) step1.textContent = formatTry(s1);
+                if (step2) step2.textContent = formatTry(s2);
+                if (step3) step3.textContent = formatTry(b);
             }
 
-            function updateSummary(visibleCount) {
-                if (!summary) {
-                    return;
-                }
-
-                summary.textContent = visibleCount + ' tesis gosteriliyor. Sayfa basi ' + @Model.PageSize + ' tesis planlandi.';
-            }
-
-            function getNormalizedValue(primary, secondary) {
-                if (primary && primary.value) {
-                    return primary.value.toLowerCase();
-                }
-
-                if (secondary && secondary.value) {
-                    return secondary.value.toLowerCase();
-                }
-
-                return '';
-            }
-
-            function sortVisibleCards(visibleCards) {
-                if (!cardList || !sortSelect) {
-                    return;
-                }
-
-                const mode = sortSelect.value;
-                const sorted = visibleCards.slice().sort(function (a, b) {
-                    const priceA = Number(a.dataset.price || '0');
-                    const priceB = Number(b.dataset.price || '0');
-                    const ratingA = Number(a.dataset.rating || '0');
-                    const ratingB = Number(b.dataset.rating || '0');
-                    const nameA = (a.querySelector('h2')?.textContent || '').trim();
-                    const nameB = (b.querySelector('h2')?.textContent || '').trim();
-
-                    if (mode === 'price-asc') return priceA - priceB;
-                    if (mode === 'price-desc') return priceB - priceA;
-                    if (mode === 'rating-desc') return ratingB - ratingA;
-                    if (mode === 'name-asc') return nameA.localeCompare(nameB, 'tr');
-                    return ratingB - ratingA;
-                });
-
-                sorted.forEach(function (card) {
-                    cardList.appendChild(card);
-                });
+            function syncPriceSliderVisual() {
+                if (!maxPriceRange) return;
+                const min = Number(maxPriceRange.min || '0');
+                const max = Number(maxPriceRange.max || '0');
+                const val = Number(maxPriceRange.value || '0');
+                const pct = max > min ? ((val - min) / (max - min)) * 100 : 100;
+                const wrap = maxPriceRange.closest('.price-slider-wrap');
+                if (wrap) wrap.style.setProperty('--slider-pos', Math.max(0, Math.min(100, pct)).toFixed(2) + '%');
             }
 
             function applyFilters() {
-                if (!cards.length) {
-                    return;
-                }
-
-                const keyword = getNormalizedValue(desktopKeyword, mobileKeyword);
-                const city = getNormalizedValue(desktopCity, mobileCity);
-                const district = getNormalizedValue(desktopDistrict, mobileDistrict);
-                const neighborhood = getNormalizedValue(desktopNeighborhood, mobileNeighborhood);
+                const keyword = normalize(keywordInput?.value || '');
                 const minPrice = Number(minPriceInput?.value || '0');
-                const maxPrice = Number(maxPriceInput?.value || maxPriceRange?.value || '0');
-                const selectedStars = Array.from(starFilters).filter(x => x.checked).map(x => x.value);
-                const selectedAmenities = Array.from(amenityFilters).filter(x => x.checked).map(x => x.value.toLowerCase());
-                const selectedProperties = Array.from(propertyFilters).filter(x => x.checked).map(x => x.value.toLowerCase());
-                const selectedCampaigns = Array.from(campaignFilters).filter(x => x.checked).map(x => x.value.toLowerCase());
-                const minScore = Array.from(ratingChips)
+                const maxPrice = Number(maxPriceInput?.value || '0');
+                const selectedAmenities = amenityChecks.filter(x => x.checked).map(x => normalize(x.value));
+                const selectedStars = starChecks.filter(x => x.checked).map(x => String(x.value));
+                const featuredOnly = featuredChecks.some(x => x.checked);
+                const minScore = ratingChips
                     .filter(x => x.classList.contains('active'))
                     .map(x => Number(x.dataset.minScore || '0'))
-                    .reduce((max, value) => Math.max(max, value), 0);
-
-                const visibleCards = [];
+                    .reduce((acc, v) => Math.max(acc, v), 0);
 
                 cards.forEach(function (card) {
                     const cardPrice = Number(card.dataset.price || '0');
                     const cardStars = String(card.dataset.stars || '0');
                     const cardRating = Number(card.dataset.rating || '0');
-                    const keywords = (card.dataset.keywords || '').toLowerCase();
-                    const amenities = (card.dataset.amenities || '').toLowerCase();
-                    const campaigns = (card.dataset.campaigns || '').toLowerCase();
-                    const property = (card.dataset.property || '').toLowerCase();
+                    const cardKeywords = normalize(card.dataset.keywords || '');
+                    const cardAmenities = normalize(card.dataset.amenities || '');
+                    const isFeatured = (card.dataset.featured || '0') === '1';
 
-                    const matchesKeyword = !keyword || keywords.indexOf(keyword) > -1;
-                    const matchesCity = !city || (card.dataset.city || '') === city;
-                    const matchesDistrict = !district || (card.dataset.district || '') === district;
-                    const matchesNeighborhood = !neighborhood || (card.dataset.neighborhood || '') === neighborhood;
-                    const matchesPrice = cardPrice >= minPrice && (maxPrice <= 0 || cardPrice <= maxPrice);
-                    const matchesStars = !selectedStars.length || selectedStars.includes(cardStars);
-                    const matchesAmenities = !selectedAmenities.length || selectedAmenities.every(x => amenities.indexOf(x) > -1);
-                    const matchesProperty = !selectedProperties.length || selectedProperties.includes(property);
-                    const matchesCampaigns = !selectedCampaigns.length || selectedCampaigns.every(x => campaigns.indexOf(x) > -1);
-                    const matchesRating = minScore <= 0 || cardRating >= minScore;
+                    const keywordOk = !keyword || cardKeywords.indexOf(keyword) > -1;
+                    const priceOk = cardPrice >= minPrice && (maxPrice <= 0 || cardPrice <= maxPrice);
+                    const starOk = selectedStars.length === 0 || selectedStars.includes(cardStars);
+                    const ratingOk = minScore <= 0 || cardRating >= minScore;
+                    const amenityOk = selectedAmenities.length === 0 || selectedAmenities.every(x => cardAmenities.indexOf(x) > -1);
+                    const featuredOk = !featuredOnly || isFeatured;
 
-                    const shouldShow = matchesKeyword
-                        && matchesCity
-                        && matchesDistrict
-                        && matchesNeighborhood
-                        && matchesPrice
-                        && matchesStars
-                        && matchesAmenities
-                        && matchesProperty
-                        && matchesCampaigns
-                        && matchesRating;
-
-                    card.hidden = !shouldShow;
-                    if (shouldShow) {
-                        visibleCards.push(card);
-                    }
+                    card.hidden = !(keywordOk && priceOk && starOk && ratingOk && amenityOk && featuredOk);
                 });
-
-                sortVisibleCards(visibleCards);
-                if (emptyState) {
-                    emptyState.hidden = visibleCards.length !== 0;
-                }
-                updateSummary(visibleCards.length);
             }
 
-            document.querySelectorAll('[data-open-mobile-filters]').forEach(function (button) {
-                button.addEventListener('click', openFilters);
-            });
+            if (keywordClearBtn && keywordInput) {
+                keywordClearBtn.hidden = String(keywordInput.value || '').trim().length === 0;
+            }
 
-            document.querySelectorAll('[data-close-mobile-filters]').forEach(function (button) {
-                button.addEventListener('click', closeFilters);
-            });
+            function sortCards() {
+                if (!sortSelect || !listView) return;
+                const mode = sortSelect.value;
+                const visible = cards.filter(card => !card.hidden);
+                visible.sort(function (a, b) {
+                    const priceA = Number(a.dataset.price || '0');
+                    const priceB = Number(b.dataset.price || '0');
+                    const scoreA = Number(a.dataset.rating || '0');
+                    const scoreB = Number(b.dataset.rating || '0');
+                    if (mode === 'price-asc') return priceA - priceB;
+                    if (mode === 'rating-desc') return scoreB - scoreA;
+                    return scoreB - scoreA;
+                });
+                visible.forEach(card => listView.appendChild(card));
+            }
 
-            sortSelect?.addEventListener('change', applyFilters);
-            desktopKeyword?.addEventListener('input', function () {
-                syncInput(desktopKeyword, mobileKeyword);
+            sortSelect?.addEventListener('change', sortCards);
+            keywordInput?.addEventListener('input', function () {
                 applyFilters();
+                sortCards();
+                if (keywordClearBtn) keywordClearBtn.hidden = String(keywordInput.value || '').trim().length === 0;
+                syncMobileFilterCount();
             });
-            mobileKeyword?.addEventListener('input', function () {
-                syncInput(mobileKeyword, desktopKeyword);
+            keywordClearBtn?.addEventListener('click', function () {
+                if (!keywordInput) return;
+                keywordInput.value = '';
+                keywordClearBtn.hidden = true;
                 applyFilters();
+                sortCards();
+                syncMobileFilterCount();
+                keywordInput.focus();
             });
-            desktopCity?.addEventListener('change', function () {
-                syncInput(desktopCity, mobileCity);
+            minPriceInput?.addEventListener('input', function () {
                 applyFilters();
+                sortCards();
+                syncPriceSteps();
+                syncPriceSliderVisual();
+                syncMobileFilterCount();
             });
-            mobileCity?.addEventListener('change', function () {
-                syncInput(mobileCity, desktopCity);
-                applyFilters();
-            });
-            desktopDistrict?.addEventListener('change', function () {
-                syncInput(desktopDistrict, mobileDistrict);
-                applyFilters();
-            });
-            mobileDistrict?.addEventListener('change', function () {
-                syncInput(mobileDistrict, desktopDistrict);
-                applyFilters();
-            });
-            desktopNeighborhood?.addEventListener('change', function () {
-                syncInput(desktopNeighborhood, mobileNeighborhood);
-                applyFilters();
-            });
-            mobileNeighborhood?.addEventListener('change', function () {
-                syncInput(mobileNeighborhood, desktopNeighborhood);
-                applyFilters();
-            });
-
-            minPriceInput?.addEventListener('input', applyFilters);
             maxPriceInput?.addEventListener('input', function () {
-                if (maxPriceRange) {
-                    maxPriceRange.value = maxPriceInput.value;
-                }
+                if (maxPriceRange) maxPriceRange.value = maxPriceInput.value;
                 applyFilters();
+                sortCards();
+                syncPriceSliderVisual();
+                syncMobileFilterCount();
             });
             maxPriceRange?.addEventListener('input', function () {
-                if (maxPriceInput) {
-                    maxPriceInput.value = maxPriceRange.value;
-                }
+                if (maxPriceInput) maxPriceInput.value = maxPriceRange.value;
                 applyFilters();
+                sortCards();
+                syncPriceSliderVisual();
+                syncMobileFilterCount();
             });
 
-            starFilters.forEach(function (item) { item.addEventListener('change', applyFilters); });
-            amenityFilters.forEach(function (item) { item.addEventListener('change', applyFilters); });
-            propertyFilters.forEach(function (item) { item.addEventListener('change', applyFilters); });
-            campaignFilters.forEach(function (item) { item.addEventListener('change', applyFilters); });
-            ratingChips.forEach(function (item) {
-                item.addEventListener('click', function () {
-                    item.classList.toggle('active');
+            const filterCard = document.getElementById('listingFilterCard');
+            const barBtn = document.getElementById('mobileFilterBarBtn');
+            const modal = document.getElementById('listingFilterModal');
+            const modalOverlay = document.getElementById('listingFilterModalOverlay');
+            const modalClose = document.getElementById('listingFilterModalClose');
+            const modalHost = document.getElementById('listingMobileFilterHost');
+            const modalApply = document.getElementById('listingFilterApplyBtn');
+            const desktopSidebar = document.querySelector('.filter-sidebar');
+            const filterCount = document.getElementById('mobileFilterCount');
+
+            function openMobileFilters() {
+                if (!modal || !modalHost || !filterCard) return;
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                if (filterCard.parentElement !== modalHost) {
+                    modalHost.appendChild(filterCard);
+                }
+            }
+
+            function closeMobileFilters() {
+                if (!modal) return;
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                if (desktopSidebar && filterCard && filterCard.parentElement !== desktopSidebar) {
+                    desktopSidebar.appendChild(filterCard);
+                }
+            }
+
+            barBtn?.addEventListener('click', openMobileFilters);
+            modalOverlay?.addEventListener('click', closeMobileFilters);
+            modalClose?.addEventListener('click', closeMobileFilters);
+            modalApply?.addEventListener('click', closeMobileFilters);
+
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 900) {
+                    closeMobileFilters();
+                }
+            });
+            amenityChecks.forEach(x => x.addEventListener('change', function () { applyFilters(); sortCards(); syncMobileFilterCount(); }));
+            starChecks.forEach(x => x.addEventListener('change', function () { applyFilters(); sortCards(); syncMobileFilterCount(); }));
+            featuredChecks.forEach(x => x.addEventListener('change', function () { applyFilters(); sortCards(); syncMobileFilterCount(); }));
+            ratingChips.forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    chip.classList.toggle('active');
                     applyFilters();
+                    sortCards();
+                    syncMobileFilterCount();
                 });
             });
 
-            resetButton?.addEventListener('click', function () {
-                desktopKeyword.value = '';
-                if (mobileKeyword) mobileKeyword.value = '';
-                if (desktopCity) desktopCity.value = '';
-                if (mobileCity) mobileCity.value = '';
-                if (desktopDistrict) desktopDistrict.value = '';
-                if (mobileDistrict) mobileDistrict.value = '';
-                if (desktopNeighborhood) desktopNeighborhood.value = '';
-                if (mobileNeighborhood) mobileNeighborhood.value = '';
+            clearAllBtn?.addEventListener('click', function () {
+                amenityChecks.forEach(x => x.checked = false);
+                starChecks.forEach(x => x.checked = false);
+                featuredChecks.forEach(x => x.checked = false);
+                ratingChips.forEach(x => x.classList.remove('active'));
+                if (keywordInput) keywordInput.value = '';
                 if (minPriceInput) minPriceInput.value = '0';
-                if (maxPriceInput) maxPriceInput.value = '@maxPrice';
-                if (maxPriceRange) maxPriceRange.value = '@maxPrice';
-                starFilters.forEach(function (item) { item.checked = false; });
-                amenityFilters.forEach(function (item) { item.checked = false; });
-                propertyFilters.forEach(function (item) { item.checked = false; });
-                campaignFilters.forEach(function (item) { item.checked = false; });
-                ratingChips.forEach(function (item) { item.classList.remove('active'); });
+                if (maxPriceInput) maxPriceInput.value = '@maxPrice.ToString(CultureInfo.InvariantCulture)';
+                if (maxPriceRange) maxPriceRange.value = '@maxPrice.ToString(CultureInfo.InvariantCulture)';
                 applyFilters();
+                sortCards();
+                syncPriceSteps();
+                syncPriceSliderVisual();
+                syncMobileFilterCount();
             });
 
+            function syncMobileFilterCount() {
+                if (!filterCount) return;
+                const active =
+                    (amenityChecks.filter(x => x.checked).length)
+                    + (starChecks.filter(x => x.checked).length)
+                    + (featuredChecks.filter(x => x.checked).length)
+                    + (ratingChips.filter(x => x.classList.contains('active')).length)
+                    + ((String(keywordInput?.value || '').trim().length > 0) ? 1 : 0)
+                    + ((Number(minPriceInput?.value || '0') > 0) ? 1 : 0)
+                    + ((Number(maxPriceInput?.value || '0') > 0 && Number(maxPriceInput?.value || '0') < Number(maxPriceRange?.max || '0')) ? 1 : 0);
+
+                filterCount.textContent = String(active);
+                filterCount.hidden = active <= 0;
+            }
+
+            const amenitiesModal = document.getElementById('listingAmenitiesModal');
+            const amenitiesOverlay = document.getElementById('listingAmenitiesOverlay');
+            const amenitiesClose = document.getElementById('listingAmenitiesClose');
+            const amenitiesOk = document.getElementById('listingAmenitiesOk');
+            const amenitiesTitle = document.getElementById('listingAmenitiesTitle');
+            const amenitiesList = document.getElementById('listingAmenitiesList');
+
+            function openAmenitiesModal(hotelName, amenities) {
+                if (!amenitiesModal || !amenitiesList) return;
+                amenitiesTitle.textContent = (hotelName || 'Otel') + ' • Özellikler';
+                const items = Array.isArray(amenities) ? amenities : [];
+                amenitiesList.innerHTML = items
+                    .filter(x => String(x || '').trim().length > 0)
+                    .map(x => '<div class="amenity-modal-item"><i class="fas fa-circle-check"></i><span>' + String(x).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>')
+                    .join('');
+                amenitiesModal.classList.add('active');
+                amenitiesModal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeAmenitiesModal() {
+                if (!amenitiesModal) return;
+                amenitiesModal.classList.remove('active');
+                amenitiesModal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+
+            document.querySelectorAll('.feature-more-btn[data-amenities]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    let payload = [];
+                    try {
+                        payload = JSON.parse(btn.getAttribute('data-amenities') || '[]');
+                    } catch { payload = []; }
+                    openAmenitiesModal(btn.getAttribute('data-hotel-name') || '', payload);
+                });
+            });
+            amenitiesOverlay?.addEventListener('click', closeAmenitiesModal);
+            amenitiesClose?.addEventListener('click', closeAmenitiesModal);
+            amenitiesOk?.addEventListener('click', closeAmenitiesModal);
+
             applyFilters();
+            sortCards();
+            syncPriceSteps();
+            syncPriceSliderVisual();
+            syncMobileFilterCount();
         })();
     </script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />

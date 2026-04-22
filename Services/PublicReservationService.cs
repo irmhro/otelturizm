@@ -1,10 +1,14 @@
 using System.Globalization;
+using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
 using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
 using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Email;
+using otelturizmnew.Models.Messages;
+using otelturizmnew.Models.Payments;
 using otelturizmnew.Models.Reservations;
 using otelturizmnew.Services.Abstractions;
 
@@ -17,6 +21,7 @@ public class PublicReservationService : IPublicReservationService
     private readonly IReservationDraftService _reservationDraftService;
     private readonly IEmailQueueService _emailQueueService;
     private readonly IPhoneVerificationService _phoneVerificationService;
+    private readonly ISecureFileService _secureFileService;
     private readonly ILogger<PublicReservationService> _logger;
 
     public PublicReservationService(
@@ -25,6 +30,7 @@ public class PublicReservationService : IPublicReservationService
         IReservationDraftService reservationDraftService,
         IEmailQueueService emailQueueService,
         IPhoneVerificationService phoneVerificationService,
+        ISecureFileService secureFileService,
         ILogger<PublicReservationService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
@@ -33,6 +39,7 @@ public class PublicReservationService : IPublicReservationService
         _reservationDraftService = reservationDraftService;
         _emailQueueService = emailQueueService;
         _phoneVerificationService = phoneVerificationService;
+        _secureFileService = secureFileService;
         _logger = logger;
     }
 
@@ -74,31 +81,22 @@ public class PublicReservationService : IPublicReservationService
         };
     }
 
-    public async Task<PublicReservationResult> StartReservationAsync(long? userId, string? sessionKey, PublicHotelReservationForm form, CancellationToken cancellationToken = default)
+    public async Task<PublicReservationResult> StartReservationAsync(long? userId, string? sessionKey, PublicHotelReservationForm form, IFormFile? bankTransferReceipt, CancellationToken cancellationToken = default)
     {
-        if (form.HotelId <= 0 || form.RoomTypeId <= 0)
+        if (form.HotelId <= 0)
         {
             return new PublicReservationResult { Message = "Otel ve oda tipi secilmeden rezervasyon baslatilamaz." };
         }
 
-        if (form.CheckOutDate <= form.CheckInDate)
+        var selections = ParseMultiRoomSelections(form);
+        if (selections.Count == 0)
         {
-            return new PublicReservationResult { Message = "Cikis tarihi giris tarihinden sonra olmalidir." };
+            return new PublicReservationResult { Message = "Oda secimi yapilmadan rezervasyon baslatilamaz." };
         }
-
-        if (IsOnlinePaymentPendingFeature(form.PaymentMethod))
-        {
-            return new PublicReservationResult
-            {
-                Message = "Online ödeme altyapısı şu anda geliştirme aşamasında. Şimdilik kapıda ödeme / nakit ile devam edebilirsiniz."
-            };
-        }
-
-        var paymentMethod = NormalizePaymentMethod(form.PaymentMethod);
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        var hotel = await LoadHotelAsync(connection, form.HotelId, form.RoomTypeId, cancellationToken);
-        var occupancyValidationMessage = ValidateRoomOccupancy(form, hotel);
+        var hotel = await LoadHotelAsync(connection, form.HotelId, selections[0].RoomTypeId, cancellationToken);
+        var occupancyValidationMessage = await ValidateRoomOccupancyMultiAsync(connection, form, selections, cancellationToken);
         if (!string.IsNullOrWhiteSpace(occupancyValidationMessage))
         {
             return new PublicReservationResult
@@ -108,14 +106,39 @@ public class PublicReservationService : IPublicReservationService
             };
         }
 
-        var pricing = await BuildPriceSummaryAsync(connection, form.RoomTypeId, form.CheckInDate, form.CheckOutDate, form.RoomCount, cancellationToken);
-        if (!pricing.IsAvailable)
+        var perRoomPricing = new List<(PublicMultiRoomSelectionItem Selection, PriceSummary Pricing)>(selections.Count);
+        foreach (var selection in selections)
+        {
+            if (selection.RoomTypeId <= 0)
+            {
+                return new PublicReservationResult { Message = "Oda tipi secilmeden rezervasyon baslatilamaz.", RedirectUrl = $"/oteller/{hotel.Slug}" };
+            }
+            if (selection.CheckOutDate <= selection.CheckInDate)
+            {
+                return new PublicReservationResult { Message = "Cikis tarihi giris tarihinden sonra olmalidir.", RedirectUrl = $"/oteller/{hotel.Slug}" };
+            }
+
+            var pricing = await BuildPriceSummaryAsync(connection, selection.RoomTypeId, selection.CheckInDate, selection.CheckOutDate, Math.Max(1, selection.RoomCount), cancellationToken);
+            if (!pricing.IsAvailable)
+            {
+                return new PublicReservationResult
+                {
+                    Message = string.IsNullOrWhiteSpace(pricing.AvailabilityMessage)
+                        ? "Secilen tarih araliginda uygun oda veya fiyat bulunamadi."
+                        : pricing.AvailabilityMessage,
+                    RedirectUrl = $"/oteller/{hotel.Slug}"
+                };
+            }
+            perRoomPricing.Add((selection, pricing));
+        }
+
+        var totalAmountOverall = perRoomPricing.Sum(x => x.Pricing.TotalAmount);
+
+        if (!TryBuildPaymentAllocation(form, totalAmountOverall, out var paymentPlan, out var paymentPlanError))
         {
             return new PublicReservationResult
             {
-                Message = string.IsNullOrWhiteSpace(pricing.AvailabilityMessage)
-                    ? "Secilen tarih araliginda uygun oda veya fiyat bulunamadi."
-                    : pricing.AvailabilityMessage,
+                Message = paymentPlanError ?? "Odeme plani gecersiz.",
                 RedirectUrl = $"/oteller/{hotel.Slug}"
             };
         }
@@ -126,23 +149,25 @@ public class PublicReservationService : IPublicReservationService
             SessionKey = sessionKey,
             Source = "Public",
             HotelId = form.HotelId,
-            RoomTypeId = form.RoomTypeId,
-            CheckInDate = form.CheckInDate,
-            CheckOutDate = form.CheckOutDate,
+            RoomTypeId = selections[0].RoomTypeId,
+            CheckInDate = selections[0].CheckInDate,
+            CheckOutDate = selections[0].CheckOutDate,
             AdultCount = form.AdultCount,
             ChildCount = form.ChildCount,
-            RoomCount = form.RoomCount,
-            NightlyPrice = pricing.NightlyPrice,
-            NetRoomAmount = pricing.NetRoomAmount,
-            VatRate = pricing.VatRate,
-            VatAmount = pricing.VatAmount,
-            AccommodationTaxRate = pricing.AccommodationTaxRate,
-            AccommodationTaxAmount = pricing.AccommodationTaxAmount,
-            TaxAmount = pricing.TaxAmount,
-            TotalAmount = pricing.TotalAmount,
+            RoomCount = selections.Count,
+            NightlyPrice = null,
+            NetRoomAmount = perRoomPricing.Sum(x => x.Pricing.NetRoomAmount),
+            VatRate = perRoomPricing.FirstOrDefault().Pricing.VatRate,
+            VatAmount = perRoomPricing.Sum(x => x.Pricing.VatAmount),
+            AccommodationTaxRate = perRoomPricing.FirstOrDefault().Pricing.AccommodationTaxRate,
+            AccommodationTaxAmount = perRoomPricing.Sum(x => x.Pricing.AccommodationTaxAmount),
+            TaxAmount = perRoomPricing.Sum(x => x.Pricing.TaxAmount),
+            TotalAmount = totalAmountOverall,
             ReturnUrl = $"/oteller/{hotel.Slug}?continueDraft=1",
             ProfileCompletionUrl = $"/oteller/{hotel.Slug}?continueDraft=1&openProfile=1",
-            Notes = "Public otel detay sayfasindan baslatildi."
+            Notes = string.IsNullOrWhiteSpace(form.RoomsJson)
+                ? "Public otel detay sayfasindan baslatildi."
+                : "Public otel detay sayfasindan baslatildi. RoomsJson=" + form.RoomsJson
         };
 
         if (userId.GetValueOrDefault() <= 0)
@@ -217,8 +242,7 @@ public class PublicReservationService : IPublicReservationService
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            var reservationNo = await GenerateReservationNoAsync(connection, (SqlTransaction)transaction, cancellationToken);
-            const string insertSql = @"
+            var insertSql = $@"
                 INSERT INTO rezervasyonlar
                 (
                     rezervasyon_no, otel_id, oda_tip_id, kullanici_id,
@@ -229,7 +253,9 @@ public class PublicReservationService : IPublicReservationService
                     konaklama_vergisi_orani, konaklama_vergisi_tutari, toplam_tutar, vergiler_dahil_toplam_tutar,
                     komisyon_vergi_kural_id, komisyon_orani, komisyon_tutari, komisyon_gelir_vergisi_orani, komisyon_gelir_vergisi_tutari,
                     platform_net_komisyon_tutari, otele_odenecek_tutar,
-                    durum, odeme_durumu, odeme_yontemi, kapida_odeme_tutari, kapida_odeme_durumu, online_odeme_tutari, online_odeme_durumu,
+                    durum, rezervasyon_durumu_id, odeme_durumu, odeme_yontemi,
+                    kapida_odeme_tutari, kapida_odeme_durumu, online_odeme_tutari, online_odeme_durumu,
+                    havale_eft_bekleyen_tutari, odeme_referans_no,
                     tahsil_edilen_tutar, kalan_tahsil_edilecek_tutar, on_odeme_tutari, kalan_odeme_tutari,
                     otel_onay_durumu, firma_onay_durumu,
                     kaynak, rezervasyon_kanali, ozel_istekler, rezervasyon_taslagi_id
@@ -244,120 +270,196 @@ public class PublicReservationService : IPublicReservationService
                     @accommodationTaxRate, @accommodationTaxAmount, @totalAmount, @totalAmount,
                     @commissionRuleId, @commissionRate, @commissionAmount, @commissionIncomeTaxRate, @commissionIncomeTaxAmount,
                     @platformNetCommissionAmount, @hotelPayoutAmount,
-                    'Onay Bekliyor', 'Beklemede', @paymentMethod, @cashAtHotelAmount, @cashAtHotelStatus, @onlinePaymentAmount, @onlinePaymentStatus,
+                    'Onay Bekliyor', (SELECT TOP (1) id FROM dbo.rezervasyon_durum_tanimlari WHERE kod = N'{RezervasyonDurumKodlari.OnayBekliyor}'), @aggregateOdemeDurumu, @legacyOdemeYontemi, @cashAtHotelAmount, @cashAtHotelStatus, @onlinePaymentAmount, @onlinePaymentStatus,
+                    @havalePendingAmount, @bankTransferReferenceSql,
                     0, @remainingCollectionAmount, 0, @remainingCollectionAmount,
                     'Beklemede', 'Onay Gerekmiyor',
                     'Web', 'Web', @note, @draftId
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
-            long reservationId;
-            await using (var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction))
+            var createdReservationIds = new List<long>(perRoomPricing.Count);
+            var createdReservationNos = new List<string>(perRoomPricing.Count);
+            var remainingKapida = paymentPlan.KapidaTutari;
+            var remainingOnline = paymentPlan.OnlineTutari;
+            var remainingHavale = paymentPlan.HavaleBekleyen;
+
+            for (var i = 0; i < perRoomPricing.Count; i++)
             {
-                insertCommand.Parameters.AddWithValue("@reservationNo", reservationNo);
-                insertCommand.Parameters.AddWithValue("@hotelId", form.HotelId);
-                insertCommand.Parameters.AddWithValue("@roomTypeId", form.RoomTypeId);
-                insertCommand.Parameters.AddWithValue("@userId", authenticatedUserId);
-                insertCommand.Parameters.AddWithValue("@fullName", userProfile.FullName);
-                insertCommand.Parameters.AddWithValue("@email", userProfile.Email);
-                insertCommand.Parameters.AddWithValue("@phone", userProfile.Phone);
-                insertCommand.Parameters.AddWithValue("@note", "Public rezervasyon talebi");
-                insertCommand.Parameters.AddWithValue("@city", userProfile.City);
-                insertCommand.Parameters.AddWithValue("@district", userProfile.District);
-                insertCommand.Parameters.AddWithValue("@neighborhood", userProfile.Neighborhood);
-                insertCommand.Parameters.AddWithValue("@address", userProfile.Address);
-                insertCommand.Parameters.AddWithValue("@checkIn", form.CheckInDate.ToDateTime(TimeOnly.MinValue));
-                insertCommand.Parameters.AddWithValue("@checkOut", form.CheckOutDate.ToDateTime(TimeOnly.MinValue));
-                insertCommand.Parameters.AddWithValue("@adultCount", form.AdultCount);
-                insertCommand.Parameters.AddWithValue("@childCount", form.ChildCount);
-                insertCommand.Parameters.AddWithValue("@roomCount", form.RoomCount);
-                insertCommand.Parameters.AddWithValue("@nightlyPrice", pricing.NightlyPrice);
-                insertCommand.Parameters.AddWithValue("@netRoomAmount", pricing.NetRoomAmount);
-                insertCommand.Parameters.AddWithValue("@roomTotal", pricing.RoomTotal);
-                insertCommand.Parameters.AddWithValue("@taxAmount", pricing.TaxAmount);
-                insertCommand.Parameters.AddWithValue("@vatRate", pricing.VatRate);
-                insertCommand.Parameters.AddWithValue("@vatAmount", pricing.VatAmount);
-                insertCommand.Parameters.AddWithValue("@accommodationTaxRate", pricing.AccommodationTaxRate);
-                insertCommand.Parameters.AddWithValue("@accommodationTaxAmount", pricing.AccommodationTaxAmount);
-                insertCommand.Parameters.AddWithValue("@totalAmount", pricing.TotalAmount);
-                insertCommand.Parameters.AddWithValue("@commissionRuleId", pricing.CommissionRuleId.HasValue ? pricing.CommissionRuleId.Value : DBNull.Value);
-                insertCommand.Parameters.AddWithValue("@commissionRate", pricing.CommissionRate);
-                insertCommand.Parameters.AddWithValue("@commissionAmount", pricing.CommissionAmount);
-                insertCommand.Parameters.AddWithValue("@commissionIncomeTaxRate", pricing.CommissionIncomeTaxRate);
-                insertCommand.Parameters.AddWithValue("@commissionIncomeTaxAmount", pricing.CommissionIncomeTaxAmount);
-                insertCommand.Parameters.AddWithValue("@platformNetCommissionAmount", pricing.PlatformNetCommissionAmount);
-                insertCommand.Parameters.AddWithValue("@hotelPayoutAmount", pricing.HotelPayoutAmount);
-                insertCommand.Parameters.AddWithValue("@paymentMethod", paymentMethod);
-                insertCommand.Parameters.AddWithValue("@cashAtHotelAmount", paymentMethod == "Kapıda Ödeme" ? pricing.TotalAmount : 0m);
-                insertCommand.Parameters.AddWithValue("@cashAtHotelStatus", paymentMethod == "Kapıda Ödeme" ? "Odenmedi" : "Uygulanmiyor");
-                insertCommand.Parameters.AddWithValue("@onlinePaymentAmount", paymentMethod == "Sanal POS" ? pricing.TotalAmount : 0m);
-                insertCommand.Parameters.AddWithValue("@onlinePaymentStatus", paymentMethod == "Sanal POS" ? "Beklemede" : "Uygulanmiyor");
-                insertCommand.Parameters.AddWithValue("@remainingCollectionAmount", pricing.TotalAmount);
-                insertCommand.Parameters.AddWithValue("@draftId", draftId);
-                var reservationIdRaw = await insertCommand.ExecuteScalarAsync(cancellationToken);
-                reservationId = Convert.ToInt64(reservationIdRaw ?? 0L, CultureInfo.InvariantCulture);
+                var (selection, pricing) = perRoomPricing[i];
+                var ratio = totalAmountOverall > 0 ? (pricing.TotalAmount / totalAmountOverall) : 0m;
+                var isLast = i == perRoomPricing.Count - 1;
+
+                var kapida = isLast ? remainingKapida : Math.Round(paymentPlan.KapidaTutari * ratio, 2, MidpointRounding.AwayFromZero);
+                var online = isLast ? remainingOnline : Math.Round(paymentPlan.OnlineTutari * ratio, 2, MidpointRounding.AwayFromZero);
+                var havale = isLast ? remainingHavale : Math.Round(paymentPlan.HavaleBekleyen * ratio, 2, MidpointRounding.AwayFromZero);
+                remainingKapida -= kapida;
+                remainingOnline -= online;
+                remainingHavale -= havale;
+
+                var reservationNo = await GenerateReservationNoAsync(connection, (SqlTransaction)transaction, cancellationToken);
+                var roomHotel = await LoadHotelAsync(connection, form.HotelId, selection.RoomTypeId, cancellationToken);
+
+                long reservationId;
+                await using (var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction))
+                {
+                    insertCommand.Parameters.AddWithValue("@reservationNo", reservationNo);
+                    insertCommand.Parameters.AddWithValue("@hotelId", form.HotelId);
+                    insertCommand.Parameters.AddWithValue("@roomTypeId", selection.RoomTypeId);
+                    insertCommand.Parameters.AddWithValue("@userId", authenticatedUserId);
+                    insertCommand.Parameters.AddWithValue("@fullName", userProfile.FullName);
+                    insertCommand.Parameters.AddWithValue("@email", userProfile.Email);
+                    insertCommand.Parameters.AddWithValue("@phone", userProfile.Phone);
+                    insertCommand.Parameters.AddWithValue("@note", selections.Count > 1 ? "Public rezervasyon talebi (çoklu oda)" : "Public rezervasyon talebi");
+                    insertCommand.Parameters.AddWithValue("@city", userProfile.City);
+                    insertCommand.Parameters.AddWithValue("@district", userProfile.District);
+                    insertCommand.Parameters.AddWithValue("@neighborhood", userProfile.Neighborhood);
+                    insertCommand.Parameters.AddWithValue("@address", userProfile.Address);
+                    insertCommand.Parameters.AddWithValue("@checkIn", selection.CheckInDate.ToDateTime(TimeOnly.MinValue));
+                    insertCommand.Parameters.AddWithValue("@checkOut", selection.CheckOutDate.ToDateTime(TimeOnly.MinValue));
+                    insertCommand.Parameters.AddWithValue("@adultCount", form.AdultCount);
+                    insertCommand.Parameters.AddWithValue("@childCount", form.ChildCount);
+                    insertCommand.Parameters.AddWithValue("@roomCount", Math.Max(1, selection.RoomCount));
+                    insertCommand.Parameters.AddWithValue("@nightlyPrice", pricing.NightlyPrice);
+                    insertCommand.Parameters.AddWithValue("@netRoomAmount", pricing.NetRoomAmount);
+                    insertCommand.Parameters.AddWithValue("@roomTotal", pricing.RoomTotal);
+                    insertCommand.Parameters.AddWithValue("@taxAmount", pricing.TaxAmount);
+                    insertCommand.Parameters.AddWithValue("@vatRate", pricing.VatRate);
+                    insertCommand.Parameters.AddWithValue("@vatAmount", pricing.VatAmount);
+                    insertCommand.Parameters.AddWithValue("@accommodationTaxRate", pricing.AccommodationTaxRate);
+                    insertCommand.Parameters.AddWithValue("@accommodationTaxAmount", pricing.AccommodationTaxAmount);
+                    insertCommand.Parameters.AddWithValue("@totalAmount", pricing.TotalAmount);
+                    insertCommand.Parameters.AddWithValue("@commissionRuleId", pricing.CommissionRuleId.HasValue ? pricing.CommissionRuleId.Value : DBNull.Value);
+                    insertCommand.Parameters.AddWithValue("@commissionRate", pricing.CommissionRate);
+                    insertCommand.Parameters.AddWithValue("@commissionAmount", pricing.CommissionAmount);
+                    insertCommand.Parameters.AddWithValue("@commissionIncomeTaxRate", pricing.CommissionIncomeTaxRate);
+                    insertCommand.Parameters.AddWithValue("@commissionIncomeTaxAmount", pricing.CommissionIncomeTaxAmount);
+                    insertCommand.Parameters.AddWithValue("@platformNetCommissionAmount", pricing.PlatformNetCommissionAmount);
+                    insertCommand.Parameters.AddWithValue("@hotelPayoutAmount", pricing.HotelPayoutAmount);
+                    insertCommand.Parameters.AddWithValue("@aggregateOdemeDurumu", paymentPlan.AggregateOdemeDurumu);
+                    insertCommand.Parameters.AddWithValue("@legacyOdemeYontemi", paymentPlan.LegacyOdemeYontemi);
+                    insertCommand.Parameters.AddWithValue("@cashAtHotelAmount", kapida);
+                    insertCommand.Parameters.AddWithValue("@cashAtHotelStatus", paymentPlan.KapidaDurumu);
+                    insertCommand.Parameters.AddWithValue("@onlinePaymentAmount", online);
+                    insertCommand.Parameters.AddWithValue("@onlinePaymentStatus", paymentPlan.OnlineDurumu);
+                    insertCommand.Parameters.AddWithValue("@havalePendingAmount", havale);
+                    insertCommand.Parameters.AddWithValue("@bankTransferReferenceSql", string.IsNullOrWhiteSpace(paymentPlan.BankTransferReference) ? DBNull.Value : paymentPlan.BankTransferReference.Trim());
+                    insertCommand.Parameters.AddWithValue("@remainingCollectionAmount", pricing.TotalAmount);
+                    insertCommand.Parameters.AddWithValue("@draftId", draftId);
+                    var reservationIdRaw = await insertCommand.ExecuteScalarAsync(cancellationToken);
+                    reservationId = Convert.ToInt64(reservationIdRaw ?? 0L, CultureInfo.InvariantCulture);
+                }
+
+                var splitPlan = new ReservationPaymentPlan
+                {
+                    AggregateOdemeDurumu = paymentPlan.AggregateOdemeDurumu,
+                    LegacyOdemeYontemi = paymentPlan.LegacyOdemeYontemi,
+                    KapidaTutari = kapida,
+                    KapidaDurumu = paymentPlan.KapidaDurumu,
+                    OnlineTutari = online,
+                    OnlineDurumu = paymentPlan.OnlineDurumu,
+                    HavaleBekleyen = havale,
+                    BankTransferReference = paymentPlan.BankTransferReference,
+                    Lines = new List<ReservationPaymentLine>()
+                };
+                if (kapida > 0)
+                {
+                    splitPlan.Lines.Add(new ReservationPaymentLine { MethodKod = OdemeYontemiKodlari.KapidaOdeme, Tutar = kapida });
+                }
+                if (online > 0)
+                {
+                    splitPlan.Lines.Add(new ReservationPaymentLine { MethodKod = OdemeYontemiKodlari.SanalPos, Tutar = online });
+                }
+                if (havale > 0)
+                {
+                    splitPlan.Lines.Add(new ReservationPaymentLine { MethodKod = OdemeYontemiKodlari.HavaleEft, Tutar = havale, HavaleReferans = splitPlan.BankTransferReference });
+                }
+                await InsertReservationPaymentLinesAsync(connection, (SqlTransaction)transaction, reservationId, splitPlan, cancellationToken);
+                createdReservationIds.Add(reservationId);
+                createdReservationNos.Add(reservationNo);
+
+                await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
+                {
+                    UserId = authenticatedUserId,
+                    RecipientEmail = userProfile.Email,
+                    TemplateCode = "reservation_received_customer",
+                    RelatedTable = "rezervasyonlar",
+                    RelatedRecordId = reservationId,
+                    Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["user_first_name"] = userProfile.FirstName,
+                        ["booking_reference"] = reservationNo,
+                        ["hotel_name"] = roomHotel.Name,
+                        ["check_in_date"] = selection.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["check_out_date"] = selection.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["total_price"] = pricing.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["room_type_name"] = roomHotel.RoomName,
+                        ["booking_details_link"] = "/panel/user/rezervasyonlarim",
+                        ["hotel_address"] = roomHotel.Address
+                    }
+                }, cancellationToken);
+
+                var partnerRecipient = await ResolvePartnerRecipientAsync(connection, (SqlTransaction)transaction, form.HotelId, cancellationToken);
+                await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
+                {
+                    UserId = partnerRecipient.UserId,
+                    RecipientEmail = partnerRecipient.Email,
+                    TemplateCode = "reservation_new_partner",
+                    RelatedTable = "rezervasyonlar",
+                    RelatedRecordId = reservationId,
+                    Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["hotel_manager_name"] = partnerRecipient.ManagerName,
+                        ["hotel_name"] = roomHotel.Name,
+                        ["booking_reference"] = reservationNo,
+                        ["guest_full_name"] = userProfile.FullName,
+                        ["guest_email"] = userProfile.Email,
+                        ["guest_phone"] = userProfile.Phone,
+                        ["total_price"] = pricing.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["check_in_date"] = selection.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["check_out_date"] = selection.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["room_type_name"] = roomHotel.RoomName,
+                        ["room_count"] = Math.Max(1, selection.RoomCount).ToString(CultureInfo.InvariantCulture)
+                    }
+                }, cancellationToken);
             }
-
-            await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
-            {
-                UserId = authenticatedUserId,
-                RecipientEmail = userProfile.Email,
-                TemplateCode = "reservation_received_customer",
-                RelatedTable = "rezervasyonlar",
-                RelatedRecordId = reservationId,
-                Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["user_first_name"] = userProfile.FirstName,
-                    ["booking_reference"] = reservationNo,
-                    ["hotel_name"] = hotel.Name,
-                    ["check_in_date"] = form.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
-                    ["check_out_date"] = form.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
-                    ["total_price"] = pricing.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
-                    ["room_type_name"] = hotel.RoomName,
-                    ["booking_details_link"] = "/panel/user/rezervasyonlarim",
-                    ["hotel_address"] = hotel.Address
-                }
-            }, cancellationToken);
-
-            var partnerRecipient = await ResolvePartnerRecipientAsync(connection, (SqlTransaction)transaction, form.HotelId, cancellationToken);
-            await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
-            {
-                UserId = partnerRecipient.UserId,
-                RecipientEmail = partnerRecipient.Email,
-                TemplateCode = "reservation_new_partner",
-                RelatedTable = "rezervasyonlar",
-                RelatedRecordId = reservationId,
-                Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["hotel_manager_name"] = partnerRecipient.ManagerName,
-                    ["hotel_name"] = hotel.Name,
-                    ["booking_reference"] = reservationNo,
-                    ["guest_full_name"] = userProfile.FullName,
-                    ["guest_email"] = userProfile.Email,
-                    ["guest_phone"] = userProfile.Phone,
-                    ["total_price"] = pricing.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
-                    ["check_in_date"] = form.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
-                    ["check_out_date"] = form.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
-                    ["room_type_name"] = hotel.RoomName,
-                    ["room_count"] = form.RoomCount.ToString(CultureInfo.InvariantCulture)
-                }
-            }, cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
             try
             {
-                await _reservationDraftService.MarkCompletedAsync(draftId, reservationId, cancellationToken);
+                if (createdReservationIds.Count > 0)
+                {
+                    await AttachBankTransferReceiptIfNeededAsync(createdReservationIds[0], authenticatedUserId, bankTransferReceipt, paymentPlan, cancellationToken);
+                }
+            }
+            catch (Exception attachmentException)
+            {
+                _logger.LogWarning(attachmentException, "Havale dekontu kaydedilemedi. ReservationId: {ReservationId}", createdReservationIds.Count > 0 ? createdReservationIds[0] : 0);
+            }
+
+            try
+            {
+                if (createdReservationIds.Count > 0)
+                {
+                    await _reservationDraftService.MarkCompletedAsync(draftId, createdReservationIds[0], cancellationToken);
+                }
             }
             catch (Exception draftCleanupException)
             {
-                _logger.LogWarning(draftCleanupException, "Rezervasyon tamamlandi ancak taslak temizlenemedi. DraftId: {DraftId}, ReservationId: {ReservationId}", draftId, reservationId);
+                _logger.LogWarning(draftCleanupException, "Rezervasyon tamamlandi ancak taslak temizlenemedi. DraftId: {DraftId}", draftId);
             }
+
+            var reservationNosText = createdReservationNos.Count > 0
+                ? string.Join(", ", createdReservationNos)
+                : "WEB";
 
             return new PublicReservationResult
             {
                 Success = true,
-                Message = $"Rezervasyonunuz alindi: {reservationNo}",
-                ReservationId = reservationId,
+                Message = createdReservationNos.Count > 1
+                    ? $"Rezervasyonlariniz alindi: {reservationNosText}"
+                    : $"Rezervasyonunuz alindi: {reservationNosText}",
+                ReservationId = createdReservationIds.Count > 0 ? createdReservationIds[0] : null,
                 RedirectUrl = "/panel/user/rezervasyonlarim"
             };
         }
@@ -379,6 +481,49 @@ public class PublicReservationService : IPublicReservationService
                 RedirectUrl = $"/oteller/{hotel.Slug}"
             };
         }
+    }
+
+    private static List<PublicMultiRoomSelectionItem> ParseMultiRoomSelections(PublicHotelReservationForm form)
+    {
+        if (!string.IsNullOrWhiteSpace(form.RoomsJson))
+        {
+            try
+            {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var items = JsonSerializer.Deserialize<List<PublicMultiRoomSelectionItem>>(form.RoomsJson, options) ?? new List<PublicMultiRoomSelectionItem>();
+                return items
+                    .Where(x => x is not null && x.RoomTypeId > 0)
+                    .Select(x => new PublicMultiRoomSelectionItem
+                    {
+                        RoomTypeId = x.RoomTypeId,
+                        CheckInDate = x.CheckInDate,
+                        CheckOutDate = x.CheckOutDate,
+                        RoomCount = Math.Max(1, x.RoomCount)
+                    })
+                    .Take(6)
+                    .ToList();
+            }
+            catch
+            {
+                // ignore malformed JSON; fallback to single-room binding
+            }
+        }
+
+        if (form.RoomTypeId <= 0)
+        {
+            return new List<PublicMultiRoomSelectionItem>();
+        }
+
+        return new List<PublicMultiRoomSelectionItem>
+        {
+            new()
+            {
+                RoomTypeId = form.RoomTypeId,
+                CheckInDate = form.CheckInDate,
+                CheckOutDate = form.CheckOutDate,
+                RoomCount = Math.Max(1, form.RoomCount)
+            }
+        };
     }
 
     private async Task<UserProfileSnapshot> LoadUserProfileAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
@@ -489,6 +634,52 @@ public class PublicReservationService : IPublicReservationService
         return null;
     }
 
+    private async Task<string?> ValidateRoomOccupancyMultiAsync(
+        SqlConnection connection,
+        PublicHotelReservationForm form,
+        List<PublicMultiRoomSelectionItem> selections,
+        CancellationToken cancellationToken)
+    {
+        var adultCount = Math.Max(1, form.AdultCount);
+        var childCount = Math.Max(0, form.ChildCount);
+        var totalGuestCount = adultCount + childCount;
+
+        var totalMaxGuest = 0;
+        var totalMaxAdult = 0;
+        var totalMaxChild = 0;
+        var roomNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var selection in selections)
+        {
+            var snap = await LoadHotelAsync(connection, form.HotelId, selection.RoomTypeId, cancellationToken);
+            roomNames.Add(snap.RoomName);
+            var rc = Math.Max(1, selection.RoomCount);
+            totalMaxGuest += Math.Max(1, snap.MaxGuestCount) * rc;
+            totalMaxAdult += Math.Max(1, snap.MaxAdultCount) * rc;
+            totalMaxChild += Math.Max(0, snap.MaxChildCount) * rc;
+        }
+
+        var isSingleRoomType = roomNames.Count <= 1;
+        var roomLabel = isSingleRoomType ? roomNames.FirstOrDefault() ?? "Seçilen oda" : "Seçilen oda(lar)";
+
+        if (adultCount > totalMaxAdult)
+        {
+            return $"{roomLabel} toplam yetişkin kapasitesi: en fazla {totalMaxAdult} yetişkin. {adultCount} yetişkin için lütfen bir oda daha ekleyin veya oda tipini değiştirin.";
+        }
+
+        if (childCount > totalMaxChild)
+        {
+            return $"{roomLabel} toplam çocuk kapasitesi: en fazla {totalMaxChild} çocuk. {childCount} çocuk için lütfen bir oda daha ekleyin veya oda tipini değiştirin.";
+        }
+
+        if (totalGuestCount > totalMaxGuest)
+        {
+            return $"{roomLabel} toplam kapasitesi: en fazla {totalMaxGuest} kişi. Toplam {totalGuestCount} misafir için lütfen bir oda daha ekleyin veya oda tipini değiştirin.";
+        }
+
+        return null;
+    }
+
     private async Task<(long UserId, string Email, string ManagerName)> ResolvePartnerRecipientAsync(SqlConnection connection, SqlTransaction transaction, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
@@ -556,19 +747,21 @@ public class PublicReservationService : IPublicReservationService
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
         command.Parameters.AddWithValue("@effectiveDate", effectiveDate.ToDateTime(TimeOnly.MinValue));
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (await reader.ReadAsync(cancellationToken))
         {
-            return new CommissionTaxRuleSnapshot
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
             {
-                HotelId = reader.GetInt64(0),
-                RuleId = reader.IsDBNull(1) ? null : reader.GetInt64(1),
-                CommissionRate = SafeGetDecimal(reader, 2),
-                CommissionIncomeTaxRate = SafeGetDecimal(reader, 3),
-                VatRate = SafeGetDecimal(reader, 4),
-                AccommodationTaxRate = SafeGetDecimal(reader, 5),
-                Currency = reader.IsDBNull(6) ? "TRY" : reader.GetString(6)
-            };
+                return new CommissionTaxRuleSnapshot
+                {
+                    HotelId = reader.GetInt64(0),
+                    RuleId = reader.IsDBNull(1) ? null : reader.GetInt64(1),
+                    CommissionRate = SafeGetDecimal(reader, 2),
+                    CommissionIncomeTaxRate = SafeGetDecimal(reader, 3),
+                    VatRate = SafeGetDecimal(reader, 4),
+                    AccommodationTaxRate = SafeGetDecimal(reader, 5),
+                    Currency = reader.IsDBNull(6) ? "TRY" : reader.GetString(6)
+                };
+            }
         }
 
         return await LoadFallbackCommissionRuleAsync(connection, roomTypeId, cancellationToken);
@@ -675,35 +868,297 @@ public class PublicReservationService : IPublicReservationService
         return fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Misafir";
     }
 
-    private static string NormalizePaymentMethod(string? paymentMethod)
+    private sealed class ReservationPaymentPlan
     {
-        var normalized = (paymentMethod ?? string.Empty).Trim();
-        if (normalized.Equals("Sanal POS", StringComparison.OrdinalIgnoreCase)
-            || normalized.Equals("Online Ödeme", StringComparison.OrdinalIgnoreCase)
-            || normalized.Equals("Online Odeme", StringComparison.OrdinalIgnoreCase)
-            || normalized.Equals("Kart ile Öde", StringComparison.OrdinalIgnoreCase)
-            || normalized.Equals("Kart ile Ode", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Sanal POS";
-        }
-
-        if (normalized.Equals("Kredi Kartı", StringComparison.OrdinalIgnoreCase)
-            || normalized.Equals("Kredi Karti", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Kredi Kartı";
-        }
-
-        return "Kapıda Ödeme";
+        public string AggregateOdemeDurumu { get; set; } = "Beklemede";
+        public string LegacyOdemeYontemi { get; set; } = string.Empty;
+        public decimal KapidaTutari { get; set; }
+        public string KapidaDurumu { get; set; } = "Uygulanmiyor";
+        public decimal OnlineTutari { get; set; }
+        public string OnlineDurumu { get; set; } = "Uygulanmiyor";
+        public decimal HavaleBekleyen { get; set; }
+        public string? BankTransferReference { get; set; }
+        public List<ReservationPaymentLine> Lines { get; set; } = new();
     }
 
-    private static bool IsOnlinePaymentPendingFeature(string? paymentMethod)
+    private sealed class ReservationPaymentLine
     {
-        var normalized = (paymentMethod ?? string.Empty).Trim();
-        return normalized.Equals("Online Ödeme", StringComparison.OrdinalIgnoreCase)
-               || normalized.Equals("Online Odeme", StringComparison.OrdinalIgnoreCase)
-               || normalized.Equals("Sanal POS", StringComparison.OrdinalIgnoreCase)
-               || normalized.Equals("Kart ile Öde", StringComparison.OrdinalIgnoreCase)
-               || normalized.Equals("Kart ile Ode", StringComparison.OrdinalIgnoreCase);
+        public string MethodKod { get; set; } = string.Empty;
+        public decimal Tutar { get; set; }
+        public string? HavaleReferans { get; set; }
+    }
+
+    private static bool NearlyEqualsMoney(decimal total, decimal sum)
+        => Math.Abs(total - sum) <= 0.05m;
+
+    private static bool TryBuildPaymentAllocation(PublicHotelReservationForm form, decimal totalAmount, out ReservationPaymentPlan plan, out string? errorMessage)
+    {
+        plan = new ReservationPaymentPlan();
+        errorMessage = null;
+        var pm = (form.PaymentMethod ?? string.Empty).Trim();
+        if (totalAmount <= 0)
+        {
+            errorMessage = "Toplam tutar hesaplanamadi.";
+            return false;
+        }
+
+        static decimal R(decimal v) => decimal.Round(v, 2, MidpointRounding.AwayFromZero);
+
+        var card = R(form.CardAmount);
+        var bank = R(form.BankTransferAmount);
+        var cashSplit = R(form.CashAtHotelAmountSplit);
+        var bankRef = string.IsNullOrWhiteSpace(form.BankTransferReference) ? null : form.BankTransferReference.Trim();
+
+        switch (pm)
+        {
+            case "Kapıda Ödeme":
+                plan = BuildPlanCore(
+                    legacyOdemeYontemi: "Kapıda Ödeme",
+                    kapida: totalAmount,
+                    online: 0,
+                    havale: 0,
+                    lines: new List<ReservationPaymentLine>
+                    {
+                        new() { MethodKod = OdemeYontemiKodlari.KapidaOdeme, Tutar = totalAmount }
+                    });
+                return true;
+
+            case "Online Ödeme":
+            case "Sanal POS":
+                plan = BuildPlanCore(
+                    legacyOdemeYontemi: "Sanal POS",
+                    kapida: 0,
+                    online: totalAmount,
+                    havale: 0,
+                    lines: new List<ReservationPaymentLine>
+                    {
+                        new() { MethodKod = OdemeYontemiKodlari.SanalPos, Tutar = totalAmount }
+                    });
+                return true;
+
+            case "Havale/EFT":
+                plan = BuildPlanCore(
+                    legacyOdemeYontemi: "Havale/EFT",
+                    kapida: 0,
+                    online: 0,
+                    havale: totalAmount,
+                    lines: new List<ReservationPaymentLine>
+                    {
+                        new() { MethodKod = OdemeYontemiKodlari.HavaleEft, Tutar = totalAmount, HavaleReferans = bankRef }
+                    });
+                plan.BankTransferReference = bankRef;
+                return true;
+
+            case "Karma — Kart ve Havale":
+                if (card <= 0 || bank <= 0)
+                {
+                    errorMessage = "Kart ve havale tutarlarini pozitif giriniz.";
+                    return false;
+                }
+
+                if (!NearlyEqualsMoney(totalAmount, card + bank))
+                {
+                    errorMessage = $"Kart ({card:N2} TL) ve havale ({bank:N2} TL) toplami, toplam tutara ({totalAmount:N2} TL) esit olmalidir.";
+                    return false;
+                }
+
+                plan = BuildPlanCore(
+                    legacyOdemeYontemi: "Karma Ödeme",
+                    kapida: 0,
+                    online: card,
+                    havale: bank,
+                    lines: new List<ReservationPaymentLine>
+                    {
+                        new() { MethodKod = OdemeYontemiKodlari.SanalPos, Tutar = card },
+                        new() { MethodKod = OdemeYontemiKodlari.HavaleEft, Tutar = bank, HavaleReferans = bankRef }
+                    });
+                plan.BankTransferReference = bankRef;
+                return true;
+
+            case "Karma — Kart ve Kapıda":
+                if (card <= 0 || cashSplit <= 0)
+                {
+                    errorMessage = "Kart ve kapida odeme tutarlarini pozitif giriniz.";
+                    return false;
+                }
+
+                if (!NearlyEqualsMoney(totalAmount, card + cashSplit))
+                {
+                    errorMessage = $"Kart ve kapida tutarlari toplami toplam tutara esit olmalidir (toplam {totalAmount:N2} TL).";
+                    return false;
+                }
+
+                plan = BuildPlanCore(
+                    legacyOdemeYontemi: "Karma Ödeme",
+                    kapida: cashSplit,
+                    online: card,
+                    havale: 0,
+                    lines: new List<ReservationPaymentLine>
+                    {
+                        new() { MethodKod = OdemeYontemiKodlari.SanalPos, Tutar = card },
+                        new() { MethodKod = OdemeYontemiKodlari.KapidaOdeme, Tutar = cashSplit }
+                    });
+                return true;
+
+            case "Karma — Havale ve Kapıda":
+                if (bank <= 0 || cashSplit <= 0)
+                {
+                    errorMessage = "Havale ve kapida tutarlarini pozitif giriniz.";
+                    return false;
+                }
+
+                if (!NearlyEqualsMoney(totalAmount, bank + cashSplit))
+                {
+                    errorMessage = $"Havale ve kapida tutarlari toplami toplam tutara esit olmalidir (toplam {totalAmount:N2} TL).";
+                    return false;
+                }
+
+                plan = BuildPlanCore(
+                    legacyOdemeYontemi: "Karma Ödeme",
+                    kapida: cashSplit,
+                    online: 0,
+                    havale: bank,
+                    lines: new List<ReservationPaymentLine>
+                    {
+                        new() { MethodKod = OdemeYontemiKodlari.HavaleEft, Tutar = bank, HavaleReferans = bankRef },
+                        new() { MethodKod = OdemeYontemiKodlari.KapidaOdeme, Tutar = cashSplit }
+                    });
+                plan.BankTransferReference = bankRef;
+                return true;
+
+            case "Karma — Kart, Havale ve Kapıda":
+                if (card <= 0 || bank <= 0 || cashSplit <= 0)
+                {
+                    errorMessage = "Uc yontem icin de pozitif tutar giriniz.";
+                    return false;
+                }
+
+                if (!NearlyEqualsMoney(totalAmount, card + bank + cashSplit))
+                {
+                    errorMessage = "Kart, havale ve kapida tutarlari toplami toplam tutara esit olmalidir.";
+                    return false;
+                }
+
+                plan = BuildPlanCore(
+                    legacyOdemeYontemi: "Karma Ödeme",
+                    kapida: cashSplit,
+                    online: card,
+                    havale: bank,
+                    lines: new List<ReservationPaymentLine>
+                    {
+                        new() { MethodKod = OdemeYontemiKodlari.SanalPos, Tutar = card },
+                        new() { MethodKod = OdemeYontemiKodlari.HavaleEft, Tutar = bank, HavaleReferans = bankRef },
+                        new() { MethodKod = OdemeYontemiKodlari.KapidaOdeme, Tutar = cashSplit }
+                    });
+                plan.BankTransferReference = bankRef;
+                return true;
+
+            default:
+                errorMessage = "Desteklenmeyen odeme secimi.";
+                return false;
+        }
+    }
+
+    private static ReservationPaymentPlan BuildPlanCore(
+        string legacyOdemeYontemi,
+        decimal kapida,
+        decimal online,
+        decimal havale,
+        List<ReservationPaymentLine> lines)
+    {
+        var kapidaDurum = kapida > 0 ? "Odenmedi" : "Uygulanmiyor";
+        var onlineDurum = online > 0 ? "Beklemede" : "Uygulanmiyor";
+        return new ReservationPaymentPlan
+        {
+            AggregateOdemeDurumu = "Beklemede",
+            LegacyOdemeYontemi = legacyOdemeYontemi,
+            KapidaTutari = kapida,
+            KapidaDurumu = kapidaDurum,
+            OnlineTutari = online,
+            OnlineDurumu = onlineDurum,
+            HavaleBekleyen = havale,
+            Lines = lines
+        };
+    }
+
+    private async Task InsertReservationPaymentLinesAsync(
+        SqlConnection connection,
+        SqlTransaction transaction,
+        long reservationId,
+        ReservationPaymentPlan plan,
+        CancellationToken cancellationToken)
+    {
+        var insertSql = $@"
+            INSERT INTO dbo.rezervasyon_odeme_kalemleri
+            (rezervasyon_id, odeme_yontemi_id, odeme_durumu_id, tutar, sira_no, havale_eft_referans)
+            VALUES
+            (
+                @rezId,
+                (SELECT TOP (1) id FROM dbo.odeme_yontemi_tanimlari WHERE kod = @methodKod),
+                (SELECT TOP (1) id FROM dbo.odeme_durumu_tanimlari WHERE kod = N'{OdemeDurumuKodlari.Beklemede}'),
+                @tutar,
+                @sira,
+                @ref
+            );";
+
+        var order = 1;
+        foreach (var line in plan.Lines)
+        {
+            await using var cmd = new SqlCommand(insertSql, connection, transaction);
+            cmd.Parameters.AddWithValue("@rezId", reservationId);
+            cmd.Parameters.AddWithValue("@methodKod", line.MethodKod);
+            cmd.Parameters.AddWithValue("@tutar", line.Tutar);
+            cmd.Parameters.AddWithValue("@sira", order++);
+            cmd.Parameters.AddWithValue("@ref", string.IsNullOrWhiteSpace(line.HavaleReferans) ? DBNull.Value : line.HavaleReferans);
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
+        }
+    }
+
+    private async Task AttachBankTransferReceiptIfNeededAsync(
+        long reservationId,
+        long userId,
+        IFormFile? receipt,
+        ReservationPaymentPlan plan,
+        CancellationToken cancellationToken)
+    {
+        if (receipt is null || receipt.Length <= 0 || plan.HavaleBekleyen <= 0)
+        {
+            return;
+        }
+
+        var stored = await _secureFileService.SaveAsync(
+            receipt,
+            new SecureFileSaveRequest
+            {
+                ContextTable = "rezervasyonlar",
+                ContextId = reservationId,
+                OwnerUserId = userId,
+                Category = "rezervasyon-havale-dekont",
+                VisibilityScope = "partner"
+            },
+            cancellationToken);
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        const string sql = @"
+            UPDATE k
+            SET k.dekont_guvenli_dosya_id = @fileId
+            FROM dbo.rezervasyon_odeme_kalemleri k
+            INNER JOIN dbo.odeme_yontemi_tanimlari y ON y.id = k.odeme_yontemi_id
+            WHERE k.rezervasyon_id = @rezId
+              AND y.kod = @havaleKod;";
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@fileId", stored.FileId);
+        cmd.Parameters.AddWithValue("@rezId", reservationId);
+        cmd.Parameters.AddWithValue("@havaleKod", OdemeYontemiKodlari.HavaleEft);
+        try
+        {
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (SqlException ex)
+        {
+            _logger.LogWarning(ex, "Dekont dosya baglantisi yazilamadi. FileId: {FileId}", stored.FileId);
+        }
     }
 
     private static string BuildSlug(string hotelName, string hotelCode)

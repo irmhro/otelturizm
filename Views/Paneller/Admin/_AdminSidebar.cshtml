@@ -2,81 +2,152 @@
 @model AdminShellViewModel
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Dashboard";
-
-    string Active(string action) => currentAction == action ? "active" : string.Empty;
+    bool IsActive(string action) => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase);
+    string Active(string action) => IsActive(action) ? "active" : string.Empty;
+    string Badge(int value) => value > 0 ? value.ToString() : "0";
+    bool IsOpen(params string[] actions) => actions.Any(IsActive);
 }
 
-<aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <a asp-controller="AdminPanel" asp-action="Dashboard" class="brand-link justify-content-center">
-        <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="brand-image img-circle elevation-3 admin-brand-logo" />
-    </a>
-
+<aside class="main-sidebar sidebar-dark-primary elevation-4 admin-accordion-sidebar">
     <div class="sidebar">
-        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-            <div class="image">
-                <i class="fas fa-user-circle text-white fa-2x"></i>
-            </div>
-            <div class="info">
-                <a href="#" class="d-block">@Model.FullName</a>
-                <small class="text-muted">@Model.Email</small>
+        <div class="admin-sidebar-sticky-top">
+            <a asp-controller="AdminPanel" asp-action="Dashboard" class="admin-sidebar-brand">
+                <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="admin-brand-logo" />
+                <span class="admin-brand-badge">ADMIN</span>
+            </a>
+
+            <div class="admin-sidebar-profile">
+                <div class="admin-sidebar-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div>
+                    <h3>@Model.FullName</h3>
+                    <p>@Model.Email</p>
+                </div>
             </div>
         </div>
 
-        <nav class="mt-2">
-            <ul class="nav nav-pills nav-sidebar flex-column nav-compact text-sm" data-widget="treeview" role="menu" data-accordion="false">
-                <li class="nav-item">
-                    <a asp-controller="AdminPanel" asp-action="Dashboard" class="nav-link @Active("Dashboard")">
-                        <i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p>
-                    </a>
-                </li>
+        <nav class="admin-sidebar-accordion" aria-label="Admin gezinti">
+            <p class="admin-sidebar-section-title">Genel</p>
+            <a asp-controller="AdminPanel" asp-action="Dashboard" class="admin-sidebar-link standalone @Active("Dashboard")">
+                <span class="admin-sidebar-link-icon"><i class="fas fa-table-columns"></i></span>
+                <span>Panel Özeti</span>
+            </a>
 
-                <li class="nav-header">CORE</li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Hotels" class="nav-link @Active("Hotels")"><i class="nav-icon fas fa-hotel"></i><p>Oteller</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Reservations" class="nav-link @Active("Reservations")"><i class="nav-icon fas fa-calendar-check"></i><p>Rezervasyonlar</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Payments" class="nav-link @Active("Payments")"><i class="nav-icon fas fa-credit-card"></i><p>Ödemeler</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Users" class="nav-link @Active("Users")"><i class="nav-icon fas fa-users"></i><p>Kullanıcılar</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Managers" class="nav-link @Active("Managers")"><i class="nav-icon fas fa-user-tie"></i><p>Yöneticiler</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="PartnerApplications" class="nav-link @Active("PartnerApplications")"><i class="nav-icon fas fa-handshake"></i><p>Partner Başvuruları <span class="right badge badge-warning">@(Model.PendingPartnerApplications)</span></p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Reviews" class="nav-link @Active("Reviews")"><i class="nav-icon fas fa-star"></i><p>Değerlendirmeler <span class="right badge badge-info">@(Model.PendingReviews)</span></p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Campaigns" class="nav-link @Active("Campaigns")"><i class="nav-icon fas fa-bullhorn"></i><p>Kampanyalar</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Invoices" class="nav-link @Active("Invoices")"><i class="nav-icon fas fa-file-invoice"></i><p>Faturalar</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Commissions" class="nav-link @Active("Commissions")"><i class="nav-icon fas fa-percent"></i><p>Komisyonlar</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Contracts" class="nav-link @Active("Contracts")"><i class="nav-icon fas fa-file-contract"></i><p>Sözleşmeler</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Notifications" class="nav-link @Active("Notifications")"><i class="nav-icon fas fa-bell"></i><p>Bildirimler <span class="right badge badge-warning">@(Model.UnreadNotifications)</span></p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="EmailTemplates" class="nav-link @Active("EmailTemplates")"><i class="nav-icon fas fa-envelope"></i><p>E-posta Şablonları</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="WhatsAppCloudApi" class="nav-link @Active("WhatsAppCloudApi")"><i class="nav-icon fab fa-whatsapp"></i><p>WhatsApp Cloud API</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Logs" class="nav-link @Active("Logs")"><i class="nav-icon fas fa-clipboard-list"></i><p>Log Kayıtları <span class="right badge badge-danger">@(Model.CriticalLogs)</span></p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Reports" class="nav-link @Active("Reports")"><i class="nav-icon fas fa-chart-line"></i><p>Raporlar</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Blog" class="nav-link @Active("Blog")"><i class="nav-icon fas fa-blog"></i><p>Blog Yönetimi</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Faq" class="nav-link @Active("Faq")"><i class="nav-icon fas fa-question-circle"></i><p>SSS Yönetimi</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Settings" class="nav-link @Active("Settings")"><i class="nav-icon fas fa-cog"></i><p>Ayarlar</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Security" class="nav-link @Active("Security")"><i class="nav-icon fas fa-shield-alt"></i><p>Güvenlik</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Complaints" class="nav-link @Active("Complaints")"><i class="nav-icon fas fa-exclamation-triangle"></i><p>Şikayetler</p></a></li>
-                <li class="nav-item"><a asp-controller="AdminPanel" asp-action="Backups" class="nav-link @Active("Backups")"><i class="nav-icon fas fa-database"></i><p>Yedekleme</p></a></li>
+            <p class="admin-sidebar-section-title">Yönetim</p>
+            <section class="admin-sidebar-group @(IsOpen("Hotels", "ActiveHotels", "PendingHotels", "Campaigns", "Reviews") ? "open" : string.Empty)">
+                <button type="button" class="admin-sidebar-group-toggle" data-admin-accordion="group">
+                    <span class="admin-sidebar-group-meta">
+                        <span class="admin-sidebar-link-icon"><i class="fas fa-hotel"></i></span>
+                        <span>
+                            <strong>Konaklama Yönetimi</strong>
+                            <small>Otel, kampanya ve kalite</small>
+                        </span>
+                    </span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="admin-sidebar-group-body">
+                    <a asp-controller="AdminPanel" asp-action="Hotels" class="admin-sidebar-link @Active("Hotels")"><span>Oteller</span></a>
+                    <a asp-controller="AdminPanel" asp-action="ActiveHotels" class="admin-sidebar-link @Active("ActiveHotels")"><span>Açık Oteller</span></a>
+                    <a asp-controller="AdminPanel" asp-action="PendingHotels" class="admin-sidebar-link @Active("PendingHotels")"><span>Bekleyen Oteller</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Campaigns" class="admin-sidebar-link @Active("Campaigns")"><span>Kampanyalar</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Reviews" class="admin-sidebar-link @Active("Reviews")"><span>Değerlendirmeler</span><strong>@Badge(Model.PendingReviews)</strong></a>
+                </div>
+            </section>
 
-                <li class="nav-header">ADMINLTE ROADMAP</li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Widgets New</p></a></li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Layout Options</p></a></li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Charts</p></a></li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Forms</p></a></li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Tables</p></a></li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Calendar</p></a></li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Gallery</p></a></li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Kanban Board</p></a></li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Mailbox</p></a></li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Pages & Extras</p></a></li>
-                <li class="nav-item"><a href="#" class="nav-link"><i class="nav-icon far fa-circle text-info"></i><p>Documentation</p></a></li>
-            </ul>
+            <section class="admin-sidebar-group @(IsOpen("Reservations", "Payments", "Invoices", "Commissions", "Contracts", "Reports") ? "open" : string.Empty)">
+                <button type="button" class="admin-sidebar-group-toggle" data-admin-accordion="group">
+                    <span class="admin-sidebar-group-meta">
+                        <span class="admin-sidebar-link-icon"><i class="fas fa-wallet"></i></span>
+                        <span>
+                            <strong>Ticari Operasyon</strong>
+                            <small>Rezervasyon, ödeme ve gelir</small>
+                        </span>
+                    </span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="admin-sidebar-group-body">
+                    <a asp-controller="AdminPanel" asp-action="Reservations" class="admin-sidebar-link @Active("Reservations")"><span>Rezervasyonlar</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Payments" class="admin-sidebar-link @Active("Payments")"><span>Ödemeler</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Invoices" class="admin-sidebar-link @Active("Invoices")"><span>Faturalar</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Commissions" class="admin-sidebar-link @Active("Commissions")"><span>Komisyonlar</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Contracts" class="admin-sidebar-link @Active("Contracts")"><span>Sözleşmeler</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Reports" class="admin-sidebar-link @Active("Reports")"><span>Gelir / Komisyon Raporu</span></a>
+                </div>
+            </section>
+
+            <section class="admin-sidebar-group @(IsOpen("Users", "Managers", "PlatformOfficials", "PartnerApplications", "CompanyApplications") ? "open" : string.Empty)">
+                <button type="button" class="admin-sidebar-group-toggle" data-admin-accordion="group">
+                    <span class="admin-sidebar-group-meta">
+                        <span class="admin-sidebar-link-icon"><i class="fas fa-users"></i></span>
+                        <span>
+                            <strong>Kullanıcı ve Yetki</strong>
+                            <small>Hesap, rol ve başvuru</small>
+                        </span>
+                    </span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="admin-sidebar-group-body">
+                    <a asp-controller="AdminPanel" asp-action="Users" class="admin-sidebar-link @Active("Users")"><span>Kullanıcılar</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Managers" class="admin-sidebar-link @Active("Managers")"><span>Yöneticiler</span></a>
+                    <a asp-controller="AdminPanel" asp-action="PlatformOfficials" class="admin-sidebar-link @Active("PlatformOfficials")"><span>Platform Yetkilileri</span></a>
+                    <a asp-controller="AdminPanel" asp-action="PartnerApplications" class="admin-sidebar-link @Active("PartnerApplications")"><span>Partner Başvuruları</span><strong>@Badge(Model.PendingPartnerApplications)</strong></a>
+                    <a asp-controller="AdminPanel" asp-action="CompanyApplications" class="admin-sidebar-link @Active("CompanyApplications")"><span>Firma Başvuruları</span><strong>@Badge(Model.PendingCompanyApplications)</strong></a>
+                </div>
+            </section>
+
+            <p class="admin-sidebar-section-title">İçerik ve Sistem</p>
+            <section class="admin-sidebar-group @(IsOpen("Notifications", "EmailTemplates", "WhatsAppCloudApi", "Blog", "Faq") ? "open" : string.Empty)">
+                <button type="button" class="admin-sidebar-group-toggle" data-admin-accordion="group">
+                    <span class="admin-sidebar-group-meta">
+                        <span class="admin-sidebar-link-icon"><i class="fas fa-bullhorn"></i></span>
+                        <span>
+                            <strong>İletişim ve İçerik</strong>
+                            <small>Mesajlaşma, şablon ve içerik</small>
+                        </span>
+                    </span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="admin-sidebar-group-body">
+                    <a asp-controller="AdminPanel" asp-action="Notifications" class="admin-sidebar-link @Active("Notifications")"><span>Bildirimler</span><strong>@Badge(Model.UnreadNotifications)</strong></a>
+                    <a asp-controller="AdminPanel" asp-action="EmailTemplates" class="admin-sidebar-link @Active("EmailTemplates")"><span>E-posta Şablonları</span></a>
+                    <a asp-controller="AdminPanel" asp-action="WhatsAppCloudApi" class="admin-sidebar-link @Active("WhatsAppCloudApi")"><span>WhatsApp Cloud API</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Blog" class="admin-sidebar-link @Active("Blog")"><span>Blog Yönetimi</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Faq" class="admin-sidebar-link @Active("Faq")"><span>SSS Yönetimi</span></a>
+                </div>
+            </section>
+
+            <section class="admin-sidebar-group @(IsOpen("Settings", "Security", "Complaints", "Backups", "Logs") ? "open" : string.Empty)">
+                <button type="button" class="admin-sidebar-group-toggle" data-admin-accordion="group">
+                    <span class="admin-sidebar-group-meta">
+                        <span class="admin-sidebar-link-icon"><i class="fas fa-shield-halved"></i></span>
+                        <span>
+                            <strong>Sistem ve Güvenlik</strong>
+                            <small>Ayar, log, yedekleme ve denetim</small>
+                        </span>
+                    </span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="admin-sidebar-group-body">
+                    <a asp-controller="AdminPanel" asp-action="Settings" class="admin-sidebar-link @Active("Settings")"><span>Ayarlar</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Security" class="admin-sidebar-link @Active("Security")"><span>Güvenlik</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Complaints" class="admin-sidebar-link @Active("Complaints")"><span>Şikayetler</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Backups" class="admin-sidebar-link @Active("Backups")"><span>Yedekleme</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Logs" class="admin-sidebar-link @Active("Logs")"><span>Log Kayıtları</span><strong>@Badge(Model.CriticalLogs)</strong></a>
+                </div>
+            </section>
         </nav>
 
-        <div class="mt-3 px-2 pb-2">
-            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-light btn-block btn-sm">
-                <i class="fas fa-arrow-left mr-1"></i> Ana Sayfaya Dön
+        <div class="admin-sidebar-actions">
+            <a asp-controller="Home" asp-action="Index" class="admin-sidebar-secondary-link">
+                <i class="fas fa-arrow-left"></i>
+                <span>Ana Sayfaya Dön</span>
             </a>
-            <form method="post" action="/cikis-yap" class="mt-2">
+            <form method="post" action="/cikis-yap" class="admin-sidebar-logout-form">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-danger btn-block btn-sm">
-                    <i class="fas fa-sign-out-alt mr-1"></i> Çıkış Yap
+                <button type="submit" class="admin-sidebar-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Çıkış Yap</span>
                 </button>
             </form>
         </div>

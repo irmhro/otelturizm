@@ -33,7 +33,11 @@ public class AdminService : IAdminService
                 (SELECT COUNT(*) FROM oteller) AS total_hotels,
                 (SELECT COUNT(*) FROM rezervasyonlar) AS total_reservations,
                 (SELECT COUNT(*) FROM odeme_islemleri WHERE odeme_durumu IN ('Başarılı','Geri Ödendi','Kısmi Geri Ödendi')) AS successful_payments,
-                (SELECT COUNT(*) FROM users WHERE rol = 'admin') AS admin_count;";
+                (SELECT COUNT(*) FROM users WHERE rol = 'admin') AS admin_count,
+                (SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Beklemede') AS pending_partner_count,
+                (SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu, 'Beklemede') = 'Beklemede') AS pending_company_count,
+                (SELECT COUNT(*) FROM oteller WHERE yayin_durumu = 'Yayında' AND onay_durumu = 'Onaylandı') AS active_hotel_count,
+                (SELECT COUNT(*) FROM oteller WHERE COALESCE(onay_durumu, '') = 'Beklemede') AS pending_hotel_count;";
 
         await using (var command = new SqlCommand(metricsSql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -44,6 +48,10 @@ public class AdminService : IAdminService
                 model.Metrics.Add(new AdminMetricCardViewModel { Label = "Toplam Rezervasyon", Value = SafeInt(reader, 1).ToString(), TrendText = "Tum rezervasyon kayitlari", IconClass = "fa-calendar-check", ToneClass = "success" });
                 model.Metrics.Add(new AdminMetricCardViewModel { Label = "Basarili Odeme", Value = SafeInt(reader, 2).ToString(), TrendText = "Tahsilat ve iade dahil tamamlanan islemler", IconClass = "fa-credit-card", ToneClass = "warning" });
                 model.Metrics.Add(new AdminMetricCardViewModel { Label = "Admin Kullanici", Value = SafeInt(reader, 3).ToString(), TrendText = "Yonetsel yetkili aktif hesaplar", IconClass = "fa-user-shield", ToneClass = "danger" });
+                model.Metrics.Add(new AdminMetricCardViewModel { Label = "Bekleyen Partner", Value = SafeInt(reader, 4).ToString(), TrendText = "Onay bekleyen partner basvurulari", IconClass = "fa-handshake", ToneClass = "warning" });
+                model.Metrics.Add(new AdminMetricCardViewModel { Label = "Bekleyen Firma", Value = SafeInt(reader, 5).ToString(), TrendText = "Onay bekleyen firma basvurulari", IconClass = "fa-building", ToneClass = "info" });
+                model.Metrics.Add(new AdminMetricCardViewModel { Label = "Açık Otel", Value = SafeInt(reader, 6).ToString(), TrendText = "Yayinda ve onayli tesisler", IconClass = "fa-tower-broadcast", ToneClass = "success" });
+                model.Metrics.Add(new AdminMetricCardViewModel { Label = "Bekleyen Otel", Value = SafeInt(reader, 7).ToString(), TrendText = "Onay/yayin aksiyonunda bekleyen tesisler", IconClass = "fa-hourglass-half", ToneClass = "danger" });
             }
         }
 
@@ -500,6 +508,50 @@ public class AdminService : IAdminService
             }
         }
 
+        const string financeSql = @"
+            SELECT TOP (20)
+                o.id,
+                o.otel_adi,
+                COALESCE(reservationStats.gross_revenue, 0) AS gross_revenue,
+                COALESCE(commissionStats.total_commission, 0) AS total_commission,
+                COALESCE(commissionStats.paid_commission, 0) AS paid_commission
+            FROM oteller o
+            OUTER APPLY
+            (
+                SELECT SUM(COALESCE(r.toplam_tutar, 0)) AS gross_revenue
+                FROM rezervasyonlar r
+                WHERE r.otel_id = o.id
+                  AND COALESCE(r.durum, '') <> 'İptal Edildi'
+            ) reservationStats
+            OUTER APPLY
+            (
+                SELECT
+                    SUM(COALESCE(k.komisyon_tutari, 0)) AS total_commission,
+                    SUM(CASE WHEN COALESCE(k.otele_odeme_durumu, '') = 'Ödendi' THEN COALESCE(k.komisyon_tutari, 0) ELSE 0 END) AS paid_commission
+                FROM komisyon_muhasebe_kayitlari k
+                WHERE k.otel_id = o.id
+            ) commissionStats
+            WHERE (@hotelId IS NULL OR o.id = @hotelId)
+              AND (COALESCE(reservationStats.gross_revenue, 0) > 0 OR COALESCE(commissionStats.total_commission, 0) > 0)
+            ORDER BY COALESCE(reservationStats.gross_revenue, 0) DESC, o.id DESC;";
+
+        await using (var financeCommand = new SqlCommand(financeSql, connection))
+        {
+            financeCommand.Parameters.AddWithValue("@hotelId", hotelId.HasValue ? hotelId.Value : DBNull.Value);
+            await using var financeReader = await financeCommand.ExecuteReaderAsync(cancellationToken);
+            while (await financeReader.ReadAsync(cancellationToken))
+            {
+                model.HotelFinanceRows.Add(new AdminHotelCommissionFinanceRowViewModel
+                {
+                    HotelId = financeReader.GetInt64(0),
+                    HotelName = financeReader.GetString(1),
+                    GrossRevenue = SafeDecimal(financeReader, 2),
+                    TotalCommission = SafeDecimal(financeReader, 3),
+                    PaidCommission = SafeDecimal(financeReader, 4)
+                });
+            }
+        }
+
         return model;
     }
 
@@ -572,6 +624,7 @@ public class AdminService : IAdminService
         const string sql = @"
             SELECT
                 (SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Beklemede') AS pending_partner_applications,
+                (SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu, 'Beklemede') = 'Beklemede') AS pending_company_applications,
                 (SELECT COUNT(*) FROM sistem_ici_bildirimler WHERE okundu_mu = 0) AS unread_notifications,
                 (SELECT COUNT(*) FROM sistem_hata_loglari WHERE hata_seviyesi IN ('CRITICAL','ALERT','EMERGENCY') AND cozuldu_mu = 0) AS critical_logs,
                 (SELECT COUNT(*) FROM yorumlar WHERE onay_durumu = 'Beklemede') AS pending_reviews;";
@@ -583,9 +636,10 @@ public class AdminService : IAdminService
         if (await reader.ReadAsync(cancellationToken))
         {
             shell.PendingPartnerApplications = SafeInt(reader, 0);
-            shell.UnreadNotifications = SafeInt(reader, 1);
-            shell.CriticalLogs = SafeInt(reader, 2);
-            shell.PendingReviews = SafeInt(reader, 3);
+            shell.PendingCompanyApplications = SafeInt(reader, 1);
+            shell.UnreadNotifications = SafeInt(reader, 2);
+            shell.CriticalLogs = SafeInt(reader, 3);
+            shell.PendingReviews = SafeInt(reader, 4);
         }
 
         return shell;
@@ -635,7 +689,7 @@ public class AdminService : IAdminService
     {
         return sectionKey switch
         {
-            "users" => ("Kullanicilar", "Tum kullanici tiplerini, rollerini ve hesap durumlarini veritabani kayitlari ile yonetin.", new[] { "Kullanici", "E-posta", "Rol", "Durum", "Kayit" }, "Kullanici kaydi bulunamadi.", null),
+            "users" => ("Kullanicilar", "Tum kullanici tiplerini, rollerini ve hesap durumlarini veritabani kayitlari ile yonetin.", new[] { "Kullanici", "E-posta", "Telefon", "Uyelik", "Rezervasyon", "Puan", "Durum", "Islem" }, "Kullanici kaydi bulunamadi.", null),
             "managers" => ("Yoneticiler", "Admin ve ekip kullanicilarini departman ve rol dagilimi ile izleyin.", new[] { "Ad Soyad", "E-posta", "Departman", "Rol", "Son Giris" }, "Yonetici kaydi bulunamadi.", null),
             "hotels" => ("Oteller", "Otel, yayin ve onay durumlarini tek ekranda izleyin.", new[] { "Otel", "Konum", "Tur", "Yayin", "Onay", "Puan" }, "Otel kaydi bulunamadi.", null),
             "hotel-detail" => ("Otel Detay", "Referans admin otel detay ekranini, secili otelin tum panel verileri ile baglayacagiz.", Array.Empty<string>(), "Detay ekrani icin otel secimi gerekiyor.", "Bu ekran sonraki adimda secili otel bazli detay verilerle ayri servisle baglanacak."),
@@ -644,6 +698,10 @@ public class AdminService : IAdminService
             "invoices" => ("Faturalar", "Platform ve otel faturalarini veritabani kayitlari ile izleyin.", new[] { "Fatura No", "Tarih", "Tur", "Durum", "Toplam", "PB" }, "Fatura kaydi bulunamadi.", null),
             "commissions" => ("Komisyonlar", "Komisyon muhasebe ve mutabakat durumlarini takip edin.", new[] { "Kayit No", "Donem", "Otel", "Komisyon", "Odeme Durumu", "Mutabakat" }, "Komisyon kaydi bulunamadi.", null),
             "partner-applications" => ("Partner Basvurulari", "Partner onboarding surecini ve onay akisini yonetin.", new[] { "Firma", "Yetkili", "E-posta", "Vergi No", "Durum", "Kayit" }, "Partner basvurusu bulunamadi.", null),
+            "company-applications" => ("Firma Basvurulari", "Firma onboarding durumlarini ve rezervasyon onay akislarini izleyin.", new[] { "Firma", "Onay", "Firma Kullanicisi", "Rezervasyon", "Kayit" }, "Firma basvurusu bulunamadi.", null),
+            "platform-officials" => ("Platform Yetkilileri", "Admin ve superadmin hesaplarin durumunu ve erisim izlerini yonetin.", new[] { "Ad Soyad", "E-posta", "Rol", "Durum", "Son Giris", "Kayit" }, "Platform yetkilisi bulunamadi.", null),
+            "active-hotels" => ("Acik Oteller", "Yayinda ve onayli otelleri operasyonel performans ile izleyin.", new[] { "Otel", "Konum", "Puan", "Rezervasyon", "Gelir", "Guncelleme" }, "Acik otel bulunamadi.", null),
+            "pending-hotels" => ("Bekleyen Oteller", "Onay veya yayin bekleyen tesisleri hizli aksiyon listesi olarak yonetin.", new[] { "Otel", "Konum", "Onay", "Yayin", "Olusturma", "Son Guncelleme" }, "Bekleyen otel bulunamadi.", null),
             "reviews" => ("Degerlendirmeler", "Yorum moderasyonu, raporlanan yorumlar ve dogrulanmis konaklama kayitlarini yonetin.", new[] { "Baslik", "Puan", "Durum", "Rapor", "Dogrulama", "Tarih" }, "Yorum kaydi bulunamadi.", null),
             "reports" => ("Raporlar", "Rapor ekranini mevcut operasyon verileri uzerinden kurgulayacagiz.", Array.Empty<string>(), "Rapor veri matrisi bir sonraki fazda kurulur.", "Bu ekran icin rapor snapshot / export altyapisi migration ile eklenecek."),
             "campaigns" => ("Kampanyalar", "Kampanya performansini ve yayindaki indirim kurallarini izleyin.", new[] { "Kampanya", "Tur", "Baslangic", "Bitis", "Aktif", "Kullanim" }, "Kampanya bulunamadi.", null),
@@ -667,9 +725,9 @@ public class AdminService : IAdminService
             "users" =>
             [
                 ("Toplam Kullanici", "SELECT COUNT(*) FROM users", "Tum hesaplar", "info", "fa-users"),
-                ("Admin", "SELECT COUNT(*) FROM users WHERE rol = 'admin'", "Yonetim kullanicilari", "danger", "fa-user-shield"),
-                ("Partner", "SELECT COUNT(*) FROM users WHERE rol LIKE 'partner_%'", "Partner yoneten hesaplar", "warning", "fa-building"),
-                ("Aktif Hesap", "SELECT COUNT(*) FROM users WHERE hesap_durumu = 1", "Giris yapabilen hesaplar", "success", "fa-circle-check")
+                ("Aktif Kullanici", "SELECT COUNT(*) FROM users WHERE hesap_durumu = 1", "Giris yapabilen hesaplar", "success", "fa-circle-check"),
+                ("Onaysiz E-posta", "SELECT COUNT(*) FROM users WHERE email_dogrulama_tarihi IS NULL", "E-posta dogrulamasi bekleyenler", "warning", "fa-envelope-circle-check"),
+                ("Pasif Kullanici", "SELECT COUNT(*) FROM users WHERE COALESCE(hesap_durumu, 0) = 0", "Panele veya siteye erisemeyen hesaplar", "danger", "fa-user-slash")
             ],
             "managers" =>
             [
@@ -719,6 +777,34 @@ public class AdminService : IAdminService
                 ("Beklemede", "SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Beklemede'", "Inceleme bekleyen basvurular", "warning", "fa-hourglass-half"),
                 ("Onaylandi", "SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Onaylandi'", "Aktif partner hesaplari", "success", "fa-circle-check"),
                 ("Reddedildi", "SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Reddedildi'", "Reddedilen kayitlar", "danger", "fa-circle-xmark")
+            ],
+            "company-applications" =>
+            [
+                ("Toplam Firma", "SELECT COUNT(*) FROM firmalar", "Tum firma profilleri", "info", "fa-building"),
+                ("Beklemede", "SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu,'Beklemede') = 'Beklemede'", "Onay bekleyen firmalar", "warning", "fa-hourglass-half"),
+                ("Onaylandi", "SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu,'') = 'Onaylandı'", "Aktif firma hesaplari", "success", "fa-circle-check"),
+                ("Firma Rezervasyonu", "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id IS NOT NULL", "Firma baglantili rezervasyonlar", "danger", "fa-briefcase")
+            ],
+            "platform-officials" =>
+            [
+                ("Yetkili Hesap", "SELECT COUNT(*) FROM users WHERE rol IN ('admin','superadmin')", "Admin ve superadmin kullanicilar", "info", "fa-user-shield"),
+                ("Aktif Yetkili", "SELECT COUNT(*) FROM users WHERE rol IN ('admin','superadmin') AND hesap_durumu = 1", "Panele erisebilen yetkililer", "success", "fa-user-check"),
+                ("Departman Kaydi", "SELECT COUNT(*) FROM kullanici_departman", "Yetkili departman baglantilari", "warning", "fa-sitemap"),
+                ("Rol Kaydi", "SELECT COUNT(*) FROM kullanici_rolleri", "Rol atama kayitlari", "danger", "fa-key")
+            ],
+            "active-hotels" =>
+            [
+                ("Yayinda", "SELECT COUNT(*) FROM oteller WHERE yayin_durumu = 'Yayında' AND onay_durumu = 'Onaylandı'", "Yayinda ve onayli oteller", "success", "fa-tower-broadcast"),
+                ("Toplam Oda Tipi", "SELECT COUNT(*) FROM oda_tipleri ot INNER JOIN oteller o ON o.id = ot.otel_id WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı'", "Acik otellerdeki oda tipleri", "info", "fa-bed"),
+                ("Toplam Rezervasyon", "SELECT COUNT(*) FROM rezervasyonlar r INNER JOIN oteller o ON o.id = r.otel_id WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı'", "Acik otellere gelen rezervasyonlar", "warning", "fa-calendar-check"),
+                ("Toplam Gelir", "SELECT COALESCE(SUM(COALESCE(r.toplam_tutar,0)),0) FROM rezervasyonlar r INNER JOIN oteller o ON o.id = r.otel_id WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı' AND COALESCE(r.durum,'') <> 'İptal Edildi'", "Iptal disi rezervasyon gelirleri", "danger", "fa-money-bill-wave")
+            ],
+            "pending-hotels" =>
+            [
+                ("Bekleyen Onay", "SELECT COUNT(*) FROM oteller WHERE onay_durumu = 'Beklemede'", "Onay bekleyen tesisler", "warning", "fa-hourglass-half"),
+                ("Taslak Yayin", "SELECT COUNT(*) FROM oteller WHERE yayin_durumu <> 'Yayında'", "Yayina alinmamis tesisler", "info", "fa-file-pen"),
+                ("Partner Basvuru Bekliyor", "SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Beklemede'", "Partner adiminda bekleyenler", "danger", "fa-user-clock"),
+                ("Eksik Medya", "SELECT COUNT(*) FROM oteller o WHERE NOT EXISTS (SELECT 1 FROM otel_gorselleri g WHERE g.otel_id = o.id)", "Gorsel yuklenmemis oteller", "success", "fa-image")
             ],
             "reviews" =>
             [
@@ -770,7 +856,37 @@ public class AdminService : IAdminService
     {
         return sectionKey switch
         {
-            "users" => @"SELECT TOP (12) ad_soyad, eposta, rol, hesap_durumu, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR') FROM users ORDER BY id DESC;",
+            "users" => @"SELECT TOP (40)
+                                CAST(u.id AS nvarchar(30)),
+                                COALESCE(NULLIF(u.ad_soyad, ''), '-'),
+                                COALESCE(NULLIF(u.eposta, ''), '-'),
+                                COALESCE(NULLIF(u.telefon, ''), NULLIF(u.telefon_e164, ''), '-'),
+                                CASE
+                                    WHEN reservationStats.reservation_count >= 10 OR reservationStats.total_spent >= 100000 THEN 'Gold'
+                                    WHEN reservationStats.reservation_count >= 4 OR reservationStats.total_spent >= 30000 THEN 'Silver'
+                                    ELSE 'Bronze'
+                                END,
+                                CAST(reservationStats.reservation_count AS nvarchar(20)),
+                                FORMAT(reservationStats.loyalty_points, 'N0', 'tr-TR'),
+                                CASE
+                                    WHEN COALESCE(u.hesap_durumu, 0) = 0 THEN 'Pasif'
+                                    WHEN u.email_dogrulama_tarihi IS NULL THEN 'Onaysiz'
+                                    ELSE 'Aktif'
+                                END,
+                                COALESCE(NULLIF(u.rol, ''), 'user'),
+                                FORMAT(u.olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR')
+                         FROM users u
+                         OUTER APPLY
+                         (
+                             SELECT
+                                 COUNT(r.id) AS reservation_count,
+                                 COALESCE(SUM(COALESCE(r.toplam_tutar, 0)), 0) AS total_spent,
+                                 CAST(ROUND(COALESCE(SUM(COALESCE(r.toplam_tutar, 0)), 0) / 12.5, 0) AS int) AS loyalty_points
+                             FROM rezervasyonlar r
+                             WHERE r.kullanici_id = u.id
+                               AND COALESCE(r.durum, '') <> 'İptal Edildi'
+                         ) reservationStats
+                         ORDER BY u.id DESC;",
             "managers" => @"SELECT TOP (12) u.ad_soyad, u.eposta, COALESCE(d.departman_adi, '-'), COALESCE(r.rol_adi, u.rol), COALESCE(FORMAT(u.son_giris_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR'), '-') FROM users u LEFT JOIN kullanici_departman kd ON kd.kullanici_id = u.id LEFT JOIN departmanlar d ON d.id = kd.departman_id LEFT JOIN kullanici_rolleri kr ON kr.kullanici_id = u.id AND (kr.bitis_tarihi IS NULL OR kr.bitis_tarihi > SYSUTCDATETIME()) LEFT JOIN roller r ON r.id = kr.rol_id WHERE u.rol = 'admin' ORDER BY u.id DESC;",
             "hotels" => @"SELECT TOP (12) otel_adi, CONCAT(ilce, ', ', sehir), otel_turu, yayin_durumu, onay_durumu, FORMAT(ortalama_puan, '0.0', 'tr-TR') FROM oteller ORDER BY id DESC;",
             "reservations" => @"SELECT TOP (12) rezervasyon_no, misafir_ad_soyad, FORMAT(giris_tarihi, 'dd.MM.yyyy', 'tr-TR'), FORMAT(cikis_tarihi, 'dd.MM.yyyy', 'tr-TR'), durum, FORMAT(toplam_tutar, 'N0', 'tr-TR') FROM rezervasyonlar ORDER BY id DESC;",
@@ -778,6 +894,40 @@ public class AdminService : IAdminService
             "invoices" => @"SELECT TOP (12) fatura_no, FORMAT(fatura_tarihi, 'dd.MM.yyyy', 'tr-TR'), fatura_turu, fatura_durumu, FORMAT(genel_toplam, 'N0', 'tr-TR'), para_birimi FROM faturalar ORDER BY id DESC;",
             "commissions" => @"SELECT TOP (12) kayit_no, donem, o.otel_adi, FORMAT(komisyon_tutari, 'N0', 'tr-TR'), otele_odeme_durumu, mutabakat_durumu FROM komisyon_muhasebe_kayitlari k LEFT JOIN oteller o ON o.id = k.otel_id ORDER BY k.id DESC;",
             "partner-applications" => @"SELECT TOP (12) firma_unvani, yetkili_ad_soyad, yetkili_eposta, vergi_numarasi, onay_durumu, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR') FROM partner_detaylari ORDER BY id DESC;",
+            "company-applications" => @"SELECT TOP (20) f.firma_adi, COALESCE(f.onay_durumu, 'Beklemede'),
+                                                (SELECT COUNT(*) FROM users u WHERE u.firma_id = f.id AND u.rol LIKE 'firma_%'),
+                                                (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.firma_id = f.id),
+                                                FORMAT(f.olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR')
+                                         FROM firmalar f
+                                         ORDER BY f.id DESC;",
+            "platform-officials" => @"SELECT TOP (20) u.ad_soyad, u.eposta, COALESCE(NULLIF(u.rol, ''), 'admin'),
+                                               CASE WHEN COALESCE(u.hesap_durumu, 0) = 1 THEN 'Aktif' ELSE 'Pasif' END,
+                                               COALESCE(FORMAT(u.son_giris_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR'), '-'),
+                                               FORMAT(u.olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR')
+                                        FROM users u
+                                        WHERE u.rol IN ('admin', 'superadmin')
+                                        ORDER BY COALESCE(u.son_giris_tarihi, u.olusturulma_tarihi) DESC;",
+            "active-hotels" => @"SELECT TOP (20)
+                                        o.otel_adi,
+                                        CONCAT(o.ilce, ', ', o.sehir),
+                                        FORMAT(COALESCE(o.ortalama_puan, 0), '0.0', 'tr-TR'),
+                                        (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.otel_id = o.id),
+                                        FORMAT(COALESCE((SELECT SUM(COALESCE(r.toplam_tutar,0)) FROM rezervasyonlar r WHERE r.otel_id = o.id AND COALESCE(r.durum,'') <> 'İptal Edildi'),0), 'N0', 'tr-TR'),
+                                        FORMAT(COALESCE(o.guncellenme_tarihi, o.olusturulma_tarihi), 'dd.MM.yyyy HH:mm', 'tr-TR')
+                                     FROM oteller o
+                                     WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı'
+                                     ORDER BY COALESCE(o.ortalama_puan, 0) DESC, o.id DESC;",
+            "pending-hotels" => @"SELECT TOP (20)
+                                         o.otel_adi,
+                                         CONCAT(o.ilce, ', ', o.sehir),
+                                         COALESCE(o.onay_durumu, '-'),
+                                         COALESCE(o.yayin_durumu, '-'),
+                                         FORMAT(o.olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR'),
+                                         FORMAT(COALESCE(o.guncellenme_tarihi, o.olusturulma_tarihi), 'dd.MM.yyyy HH:mm', 'tr-TR')
+                                  FROM oteller o
+                                  WHERE COALESCE(o.onay_durumu, '') = 'Beklemede'
+                                     OR COALESCE(o.yayin_durumu, '') <> 'Yayında'
+                                  ORDER BY o.olusturulma_tarihi DESC;",
             "reviews" => @"SELECT TOP (12) COALESCE(yorum_basligi, 'Basliksiz'), genel_puan, onay_durumu, rapor_sayisi, dogrulanmis_konaklama, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR') FROM yorumlar ORDER BY id DESC;",
             "campaigns" => @"SELECT TOP (12) kampanya_adi, tur, FORMAT(baslangic_tarihi, 'dd.MM.yyyy', 'tr-TR'), FORMAT(bitis_tarihi, 'dd.MM.yyyy', 'tr-TR'), aktif_mi, kullanilan_adet FROM kampanyalar ORDER BY id DESC;",
             "notifications" => @"SELECT TOP (12) baslik, bildirim_turu, onem_derecesi, okundu_mu, arsivlendi_mi, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR') FROM sistem_ici_bildirimler ORDER BY id DESC;",

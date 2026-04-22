@@ -1308,18 +1308,19 @@ body.listing-modal-open {
 }
 
 .listing-template-v41 .price-section {
-    min-width: 180px;
-    display: grid;
-    justify-items: end;
-    align-content: end;
-    gap: 10px;
+    min-width: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
 .listing-template-v41 .price-info {
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: 8px;
 }
 
@@ -1356,6 +1357,8 @@ body.listing-modal-open {
     font-size: 14px;
     font-weight: 700;
 }
+
+.listing-template-v41 .btn-detail { flex-shrink: 0; }
 
 .listing-template-v41 .badge {
     min-height: 28px;
@@ -1730,18 +1733,80 @@ body.listing-modal-open {
 }
 
 .listing-template-v41 .card-image {
-    width: 260px;
-    min-width: 260px;
+    width: 35%;
+    min-width: 35%;
 }
 
-.listing-template-v41 .card-image img {
+.listing-template-v41 .card-image-link { display: block; width: 100%; height: 100%; }
+
+.listing-template-v41 .card-image-grid {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 20fr 15fr;
+    gap: 8px;
+    padding: 12px;
+}
+
+.listing-template-v41 .card-image-grid img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
+    border-radius: 16px;
+    display: block;
 }
 
-.listing-template-v41 .card-badges {
+.listing-template-v41 .card-image-main {
+    border-radius: 18px;
+}
+
+.listing-template-v41 .card-image-side {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+}
+
+.listing-template-v41 .card-badge-top-left {
+    position: absolute;
     top: var(--space-3);
     left: var(--space-3);
-    gap: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.listing-template-v41 .listing-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(255,255,255,0.92);
+    color: #0f172a;
+    max-width: 170px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.listing-template-v41 .listing-pill i { font-size: 12px; }
+.listing-template-v41 .listing-pill.fav { background: #FDE047; border-color: rgba(0,0,0,0.08); }
+.listing-template-v41 .listing-pill.flash { background: #F59E0B; border-color: rgba(0,0,0,0.08); }
+.listing-template-v41 .listing-pill.early { background: #D1FAE5; border-color: rgba(6,95,70,0.10); color:#065f46; }
+.listing-template-v41 .listing-pill.discount { background: #FB7185; border-color: rgba(0,0,0,0.06); color:#fff; }
+.listing-template-v41 .listing-pill.budget { background: #DBEAFE; border-color: rgba(29,78,216,0.14); color:#1d4ed8; }
+.listing-template-v41 .listing-pill.best { background: #E5E7EB; border-color: rgba(0,0,0,0.08); }
+.listing-template-v41 .listing-pill.weekend { background: #E0E7FF; border-color: rgba(99,102,241,0.16); color:#3730a3; }
+
+@media (max-width: 720px) {
+    .listing-template-v41 .listing-pill { padding: 6px 10px; font-size: 11.5px; max-width: 150px; }
 }
 
 .listing-template-v41 .wishlist-btn {
@@ -1749,10 +1814,16 @@ body.listing-modal-open {
     right: var(--space-3);
     width: 36px;
     height: 36px;
-    border: 0;
+    border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.14);
+    z-index: 3;
+}
+
+.listing-template-v41 .wishlist-btn i {
+    font-size: 18px;
+    line-height: 1;
 }
 
 .listing-template-v41 .card-content {
@@ -1773,6 +1844,28 @@ body.listing-modal-open {
     font-size: 14px;
     font-weight: 600;
 }
+
+.listing-template-v41 .image-rating {
+    position: absolute;
+    right: var(--space-3);
+    bottom: var(--space-3);
+    z-index: 2;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(0, 59, 149, 0.75);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #fff;
+    font-weight: 900;
+    font-size: 12px;
+    border: 1px solid rgba(255,255,255,0.22);
+    box-shadow: 0 18px 34px rgba(2, 32, 71, 0.22);
+}
+
+.listing-template-v41 .image-rating i { font-size: 11px; }
 
 .listing-template-v41 .hotel-location {
     margin: var(--space-1) 0 var(--space-2);
@@ -1835,6 +1928,88 @@ body.listing-modal-open {
         width: 100%;
         min-width: 0;
         height: 200px;
+    }
+
+    .listing-template-v41 .card-image-grid {
+        grid-template-columns: 1fr;
+        padding: 0;
+    }
+
+    .listing-template-v41 .card-image-side {
+        display: none;
+    }
+
+    .listing-template-v41 .card-image-grid img {
+        border-radius: 0;
+    }
+}
+
+/* Mobile: image left ~40%, content right */
+@media (max-width: 639px) {
+    .listing-template-v41 .hotel-card {
+        flex-direction: row;
+        align-items: stretch;
+        gap: 0;
+        min-height: 160px;
+    }
+
+    .listing-template-v41 .card-image {
+        width: 40%;
+        min-width: 40%;
+        height: auto;
+    }
+
+    .listing-template-v41 .card-image .card-image-link,
+    .listing-template-v41 .card-image-grid,
+    .listing-template-v41 .card-image img {
+        width: 100%;
+        height: 100%;
+    }
+
+    .listing-template-v41 .card-image img {
+        object-fit: cover;
+    }
+
+    .listing-template-v41 .card-content {
+        width: 60%;
+        min-width: 0;
+        padding: 14px;
+    }
+
+    .listing-template-v41 .hotel-header .hotel-rating { display: none; }
+    .listing-template-v41 .image-rating { display: inline-flex; }
+
+    .listing-template-v41 .hotel-name {
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+
+    .listing-template-v41 .hotel-location {
+        font-size: 0.82rem;
+        margin: 6px 0 10px;
+    }
+
+    .listing-template-v41 .features {
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .listing-template-v41 .feature-tag {
+        font-size: 0.72rem;
+        padding: 2px 10px;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .listing-template-v41 .current-price {
+        font-size: 1.05rem;
+    }
+
+    .listing-template-v41 .btn-detail {
+        padding: 8px 14px;
+        font-size: 0.86rem;
     }
 }
 

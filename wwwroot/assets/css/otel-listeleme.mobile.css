@@ -1,4 +1,34 @@
 @media (max-width: 900px) {
+    .listing-hero-panel,
+    .listing-toolbar-bar,
+    .listing-hero-stats {
+        display: grid;
+    }
+
+    .listing-hero-panel {
+        padding: 22px 18px;
+        gap: 18px;
+    }
+
+    .listing-hero-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        min-width: 0;
+    }
+
+    .listing-toolbar-bar {
+        gap: 14px;
+    }
+
+    .listing-toolbar-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .listing-toolbar-filter-btn,
+    .listing-sortbox {
+        width: 100%;
+    }
+
     .listing-search-copy h1 {
         font-size: 1.18rem;
     }

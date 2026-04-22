@@ -4,7 +4,7 @@
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Dashboard";
 }
 <nav class="admin-mobile-nav">
-    <a asp-action="Dashboard" class="@(currentAction == "Dashboard" ? "active" : "")"><i class="fas fa-grid-2"></i><span>Panel</span></a>
+    <a asp-action="Dashboard" class="@(currentAction == "Dashboard" ? "active" : "")"><i class="fas fa-table-columns"></i><span>Panel</span></a>
     <a asp-action="Hotels" class="@(currentAction == "Hotels" ? "active" : "")"><i class="fas fa-hotel"></i><span>Oteller</span></a>
     <a asp-action="Reservations" class="@(currentAction == "Reservations" ? "active" : "")"><i class="fas fa-calendar-check"></i><span>Rez.</span></a>
     <a asp-action="Users" class="@(currentAction == "Users" ? "active" : "")"><i class="fas fa-users"></i><span>Üyeler</span></a>

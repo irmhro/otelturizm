@@ -66,6 +66,27 @@ public class PublicHotelReservationForm
     public int ChildCount { get; set; }
     public int RoomCount { get; set; } = 1;
     public string PaymentMethod { get; set; } = "Kapıda Ödeme";
+    public string? RoomsJson { get; set; }
+
+    /// <summary>Kart ile ödenmek istenen tutar (karma planlarda).</summary>
+    public decimal CardAmount { get; set; }
+
+    /// <summary>Havale/EFT ile ödenmek istenen tutar.</summary>
+    public decimal BankTransferAmount { get; set; }
+
+    /// <summary>Otelde ödenecek tutar (karma).</summary>
+    public decimal CashAtHotelAmountSplit { get; set; }
+
+    /// <summary>Havale için referans veya dekont notu.</summary>
+    public string? BankTransferReference { get; set; }
+}
+
+public sealed class PublicMultiRoomSelectionItem
+{
+    public long RoomTypeId { get; set; }
+    public DateOnly CheckInDate { get; set; }
+    public DateOnly CheckOutDate { get; set; }
+    public int RoomCount { get; set; } = 1;
 }
 
 public class PublicReservationResult

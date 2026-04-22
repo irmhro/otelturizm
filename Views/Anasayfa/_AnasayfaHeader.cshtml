@@ -155,6 +155,7 @@
         const defaultLanguage = 'tr';
         const supportedLanguages = ['tr', 'en', 'fr', 'ru', 'ar'];
         const languageToFlagCode = { tr: 'tr', en: 'gb', fr: 'fr', ru: 'ru', ar: 'sa' };
+        let pendingTranslateLanguage = null;
 
         function normalizeLanguage(value) {
             const lang = (value || defaultLanguage).toLowerCase();
@@ -262,6 +263,8 @@
                 combo.dispatchEvent(new Event('change'));
             }
 
+            pendingTranslateLanguage = null;
+
             return true;
         }
 
@@ -308,6 +311,9 @@
         }
 
         function scheduleTranslationApply(lang, attempt) {
+            if (!pendingTranslateLanguage) {
+                return;
+            }
             const currentAttempt = attempt || 0;
             if (applyGoogleTranslation(lang)) {
                 return;
@@ -319,6 +325,14 @@
             window.setTimeout(function () {
                 scheduleTranslationApply(lang, currentAttempt + 1);
             }, 250);
+        }
+
+        function requestTranslation(lang) {
+            pendingTranslateLanguage = normalizeLanguage(lang);
+            ensureGoogleTranslateScript();
+            window.setTimeout(function () {
+                scheduleTranslationApply(pendingTranslateLanguage, 0);
+            }, 80);
         }
 
         function setLanguage(lang, applyNow, isExplicitChange) {
@@ -335,7 +349,7 @@
                     if (normalized === defaultLanguage) {
                         setGoogleTranslateCookie(defaultLanguage);
                     }
-                    scheduleTranslationApply(normalized, 0);
+                    requestTranslation(normalized);
                 } else {
                     clearGoogleTranslateCookie();
                 }
@@ -351,7 +365,9 @@
 
             const container = document.getElementById('google_translate_element');
             if (!container || container.childElementCount > 0) {
-                scheduleTranslationApply(getPreferredLanguage(), 0);
+                if (pendingTranslateLanguage) {
+                    scheduleTranslationApply(pendingTranslateLanguage, 0);
+                }
                 return;
             }
 
@@ -364,9 +380,11 @@
                 'google_translate_element'
             );
 
-            window.setTimeout(function () {
-                scheduleTranslationApply(getPreferredLanguage(), 0);
-            }, 150);
+            if (pendingTranslateLanguage) {
+                window.setTimeout(function () {
+                    scheduleTranslationApply(pendingTranslateLanguage, 0);
+                }, 150);
+            }
         };
 
         // Apply preference as early as possible on every page.
@@ -459,7 +477,11 @@
             buttons.forEach(function (button) {
                 button.addEventListener('click', function () {
                     const selected = button.getAttribute('data-mobile-language-value') || defaultLanguage;
-                    setLanguage(selected, true);
+                    setLanguage(selected, true, true);
+                    const close = document.getElementById('drawerClose');
+                    if (close) {
+                        close.click();
+                    }
                 });
             });
         }
@@ -476,10 +498,9 @@
             }
             clearGoogleTranslateHashIfNeeded(preferredLanguage);
             if (hasExplicitSelection()) {
-                ensureGoogleTranslateScript();
-                window.setTimeout(function () {
-                    scheduleTranslationApply(preferredLanguage, 0);
-                }, 120);
+                if (preferredLanguage !== defaultLanguage) {
+                    requestTranslation(preferredLanguage);
+                }
             }
 
             const searchForm = document.querySelector('.public-header-search-form');
@@ -572,19 +593,6 @@
             });
         });
 
-        window.addEventListener('pageshow', function () {
-            const preferred = persistLanguagePreference(getPreferredLanguage());
-            if (hasExplicitSelection()) {
-                setGoogleTranslateCookie(preferred);
-            } else {
-                clearGoogleTranslateCookie();
-            }
-            clearGoogleTranslateHashIfNeeded(preferred);
-            syncLanguageUi(preferred);
-            if (hasExplicitSelection()) {
-                scheduleTranslationApply(preferred, 0);
-            }
-        });
     })();
 </script>
 
