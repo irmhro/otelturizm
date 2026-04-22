@@ -5,12 +5,12 @@ using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
 using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Anasayfa;
 using otelturizmnew.Models.Oteller;
+using otelturizmnew.Pricing;
 using otelturizmnew.Services.Abstractions;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text;
 
 namespace otelturizmnew.Services;
 
@@ -52,6 +52,9 @@ public class HotelService : IHotelService
 
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
+
+        const decimal homepageVatPercent = 10m;
+        const decimal homepageAccommodationPercent = 2m;
 
         const string hotelSql = """
             SELECT TOP (18)
@@ -206,6 +209,16 @@ public class HotelService : IHotelService
                 ? Math.Clamp((int)Math.Round(((originalPrice!.Value - discountedPrice!.Value) / originalPrice.Value) * 100m, MidpointRounding.AwayFromZero), 1, 95)
                 : 0;
 
+            decimal? guestStartingPrice = startingPrice.HasValue && startingPrice.Value > 0m
+                ? decimal.Round(InclusiveNightlyPricing.StoredNetToGuestDisplay(startingPrice.Value, homepageVatPercent, homepageAccommodationPercent), 0)
+                : null;
+            decimal? guestOriginalPrice = originalPrice.HasValue && originalPrice.Value > 0m
+                ? decimal.Round(InclusiveNightlyPricing.StoredNetToGuestDisplay(originalPrice.Value, homepageVatPercent, homepageAccommodationPercent), 0)
+                : null;
+            decimal? guestDiscountedPrice = discountedPrice.HasValue && discountedPrice.Value > 0m
+                ? decimal.Round(InclusiveNightlyPricing.StoredNetToGuestDisplay(discountedPrice.Value, homepageVatPercent, homepageAccommodationPercent), 0)
+                : null;
+
             byte? starCount = null;
             var starOrd = reader.GetOrdinal("yildiz_sayisi");
             if (!reader.IsDBNull(starOrd))
@@ -228,15 +241,15 @@ public class HotelService : IHotelService
                 Rating = rating,
                 RatingText = BuildRatingText(rating),
                 ReviewCount = reviewCount,
-                StartingPrice = startingPrice,
-                OriginalPrice = originalPrice,
-                DiscountedPrice = discountedPrice,
+                StartingPrice = guestStartingPrice,
+                OriginalPrice = guestOriginalPrice,
+                DiscountedPrice = guestDiscountedPrice,
                 DiscountPercent = discountPercent,
                 HasDiscount = hasDiscount,
-                PriceText = hasDiscount && discountedPrice.HasValue
-                    ? $"TRY {discountedPrice.Value:N0}"
-                    : startingPrice.HasValue ? $"TRY {startingPrice.Value:N0}" : "Teklif Al",
-                PriceNote = startingPrice.HasValue ? "Gecelik taban · vergi öncesi" : "Musait fiyat bilgisi bulunamadi",
+                PriceText = hasDiscount && guestDiscountedPrice.HasValue
+                    ? $"TRY {guestDiscountedPrice.Value:N0}"
+                    : guestStartingPrice.HasValue ? $"TRY {guestStartingPrice.Value:N0}" : "Teklif Al",
+                PriceNote = guestStartingPrice.HasValue ? "Gecelik taban · KDV dahil" : "Musait fiyat bilgisi bulunamadi",
                 ImageUrl = NormalizeImageUrl(imageUrl),
                 DetailSlug = BuildSlug(reader.GetString(reader.GetOrdinal("otel_adi")), reader.GetString(reader.GetOrdinal("otel_kodu"))),
                 Amenities = amenities,
