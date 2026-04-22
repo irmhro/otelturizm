@@ -2537,8 +2537,12 @@
     .detail-weather-cards,
     .similar-grid,
     .amenities-grid,
-    .gallery-side-grid {
+    /* keep gallery thumbs as 2x2; don't collapse to 1 column */
         grid-template-columns: 1fr;
+    }
+
+    .gallery-side-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .detail-actions {
