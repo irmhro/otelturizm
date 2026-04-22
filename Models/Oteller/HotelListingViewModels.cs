@@ -1,5 +1,7 @@
 using otelturizmnew.Models.Reservations;
 
+using otelturizmnew.Pricing;
+
 namespace otelturizmnew.Models.Oteller;
 
 public class HotelListingPageViewModel
@@ -108,6 +110,14 @@ public class HotelDetailPageViewModel
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
     public decimal LowestRoomPrice { get; set; }
+    /// <summary>Fiyat vitrininde kullanilan KDV orani (komisyon_vergiler).</summary>
+    public decimal TaxDisplayVatPercent { get; set; } = 10m;
+    /// <summary>Fiyat vitrininde kullanilan konaklama vergisi orani.</summary>
+    public decimal TaxDisplayAccommodationPercent { get; set; } = 2m;
+
+    public decimal GuestInclusiveNightlyFromStoredNet(decimal storedNet)
+        => InclusiveNightlyPricing.StoredNetToGuestDisplay(storedNet, TaxDisplayVatPercent, TaxDisplayAccommodationPercent);
+
     public string MainImageUrl { get; set; } = string.Empty;
     public bool IsFavorite { get; set; }
     public bool IsLoggedInUser { get; set; }

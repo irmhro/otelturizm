@@ -1551,20 +1551,40 @@
 }
 
 .booking-price-inclusive-hint {
-    margin: 8px 0 0;
+    margin: 10px 0 0;
     padding: 0;
-    font-size: 0.84rem;
-    font-weight: 700;
-    color: #047857;
-    letter-spacing: 0.01em;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #0f766e;
+    letter-spacing: 0.02em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.booking-price-inclusive-hint::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18);
 }
 
 .room-price-inclusive-label {
-    display: block;
-    margin-top: 8px;
-    font-size: 0.76rem;
-    font-weight: 700;
-    color: #047857;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #0f766e;
+    background: linear-gradient(180deg, rgba(20, 184, 166, 0.14), rgba(13, 148, 136, 0.08));
+    border: 1px solid rgba(13, 148, 136, 0.28);
 }
 
 .booking-price-badge {

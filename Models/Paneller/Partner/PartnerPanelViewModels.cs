@@ -100,6 +100,9 @@ public class PartnerReservationRowViewModel
     public string TotalText { get; set; } = string.Empty;
     public string CreatedText { get; set; } = string.Empty;
     public string? PaymentMethodLabel { get; set; }
+    /// <summary>Karma ödeme kalemleri özeti (kart / havale tutarları).</summary>
+    public string? PaymentMixSummary { get; set; }
+    public int PaymentLineCount { get; set; }
     public string? SourceLabel { get; set; }
     public string? GuestNote { get; set; }
     public string? RequestNote { get; set; }
@@ -347,6 +350,8 @@ public class PartnerRoomManagementPageViewModel
 public class PartnerRoomSummaryViewModel
 {
     public long RoomId { get; set; }
+    /// <summary>DB saklanan standart gece net tutari (vergisiz taban).</summary>
+    public decimal StandardNightlyStoredNet { get; set; }
     public string RoomName { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string CapacityText { get; set; } = string.Empty;

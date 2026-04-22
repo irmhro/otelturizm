@@ -10,6 +10,7 @@ using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.Partner;
+using otelturizmnew.Pricing;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -656,7 +657,8 @@ public class PartnerService : IPartnerService
         await connection.OpenAsync(cancellationToken);
 
         var context = await BuildContextAsync(connection, userId, hotelId, "Takvim ve Fiyatlar", "Gunluk fiyat, kampanya ve musaitlik kurallarini oda bazli takvim uzerinden yonetin.", "pricing", cancellationToken);
-        var rooms = await GetRoomSummariesAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
+        var inclusiveTax = await LoadInclusiveTaxPercentsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
+        var rooms = await GetRoomSummariesAsync(connection, context.SelectedHotel.HotelId, inclusiveTax, cancellationToken);
         var monthStart = ParseMonthStart(month);
         var monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
@@ -689,9 +691,9 @@ public class PartnerService : IPartnerService
             NextMonthKey = monthStart.AddMonths(1).ToString("yyyy-MM", CultureInfo.InvariantCulture),
             MonthOptions = BuildMonthOptions(monthStart),
             Rooms = rooms,
-            SummaryCards = BuildPricingSummaryCards(rooms, pricingEntries, selectedRoomId),
+            SummaryCards = BuildPricingSummaryCards(rooms, pricingEntries, selectedRoomId, inclusiveTax.VatPercent, inclusiveTax.AccommodationPercent),
             CalendarDays = selectedRoomId.HasValue
-                ? BuildPricingCalendarDays(rooms, pricingEntries, selectedRoomId.Value, monthStart)
+                ? BuildPricingCalendarDays(rooms, pricingEntries, selectedRoomId.Value, monthStart, inclusiveTax.VatPercent, inclusiveTax.AccommodationPercent)
                 : new List<PartnerPricingDayViewModel>(),
             AvailableCampaigns = campaigns,
             BulkForm = new PartnerBulkPricingUpdateRequest
@@ -794,6 +796,7 @@ public class PartnerService : IPartnerService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+        var inclusiveTax = await LoadInclusiveTaxPercentsAsync(connection, hotel.HotelId, cancellationToken);
         var campaign = await ResolveCampaignAsync(connection, request.CampaignId, cancellationToken);
         if (request.CampaignId.HasValue && request.CampaignId.Value > 0 && campaign is null)
         {
@@ -851,10 +854,29 @@ public class PartnerService : IPartnerService
                     var dateOnly = DateOnly.FromDateTime(date);
                     existingEntries.TryGetValue((room.RoomId, dateOnly), out var existing);
 
-                    var basePrice = request.BasePrice ?? existing?.BasePrice ?? room.BasePrice;
-                    var discountPrice = request.ClearDiscountPrice
-                        ? null
-                        : request.DiscountPrice ?? existing?.DiscountPrice;
+                    decimal basePrice;
+                    if (request.BasePrice.HasValue)
+                    {
+                        basePrice = InclusiveNightlyPricing.PartnerGrossEntryToStoredNet(request.BasePrice.Value, inclusiveTax.VatPercent, inclusiveTax.AccommodationPercent);
+                    }
+                    else
+                    {
+                        basePrice = existing?.BasePrice ?? room.BasePrice;
+                    }
+
+                    decimal? discountPrice;
+                    if (request.ClearDiscountPrice)
+                    {
+                        discountPrice = null;
+                    }
+                    else if (request.DiscountPrice.HasValue)
+                    {
+                        discountPrice = InclusiveNightlyPricing.PartnerGrossEntryToStoredNet(request.DiscountPrice.Value, inclusiveTax.VatPercent, inclusiveTax.AccommodationPercent);
+                    }
+                    else
+                    {
+                        discountPrice = existing?.DiscountPrice;
+                    }
                     var totalRooms = request.TotalRooms ?? existing?.TotalRooms ?? room.TotalRooms;
                     var minStay = request.MinStay ?? existing?.MinStay ?? (byte)1;
                     var maxStay = request.MaxStay ?? existing?.MaxStay ?? (short)30;
@@ -1097,7 +1119,8 @@ public class PartnerService : IPartnerService
         await connection.OpenAsync(cancellationToken);
 
         var context = await BuildContextAsync(connection, userId, hotelId, "Oda Yonetimi", "Oda tiplerini, kapasiteyi, gorselleri ve baz fiyatlari yonetin.", "rooms", cancellationToken);
-        var rooms = await GetRoomSummariesAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
+        var inclusiveTax = await LoadInclusiveTaxPercentsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
+        var rooms = await GetRoomSummariesAsync(connection, context.SelectedHotel.HotelId, inclusiveTax, cancellationToken);
         var selectedRoomId = roomId.HasValue && rooms.Any(item => item.RoomId == roomId.Value)
             ? roomId.Value
             : rooms.FirstOrDefault()?.RoomId;
@@ -1108,7 +1131,7 @@ public class PartnerService : IPartnerService
             SelectedHotelId = context.SelectedHotel.HotelId,
             SelectedRoomId = selectedRoomId,
             Rooms = rooms,
-            InventoryRows = await LoadRoomInventoryRowsAsync(connection, context.SelectedHotel.HotelId, cancellationToken),
+            InventoryRows = await LoadRoomInventoryRowsAsync(connection, context.SelectedHotel.HotelId, inclusiveTax, cancellationToken),
             SelectedRoomPhotos = selectedRoomId.HasValue
                 ? await LoadRoomPhotosAsync(connection, context.SelectedHotel.HotelId, selectedRoomId.Value, cancellationToken)
                 : new List<PartnerRoomPhotoCardViewModel>(),
@@ -1149,6 +1172,8 @@ public class PartnerService : IPartnerService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+        var inclusiveTax = await LoadInclusiveTaxPercentsAsync(connection, request.HotelId, cancellationToken);
+        var storedNetBasePrice = InclusiveNightlyPricing.PartnerGrossEntryToStoredNet(request.BasePrice, inclusiveTax.VatPercent, inclusiveTax.AccommodationPercent);
 
         var featuresJson = string.IsNullOrWhiteSpace(request.RoomFeaturesText)
             ? null
@@ -1174,7 +1199,7 @@ public class PartnerService : IPartnerService
                 WHERE id = @roomId AND otel_id = @hotelId;";
 
             await using var updateCommand = new SqlCommand(updateSql, connection);
-            BindRoomCommand(updateCommand, request, hotel, featuresJson);
+            BindRoomCommand(updateCommand, request, hotel, featuresJson, storedNetBasePrice);
             updateCommand.Parameters.AddWithValue("@roomId", request.RoomId.Value);
             await updateCommand.ExecuteNonQueryAsync(cancellationToken);
             await SyncRoomFeatureRelationsAsync(connection, request.RoomId.Value, request.RoomFeaturesText, cancellationToken);
@@ -1190,7 +1215,7 @@ public class PartnerService : IPartnerService
             SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
         await using var insertCommand = new SqlCommand(insertSql, connection);
-        BindRoomCommand(insertCommand, request, hotel, featuresJson);
+        BindRoomCommand(insertCommand, request, hotel, featuresJson, storedNetBasePrice);
         insertCommand.Parameters.AddWithValue("@roomCode", BuildRoomCode(hotel.HotelId));
         var createdRoomIdRaw = await insertCommand.ExecuteScalarAsync(cancellationToken);
         var createdRoomId = Convert.ToInt64(createdRoomIdRaw ?? 0L, CultureInfo.InvariantCulture);
@@ -3056,7 +3081,40 @@ public class PartnerService : IPartnerService
         return hotel;
     }
 
-    private async Task<List<PartnerRoomSummaryViewModel>> GetRoomSummariesAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private readonly record struct InclusiveTaxPercents(decimal VatPercent, decimal AccommodationPercent);
+
+    private async Task<InclusiveTaxPercents> LoadInclusiveTaxPercentsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        if (!await TableExistsAsync(connection, "komisyon_vergiler", cancellationToken))
+        {
+            return new InclusiveTaxPercents(10m, 2m);
+        }
+
+        const string sql = @"
+            SELECT TOP (1)
+                COALESCE(kv.kdv_orani, 10),
+                COALESCE(kv.konaklama_vergisi_orani, 2)
+            FROM komisyon_vergiler kv
+            WHERE kv.otel_id = @hotelId
+              AND kv.aktif_mi = 1
+              AND kv.baslangic_tarihi <= @effectiveDate
+              AND (kv.bitis_tarihi IS NULL OR kv.bitis_tarihi >= @effectiveDate)
+            ORDER BY kv.baslangic_tarihi DESC, kv.id DESC;";
+
+        var effectiveDate = DateOnly.FromDateTime(DateTime.Today).ToDateTime(TimeOnly.MinValue);
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        command.Parameters.AddWithValue("@effectiveDate", effectiveDate);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            return new InclusiveTaxPercents(reader.GetDecimal(0), reader.GetDecimal(1));
+        }
+
+        return new InclusiveTaxPercents(10m, 2m);
+    }
+
+    private async Task<List<PartnerRoomSummaryViewModel>> GetRoomSummariesAsync(SqlConnection connection, long hotelId, InclusiveTaxPercents tax, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT ot.id,
@@ -3084,16 +3142,20 @@ public class PartnerService : IPartnerService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            var discountPrice = reader.IsDBNull(9) ? (decimal?)null : reader.GetDecimal(9);
+            var storedNet = SafeDecimal(reader, 6);
+            var discountNet = reader.IsDBNull(9) ? (decimal?)null : reader.GetDecimal(9);
             rooms.Add(new PartnerRoomSummaryViewModel
             {
                 RoomId = reader.GetInt64(0),
+                StandardNightlyStoredNet = storedNet,
                 RoomName = reader.GetString(1),
                 Category = reader.GetString(2),
                 CapacityText = $"{SafeInt(reader, 3)} yetiskin / {SafeInt(reader, 4)} cocuk",
                 StockText = $"{SafeInt(reader, 5)} oda",
-                BasePriceText = FormatMoney(SafeDecimal(reader, 6)),
-                DiscountPriceText = discountPrice.HasValue ? FormatMoney(discountPrice.Value) : "-",
+                BasePriceText = FormatMoney(InclusiveNightlyPricing.StoredNetToPartnerDisplay(storedNet, tax.VatPercent, tax.AccommodationPercent)),
+                DiscountPriceText = discountNet.HasValue
+                    ? FormatMoney(InclusiveNightlyPricing.StoredNetToPartnerDisplay(discountNet.Value, tax.VatPercent, tax.AccommodationPercent))
+                    : "-",
                 CoverPhotoUrl = reader.IsDBNull(7) ? null : reader.GetString(7),
                 IsActive = SafeBool(reader, 8)
             });
@@ -3209,7 +3271,9 @@ public class PartnerService : IPartnerService
     private static List<PartnerStatCardViewModel> BuildPricingSummaryCards(
         IReadOnlyCollection<PartnerRoomSummaryViewModel> rooms,
         IReadOnlyDictionary<(long RoomId, DateOnly Date), PricingCalendarEntry> pricingEntries,
-        long? selectedRoomId)
+        long? selectedRoomId,
+        decimal vatPercent,
+        decimal accommodationPercent)
     {
         var filteredEntries = selectedRoomId.HasValue
             ? pricingEntries.Values.Where(item => item.RoomId == selectedRoomId.Value).ToList()
@@ -3218,18 +3282,28 @@ public class PartnerService : IPartnerService
         var activeRoomCount = rooms.Count(static item => item.IsActive);
         var campaignDayCount = filteredEntries.Count(static item => item.DiscountPrice.HasValue && item.DiscountPrice.Value > 0m && item.DiscountPrice.Value < item.BasePrice);
         var closedDayCount = filteredEntries.Count(static item => item.IsClosed);
-        var averagePrice = filteredEntries.Count > 0
-            ? filteredEntries.Average(static item => item.DiscountPrice ?? item.BasePrice)
-            : rooms.FirstOrDefault(item => !selectedRoomId.HasValue || item.RoomId == selectedRoomId.Value) is { } selectedRoom
-                ? ParseMoney(selectedRoom.BasePriceText)
-                : 0m;
+        decimal averageNet;
+        if (filteredEntries.Count > 0)
+        {
+            averageNet = filteredEntries.Average(static item => item.DiscountPrice ?? item.BasePrice);
+        }
+        else if (rooms.FirstOrDefault(item => !selectedRoomId.HasValue || item.RoomId == selectedRoomId.Value) is { } selectedRoom)
+        {
+            averageNet = selectedRoom.StandardNightlyStoredNet;
+        }
+        else
+        {
+            averageNet = 0m;
+        }
+
+        var averageDisplay = InclusiveNightlyPricing.StoredNetToPartnerDisplay(averageNet, vatPercent, accommodationPercent);
 
         return new List<PartnerStatCardViewModel>
         {
             new() { Label = "Aktif Oda Tipi", Value = activeRoomCount.ToString(CultureInfo.InvariantCulture), Description = "Takvimde yonetilen aktif oda tipleri", IconClass = "fa-bed", ToneClass = "info" },
             new() { Label = "Kampanyali Gun", Value = campaignDayCount.ToString(CultureInfo.InvariantCulture), Description = "Indirimli fiyat tanimlanmis gun sayisi", IconClass = "fa-tags", ToneClass = "success" },
             new() { Label = "Kapali Gun", Value = closedDayCount.ToString(CultureInfo.InvariantCulture), Description = "Satisa kapatilan takvim gunleri", IconClass = "fa-lock", ToneClass = "danger" },
-            new() { Label = "Ortalama Fiyat", Value = FormatMoney(averagePrice), Description = "Secili ay icin efektif satis fiyati ortalamasi", IconClass = "fa-money-bill-wave", ToneClass = "warning" }
+            new() { Label = "Ortalama Fiyat", Value = FormatMoney(averageDisplay), Description = "Secili ay icin vergi dahil efektif gece fiyati ortalamasi", IconClass = "fa-money-bill-wave", ToneClass = "warning" }
         };
     }
 
@@ -3237,7 +3311,9 @@ public class PartnerService : IPartnerService
         IReadOnlyCollection<PartnerRoomSummaryViewModel> rooms,
         IReadOnlyDictionary<(long RoomId, DateOnly Date), PricingCalendarEntry> pricingEntries,
         long roomId,
-        DateOnly monthStart)
+        DateOnly monthStart,
+        decimal vatPercent,
+        decimal accommodationPercent)
     {
         var room = rooms.FirstOrDefault(item => item.RoomId == roomId);
         if (room is null)
@@ -3245,7 +3321,7 @@ public class PartnerService : IPartnerService
             return new List<PartnerPricingDayViewModel>();
         }
 
-        var defaultBasePrice = ParseMoney(room.BasePriceText);
+        var defaultBaseNet = room.StandardNightlyStoredNet;
         var defaultStock = ParseStock(room.StockText);
         var culture = CultureInfo.GetCultureInfo("tr-TR");
         var monthEnd = monthStart.AddMonths(1).AddDays(-1);
@@ -3259,26 +3335,31 @@ public class PartnerService : IPartnerService
         for (var date = calendarStart; date <= calendarEnd; date = date.AddDays(1))
         {
             pricingEntries.TryGetValue((roomId, date), out var entry);
-            var basePrice = entry?.BasePrice ?? defaultBasePrice;
-            var discountPrice = entry?.DiscountPrice;
+            var baseNet = entry?.BasePrice ?? defaultBaseNet;
+            var discountNet = entry?.DiscountPrice;
             var totalRooms = entry?.TotalRooms ?? defaultStock;
             var soldRooms = entry?.SoldRooms ?? 0;
             var blockedRooms = entry?.BlockedRooms ?? 0;
             var availableRooms = Math.Max(0, totalRooms - soldRooms - blockedRooms);
             var isClosed = entry?.IsClosed ?? false;
-            var effectivePrice = discountPrice ?? basePrice;
-            var hasDiscount = discountPrice.HasValue && discountPrice.Value > 0m && discountPrice.Value < basePrice;
+            var effectiveNet = discountNet ?? baseNet;
+            var hasDiscount = discountNet.HasValue && discountNet.Value > 0m && discountNet.Value < baseNet;
+            var effectiveDisplay = InclusiveNightlyPricing.StoredNetToPartnerDisplay(effectiveNet, vatPercent, accommodationPercent);
+            var baseDisplay = InclusiveNightlyPricing.StoredNetToPartnerDisplay(baseNet, vatPercent, accommodationPercent);
+            var discountDisplay = discountNet.HasValue
+                ? InclusiveNightlyPricing.StoredNetToPartnerDisplay(discountNet.Value, vatPercent, accommodationPercent)
+                : (decimal?)null;
 
             items.Add(new PartnerPricingDayViewModel
             {
                 Date = date,
                 DayLabel = date.Day.ToString("00", CultureInfo.InvariantCulture),
                 WeekdayLabel = date.ToDateTime(TimeOnly.MinValue).ToString("ddd", culture),
-                PriceText = FormatMoney(effectivePrice),
-                BasePriceText = FormatMoney(basePrice),
-                DiscountPriceText = hasDiscount ? FormatMoney(discountPrice!.Value) : "-",
-                BasePriceAmount = basePrice,
-                DiscountPriceAmount = discountPrice,
+                PriceText = FormatMoney(effectiveDisplay),
+                BasePriceText = FormatMoney(baseDisplay),
+                DiscountPriceText = hasDiscount && discountDisplay.HasValue ? FormatMoney(discountDisplay.Value) : "-",
+                BasePriceAmount = baseDisplay,
+                DiscountPriceAmount = discountDisplay,
                 TotalRooms = Convert.ToInt16(totalRooms, CultureInfo.InvariantCulture),
                 SoldRooms = soldRooms,
                 BlockedRooms = blockedRooms,
@@ -3693,7 +3774,7 @@ public class PartnerService : IPartnerService
         return items;
     }
 
-    private async Task<List<PartnerRoomInventoryRowViewModel>> LoadRoomInventoryRowsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    private async Task<List<PartnerRoomInventoryRowViewModel>> LoadRoomInventoryRowsAsync(SqlConnection connection, long hotelId, InclusiveTaxPercents tax, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT
@@ -3731,8 +3812,8 @@ public class PartnerService : IPartnerService
                 TotalRooms = Convert.ToInt16(reader.GetValue(2), CultureInfo.InvariantCulture),
                 SellableRooms = Convert.ToInt16(reader.GetValue(3), CultureInfo.InvariantCulture),
                 MaintenanceRooms = Convert.ToInt16(reader.GetValue(4), CultureInfo.InvariantCulture),
-                MinPriceText = FormatMoney(SafeDecimal(reader, 5)),
-                MaxPriceText = FormatMoney(SafeDecimal(reader, 6)),
+                MinPriceText = FormatMoney(InclusiveNightlyPricing.StoredNetToPartnerDisplay(SafeDecimal(reader, 5), tax.VatPercent, tax.AccommodationPercent)),
+                MaxPriceText = FormatMoney(InclusiveNightlyPricing.StoredNetToPartnerDisplay(SafeDecimal(reader, 6), tax.VatPercent, tax.AccommodationPercent)),
                 IsActive = SafeBool(reader, 7)
             });
         }
@@ -3742,6 +3823,8 @@ public class PartnerService : IPartnerService
 
     private async Task<PartnerRoomUpsertRequest> LoadRoomFormAsync(SqlConnection connection, long hotelId, long roomId, CancellationToken cancellationToken)
     {
+        var inclusiveTax = await LoadInclusiveTaxPercentsAsync(connection, hotelId, cancellationToken);
+
         const string sql = @"
             SELECT id, oda_adi, oda_kategorisi, yatak_tipi, manzara_tipi, oda_metrekare,
                    maksimum_yetiskin_sayisi, maksimum_cocuk_sayisi, bebek_ucretsiz_mi,
@@ -3766,7 +3849,10 @@ public class PartnerService : IPartnerService
             model.MaxChildren = reader.IsDBNull(7) ? (byte)0 : SafeByte(reader, 7);
             model.MaxBabies = SafeBool(reader, 8) ? (byte)1 : (byte)0;
             model.TotalRooms = reader.IsDBNull(9) ? (short)1 : SafeShort(reader, 9);
-            model.BasePrice = reader.IsDBNull(10) ? 0m : reader.GetDecimal(10);
+            var storedNet = reader.IsDBNull(10) ? 0m : reader.GetDecimal(10);
+            model.BasePrice = storedNet <= 0m
+                ? 0m
+                : InclusiveNightlyPricing.StoredNetToPartnerDisplay(storedNet, inclusiveTax.VatPercent, inclusiveTax.AccommodationPercent);
             model.CoverPhotoPath = reader.IsDBNull(11) ? null : reader.GetString(11);
             model.IsActive = SafeBool(reader, 13);
 
@@ -4052,7 +4138,7 @@ public class PartnerService : IPartnerService
         return items;
     }
 
-    private static void BindRoomCommand(SqlCommand command, PartnerRoomUpsertRequest request, PartnerHotelContext hotel, string? featuresJson)
+    private static void BindRoomCommand(SqlCommand command, PartnerRoomUpsertRequest request, PartnerHotelContext hotel, string? featuresJson, decimal storedNetBasePrice)
     {
         var safeMaxAdults = (byte)Math.Max(1, (int)request.MaxAdults);
         var safeMaxChildren = request.MaxChildren;
@@ -4069,7 +4155,7 @@ public class PartnerService : IPartnerService
         command.Parameters.AddWithValue("@bedType", (object?)request.BedType ?? DBNull.Value);
         command.Parameters.AddWithValue("@roomSize", request.RoomSize.HasValue ? request.RoomSize.Value : DBNull.Value);
         command.Parameters.AddWithValue("@viewType", (object?)request.ViewType ?? DBNull.Value);
-        command.Parameters.AddWithValue("@basePrice", request.BasePrice);
+        command.Parameters.AddWithValue("@basePrice", storedNetBasePrice);
         command.Parameters.AddWithValue("@totalRooms", request.TotalRooms);
         command.Parameters.AddWithValue("@coverPhoto", (object?)request.CoverPhotoPath ?? DBNull.Value);
         command.Parameters.AddWithValue("@features", string.IsNullOrWhiteSpace(featuresJson) ? DBNull.Value : featuresJson);
@@ -4117,6 +4203,13 @@ public class PartnerService : IPartnerService
                     @paymentMethodFilter = 'all'
                     OR (@paymentMethodFilter = 'card' AND COALESCE(r.odeme_yontemi, '') IN ('Kredi Kartı','Sanal POS'))
                     OR (@paymentMethodFilter = 'cash' AND COALESCE(r.odeme_yontemi, '') IN ('Kapıda Ödeme','Nakit'))
+                    OR (@paymentMethodFilter = 'transfer' AND (
+                            COALESCE(r.odeme_yontemi, '') IN ('Havale/EFT','Banka Havalesi','Banka Havalesi/EFT')
+                            OR EXISTS (
+                                SELECT 1 FROM dbo.rezervasyon_odeme_kalemleri k
+                                INNER JOIN dbo.odeme_yontemi_tanimlari oy ON oy.id = k.odeme_yontemi_id AND oy.kod IN (N'HAVALE_EFT', N'BANKA_HAVALESI')
+                                WHERE k.rezervasyon_id = r.id)))
+                    OR (@paymentMethodFilter = 'mixed' AND COALESCE(r.odeme_yontemi, '') = N'Karma Ödeme')
                   );";
         var totalCount = 0;
         await using (var countCommand = new SqlCommand(countSql, connection))
@@ -4159,7 +4252,18 @@ public class PartnerService : IPartnerService
                 COALESCE(r.cocuk_sayisi, 0) AS cocuk_sayisi,
                 DATEDIFF(DAY, r.giris_tarihi, r.cikis_tarihi) AS gece_sayisi,
                 COALESCE(r.otel_onay_durumu, 'Beklemede') AS otel_onay_durumu,
-                r.kullanici_id
+                r.kullanici_id,
+                (
+                    SELECT COUNT(*)
+                    FROM dbo.rezervasyon_odeme_kalemleri k
+                    WHERE k.rezervasyon_id = r.id
+                ) AS odeme_kalem_sayisi,
+                (
+                    SELECT STRING_AGG(CAST(y.ad AS nvarchar(max)) + N': ' + CAST(k.tutar AS nvarchar(40)) + N' TL', N' | ')
+                    FROM dbo.rezervasyon_odeme_kalemleri k
+                    INNER JOIN dbo.odeme_yontemi_tanimlari y ON y.id = k.odeme_yontemi_id
+                    WHERE k.rezervasyon_id = r.id
+                ) AS odeme_kalem_ozet
             FROM rezervasyonlar r
             LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
             WHERE r.otel_id = @hotelId
@@ -4175,6 +4279,13 @@ public class PartnerService : IPartnerService
                     @paymentMethodFilter = 'all'
                     OR (@paymentMethodFilter = 'card' AND COALESCE(r.odeme_yontemi, '') IN ('Kredi Kartı','Sanal POS'))
                     OR (@paymentMethodFilter = 'cash' AND COALESCE(r.odeme_yontemi, '') IN ('Kapıda Ödeme','Nakit'))
+                    OR (@paymentMethodFilter = 'transfer' AND (
+                            COALESCE(r.odeme_yontemi, '') IN ('Havale/EFT','Banka Havalesi','Banka Havalesi/EFT')
+                            OR EXISTS (
+                                SELECT 1 FROM dbo.rezervasyon_odeme_kalemleri k
+                                INNER JOIN dbo.odeme_yontemi_tanimlari oy ON oy.id = k.odeme_yontemi_id AND oy.kod IN (N'HAVALE_EFT', N'BANKA_HAVALESI')
+                                WHERE k.rezervasyon_id = r.id)))
+                    OR (@paymentMethodFilter = 'mixed' AND COALESCE(r.odeme_yontemi, '') = N'Karma Ödeme')
                   )
             ORDER BY r.olusturulma_tarihi DESC, r.id DESC
             OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;";
@@ -4228,7 +4339,9 @@ public class PartnerService : IPartnerService
                 NightCount = reader.IsDBNull(20) ? (short)0 : Convert.ToInt16(reader.GetValue(20), CultureInfo.InvariantCulture),
                 CanApprove = canApprove,
                 CanReject = canReject,
-                CanMessageGuest = !reader.IsDBNull(22) && Convert.ToInt64(reader.GetValue(22), CultureInfo.InvariantCulture) > 0
+                CanMessageGuest = !reader.IsDBNull(22) && Convert.ToInt64(reader.GetValue(22), CultureInfo.InvariantCulture) > 0,
+                PaymentLineCount = reader.IsDBNull(23) ? 0 : Convert.ToInt32(reader.GetValue(23), CultureInfo.InvariantCulture),
+                PaymentMixSummary = reader.IsDBNull(24) ? null : reader.GetString(24)
             });
         }
 
@@ -4450,6 +4563,8 @@ public class PartnerService : IPartnerService
         {
             "card" => "card",
             "cash" => "cash",
+            "transfer" => "transfer",
+            "mixed" => "mixed",
             _ => "all"
         };
     }

@@ -228,12 +228,12 @@
                 <input type="date" name="DateTo" value="@Model.BulkForm.DateTo.ToString("yyyy-MM-dd")" />
             </label>
             <label>
-                <span>Normal fiyat</span>
-                <input type="number" step="0.01" name="BasePrice" value="@(Model.BulkForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Bos birak: mevcut fiyat kalsin" />
+                <span>Normal fiyat (vergi dahil)</span>
+                <input type="number" step="0.01" name="BasePrice" value="@(Model.BulkForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Bos birak: mevcut fiyat kalsin" title="KDV ve konaklama vergisi dahil gece tutari" />
             </label>
             <label>
-                <span>Kampanyali fiyat</span>
-                <input type="number" step="0.01" name="DiscountPrice" value="@(Model.BulkForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Opsiyonel" />
+                <span>Kampanyali fiyat (vergi dahil)</span>
+                <input type="number" step="0.01" name="DiscountPrice" value="@(Model.BulkForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Opsiyonel" title="KDV ve konaklama vergisi dahil" />
             </label>
             <label class="partner-inline-toggle">
                 <input type="checkbox" name="ClearDiscountPrice" value="true" />
@@ -312,12 +312,12 @@
                 <input type="text" id="dailyEditorDateDisplay" value="@Model.DailyForm.Date.ToString("dd.MM.yyyy")" readonly />
             </label>
             <label>
-                <span>Normal fiyat</span>
-                <input type="number" step="0.01" name="BasePrice" id="dailyEditorBasePrice" value="@(Model.DailyForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+                <span>Normal fiyat (vergi dahil)</span>
+                <input type="number" step="0.01" name="BasePrice" id="dailyEditorBasePrice" value="@(Model.DailyForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" title="KDV ve konaklama vergisi dahil gece tutari" />
             </label>
             <label>
-                <span>Kampanyali fiyat</span>
-                <input type="number" step="0.01" name="DiscountPrice" id="dailyEditorDiscountPrice" value="@(Model.DailyForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+                <span>Kampanyali fiyat (vergi dahil)</span>
+                <input type="number" step="0.01" name="DiscountPrice" id="dailyEditorDiscountPrice" value="@(Model.DailyForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" title="KDV ve konaklama vergisi dahil" />
             </label>
             <label class="partner-inline-toggle">
                 <input type="checkbox" name="ClearDiscountPrice" value="true" id="dailyEditorClearDiscount" />

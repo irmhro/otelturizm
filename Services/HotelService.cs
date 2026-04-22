@@ -1176,6 +1176,10 @@ public class HotelService : IHotelService
             }
         }
 
+        var hotelTaxDisplay = await LoadHotelDisplayTaxPercentsAsync(connection, model.Id, cancellationToken);
+        model.TaxDisplayVatPercent = hotelTaxDisplay.VatPercent;
+        model.TaxDisplayAccommodationPercent = hotelTaxDisplay.AccommodationPercent;
+
         if (model.Rooms.Count > 0)
         {
             const string roomGallerySql = """
@@ -2092,6 +2096,54 @@ public class HotelService : IHotelService
         }
 
         return string.Concat(parts.Take(2).Select(x => char.ToUpperInvariant(x[0])));
+    }
+
+    private readonly record struct HotelDisplayTaxPercents(decimal VatPercent, decimal AccommodationPercent);
+
+    private static async Task<bool> HotelTableExistsAsync(SqlConnection connection, string tableName, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT COUNT(*)
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = DB_NAME()
+              AND TABLE_NAME = @tableName;
+            """;
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;
+    }
+
+    private static async Task<HotelDisplayTaxPercents> LoadHotelDisplayTaxPercentsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        if (!await HotelTableExistsAsync(connection, "komisyon_vergiler", cancellationToken))
+        {
+            return new HotelDisplayTaxPercents(10m, 2m);
+        }
+
+        const string sql = """
+            SELECT TOP (1)
+                COALESCE(kv.kdv_orani, 10),
+                COALESCE(kv.konaklama_vergisi_orani, 2)
+            FROM komisyon_vergiler kv
+            WHERE kv.otel_id = @hotelId
+              AND kv.aktif_mi = 1
+              AND kv.baslangic_tarihi <= @effectiveDate
+              AND (kv.bitis_tarihi IS NULL OR kv.bitis_tarihi >= @effectiveDate)
+            ORDER BY kv.baslangic_tarihi DESC, kv.id DESC;
+            """;
+
+        var effectiveDate = DateOnly.FromDateTime(DateTime.Today).ToDateTime(TimeOnly.MinValue);
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        command.Parameters.AddWithValue("@effectiveDate", effectiveDate);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            return new HotelDisplayTaxPercents(reader.GetDecimal(0), reader.GetDecimal(1));
+        }
+
+        return new HotelDisplayTaxPercents(10m, 2m);
     }
 }
 

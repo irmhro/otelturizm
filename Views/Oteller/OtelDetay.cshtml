@@ -69,8 +69,10 @@
     var initialNightCount = Math.Max(1, reservationForm.CheckOutDate.DayNumber - reservationForm.CheckInDate.DayNumber);
     var initialRooms = Math.Max(1, reservationForm.RoomCount);
     var initialSubtotal = roomPriceSeed * initialNightCount * initialRooms;
-    var initialVat = Math.Round(initialSubtotal * 0.10m, 0);
-    var initialAccommodationTax = Math.Round(initialSubtotal * 0.02m, 0);
+    var vatRateFrac = Model.TaxDisplayVatPercent / 100m;
+    var accomRateFrac = Model.TaxDisplayAccommodationPercent / 100m;
+    var initialVat = Math.Round(initialSubtotal * vatRateFrac, 0);
+    var initialAccommodationTax = Math.Round(initialSubtotal * accomRateFrac, 0);
     var initialTax = initialVat + initialAccommodationTax;
     var initialTotal = initialSubtotal + initialTax;
     var initialInclusiveNightly = initialNightCount > 0 && initialRooms > 0
@@ -462,10 +464,10 @@
                             </div>
                         </div>
                         <div class="room-price-box">
-                            <strong>@(room.Price > 0m ? $"₺{Math.Round(room.Price * 1.12m, 0):N0}" : "Fiyat Yok")</strong>
+                            <strong>@(room.Price > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(room.Price):N0}" : "Fiyat Yok")</strong>
                             @if (room.Price > 0m)
                             {
-                                <span class="room-price-inclusive-label">KDV dahil</span>
+                                <span class="room-price-inclusive-label" title="KDV ve konaklama vergisi dahil gece fiyatı">Vergi dahil</span>
                             }
                             else
                             {
@@ -608,10 +610,10 @@
         <div class="booking-card">
             <div class="booking-price-head">
                 <div class="booking-price-main">
-                    <strong id="bookingPrice">@(initialInclusiveNightly > 0m ? $"₺{initialInclusiveNightly:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Math.Round(Model.LowestRoomPrice * 1.12m, 0):N0}" : "Fiyat Yok"))</strong>
+                    <strong id="bookingPrice">@(initialInclusiveNightly > 0m ? $"₺{initialInclusiveNightly:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
                     <span class="booking-price-unit">/ gece</span>
                 </div>
-                <p class="booking-price-inclusive-hint" id="bookingPriceHint">KDV dahil</p>
+                <p class="booking-price-inclusive-hint" id="bookingPriceHint" title="KDV ve konaklama vergisi dahil">Vergi dahil</p>
             </div>
 
             <form class="booking-form" id="bookingForm" method="post" action="/oteller/@Model.Slug/rezervasyon" enctype="multipart/form-data">
@@ -738,8 +740,8 @@
 
             <div class="booking-quote-notice" id="bookingQuoteNotice" hidden></div>
             <div class="price-breakdown" id="priceBreakdown">
-                <div class="price-row price-row-tax"><span>KDV <small class="tax-rate-hint">%10</small></span><strong>₺@initialVat.ToString("N0")</strong></div>
-                <div class="price-row price-row-tax"><span>Konaklama Vergisi <small class="tax-rate-hint">%2</small></span><strong>₺@initialAccommodationTax.ToString("N0")</strong></div>
+                <div class="price-row price-row-tax"><span>KDV <small class="tax-rate-hint">%@Model.TaxDisplayVatPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)</small></span><strong>₺@initialVat.ToString("N0")</strong></div>
+                <div class="price-row price-row-tax"><span>Konaklama Vergisi <small class="tax-rate-hint">%@Model.TaxDisplayAccommodationPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)</small></span><strong>₺@initialAccommodationTax.ToString("N0")</strong></div>
                 <div class="price-row price-row-tax"><span>Vergi ve Harçlar</span><strong>₺@initialTax.ToString("N0")</strong></div>
                 <div class="price-row total"><span>Toplam</span><strong>₺@initialTotal.ToString("N0")</strong></div>
             </div>
@@ -1446,6 +1448,11 @@
                 return '₺' + Number(value || 0).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
             }
 
+            const detailVatFraction = @((Model.TaxDisplayVatPercent / 100m).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            const detailAccommodationFraction = @((Model.TaxDisplayAccommodationPercent / 100m).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            const detailVatPctLabel = '@Model.TaxDisplayVatPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)';
+            const detailAccomPctLabel = '@Model.TaxDisplayAccommodationPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)';
+
             function openModal(modal) {
                 if (!modal || !actionBackdrop) {
                     return;
@@ -1644,8 +1651,8 @@
                     const diffMs = new Date(checkOut).getTime() - new Date(checkIn).getTime();
                     const nights = Math.max(1, Math.round(diffMs / 86400000));
                     const subtotal = fallbackNetNightly * nights * roomCount;
-                    const vat = Math.round(subtotal * 0.10);
-                    const accommodationTax = Math.round(subtotal * 0.02);
+                    const vat = Math.round(subtotal * detailVatFraction);
+                    const accommodationTax = Math.round(subtotal * detailAccommodationFraction);
                     const tax = vat + accommodationTax;
                     const total = subtotal + tax;
                     const inclNightly = total / nights / Math.max(1, roomCount);
@@ -1653,8 +1660,8 @@
                     setQuoteNotice('Günlük fiyat dökümü alınamadı, varsayılan oda fiyatı gösteriliyor.', 'info');
                     bookingForm?.querySelector('.reserve-btn')?.removeAttribute('disabled');
                     breakdown.innerHTML =
-                        '<div class="price-row price-row-tax"><span>KDV <small class="tax-rate-hint">%10</small></span><strong>' + formatMoney(vat) + '</strong></div>' +
-                        '<div class="price-row price-row-tax"><span>Konaklama Vergisi <small class="tax-rate-hint">%2</small></span><strong>' + formatMoney(accommodationTax) + '</strong></div>' +
+                        '<div class="price-row price-row-tax"><span>KDV <small class="tax-rate-hint">%' + detailVatPctLabel + '</small></span><strong>' + formatMoney(vat) + '</strong></div>' +
+                        '<div class="price-row price-row-tax"><span>Konaklama Vergisi <small class="tax-rate-hint">%' + detailAccomPctLabel + '</small></span><strong>' + formatMoney(accommodationTax) + '</strong></div>' +
                         '<div class="price-row price-row-tax"><span>Vergi ve Harçlar</span><strong>' + formatMoney(tax) + '</strong></div>' +
                         '<div class="price-row total"><span>Toplam</span><strong>' + formatMoney(total) + '</strong></div>';
                 }

@@ -182,8 +182,9 @@
                 </select>
             </label>
             <label>
-                <span>Taban fiyat</span>
-                <input type="number" step="0.01" name="BasePrice" value="@Model.Form.BasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)" min="0.01" required />
+                <span>Gece fiyatı (vergi dahil)</span>
+                <input type="number" step="0.01" name="BasePrice" value="@Model.Form.BasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)" min="0.01" required aria-describedby="basePriceHelp" />
+                <small id="basePriceHelp" class="partner-field-hint">Misafirin göreceği tutardır; KDV ve konaklama vergisi bu tutarın içindedir. Sistem kayıtta net oda tutarını saklar.</small>
             </label>
             <label>
                 <span>Toplam oda</span>
