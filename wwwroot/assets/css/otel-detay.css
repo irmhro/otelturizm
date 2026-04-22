@@ -1417,6 +1417,123 @@
     gap: 14px;
 }
 
+.review-body {
+    display: grid;
+    gap: 10px;
+}
+
+.review-text {
+    margin: 0;
+    color: #334155;
+    line-height: 1.55;
+}
+
+.review-more {
+    justify-self: flex-start;
+    border: 0;
+    background: rgba(29, 78, 216, 0.1);
+    color: #1d4ed8;
+    font-weight: 800;
+    padding: 8px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.review-more:hover {
+    background: rgba(29, 78, 216, 0.16);
+}
+
+@media (max-width: 900px) {
+    .review-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+}
+
+.review-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1900;
+    display: none;
+}
+
+.review-modal.is-open {
+    display: grid;
+    grid-template-rows: 1fr;
+}
+
+.review-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.72);
+}
+
+.review-modal-dialog {
+    position: relative;
+    margin: auto;
+    width: min(720px, calc(100% - 28px));
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 30px 70px rgba(2, 8, 23, 0.35);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    overflow: hidden;
+}
+
+.review-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 14px 10px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.review-modal-head strong {
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.review-modal-close {
+    border: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.06);
+    color: #0f172a;
+    cursor: pointer;
+}
+
+.review-modal-body {
+    padding: 0 14px 14px;
+    display: grid;
+    gap: 10px;
+}
+
+.review-modal-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.review-modal-score {
+    background: rgba(29, 78, 216, 0.12);
+    color: #1d4ed8;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 900;
+}
+
+.review-modal-text {
+    color: #0f172a;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
 .review-toolbar {
     display: flex;
     align-items: center;
@@ -1545,6 +1662,7 @@
     .review-card { padding: 16px; }
     .review-toolbar { flex-direction: column; align-items: stretch; }
     .review-sort { justify-content: space-between; }
+    .review-toolbar-count { display: none; }
 }
 
 .review-tags span {
@@ -2236,11 +2354,23 @@
         height: var(--detail-gallery-main-height);
     }
 
-    .gallery-side-grid { display: none; }
+    /* Mobile: keep gallery like desktop (main + side grid) */
+    .gallery-grid {
+        grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .gallery-side-grid {
+        display: grid;
+    }
+
+    .gallery-thumb {
+        height: calc((var(--detail-gallery-main-height) - 10px) / 2);
+    }
 
     .gallery-mobile-strip {
-        display: block;
-        margin-top: 10px;
+        display: none;
+        margin-top: 0;
     }
 
     .gallery-mobile-track {
@@ -2381,6 +2511,22 @@
 
     .gallery-lightbox-nav.prev { left: 10px; }
     .gallery-lightbox-nav.next { right: 10px; }
+}
+
+@media (max-width: 420px) {
+    /* Very small screens: stack gallery, keep 2x2 thumbs below */
+    .gallery-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gallery-side-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .gallery-thumb {
+        height: 108px;
+        border-radius: 18px;
+    }
 }
 
 @media (max-width: 640px) {
@@ -2572,7 +2718,7 @@
     }
 
     .review-score strong {
-        font-size: 2.4rem;
+        font-size: 1.45rem;
     }
 
     .review-bars > div {
@@ -2804,6 +2950,55 @@ body.room-gallery-open {
     cursor: pointer;
     color: #1d4ed8;
     font-weight: 700;
+}
+
+.room-feature-more-inline {
+    margin-top: 10px;
+    display: grid;
+    gap: 10px;
+}
+
+.room-feature-more-btn {
+    width: fit-content;
+    border: 1px solid rgba(29, 78, 216, 0.18);
+    background: rgba(29, 78, 216, 0.08);
+    color: #1d4ed8;
+    font-weight: 900;
+    padding: 9px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.room-feature-more-btn:hover {
+    background: rgba(29, 78, 216, 0.12);
+}
+
+.room-feature-panel {
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.06);
+}
+
+.room-feature-panel-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+@media (max-width: 900px) {
+    .room-feature-panel {
+        padding: 12px;
+        border-radius: 16px;
+    }
+
+    .room-feature-chip.room-feature-chip-full {
+        background: #fff;
+    }
 }
 
 .room-gallery-modal {
@@ -3440,7 +3635,21 @@ body.room-gallery-open {
 }
 
 .otel-detail-template-v41 .detail-breadcrumb {
-    padding: 10px 0 14px;
+    padding: 18px 0 14px;
+}
+
+/* Align breadcrumb chips with header buttons */
+.otel-detail-template-v41 .detail-back-link,
+.otel-detail-template-v41 .detail-breadcrumb-context {
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+}
+
+.otel-detail-template-v41 .detail-back-link i,
+.otel-detail-template-v41 .detail-breadcrumb-context i {
+    font-size: 13px;
 }
 
 .otel-detail-template-v41 .detail-header.hotel-title-section {
@@ -3712,6 +3921,56 @@ body.room-gallery-open {
     color: #1d4ed8;
     font-size: 0.8rem;
     letter-spacing: 0.05em;
+}
+
+.nightly-breakdown-details {
+    margin-top: 12px;
+    border: 1px solid #dfe7f2;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.nightly-breakdown-details summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    font-weight: 900;
+    color: #0f172a;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.nightly-breakdown-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.nightly-breakdown-list {
+    padding: 12px 14px 14px;
+    display: grid;
+    gap: 10px;
+}
+
+.nightly-breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(148, 163, 184, 0.12);
+}
+
+.nightly-breakdown-row span {
+    color: #0f172a;
+    font-weight: 800;
+}
+
+.nightly-breakdown-row strong {
+    color: #1d4ed8;
+    font-weight: 900;
 }
 
 .otel-detail-template-v41 .price-row,

@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Linq;
+using System.Security.Cryptography;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
@@ -18,6 +20,7 @@ public class UserPanelService : IUserPanelService
     private readonly IAddressLookupService _addressLookupService;
     private readonly IEmailQueueService _emailQueueService;
     private readonly IHotelPricingReadService _hotelPricingReadService;
+    private readonly string _publicBaseUrl;
 
     public UserPanelService(
         IConfiguration configuration,
@@ -32,6 +35,7 @@ public class UserPanelService : IUserPanelService
         _addressLookupService = addressLookupService;
         _emailQueueService = emailQueueService;
         _hotelPricingReadService = hotelPricingReadService;
+        _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://localhost:7223").TrimEnd('/');
     }
 
     public async Task<UserDashboardPageViewModel> GetDashboardAsync(
@@ -516,7 +520,9 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = @"
             SELECT TOP (1) ad_soyad, eposta, COALESCE(telefon, ''), tc_kimlik_no, dogum_tarihi, cinsiyet, uyruk, adres, sehir, ilce, mahalle, posta_kodu,
-                   tercih_edilen_oda_tipi, yatak_tercihi, konusulan_diller, seyahat_amaci, ozel_istekler
+                   tercih_edilen_oda_tipi, yatak_tercihi, konusulan_diller, seyahat_amaci, ozel_istekler,
+                   email_dogrulama_tarihi,
+                   COALESCE(NULLIF(profil_resim_url, ''), '') AS profil_resim_url
             FROM users
             WHERE id = @userId;";
 
@@ -527,6 +533,8 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         if (await reader.ReadAsync(cancellationToken))
         {
             var name = SplitName(reader.GetString(0));
+            var emailVerifiedAt = reader.IsDBNull(17) ? (DateTime?)null : reader.GetDateTime(17);
+            var profileImageUrl = reader.IsDBNull(18) ? string.Empty : reader.GetString(18);
             model.Form = new UserProfileForm
             {
                 FirstName = name.FirstName,
@@ -548,10 +556,20 @@ INNER JOIN agg ON agg.otel_id = o.id;";
                 TravelPurpose = reader.IsDBNull(15) ? null : reader.GetString(15),
                 SpecialRequests = reader.IsDBNull(16) ? null : reader.GetString(16)
             };
+
+            model.EmailVerified = emailVerifiedAt.HasValue;
+            model.EmailVerifiedAtText = emailVerifiedAt.HasValue
+                ? emailVerifiedAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"))
+                : "Onay bekliyor";
+
+            model.ProfileImageUrl = string.IsNullOrWhiteSpace(profileImageUrl)
+                ? "/uploads/demo/avatars/avatar-01.svg"
+                : profileImageUrl;
         }
 
         model.Countries = (await _addressLookupService.GetCountriesAsync(cancellationToken)).ToList();
         model.Provinces = (await _addressLookupService.GetProvincesAsync(cancellationToken)).ToList();
+        model.PresetAvatarUrls = BuildPresetAvatarUrls();
         var selection = await _addressLookupService.ResolveSelectionAsync(model.Form.City, model.Form.District, model.Form.Neighborhood, model.Form.Nationality, cancellationToken);
         if (selection is not null)
         {
@@ -564,17 +582,59 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         return model;
     }
 
+    private static List<string> BuildPresetAvatarUrls()
+        => new()
+        {
+            "/uploads/demo/avatars/avatar-01.svg",
+            "/uploads/demo/avatars/avatar-02.svg",
+            "/uploads/demo/avatars/avatar-03.svg",
+            "/uploads/demo/avatars/avatar-04.svg",
+            "/uploads/demo/avatars/avatar-05.svg",
+            "/uploads/demo/avatars/avatar-06.svg",
+            "/uploads/demo/avatars/avatar-07.svg",
+            "/uploads/demo/avatars/avatar-08.svg",
+            "/uploads/demo/avatars/avatar-09.svg",
+            "/uploads/demo/avatars/avatar-10.svg"
+        };
+
     public async Task<bool> SaveProfileAsync(long userId, UserProfileForm form, CancellationToken cancellationToken = default)
     {
         var email = form.Email?.Trim() ?? string.Empty;
         var phone = form.Phone?.Trim() ?? string.Empty;
         var normalizedPhone = PhoneVerificationService.NormalizePhoneNumber(phone);
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+
+        string existingEmail = string.Empty;
+        var emailVerified = false;
+        await using (var emailSnapshotCommand = new SqlCommand("""
+            SELECT TOP (1) COALESCE(eposta, ''), email_dogrulama_tarihi
+            FROM users
+            WHERE id = @userId;
+            """, connection))
+        {
+            emailSnapshotCommand.Parameters.AddWithValue("@userId", userId);
+            await using var snapshotReader = await emailSnapshotCommand.ExecuteReaderAsync(cancellationToken);
+            if (await snapshotReader.ReadAsync(cancellationToken))
+            {
+                existingEmail = snapshotReader.IsDBNull(0) ? string.Empty : snapshotReader.GetString(0);
+                emailVerified = !snapshotReader.IsDBNull(1);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        if (emailVerified)
+        {
+            email = existingEmail;
+        }
+
         if (string.IsNullOrWhiteSpace(email))
         {
             return false;
         }
 
-        await using var connection = await OpenConnectionAsync(cancellationToken);
         await using (var duplicateCheckCommand = new SqlCommand("SELECT COUNT(*) FROM users WHERE eposta = @email AND id <> @userId;", connection))
         {
             duplicateCheckCommand.Parameters.AddWithValue("@email", email);
@@ -691,6 +751,331 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         }
     }
 
+    public async Task<(bool Success, string Message)> RequestEmailUpdateAsync(
+        long userId,
+        UserEmailUpdateRequestForm form,
+        string? ipAddress,
+        string? userAgent,
+        CancellationToken cancellationToken = default)
+    {
+        var newEmail = (form.NewEmail ?? string.Empty).Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(newEmail) || !newEmail.Contains('@', StringComparison.Ordinal) || !newEmail.Contains('.', StringComparison.Ordinal))
+        {
+            return (false, "Geçerli bir e-posta adresi girin.");
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+
+        const string snapshotSql = """
+            SELECT TOP (1) COALESCE(ad_soyad, ''), COALESCE(eposta, ''), email_dogrulama_tarihi
+            FROM users
+            WHERE id = @userId;
+            """;
+
+        string fullName;
+        string currentEmail;
+        bool emailVerified;
+        await using (var snapshotCommand = new SqlCommand(snapshotSql, connection))
+        {
+            snapshotCommand.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await snapshotCommand.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return (false, "Kullanıcı bulunamadı.");
+            }
+
+            fullName = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+            currentEmail = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+            emailVerified = !reader.IsDBNull(2);
+        }
+
+        if (!emailVerified)
+        {
+            return (false, "E-posta değişikliği için önce mevcut e-posta adresinizi onaylamanız gerekir.");
+        }
+
+        if (string.Equals(currentEmail.Trim().ToLowerInvariant(), newEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, "Yeni e-posta mevcut e-posta ile aynı.");
+        }
+
+        await using (var duplicateCheckCommand = new SqlCommand("SELECT COUNT(*) FROM users WHERE eposta = @email AND id <> @userId;", connection))
+        {
+            duplicateCheckCommand.Parameters.AddWithValue("@email", newEmail);
+            duplicateCheckCommand.Parameters.AddWithValue("@userId", userId);
+            var duplicateCount = Convert.ToInt32(await duplicateCheckCommand.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+            if (duplicateCount > 0)
+            {
+                return (false, "Bu e-posta adresi zaten kullanımda.");
+            }
+        }
+
+        await using (var rateLimitCommand = new SqlCommand("""
+            SELECT TOP (1) olusturulma_tarihi
+            FROM email_dogrulama_tokenlari
+            WHERE kullanici_id = @userId
+              AND kullanildi_mi = 0
+            ORDER BY olusturulma_tarihi DESC;
+            """, connection))
+        {
+            rateLimitCommand.Parameters.AddWithValue("@userId", userId);
+            var lastCreated = await rateLimitCommand.ExecuteScalarAsync(cancellationToken);
+            if (lastCreated is DateTime lastCreatedAt && lastCreatedAt.ToUniversalTime() > DateTime.UtcNow.AddSeconds(-60))
+            {
+                return (false, "Yeni kod istemeden önce lütfen 1 dakika bekleyin.");
+            }
+        }
+
+        var token = CreateSecureToken(48);
+        var code = CreateNumericCode(6);
+        var verificationLink = $"{_publicBaseUrl}/panel/user/profil-bilgilerim?openEmailUpdate=true";
+
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await using (var invalidateCommand = new SqlCommand("""
+                UPDATE email_dogrulama_tokenlari
+                SET kullanildi_mi = 1,
+                    kullanilma_tarihi = SYSUTCDATETIME()
+                WHERE kullanici_id = @userId
+                  AND kullanildi_mi = 0;
+                """, connection, (SqlTransaction)transaction))
+            {
+                invalidateCommand.Parameters.AddWithValue("@userId", userId);
+                await invalidateCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await using (var insertCommand = new SqlCommand("""
+                INSERT INTO email_dogrulama_tokenlari
+                (kullanici_id, eposta, token, dogrulama_kodu, kullanildi_mi, deneme_sayisi, maksimum_deneme, ip_adresi, user_agent, gecerlilik_suresi, olusturulma_tarihi)
+                VALUES
+                (@userId, @email, @token, @code, 0, 0, 5, @ipAddress, @userAgent, DATEADD(MINUTE, 30, SYSUTCDATETIME()), SYSUTCDATETIME());
+                """, connection, (SqlTransaction)transaction))
+            {
+                insertCommand.Parameters.AddWithValue("@userId", userId);
+                insertCommand.Parameters.AddWithValue("@email", newEmail);
+                insertCommand.Parameters.AddWithValue("@token", token);
+                insertCommand.Parameters.AddWithValue("@code", code);
+                insertCommand.Parameters.AddWithValue("@ipAddress", (object?)ipAddress ?? DBNull.Value);
+                insertCommand.Parameters.AddWithValue("@userAgent", (object?)TrimOrNull(userAgent, 500) ?? DBNull.Value);
+                await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await _emailQueueService.QueueTemplateAsync(
+                connection,
+                (SqlTransaction)transaction,
+                new QueuedEmailTemplateRequest
+                {
+                    UserId = userId,
+                    RecipientEmail = newEmail,
+                    TemplateCode = "email_verify",
+                    RelatedTable = "users",
+                    RelatedRecordId = userId,
+                    Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["user_first_name"] = FirstNameFromFullName(fullName),
+                        ["user_email"] = newEmail,
+                        ["registration_date"] = DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["verification_link"] = verificationLink,
+                        ["verification_code"] = code
+                    }
+                },
+                cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+            return (true, "Doğrulama kodu yeni e-posta adresinize gönderildi.");
+        }
+        catch (SqlException ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return (false, $"Doğrulama kodu gönderilemedi: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> VerifyEmailUpdateAsync(
+        long userId,
+        UserEmailUpdateVerifyForm form,
+        string? ipAddress,
+        string? userAgent,
+        CancellationToken cancellationToken = default)
+    {
+        var newEmail = (form.NewEmail ?? string.Empty).Trim().ToLowerInvariant();
+        var code = (form.Code ?? string.Empty).Trim().ToUpperInvariant();
+        var token = (form.Token ?? string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(newEmail) || string.IsNullOrWhiteSpace(code))
+        {
+            return (false, "E-posta ve doğrulama kodu zorunludur.");
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        const string tokenSql = """
+            SELECT TOP (1) id, gecerlilik_suresi, kullanildi_mi, deneme_sayisi, maksimum_deneme, token
+            FROM email_dogrulama_tokenlari
+            WHERE kullanici_id = @userId
+              AND eposta = @email
+              AND dogrulama_kodu = @code
+            ORDER BY olusturulma_tarihi DESC;
+            """;
+
+        long tokenId;
+        DateTime expiryUtc;
+        bool used;
+        int attemptCount;
+        int maxAttempt;
+        string storedToken;
+        await using (var tokenCommand = new SqlCommand(tokenSql, connection, (SqlTransaction)transaction))
+        {
+            tokenCommand.Parameters.AddWithValue("@userId", userId);
+            tokenCommand.Parameters.AddWithValue("@email", newEmail);
+            tokenCommand.Parameters.AddWithValue("@code", code);
+            await using var reader = await tokenCommand.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return (false, "Doğrulama kodu hatalı veya bulunamadı.");
+            }
+
+            tokenId = reader.GetInt64(0);
+            expiryUtc = reader.GetDateTime(1);
+            used = !reader.IsDBNull(2) && reader.GetBoolean(2);
+            attemptCount = reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3), CultureInfo.InvariantCulture);
+            maxAttempt = reader.IsDBNull(4) ? 5 : Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture);
+            storedToken = reader.IsDBNull(5) ? string.Empty : reader.GetString(5);
+        }
+
+        if (!string.IsNullOrWhiteSpace(token) && !string.Equals(token, storedToken, StringComparison.Ordinal))
+        {
+            await IncrementEmailTokenAttemptAsync(connection, (SqlTransaction)transaction, tokenId, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return (false, "Doğrulama bağlantısı geçersiz.");
+        }
+
+        if (used)
+        {
+            return (false, "Bu doğrulama kodu daha önce kullanılmış.");
+        }
+
+        if (expiryUtc <= DateTime.UtcNow)
+        {
+            return (false, "Doğrulama kodunun süresi dolmuş. Lütfen yeni kod isteyin.");
+        }
+
+        if (attemptCount >= maxAttempt)
+        {
+            return (false, "Bu doğrulama kodu çok fazla denendiği için geçersiz hale geldi.");
+        }
+
+        await using (var duplicateCheckCommand = new SqlCommand("SELECT COUNT(*) FROM users WHERE eposta = @email AND id <> @userId;", connection, (SqlTransaction)transaction))
+        {
+            duplicateCheckCommand.Parameters.AddWithValue("@email", newEmail);
+            duplicateCheckCommand.Parameters.AddWithValue("@userId", userId);
+            var duplicateCount = Convert.ToInt32(await duplicateCheckCommand.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+            if (duplicateCount > 0)
+            {
+                return (false, "Bu e-posta adresi artık kullanımda. Lütfen farklı bir e-posta deneyin.");
+            }
+        }
+
+        await MarkEmailTokenUsedAsync(connection, (SqlTransaction)transaction, tokenId, cancellationToken);
+        await using (var updateUserCommand = new SqlCommand("""
+            UPDATE users
+            SET eposta = @email,
+                email_dogrulama_tarihi = COALESCE(email_dogrulama_tarihi, SYSUTCDATETIME()),
+                email_dogrulama_son_gonderim_tarihi = SYSUTCDATETIME(),
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE id = @userId;
+            """, connection, (SqlTransaction)transaction))
+        {
+            updateUserCommand.Parameters.AddWithValue("@userId", userId);
+            updateUserCommand.Parameters.AddWithValue("@email", newEmail);
+            await updateUserCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return (true, "E-posta adresiniz güncellendi ve doğrulandı.");
+    }
+
+    public async Task<bool> SaveProfileImageAsync(long userId, string imageUrl, string source, CancellationToken cancellationToken = default)
+    {
+        var normalizedUrl = (imageUrl ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedUrl))
+        {
+            return false;
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await using var command = new SqlCommand("""
+            UPDATE users
+            SET profil_resim_url = @url,
+                profil_resim_kaynak = NULLIF(@source, ''),
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE id = @userId;
+            """, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@url", normalizedUrl);
+        command.Parameters.AddWithValue("@source", (source ?? string.Empty).Trim());
+        return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+    }
+
+    private static async Task MarkEmailTokenUsedAsync(SqlConnection connection, SqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand("""
+            UPDATE email_dogrulama_tokenlari
+            SET kullanildi_mi = 1,
+                kullanilma_tarihi = SYSUTCDATETIME()
+            WHERE id = @tokenId;
+            """, connection, transaction);
+        command.Parameters.AddWithValue("@tokenId", tokenId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task IncrementEmailTokenAttemptAsync(SqlConnection connection, SqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand("""
+            UPDATE email_dogrulama_tokenlari
+            SET deneme_sayisi = COALESCE(deneme_sayisi, 0) + 1
+            WHERE id = @tokenId;
+            """, connection, transaction);
+        command.Parameters.AddWithValue("@tokenId", tokenId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static string CreateSecureToken(int byteLength)
+    {
+        var buffer = RandomNumberGenerator.GetBytes(byteLength);
+        return Convert.ToHexString(buffer).ToLowerInvariant();
+    }
+
+    private static string CreateNumericCode(int length)
+    {
+        var max = (int)Math.Pow(10, length);
+        var min = (int)Math.Pow(10, length - 1);
+        return RandomNumberGenerator.GetInt32(min, max).ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static string FirstNameFromFullName(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return "Misafir";
+        }
+
+        return fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? fullName;
+    }
+
+    private static string? TrimOrNull(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+    }
+
     public async Task<UserNotificationsPageViewModel> GetNotificationsAsync(long userId, CancellationToken cancellationToken = default)
     {
         var model = new UserNotificationsPageViewModel();
@@ -780,28 +1165,69 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         var model = new UserSecurityPageViewModel();
         await using var connection = await OpenConnectionAsync(cancellationToken);
 
-        await using (var command = new SqlCommand("SELECT TOP (1) iki_asamali_dogrulama_aktif_mi FROM users WHERE id = @userId;", connection))
+        await using (var command = new SqlCommand("""
+            SELECT TOP (1)
+                COALESCE(iki_asamali_dogrulama_aktif_mi, 0),
+                COALESCE(iki_asamali_dogrulama_kanali, 'email'),
+                COALESCE(eposta, ''),
+                email_dogrulama_tarihi,
+                COALESCE(telefon_e164, ''),
+                telefon_dogrulama_tarihi
+            FROM users
+            WHERE id = @userId;
+            """, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
-            var scalar = await command.ExecuteScalarAsync(cancellationToken);
-            model.TwoFactorEnabled = scalar is not null && scalar != DBNull.Value && Convert.ToInt32(scalar, CultureInfo.InvariantCulture) == 1;
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                model.TwoFactorEnabled = Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture) == 1;
+                model.SelectedTwoFactorChannel = NormalizeTwoFactorChannel(reader.GetString(1));
+                model.EmailAddress = reader.GetString(2);
+                model.MaskedEmailAddress = MaskEmail(model.EmailAddress);
+                model.EmailUsableForTwoFactor = !string.IsNullOrWhiteSpace(model.EmailAddress) && !reader.IsDBNull(3);
+                model.PhoneNumber = reader.GetString(4);
+                model.MaskedPhoneNumber = MaskPhone(model.PhoneNumber);
+                model.PhoneUsableForTwoFactor = !string.IsNullOrWhiteSpace(model.PhoneNumber) && !reader.IsDBNull(5);
+            }
         }
 
         await using var sessionCommand = new SqlCommand(@"
-            SELECT TOP (8) COALESCE(cihaz_etiketi, 'Bilinmeyen cihaz'), beni_hatirla_tercihi, toplam_oturum_suresi_saniye, son_aktivite_tarihi
-            FROM kullanici_oturum_istatistikleri
-            WHERE kullanici_id = @userId AND hesap_tipi = 'user'
-            ORDER BY son_aktivite_tarihi DESC, id DESC;", connection);
+            SELECT TOP (5)
+                COALESCE(s.cihaz_etiketi, 'Bilinmeyen cihaz') AS cihaz,
+                s.beni_hatirla_tercihi,
+                s.toplam_oturum_suresi_saniye,
+                s.son_aktivite_tarihi,
+                l.ip_adresi,
+                l.giris_tarihi
+            FROM kullanici_oturum_istatistikleri s
+            OUTER APPLY
+            (
+                SELECT TOP (1) ip_adresi, giris_tarihi
+                FROM kullanici_giris_loglari
+                WHERE kullanici_id = s.kullanici_id
+                  AND hesap_tipi = 'user'
+                ORDER BY giris_tarihi DESC
+            ) l
+            WHERE s.kullanici_id = @userId
+              AND s.hesap_tipi = 'user'
+            ORDER BY s.son_aktivite_tarihi DESC, s.id DESC;", connection);
         sessionCommand.Parameters.AddWithValue("@userId", userId);
-        await using var reader = await sessionCommand.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        await using var sessionReader = await sessionCommand.ExecuteReaderAsync(cancellationToken);
+        while (await sessionReader.ReadAsync(cancellationToken))
         {
-            var duration = reader.IsDBNull(2) ? 0L : reader.GetInt64(2);
-            var lastActive = reader.IsDBNull(3) ? (DateTime?)null : reader.GetDateTime(3).ToLocalTime();
+            var duration = sessionReader.IsDBNull(2) ? 0L : sessionReader.GetInt64(2);
+            var lastActive = sessionReader.IsDBNull(3) ? (DateTime?)null : sessionReader.GetDateTime(3).ToLocalTime();
+            var ip = sessionReader.IsDBNull(4) ? "—" : sessionReader.GetString(4);
+            var loginAtLocal = sessionReader.IsDBNull(5) ? (DateTime?)null : sessionReader.GetDateTime(5).ToLocalTime();
+            var openMinutes = loginAtLocal.HasValue ? (int)Math.Max(0, Math.Round((DateTime.Now - loginAtLocal.Value).TotalMinutes)) : 0;
             model.Sessions.Add(new UserSessionRowViewModel
             {
-                DeviceLabel = reader.GetString(0),
-                RememberText = SafeBool(reader, 1) ? "Beni hatırla açık" : "Standart oturum",
+                DeviceLabel = sessionReader.GetString(0),
+                IpAddress = ip,
+                LoginAtText = loginAtLocal.HasValue ? $"{loginAtLocal.Value:dd.MM.yyyy HH:mm}" : "—",
+                OpenMinutes = openMinutes,
+                RememberText = SafeBool(sessionReader, 1) ? "Beni hatırla açık" : "Standart oturum",
                 ActivityText = lastActive.HasValue ? $"{lastActive.Value:dd.MM.yyyy HH:mm} · {Math.Max(1, duration / 60)} dk toplam" : "Henüz aktivite yok"
             });
         }
@@ -852,10 +1278,95 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     public async Task<bool> SaveTwoFactorAsync(long userId, UserTwoFactorForm form, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new SqlCommand("UPDATE users SET iki_asamali_dogrulama_aktif_mi = @enabled WHERE id = @userId;", connection);
+        var channel = NormalizeTwoFactorChannel(form.Channel);
+        if (form.Enabled)
+        {
+            await using var validationCommand = new SqlCommand("""
+                SELECT TOP (1)
+                    COALESCE(eposta, ''),
+                    email_dogrulama_tarihi,
+                    COALESCE(telefon_e164, ''),
+                    telefon_dogrulama_tarihi
+                FROM users
+                WHERE id = @userId;
+                """, connection);
+            validationCommand.Parameters.AddWithValue("@userId", userId);
+            await using var validationReader = await validationCommand.ExecuteReaderAsync(cancellationToken);
+            if (await validationReader.ReadAsync(cancellationToken))
+            {
+                var email = validationReader.GetString(0);
+                var emailVerified = !validationReader.IsDBNull(1);
+                var phone = validationReader.GetString(2);
+                var phoneVerified = !validationReader.IsDBNull(3);
+
+                if (channel == "email" && (string.IsNullOrWhiteSpace(email) || !emailVerified))
+                {
+                    return false;
+                }
+
+                if (channel == "whatsapp" && (string.IsNullOrWhiteSpace(phone) || !phoneVerified))
+                {
+                    return false;
+                }
+            }
+        }
+
+        await using var command = new SqlCommand("""
+            UPDATE users
+            SET iki_asamali_dogrulama_aktif_mi = @enabled,
+                iki_asamali_dogrulama_kanali = @channel
+            WHERE id = @userId;
+            """, connection);
         command.Parameters.AddWithValue("@enabled", form.Enabled ? 1 : 0);
+        command.Parameters.AddWithValue("@channel", channel);
         command.Parameters.AddWithValue("@userId", userId);
         return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+    }
+
+    private static string NormalizeTwoFactorChannel(string? channel)
+    {
+        var normalized = (channel ?? string.Empty).Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "telefon" => "whatsapp",
+            "phone" => "whatsapp",
+            "whatsapp" => "whatsapp",
+            _ => "email"
+        };
+    }
+
+    private static string MaskEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@', StringComparison.Ordinal))
+        {
+            return "—";
+        }
+
+        var parts = email.Split('@', 2);
+        var local = parts[0];
+        var domain = parts[1];
+        if (local.Length <= 2)
+        {
+            return $"{local[0]}***@{domain}";
+        }
+
+        return $"{local[..2]}***@{domain}";
+    }
+
+    private static string MaskPhone(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone))
+        {
+            return "—";
+        }
+
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        if (digits.Length < 4)
+        {
+            return phone;
+        }
+
+        return $"*** *** {digits[^4..]}";
     }
 
     public async Task<UserPaymentMethodsPageViewModel> GetPaymentMethodsAsync(long userId, CancellationToken cancellationToken = default)
@@ -1019,7 +1530,9 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         model.PointTransactions = await LoadLoyaltyTransactionsAsync(connection, userId, cancellationToken);
         model.Rewards = await LoadLoyaltyRewardsAsync(connection, model.AvailablePoints, cancellationToken);
         model.Badges = await LoadUserBadgesAsync(connection, userId, cancellationToken);
+        await EnsurePassportCitiesAsync(connection, userId, cancellationToken);
         model.PassportCities = await LoadPassportCitiesAsync(connection, userId, cancellationToken);
+        model.RecentReservationCities = await LoadRecentReservationCitiesAsync(connection, userId, 5, cancellationToken);
         model.TravelPlans = await LoadTravelPlansAsync(connection, userId, cancellationToken);
         model.Offers = await LoadOffersAsync(connection, userId, cancellationToken);
         model.BudgetPlans = await LoadBudgetPlansAsync(connection, userId, cancellationToken);
@@ -1404,17 +1917,92 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         return list;
     }
 
+    private static async Task EnsurePassportCitiesAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            MERGE kullanici_dijital_pasaportlari AS target
+            USING
+            (
+                SELECT
+                    @userId AS kullanici_id,
+                    LTRIM(RTRIM(COALESCE(o.sehir, ''))) AS sehir,
+                    CAST(MIN(r.giris_tarihi) AS date) AS ilk_konaklama_tarihi,
+                    CAST(MAX(r.cikis_tarihi) AS date) AS son_konaklama_tarihi,
+                    COUNT(*) AS toplam_konaklama_sayisi
+                FROM rezervasyonlar r
+                INNER JOIN oteller o ON o.id = r.otel_id
+                WHERE r.kullanici_id = @userId
+                  AND COALESCE(NULLIF(o.sehir, ''), '') <> ''
+                  AND COALESCE(NULLIF(r.durum, ''), '') <> 'İptal Edildi'
+                GROUP BY LTRIM(RTRIM(COALESCE(o.sehir, '')))
+            ) AS source
+            ON target.kullanici_id = source.kullanici_id
+               AND target.sehir = source.sehir
+            WHEN MATCHED THEN
+                UPDATE SET
+                    ilk_konaklama_tarihi = CASE
+                        WHEN target.ilk_konaklama_tarihi IS NULL THEN source.ilk_konaklama_tarihi
+                        WHEN source.ilk_konaklama_tarihi < target.ilk_konaklama_tarihi THEN source.ilk_konaklama_tarihi
+                        ELSE target.ilk_konaklama_tarihi
+                    END,
+                    son_konaklama_tarihi = CASE
+                        WHEN target.son_konaklama_tarihi IS NULL THEN source.son_konaklama_tarihi
+                        WHEN source.son_konaklama_tarihi > target.son_konaklama_tarihi THEN source.son_konaklama_tarihi
+                        ELSE target.son_konaklama_tarihi
+                    END,
+                    toplam_konaklama_sayisi = source.toplam_konaklama_sayisi,
+                    guncellenme_tarihi = SYSUTCDATETIME()
+            WHEN NOT MATCHED THEN
+                INSERT (kullanici_id, sehir, ulke, ilk_konaklama_tarihi, son_konaklama_tarihi, toplam_konaklama_sayisi, olusturulma_tarihi, guncellenme_tarihi)
+                VALUES (source.kullanici_id, source.sehir, N'Türkiye', source.ilk_konaklama_tarihi, source.son_konaklama_tarihi, source.toplam_konaklama_sayisi, SYSUTCDATETIME(), SYSUTCDATETIME());
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task<List<UserLoyaltyRecentCityViewModel>> LoadRecentReservationCitiesAsync(SqlConnection connection, long userId, int take, CancellationToken cancellationToken)
+    {
+        var list = new List<UserLoyaltyRecentCityViewModel>();
+        await using var command = new SqlCommand("""
+            SELECT TOP (@take)
+                   COALESCE(NULLIF(o.sehir, ''), '') AS sehir,
+                   r.giris_tarihi
+            FROM rezervasyonlar r
+            INNER JOIN oteller o ON o.id = r.otel_id
+            WHERE r.kullanici_id = @userId
+              AND COALESCE(NULLIF(o.sehir, ''), '') <> ''
+            ORDER BY r.giris_tarihi DESC, r.id DESC;
+            """, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@take", Math.Clamp(take, 1, 10));
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var city = reader.GetString(0);
+            var checkIn = reader.IsDBNull(1) ? (DateTime?)null : reader.GetDateTime(1);
+            list.Add(new UserLoyaltyRecentCityViewModel
+            {
+                CityName = city,
+                DateText = checkIn.HasValue ? checkIn.Value.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")) : "—"
+            });
+        }
+        return list;
+    }
+
     private async Task<List<UserLoyaltyTravelPlanViewModel>> LoadTravelPlansAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         var list = new List<UserLoyaltyTravelPlanViewModel>();
         await using var command = new SqlCommand(@"
             SELECT TOP (5) p.id, p.plan_adi, p.hedef_sehir, p.baslangic_tarihi, p.bitis_tarihi, COALESCE(p.butce_tutari, 0), COALESCE(p.durum, 'Taslak'),
-                   COALESCE(COUNT(ps.id), 0) AS secim_sayisi
+                   COALESCE(COUNT(ps.id), 0) AS secim_sayisi,
+                   MAX(p.guncellenme_tarihi) AS son_guncellenme_tarihi
             FROM kullanici_seyahat_planlari p
             LEFT JOIN kullanici_seyahat_plan_otel_secimleri ps ON ps.plan_id = p.id
             WHERE p.olusturan_kullanici_id = @userId
             GROUP BY p.id, p.plan_adi, p.hedef_sehir, p.baslangic_tarihi, p.bitis_tarihi, p.butce_tutari, p.durum
-            ORDER BY p.guncellenme_tarihi DESC, p.id DESC;", connection);
+            ORDER BY MAX(p.guncellenme_tarihi) DESC, p.id DESC;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))

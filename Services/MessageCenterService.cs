@@ -69,6 +69,7 @@ public class MessageCenterService : IMessageCenterService
             FROM mesaj_konusmalari
             WHERE misafir_kullanici_id = @userId
               AND otel_id = @hotelId
+              AND konusma_turu = 'Otel'
               AND durum <> 'Arşivlendi'
             ORDER BY COALESCE(son_mesaj_tarihi, olusturulma_tarihi) DESC, id DESC;";
 
@@ -91,13 +92,13 @@ public class MessageCenterService : IMessageCenterService
                 INSERT INTO mesaj_konusmalari
                 (
                     konusma_kodu, rezervasyon_id, otel_id, misafir_kullanici_id, otel_yetkilisi_kullanici_id,
-                    konu_basligi, konu_kategorisi, durum, oncelik, son_mesaj_tarihi, son_mesaj_gonderen, son_mesaj_onizleme,
+                    konu_basligi, konusma_turu, konu_kategorisi, durum, oncelik, son_mesaj_tarihi, son_mesaj_gonderen, son_mesaj_onizleme,
                     otel_okunmamis_sayisi, misafir_okunmamis_sayisi
                 )
                 VALUES
                 (
                     @code, @reservationId, @hotelId, @userId, @hotelManagerUserId,
-                    @subject, 'Rezervasyon', 'Açık', 'Normal', CURRENT_TIMESTAMP, 'Misafir', 'Görüşme başlatıldı.',
+                    @subject, 'Otel', 'Rezervasyon', 'Açık', 'Normal', CURRENT_TIMESTAMP, 'Misafir', 'Görüşme başlatıldı.',
                     1, 0
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS bigint);";

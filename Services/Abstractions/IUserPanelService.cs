@@ -32,6 +32,9 @@ public interface IUserPanelService
     Task<(bool Success, string Message)> DeleteMessageAsync(long userId, MessageDeleteRequest form, CancellationToken cancellationToken = default);
     Task<UserProfilePageViewModel> GetProfileAsync(long userId, CancellationToken cancellationToken = default);
     Task<bool> SaveProfileAsync(long userId, UserProfileForm form, CancellationToken cancellationToken = default);
+    Task<bool> SaveProfileImageAsync(long userId, string imageUrl, string source, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> RequestEmailUpdateAsync(long userId, UserEmailUpdateRequestForm form, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> VerifyEmailUpdateAsync(long userId, UserEmailUpdateVerifyForm form, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default);
     Task<UserNotificationsPageViewModel> GetNotificationsAsync(long userId, CancellationToken cancellationToken = default);
     Task<bool> SaveNotificationsAsync(long userId, UserNotificationPreferencesForm form, CancellationToken cancellationToken = default);
     Task<UserSecurityPageViewModel> GetSecurityAsync(long userId, CancellationToken cancellationToken = default);

@@ -551,9 +551,9 @@ public class PartnerService : IPartnerService
             {
                 const string createConversationSql = @"
                     INSERT INTO mesaj_konusmalari
-                    (konusma_kodu, rezervasyon_id, otel_id, misafir_kullanici_id, otel_yetkilisi_kullanici_id, konu_basligi, konu_kategorisi, durum, oncelik, son_mesaj_tarihi, son_mesaj_gonderen, son_mesaj_onizleme, otel_okunmamis_sayisi, misafir_okunmamis_sayisi)
+                    (konusma_kodu, rezervasyon_id, otel_id, misafir_kullanici_id, otel_yetkilisi_kullanici_id, konu_basligi, konusma_turu, konu_kategorisi, durum, oncelik, son_mesaj_tarihi, son_mesaj_gonderen, son_mesaj_onizleme, otel_okunmamis_sayisi, misafir_okunmamis_sayisi)
                     VALUES
-                    (@conversationCode, @reservationId, @hotelId, @guestUserId, @userId, @subject, 'Rezervasyon', 'Açık', 'Normal', GETDATE(), 'Otel', @messagePreview, 0, 1);
+                    (@conversationCode, @reservationId, @hotelId, @guestUserId, @userId, @subject, 'Otel', 'Rezervasyon', 'Açık', 'Normal', GETDATE(), 'Otel', @messagePreview, 0, 1);
                     SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
                 await using var createConversationCommand = new SqlCommand(createConversationSql, connection, (SqlTransaction)transaction);

@@ -14,11 +14,13 @@ public class FirmaPanelController : Controller
 {
     private readonly IFirmaService _firmaService;
     private readonly IPhoneVerificationService _phoneVerificationService;
+    private readonly IAuthService _authService;
 
-    public FirmaPanelController(IFirmaService firmaService, IPhoneVerificationService phoneVerificationService)
+    public FirmaPanelController(IFirmaService firmaService, IPhoneVerificationService phoneVerificationService, IAuthService authService)
     {
         _firmaService = firmaService;
         _phoneVerificationService = phoneVerificationService;
+        _authService = authService;
     }
 
     [HttpGet("")]
@@ -36,6 +38,29 @@ public class FirmaPanelController : Controller
         ViewData["Title"] = "Firma Dashboard";
         ViewData["PageCssPath"] = "paneller/firma/dashboard";
         return View("~/Views/Paneller/Firma/Dashboard.cshtml", model);
+    }
+
+    [HttpGet("guvenlik")]
+    public async Task<IActionResult> Security(CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        var dashboard = await _firmaService.GetDashboardAsync(GetUserId(), cancellationToken);
+        ApplyFeedback(dashboard.Shell);
+        ViewData["FirmaShell"] = dashboard.Shell;
+        var model = await _authService.GetTwoFactorSecurityAsync(GetUserId(), "firma", cancellationToken);
+        ViewData["Title"] = "Güvenlik";
+        ViewData["PageCssPath"] = "panel-user-security";
+        return View("~/Views/Paneller/Firma/Security.cshtml", model);
+    }
+
+    [HttpPost("guvenlik/iki-asamali")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveTwoFactor(otelturizmnew.Models.Paneller.User.UserTwoFactorForm form, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        var result = await _authService.SaveTwoFactorSecurityAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "FirmaSuccess" : "FirmaError"] = result.Message;
+        return Redirect("/panel/firma/guvenlik");
     }
 
     [HttpGet("firma-fiyatlari")]

@@ -109,7 +109,16 @@
                         <div class="alert-hotel">@alert.HotelName</div>
                         <div class="alert-sub">Hedef @alert.TargetPriceText</div>
                     </div>
-                    <span class="alert-price @(alert.IsTriggered ? "is-triggered" : string.Empty)">@alert.CurrentPriceText</span>
+                    <div class="alert-right">
+                        <span class="alert-price @(alert.IsTriggered ? "is-triggered" : string.Empty)">@alert.CurrentPriceText</span>
+                        <form asp-action="DeletePriceAlertFromLoyalty" asp-controller="UserPanel" method="post" class="inline-delete">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="hotelId" value="@alert.HotelId" />
+                            <button type="submit" class="icon-delete" title="Alarmı sil" aria-label="Alarmı sil">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             }
         }
@@ -156,6 +165,21 @@
             </div>
         </div>
         <p class="feature-support-copy">@Model.PassportCities.Count sehir damgasi bulundu.</p>
+        @if (Model.RecentReservationCities.Count > 0)
+        {
+            <div class="passport-recent">
+                <div class="passport-recent-title"><i class="far fa-clock"></i> Son rezervasyon sehirleri</div>
+                <div class="passport-recent-list">
+                    @foreach (var item in Model.RecentReservationCities.Take(5))
+                    {
+                        <div class="passport-recent-row">
+                            <strong>@item.CityName</strong>
+                            <span>@item.DateText</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
     </article>
 
     <article class="feature-card">

@@ -15,12 +15,14 @@ public class UserPanelController : Controller
     private readonly IUserFavoriteService _userFavoriteService;
     private readonly IUserPanelService _userPanelService;
     private readonly IPhoneVerificationService _phoneVerificationService;
+    private readonly IImageStorageService _imageStorageService;
 
-    public UserPanelController(IUserFavoriteService userFavoriteService, IUserPanelService userPanelService, IPhoneVerificationService phoneVerificationService)
+    public UserPanelController(IUserFavoriteService userFavoriteService, IUserPanelService userPanelService, IPhoneVerificationService phoneVerificationService, IImageStorageService imageStorageService)
     {
         _userFavoriteService = userFavoriteService;
         _userPanelService = userPanelService;
         _phoneVerificationService = phoneVerificationService;
+        _imageStorageService = imageStorageService;
     }
 
     [HttpGet("")]
@@ -186,6 +188,19 @@ public class UserPanelController : Controller
         return RedirectToAction(nameof(Favorites));
     }
 
+    [HttpPost("otelpuan-programi/fiyat-alarmi/sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeletePriceAlertFromLoyalty(long hotelId, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userFavoriteService.DeletePriceAlertAsync(GetCurrentUserId(), hotelId, cancellationToken);
+            TempData[result.Success ? "UserLoyaltySuccess" : "UserLoyaltyError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Loyalty));
+    }
+
     [HttpGet("otelpuan-programi")]
     [HttpGet("puanlarim")]
     public async Task<IActionResult> Loyalty(CancellationToken cancellationToken = default)
@@ -242,7 +257,7 @@ public class UserPanelController : Controller
     }
 
     [HttpGet("profil-bilgilerim")]
-    public async Task<IActionResult> Profile([FromQuery] bool openCompletion = false, [FromQuery] bool openPhoneVerification = false, [FromQuery] string? returnUrl = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Profile([FromQuery] bool openCompletion = false, [FromQuery] bool openPhoneVerification = false, [FromQuery] bool openEmailUpdate = false, [FromQuery] string? returnUrl = null, CancellationToken cancellationToken = default)
     {
         if (!CanAccessUserPanel())
         {
@@ -252,6 +267,7 @@ public class UserPanelController : Controller
         var model = await _userPanelService.GetProfileAsync(GetCurrentUserId(), cancellationToken);
         model.OpenCompletionModal = openCompletion;
         model.OpenPhoneVerification = openPhoneVerification;
+        model.OpenEmailUpdate = openEmailUpdate;
         model.PhoneVerification = await _phoneVerificationService.GetUserStatusAsync(GetCurrentUserId(), cancellationToken);
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
@@ -371,6 +387,106 @@ public class UserPanelController : Controller
         return RedirectToAction(nameof(Profile), new { openPhoneVerification = true });
     }
 
+    [HttpPost("profil-bilgilerim/eposta-kodu-gonder")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendEmailUpdateCode([Bind(Prefix = "EmailUpdate")] UserEmailUpdateRequestForm form, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userPanelService.RequestEmailUpdateAsync(
+                GetCurrentUserId(),
+                form,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString(),
+                cancellationToken);
+            TempData[result.Success ? "UserProfileSuccess" : "UserProfileError"] = result.Message;
+        }
+
+        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
+        {
+            return Redirect(form.ReturnUrl);
+        }
+
+        return RedirectToAction(nameof(Profile), new { openEmailUpdate = true });
+    }
+
+    [HttpPost("profil-bilgilerim/eposta-kodu-dogrula")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyEmailUpdateCode([Bind(Prefix = "EmailUpdateVerify")] UserEmailUpdateVerifyForm form, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userPanelService.VerifyEmailUpdateAsync(
+                GetCurrentUserId(),
+                form,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString(),
+                cancellationToken);
+            TempData[result.Success ? "UserProfileSuccess" : "UserProfileError"] = result.Message;
+        }
+
+        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
+        {
+            return Redirect(form.ReturnUrl);
+        }
+
+        return RedirectToAction(nameof(Profile), new { openEmailUpdate = true });
+    }
+
+    [HttpPost("profil-bilgilerim/profil-resmi-yukle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadProfileImage(IFormFile profileImage, CancellationToken cancellationToken)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (profileImage is null || profileImage.Length <= 0)
+        {
+            TempData["UserProfileError"] = "Lütfen bir görsel seçin.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        var userId = GetCurrentUserId();
+        var targetDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "user", "avatars", userId.ToString());
+        try
+        {
+            var saved = await _imageStorageService.SaveAsWebpAsync(profileImage, targetDir, "avatar", cancellationToken);
+            var webPath = $"/uploads/user/avatars/{userId}/{saved.FileName}";
+
+            await _userPanelService.SaveProfileImageAsync(userId, webPath, "upload", cancellationToken);
+            TempData["UserProfileSuccess"] = "Profil görseliniz güncellendi.";
+        }
+        catch (Exception ex)
+        {
+            TempData["UserProfileError"] = $"Profil görseli yüklenemedi: {ex.Message}";
+        }
+
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [HttpPost("profil-bilgilerim/profil-resmi-sec")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SelectPresetProfileImage(string avatarUrl, CancellationToken cancellationToken)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var normalized = (avatarUrl ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalized) || !normalized.StartsWith("/uploads/demo/avatars/", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["UserProfileError"] = "Geçersiz görsel seçimi.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        await _userPanelService.SaveProfileImageAsync(GetCurrentUserId(), normalized, "preset", cancellationToken);
+        TempData["UserProfileSuccess"] = "Profil görseliniz güncellendi.";
+        return RedirectToAction(nameof(Profile));
+    }
+
     [HttpPost("mesajlarim/gonder")]
     public async Task<IActionResult> SendMessage(MessageSendRequest form, List<IFormFile>? attachments, CancellationToken cancellationToken)
     {
@@ -423,8 +539,10 @@ public class UserPanelController : Controller
     {
         if (CanAccessUserPanel())
         {
-            await _userPanelService.SaveTwoFactorAsync(GetCurrentUserId(), form, cancellationToken);
-            TempData["UserSecuritySuccess"] = "Güvenlik tercihi güncellendi.";
+            var success = await _userPanelService.SaveTwoFactorAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[success ? "UserSecuritySuccess" : "UserSecurityError"] = success
+                ? "Güvenlik tercihi güncellendi."
+                : "İki aşamalı doğrulama tercihi kaydedilemedi. E-posta veya telefon doğrulama durumunu kontrol edin.";
         }
 
         return RedirectToAction(nameof(Security));
@@ -468,4 +586,3 @@ public class UserPanelController : Controller
         return long.TryParse(raw, out var userId) ? userId : 0;
     }
 }
-

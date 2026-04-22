@@ -33,4 +33,11 @@
     <None Remove=".codex_obj\\**\\*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Views\Email\**\*.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -10,6 +10,7 @@ using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Giris;
 using otelturizmnew.Models.Legal;
+using otelturizmnew.Models.Paneller.User;
 using otelturizmnew.Models.Register;
 using otelturizmnew.Services.Abstractions;
 
@@ -40,6 +41,321 @@ public class AuthService : IAuthService
         _emailQueueService = emailQueueService;
         _contractContentService = contractContentService;
         _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://localhost:7223").TrimEnd('/');
+    }
+
+    public async Task<UserSessionModel?> GetUserSessionByIdAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+        {
+            return null;
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        return await GetUserByIdAsync(connection, userId, cancellationToken);
+    }
+
+    public async Task<bool> IsTwoFactorEnabledAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand("SELECT TOP (1) iki_asamali_dogrulama_aktif_mi FROM users WHERE id = @userId;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
+        return scalar is not null && scalar != DBNull.Value && Convert.ToInt32(scalar, CultureInfo.InvariantCulture) == 1;
+    }
+
+    public async Task<(bool Success, string Message, string Channel, string DestinationHint)> GetTwoFactorChallengeInfoAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand("""
+            SELECT TOP (1)
+                COALESCE(eposta, ''),
+                email_dogrulama_tarihi,
+                COALESCE(telefon_e164, ''),
+                telefon_dogrulama_tarihi,
+                COALESCE(iki_asamali_dogrulama_kanali, 'email')
+            FROM users
+            WHERE id = @userId;
+            """, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return (false, "Kullanıcı bulunamadı.", "email", string.Empty);
+        }
+
+        var email = reader.GetString(0);
+        var emailVerified = !reader.IsDBNull(1);
+        var phone = reader.GetString(2);
+        var phoneVerified = !reader.IsDBNull(3);
+        var channel = NormalizeTwoFactorChannel(reader.GetString(4));
+
+        if (channel == "whatsapp")
+        {
+            if (string.IsNullOrWhiteSpace(phone))
+            {
+                return (false, "WhatsApp ile 2FA için profilinize telefon eklemelisiniz.", channel, string.Empty);
+            }
+
+            if (!phoneVerified)
+            {
+                return (false, "WhatsApp ile 2FA için telefon numaranızın doğrulanmış olması gerekir.", channel, MaskPhone(phone));
+            }
+
+            return (true, "Telefon doğrulandı.", channel, MaskPhone(phone));
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return (false, "E-posta ile 2FA için hesabınızda geçerli bir e-posta bulunmalıdır.", "email", string.Empty);
+        }
+
+        if (!emailVerified)
+        {
+            return (false, "E-posta ile 2FA için e-posta adresinizin onaylanmış olması gerekir.", "email", MaskEmail(email));
+        }
+
+        return (true, "E-posta doğrulandı.", "email", MaskEmail(email));
+    }
+
+    public async Task<(bool Success, string Message, string? PhoneE164)> GetTwoFactorPhoneAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand("""
+            SELECT TOP (1) COALESCE(telefon_e164, ''), telefon_dogrulama_tarihi
+            FROM users
+            WHERE id = @userId;
+            """, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return (false, "Kullanıcı bulunamadı.", null);
+        }
+
+        var phone = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+        var verified = !reader.IsDBNull(1);
+        if (string.IsNullOrWhiteSpace(phone))
+        {
+            return (false, "İki aşamalı doğrulama için profilinize doğrulanmış bir WhatsApp telefon numarası eklemelisiniz.", null);
+        }
+        if (!verified)
+        {
+            return (false, "İki aşamalı doğrulama için telefon numaranızın WhatsApp ile doğrulanmış olması gerekir.", null);
+        }
+
+        return (true, "Telefon doğrulandı.", phone);
+    }
+
+    public async Task<UserSecurityPageViewModel> GetTwoFactorSecurityAsync(long userId, string accountType, CancellationToken cancellationToken = default)
+    {
+        var model = new UserSecurityPageViewModel();
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using (var command = new SqlCommand("""
+            SELECT TOP (1)
+                COALESCE(iki_asamali_dogrulama_aktif_mi, 0),
+                COALESCE(iki_asamali_dogrulama_kanali, 'email'),
+                COALESCE(eposta, ''),
+                email_dogrulama_tarihi,
+                COALESCE(telefon_e164, ''),
+                telefon_dogrulama_tarihi
+            FROM users
+            WHERE id = @userId;
+            """, connection))
+        {
+            command.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                model.TwoFactorEnabled = Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture) == 1;
+                model.SelectedTwoFactorChannel = NormalizeTwoFactorChannel(reader.GetString(1));
+                model.EmailAddress = reader.GetString(2);
+                model.MaskedEmailAddress = MaskEmail(model.EmailAddress);
+                model.EmailUsableForTwoFactor = !string.IsNullOrWhiteSpace(model.EmailAddress) && !reader.IsDBNull(3);
+                model.PhoneNumber = reader.GetString(4);
+                model.MaskedPhoneNumber = MaskPhone(model.PhoneNumber);
+                model.PhoneUsableForTwoFactor = !string.IsNullOrWhiteSpace(model.PhoneNumber) && !reader.IsDBNull(5);
+            }
+        }
+
+        await using var sessionCommand = new SqlCommand("""
+            SELECT TOP (5)
+                COALESCE(s.cihaz_etiketi, N'Bilinmeyen cihaz') AS cihaz,
+                s.beni_hatirla_tercihi,
+                s.toplam_oturum_suresi_saniye,
+                s.son_aktivite_tarihi,
+                l.ip_adresi,
+                l.giris_tarihi
+            FROM kullanici_oturum_istatistikleri s
+            OUTER APPLY
+            (
+                SELECT TOP (1) ip_adresi, giris_tarihi
+                FROM kullanici_giris_loglari
+                WHERE kullanici_id = s.kullanici_id
+                  AND hesap_tipi = @accountType
+                ORDER BY giris_tarihi DESC
+            ) l
+            WHERE s.kullanici_id = @userId
+              AND s.hesap_tipi = @accountType
+            ORDER BY s.son_aktivite_tarihi DESC, s.id DESC;
+            """, connection);
+        sessionCommand.Parameters.AddWithValue("@userId", userId);
+        sessionCommand.Parameters.AddWithValue("@accountType", (accountType ?? "user").Trim().ToLowerInvariant());
+        await using var sessionReader = await sessionCommand.ExecuteReaderAsync(cancellationToken);
+        while (await sessionReader.ReadAsync(cancellationToken))
+        {
+            var duration = sessionReader.IsDBNull(2) ? 0L : sessionReader.GetInt64(2);
+            var lastActive = sessionReader.IsDBNull(3) ? (DateTime?)null : sessionReader.GetDateTime(3).ToLocalTime();
+            var ip = sessionReader.IsDBNull(4) ? "—" : sessionReader.GetString(4);
+            var loginAtLocal = sessionReader.IsDBNull(5) ? (DateTime?)null : sessionReader.GetDateTime(5).ToLocalTime();
+            var openMinutes = loginAtLocal.HasValue ? (int)Math.Max(0, Math.Round((DateTime.Now - loginAtLocal.Value).TotalMinutes)) : 0;
+            model.Sessions.Add(new UserSessionRowViewModel
+            {
+                DeviceLabel = sessionReader.GetString(0),
+                IpAddress = ip,
+                LoginAtText = loginAtLocal.HasValue ? $"{loginAtLocal.Value:dd.MM.yyyy HH:mm}" : "—",
+                OpenMinutes = openMinutes,
+                RememberText = SafeBool(sessionReader, 1) ? "Beni hatırla açık" : "Standart oturum",
+                ActivityText = lastActive.HasValue ? $"{lastActive.Value:dd.MM.yyyy HH:mm} · {Math.Max(1, duration / 60)} dk toplam" : "Henüz aktivite yok"
+            });
+        }
+
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> SaveTwoFactorSecurityAsync(long userId, UserTwoFactorForm form, CancellationToken cancellationToken = default)
+    {
+        var channel = NormalizeTwoFactorChannel(form.Channel);
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        if (form.Enabled)
+        {
+            var challenge = await GetTwoFactorChallengeInfoAsync(userId, cancellationToken);
+            if (!challenge.Success && string.Equals(challenge.Channel, channel, StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, challenge.Message);
+            }
+
+            if (channel == "whatsapp")
+            {
+                var phoneCheck = await GetTwoFactorPhoneAsync(userId, cancellationToken);
+                if (!phoneCheck.Success)
+                {
+                    return (false, phoneCheck.Message);
+                }
+            }
+        }
+
+        await using var command = new SqlCommand("""
+            UPDATE users
+            SET iki_asamali_dogrulama_aktif_mi = @enabled,
+                iki_asamali_dogrulama_kanali = @channel,
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE id = @userId;
+            """, connection);
+        command.Parameters.AddWithValue("@enabled", form.Enabled ? 1 : 0);
+        command.Parameters.AddWithValue("@channel", channel);
+        command.Parameters.AddWithValue("@userId", userId);
+        var affected = await command.ExecuteNonQueryAsync(cancellationToken);
+        return affected > 0 ? (true, "Güvenlik tercihi güncellendi.") : (false, "Güvenlik tercihi kaydedilemedi.");
+    }
+
+    public async Task RecordLoginAsync(long userId, string accountType, string? ipAddress, string? userAgent, string? deviceLabel, CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+        {
+            return;
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = new SqlCommand("""
+            INSERT INTO kullanici_giris_loglari
+            (kullanici_id, hesap_tipi, ip_adresi, user_agent, cihaz_etiketi, giris_tarihi, olusturulma_tarihi)
+            VALUES
+            (@userId, @accountType, NULLIF(@ip, ''), NULLIF(@ua, ''), NULLIF(@device, ''), SYSUTCDATETIME(), SYSUTCDATETIME());
+            """, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@accountType", (accountType ?? "user").Trim().ToLowerInvariant());
+        command.Parameters.AddWithValue("@ip", ipAddress ?? string.Empty);
+        command.Parameters.AddWithValue("@ua", (object?)TrimToMax(userAgent, 500) ?? string.Empty);
+        command.Parameters.AddWithValue("@device", (object?)TrimToMax(deviceLabel, 150) ?? string.Empty);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static string? TrimToMax(string? value, int max)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+        var trimmed = value.Trim();
+        return trimmed.Length <= max ? trimmed : trimmed[..max];
+    }
+
+    private static string NormalizeTwoFactorChannel(string? channel)
+    {
+        var normalized = (channel ?? string.Empty).Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "telefon" => "whatsapp",
+            "phone" => "whatsapp",
+            "whatsapp" => "whatsapp",
+            _ => "email"
+        };
+    }
+
+    private static string MaskEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@', StringComparison.Ordinal))
+        {
+            return "—";
+        }
+
+        var parts = email.Split('@', 2);
+        var local = parts[0];
+        var domain = parts[1];
+        if (local.Length <= 2)
+        {
+            return $"{local[0]}***@{domain}";
+        }
+
+        return $"{local[..2]}***@{domain}";
+    }
+
+    private static string MaskPhone(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone))
+        {
+            return "—";
+        }
+
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        if (digits.Length < 4)
+        {
+            return phone;
+        }
+
+        return $"*** *** {digits[^4..]}";
+    }
+
+    private static bool SafeBool(SqlDataReader reader, int ordinal)
+    {
+        if (reader.IsDBNull(ordinal))
+        {
+            return false;
+        }
+
+        return Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture) == 1;
     }
 
     public async Task<UserSessionModel?> AuthenticateUserAsync(string identity, string password, CancellationToken cancellationToken = default)
@@ -1703,6 +2019,8 @@ public class AuthService : IAuthService
                 u.id,
                 u.ad_soyad,
                 u.eposta,
+                MAX(COALESCE(CONVERT(int, u.iki_asamali_dogrulama_aktif_mi), 0)) AS two_factor_enabled,
+                MAX(COALESCE(u.iki_asamali_dogrulama_kanali, 'email')) AS two_factor_channel,
                 {partnerIdSelect} AS partner_id,
                 {roleSelect} AS user_role,
                 {firmaIdSelect} AS firma_id,
@@ -1787,6 +2105,8 @@ public class AuthService : IAuthService
         var idOrdinal = reader.GetOrdinal("id");
         var fullNameOrdinal = reader.GetOrdinal("ad_soyad");
         var emailOrdinal = reader.GetOrdinal("eposta");
+        var twoFactorEnabledOrdinal = reader.GetOrdinal("two_factor_enabled");
+        var twoFactorChannelOrdinal = reader.GetOrdinal("two_factor_channel");
         var partnerIdOrdinal = reader.GetOrdinal("partner_id");
         var userRoleOrdinal = reader.GetOrdinal("user_role");
         var firmaIdOrdinal = reader.GetOrdinal("firma_id");
@@ -1811,6 +2131,8 @@ public class AuthService : IAuthService
             UserId = reader.GetInt64(idOrdinal),
             FullName = reader.GetString(fullNameOrdinal),
             Email = reader.GetString(emailOrdinal),
+            TwoFactorEnabled = !reader.IsDBNull(twoFactorEnabledOrdinal) && Convert.ToInt32(reader.GetValue(twoFactorEnabledOrdinal), CultureInfo.InvariantCulture) == 1,
+            TwoFactorChannel = NormalizeTwoFactorChannel(reader.IsDBNull(twoFactorChannelOrdinal) ? "email" : reader.GetString(twoFactorChannelOrdinal)),
             PartnerId = reader.IsDBNull(partnerIdOrdinal) ? null : reader.GetInt64(partnerIdOrdinal),
             OwnershipPartnerId = reader.IsDBNull(ownershipPartnerOrdinal) ? null : reader.GetInt64(ownershipPartnerOrdinal),
             UserRole = userRole,
@@ -1954,6 +2276,8 @@ public class AuthService : IAuthService
                 u.id,
                 u.ad_soyad,
                 u.eposta,
+                MAX(COALESCE(CONVERT(int, u.iki_asamali_dogrulama_aktif_mi), 0)) AS two_factor_enabled,
+                MAX(COALESCE(u.iki_asamali_dogrulama_kanali, 'email')) AS two_factor_channel,
                 {partnerIdSelect} AS partner_id,
                 {roleSelect} AS user_role,
                 {firmaIdSelect} AS firma_id,
@@ -1982,6 +2306,8 @@ public class AuthService : IAuthService
         var idOrdinal = reader.GetOrdinal("id");
         var fullNameOrdinal = reader.GetOrdinal("ad_soyad");
         var emailOrdinal = reader.GetOrdinal("eposta");
+        var twoFactorEnabledOrdinal = reader.GetOrdinal("two_factor_enabled");
+        var twoFactorChannelOrdinal = reader.GetOrdinal("two_factor_channel");
         var partnerIdOrdinal = reader.GetOrdinal("partner_id");
         var userRoleOrdinal = reader.GetOrdinal("user_role");
         var firmaIdOrdinal = reader.GetOrdinal("firma_id");
@@ -2006,6 +2332,8 @@ public class AuthService : IAuthService
             UserId = reader.GetInt64(idOrdinal),
             FullName = reader.GetString(fullNameOrdinal),
             Email = reader.GetString(emailOrdinal),
+            TwoFactorEnabled = !reader.IsDBNull(twoFactorEnabledOrdinal) && Convert.ToInt32(reader.GetValue(twoFactorEnabledOrdinal), CultureInfo.InvariantCulture) == 1,
+            TwoFactorChannel = NormalizeTwoFactorChannel(reader.IsDBNull(twoFactorChannelOrdinal) ? "email" : reader.GetString(twoFactorChannelOrdinal)),
             PartnerId = reader.IsDBNull(partnerIdOrdinal) ? null : reader.GetInt64(partnerIdOrdinal),
             OwnershipPartnerId = reader.IsDBNull(ownershipPartnerOrdinal) ? null : reader.GetInt64(ownershipPartnerOrdinal),
             UserRole = userRole,

@@ -41,6 +41,7 @@ builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<IUserFavoriteService, UserFavoriteService>();
 builder.Services.AddScoped<IUserPanelService, UserPanelService>();
 builder.Services.AddScoped<ISessionSecurityService, SessionSecurityService>();
+builder.Services.AddScoped<ILoginTwoFactorService, LoginTwoFactorService>();
 builder.Services.AddScoped<ISupportService, SupportService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IWeatherService, WeatherService>();

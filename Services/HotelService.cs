@@ -595,7 +595,8 @@ public class HotelService : IHotelService
             SearchLabel = displayLabel,
             CampaignSlug = normalizedCampaignSlug,
             ActiveTag = normalizedTag,
-            CurrentPage = Math.Max(page, 1)
+            CurrentPage = Math.Max(page, 1),
+            PageSize = 15
         };
 
         var connectionString = GetConnectionString();

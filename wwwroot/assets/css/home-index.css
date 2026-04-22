@@ -25,7 +25,8 @@
 .fancy-input-wrap { display:flex; align-items:center; gap:8px; background:#fff; border-radius:12px; padding:8px; border:1px solid #e6eef9; box-shadow: 0 8px 24px rgba(2,32,71,0.04); }
 .fancy-pin { width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,#003b95,#0c5adb); color:#fff; display:grid; place-items:center; font-size:18px; }
 .fancy-input-wrap { position: relative; }
-.fancy-input { border:0; outline:none; padding:12px; font-size:16px; width:100%; }
+.fancy-input { border:0; outline:none; padding:12px; font-size:16px; width:100%; color:#0f172a; }
+.fancy-input::placeholder { color:#94A3B8; opacity: 1; font-weight: 600; }
 .fancy-search-suggestions {
     display: grid;
     gap: 8px;
@@ -161,6 +162,51 @@
 
 .fancy-cta-text {
     color: #ffffff;
+}
+
+/* Desktop: reduce "Nereye gidiyorsun?" field height ~25% */
+@media (min-width: 901px) {
+    .fancy-search-card {
+        padding: 14px;
+        gap: 12px;
+        border-radius: 16px;
+    }
+
+    .fancy-main {
+        gap: 6px;
+    }
+
+    .fancy-input-wrap {
+        padding: 6px;
+        border-radius: 12px;
+    }
+
+    .fancy-pin {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        font-size: 16px;
+    }
+
+    .fancy-input {
+        padding: 9px 10px;
+        font-size: 15px;
+    }
+
+    .fancy-controls {
+        gap: 8px;
+    }
+
+    .pill {
+        padding: 6px 10px;
+        border-radius: 12px;
+    }
+
+    .fancy-cta {
+        min-width: 112px;
+        padding: 10px 16px;
+        border-radius: 12px;
+    }
 }
 
 @keyframes searchIconPulse {
@@ -361,7 +407,7 @@
 }
 
 .hero-section {
-    padding: 32px 0 8px;
+    padding: 24px 0 8px;
 }
 
 .hero-layout {
@@ -369,13 +415,19 @@
        below when the slide image changes size. This makes the area under the hero independent. */
     display: flex;
     gap: 32px;
-    align-items: flex-start;
+    align-items: stretch;
+}
+
+/* Desktop: campaigns on the right side */
+@media (min-width: 1101px) {
+    .hero-copy { order: 1; }
+    .hero-slider-shell { order: 2; }
 }
 
 .hero-copy {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
     /* keep hero copy at least as tall as the slider so cards don't overlap on large screens */
     min-height: 360px;
 }
@@ -547,7 +599,7 @@
     /* keep slider at a predictable width so it doesn't expand the hero row or affect the sections below */
     flex: 0 0 520px;
     max-width: 520px;
-    align-self: flex-start;
+    align-self: stretch;
 }
 
 /* Make slider content fully constrained inside the slider shell */
@@ -558,7 +610,7 @@
 .hero-slide-card img {
     display: block; /* eliminate inline-image whitespace issues */
     width: 100%;
-    height: 360px; /* fixed visual height for consistency */
+    height: 100%; /* follow slider height */
     object-fit: cover;
 }
 
@@ -577,10 +629,47 @@
 
 .hero-swiper,
 .hero-slide-empty {
-    height: 360px;
+    height: 100%;
+    min-height: 360px;
     border-radius: 24px;
     overflow: hidden;
     box-shadow: 0 24px 48px rgba(0, 59, 149, 0.16);
+}
+
+/* Campaign slider moved below hero */
+.home-campaign-section {
+    padding-top: 10px;
+}
+
+.desktop-only { display: block; }
+.mobile-only { display: block; }
+
+@media (max-width: 900px) {
+    .desktop-only { display: none !important; }
+}
+
+@media (min-width: 901px) {
+    .mobile-only { display: none !important; }
+}
+
+.campaign-slider-shell {
+    position: relative;
+}
+
+.campaign-slider-shell .hero-swiper {
+    max-width: 100%;
+}
+
+.campaign-slider-shell .hero-swiper,
+.campaign-slider-shell .hero-slide-empty {
+    min-height: 340px;
+}
+
+@media (max-width: 767px) {
+    .campaign-slider-shell .hero-swiper,
+    .campaign-slider-shell .hero-slide-empty {
+        min-height: 210px;
+    }
 }
 
 .hero-slide-card {
@@ -646,8 +735,8 @@
     );
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 14px 34px rgba(2, 6, 23, 0.18);
-    backdrop-filter: blur(9px);
-    -webkit-backdrop-filter: blur(9px);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     color: #fff;
     z-index: 3;
     text-align: center;
@@ -903,6 +992,17 @@
 .rating-value i { color: #ffd166; }
 .new-reviews { background:#eef2ff; color:#1d4ed8; }
 
+/* Home hotel card: price left, rating right */
+.rating-price { flex-direction: row; }
+.rating-price .price-box { order: 1; flex: 1 1 auto; min-width: 0; }
+.rating-price .rating-box {
+    order: 2;
+    margin-left: auto;
+    flex: 0 0 auto;
+    align-items: flex-end;
+    text-align: right;
+}
+
 
 .home-hotel-card-link {
     display: block;
@@ -1156,6 +1256,26 @@
     box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
 }
 
+/* Desktop: lift swiper arrows so they don't cover hotel name */
+@media (min-width: 901px) {
+    .popular-swiper,
+    .weekend-swiper,
+    .home-category-swiper {
+        position: relative;
+    }
+
+    .popular-prev,
+    .popular-next,
+    .weekend-prev,
+    .weekend-next,
+    .home-category-prev,
+    .home-category-next {
+        top: 42%;
+        transform: translateY(-50%);
+        z-index: 6;
+    }
+}
+
 .popular-prev::after,
 .popular-next::after,
 .weekend-prev::after,
@@ -1258,10 +1378,16 @@
 }
 
 @media (max-width: 1100px) {
-    .hero-layout { flex-direction: column; }
+    .hero-layout { flex-direction: column; align-items: stretch; }
     .hero-slider-shell,
     .hero-swiper { max-width: 100%; flex-basis: auto; width: 100%; }
     .destination-grid { grid-template-columns: 1fr; }
+
+    /* Ensure hero copy expands with viewport width */
+    .hero-copy { width: 100%; max-width: 100%; box-sizing: border-box; }
+
+    /* Mobile: show campaigns first */
+    .hero-slider-shell { order: -1; }
 
     .hero-search-card {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1364,7 +1490,7 @@
 
     .hero-swiper,
     .hero-slide-empty {
-        height: 280px;
+        height: 210px;
     }
 
     .destination-card {
@@ -1376,17 +1502,16 @@
     }
 
     .section-header {
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
+        display: flex;
         align-items: center;
-        column-gap: 8px;
+        justify-content: space-between;
+        gap: 12px;
         margin-bottom: 12px;
     }
 
     .section-title {
-        grid-column: 2;
-        text-align: center;
-        width: 100%;
+        text-align: left;
+        width: auto;
         font-size: clamp(1.18rem, 5.4vw, 1.45rem);
         line-height: 1.15;
         white-space: nowrap;
@@ -1395,8 +1520,7 @@
     }
 
     .section-link {
-        grid-column: 3;
-        justify-self: end;
+        justify-self: auto;
         white-space: nowrap;
         padding: 7px 10px;
         font-size: 0.78rem;
@@ -1454,6 +1578,12 @@
     }
 }
 
+@media (max-width: 900px) {
+    /* Mobile hero search: slightly smaller input text/placeholder */
+    .fancy-input { font-size: 15px; padding: 11px 12px; }
+    .fancy-input::placeholder { font-weight: 600; font-size: 14px; }
+}
+
 @media (max-width: 560px) {
     .hero-search-card,
     .hotel-grid {
@@ -1464,10 +1594,20 @@
         grid-column: span 1;
     }
 
-    .hotel-name-row,
-    .rating-price {
+    .hotel-name-row {
         flex-direction: column;
         align-items: start;
+    }
+
+    /* Keep rating box on the right of the price row (mobile) */
+    .rating-price {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .rating-price .rating-box {
+        margin-left: auto;
+        flex: 0 0 auto;
     }
 
     .price-box {

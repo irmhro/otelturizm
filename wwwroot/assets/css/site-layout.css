@@ -1265,8 +1265,8 @@ body {
   }
   .logo-area {
     position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 16px;
+    transform: none;
     gap: 0;
   }
   .header-actions .action-btn:not(.mobile-nav-toggle),
@@ -1325,17 +1325,39 @@ body {
   .brand-logo-image { height: 36px; max-width: 180px; }
   .footer-logo-image { height: 34px; max-width: 180px; }
   .footer-bottom-links {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
   }
   .trust-badges {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    gap: 8px;
   }
   .trust-badge {
     text-align: center;
     justify-content: center;
+    flex: 1 1 0;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  /* Mobile footer order + alignment */
+  .footer-bottom { display: flex; flex-direction: column; gap: 10px; }
+  .footer-bottom-top { display: flex; flex-direction: column; gap: 10px; }
+  .footer-agency-wrap { order: 1; width: 100%; justify-items: start; }
+  .footer-bottom-links { order: 2; width: 100%; }
+  .footer-copyright { order: 3; width: 100%; font-size: 13px; color: var(--text-gray); }
+
+  .footer-agency-note {
+    width: 100%;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    letter-spacing: 0.02em;
   }
 }
 .global-draft-banner {

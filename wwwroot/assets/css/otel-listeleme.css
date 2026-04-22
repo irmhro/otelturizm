@@ -1808,16 +1808,30 @@ body.listing-modal-open {
 
 /* Mobile: price single line, button below */
 @media (max-width: 639px) {
-    /* Mobile grid: 2 cards side-by-side, tight spacing */
+    /* Mobile: single card per view with swipe (horizontal snap) */
     .listing-template-v41 .hotel-list {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        display: flex;
+        flex-direction: row;
+        gap: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 2px 2px 10px;
+        scroll-snap-type: x mandatory;
+        scroll-padding-left: 2px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .listing-template-v41 .hotel-list::-webkit-scrollbar {
+        display: none;
     }
 
     .listing-template-v41 .hotel-card {
-        min-height: 0;
+        flex: 0 0 calc(100% - 4px);
+        scroll-snap-align: start;
     }
+
+    .listing-template-v41 .hotel-card { min-height: 0; }
 
     .listing-template-v41 .price-section {
         flex-direction: row;

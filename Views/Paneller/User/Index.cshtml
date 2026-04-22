@@ -27,31 +27,41 @@
     <article class="stats-card">
         <div class="stats-head">
             <div class="stats-icon blue"><i class="fas fa-calendar-alt"></i></div>
-            <span class="trend up"><i class="fas fa-list"></i> Toplam</span>
+            <div class="stats-head-right">
+                <strong class="stats-value">@Model.TotalReservationCount</strong>
+                <span class="trend up"><i class="fas fa-list"></i> Toplam</span>
+            </div>
         </div>
-        <strong>@Model.TotalReservationCount</strong>
         <p>Toplam rezervasyon</p>
     </article>
     <article class="stats-card">
         <div class="stats-head">
             <div class="stats-icon yellow"><i class="fas fa-clock"></i></div>
-            <span class="trend up"><i class="fas fa-suitcase"></i> Aktif</span>
+            <div class="stats-head-right">
+                <strong class="stats-value">@Model.UpcomingReservationCount</strong>
+                <span class="trend up"><i class="fas fa-suitcase"></i> Aktif</span>
+            </div>
         </div>
-        <strong>@Model.UpcomingReservationCount</strong>
         <p>Yaklaşan konaklama</p>
     </article>
     <article class="stats-card">
         <div class="stats-head">
             <div class="stats-icon rose"><i class="fas fa-heart"></i></div>
+            <div class="stats-head-right">
+                <strong class="stats-value">@Model.FavoriteCount</strong>
+                <span class="trend up"><i class="fas fa-heart"></i> Favori</span>
+            </div>
         </div>
-        <strong>@Model.FavoriteCount</strong>
         <p>Favori otel</p>
     </article>
     <article class="stats-card">
         <div class="stats-head">
             <div class="stats-icon green"><i class="fas fa-tag"></i></div>
+            <div class="stats-head-right">
+                <strong class="stats-value">@Model.DiscountText</strong>
+                <span class="trend up"><i class="fas fa-tag"></i> Tasarruf</span>
+            </div>
         </div>
-        <strong>@Model.DiscountText</strong>
         <p>Toplam tasarruf</p>
     </article>
 </section>

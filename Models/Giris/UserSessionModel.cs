@@ -11,4 +11,6 @@ public class UserSessionModel
     public long? OwnershipPartnerId { get; set; }
     public List<long> ManagedHotelIds { get; set; } = new();
     public List<string> RoleCodes { get; set; } = new();
+    public bool TwoFactorEnabled { get; set; }
+    public string TwoFactorChannel { get; set; } = "email";
 }

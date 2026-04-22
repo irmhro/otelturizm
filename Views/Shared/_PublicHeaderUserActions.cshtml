@@ -68,25 +68,45 @@
         </summary>
 
         <div class="public-account-dropdown">
-            <div class="public-account-summary">
-                <span class="public-account-badge">@GetAccountBadge()</span>
-                @if (string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase))
-                {
-                    <strong>@fullName</strong>
-                }
-                else
-                {
-                    <strong>@GetPanelLabel()</strong>
-                }
-            </div>
-
-            <a href="@GetPanelUrl()" class="public-account-link">
-                <i class="fas fa-grid-2"></i>
-                <span>@GetPanelLabel()</span>
-            </a>
-
-            @if (!string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase))
+            @if (string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase))
             {
+                <div class="public-account-summary">
+                    <span class="public-account-badge">@GetAccountBadge()</span>
+                    <strong>@fullName</strong>
+                </div>
+
+                <a href="@GetPanelUrl()" class="public-account-link">
+                    <i class="fas fa-grid-2"></i>
+                    <span>@GetPanelLabel()</span>
+                </a>
+            }
+            else if (string.Equals(accountType, "partner", StringComparison.OrdinalIgnoreCase))
+            {
+                <a href="@GetPanelUrl()" class="public-account-link">
+                    <i class="fas fa-grid-2"></i>
+                    <span>Partner Paneli</span>
+                </a>
+                <a href="/kurumsal" class="public-account-link">
+                    <i class="fas fa-building"></i>
+                    <span>Kurumsal</span>
+                </a>
+                <a href="/panel/partner/rooms" class="public-account-link">
+                    <i class="fas fa-bed"></i>
+                    <span>Odalar</span>
+                </a>
+            }
+            else
+            {
+                <div class="public-account-summary">
+                    <span class="public-account-badge">@GetAccountBadge()</span>
+                    <strong>@GetPanelLabel()</strong>
+                </div>
+
+                <a href="@GetPanelUrl()" class="public-account-link">
+                    <i class="fas fa-grid-2"></i>
+                    <span>@GetPanelLabel()</span>
+                </a>
+
                 <a href="/kurumsal" class="public-account-link">
                     <i class="fas fa-building"></i>
                     <span>Kurumsal</span>
@@ -111,13 +131,6 @@
                     <a href="/panel/firma/dashboard" class="public-account-link">
                         <i class="fas fa-chart-line"></i>
                         <span>Firma Özeti</span>
-                    </a>
-                }
-                else if (string.Equals(accountType, "partner", StringComparison.OrdinalIgnoreCase))
-                {
-                    <a href="/panel/partner/rooms" class="public-account-link">
-                        <i class="fas fa-bed"></i>
-                        <span>Odalar</span>
                     </a>
                 }
             }

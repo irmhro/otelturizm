@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Giris;
@@ -20,10 +21,15 @@ public class AuthController : Controller
     private const string ResetPasswordPath = "/sifre-sifirla";
 
     private readonly IAuthService _authService;
+    private readonly ILoginTwoFactorService _loginTwoFactorService;
+    private readonly IDataProtector _login2FaProtector;
+    private const string Login2FaCookieName = "Otelturizm.Login2FA";
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, ILoginTwoFactorService loginTwoFactorService, IDataProtectionProvider dataProtectionProvider)
     {
         _authService = authService;
+        _loginTwoFactorService = loginTwoFactorService;
+        _login2FaProtector = dataProtectionProvider.CreateProtector("otelturizm.login-2fa.v1");
     }
 
     [HttpGet(UserLoginPath)]
@@ -101,8 +107,221 @@ public class AuthController : Controller
             return Redirect(UserLoginPath);
         }
 
+        var twoFactorRedirect = await HandleTwoFactorAsync(user, rememberMe, UserLoginPath, "UserLoginError", cancellationToken);
+        if (twoFactorRedirect is not null)
+        {
+            return twoFactorRedirect;
+        }
+
         await SignInAsync(user, rememberMe);
+        await _authService.RecordLoginAsync(user.UserId, "user", HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
         return Redirect(GetRedirectPath(user));
+    }
+
+    [HttpGet("/kullanici-giris-2fa")]
+    public IActionResult UserLoginTwoFactor()
+    {
+        ViewData["PageCss"] = "user-login";
+        if (!TryReadLogin2FaCookie(out _, out _, out _, out var loginPath, out var channel, out var destinationHint))
+        {
+            TempData["UserLoginError"] = "Güvenlik doğrulaması bulunamadı. Lütfen tekrar giriş yapın.";
+            return Redirect(UserLoginPath);
+        }
+
+        return View("~/Views/Login/UserLogin2FA.cshtml", BuildTwoFactorViewModel(channel, destinationHint));
+    }
+
+    [HttpPost("/kullanici-giris-2fa")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UserLoginTwoFactorPost(LoginTwoFactorViewModel model, CancellationToken cancellationToken = default)
+    {
+        ViewData["PageCss"] = "user-login";
+        if (!TryReadLogin2FaCookie(out var userId, out var rememberMe, out var redirectPath, out var loginPath, out _, out _))
+        {
+            TempData["UserLoginError"] = "Güvenlik doğrulaması bulunamadı. Lütfen tekrar giriş yapın.";
+            return Redirect(UserLoginPath);
+        }
+
+        if (!ModelState.IsValid)
+        {
+            if (TryReadLogin2FaCookie(out _, out _, out _, out _, out var currentChannel, out var currentDestinationHint))
+            {
+                var viewModel = BuildTwoFactorViewModel(currentChannel, currentDestinationHint);
+                viewModel.Code = model.Code;
+                return View("~/Views/Login/UserLogin2FA.cshtml", viewModel);
+            }
+
+            return View("~/Views/Login/UserLogin2FA.cshtml", model);
+        }
+
+        var verify = await _loginTwoFactorService.VerifyCodeAsync(userId, model.Code, cancellationToken);
+        if (!verify.Success)
+        {
+            TempData["UserLoginError"] = verify.Message;
+            return Redirect("/kullanici-giris-2fa");
+        }
+
+        var user = await _authService.GetUserSessionByIdAsync(userId, cancellationToken);
+        if (user is null)
+        {
+            TempData["UserLoginError"] = "Giriş bilgileri alınamadı. Lütfen tekrar deneyin.";
+            return Redirect(UserLoginPath);
+        }
+
+        await SignInAsync(user, rememberMe);
+        await _authService.RecordLoginAsync(user.UserId, "user", HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
+        ClearLogin2FaCookie();
+        return Redirect(string.IsNullOrWhiteSpace(redirectPath) ? GetRedirectPath(user) : redirectPath);
+    }
+
+    [HttpPost("/kullanici-giris-2fa/tekrar-gonder")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendUserLoginTwoFactor(CancellationToken cancellationToken = default)
+    {
+        if (!TryReadLogin2FaCookie(out var userId, out _, out _, out var loginPath, out _, out var destinationHint))
+        {
+            TempData["UserLoginError"] = "Güvenlik doğrulaması bulunamadı. Lütfen tekrar giriş yapın.";
+            return Redirect(UserLoginPath);
+        }
+
+        var sendResult = await _loginTwoFactorService.SendCodeAsync(
+            userId,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+
+        TempData[sendResult.Success ? "UserLoginSuccess" : "UserLoginError"] = sendResult.Message;
+        if (sendResult.Success)
+        {
+            var challengeInfo = await _authService.GetTwoFactorChallengeInfoAsync(userId, cancellationToken);
+            var refreshedHint = challengeInfo.Success ? challengeInfo.DestinationHint : destinationHint;
+            var refreshedChannel = challengeInfo.Success ? challengeInfo.Channel : sendResult.Channel;
+            UpdateLogin2FaCookieChannel(userId, loginPath, refreshedChannel, refreshedHint);
+        }
+        return Redirect("/kullanici-giris-2fa");
+    }
+
+    private void SetLogin2FaCookie(long userId, bool rememberMe, string redirectPath, string loginPath, string channel, string destinationHint)
+    {
+        var payload = $"{userId}|{(rememberMe ? 1 : 0)}|{Uri.EscapeDataString(redirectPath ?? string.Empty)}|{DateTime.UtcNow:O}|{Uri.EscapeDataString(loginPath ?? UserLoginPath)}|{channel}|{Uri.EscapeDataString(destinationHint ?? string.Empty)}";
+        var protectedValue = _login2FaProtector.Protect(payload);
+        Response.Cookies.Append(Login2FaCookieName, protectedValue, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            IsEssential = true,
+            Expires = DateTimeOffset.UtcNow.AddMinutes(10)
+        });
+    }
+
+    private bool TryReadLogin2FaCookie(out long userId, out bool rememberMe, out string redirectPath, out string loginPath, out string channel, out string destinationHint)
+    {
+        userId = 0;
+        rememberMe = false;
+        redirectPath = string.Empty;
+        loginPath = UserLoginPath;
+        channel = "email";
+        destinationHint = string.Empty;
+
+        if (!Request.Cookies.TryGetValue(Login2FaCookieName, out var raw) || string.IsNullOrWhiteSpace(raw))
+        {
+            return false;
+        }
+
+        string unprotected;
+        try
+        {
+            unprotected = _login2FaProtector.Unprotect(raw);
+        }
+        catch
+        {
+            return false;
+        }
+
+        var parts = unprotected.Split('|');
+        if (parts.Length < 4 || !long.TryParse(parts[0], out userId))
+        {
+            return false;
+        }
+
+        rememberMe = string.Equals(parts[1], "1", StringComparison.Ordinal);
+        redirectPath = Uri.UnescapeDataString(parts[2] ?? string.Empty);
+        if (parts.Length >= 5)
+        {
+            loginPath = Uri.UnescapeDataString(parts[4] ?? string.Empty);
+        }
+        if (parts.Length >= 6)
+        {
+            channel = parts[5];
+        }
+        if (parts.Length >= 7)
+        {
+            destinationHint = Uri.UnescapeDataString(parts[6] ?? string.Empty);
+        }
+        return userId > 0;
+    }
+
+    private void UpdateLogin2FaCookieChannel(long userId, string loginPath, string channel, string destinationHint)
+    {
+        if (!TryReadLogin2FaCookie(out _, out var rememberMe, out var redirectPath, out _, out _, out _))
+        {
+            return;
+        }
+
+        SetLogin2FaCookie(userId, rememberMe, redirectPath, loginPath, channel, destinationHint);
+    }
+
+    private void ClearLogin2FaCookie()
+    {
+        Response.Cookies.Delete(Login2FaCookieName);
+    }
+
+    private async Task<IActionResult?> HandleTwoFactorAsync(UserSessionModel user, bool rememberMe, string loginPath, string errorTempDataKey, CancellationToken cancellationToken)
+    {
+        if (!user.TwoFactorEnabled)
+        {
+            return null;
+        }
+
+        var challengeInfo = await _authService.GetTwoFactorChallengeInfoAsync(user.UserId, cancellationToken);
+        if (!challengeInfo.Success)
+        {
+            TempData[errorTempDataKey] = challengeInfo.Message;
+            return Redirect(loginPath);
+        }
+
+        var sendResult = await _loginTwoFactorService.SendCodeAsync(
+            user.UserId,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+
+        if (!sendResult.Success)
+        {
+            TempData[errorTempDataKey] = sendResult.Message;
+            return Redirect(loginPath);
+        }
+
+        SetLogin2FaCookie(user.UserId, rememberMe, GetRedirectPath(user), loginPath, challengeInfo.Channel, challengeInfo.DestinationHint);
+        return Redirect("/kullanici-giris-2fa");
+    }
+
+    private static LoginTwoFactorViewModel BuildTwoFactorViewModel(string channel, string destinationHint)
+    {
+        var normalizedChannel = string.Equals(channel, "whatsapp", StringComparison.OrdinalIgnoreCase)
+            ? "whatsapp"
+            : "email";
+
+        return new LoginTwoFactorViewModel
+        {
+            Channel = normalizedChannel,
+            ChannelLabel = normalizedChannel == "whatsapp" ? "WhatsApp" : "E-posta",
+            DestinationHint = destinationHint ?? string.Empty,
+            InlineHint = normalizedChannel == "whatsapp"
+                ? $"Girişinizi tamamlamak için WhatsApp üzerinden gönderilen güvenlik kodunu girin. {destinationHint}".Trim()
+                : $"Girişinizi tamamlamak için e-posta adresinize gönderilen güvenlik kodunu girin. {destinationHint}".Trim()
+        };
     }
 
     [HttpPost(AdminLoginPath)]
@@ -145,6 +364,12 @@ public class AuthController : Controller
             return Redirect(AdminLoginPath);
         }
 
+        var twoFactorRedirect = await HandleTwoFactorAsync(user, rememberMe, AdminLoginPath, "AdminLoginError", cancellationToken);
+        if (twoFactorRedirect is not null)
+        {
+            return twoFactorRedirect;
+        }
+
         await SignInAsync(user, rememberMe);
         return Redirect(Url.Action("Dashboard", "AdminPanel") ?? "/admin/dashboard");
     }
@@ -180,6 +405,12 @@ public class AuthController : Controller
         {
             TempData["FirmaLoginError"] = "Firma hesabı bulunamadı, henüz onaylanmadı veya şifre yanlış.";
             return Redirect(FirmaLoginPath);
+        }
+
+        var twoFactorRedirect = await HandleTwoFactorAsync(user, rememberMe, FirmaLoginPath, "FirmaLoginError", cancellationToken);
+        if (twoFactorRedirect is not null)
+        {
+            return twoFactorRedirect;
         }
 
         await SignInAsync(user, rememberMe);
@@ -231,6 +462,12 @@ public class AuthController : Controller
             return Redirect(PartnerLoginPath);
         }
 
+        var twoFactorRedirect = await HandleTwoFactorAsync(user, rememberMe, PartnerLoginPath, "PartnerLoginError", cancellationToken);
+        if (twoFactorRedirect is not null)
+        {
+            return twoFactorRedirect;
+        }
+
         await SignInAsync(user, rememberMe);
         return Redirect(GetRedirectPath(user));
     }
@@ -249,6 +486,7 @@ public class AuthController : Controller
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         HttpContext.Response.Cookies.Delete("Otelturizm.SessionKey");
         HttpContext.Response.Cookies.Delete("Otelturizm.LastSeenUtc");
+        HttpContext.Response.Cookies.Delete(Login2FaCookieName);
         return Redirect(redirectPath);
     }
 

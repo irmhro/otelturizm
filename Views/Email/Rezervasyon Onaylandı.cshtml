@@ -1,48 +1,54 @@
 <!DOCTYPE html>
 <html lang="tr">
-<body style="margin:0;padding:0;background:#edf3f9;font-family:Inter,Arial,sans-serif;color:#162136;">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#edf3f9;padding:28px 12px;">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Otelturizm · Rezervasyonun Onaylandı</title>
+</head>
+<body style="margin:0;padding:0;background:#E8ECF2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Helvetica,Arial,sans-serif;color:#1A1F26;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#E8ECF2;padding:36px 12px;">
         <tr>
             <td align="center">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="640" style="max-width:640px;background:#ffffff;border:1px solid #dae5f4;border-radius:24px;overflow:hidden;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#FFFFFF;border-radius:24px;overflow:hidden;box-shadow:0 10px 34px rgba(15,23,42,0.10);">
                     <tr>
-                        <td style="background:linear-gradient(135deg,#003b95 0%,#0f5bd7 60%,#2d7fff 100%);padding:34px;color:#ffffff;">
-                            <p style="margin:0 0 8px;font-size:13px;letter-spacing:.16em;text-transform:uppercase;opacity:.85;">Rezervasyon Merkezi</p>
-                            <h1 style="margin:0;font-size:30px;line-height:1.2;">Rezervasyonunuz onaylandi</h1>
-                            <p style="margin:12px 0 0;font-size:16px;line-height:1.55;opacity:.92;">Konaklamaniz kesinlesti, keyifli bir deneyim dileriz.</p>
+                        <td style="background:linear-gradient(135deg,#003B95 0%,#0055CC 100%);padding:34px 28px;color:#ffffff;text-align:center;">
+                            <div style="font-size:13px;letter-spacing:.16em;text-transform:uppercase;opacity:.92;font-weight:800;">Rezervasyon Merkezi</div>
+                            <div style="margin-top:10px;font-size:22px;font-weight:900;">Rezervasyonun Onaylandı!</div>
+                            <div style="margin-top:8px;font-size:14px;opacity:.92;">Tatilin için geri sayım başladı</div>
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding:34px;">
-                            <p style="margin:0 0 14px;font-size:17px;">Merhaba <strong>{{user_first_name}}</strong>,</p>
-                            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#425571;">
-                                <strong>{{hotel_name}}</strong> icin rezervasyonunuz basariyla onaylandi.
+                        <td style="padding:28px;">
+                            <p style="margin:0 0 12px;font-size:18px;">Harika haber <strong>{{user_first_name}}</strong>!</p>
+                            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#334155;">
+                                <strong>{{hotel_name}}</strong> rezervasyonun onaylandı. Rezervasyon numaran:
+                                <strong style="font-size:18px;color:#003B95;">#{{booking_reference}}</strong>
                             </p>
 
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f5f9ff;border:1px solid #dfe9f8;border-radius:16px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border:1px solid #E7E9EC;border-radius:16px;margin:0 0 16px;">
                                 <tr>
-                                    <td style="padding:16px 18px;">
-                                        <p style="margin:0 0 8px;font-size:13px;color:#60768f;letter-spacing:.06em;text-transform:uppercase;">Rezervasyon no</p>
-                                        <p style="margin:0 0 12px;font-size:22px;font-weight:800;color:#0f5bd7;">#{{booking_reference}}</p>
-                                        <p style="margin:0 0 6px;font-size:14px;color:#2b3f58;"><strong>Konaklama:</strong> {{check_in_date}} - {{check_out_date}}</p>
-                                        <p style="margin:0;font-size:14px;color:#2b3f58;"><strong>Toplam:</strong> ₺{{total_price}}</p>
+                                    <td style="padding:16px 16px;">
+                                        <div style="font-size:12px;color:#6B7380;text-transform:uppercase;letter-spacing:.08em;font-weight:800;">Konaklama Detayları</div>
+                                        <div style="margin-top:10px;font-size:14px;color:#1A1F26;"><strong>Konaklama:</strong> {{check_in_date}} → {{check_out_date}}</div>
+                                        <div style="margin-top:6px;font-size:14px;color:#1A1F26;"><strong>Oda:</strong> {{room_type_name}}</div>
+                                        <div style="margin-top:6px;font-size:14px;color:#1A1F26;"><strong>Toplam:</strong> ₺{{total_price}}</div>
                                     </td>
                                 </tr>
                             </table>
 
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#ecfff4;border:1px solid #bfebd0;border-radius:14px;margin:16px 0 0;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:rgba(0,168,107,0.10);border:1px solid rgba(0,168,107,0.26);border-radius:14px;margin:0 0 16px;">
                                 <tr>
                                     <td style="padding:14px 16px;font-size:13px;line-height:1.65;color:#1e6f42;">
-                                        Otele varisinizdan once check-in detaylariniz panelinizde goruntulenecektir.
+                                        Check-in detayların ve varsa ek taleplerin hesap panelinde görüntülenir.
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding:22px 34px;background:#f6f9ff;border-top:1px solid #e3ebf7;">
-                            <p style="margin:0;font-size:12px;color:#6d7f96;">Detaylar icin hesap panelini ziyaret edin.</p>
-                            <p style="margin:8px 0 0;font-size:12px;color:#6d7f96;">© 2026 Otelturizm</p>
+                        <td style="padding:18px 22px;background:#F5F7FA;border-top:1px solid #E7E9EC;color:#6B7380;text-align:center;">
+                            <p style="margin:0;font-size:12px;">Detaylar için hesap panelini ziyaret edebilirsin.</p>
+                            <p style="margin:8px 0 0;font-size:12px;">© 2026 Otelturizm · Rezervasyon No: #{{booking_reference}}</p>
                         </td>
                     </tr>
                 </table>

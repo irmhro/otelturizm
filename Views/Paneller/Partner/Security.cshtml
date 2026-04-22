@@ -1,0 +1,33 @@
+@model otelturizmnew.Models.Paneller.User.UserSecurityPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+}
+
+<section class="form-stack">
+    <form method="post" action="/panel/partner/guvenlik/iki-asamali" class="panel-card">
+        @Html.AntiForgeryToken()
+        <div class="section-head"><h2>İki Aşamalı Doğrulama</h2></div>
+        <label class="toggle-row no-border">
+            <div><h3>Partner hesabı için 2FA</h3><p>Yönetim hesabınıza ikinci doğrulama adımı ekleyin.</p></div>
+            <input name="Enabled" type="checkbox" value="true" @(Model.TwoFactorEnabled ? "checked" : null) />
+        </label>
+        <input name="Enabled" type="hidden" value="false" />
+        <div class="form-grid" style="margin-top:18px;">
+            <label class="full">
+                <span>Doğrulama kanalı</span>
+                <div class="radio-stack">
+                    <label class="radio-option">
+                        <input type="radio" name="Channel" value="email" @(Model.SelectedTwoFactorChannel == "email" ? "checked" : null) />
+                        <span><strong>E-posta güvenlik kodu</strong><small>@(Model.EmailUsableForTwoFactor ? $"Aktif adres: {Model.MaskedEmailAddress}" : "Önce e-posta doğrulaması tamamlanmalı.")</small></span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="Channel" value="whatsapp" @(Model.SelectedTwoFactorChannel == "whatsapp" ? "checked" : null) />
+                        <span><strong>Telefon / WhatsApp kodu</strong><small>@(Model.PhoneUsableForTwoFactor ? $"Doğrulanmış numara: {Model.MaskedPhoneNumber}" : "Telefon kanalı hazır, ancak doğrulanmış WhatsApp numarası gerektirir.")</small></span>
+                    </label>
+                </div>
+            </label>
+        </div>
+        <p class="auth-inline-hint" style="margin-top:14px;">Partner hesabı için e-posta kanalı en hızlı ve güvenli seçenek olarak önerilir. Telefon/WhatsApp kanalı geliştirilmiş beta destek olarak kalır.</p>
+        <div class="save-row"><button type="submit" class="primary-btn">Güvenlik tercihini kaydet</button></div>
+    </form>
+</section>

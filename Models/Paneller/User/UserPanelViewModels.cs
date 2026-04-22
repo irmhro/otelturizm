@@ -148,12 +148,19 @@ public class UserLoyaltyPageViewModel
     public List<UserLoyaltyPriceAlertViewModel> PriceAlerts { get; set; } = new();
     public List<UserLoyaltyBadgeViewModel> Badges { get; set; } = new();
     public List<UserLoyaltyPassportCityViewModel> PassportCities { get; set; } = new();
+    public List<UserLoyaltyRecentCityViewModel> RecentReservationCities { get; set; } = new();
     public List<UserLoyaltyTravelPlanViewModel> TravelPlans { get; set; } = new();
     public List<UserLoyaltyOfferViewModel> Offers { get; set; } = new();
     public List<UserLoyaltyBudgetPlanViewModel> BudgetPlans { get; set; } = new();
     public List<UserLoyaltyRecommendationViewModel> Recommendations { get; set; } = new();
     public UserLoyaltyBudgetPlanForm BudgetPlanForm { get; set; } = new();
     public UserLoyaltyTravelPlanForm TravelPlanForm { get; set; } = new();
+}
+
+public class UserLoyaltyRecentCityViewModel
+{
+    public string CityName { get; set; } = string.Empty;
+    public string DateText { get; set; } = string.Empty;
 }
 
 public class UserLoyaltyTierViewModel
@@ -284,6 +291,10 @@ public class UserLoyaltyTravelPlanForm
 public class UserProfilePageViewModel
 {
     public UserProfileForm Form { get; set; } = new();
+    public bool EmailVerified { get; set; }
+    public string EmailVerifiedAtText { get; set; } = "—";
+    public string ProfileImageUrl { get; set; } = "/uploads/demo/avatars/avatar-01.svg";
+    public List<string> PresetAvatarUrls { get; set; } = new();
     public UserPhoneVerificationStatusViewModel PhoneVerification { get; set; } = new();
     public List<AddressCountryOption> Countries { get; set; } = new();
     public List<AddressProvinceOption> Provinces { get; set; } = new();
@@ -293,6 +304,7 @@ public class UserProfilePageViewModel
     public long? SelectedNeighborhoodId { get; set; }
     public bool OpenCompletionModal { get; set; }
     public bool OpenPhoneVerification { get; set; }
+    public bool OpenEmailUpdate { get; set; }
     public string ReturnUrl { get; set; } = string.Empty;
 }
 
@@ -317,6 +329,20 @@ public class UserProfileForm
     public string? SpokenLanguages { get; set; }
     public string? TravelPurpose { get; set; }
     public string? SpecialRequests { get; set; }
+}
+
+public class UserEmailUpdateRequestForm
+{
+    public string? ReturnUrl { get; set; }
+    public string NewEmail { get; set; } = string.Empty;
+}
+
+public class UserEmailUpdateVerifyForm
+{
+    public string? ReturnUrl { get; set; }
+    public string NewEmail { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string? Token { get; set; }
 }
 
 public class UserNotificationsPageViewModel
@@ -347,12 +373,22 @@ public class UserNotificationItemViewModel
 public class UserSecurityPageViewModel
 {
     public bool TwoFactorEnabled { get; set; }
+    public string SelectedTwoFactorChannel { get; set; } = "email";
+    public string EmailAddress { get; set; } = string.Empty;
+    public string MaskedEmailAddress { get; set; } = string.Empty;
+    public bool EmailUsableForTwoFactor { get; set; }
+    public string PhoneNumber { get; set; } = string.Empty;
+    public string MaskedPhoneNumber { get; set; } = string.Empty;
+    public bool PhoneUsableForTwoFactor { get; set; }
     public List<UserSessionRowViewModel> Sessions { get; set; } = new();
 }
 
 public class UserSessionRowViewModel
 {
     public string DeviceLabel { get; set; } = string.Empty;
+    public string IpAddress { get; set; } = "—";
+    public string LoginAtText { get; set; } = "—";
+    public int OpenMinutes { get; set; }
     public string ActivityText { get; set; } = string.Empty;
     public string RememberText { get; set; } = string.Empty;
 }
@@ -367,6 +403,7 @@ public class UserChangePasswordForm
 public class UserTwoFactorForm
 {
     public bool Enabled { get; set; }
+    public string Channel { get; set; } = "email";
 }
 
 public class UserPaymentMethodsPageViewModel

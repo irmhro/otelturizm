@@ -23,7 +23,7 @@ public class EmailTemplateService : IEmailTemplateService
         var absolutePath = Path.Combine(_environment.ContentRootPath, normalized);
         if (!File.Exists(absolutePath))
         {
-            throw new FileNotFoundException($"E-posta şablonu bulunamadı: {absolutePath}");
+            return RenderFallbackTemplate(relativeViewPath, tokens, absolutePath);
         }
 
         var content = await File.ReadAllTextAsync(absolutePath, Encoding.UTF8, cancellationToken);
@@ -34,5 +34,51 @@ public class EmailTemplateService : IEmailTemplateService
         }
 
         return content;
+    }
+
+    private static string RenderFallbackTemplate(string relativeViewPath, IReadOnlyDictionary<string, string> tokens, string absolutePath)
+    {
+        var normalized = relativeViewPath.Replace('\\', '/');
+        if (normalized.EndsWith("Views/Email/Giris Guvenlik Kodu.cshtml", StringComparison.OrdinalIgnoreCase))
+        {
+            var code = ReadToken(tokens, "verification_code");
+            var firstName = ReadToken(tokens, "user_first_name", "Misafir");
+            var loginTime = ReadToken(tokens, "login_time");
+
+            return $$"""
+                     <!DOCTYPE html>
+                     <html lang="tr">
+                     <head>
+                         <meta charset="utf-8" />
+                         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                         <title>Giriş Güvenlik Kodunuz</title>
+                     </head>
+                     <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#10203a;">
+                         <div style="max-width:620px;margin:0 auto;padding:32px 16px;">
+                             <div style="background:#ffffff;border-radius:20px;padding:32px;border:1px solid #dbe4f0;">
+                                 <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:.08em;color:#2f6fed;">OTELTURIZM</p>
+                                 <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#10203a;">Giriş güvenlik kodunuz hazır</h1>
+                                 <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">Merhaba {{firstName}},</p>
+                                 <p style="margin:0 0 20px;font-size:16px;line-height:1.6;">Hesabınıza giriş yapmak için aşağıdaki tek kullanımlık güvenlik kodunu kullanın.</p>
+                                 <div style="margin:0 0 20px;padding:18px 24px;border-radius:16px;background:#edf4ff;border:1px solid #c7dbff;text-align:center;">
+                                     <span style="display:block;font-size:34px;font-weight:800;letter-spacing:.28em;color:#174ea6;">{{code}}</span>
+                                 </div>
+                                 <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#4d5f7a;">Kod oluşturulma zamanı: {{loginTime}}</p>
+                                 <p style="margin:0;font-size:14px;line-height:1.6;color:#4d5f7a;">Bu işlemi siz yapmadıysanız hesabınızın şifresini değiştirin.</p>
+                             </div>
+                         </div>
+                     </body>
+                     </html>
+                     """;
+        }
+
+        throw new FileNotFoundException($"E-posta şablonu bulunamadı: {absolutePath}");
+    }
+
+    private static string ReadToken(IReadOnlyDictionary<string, string> tokens, string key, string fallback = "")
+    {
+        return tokens.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
+            ? value
+            : fallback;
     }
 }

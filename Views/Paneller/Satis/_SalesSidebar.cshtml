@@ -1,4 +1,7 @@
 @model otelturizmnew.Models.Paneller.Satis.SalesPanelShellViewModel
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+}
 <aside class="sales-sidebar">
     <div class="sales-sidebar-header">
         <a href="/panel/satis/dashboard" class="sales-brand-link" aria-label="Otelturizm Satis">
@@ -21,6 +24,7 @@
         <a class="@(Model.ActiveSectionKey == "customers" ? "active" : string.Empty)" href="/panel/satis/musteri-yonetimi"><i class="fas fa-users"></i><span>Müşteri Yönetimi</span></a>
         <a class="@(Model.ActiveSectionKey == "reports" ? "active" : string.Empty)" href="/panel/satis/raporlar"><i class="fas fa-chart-column"></i><span>Raporlar</span></a>
         <a class="@(Model.ActiveSectionKey == "hotels" ? "active" : string.Empty)" href="/panel/satis/otel-rehberi"><i class="fas fa-hotel"></i><span>Otel Rehberi</span></a>
+        <a class="@(currentAction == "Security" ? "active" : string.Empty)" href="/panel/satis/guvenlik"><i class="fas fa-shield-halved"></i><span>Güvenlik</span></a>
     </nav>
     <div class="sales-sidebar-meta">
         <span>Günlük hedef: @Model.DailyTarget.ToString("N0") TL</span>

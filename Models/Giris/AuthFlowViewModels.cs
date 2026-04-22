@@ -37,6 +37,18 @@ public class ResetPasswordViewModel
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
+public class LoginTwoFactorViewModel
+{
+    [Required]
+    [StringLength(8, MinimumLength = 4)]
+    public string Code { get; set; } = string.Empty;
+
+    public string Channel { get; set; } = "email";
+    public string ChannelLabel { get; set; } = "E-posta";
+    public string DestinationHint { get; set; } = string.Empty;
+    public string InlineHint { get; set; } = "Girişinizi tamamlamak için size iletilen güvenlik kodunu girin.";
+}
+
 public sealed class AuthFlowException : Exception
 {
     public string? ErrorCode { get; }

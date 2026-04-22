@@ -12,10 +12,12 @@ namespace otelturizmnew.Controllers.Paneller.Satis;
 public class SalesPanelController : Controller
 {
     private readonly ISalesService _salesService;
+    private readonly IAuthService _authService;
 
-    public SalesPanelController(ISalesService salesService)
+    public SalesPanelController(ISalesService salesService, IAuthService authService)
     {
         _salesService = salesService;
+        _authService = authService;
     }
 
     [HttpGet("")]
@@ -28,6 +30,31 @@ public class SalesPanelController : Controller
         ViewData["Title"] = "Satış Dashboard";
         ViewData["PageCssPath"] = "paneller/satis/dashboard";
         return View("~/Views/Paneller/Satis/Dashboard.cshtml", model);
+    }
+
+    [HttpGet("guvenlik")]
+    public async Task<IActionResult> Security(CancellationToken cancellationToken)
+    {
+        if (!IsSalesUser()) return Redirect("/kullanici-giris");
+        var dashboard = await _salesService.GetDashboardAsync(GetUserId(), cancellationToken);
+        ApplyFeedback(dashboard.Shell);
+        ViewData["SalesShell"] = dashboard.Shell;
+        var model = await _authService.GetTwoFactorSecurityAsync(GetUserId(), "sales", cancellationToken);
+        TempData["SalesSuccess"] ??= TempData["UserSecuritySuccess"];
+        TempData["SalesError"] ??= TempData["UserSecurityError"];
+        ViewData["Title"] = "Satış Güvenlik";
+        ViewData["PageCssPath"] = "panel-user-security";
+        return View("~/Views/Paneller/Satis/Security.cshtml", model);
+    }
+
+    [HttpPost("guvenlik/iki-asamali")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveTwoFactor(otelturizmnew.Models.Paneller.User.UserTwoFactorForm form, CancellationToken cancellationToken)
+    {
+        if (!IsSalesUser()) return Redirect("/kullanici-giris");
+        var result = await _authService.SaveTwoFactorSecurityAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "SalesSuccess" : "SalesError"] = result.Message;
+        return Redirect("/panel/satis/guvenlik");
     }
 
     [HttpGet("yeni-rezervasyon")]

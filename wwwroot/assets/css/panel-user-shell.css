@@ -687,13 +687,27 @@ body {
 
 .reward-panel {
     padding: 24px;
-    background: #fff;
-    color: #1e293b;
+    background:
+        radial-gradient(1200px 420px at 20% 0%, rgba(255, 56, 92, 0.22), rgba(255,255,255,0) 55%),
+        radial-gradient(900px 360px at 80% 20%, rgba(12, 90, 219, 0.28), rgba(255,255,255,0) 60%),
+        linear-gradient(135deg, #0b1f4a 0%, #0c3e9b 52%, #0a2b6a 100%);
+    color: rgba(255, 255, 255, 0.92);
 }
 
 .reward-panel p,
 .mini-label.light {
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.reward-panel h2 {
+    color: #ffffff;
+}
+
+.reward-panel .mini-label.light {
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.76);
 }
 
 .reward-link {
@@ -708,9 +722,10 @@ body {
 }
 
 .reward-link.secondary {
-    color: #1e3a8a;
-    background: #fff;
-    border: 1px solid #d6e2f0;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(6px);
 }
 
 .reservation-filter-form {

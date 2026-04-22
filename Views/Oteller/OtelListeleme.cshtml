@@ -7,7 +7,8 @@
 
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
     var minPrice = Model.MinPrice > 0 ? Model.MinPrice : 0m;
-    var maxPrice = Model.MaxPrice > 0 ? Model.MaxPrice : 15000m;
+    var computedMax = hotels.Where(x => (x.StartingPrice ?? 0m) > 0m).Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Max();
+    var maxPrice = Model.MaxPrice > 0 ? Model.MaxPrice : (computedMax > 0 ? computedMax : 15000m);
     var titleText = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Oteller" : Model.SearchLabel;
     var cityText = string.IsNullOrWhiteSpace(Model.City) ? titleText : Model.City;
     var amenityCounts = hotels
@@ -369,6 +370,19 @@
   .filter-accordion-body { padding-bottom: var(--space-2); }
   .filter-help { margin-top: 10px; color: var(--text-light); font-size: 12.5px; font-weight: 600; line-height: 1.4; }
 
+  /* Desktop-only: lighter headings + tighter spacing (desing.md rhythm) */
+  @@media (min-width: 901px) {
+      .filter-card { padding: var(--space-4); }
+      .filter-accordion + .filter-accordion { margin-top: 10px; }
+      .filter-accordion-summary {
+          font-size: 14px;
+          font-weight: 650;
+          padding: 10px 0;
+      }
+      .filter-accordion-body { padding-bottom: 6px; }
+      .filter-help { margin-top: 8px; font-size: 12px; }
+  }
+
   .listing-search-lux {
       display: grid;
       grid-template-columns: 42px 1fr 40px;
@@ -577,6 +591,20 @@
                         </div>
                     </details>
 
+                    <details class="filter-accordion" open>
+                        <summary class="filter-accordion-summary">
+                            <span>Sıralama</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <select class="sort-select" id="listingSortSelect" style="width:100%;">
+                                <option value="recommended">Önerilen</option>
+                                <option value="price-asc">En Düşük Fiyat</option>
+                                <option value="rating-desc">En Yüksek Puan</option>
+                            </select>
+                        </div>
+                    </details>
+
                     <details class="filter-accordion">
                         <summary class="filter-accordion-summary">
                             <span>Yıldız Sayısı</span>
@@ -632,20 +660,6 @@
                                 <label class="filter-check"><input type="checkbox" class="listing-featured-filter" value="1"> En İyi Fiyat</label>
                                 <label class="filter-check"><input type="checkbox" class="listing-featured-filter" value="1"> Kampanyalı</label>
                             </div>
-                        </div>
-                    </details>
-
-                    <details class="filter-accordion">
-                        <summary class="filter-accordion-summary">
-                            <span>Sıralama</span>
-                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                        </summary>
-                        <div class="filter-accordion-body">
-                            <select class="sort-select" id="listingSortSelect" style="width:100%;">
-                                <option value="recommended">Önerilen</option>
-                                <option value="price-asc">En Düşük Fiyat</option>
-                                <option value="rating-desc">En Yüksek Puan</option>
-                            </select>
                         </div>
                     </details>
 

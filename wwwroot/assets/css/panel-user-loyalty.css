@@ -788,6 +788,7 @@
 
 .loyalty-feature-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
 }
 
 .feature-card {
@@ -796,6 +797,9 @@
     padding: 24px;
     border: 1px solid var(--loyalty-border-light);
     box-shadow: var(--loyalty-shadow-md);
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
 }
 
 .feature-header {
@@ -841,6 +845,37 @@
     border-bottom: 1px solid var(--loyalty-border-light);
 }
 
+.alert-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.inline-delete {
+    margin: 0;
+}
+
+.icon-delete {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    border: 1px solid rgba(239, 68, 68, 0.22);
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--loyalty-error);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.icon-delete:hover {
+    transform: translateY(-1px);
+    border-color: rgba(239, 68, 68, 0.34);
+    box-shadow: 0 10px 18px rgba(239, 68, 68, 0.14);
+}
+
 .alert-item:last-of-type {
     border-bottom: 0;
 }
@@ -869,6 +904,10 @@
     color: var(--loyalty-text-body);
     text-decoration: none;
     font-weight: 600;
+}
+
+.feature-card .btn-add {
+    margin-top: auto;
 }
 
 .badges-grid {
@@ -909,6 +948,47 @@
     background: linear-gradient(135deg, #e8f4f8 0%, #dbeafe 100%);
     border-radius: 16px;
     padding: 16px;
+}
+
+.passport-recent {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(100, 116, 139, 0.28);
+}
+
+.passport-recent-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: var(--loyalty-text-body);
+    margin-bottom: 10px;
+}
+
+.passport-recent-list {
+    display: grid;
+    gap: 10px;
+}
+
+.passport-recent-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.03);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.passport-recent-row strong {
+    color: var(--loyalty-text-dark);
+}
+
+.passport-recent-row span {
+    color: var(--loyalty-text-gray);
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 .city-list {
@@ -1042,6 +1122,12 @@
     .benefits-grid,
     .rewards-grid {
         grid-template-columns: 1fr;
+    }
+
+    .loyalty-feature-grid,
+    .stats-mini-grid,
+    .tiers-grid {
+        gap: 12px;
     }
 }
 

@@ -12,10 +12,12 @@ namespace otelturizmnew.Controllers.Paneller.Partner;
 public class PartnerPanelController : Controller
 {
     private readonly IPartnerService _partnerService;
+    private readonly IAuthService _authService;
 
-    public PartnerPanelController(IPartnerService partnerService)
+    public PartnerPanelController(IPartnerService partnerService, IAuthService authService)
     {
         _partnerService = partnerService;
+        _authService = authService;
     }
 
     [HttpGet("")]
@@ -27,6 +29,28 @@ public class PartnerPanelController : Controller
         ViewData["Title"] = "Partner Paneli";
         ViewData["PageCssPath"] = "paneller/partner/dashboard";
         return View("~/Views/Paneller/Partner/Dashboard.cshtml", model);
+    }
+
+    [HttpGet("guvenlik")]
+    public async Task<IActionResult> Security(CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        var dashboard = await _partnerService.GetDashboardAsync(GetUserId(), null, cancellationToken);
+        ViewData["PartnerShell"] = dashboard.Shell;
+        var model = await _authService.GetTwoFactorSecurityAsync(GetUserId(), "partner", cancellationToken);
+        ViewData["Title"] = "Partner Güvenlik";
+        ViewData["PageCssPath"] = "panel-user-security";
+        return View("~/Views/Paneller/Partner/Security.cshtml", model);
+    }
+
+    [HttpPost("guvenlik/iki-asamali")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveTwoFactor(otelturizmnew.Models.Paneller.User.UserTwoFactorForm form, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        var result = await _authService.SaveTwoFactorSecurityAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        return Redirect("/panel/partner/guvenlik");
     }
 
     [HttpGet("rezervasyonlar")]

@@ -538,14 +538,14 @@
                                 <p>@room.Specs</p>
                                 @{
                                     var roomFeatureSeed = room.Features ?? new List<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>();
-                                    var roomTopFeatures = roomFeatureSeed.Take(5).ToList();
-                                    if (roomTopFeatures.Count < 5)
+                                    var roomTopFeatures = roomFeatureSeed.Take(2).ToList();
+                                    if (roomTopFeatures.Count < 2)
                                     {
-                                        // Oda özellikleri 5'ten azsa, otelin öne çıkan olanaklarından tamamla (tekrarları çıkar).
+                                        // Oda özellikleri azsa, otelin öne çıkan olanaklarından tamamla (tekrarları çıkar).
                                         var existing = new HashSet<string>(roomTopFeatures.Select(x => x.Name ?? string.Empty), StringComparer.OrdinalIgnoreCase);
                                         foreach (var amenity in Model.Amenities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
                                         {
-                                            if (roomTopFeatures.Count >= 5) break;
+                                            if (roomTopFeatures.Count >= 2) break;
                                             if (!existing.Add(amenity.Name)) continue;
                                             roomTopFeatures.Add(new otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel
                                             {
@@ -566,15 +566,23 @@
                                 }
                                 @if ((room.Features?.Count ?? 0) > 5)
                                 {
-                                    <details class="room-feature-more">
-                                        <summary>Tümünü gör</summary>
-                                        <div class="room-feature-preview room-feature-preview-all">
-                                            @foreach (var feature in (room.Features ?? Enumerable.Empty<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>()).Skip(5))
-                                            {
-                                                <span class="room-feature-chip"><i class="fas @feature.IconClass"></i> @feature.Name</span>
-                                            }
+                                    <div class="room-feature-more-inline" data-room-feature-wrap>
+                                        <button type="button"
+                                                class="room-feature-more-btn"
+                                                data-room-feature-toggle
+                                                aria-expanded="false">
+                                            Diğer özellikler
+                                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                        </button>
+                                        <div class="room-feature-panel" data-room-feature-panel hidden>
+                                            <div class="room-feature-panel-grid">
+                                                @foreach (var feature in (room.Features ?? Enumerable.Empty<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>()))
+                                                {
+                                                    <span class="room-feature-chip room-feature-chip-full"><i class="fas @feature.IconClass"></i> @feature.Name</span>
+                                                }
+                                            </div>
                                         </div>
-                                    </details>
+                                    </div>
                                 }
                                 <span class="cancellation-badge"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
                             </div>
@@ -694,7 +702,11 @@
                                 </div>
                                 <span class="review-chip">@review.Score.ToString("0.0")</span>
                             </div>
-                            <p>@FixMojibake(review.Text)</p>
+                            <div class="review-body" data-review-card>
+                                <p class="review-text" data-review-text>@FixMojibake(review.Text)</p>
+                                <button type="button" class="review-more" data-review-more hidden>Devamını oku</button>
+                                <span data-review-fulltext hidden>@FixMojibake(review.Text)</span>
+                            </div>
                         </article>
                     }
                 </div>
@@ -850,11 +862,6 @@
                             <select name="PaymentMethod" id="paymentMethodSelect">
                                 <option value="Kapıda Ödeme" selected="@(string.Equals(reservationForm.PaymentMethod, "Kapıda Ödeme", StringComparison.OrdinalIgnoreCase))">Kapıda ödeme — tam tutar</option>
                                 <option value="Online Ödeme" selected="@(string.Equals(reservationForm.PaymentMethod, "Online Ödeme", StringComparison.OrdinalIgnoreCase))">Online kredi kartı — tam tutar</option>
-                                <option value="Havale/EFT" selected="@(string.Equals(reservationForm.PaymentMethod, "Havale/EFT", StringComparison.OrdinalIgnoreCase))">Havale / EFT — tam tutar</option>
-                                <option value="Karma — Kart ve Havale" selected="@(string.Equals(reservationForm.PaymentMethod, "Karma — Kart ve Havale", StringComparison.OrdinalIgnoreCase))">Karma — kart + havale</option>
-                                <option value="Karma — Kart ve Kapıda" selected="@(string.Equals(reservationForm.PaymentMethod, "Karma — Kart ve Kapıda", StringComparison.OrdinalIgnoreCase))">Karma — kart + kapıda</option>
-                                <option value="Karma — Havale ve Kapıda" selected="@(string.Equals(reservationForm.PaymentMethod, "Karma — Havale ve Kapıda", StringComparison.OrdinalIgnoreCase))">Karma — havale + kapıda</option>
-                                <option value="Karma — Kart, Havale ve Kapıda" selected="@(string.Equals(reservationForm.PaymentMethod, "Karma — Kart, Havale ve Kapıda", StringComparison.OrdinalIgnoreCase))">Karma — kart + havale + kapıda</option>
                             </select>
                         </label>
                         <div class="booking-payment-mix" id="bookingPaymentMix" hidden>
@@ -903,11 +910,34 @@
                 <div class="price-row price-row-tax"><span>Vergi ve Harçlar</span><strong>₺@initialTax.ToString("N0")</strong></div>
                 <div class="price-row total"><span>Toplam</span><strong>₺@initialTotal.ToString("N0")</strong></div>
             </div>
+            <details class="nightly-breakdown-details" id="nightlyBreakdownDetails" hidden>
+                <summary><i class="fas fa-angle-down"></i> Gün gün fiyat detayı</summary>
+                <div class="nightly-breakdown-list" id="nightlyBreakdownList"></div>
+            </details>
         </div>
     </aside>
 </section>
 
 <div class="detail-modal-backdrop" id="detailActionBackdrop" hidden></div>
+
+<div class="review-modal" id="reviewModal" aria-hidden="true">
+    <div class="review-modal-backdrop" data-review-modal-close></div>
+    <div class="review-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+        <div class="review-modal-head">
+            <strong id="reviewModalTitle">Misafir yorumu</strong>
+            <button type="button" class="review-modal-close" data-review-modal-close aria-label="Kapat">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="review-modal-body">
+            <div class="review-modal-meta">
+                <span id="reviewModalDate"></span>
+                <span class="review-modal-score" id="reviewModalScore"></span>
+            </div>
+            <div class="review-modal-text" id="reviewModalText"></div>
+        </div>
+    </div>
+</div>
 
 <section class="detail-modal detail-info-modal" id="detailInfoModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="detailInfoModalTitle">
     <button type="button" class="detail-modal-close" data-close-modal="detailInfoModal" aria-label="Kapat"><i class="fas fa-times"></i></button>
@@ -1126,6 +1156,8 @@
             const checkOutInput = document.getElementById('checkOutDateInput');
             const bookingPrice = document.getElementById('bookingPrice');
             const breakdown = document.getElementById('priceBreakdown');
+            const nightlyDetails = document.getElementById('nightlyBreakdownDetails');
+            const nightlyList = document.getElementById('nightlyBreakdownList');
             const bookingQuoteNotice = document.getElementById('bookingQuoteNotice');
             const bookingPaymentNote = document.getElementById('bookingPaymentNote');
             const bookingPaymentMix = document.getElementById('bookingPaymentMix');
@@ -1880,6 +1912,15 @@
                 return t.replace(/0$/, '');
             }
 
+            function escapeHtml(value) {
+                return (value || '').toString()
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#39;');
+            }
+
             function buildTaxAndTotalRows(quote) {
                 const vatR = typeof quote.vatRate === 'string' ? quote.vatRate : formatRatePct(quote.vatRate);
                 const accR = typeof quote.accommodationTaxRate === 'string' ? quote.accommodationTaxRate : formatRatePct(quote.accommodationTaxRate);
@@ -1965,6 +2006,11 @@
                     return;
                 }
 
+                if (nightlyDetails && nightlyList) {
+                    nightlyDetails.hidden = true;
+                    nightlyList.innerHTML = '';
+                }
+
                 const roomNodes = getRoomItemNodes();
                 if (!roomNodes.length) {
                     return;
@@ -1992,6 +2038,7 @@
                 };
 
                 const perRoom = [];
+                const nightlySeed = { rows: [] };
                 let anyUnavailable = false;
                 let availabilityMessage = '';
 
@@ -2025,6 +2072,10 @@
                             checkOut: item.checkOut,
                             totalAmount: total
                         });
+
+                        if (perRoom.length === 1 && Array.isArray(quote.nightlyBreakdown)) {
+                            nightlySeed.rows = quote.nightlyBreakdown;
+                        }
 
                         if (quote.isAvailable === false) {
                             anyUnavailable = true;
@@ -2076,6 +2127,20 @@
 
                 breakdown.innerHTML = buildMultiRoomBreakdownHtml(perRoom, totals);
 
+                if (nightlyDetails && nightlyList) {
+                    const showNightly = roomNodes.length === 1 && Array.isArray(nightlySeed.rows) && nightlySeed.rows.length > 0;
+                    nightlyDetails.hidden = !showNightly;
+                    if (showNightly) {
+                        nightlyList.innerHTML = nightlySeed.rows.map(function (row) {
+                            const label = (row.dateText || row.date || '').toString();
+                            const amount = Number(row.totalAmount || row.amount || 0);
+                            return '<div class="nightly-breakdown-row"><span>' + escapeHtml(label) + '</span><strong>' + formatMoney(amount) + '</strong></div>';
+                        }).join('');
+                    } else {
+                        nightlyList.innerHTML = '';
+                    }
+                }
+
                 const reserveButton = bookingForm?.querySelector('.reserve-btn');
                 if (anyUnavailable) {
                     setQuoteNotice(availabilityMessage || 'Seçili tarihler için uygun stok veya satış bulunamadı.', 'warning');
@@ -2084,6 +2149,83 @@
                     setQuoteNotice(availabilityMessage || '', 'info');
                     reserveButton?.removeAttribute('disabled');
                 }
+            }
+
+            function initReviewReadMore() {
+                const modal = document.getElementById('reviewModal');
+                const modalTitle = document.getElementById('reviewModalTitle');
+                const modalDate = document.getElementById('reviewModalDate');
+                const modalScore = document.getElementById('reviewModalScore');
+                const modalText = document.getElementById('reviewModalText');
+                if (!modal || !modalText) return;
+
+                function openReviewModal(payload) {
+                    if (modalTitle) modalTitle.textContent = payload.title || 'Misafir yorumu';
+                    if (modalDate) modalDate.textContent = payload.date || '';
+                    if (modalScore) modalScore.textContent = payload.score || '';
+                    modalText.textContent = payload.text || '';
+                    modal.classList.add('is-open');
+                    modal.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                }
+
+                function closeReviewModal() {
+                    modal.classList.remove('is-open');
+                    modal.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                }
+
+                modal.querySelectorAll('[data-review-modal-close]').forEach(function (btn) {
+                    btn.addEventListener('click', closeReviewModal);
+                });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && modal.classList.contains('is-open')) closeReviewModal();
+                });
+
+                document.querySelectorAll('[data-review-card]').forEach(function (card) {
+                    const p = card.querySelector('[data-review-text]');
+                    const moreBtn = card.querySelector('[data-review-more]');
+                    const full = card.querySelector('[data-review-fulltext]');
+                    if (!p || !moreBtn || !full) return;
+
+                    const metaRoot = card.closest('.review-card');
+                    const date = metaRoot?.querySelector('.review-meta p')?.textContent?.trim() || '';
+                    const title = metaRoot?.querySelector('.review-meta h4')?.textContent?.trim() || 'Misafir yorumu';
+                    const score = metaRoot?.querySelector('.review-chip')?.textContent?.trim() || '';
+
+                    requestAnimationFrame(function () {
+                        const isTruncated = p.scrollHeight > p.clientHeight + 2;
+                        moreBtn.hidden = !isTruncated;
+                    });
+
+                    moreBtn.addEventListener('click', function () {
+                        openReviewModal({
+                            title: title,
+                            date: date,
+                            score: score,
+                            text: full.textContent || p.textContent || ''
+                        });
+                    });
+                });
+            }
+
+            function initRoomFeaturePanels() {
+                document.querySelectorAll('[data-room-feature-wrap]').forEach(function (wrap) {
+                    const btn = wrap.querySelector('[data-room-feature-toggle]');
+                    const panel = wrap.querySelector('[data-room-feature-panel]');
+                    if (!btn || !panel) return;
+
+                    btn.addEventListener('click', function () {
+                        const isOpen = panel.hidden === false;
+                        panel.hidden = isOpen;
+                        btn.setAttribute('aria-expanded', (!isOpen).toString());
+                        const icon = btn.querySelector('i.fas');
+                        if (icon) {
+                            icon.classList.toggle('fa-angle-down', isOpen);
+                            icon.classList.toggle('fa-angle-up', !isOpen);
+                        }
+                    });
+                });
             }
 
             async function loadSelectOptions(url, select, placeholder, selectedText) {
@@ -2297,6 +2439,8 @@
             ensureGuestCapacity(false);
             syncPaymentMethodState();
             refreshPriceQuote();
+            initReviewReadMore();
+            initRoomFeaturePanels();
             paymentMethodSelect?.addEventListener('change', syncPaymentMethodState);
 
             const reviewSortSelect = document.getElementById('reviewSortSelect');
