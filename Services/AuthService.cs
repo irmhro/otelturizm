@@ -1599,17 +1599,25 @@ public class AuthService : IAuthService
             await verifyUserCommand.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await _contractContentService.FinalizeEmailVerificationAsync(
-            connection,
-            (SqlTransaction)transaction,
-            userId,
-            normalizedEmail,
-            ipAddress,
-            userAgent,
-            cancellationToken);
+        string? finalizeWarning = null;
+        try
+        {
+            await _contractContentService.FinalizeEmailVerificationAsync(
+                connection,
+                (SqlTransaction)transaction,
+                userId,
+                normalizedEmail,
+                ipAddress,
+                userAgent,
+                cancellationToken);
+        }
+        catch
+        {
+            finalizeWarning = " Sözleşme bilgilendirme e-postası daha sonra tekrar gönderilecektir.";
+        }
 
         await transaction.CommitAsync(cancellationToken);
-        return (true, "E-posta adresiniz başarıyla onaylandı. Artık giriş yapabilirsiniz.");
+        return (true, $"E-posta adresiniz başarıyla onaylandı. Artık giriş yapabilirsiniz.{finalizeWarning}");
     }
 
     public async Task<(bool Success, string Message)> ResendVerificationEmailAsync(string email, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default)

@@ -4064,6 +4064,37 @@ body.room-gallery-open {
         border-radius: 12px;
     }
 
+    /* Mobile: compress booking section to fit one screen better */
+    .otel-detail-template-v41 .booking-form span {
+        font-size: 0.86rem;
+    }
+
+    .otel-detail-template-v41 .guest-row {
+        padding: 8px 10px;
+        border-radius: 12px;
+    }
+
+    .otel-detail-template-v41 .guest-row > span {
+        font-size: 0.9rem;
+    }
+
+    .otel-detail-template-v41 .guest-controls strong {
+        font-size: 1rem;
+    }
+
+    .otel-detail-template-v41 .guest-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .otel-detail-template-v41 .booking-advanced-fields summary {
+        font-size: 0.92rem;
+    }
+
+    .otel-detail-template-v41 .booking-advanced-grid {
+        gap: 10px;
+    }
+
     .otel-detail-template-v41 .booking-advanced-fields {
         padding: 8px;
         border-radius: 12px;
@@ -4101,6 +4132,16 @@ body.room-gallery-open {
     .otel-detail-template-v41 .price-row.total {
         padding: 8px 10px;
         font-size: 0.98rem;
+    }
+
+    .otel-detail-template-v41 .nightly-breakdown-details summary {
+        padding: 10px 12px;
+        font-size: 0.92rem;
+    }
+
+    .otel-detail-template-v41 .nightly-breakdown-list {
+        padding: 10px 12px 12px;
+        gap: 8px;
     }
 }
 

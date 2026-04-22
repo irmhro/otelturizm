@@ -1365,8 +1365,9 @@ body {
     margin: 18px auto 0;
     padding: 16px 20px;
     border-radius: 20px;
-    background: linear-gradient(135deg, rgba(15,91,215,.08), rgba(255,255,255,.96));
-    border: 1px solid rgba(15,91,215,.14);
+    /* Make the draft banner clearly visible */
+    background: linear-gradient(135deg, rgba(0, 168, 107, 0.14), rgba(255, 255, 255, 0.96));
+    border: 1px solid rgba(0, 168, 107, 0.22);
     display: flex;
     align-items: center;
     justify-content: space-between;
