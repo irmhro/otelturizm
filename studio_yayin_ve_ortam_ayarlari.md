@@ -11,6 +11,20 @@ Bu dosya, projeyi localde canlıya en yakın şekilde çalıştırıp ardından 
 - Canlı veritabanı adı: `otelturizm_2026db`
 - Amaç: localde güvenli geliştirme yapıp aynı şema adıyla canlıya kontrollü publish almaktır
 
+## Zorunlu Operasyon Notu
+- Kullanıcı `canlıya yükle` dediğinde bu komut sadece uygulama dosyalarını publish etmek anlamına gelmez.
+- `canlıya yükle` komutu şu anlama gelir: local projedeki gerekli uygulama dosyaları, görseller, upload klasörleri, demo veriler, migration dosyaları ve gerekli veritabanı kayıtları eksiksiz şekilde canlıya senkronlanacaktır.
+- `canlıya yükle` komutunda eksik veri bırakılmaz; özellikle oteller, odalar, görseller, kampanyalar ve bunlara bağlı veritabanı kayıtları local ile canlı arasında karşılaştırılarak eksikler tamamlanır.
+- Kullanıcı `canlıya aktar` dediğinde zorunlu sıra şudur:
+  1. Önce proje dosyaları ve veritabanı ile ilgili güncel içerikler GitHub reposuna gönderilir.
+  2. Sonra aynı güncel durum canlı dosyalara ve canlı veritabanına aktarılır.
+- `canlıya aktar` veya `canlıya yükle` komutlarında yalnızca migration uygulamak yeterli sayılmaz; localde bulunan ama canlıda eksik kalan içerik verileri de ayrıca taşınmalıdır.
+- Operasyon tamamlandı kabul edilebilmesi için en az şu kontroller yapılır:
+  - canlı dosyalar publish edilmiş olmalı
+  - canlı veritabanı script/migration kayıtları güncel olmalı
+  - localde bulunan önemli veri kayıtları canlıda da var olmalı
+  - görsel veya upload dosyaları canlı URL üzerinden erişilebilir olmalı
+
 ## Local Geliştirme Ayarları
 
 ### Uygulama URL'leri
