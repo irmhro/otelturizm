@@ -24,6 +24,7 @@ BEGIN
     ALTER TABLE dbo.yorumlar ADD puan_personel_10 TINYINT NULL;
 END;
 
+EXEC(N'
 UPDATE dbo.yorumlar
 SET
     genel_puan_10 = COALESCE(
@@ -66,3 +67,4 @@ WHERE genel_puan_10 IS NULL
    OR puan_konum_10 IS NULL
    OR puan_fiyat_10 IS NULL
    OR puan_personel_10 IS NULL;
+');
