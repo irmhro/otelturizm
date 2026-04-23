@@ -72,6 +72,8 @@
         <div class="search-wrapper">
             <form class="search-container public-header-search-form" method="get" action="/oteller" autocomplete="off">
                 <input type="text" class="search-input" id="publicHeaderSearchInput" name="q" placeholder="Otel adı, il, ilçe, mahalle veya bölge ara">
+                <input type="hidden" id="publicHeaderSelectedType" value="" />
+                <input type="hidden" id="publicHeaderSelectedSlug" value="" />
                 <button type="submit" class="search-btn header-search-btn" aria-label="Ara">
                     <i class="fas fa-search"></i>
                 </button>
@@ -506,6 +508,8 @@
             const searchForm = document.querySelector('.public-header-search-form');
             const searchInput = document.getElementById('publicHeaderSearchInput');
             const searchSuggestions = document.getElementById('publicHeaderSearchSuggestions');
+            const selectedTypeInput = document.getElementById('publicHeaderSelectedType');
+            const selectedSlugInput = document.getElementById('publicHeaderSelectedSlug');
             let suggestionTimer = null;
 
             function hideHeaderSuggestions() {
@@ -528,7 +532,7 @@
                 }
 
                 searchSuggestions.innerHTML = items.map(function (item) {
-                    return '<button type="button" class="header-search-suggestion" data-value="' + item.value.replace(/"/g, '&quot;') + '">' +
+                    return '<button type="button" class="header-search-suggestion" data-value="' + item.value.replace(/"/g, '&quot;') + '" data-type="' + (item.type || '').replace(/"/g, '&quot;') + '" data-slug="' + (item.slug || '').replace(/"/g, '&quot;') + '">' +
                         '<span>' + item.label + '</span>' +
                         '<small>' + item.type + '</small>' +
                         '</button>';
@@ -565,6 +569,12 @@
             }
 
             searchInput?.addEventListener('input', function () {
+                if (selectedTypeInput) {
+                    selectedTypeInput.value = '';
+                }
+                if (selectedSlugInput) {
+                    selectedSlugInput.value = '';
+                }
                 window.clearTimeout(suggestionTimer);
                 suggestionTimer = window.setTimeout(loadHeaderSuggestions, 180);
             });
@@ -582,8 +592,27 @@
                 }
 
                 searchInput.value = button.dataset.value || '';
+                if (selectedTypeInput) {
+                    selectedTypeInput.value = button.dataset.type || '';
+                }
+                if (selectedSlugInput) {
+                    selectedSlugInput.value = button.dataset.slug || '';
+                }
                 hideHeaderSuggestions();
+                if ((button.dataset.type || '').toLowerCase() === 'otel' && (button.dataset.slug || '').trim().length > 0) {
+                    window.location.href = '/oteller/' + encodeURIComponent(button.dataset.slug || '');
+                    return;
+                }
                 searchForm?.requestSubmit();
+            });
+
+            searchForm?.addEventListener('submit', function (event) {
+                const selectedType = (selectedTypeInput?.value || '').trim().toLowerCase();
+                const selectedSlug = (selectedSlugInput?.value || '').trim();
+                if (selectedType === 'otel' && selectedSlug.length > 0) {
+                    event.preventDefault();
+                    window.location.href = '/oteller/' + encodeURIComponent(selectedSlug);
+                }
             });
 
             document.addEventListener('click', function (event) {

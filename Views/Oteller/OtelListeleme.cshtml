@@ -6,9 +6,11 @@
     ViewData["PageCssMobile"] = "otel-listeleme.mobile";
 
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
-    var minPrice = Model.MinPrice > 0 ? Model.MinPrice : 0m;
+    var minPrice = 0m;
     var computedMax = hotels.Where(x => (x.StartingPrice ?? 0m) > 0m).Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Max();
-    var maxPrice = Model.MaxPrice > 0 ? Model.MaxPrice : (computedMax > 0 ? computedMax : 15000m);
+    var maxPrice = computedMax > 0m
+        ? computedMax
+        : (Model.MaxPrice > 0m ? Model.MaxPrice : 15000m);
     var titleText = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Oteller" : Model.SearchLabel;
     var cityText = string.IsNullOrWhiteSpace(Model.City) ? titleText : Model.City;
     var amenityCounts = hotels
@@ -384,6 +386,7 @@
   }
 
   .listing-search-lux {
+      position: relative;
       display: grid;
       grid-template-columns: 42px 1fr 40px;
       align-items: center;
@@ -432,6 +435,53 @@
       place-items: center;
       color: #0f172a;
       cursor: pointer;
+  }
+
+  .listing-search-suggestions {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0;
+      right: 0;
+      z-index: 30;
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 18px;
+      border: 1px solid rgba(226, 232, 240, 1);
+      background: rgba(255,255,255,0.98);
+      box-shadow: 0 26px 40px rgba(15, 23, 42, 0.14);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+  }
+
+  .listing-search-suggestion {
+      width: 100%;
+      border: 0;
+      background: linear-gradient(180deg, rgba(248,250,252,1), rgba(255,255,255,1));
+      border-radius: 14px;
+      padding: 12px 14px;
+      text-align: left;
+      cursor: pointer;
+      display: grid;
+      gap: 4px;
+  }
+
+  .listing-search-suggestion span {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-dark);
+  }
+
+  .listing-search-suggestion small {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+  }
+
+  .listing-search-suggestion:hover {
+      background: linear-gradient(135deg, rgba(0,59,149,0.08), rgba(255,255,255,1));
   }
 
   .price-slider-wrap {
@@ -552,6 +602,7 @@
                                 <button type="button" class="listing-search-clear" id="listingKeywordClear" aria-label="Aramayı temizle" hidden>
                                     <i class="fas fa-xmark" aria-hidden="true"></i>
                                 </button>
+                                <div class="listing-search-suggestions" id="listingKeywordSuggestions" hidden></div>
                             </div>
                             <p class="filter-help">İl, ilçe, mahalle veya otel adı ile arayabilirsiniz.</p>
                         </div>
@@ -899,6 +950,8 @@
             const featuredChecks = Array.from(document.querySelectorAll('.listing-featured-filter'));
             const clearAllBtn = document.getElementById('clearAllFiltersBtn');
             const keywordClearBtn = document.getElementById('listingKeywordClear');
+            const keywordSuggestions = document.getElementById('listingKeywordSuggestions');
+            let keywordSuggestionTimer = null;
 
             function normalize(v) {
                 return String(v || '').toLocaleLowerCase('tr-TR');
@@ -969,6 +1022,59 @@
                 });
             }
 
+            function hideKeywordSuggestions() {
+                if (!keywordSuggestions) return;
+                keywordSuggestions.innerHTML = '';
+                keywordSuggestions.hidden = true;
+            }
+
+            function renderKeywordSuggestions(items) {
+                if (!keywordSuggestions || !Array.isArray(items) || items.length === 0) {
+                    hideKeywordSuggestions();
+                    return;
+                }
+
+                keywordSuggestions.innerHTML = items.map(function (item) {
+                    const value = String(item.value || '').replace(/"/g, '&quot;');
+                    const type = String(item.type || '').replace(/"/g, '&quot;');
+                    const slug = String(item.slug || '').replace(/"/g, '&quot;');
+                    return '<button type="button" class="listing-search-suggestion" data-value="' + value + '" data-type="' + type + '" data-slug="' + slug + '">' +
+                        '<span>' + String(item.label || '') + '</span>' +
+                        '<small>' + String(item.type || '') + '</small>' +
+                        '</button>';
+                }).join('');
+                keywordSuggestions.hidden = false;
+            }
+
+            async function loadKeywordSuggestions() {
+                const currentValue = String(keywordInput?.value || '').trim();
+                if (!currentValue) {
+                    hideKeywordSuggestions();
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/oteller/arama-onerileri?q=' + encodeURIComponent(currentValue), {
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (!response.ok) {
+                        hideKeywordSuggestions();
+                        return;
+                    }
+
+                    const items = await response.json();
+                    if (String(keywordInput?.value || '').trim() !== currentValue) {
+                        return;
+                    }
+
+                    renderKeywordSuggestions(items);
+                } catch (_) {
+                    hideKeywordSuggestions();
+                }
+            }
+
             if (keywordClearBtn && keywordInput) {
                 keywordClearBtn.hidden = String(keywordInput.value || '').trim().length === 0;
             }
@@ -991,19 +1097,60 @@
 
             sortSelect?.addEventListener('change', sortCards);
             keywordInput?.addEventListener('input', function () {
+                window.clearTimeout(keywordSuggestionTimer);
                 applyFilters();
                 sortCards();
                 if (keywordClearBtn) keywordClearBtn.hidden = String(keywordInput.value || '').trim().length === 0;
                 syncMobileFilterCount();
+                keywordSuggestionTimer = window.setTimeout(loadKeywordSuggestions, 180);
+            });
+            keywordInput?.addEventListener('focus', function () {
+                if (String(keywordInput.value || '').trim().length > 0) {
+                    window.clearTimeout(keywordSuggestionTimer);
+                    keywordSuggestionTimer = window.setTimeout(loadKeywordSuggestions, 120);
+                }
             });
             keywordClearBtn?.addEventListener('click', function () {
                 if (!keywordInput) return;
                 keywordInput.value = '';
                 keywordClearBtn.hidden = true;
+                hideKeywordSuggestions();
                 applyFilters();
                 sortCards();
                 syncMobileFilterCount();
                 keywordInput.focus();
+            });
+            keywordSuggestions?.addEventListener('click', function (event) {
+                const button = event.target instanceof HTMLElement
+                    ? event.target.closest('.listing-search-suggestion')
+                    : null;
+                if (!button || !(button instanceof HTMLButtonElement) || !keywordInput) {
+                    return;
+                }
+
+                const selectedValue = button.dataset.value || '';
+                const selectedType = (button.dataset.type || '').trim().toLowerCase();
+                const selectedSlug = (button.dataset.slug || '').trim();
+
+                keywordInput.value = selectedValue;
+                if (keywordClearBtn) keywordClearBtn.hidden = selectedValue.trim().length === 0;
+                hideKeywordSuggestions();
+
+                if (selectedType === 'otel' && selectedSlug.length > 0) {
+                    window.location.href = '/oteller/' + encodeURIComponent(selectedSlug);
+                    return;
+                }
+
+                applyFilters();
+                sortCards();
+                syncMobileFilterCount();
+            });
+            document.addEventListener('click', function (event) {
+                if (keywordSuggestions?.hidden) return;
+                const wrapper = keywordInput?.closest('.listing-search-lux');
+                if (wrapper && event.target instanceof Node && !wrapper.contains(event.target)) {
+                    hideKeywordSuggestions();
+                }
             });
             minPriceInput?.addEventListener('input', function () {
                 applyFilters();
@@ -1089,6 +1236,7 @@
                 featuredChecks.forEach(x => x.checked = false);
                 ratingChips.forEach(x => x.classList.remove('active'));
                 if (keywordInput) keywordInput.value = '';
+                hideKeywordSuggestions();
                 if (minPriceInput) minPriceInput.value = '0';
                 if (maxPriceInput) maxPriceInput.value = '@maxPrice.ToString(CultureInfo.InvariantCulture)';
                 if (maxPriceRange) maxPriceRange.value = '@maxPrice.ToString(CultureInfo.InvariantCulture)';

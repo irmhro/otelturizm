@@ -418,21 +418,21 @@ public class HotelService : IHotelService
         }
 
         const string sql = """
-            SELECT TOP (150) suggestion_value, suggestion_label, suggestion_type
+            SELECT TOP (150) suggestion_value, suggestion_label, suggestion_type, suggestion_hotel_code
             FROM (
-                SELECT DISTINCT o.sehir AS suggestion_value, o.sehir AS suggestion_label, 'Sehir' AS suggestion_type
+                SELECT DISTINCT o.sehir AS suggestion_value, o.sehir AS suggestion_label, 'Sehir' AS suggestion_type, CAST('' AS nvarchar(50)) AS suggestion_hotel_code
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
 
                 UNION
 
-                SELECT DISTINCT o.ilce AS suggestion_value, CONCAT(o.ilce, ' / ', o.sehir) AS suggestion_label, 'Ilce' AS suggestion_type
+                SELECT DISTINCT o.ilce AS suggestion_value, CONCAT(o.ilce, ' / ', o.sehir) AS suggestion_label, 'Ilce' AS suggestion_type, CAST('' AS nvarchar(50)) AS suggestion_hotel_code
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
 
                 UNION
 
-                SELECT DISTINCT o.mahalle AS suggestion_value, CONCAT(o.mahalle, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Mahalle' AS suggestion_type
+                SELECT DISTINCT o.mahalle AS suggestion_value, CONCAT(o.mahalle, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Mahalle' AS suggestion_type, CAST('' AS nvarchar(50)) AS suggestion_hotel_code
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
                   AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
@@ -441,7 +441,7 @@ public class HotelService : IHotelService
 
                 UNION
 
-                SELECT DISTINCT o.otel_adi AS suggestion_value, CONCAT(o.otel_adi, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Otel' AS suggestion_type
+                SELECT DISTINCT o.otel_adi AS suggestion_value, CONCAT(o.otel_adi, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Otel' AS suggestion_type, COALESCE(o.otel_kodu, '') AS suggestion_hotel_code
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
             ) AS suggestions;
@@ -455,7 +455,10 @@ public class HotelService : IHotelService
             {
                 Value = reader.GetString(0),
                 Label = reader.GetString(1),
-                Type = reader.GetString(2)
+                Type = reader.GetString(2),
+                Slug = string.Equals(reader.GetString(2), "Otel", StringComparison.OrdinalIgnoreCase)
+                    ? BuildSlug(reader.GetString(0), reader.IsDBNull(3) ? string.Empty : reader.GetString(3))
+                    : string.Empty
             });
         }
 
@@ -1013,9 +1016,9 @@ public class HotelService : IHotelService
         var normalizedHotelNameSql = BuildSearchNormalizationSql("o.otel_adi");
 
         var sql = $"""
-            SELECT TOP (8) suggestion_value, suggestion_label, suggestion_type
+            SELECT TOP (8) suggestion_value, suggestion_label, suggestion_type, suggestion_hotel_code
             FROM (
-                SELECT DISTINCT o.sehir AS suggestion_value, o.sehir AS suggestion_label, 'Sehir' AS suggestion_type, 1 AS sort_order
+                SELECT DISTINCT o.sehir AS suggestion_value, o.sehir AS suggestion_label, 'Sehir' AS suggestion_type, 1 AS sort_order, CAST('' AS nvarchar(50)) AS suggestion_hotel_code
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
               AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
@@ -1023,7 +1026,7 @@ public class HotelService : IHotelService
 
                 UNION
 
-                SELECT DISTINCT o.ilce AS suggestion_value, CONCAT(o.ilce, ' / ', o.sehir) AS suggestion_label, 'Ilce' AS suggestion_type, 2 AS sort_order
+                SELECT DISTINCT o.ilce AS suggestion_value, CONCAT(o.ilce, ' / ', o.sehir) AS suggestion_label, 'Ilce' AS suggestion_type, 2 AS sort_order, CAST('' AS nvarchar(50)) AS suggestion_hotel_code
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
               AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
@@ -1031,7 +1034,7 @@ public class HotelService : IHotelService
 
                 UNION
 
-                SELECT DISTINCT o.mahalle AS suggestion_value, CONCAT(o.mahalle, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Mahalle' AS suggestion_type, 3 AS sort_order
+                SELECT DISTINCT o.mahalle AS suggestion_value, CONCAT(o.mahalle, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Mahalle' AS suggestion_type, 3 AS sort_order, CAST('' AS nvarchar(50)) AS suggestion_hotel_code
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
               AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
@@ -1041,7 +1044,7 @@ public class HotelService : IHotelService
 
                 UNION
 
-                SELECT DISTINCT o.otel_adi AS suggestion_value, CONCAT(o.otel_adi, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Otel' AS suggestion_type, 4 AS sort_order
+                SELECT DISTINCT o.otel_adi AS suggestion_value, CONCAT(o.otel_adi, ' / ', o.ilce, ' / ', o.sehir) AS suggestion_label, 'Otel' AS suggestion_type, 4 AS sort_order, COALESCE(o.otel_kodu, '') AS suggestion_hotel_code
                 FROM oteller o
                 WHERE o.yayin_durumu = N'Yayında'
               AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
@@ -1059,7 +1062,10 @@ public class HotelService : IHotelService
             {
                 Value = reader.GetString(0),
                 Label = reader.GetString(1),
-                Type = reader.GetString(2)
+                Type = reader.GetString(2),
+                Slug = string.Equals(reader.GetString(2), "Otel", StringComparison.OrdinalIgnoreCase)
+                    ? BuildSlug(reader.GetString(0), reader.IsDBNull(3) ? string.Empty : reader.GetString(3))
+                    : string.Empty
             });
         }
 

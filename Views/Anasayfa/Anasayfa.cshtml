@@ -127,6 +127,8 @@
 
         const fancySearchCard = document.querySelector('.fancy-search-card');
         const fancyInput = fancySearchCard?.querySelector('.fancy-input');
+        const fancySelectedType = fancySearchCard?.querySelector('.fancy-selected-type');
+        const fancySelectedSlug = fancySearchCard?.querySelector('.fancy-selected-slug');
         const fancyLiveStatusText = fancySearchCard?.querySelector('.fancy-live-status-text');
         const fancySuggestions = document.getElementById('homeSearchSuggestions');
         if (fancySearchCard && fancyInput) {
@@ -162,7 +164,7 @@
                 }
 
                 fancySuggestions.innerHTML = items.map(function (item) {
-                    return '<button type="button" class="fancy-search-suggestion" data-value="' + item.value.replace(/"/g, '&quot;') + '">' +
+                    return '<button type="button" class="fancy-search-suggestion" data-value="' + item.value.replace(/"/g, '&quot;') + '" data-type="' + (item.type || '').replace(/"/g, '&quot;') + '" data-slug="' + (item.slug || '').replace(/"/g, '&quot;') + '">' +
                         '<span>' + item.label + '</span>' +
                         '<small>' + item.type + '</small>' +
                         '</button>';
@@ -196,6 +198,12 @@
             };
             fancyInput.addEventListener('input', updateFancySearchState);
             fancyInput.addEventListener('input', function () {
+                if (fancySelectedType) {
+                    fancySelectedType.value = '';
+                }
+                if (fancySelectedSlug) {
+                    fancySelectedSlug.value = '';
+                }
                 window.clearTimeout(suggestionTimer);
                 suggestionTimer = window.setTimeout(loadSuggestions, 180);
             });
@@ -211,8 +219,27 @@
                 }
 
                 fancyInput.value = button.dataset.value || '';
+                if (fancySelectedType) {
+                    fancySelectedType.value = button.dataset.type || '';
+                }
+                if (fancySelectedSlug) {
+                    fancySelectedSlug.value = button.dataset.slug || '';
+                }
                 updateFancySearchState();
                 hideSuggestions();
+                if ((button.dataset.type || '').toLowerCase() === 'otel' && (button.dataset.slug || '').trim().length > 0) {
+                    window.location.href = '/oteller/' + encodeURIComponent(button.dataset.slug || '');
+                    return;
+                }
+                fancySearchCard.requestSubmit();
+            });
+            fancySearchCard.addEventListener('submit', function (event) {
+                const selectedType = (fancySelectedType?.value || '').trim().toLowerCase();
+                const selectedSlug = (fancySelectedSlug?.value || '').trim();
+                if (selectedType === 'otel' && selectedSlug.length > 0) {
+                    event.preventDefault();
+                    window.location.href = '/oteller/' + encodeURIComponent(selectedSlug);
+                }
             });
             document.addEventListener('click', function (event) {
                 if (!fancySearchCard.contains(event.target)) {
