@@ -76,7 +76,7 @@
                 </div>
             </section>
 
-            <section class="admin-sidebar-group @(IsOpen("Users", "Managers", "PlatformOfficials", "PartnerApplications", "CompanyApplications") ? "open" : string.Empty)">
+            <section class="admin-sidebar-group @(IsOpen("Users", "Managers", "PlatformOfficials", "PartnerApplications", "CompanyApplications", "DevelopmentRequests") ? "open" : string.Empty)">
                 <button type="button" class="admin-sidebar-group-toggle" data-admin-accordion="group">
                     <span class="admin-sidebar-group-meta">
                         <span class="admin-sidebar-link-icon"><i class="fas fa-users"></i></span>
@@ -91,6 +91,7 @@
                     <a asp-controller="AdminPanel" asp-action="Users" class="admin-sidebar-link @Active("Users")"><span>Kullanıcılar</span></a>
                     <a asp-controller="AdminPanel" asp-action="Managers" class="admin-sidebar-link @Active("Managers")"><span>Yöneticiler</span></a>
                     <a asp-controller="AdminPanel" asp-action="PlatformOfficials" class="admin-sidebar-link @Active("PlatformOfficials")"><span>Platform Yetkilileri</span></a>
+                    <a asp-controller="AdminPanel" asp-action="DevelopmentRequests" class="admin-sidebar-link @Active("DevelopmentRequests")"><span>Geliştirme Talepleri</span></a>
                     <a asp-controller="AdminPanel" asp-action="PartnerApplications" class="admin-sidebar-link @Active("PartnerApplications")"><span>Partner Başvuruları</span><strong>@Badge(Model.PendingPartnerApplications)</strong></a>
                     <a asp-controller="AdminPanel" asp-action="CompanyApplications" class="admin-sidebar-link @Active("CompanyApplications")"><span>Firma Başvuruları</span><strong>@Badge(Model.PendingCompanyApplications)</strong></a>
                 </div>

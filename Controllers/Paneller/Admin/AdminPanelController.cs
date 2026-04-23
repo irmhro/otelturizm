@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Paneller.Admin;
+using otelturizmnew.Models.Paneller.Developer;
 using otelturizmnew.Models.TelefonDogrulama;
 using otelturizmnew.Services.Abstractions;
 
@@ -15,13 +16,15 @@ public class AdminPanelController : Controller
     private readonly IAdminService _adminService;
     private readonly IAdminHotelManagementService _adminHotelManagementService;
     private readonly IContractContentService _contractContentService;
+    private readonly IDevelopmentRequestService _developmentRequestService;
     private readonly IPhoneVerificationService _phoneVerificationService;
 
-    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IPhoneVerificationService phoneVerificationService)
+    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService)
     {
         _adminService = adminService;
         _adminHotelManagementService = adminHotelManagementService;
         _contractContentService = contractContentService;
+        _developmentRequestService = developmentRequestService;
         _phoneVerificationService = phoneVerificationService;
     }
 
@@ -393,6 +396,62 @@ public class AdminPanelController : Controller
 
     [HttpGet("firma-basvurulari")]
     public Task<IActionResult> CompanyApplications(CancellationToken cancellationToken) => RenderSectionAsync("company-applications", "CompanyApplications", cancellationToken);
+
+    [HttpGet("gelistirme-talepleri")]
+    public async Task<IActionResult> DevelopmentRequests([FromQuery] string? q, [FromQuery] string? status, [FromQuery] string? priority, [FromQuery] long? developerUserId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _developmentRequestService.GetAdminPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, priority, developerUserId, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCss"] = "panel-admin-development";
+        return View("~/Views/Paneller/Admin/DevelopmentRequests.cshtml", model);
+    }
+
+    [HttpPost("gelistirme-talepleri/kaydet")]
+    [ValidateAntiForgeryToken]
+    [RequestFormLimits(MultipartBodyLengthLimit = 52428800)]
+    [RequestSizeLimit(52428800)]
+    public async Task<IActionResult> SaveDevelopmentRequest(AdminDevelopmentRequestUpdateForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        string? imageUrl = null;
+        if (form.VisualFile is not null && form.VisualFile.Length > 0)
+        {
+            var fileName = $"{Guid.NewGuid():N}-{Path.GetFileName(form.VisualFile.FileName)}";
+            var targetDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "developer", "admin");
+            Directory.CreateDirectory(targetDirectory);
+            var physicalPath = Path.Combine(targetDirectory, fileName);
+            await using var stream = System.IO.File.Create(physicalPath);
+            await form.VisualFile.CopyToAsync(stream, cancellationToken);
+            imageUrl = $"/uploads/developer/admin/{fileName}";
+        }
+
+        var result = await _developmentRequestService.SaveAdminRequestAsync(GetUserId(), form, imageUrl, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(DevelopmentRequests));
+    }
+
+    [HttpPost("gelistirme-talepleri/sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteDevelopmentRequest(long requestId, string? note, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _developmentRequestService.DeleteRequestAsync(GetUserId(), requestId, note, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(DevelopmentRequests));
+    }
 
     [HttpGet("platform-yetkilileri")]
     public Task<IActionResult> PlatformOfficials(CancellationToken cancellationToken) => RenderSectionAsync("platform-officials", "PlatformOfficials", cancellationToken);

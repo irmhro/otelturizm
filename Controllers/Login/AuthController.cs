@@ -114,7 +114,7 @@ public class AuthController : Controller
         }
 
         await SignInAsync(user, rememberMe);
-        await _authService.RecordLoginAsync(user.UserId, "user", HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
+        await _authService.RecordLoginAsync(user.UserId, user.AccountType, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
         return Redirect(GetRedirectPath(user));
     }
 
@@ -169,7 +169,7 @@ public class AuthController : Controller
         }
 
         await SignInAsync(user, rememberMe);
-        await _authService.RecordLoginAsync(user.UserId, "user", HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
+        await _authService.RecordLoginAsync(user.UserId, user.AccountType, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
         ClearLogin2FaCookie();
         return Redirect(string.IsNullOrWhiteSpace(redirectPath) ? GetRedirectPath(user) : redirectPath);
     }
@@ -657,6 +657,7 @@ public class AuthController : Controller
             "admin" => Url.Action("Dashboard", "AdminPanel") ?? "/admin/dashboard",
             "partner" => Url.Action("Index", "PartnerPanel") ?? "/panel/partner",
             "firma" => Url.Action("Index", "FirmaPanel") ?? "/panel/firma",
+            "developer" => Url.Action("Index", "DeveloperPanel") ?? "/panel/developer",
             "sales" => Url.Action("Index", "SalesPanel") ?? "/panel/satis",
             _ => Url.Action("Index", "UserPanel") ?? "/panel/user"
         };
@@ -670,6 +671,7 @@ public class AuthController : Controller
             "admin" => Url.Action("Dashboard", "AdminPanel") ?? "/admin/dashboard",
             "partner" => Url.Action("Index", "PartnerPanel") ?? "/panel/partner",
             "firma" => Url.Action("Index", "FirmaPanel") ?? "/panel/firma",
+            "developer" => Url.Action("Index", "DeveloperPanel") ?? "/panel/developer",
             "sales" => Url.Action("Index", "SalesPanel") ?? "/panel/satis",
             _ => Url.Action("Index", "UserPanel") ?? "/panel/user"
         };

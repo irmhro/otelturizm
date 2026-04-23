@@ -1,0 +1,179 @@
+@model otelturizmnew.Models.Paneller.Developer.DeveloperDashboardViewModel
+@{
+    Layout = "~/Views/Paneller/Developer/_DeveloperPanelLayout.cshtml";
+    ViewData["Title"] = "Developer Paneli";
+}
+
+@if (TempData["DeveloperSuccess"] is string successMessage)
+{
+    <div class="panel-inline-status success">@successMessage</div>
+}
+
+@if (TempData["DeveloperError"] is string errorMessage)
+{
+    <div class="panel-inline-status error">@errorMessage</div>
+}
+
+<section class="developer-dashboard-grid">
+    <div class="developer-content-stack">
+        <section class="developer-stat-grid">
+            @foreach (var stat in Model.Stats)
+            {
+                <article class="developer-stat-card @stat.ToneClass">
+                    <span class="developer-stat-icon"><i class="fas @stat.IconClass"></i></span>
+                    <strong>@stat.Value</strong>
+                    <h3>@stat.Label</h3>
+                    <p>@stat.Description</p>
+                </article>
+            }
+        </section>
+
+        <section class="panel-card developer-search-card">
+            <form method="get" asp-action="Index" class="developer-search-form">
+                <label>
+                    <span>Ara</span>
+                    <input type="text" name="q" value="@Model.SearchText" placeholder="Baslik veya aciklama ara" />
+                </label>
+                <label>
+                    <span>Durum</span>
+                    <select name="status">
+                        <option value="all" selected="@(Model.StatusFilter == "all" ? "selected" : null)">Tum durumlar</option>
+                        <option value="Yeni" selected="@(Model.StatusFilter == "Yeni" ? "selected" : null)">Yeni</option>
+                        <option value="Planlandi" selected="@(Model.StatusFilter == "Planlandi" ? "selected" : null)">Planlandi</option>
+                        <option value="Devam Ediyor" selected="@(Model.StatusFilter == "Devam Ediyor" ? "selected" : null)">Devam Ediyor</option>
+                        <option value="Kontrol Bekliyor" selected="@(Model.StatusFilter == "Kontrol Bekliyor" ? "selected" : null)">Kontrol Bekliyor</option>
+                        <option value="Tamamlandi" selected="@(Model.StatusFilter == "Tamamlandi" ? "selected" : null)">Tamamlandi</option>
+                    </select>
+                </label>
+                <button type="submit" class="primary-btn">Filtrele</button>
+            </form>
+        </section>
+
+        <section class="developer-request-list">
+            @if (Model.Requests.Count == 0)
+            {
+                <article class="panel-card empty-state-card">
+                    <h2>Henüz kayıtlı talep yok</h2>
+                    <p>Yeni bir geliştirme gereksinimi eklediğinizde burada admin aksiyonlarıyla birlikte görünür.</p>
+                </article>
+            }
+            else
+            {
+                foreach (var request in Model.Requests)
+                {
+                    <article class="panel-card developer-request-card">
+                        <div class="developer-request-head">
+                            <div>
+                                <div class="developer-chip-row">
+                                    <span class="developer-chip @request.PriorityToneClass">@request.Priority</span>
+                                    <span class="developer-chip status @request.StatusToneClass">@request.Status</span>
+                                </div>
+                                <h2>@request.Title</h2>
+                                <p>@request.Description</p>
+                            </div>
+                            <div class="developer-request-meta">
+                                <strong>@request.CreatedAtText</strong>
+                                <span>Son hareket: @request.LastActivityText</span>
+                                @if (!string.IsNullOrWhiteSpace(request.AssignedDeveloperName))
+                                {
+                                    <span>Atanan: @request.AssignedDeveloperName</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(request.PlannedStartDateText))
+                                {
+                                    <span>Baslangic: @request.PlannedStartDateText</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(request.DueDateText))
+                                {
+                                    <span>Hedef: @request.DueDateText</span>
+                                }
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(request.ImageUrl))
+                        {
+                            <a class="developer-request-visual" href="@request.ImageUrl" target="_blank" rel="noreferrer">
+                                <img src="@request.ImageUrl" alt="@request.Title" />
+                            </a>
+                        }
+
+                        <div class="developer-activity-list">
+                            @foreach (var activity in request.Activities)
+                            {
+                                <article class="developer-activity-item">
+                                    <div class="developer-activity-dot"></div>
+                                    <div>
+                                        <strong>@activity.ActivityLabel · @activity.SourceRoleLabel</strong>
+                                        <p>@activity.Message</p>
+                                        <span>@activity.SourceName · @activity.CreatedAtText</span>
+                                        @if (!string.IsNullOrWhiteSpace(activity.ImageUrl))
+                                        {
+                                            <a href="@activity.ImageUrl" target="_blank" rel="noreferrer">Gorseli Ac</a>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        </div>
+
+                        @if (request.CanDeveloperReply)
+                        {
+                            <form method="post" asp-action="AddReply" enctype="multipart/form-data" class="developer-reply-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="RequestId" value="@request.RequestId" />
+                                <label>
+                                    <span>Durum notu</span>
+                                    <select name="ActionType">
+                                        <option value="comment">Sadece not ekle</option>
+                                        <option value="in_progress">Calisma basladi</option>
+                                        <option value="ready_for_review">Bitti, kontrol edilsin</option>
+                                        <option value="needs_revision">Ek gelistirme gerekiyor</option>
+                                    </select>
+                                </label>
+                                <label class="full">
+                                    <span>Aciklama</span>
+                                    <textarea name="Message" rows="4" placeholder="Yapilan is, kalan kalemler veya kontrol beklentisini yazin."></textarea>
+                                </label>
+                                <label>
+                                    <span>Gorsel ekle</span>
+                                    <input type="file" name="VisualFile" accept="image/*" />
+                                </label>
+                                <button type="submit" class="primary-btn">Guncellemeyi Kaydet</button>
+                            </form>
+                        }
+                    </article>
+                }
+            }
+        </section>
+    </div>
+
+    <aside class="panel-card developer-create-card">
+        <div class="section-head">
+            <h2>Yeni Gelistirme Talebi</h2>
+            <p>Baslik, aciklama, oncelik ve gorsel ile kayit acin. Admin bu kaydi planlayip size tarih verebilir.</p>
+        </div>
+        <form method="post" asp-action="CreateRequest" enctype="multipart/form-data" class="developer-create-form">
+            @Html.AntiForgeryToken()
+            <label>
+                <span>Baslik</span>
+                <input type="text" name="Title" maxlength="220" required />
+            </label>
+            <label>
+                <span>Oncelik</span>
+                <select name="Priority">
+                    <option value="Orta">Orta</option>
+                    <option value="Yuksek">Yuksek</option>
+                    <option value="Kritik">Kritik</option>
+                    <option value="Dusuk">Dusuk</option>
+                </select>
+            </label>
+            <label>
+                <span>Aciklama</span>
+                <textarea name="Description" rows="8" minlength="20" maxlength="6000" required placeholder="Gelistirme ihtiyacini, beklenen sonucu ve kritik notlari detayli yazin."></textarea>
+            </label>
+            <label>
+                <span>Referans gorsel</span>
+                <input type="file" name="VisualFile" accept="image/*" />
+            </label>
+            <button type="submit" class="primary-btn">Talebi Gonder</button>
+        </form>
+    </aside>
+</section>

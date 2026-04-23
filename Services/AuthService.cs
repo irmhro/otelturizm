@@ -417,6 +417,19 @@ public class AuthService : IAuthService
             return user;
         }
 
+        if (user.AccountType == "developer")
+        {
+            if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
+            {
+                throw new AuthFlowException(
+                    "E-posta adresinizi onaylamadan giris yapamazsiniz. Lütfen gelen kutunuzu kontrol edin veya doğrulama kodunu yeniden isteyin.",
+                    AuthFlowErrorCodes.EmailNotVerified,
+                    user.Email);
+            }
+
+            return user;
+        }
+
         if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
         {
             throw new AuthFlowException(
@@ -425,7 +438,9 @@ public class AuthService : IAuthService
                 user.Email);
         }
 
-        user.AccountType = "user";
+        user.AccountType = string.Equals(user.AccountType, "developer", StringComparison.OrdinalIgnoreCase)
+            ? "developer"
+            : "user";
         return user;
     }
 
@@ -2159,6 +2174,10 @@ public class AuthService : IAuthService
         {
             session.AccountType = "admin";
         }
+        else if (IsDeveloperAccount(session.UserRole, roles))
+        {
+            session.AccountType = "developer";
+        }
         else if (!reader.IsDBNull(firmaIdOrdinal) || session.UserRole.StartsWith("firma_", StringComparison.OrdinalIgnoreCase))
         {
             session.AccountType = "firma";
@@ -2356,12 +2375,14 @@ public class AuthService : IAuthService
             RoleCodes = roles,
             AccountType = IsAdminAccount(userRole, roles)
                 ? "admin"
-                : (!reader.IsDBNull(firmaIdOrdinal) || userRole.StartsWith("firma_", StringComparison.OrdinalIgnoreCase)
-                    ? "firma"
-                    : (!reader.IsDBNull(salesTeamOrdinal) || userRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase)
-                        ? "sales"
-                    : (!reader.IsDBNull(partnerIdOrdinal) || userRole.StartsWith("partner_", StringComparison.OrdinalIgnoreCase) ? "partner" : "user"))
-                  )
+                : IsDeveloperAccount(userRole, roles)
+                    ? "developer"
+                    : (!reader.IsDBNull(firmaIdOrdinal) || userRole.StartsWith("firma_", StringComparison.OrdinalIgnoreCase)
+                        ? "firma"
+                        : (!reader.IsDBNull(salesTeamOrdinal) || userRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase)
+                            ? "sales"
+                        : (!reader.IsDBNull(partnerIdOrdinal) || userRole.StartsWith("partner_", StringComparison.OrdinalIgnoreCase) ? "partner" : "user"))
+                      )
         };
     }
 
@@ -2485,6 +2506,17 @@ public class AuthService : IAuthService
             "firma" => FirmaLoginPath,
             _ => UserLoginPath
         };
+    }
+
+    private static bool IsDeveloperAccount(string? userRole, IEnumerable<string> roles)
+    {
+        if (!string.IsNullOrWhiteSpace(userRole) && userRole.StartsWith("developer", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return roles.Any(role => string.Equals(role, "developer", StringComparison.OrdinalIgnoreCase)
+            || role.StartsWith("developer_", StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool IsPasswordPolicyValid(string? password)
