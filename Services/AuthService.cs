@@ -1731,25 +1731,32 @@ public class AuthService : IAuthService
             await insertCommand.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await _emailQueueService.QueueTemplateAsync(
-            connection,
-            null,
-            new QueuedEmailTemplateRequest
-            {
-                UserId = userId,
-                RecipientEmail = normalizedEmail,
-                TemplateCode = "password_reset",
-                RelatedTable = "users",
-                RelatedRecordId = userId,
-                Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        try
+        {
+            await _emailQueueService.QueueTemplateAsync(
+                connection,
+                null,
+                new QueuedEmailTemplateRequest
                 {
-                    ["user_first_name"] = FirstNameFromFullName(fullName),
-                    ["user_email"] = normalizedEmail,
-                    ["reset_link"] = resetLink,
-                    ["request_ip"] = string.IsNullOrWhiteSpace(ipAddress) ? "-" : ipAddress
-                }
-            },
-            cancellationToken);
+                    UserId = userId,
+                    RecipientEmail = normalizedEmail,
+                    TemplateCode = "password_reset",
+                    RelatedTable = "users",
+                    RelatedRecordId = userId,
+                    Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["user_first_name"] = FirstNameFromFullName(fullName),
+                        ["user_email"] = normalizedEmail,
+                        ["reset_link"] = resetLink,
+                        ["request_ip"] = string.IsNullOrWhiteSpace(ipAddress) ? "-" : ipAddress
+                    }
+                },
+                cancellationToken);
+        }
+        catch
+        {
+            return (true, "Şifre sıfırlama bağlantısı oluşturuldu. E-posta teslimatı kısa süre içinde tekrar denenecektir.");
+        }
 
         return (true, "Şifre sıfırlama bağlantısı uygunsa e-posta adresinize gönderildi.");
     }

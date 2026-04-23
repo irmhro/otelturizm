@@ -39,6 +39,78 @@ public class EmailTemplateService : IEmailTemplateService
     private static string RenderFallbackTemplate(string relativeViewPath, IReadOnlyDictionary<string, string> tokens, string absolutePath)
     {
         var normalized = relativeViewPath.Replace('\\', '/');
+        if (normalized.EndsWith("Views/Email/E-posta Adresini Onayla.cshtml", StringComparison.OrdinalIgnoreCase)
+            || normalized.EndsWith("Views/Email/E-posta Adresini Onayla.cshtml".Replace("ş", "s"), StringComparison.OrdinalIgnoreCase))
+        {
+            var firstName = ReadToken(tokens, "user_first_name", "Misafir");
+            var email = ReadToken(tokens, "user_email");
+            var registrationDate = ReadToken(tokens, "registration_date");
+            var verificationLink = ReadToken(tokens, "verification_link", "https://otelturizm.com/eposta-dogrula");
+            var verificationCode = ReadToken(tokens, "verification_code");
+
+            return $$"""
+                     <!DOCTYPE html>
+                     <html lang="tr">
+                     <head>
+                         <meta charset="utf-8" />
+                         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                         <title>E-posta Adresinizi Onaylayın</title>
+                     </head>
+                     <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#10203a;">
+                         <div style="max-width:620px;margin:0 auto;padding:32px 16px;">
+                             <div style="background:#ffffff;border-radius:20px;padding:32px;border:1px solid #dbe4f0;">
+                                 <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:.08em;color:#2f6fed;">OTELTURIZM</p>
+                                 <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#10203a;">E-posta adresinizi onaylayın</h1>
+                                 <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">Merhaba {{firstName}},</p>
+                                 <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">{{email}} adresiyle oluşturduğunuz hesabı tamamlamak için aşağıdaki kodu kullanabilir veya bağlantıya tıklayabilirsiniz.</p>
+                                 <div style="margin:0 0 20px;padding:18px 24px;border-radius:16px;background:#edf4ff;border:1px solid #c7dbff;text-align:center;">
+                                     <span style="display:block;font-size:34px;font-weight:800;letter-spacing:.18em;color:#174ea6;">{{verificationCode}}</span>
+                                 </div>
+                                 <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#4d5f7a;">Kayıt zamanı: {{registrationDate}}</p>
+                                 <p style="margin:0;">
+                                     <a href="{{verificationLink}}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#174ea6;color:#ffffff;font-weight:700;text-decoration:none;">E-postamı doğrula</a>
+                                 </p>
+                             </div>
+                         </div>
+                     </body>
+                     </html>
+                     """;
+        }
+
+        if (normalized.EndsWith("Views/Email/Şifre Sıfırlama Talebi.cshtml", StringComparison.OrdinalIgnoreCase)
+            || normalized.EndsWith("Views/Email/Sifre Sifirlama Talebi.cshtml", StringComparison.OrdinalIgnoreCase))
+        {
+            var firstName = ReadToken(tokens, "user_first_name", "Misafir");
+            var email = ReadToken(tokens, "user_email");
+            var resetLink = ReadToken(tokens, "reset_link", "https://otelturizm.com/sifremi-unuttum");
+            var requestIp = ReadToken(tokens, "request_ip", "-");
+
+            return $$"""
+                     <!DOCTYPE html>
+                     <html lang="tr">
+                     <head>
+                         <meta charset="utf-8" />
+                         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                         <title>Şifre Sıfırlama Talebi</title>
+                     </head>
+                     <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#10203a;">
+                         <div style="max-width:620px;margin:0 auto;padding:32px 16px;">
+                             <div style="background:#ffffff;border-radius:20px;padding:32px;border:1px solid #dbe4f0;">
+                                 <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:.08em;color:#2f6fed;">OTELTURIZM</p>
+                                 <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#10203a;">Şifre sıfırlama bağlantınız hazır</h1>
+                                 <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">Merhaba {{firstName}},</p>
+                                 <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">{{email}} hesabınız için bir şifre sıfırlama talebi aldık. İşlem size aitse aşağıdaki bağlantıyla yeni şifrenizi oluşturabilirsiniz.</p>
+                                 <p style="margin:0 0 20px;">
+                                     <a href="{{resetLink}}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#174ea6;color:#ffffff;font-weight:700;text-decoration:none;">Şifremi sıfırla</a>
+                                 </p>
+                                 <p style="margin:0;font-size:14px;line-height:1.6;color:#4d5f7a;">İstek IP adresi: {{requestIp}}. Bu işlemi siz yapmadıysanız bu e-postayı dikkate almayabilirsiniz.</p>
+                             </div>
+                         </div>
+                     </body>
+                     </html>
+                     """;
+        }
+
         if (normalized.EndsWith("Views/Email/Giris Guvenlik Kodu.cshtml", StringComparison.OrdinalIgnoreCase))
         {
             var code = ReadToken(tokens, "verification_code");

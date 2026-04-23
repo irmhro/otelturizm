@@ -12,6 +12,8 @@ Bu dosya, projeyi localde canlıya en yakın şekilde çalıştırıp ardından 
 - Amaç: localde güvenli geliştirme yapıp aynı şema adıyla canlıya kontrollü publish almaktır
 
 ## Zorunlu Operasyon Notu
+- Kullanıcının isteği olmadan bile temel kural korunur: canlıya gönderilen her proje dosyası, kod değişikliği, migration, içerik dosyası veya önemli yapılandırma değişikliği GitHub reposuna da gönderilmiş olmalıdır.
+- Canlıya atılıp GitHub'a gönderilmeyen değişiklik bırakılmaz.
 - Kullanıcı `canlıya yükle` dediğinde bu komut sadece uygulama dosyalarını publish etmek anlamına gelmez.
 - `canlıya yükle` komutu şu anlama gelir: local projedeki gerekli uygulama dosyaları, görseller, upload klasörleri, demo veriler, migration dosyaları ve gerekli veritabanı kayıtları eksiksiz şekilde canlıya senkronlanacaktır.
 - `canlıya yükle` komutunda eksik veri bırakılmaz; özellikle oteller, odalar, görseller, kampanyalar ve bunlara bağlı veritabanı kayıtları local ile canlı arasında karşılaştırılarak eksikler tamamlanır.

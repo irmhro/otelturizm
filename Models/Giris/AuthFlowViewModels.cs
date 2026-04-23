@@ -4,12 +4,12 @@ namespace otelturizmnew.Models.Giris;
 
 public class EmailVerificationViewModel
 {
-    [Required]
-    [EmailAddress]
+    [Required(ErrorMessage = "E-posta adresi zorunludur.")]
+    [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi girin.")]
     public string Email { get; set; } = string.Empty;
 
-    [Required]
-    [StringLength(8, MinimumLength = 6)]
+    [Required(ErrorMessage = "Doğrulama kodu zorunludur.")]
+    [StringLength(8, MinimumLength = 6, ErrorMessage = "Doğrulama kodu 6 ile 8 karakter arasında olmalıdır.")]
     public string Code { get; set; } = string.Empty;
 
     public string? Token { get; set; }
@@ -17,23 +17,23 @@ public class EmailVerificationViewModel
 
 public class ForgotPasswordViewModel
 {
-    [Required]
-    [EmailAddress]
+    [Required(ErrorMessage = "E-posta adresi zorunludur.")]
+    [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi girin.")]
     public string Email { get; set; } = string.Empty;
 }
 
 public class ResetPasswordViewModel
 {
-    [Required]
+    [Required(ErrorMessage = "Şifre sıfırlama bağlantısı geçersiz.")]
     public string Token { get; set; } = string.Empty;
 
-    [Required]
-    [MinLength(6)]
+    [Required(ErrorMessage = "Yeni şifre zorunludur.")]
+    [MinLength(6, ErrorMessage = "Yeni şifre en az 6 karakter olmalıdır.")]
     [RegularExpression(@"^(?=.*[A-Za-z])(?=.*\d).+$", ErrorMessage = "Şifre en az 1 harf ve 1 rakam içermelidir.")]
     public string NewPassword { get; set; } = string.Empty;
 
-    [Required]
-    [MinLength(6)]
+    [Required(ErrorMessage = "Şifre tekrarı zorunludur.")]
+    [MinLength(6, ErrorMessage = "Şifre tekrarı en az 6 karakter olmalıdır.")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
