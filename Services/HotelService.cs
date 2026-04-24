@@ -1471,11 +1471,42 @@ public class HotelService : IHotelService
                 today.AddDays(1),
                 cancellationToken);
 
+            var roomDiscountIds = new HashSet<long>();
             foreach (var room in model.Rooms)
             {
                 if (roomPriceMap.TryGetValue(room.RoomTypeId, out var effectivePrice) && effectivePrice > 0m)
                 {
                     room.Price = effectivePrice;
+                }
+
+                // For the room cards: also expose base/discount for "bugün" vitrininde.
+                var breakdown = await _hotelPricingReadService.GetRoomNightlyBreakdownAsync(room.RoomTypeId, today, today.AddDays(1), cancellationToken);
+                var first = breakdown.Count > 0 ? breakdown[0] : null;
+                if (first is not null)
+                {
+                    room.BasePrice = first.BasePrice > 0m ? first.BasePrice : null;
+                    room.DiscountPrice = first.IsDiscounted && first.DiscountPrice.HasValue && first.DiscountPrice.Value > 0m
+                        ? first.DiscountPrice.Value
+                        : null;
+                    room.DiscountId = first.IsDiscounted ? first.DiscountId : null;
+                    if (room.DiscountId.HasValue && room.DiscountId.Value > 0)
+                    {
+                        roomDiscountIds.Add(room.DiscountId.Value);
+                    }
+                }
+            }
+
+            if (roomDiscountIds.Count > 0)
+            {
+                var discountMap = await LoadDiscountMetaMapAsync(connection, roomDiscountIds.ToList(), cancellationToken);
+                foreach (var room in model.Rooms)
+                {
+                    if (room.DiscountId.HasValue && discountMap.TryGetValue(room.DiscountId.Value, out var meta))
+                    {
+                        room.DiscountName = meta.Name;
+                        room.DiscountShortDescription = meta.ShortDescription;
+                        room.DiscountImageUrl = meta.ImageUrl;
+                    }
                 }
             }
 
@@ -1661,6 +1692,47 @@ public class HotelService : IHotelService
         }
 
         return model;
+    }
+
+    private static async Task<Dictionary<long, (string Name, string? ShortDescription, string? ImageUrl)>> LoadDiscountMetaMapAsync(
+        SqlConnection connection,
+        IReadOnlyCollection<long> discountIds,
+        CancellationToken cancellationToken)
+    {
+        var ids = discountIds.Where(static id => id > 0).Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return new Dictionary<long, (string, string?, string?)>();
+        }
+
+        var parameters = string.Join(", ", ids.Select((_, index) => $"@did{index}"));
+        var sql = $@"
+            SELECT id,
+                   indirim_adi,
+                   COALESCE(kisa_aciklama, '') AS kisa_aciklama,
+                   COALESCE(gorsel_url, '') AS gorsel_url
+            FROM fiyat_indirimleri
+            WHERE aktif_mi = 1
+              AND id IN ({parameters});";
+
+        var map = new Dictionary<long, (string Name, string? ShortDescription, string? ImageUrl)>();
+        await using var command = new SqlCommand(sql, connection);
+        for (var i = 0; i < ids.Count; i++)
+        {
+            command.Parameters.AddWithValue($"@did{i}", ids[i]);
+        }
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var id = reader.GetInt64(0);
+            var name = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+            var desc = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
+            var img = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
+            map[id] = (name, string.IsNullOrWhiteSpace(desc) ? null : NormalizeTurkishText(desc), string.IsNullOrWhiteSpace(img) ? null : NormalizeImageUrl(img));
+        }
+
+        return map;
     }
 
     private static string BuildRoomDetailDescription(string roomName, string bedType, ushort? squareMeter, byte maxGuests, byte maxAdults, byte maxChildren)

@@ -697,7 +697,7 @@ public class PartnerService : IPartnerService
             : rooms.FirstOrDefault(static item => item.IsActive)?.RoomId ?? rooms.FirstOrDefault()?.RoomId;
 
         var pricingEntries = await LoadPricingMonthEntriesAsync(connection, context.SelectedHotel.HotelId, monthStart, monthEnd, cancellationToken);
-        var campaigns = await LoadActiveCampaignOptionsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
+        var discounts = await LoadActiveDiscountOptionsAsync(connection, cancellationToken);
         var defaultRangeStart = monthStart < DateOnly.FromDateTime(DateTime.Today) ? DateOnly.FromDateTime(DateTime.Today) : monthStart;
         if (defaultRangeStart > monthEnd)
         {
@@ -725,7 +725,7 @@ public class PartnerService : IPartnerService
             CalendarDays = selectedRoomId.HasValue
                 ? BuildPricingCalendarDays(rooms, pricingEntries, selectedRoomId.Value, monthStart, inclusiveTax.VatPercent, inclusiveTax.AccommodationPercent)
                 : new List<PartnerPricingDayViewModel>(),
-            AvailableCampaigns = campaigns,
+            AvailableDiscounts = discounts,
             BulkForm = new PartnerBulkPricingUpdateRequest
             {
                 HotelId = context.SelectedHotel.HotelId,
@@ -747,6 +747,44 @@ public class PartnerService : IPartnerService
                 SaleStatusAction = "keep"
             }
         };
+    }
+
+    private async Task<List<PartnerDiscountOptionViewModel>> LoadActiveDiscountOptionsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        var result = new List<PartnerDiscountOptionViewModel>();
+        if (!await TableExistsAsync(connection, "fiyat_indirimleri", cancellationToken))
+        {
+            return result;
+        }
+
+        const string sql = @"
+            SELECT id,
+                   indirim_adi,
+                   COALESCE(kisa_aciklama, '') AS kisa_aciklama,
+                   COALESCE(gorsel_url, '') AS gorsel_url,
+                   COALESCE(ikon_class, '') AS ikon_class,
+                   COALESCE(renk_kodu, '') AS renk_kodu
+            FROM fiyat_indirimleri
+            WHERE aktif_mi = 1
+            ORDER BY siralama ASC, id ASC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var id = reader.GetInt64(0);
+            result.Add(new PartnerDiscountOptionViewModel
+            {
+                DiscountId = id,
+                DiscountName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                ShortDescription = reader.IsDBNull(2) ? null : reader.GetString(2),
+                ImageUrl = reader.IsDBNull(3) ? null : reader.GetString(3),
+                IconClass = reader.IsDBNull(4) ? null : reader.GetString(4),
+                ColorCode = reader.IsDBNull(5) ? null : reader.GetString(5)
+            });
+        }
+
+        return result;
     }
 
     public async Task<PartnerCampaignsPageViewModel> GetCampaignsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
@@ -814,7 +852,7 @@ public class PartnerService : IPartnerService
             || request.MinStay.HasValue
             || request.MaxStay.HasValue
             || saleAction is "open" or "close"
-            || request.CampaignId.HasValue
+            || request.DiscountId.HasValue
             || !string.IsNullOrWhiteSpace(request.CampaignLabel)
             || !string.IsNullOrWhiteSpace(request.PriceNote);
 
@@ -827,10 +865,10 @@ public class PartnerService : IPartnerService
         await connection.OpenAsync(cancellationToken);
         var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
         var inclusiveTax = await LoadInclusiveTaxPercentsAsync(connection, hotel.HotelId, cancellationToken);
-        var campaign = await ResolveCampaignAsync(connection, request.CampaignId, cancellationToken);
-        if (request.CampaignId.HasValue && request.CampaignId.Value > 0 && campaign is null)
+        var discount = await ResolveDiscountAsync(connection, request.DiscountId, cancellationToken);
+        if (request.DiscountId.HasValue && request.DiscountId.Value > 0 && discount is null)
         {
-            return (false, "Secilen kampanya bulunamadi veya aktif degil.");
+            return (false, "Seçilen indirim bulunamadı veya aktif değil.");
         }
 
         const string roomSql = @"
@@ -916,10 +954,10 @@ public class PartnerService : IPartnerService
                         "close" => true,
                         _ => existing?.IsClosed ?? false
                     };
-                    var campaignId = campaign?.CampaignId ?? existing?.CampaignId;
+                    var discountId = discount?.DiscountId ?? existing?.CampaignId;
                     var campaignLabel = !string.IsNullOrWhiteSpace(request.CampaignLabel)
                         ? request.CampaignLabel.Trim()
-                        : campaign?.DisplayLabel ?? existing?.CampaignLabel;
+                        : existing?.CampaignLabel;
                     var priceNote = !string.IsNullOrWhiteSpace(request.PriceNote)
                         ? request.PriceNote.Trim()
                         : existing?.PriceNote;
@@ -957,7 +995,7 @@ public class PartnerService : IPartnerService
                     upsertCommand.Parameters.AddWithValue("@date", date);
                     upsertCommand.Parameters.AddWithValue("@basePrice", basePrice);
                     upsertCommand.Parameters.AddWithValue("@discountPrice", discountPrice.HasValue ? discountPrice.Value : DBNull.Value);
-                    upsertCommand.Parameters.AddWithValue("@campaignId", campaignId.HasValue ? campaignId.Value : DBNull.Value);
+                    upsertCommand.Parameters.AddWithValue("@campaignId", discountId.HasValue ? discountId.Value : DBNull.Value);
                     upsertCommand.Parameters.AddWithValue("@stock", totalRooms);
                     upsertCommand.Parameters.AddWithValue("@minStay", minStay);
                     upsertCommand.Parameters.AddWithValue("@maxStay", maxStay);
@@ -967,19 +1005,6 @@ public class PartnerService : IPartnerService
                     upsertCommand.Parameters.AddWithValue("@updatedBy", userId);
                     await upsertCommand.ExecuteNonQueryAsync(cancellationToken);
                 }
-            }
-
-            if (campaign is not null)
-            {
-                await UpsertCampaignHotelParticipationAsync(
-                    connection,
-                    (SqlTransaction)transaction,
-                    hotel,
-                    campaign,
-                    userId,
-                    request.DateFrom.Date,
-                    request.DateTo.Date,
-                    cancellationToken);
             }
 
             await _favoritePriceAlertService.QueuePriceRecheckJobAsync(
@@ -1019,7 +1044,7 @@ public class PartnerService : IPartnerService
             MinStay = request.MinStay,
             MaxStay = request.MaxStay,
             SaleStatusAction = request.SaleStatusAction,
-            CampaignId = request.CampaignId,
+            DiscountId = request.DiscountId,
             PriceNote = request.PriceNote
         };
 
@@ -3590,6 +3615,35 @@ public class PartnerService : IPartnerService
             reader.GetDateTime(4).Date);
     }
 
+    private async Task<DiscountSelection?> ResolveDiscountAsync(SqlConnection connection, long? discountId, CancellationToken cancellationToken)
+    {
+        if (!discountId.HasValue || discountId.Value <= 0)
+        {
+            return null;
+        }
+
+        if (!await TableExistsAsync(connection, "fiyat_indirimleri", cancellationToken))
+        {
+            return null;
+        }
+
+        const string sql = @"
+            SELECT TOP (1) id, indirim_adi
+            FROM fiyat_indirimleri
+            WHERE id = @discountId
+              AND aktif_mi = 1;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@discountId", discountId.Value);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            return new DiscountSelection(reader.GetInt64(0), reader.IsDBNull(1) ? string.Empty : reader.GetString(1));
+        }
+
+        return null;
+    }
+
     private async Task UpsertCampaignHotelParticipationAsync(
         SqlConnection connection,
         SqlTransaction transaction,
@@ -4895,6 +4949,7 @@ public class PartnerService : IPartnerService
         string? PriceNote);
 
     private sealed record CampaignSelection(long CampaignId, string CampaignName, string CampaignCode, string DisplayLabel, DateTime StartDate, DateTime EndDate);
+    private sealed record DiscountSelection(long DiscountId, string DiscountName);
     private sealed record PartnerContext(PartnerHotelContext SelectedHotel, PartnerShellViewModel Shell);
     private sealed record PartnerHotelContext(long HotelId, long PartnerId, string HotelCode, string HotelName, string HotelType, string CityLabel, bool IsPrimary);
     private sealed record ReservationEmailSnapshot(long GuestUserId, string ReservationNo, string GuestName, string GuestEmail, DateTime CheckInDate, DateTime CheckOutDate, decimal TotalAmount, string RoomName, string HotelName);

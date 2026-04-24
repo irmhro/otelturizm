@@ -649,13 +649,53 @@
                                 }
                             </div>
                             <div class="room-price-value">
-                                <strong>@(room.Price > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(room.Price):N0}" : "Fiyat Yok")</strong>
+                                @{
+                                    var hasRoomDiscount = room.DiscountPrice.HasValue
+                                                         && room.BasePrice.HasValue
+                                                         && room.DiscountPrice.Value > 0m
+                                                         && room.BasePrice.Value > 0m
+                                                         && room.DiscountPrice.Value < room.BasePrice.Value;
+                                    var baseDisplay = hasRoomDiscount ? Model.GuestInclusiveNightlyFromStoredNet(room.BasePrice!.Value) : 0m;
+                                    var discountDisplay = hasRoomDiscount ? Model.GuestInclusiveNightlyFromStoredNet(room.DiscountPrice!.Value) : 0m;
+                                    var discountPercent = hasRoomDiscount
+                                        ? Math.Clamp((int)Math.Round(((baseDisplay - discountDisplay) / baseDisplay) * 100m, MidpointRounding.AwayFromZero), 1, 95)
+                                        : 0;
+                                }
+
                                 @if (room.Price > 0m)
                                 {
+                                    if (hasRoomDiscount)
+                                    {
+                                        <div class="room-price-discount-stack">
+                                            <span class="room-price-old">₺@baseDisplay.ToString("N0")</span>
+                                            <strong>₺@Model.GuestInclusiveNightlyFromStoredNet(room.Price).ToString("N0")</strong>
+                                            <span class="room-price-discount-pill">
+                                                %@discountPercent
+                                                @if (room.DiscountId.HasValue && !string.IsNullOrWhiteSpace(room.DiscountName))
+                                                {
+                                                    <button type="button"
+                                                            class="discount-info-btn"
+                                                            data-discount-open
+                                                            data-discount-title="@room.DiscountName"
+                                                            data-discount-desc="@room.DiscountShortDescription"
+                                                            data-discount-image="@room.DiscountImageUrl"
+                                                            aria-label="İndirim detayını görüntüle">
+                                                        <i class="fas fa-circle-info" aria-hidden="true"></i>
+                                                    </button>
+                                                }
+                                            </span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <strong>₺@Model.GuestInclusiveNightlyFromStoredNet(room.Price).ToString("N0")</strong>
+                                    }
+
                                     <span class="room-price-inclusive-label" title="Tüm vergiler dahil fiyat">Vergiler dahil</span>
                                 }
                                 else
                                 {
+                                    <strong>Fiyat Yok</strong>
                                     <span class="room-price-unavailable">Bu oda icin aktif fiyat bulunamadi</span>
                                 }
                             </div>
@@ -1316,6 +1356,23 @@
         </div>
     </section>
 }
+</div>
+
+<div class="discount-modal" id="discountModal" hidden aria-hidden="true">
+    <div class="discount-modal-backdrop" data-discount-close></div>
+    <section class="discount-modal-card" role="dialog" aria-modal="true" aria-labelledby="discountModalTitle">
+        <button type="button" class="discount-modal-close" data-discount-close aria-label="Kapat">
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+        <div class="discount-modal-head">
+            <div class="discount-modal-kicker">İndirim Detayı</div>
+            <h3 id="discountModalTitle">İndirim</h3>
+            <p id="discountModalDesc"></p>
+        </div>
+        <div class="discount-modal-visual" id="discountModalVisual" hidden>
+            <img id="discountModalImage" alt="İndirim görseli" />
+        </div>
+    </section>
 </div>
 
 @section Scripts {
@@ -3226,6 +3283,60 @@
                     prevButton?.click();
                 } else if (event.key === 'ArrowRight') {
                     nextButton?.click();
+                }
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            const modal = document.getElementById('discountModal');
+            const title = document.getElementById('discountModalTitle');
+            const desc = document.getElementById('discountModalDesc');
+            const visual = document.getElementById('discountModalVisual');
+            const image = document.getElementById('discountModalImage');
+            if (!modal || !title || !desc || !visual || !image) return;
+
+            function openDiscount(data) {
+                title.textContent = data.title || 'İndirim';
+                desc.textContent = data.desc || '';
+                const img = (data.image || '').trim();
+                if (img) {
+                    image.src = img;
+                    visual.hidden = false;
+                } else {
+                    image.src = '';
+                    visual.hidden = true;
+                }
+                modal.hidden = false;
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeDiscount() {
+                modal.hidden = true;
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+
+            document.addEventListener('click', function (event) {
+                const btn = event.target.closest('[data-discount-open]');
+                if (btn) {
+                    event.preventDefault();
+                    openDiscount({
+                        title: btn.getAttribute('data-discount-title') || '',
+                        desc: btn.getAttribute('data-discount-desc') || '',
+                        image: btn.getAttribute('data-discount-image') || ''
+                    });
+                    return;
+                }
+                if (event.target.closest('[data-discount-close]')) {
+                    closeDiscount();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && !modal.hidden) {
+                    closeDiscount();
                 }
             });
         })();

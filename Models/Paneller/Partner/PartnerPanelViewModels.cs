@@ -203,7 +203,7 @@ public class PartnerPricingPageViewModel
     public List<PartnerRoomSummaryViewModel> Rooms { get; set; } = new();
     public List<PartnerStatCardViewModel> SummaryCards { get; set; } = new();
     public List<PartnerPricingDayViewModel> CalendarDays { get; set; } = new();
-    public List<PartnerCampaignOptionViewModel> AvailableCampaigns { get; set; } = new();
+    public List<PartnerDiscountOptionViewModel> AvailableDiscounts { get; set; } = new();
     public PartnerBulkPricingUpdateRequest BulkForm { get; set; } = new();
     public PartnerDailyPricingUpdateRequest DailyForm { get; set; } = new();
 }
@@ -261,7 +261,7 @@ public class PartnerBulkPricingUpdateRequest
     public string? SaleStatusAction { get; set; }
     public bool CloseSale { get; set; }
     public bool OpenSale { get; set; }
-    public long? CampaignId { get; set; }
+    public long? DiscountId { get; set; }
     public string? CampaignLabel { get; set; }
     public string? PriceNote { get; set; }
 }
@@ -279,8 +279,18 @@ public class PartnerDailyPricingUpdateRequest
     public byte? MinStay { get; set; } = 1;
     public short? MaxStay { get; set; } = 30;
     public string? SaleStatusAction { get; set; } = "keep";
-    public long? CampaignId { get; set; }
+    public long? DiscountId { get; set; }
     public string? PriceNote { get; set; }
+}
+
+public class PartnerDiscountOptionViewModel
+{
+    public long DiscountId { get; set; }
+    public string DiscountName { get; set; } = string.Empty;
+    public string? ShortDescription { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? IconClass { get; set; }
+    public string? ColorCode { get; set; }
 }
 
 public class PartnerCampaignOptionViewModel

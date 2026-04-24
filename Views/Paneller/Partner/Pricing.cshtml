@@ -117,7 +117,7 @@
                              data-min-stay="@day.MinStay"
                              data-max-stay="@day.MaxStay"
                              data-is-closed="@(day.IsClosed ? "true" : "false")"
-                             data-campaign-id="@(day.CampaignId?.ToString() ?? string.Empty)"
+                             data-discount-id="@(day.CampaignId?.ToString() ?? string.Empty)"
                              data-price-note="@day.PriceNote">
                         <div class="partner-calendar-cell-head">
                             <div>
@@ -260,17 +260,17 @@
                 </select>
             </label>
             <label>
-                <span>Kampanya seçimi</span>
-                <select name="CampaignId">
-                    <option value="">Kampanya uygulanmayacak</option>
-                    @foreach (var campaign in Model.AvailableCampaigns)
+                <span>İndirim seçimi</span>
+                <select name="DiscountId">
+                    <option value="">İndirim uygulanmayacak</option>
+                    @foreach (var discount in Model.AvailableDiscounts)
                     {
-                        <option value="@campaign.CampaignId">@campaign.CampaignName (@campaign.CampaignCode)</option>
+                        <option value="@discount.DiscountId">@discount.DiscountName</option>
                     }
                 </select>
             </label>
             <label>
-                <span>Kampanya etiketi</span>
+                <span>İndirim etiketi (opsiyonel)</span>
                 <input type="text" name="CampaignLabel" maxlength="120" placeholder="Orn. Yaz Firsati" />
             </label>
             <label class="partner-form-span">
@@ -344,12 +344,12 @@
                 </select>
             </label>
             <label>
-                <span>Kampanya secimi</span>
-                <select name="CampaignId" id="dailyEditorCampaignId">
-                    <option value="">Kampanya uygulanmayacak</option>
-                    @foreach (var campaign in Model.AvailableCampaigns)
+                <span>İndirim seçimi</span>
+                <select name="DiscountId" id="dailyEditorDiscountId">
+                    <option value="">İndirim uygulanmayacak</option>
+                    @foreach (var discount in Model.AvailableDiscounts)
                     {
-                        <option value="@campaign.CampaignId">@campaign.CampaignName (@campaign.CampaignCode)</option>
+                        <option value="@discount.DiscountId">@discount.DiscountName</option>
                     }
                 </select>
             </label>
@@ -379,7 +379,7 @@
             const minStayInput = document.getElementById('dailyEditorMinStay');
             const maxStayInput = document.getElementById('dailyEditorMaxStay');
             const saleStatusSelect = document.getElementById('dailyEditorSaleStatus');
-            const campaignSelect = document.getElementById('dailyEditorCampaignId');
+            const campaignSelect = document.getElementById('dailyEditorDiscountId');
             const priceNoteInput = document.getElementById('dailyEditorPriceNote');
 
             if (!modal || !backdrop) {
@@ -401,7 +401,7 @@
                 minStayInput.value = cell.dataset.minStay || '';
                 maxStayInput.value = cell.dataset.maxStay || '';
                 saleStatusSelect.value = cell.dataset.isClosed === 'true' ? 'close' : 'open';
-                campaignSelect.value = cell.dataset.campaignId || '';
+                campaignSelect.value = cell.dataset.discountId || '';
                 priceNoteInput.value = cell.dataset.priceNote || '';
                 modal.hidden = false;
                 backdrop.hidden = false;
