@@ -3,6 +3,7 @@
 @inject otelturizmnew.Services.Abstractions.IUserFavoriteService UserFavoriteService
 @{
     var accountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
+    var headerContext = (ViewData["HeaderContext"] as string ?? "home").ToLowerInvariant();
     var fullName = User.FindFirstValue(AuthClaimTypes.FullName) ?? User.Identity?.Name ?? "Hesabım";
     var rawUserId = User.FindFirstValue(AuthClaimTypes.UserId) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
     var currentUserId = 0L;
@@ -150,8 +151,26 @@
 }
 else
 {
-    <a href="/kullanici-giris" class="action-btn">Kullanıcı Giriş</a>
-    <a href="/kullanici-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
+    if (headerContext == "corporate")
+    {
+        <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+        <a href="/partner-giris" class="action-btn">Partner Giriş</a>
+        <a href="/partner-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
+        <a href="/firma" class="action-btn primary">Firma</a>
+    }
+    else if (headerContext == "firma")
+    {
+        <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+        <a href="/firma-giris" class="action-btn">Firma Giriş</a>
+        <a href="/firma-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
+    }
+    else
+    {
+        <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+        <a href="/kullanici-giris" class="action-btn">Kullanıcı Giriş</a>
+        <a href="/kullanici-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
+        <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">Kurumsal</a>
+    }
 }
 
 <script>

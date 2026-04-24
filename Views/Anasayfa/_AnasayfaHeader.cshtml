@@ -84,24 +84,17 @@
         </div>
 
         <div class="header-actions">
-            @if (headerContext == "corporate")
-            {
-                <a href="/firma" class="action-btn">Firma</a>
-                @if (!homeAuthenticated && !string.Equals(homeAccountType, "partner", StringComparison.OrdinalIgnoreCase))
-                {
-                    <a href="/partner-giris" class="action-btn primary">Partner Girişi</a>
-                }
-            }
-            else if (headerContext == "firma")
+            @if (homeAuthenticated && headerContext == "corporate")
             {
                 <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
-                @if (!homeAuthenticated && !string.Equals(homeAccountType, "firma", StringComparison.OrdinalIgnoreCase))
-                {
-                    <a href="/firma-giris" class="action-btn">Firma Girişi</a>
-                    <a href="/firma-giris?sekme=kayit" class="action-btn primary">Firma Hesabı Aç</a>
-                }
+                <a href="/firma" class="action-btn primary">Firma</a>
             }
-            else
+            else if (homeAuthenticated && headerContext == "firma")
+            {
+                <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+                <a href="/firma" class="action-btn primary">Firma</a>
+            }
+            else if (homeAuthenticated)
             {
                 <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
                 <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">Kurumsal</a>

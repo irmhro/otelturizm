@@ -137,6 +137,12 @@
                 button.addEventListener('click', () => switchPanel(button.dataset.switchTab));
             });
 
+            const query = new URLSearchParams(window.location.search);
+            const shouldOpenRegisterFromUrl = query.get('sekme') === 'kayit' || window.location.hash === '#partner-kayit';
+            if (shouldOpenRegisterFromUrl) {
+                switchPanel('partnerRegisterPanel');
+            }
+
             scope.querySelectorAll('[data-toggle-target]').forEach(button => {
                 button.addEventListener('click', function () {
                     const input = document.getElementById(this.dataset.toggleTarget);
@@ -248,4 +254,3 @@
         })();
     </script>
 }
-
