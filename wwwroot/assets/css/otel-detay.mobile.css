@@ -1,0 +1,276 @@
+@import url("./otel-detay.css");
+
+/* ===== OTEL DETAY MOBIL OVERRIDE (max-width: 900px) ===== */
+
+/* Mobil galeri: tek kart 3'lü */
+.detail-mobile-gallery {
+    width: min(var(--page-max-width), calc(100% - 24px));
+    margin: 0 auto;
+}
+
+.detail-mobile-gallery-card {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    grid-template-rows: repeat(2, 1fr);
+    gap: 8px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    background: #0f172a;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+}
+
+.detail-mobile-gallery-item {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    min-height: 108px;
+}
+
+.detail-mobile-gallery-item.is-main {
+    grid-row: 1 / -1;
+}
+
+.detail-mobile-gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Otel adı tek satır */
+.detail-header.hotel-title-section .hotel-name h1 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Mobil aksiyonlar: sadece Favorim */
+#startConversationBtn,
+#shareHotelBtn,
+#shareMenu {
+    display: none !important;
+}
+
+#saveHotelBtn.favorite-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 46px;
+    font-weight: 900;
+    border-color: rgba(225, 29, 72, 0.28);
+    background: linear-gradient(135deg, rgba(225, 29, 72, 0.10), rgba(29, 78, 216, 0.08));
+}
+
+/* Hava durumu yorum satırında (puan ile aynı satır) */
+.header-top-metrics {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+.detail-utility-row {
+    margin-top: 0;
+    flex: 1;
+    min-width: 0;
+}
+
+.weather-inline-trigger {
+    width: 100%;
+    min-height: 52px;
+    border-radius: 18px;
+}
+
+.rating-summary {
+    min-height: 52px;
+    flex-shrink: 0;
+    width: auto;
+}
+
+/* Otel özellikleri yatay akış */
+.amenities-grid-lux {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding: 8px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+
+.amenities-grid-lux::-webkit-scrollbar {
+    display: none;
+}
+
+.amenity-item-lux {
+    min-width: 240px;
+    scroll-snap-align: start;
+}
+
+/* Tesis hakkında 4 satır + buton */
+.detail-about {
+    display: grid;
+    gap: 10px;
+}
+
+.detail-about-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.65;
+    color: #475569;
+    margin: 0;
+}
+
+.detail-about-more {
+    width: fit-content;
+    border: 1px solid rgba(29, 78, 216, 0.18);
+    background: rgba(29, 78, 216, 0.08);
+    color: #1d4ed8;
+    font-weight: 900;
+    padding: 9px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+/* Mobil: oda fiyatı sol, aksiyonlar sağ */
+.room-price-box {
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.room-price-actions {
+    width: auto;
+    justify-content: flex-end;
+}
+
+.room-price-value {
+    width: auto;
+    align-items: flex-start;
+    text-align: left;
+}
+
+.room-price-box strong {
+    text-align: left;
+}
+
+.room-price-box .select-room-btn,
+.room-detail-btn {
+    white-space: nowrap;
+    min-height: 44px;
+    padding: 0 14px;
+}
+
+/* Mobil rezervasyon: bottom-sheet */
+.booking-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.62);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1749;
+    opacity: 0;
+    transition: opacity 0.22s ease;
+}
+
+.booking-modal-backdrop.is-open {
+    opacity: 1;
+}
+
+.booking-modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    background: rgba(255, 255, 255, 0.98);
+    color: #0f172a;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+    cursor: pointer;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+}
+
+.booking-sidebar {
+    position: fixed !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 1750;
+    padding: 0 12px 12px;
+    transform: translateY(110%);
+    transition: transform 0.24s ease;
+    max-height: 92vh;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.booking-sidebar.is-open {
+    transform: translateY(0);
+}
+
+.booking-card {
+    position: relative;
+    border-radius: 22px;
+    box-shadow: 0 26px 80px rgba(2, 6, 23, 0.42);
+}
+
+html.modal-open,
+body.modal-open {
+    overflow: hidden;
+    touch-action: none;
+}
+
+@media (max-width: 900px) {
+    .multi-room-item-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .otel-detail-template-v41 {
+        padding-top: 8px;
+    }
+
+    .detail-breadcrumb .detail-back-link {
+        padding: 8px 14px;
+        font-size: 0.86rem;
+    }
+
+    .detail-breadcrumb-context {
+        padding: 6px 12px;
+        font-size: 0.82rem;
+    }
+
+    .room-detail-modal {
+        width: calc(100% - 20px);
+    }
+
+    .room-detail-modal-summary {
+        flex-direction: column;
+    }
+
+    .room-detail-modal-meta,
+    .room-price-actions {
+        justify-content: flex-start;
+    }
+
+    .room-detail-modal-grid {
+        grid-template-columns: 1fr;
+    }
+}

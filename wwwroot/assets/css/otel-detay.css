@@ -31,6 +31,75 @@
     gap: 8px;
 }
 
+/* Geri dön: tıklanabilir pill buton (breadcrumb) */
+.detail-breadcrumb .detail-back-link {
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(37, 99, 235, 0.28);
+    background: linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: 0.92rem;
+    letter-spacing: 0.01em;
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.1);
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.detail-breadcrumb .detail-back-link:hover {
+    background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: rgba(37, 99, 235, 0.45);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.14);
+    color: #1e40af;
+}
+
+.detail-breadcrumb .detail-back-link:active {
+    transform: scale(0.98);
+}
+
+.detail-breadcrumb .detail-back-link:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 3px;
+}
+
+.detail-breadcrumb .detail-back-link i {
+    font-size: 0.88em;
+    opacity: 0.92;
+}
+
+.detail-breadcrumb-sep {
+    color: #cbd5e1;
+    font-weight: 700;
+    user-select: none;
+}
+
+.detail-breadcrumb-context {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    color: #334155;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.detail-breadcrumb-context i {
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.detail-breadcrumb-context strong {
+    color: #0f172a;
+    font-weight: 800;
+}
+
+.detail-breadcrumb-muted {
+    color: #64748b;
+    font-weight: 600;
+}
+
 .detail-code-chip {
     display: inline-flex;
     align-items: center;
@@ -1081,14 +1150,37 @@
 }
 
 .room-price-box {
-    min-width: 170px;
+    min-width: 196px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 14px;
     text-align: right;
+}
+
+.room-price-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.room-price-value {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    width: 100%;
 }
 
 .room-price-box strong {
     display: block;
-    font-size: 1.9rem;
+    font-size: 1.82rem;
     color: #0f172a;
+    line-height: 1;
 }
 
 .room-price-tax-label {
@@ -1111,6 +1203,33 @@
     background: linear-gradient(135deg, rgba(254, 243, 199, 0.98) 0%, rgba(253, 230, 138, 0.65) 100%);
     border: 1px solid rgba(217, 119, 6, 0.4);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+}
+
+.room-price-box .select-room-btn,
+.room-detail-btn {
+    min-height: 44px;
+    padding: 0 18px;
+    white-space: nowrap;
+}
+
+.room-price-box .select-room-btn {
+    align-self: flex-end;
+    margin: 0;
+}
+
+.room-detail-btn {
+    border: 1px solid rgba(148, 163, 184, 0.34);
+    border-radius: 999px;
+    background: #fff;
+    color: #0f172a;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.room-detail-btn:hover {
+    border-color: rgba(29, 78, 216, 0.38);
+    color: #1d4ed8;
 }
 
 .room-price-tax-label i {
@@ -1140,6 +1259,107 @@
 .similar-bottom a {
     color: #1d4ed8;
     background: #eff6ff;
+}
+
+.room-detail-modal {
+    width: min(880px, calc(100% - 32px));
+}
+
+.room-detail-modal-head {
+    margin-bottom: 0;
+}
+
+.room-detail-modal-body {
+    display: grid;
+    gap: 18px;
+}
+
+.room-detail-modal-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+    border: 1px solid #dbe4f0;
+}
+
+.room-detail-modal-copy {
+    display: grid;
+    gap: 6px;
+}
+
+.room-detail-modal-copy strong {
+    font-size: 1.18rem;
+    color: #0f172a;
+}
+
+.room-detail-modal-copy p,
+.room-detail-modal-note {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+.room-detail-modal-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.room-detail-modal-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 12px;
+    border-radius: 999px;
+    background: rgba(29, 78, 216, 0.08);
+    color: #1d4ed8;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.room-detail-modal-note {
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-weight: 600;
+}
+
+.room-detail-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.room-detail-modal-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+}
+
+.room-detail-modal-item i {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(29, 78, 216, 0.08);
+    color: #1d4ed8;
+    flex-shrink: 0;
+}
+
+.room-detail-modal-item span {
+    color: #334155;
+    font-weight: 700;
+    line-height: 1.45;
 }
 
 .review-summary {
@@ -1200,6 +1420,78 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+}
+
+/* Review modal: default hidden (fix: sayfa altında "Misafir yorumu" kalması) */
+.review-modal {
+    display: none;
+}
+
+.review-modal.is-open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+}
+
+.review-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.review-modal-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(720px, calc(100% - 32px));
+    margin: 8vh auto 0;
+    border-radius: 18px;
+    background: #fff;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 30px 80px rgba(2, 6, 23, 0.35);
+}
+
+.review-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.review-modal-body {
+    padding: 16px;
+}
+
+.review-modal-close {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+}
+
+.review-modal-close:hover {
+    background: rgba(15, 23, 42, 0.06);
+}
+
+/* Sırala select görünümü */
+.review-sort select {
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #dbe4f0;
+    background: #fff;
+    font-weight: 700;
+    color: #0f172a;
+    min-width: 140px;
+}
+
+.review-sort select:focus {
+    outline: none;
+    border-color: rgba(29, 78, 216, 0.55);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
 }
 
 .review-card {
@@ -1417,6 +1709,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-width: 0;
 }
 
 .booking-form span {
@@ -1427,10 +1720,12 @@
 .booking-form input,
 .booking-form select {
     width: 100%;
+    max-width: 100%;
     padding: 14px 16px;
     border-radius: 16px;
     border: 1px solid #dbe4f0;
     background: #fff;
+    min-width: 0;
 }
 
 .guest-row {
@@ -1486,7 +1781,7 @@
 .price-breakdown > div:not(.price-breakdown-nightly) {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 16px;
     color: #64748b;
 }
@@ -1498,6 +1793,12 @@
     align-items: flex-start;
     flex: 1;
     min-width: 0;
+}
+
+.price-breakdown .price-row span:first-child {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
 }
 
 .price-row-label-stack .price-row-primary {
@@ -1551,15 +1852,20 @@
 }
 
 .booking-price-inclusive-hint {
-    margin: 10px 0 0;
-    padding: 0;
-    font-size: 0.78rem;
-    font-weight: 600;
+    margin: 12px 0 0;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    font-weight: 800;
     color: #0f766e;
     letter-spacing: 0.02em;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    white-space: nowrap;
+    width: fit-content;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(20, 184, 166, 0.14), rgba(13, 148, 136, 0.08));
+    border: 1px solid rgba(13, 148, 136, 0.22);
 }
 
 .booking-price-inclusive-hint::before {
@@ -1578,8 +1884,8 @@
     margin-top: 10px;
     padding: 5px 11px;
     border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 600;
+    font-size: 0.66rem;
+    font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
     color: #0f766e;
@@ -1705,16 +2011,207 @@
     background: #f8fafc;
 }
 
-.booking-advanced-fields summary {
-    cursor: pointer;
-    font-weight: 700;
-    color: #1e293b;
+.booking-visible-fields {
+    display: grid;
+    gap: 14px;
+}
+
+.booking-advanced-heading {
+    display: grid;
+    gap: 4px;
+}
+
+.booking-advanced-heading strong {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.booking-advanced-heading span {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #64748b;
 }
 
 .booking-advanced-grid {
     display: grid;
     gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Ödeme planı + check-in/out: alt alta (masaüstü) */
+.otel-detail-template-v41 .booking-advanced-grid {
+    grid-template-columns: 1fr;
+}
+
+.booking-advanced-grid > * {
+    min-width: 0;
+}
+
+/* Çoklu oda + gün gün fiyat (rezervasyon yan kartı) */
+.multi-room {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.multi-room-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.multi-room-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+.multi-room-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid #2563eb;
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.multi-room-add:hover {
+    background: rgba(37, 99, 235, 0.14);
+}
+
+.multi-room-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.multi-room-item {
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid #dbe4f0;
+    background: #fff;
+}
+
+.multi-room-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.multi-room-item-title {
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+.multi-room-remove {
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+
+.multi-room-item-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: start;
+}
+
+.multi-room-item-grid > * {
+    min-width: 0;
+}
+
+.multi-room-item-span {
+    grid-column: 1 / -1;
+}
+
+.nightly-breakdown-details {
+    margin-top: 10px;
+    border: 1px solid #dbe4f0;
+    border-radius: 16px;
+    padding: 12px;
+    background: #f8fafc;
+}
+
+.nightly-breakdown-details summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: #1e293b;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    list-style: none;
+}
+
+.nightly-breakdown-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.nightly-breakdown-details summary i {
+    transition: transform .2s ease;
+}
+
+.nightly-breakdown-details[open] summary i {
+    transform: rotate(180deg);
+}
+
+.nightly-breakdown-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     margin-top: 12px;
+}
+
+.nightly-breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    font-size: 0.92rem;
+}
+
+.nightly-breakdown-row span {
+    flex: 1;
+    min-width: 0;
+    color: #334155;
+    font-weight: 600;
+}
+
+.nightly-breakdown-row strong {
+    flex-shrink: 0;
+    color: #0f172a;
+    font-weight: 800;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nightly-breakdown-row-discount strong small {
+    color: #94a3b8;
+    text-decoration: line-through;
+    font-weight: 700;
 }
 
 @media (max-width: 1180px) {
@@ -1901,6 +2398,10 @@
         padding: 10px 12px;
     }
 
+    .booking-advanced-grid {
+        grid-template-columns: 1fr;
+    }
+
     .booking-price-head strong {
         font-size: 1.6rem;
     }
@@ -1917,6 +2418,12 @@
     .reserve-btn {
         margin-top: 2px;
         min-height: 46px;
+    }
+
+    .multi-room-item,
+    .booking-advanced-fields,
+    .nightly-breakdown-details {
+        overflow: hidden;
     }
 
     .gallery-lightbox {
@@ -2200,6 +2707,26 @@ body.room-gallery-open {
     align-items: center;
     justify-content: space-between;
     gap: 20px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    background: linear-gradient(135deg, rgba(220, 252, 231, 0.65) 0%, rgba(236, 253, 245, 0.92) 50%, rgba(240, 253, 250, 0.98) 100%);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.08);
+}
+
+.active-draft-banner strong {
+    color: #065f46;
+}
+
+.active-draft-banner .active-draft-message {
+    color: #047857;
+}
+
+/* v41 içerik kartı genel border; taslak bandında yeşil korunmalı */
+.otel-detail-template-v41 .content-card.active-draft-banner {
+    border-color: rgba(16, 185, 129, 0.35);
+    background: linear-gradient(135deg, rgba(220, 252, 231, 0.65) 0%, rgba(236, 253, 245, 0.92) 50%, rgba(240, 253, 250, 0.98) 100%);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.08);
 }
 
 .active-draft-banner p {
@@ -2915,7 +3442,7 @@ body.room-gallery-open {
 .otel-detail-template-v41 {
     background: #f4f6fb;
     border-radius: 24px;
-    padding: 0 0 24px;
+    padding: 16px 0 24px;
 }
 
 .otel-detail-template-v41 .detail-breadcrumb,
@@ -2927,7 +3454,7 @@ body.room-gallery-open {
 }
 
 .otel-detail-template-v41 .detail-breadcrumb {
-    padding: 10px 0 14px;
+    padding: 12px 0 16px;
 }
 
 .otel-detail-template-v41 .detail-header.hotel-title-section {
@@ -2993,17 +3520,37 @@ body.room-gallery-open {
     background: #fff;
     padding: 16px;
     gap: 14px;
+    align-items: stretch;
+}
+
+.otel-detail-template-v41 .room-card-copy {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    flex: 1;
+}
+
+.otel-detail-template-v41 .room-card-copy p {
+    margin-bottom: 0;
+}
+
+.otel-detail-template-v41 .room-feature-preview {
+    gap: 10px;
 }
 
 .otel-detail-template-v41 .room-price-box strong {
-    font-size: 2.35rem;
+    font-size: 2.05rem;
     line-height: 1;
     letter-spacing: -0.02em;
 }
 
 .otel-detail-template-v41 .room-price-tax-label {
-    font-size: 0.74rem;
+    font-size: 0.7rem;
     padding: 9px 12px;
+}
+
+.otel-detail-template-v41 .room-price-inclusive-label {
+    font-size: 0.64rem;
 }
 
 .otel-detail-template-v41 .booking-tax-banner {
@@ -3370,11 +3917,11 @@ body.room-gallery-open {
 
 /* Header-content spacing aligned with firma/kurumsal pages */
 .site-main > .otel-detail-template-v41 {
-    margin-top: -8px;
+    margin-top: -14px;
 }
 
 .otel-detail-template-v41 .detail-breadcrumb {
-    padding: 4px 0 12px;
+    padding: 2px 0 8px;
 }
 
 .otel-detail-template-v41 .weather-inline-trigger {

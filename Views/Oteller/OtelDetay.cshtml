@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = Model.Name;
+    ViewData["SuppressGlobalDraftBanner"] = true;
     var gallery = Model.GalleryImages.Count > 0 ? Model.GalleryImages : new List<string> { Model.MainImageUrl };
     var mainImage = gallery.FirstOrDefault() ?? string.Empty;
     var roomSelectOptions = Model.Rooms.Count > 0 ? Model.Rooms : new List<otelturizmnew.Models.Oteller.HotelRoomViewModel>
@@ -348,26 +349,6 @@
     <div class="detail-inline-feedback info">@infoMessage</div>
 }
 
-@if (Model.ActiveDraft is not null)
-{
-    <section class="content-card active-draft-banner">
-        <div>
-            <strong>Tamamlanmamis rezervasyonunuz var</strong>
-            <p class="active-draft-message">@Model.ActiveDraft.HotelName · @Model.ActiveDraft.CheckInText - @Model.ActiveDraft.CheckOutText · @Model.ActiveDraft.Message</p>
-        </div>
-        <div class="active-draft-actions">
-            <a href="@Model.ActiveDraft.ResumeUrl" class="active-draft-link">Devam Et</a>
-            @if ((Model.ActiveDraft.RequiresProfileCompletion || Model.ProfilePrompt.IsProfileIncomplete) && Model.IsLoggedInUser)
-            {
-                <button type="button" class="active-draft-secondary" id="openProfileCompletionFromBanner">Bilgileri Tamamla</button>
-            }
-            @{ ViewData["CancelButtonClass"] = "active-draft-cancel"; }
-            <partial name="~/Views/Shared/_ReservationDraftCancelButton.cshtml" model="Model.ActiveDraft" />
-            @{ ViewData.Remove("CancelButtonClass"); }
-        </div>
-    </section>
-}
-
 @{
     string FixMojibake(string? value)
     {
@@ -398,15 +379,15 @@
         }
 
         var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        string MaskPart(string p)
+        if (parts.Length == 1)
         {
-            if (string.IsNullOrWhiteSpace(p)) return string.Empty;
-            if (p.Length <= 2) return p.Substring(0, 1) + "*";
-            return p.Substring(0, 1) + new string('*', Math.Min(4, p.Length - 1));
+            return parts[0];
         }
 
-        if (parts.Length == 1) return MaskPart(parts[0]);
-        return $"{MaskPart(parts[0])} {MaskPart(parts[^1])}";
+        var firstName = parts[0];
+        var lastName = parts[^1];
+        var lastPrefix = lastName.Length <= 3 ? lastName : lastName.Substring(0, 3);
+        return $"{firstName} {lastPrefix}***";
     }
 
     var reviewSort = (Context.Request.Query["reviewSort"].ToString() ?? "new").Trim().ToLowerInvariant();
@@ -538,14 +519,14 @@
                                 <p>@room.Specs</p>
                                 @{
                                     var roomFeatureSeed = room.Features ?? new List<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>();
-                                    var roomTopFeatures = roomFeatureSeed.Take(2).ToList();
-                                    if (roomTopFeatures.Count < 2)
+                                    var roomTopFeatures = roomFeatureSeed.Take(3).ToList();
+                                    if (roomTopFeatures.Count < 3)
                                     {
                                         // Oda özellikleri azsa, otelin öne çıkan olanaklarından tamamla (tekrarları çıkar).
                                         var existing = new HashSet<string>(roomTopFeatures.Select(x => x.Name ?? string.Empty), StringComparer.OrdinalIgnoreCase);
                                         foreach (var amenity in Model.Amenities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
                                         {
-                                            if (roomTopFeatures.Count >= 2) break;
+                                            if (roomTopFeatures.Count >= 3) break;
                                             if (!existing.Add(amenity.Name)) continue;
                                             roomTopFeatures.Add(new otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel
                                             {
@@ -554,6 +535,29 @@
                                             });
                                         }
                                     }
+
+                                    var roomAllFeatures = (room.Features ?? Enumerable.Empty<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>())
+                                        .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                                        .Select(x => new
+                                        {
+                                            Name = x.Name,
+                                            IconClass = string.IsNullOrWhiteSpace(x.IconClass) ? "fa-circle-check" : x.IconClass
+                                        })
+                                        .ToList();
+
+                                    if (roomAllFeatures.Count == 0)
+                                    {
+                                        roomAllFeatures = roomTopFeatures
+                                            .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                                            .Select(x => new
+                                            {
+                                                Name = x.Name,
+                                                IconClass = string.IsNullOrWhiteSpace(x.IconClass) ? "fa-circle-check" : x.IconClass
+                                            })
+                                            .ToList();
+                                    }
+
+                                    var roomDetailsJson = System.Text.Json.JsonSerializer.Serialize(roomAllFeatures);
                                 }
                                 @if (roomTopFeatures.Count > 0)
                                 {
@@ -588,34 +592,49 @@
                             </div>
                         </div>
                         <div class="room-price-box">
-                            @if (room.Price > 0m)
-                            {
+                            <div class="room-price-actions">
                                 <button type="button"
-                                        class="select-room-btn"
-                                        data-room-id="@room.RoomTypeId"
-                                        data-price="@room.Price.ToString("0", System.Globalization.CultureInfo.InvariantCulture)">
-                                    Odanı Seç
+                                        class="room-detail-btn"
+                                        data-room-detail-open
+                                        data-room-name="@room.Name"
+                                        data-room-specs="@room.Specs"
+                                        data-room-cancellation="@room.CancellationText"
+                                        data-room-feature-count="@roomAllFeatures.Count"
+                                        data-room-gallery-count="@roomGallery.Count"
+                                        data-room-details='@roomDetailsJson'>
+                                    Oda Detay
                                 </button>
-                            }
-                            else
-                            {
-                                <button type="button"
-                                        class="select-room-btn"
-                                        data-room-id="@room.RoomTypeId"
-                                        data-price="0"
-                                        disabled>
-                                    Fiyat Yok
-                                </button>
-                            }
-                            <strong>@(room.Price > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(room.Price):N0}" : "Fiyat Yok")</strong>
-                            @if (room.Price > 0m)
-                            {
-                                <span class="room-price-inclusive-label" title="KDV ve konaklama vergisi dahil gece fiyatı">Vergi dahil</span>
-                            }
-                            else
-                            {
-                                <span class="room-price-unavailable">Bu oda icin aktif fiyat bulunamadi</span>
-                            }
+                                @if (room.Price > 0m)
+                                {
+                                    <button type="button"
+                                            class="select-room-btn"
+                                            data-room-id="@room.RoomTypeId"
+                                            data-price="@room.Price.ToString("0", System.Globalization.CultureInfo.InvariantCulture)">
+                                        Odanı Seç
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button"
+                                            class="select-room-btn"
+                                            data-room-id="@room.RoomTypeId"
+                                            data-price="0"
+                                            disabled>
+                                        Fiyat Yok
+                                    </button>
+                                }
+                            </div>
+                            <div class="room-price-value">
+                                <strong>@(room.Price > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(room.Price):N0}" : "Fiyat Yok")</strong>
+                                @if (room.Price > 0m)
+                                {
+                                    <span class="room-price-inclusive-label" title="KDV ve konaklama vergisi dahil gece fiyatı">Vergi dahil</span>
+                                }
+                                else
+                                {
+                                    <span class="room-price-unavailable">Bu oda icin aktif fiyat bulunamadi</span>
+                                }
+                            </div>
                         </div>
                     </div>
                 }
@@ -642,6 +661,32 @@
                     <div class="room-gallery-thumbs" id="roomGalleryThumbs"></div>
                 </div>
             </div>
+
+            <section class="detail-modal room-detail-modal" id="roomDetailModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="roomDetailModalTitle">
+                <div class="detail-modal-head room-detail-modal-head">
+                    <div>
+                        <span class="detail-modal-kicker">Oda Detayı</span>
+                        <h3 id="roomDetailModalTitle">Oda özellikleri</h3>
+                    </div>
+                    <button type="button" class="detail-modal-close" data-close-modal="roomDetailModal" aria-label="Kapat">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="room-detail-modal-body">
+                    <div class="room-detail-modal-summary">
+                        <div class="room-detail-modal-copy">
+                            <strong id="roomDetailModalRoomName">Seçilen oda</strong>
+                            <p id="roomDetailModalSpecs">Oda detayları burada gösterilir.</p>
+                        </div>
+                        <div class="room-detail-modal-meta">
+                            <span class="room-detail-modal-badge" id="roomDetailModalGalleryBadge">0 görsel</span>
+                            <span class="room-detail-modal-badge" id="roomDetailModalFeatureBadge">0 özellik</span>
+                        </div>
+                    </div>
+                    <div class="room-detail-modal-note" id="roomDetailModalCancellation">Koşullar rezervasyon adımında yeniden doğrulanır.</div>
+                    <div class="room-detail-modal-grid" id="roomDetailModalGrid"></div>
+                </div>
+            </section>
         </article>
 
         <article class="content-card">
@@ -691,52 +736,54 @@
                     </div>
                 </div>
 
-                <div class="review-list">
-                    @foreach (var review in pagedReviews)
-                    {
-                        <article class="review-card">
-                            <div class="review-meta">
-                                <div>
-                                    <h4>@MaskName(review.Name)</h4>
-                                    <p>@review.DateText</p>
+                <div id="reviewSectionDynamic">
+                    <div class="review-list">
+                        @foreach (var review in pagedReviews)
+                        {
+                            <article class="review-card">
+                                <div class="review-meta">
+                                    <div>
+                                        <h4>@MaskName(review.Name)</h4>
+                                        <p>@review.DateText</p>
+                                    </div>
+                                    <span class="review-chip">@review.Score.ToString("0.0")</span>
                                 </div>
-                                <span class="review-chip">@review.Score.ToString("0.0")</span>
-                            </div>
-                            <div class="review-body" data-review-card>
-                                <p class="review-text" data-review-text>@FixMojibake(review.Text)</p>
-                                <button type="button" class="review-more" data-review-more hidden>Devamını oku</button>
-                                <span data-review-fulltext hidden>@FixMojibake(review.Text)</span>
-                            </div>
-                        </article>
+                                <div class="review-body" data-review-card>
+                                    <p class="review-text" data-review-text>@FixMojibake(review.Text)</p>
+                                    <button type="button" class="review-more" data-review-more hidden>Devamını oku</button>
+                                    <span data-review-fulltext hidden>@FixMojibake(review.Text)</span>
+                                </div>
+                            </article>
+                        }
+                    </div>
+
+                    @if (totalReviewPages > 1)
+                    {
+                        <nav class="review-pager" aria-label="Yorum sayfalama">
+                            @{
+                                string BuildReviewUrl(int targetPage)
+                                {
+                                    var query = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                                    foreach (var key in Context.Request.Query.Keys)
+                                    {
+                                        query[key] = Context.Request.Query[key].ToString();
+                                    }
+                                    query["reviewPage"] = targetPage.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                                    query["reviewSort"] = reviewSort;
+                                    var qs = string.Join("&", query.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value ?? string.Empty)}"));
+                                    return Context.Request.Path + (string.IsNullOrWhiteSpace(qs) ? string.Empty : "?" + qs);
+                                }
+                            }
+                            <a class="review-page-btn @(reviewPage <= 1 ? "disabled" : string.Empty)"
+                               href="@(reviewPage <= 1 ? "#" : BuildReviewUrl(reviewPage - 1))"
+                               aria-disabled="@(reviewPage <= 1 ? "true" : "false")">Önceki</a>
+                            <span class="review-page-indicator">@reviewPage / @totalReviewPages</span>
+                            <a class="review-page-btn @(reviewPage >= totalReviewPages ? "disabled" : string.Empty)"
+                               href="@(reviewPage >= totalReviewPages ? "#" : BuildReviewUrl(reviewPage + 1))"
+                               aria-disabled="@(reviewPage >= totalReviewPages ? "true" : "false")">Sonraki</a>
+                        </nav>
                     }
                 </div>
-
-                @if (totalReviewPages > 1)
-                {
-                    <nav class="review-pager" aria-label="Yorum sayfalama">
-                        @{
-                            string BuildReviewUrl(int targetPage)
-                            {
-                                var query = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                                foreach (var key in Context.Request.Query.Keys)
-                                {
-                                    query[key] = Context.Request.Query[key].ToString();
-                                }
-                                query["reviewPage"] = targetPage.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                                query["reviewSort"] = reviewSort;
-                                var qs = string.Join("&", query.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value ?? string.Empty)}"));
-                                return Context.Request.Path + (string.IsNullOrWhiteSpace(qs) ? string.Empty : "?" + qs);
-                            }
-                        }
-                        <a class="review-page-btn @(reviewPage <= 1 ? "disabled" : string.Empty)"
-                           href="@(reviewPage <= 1 ? "#" : BuildReviewUrl(reviewPage - 1))"
-                           aria-disabled="@(reviewPage <= 1 ? "true" : "false")">Önceki</a>
-                        <span class="review-page-indicator">@reviewPage / @totalReviewPages</span>
-                        <a class="review-page-btn @(reviewPage >= totalReviewPages ? "disabled" : string.Empty)"
-                           href="@(reviewPage >= totalReviewPages ? "#" : BuildReviewUrl(reviewPage + 1))"
-                           aria-disabled="@(reviewPage >= totalReviewPages ? "true" : "false")">Sonraki</a>
-                    </nav>
-                }
             }
         </article>
 
@@ -854,14 +901,45 @@
                 <input type="hidden" name="CheckInDate" id="checkInDateInput" value="@checkInDefault" />
                 <input type="hidden" name="CheckOutDate" id="checkOutDateInput" value="@checkOutDefault" />
 
-                <details class="booking-advanced-fields" id="bookingAdvancedFields">
-                    <summary><i class="fas fa-angle-down"></i> Ek rezervasyon detaylari</summary>
+                @{
+                    var pmSel = reservationForm.PaymentMethod?.Trim() ?? "";
+                    var selKapida = string.Equals(pmSel, "Kapıda Ödeme", StringComparison.OrdinalIgnoreCase);
+                    var selOnline = string.Equals(pmSel, "Online Ödeme", StringComparison.OrdinalIgnoreCase);
+                    var paymentMethodChosen = selKapida || selOnline;
+                }
+                <div class="booking-advanced-fields booking-visible-fields" id="bookingAdvancedFields">
+                    <div class="booking-advanced-heading">
+                        <strong>Ödeme planı</strong>
+                        <span>Rezervasyon öncesi ödeme tercihinizi ve giriş saatlerini netleştirin.</span>
+                    </div>
                     <div class="booking-advanced-grid">
                         <label>
                             <span>Ödeme planı</span>
                             <select name="PaymentMethod" id="paymentMethodSelect">
-                                <option value="Kapıda Ödeme" selected="@(string.Equals(reservationForm.PaymentMethod, "Kapıda Ödeme", StringComparison.OrdinalIgnoreCase))">Kapıda ödeme — tam tutar</option>
-                                <option value="Online Ödeme" selected="@(string.Equals(reservationForm.PaymentMethod, "Online Ödeme", StringComparison.OrdinalIgnoreCase))">Online kredi kartı — tam tutar</option>
+                                @if (!paymentMethodChosen)
+                                {
+                                    <option value="" selected disabled>Ödeme yönteminizi seçin</option>
+                                }
+                                else
+                                {
+                                    <option value="" disabled>Ödeme yönteminizi seçin</option>
+                                }
+                                @if (selKapida)
+                                {
+                                    <option value="Kapıda Ödeme" selected>Kapıda ödeme</option>
+                                }
+                                else
+                                {
+                                    <option value="Kapıda Ödeme">Kapıda ödeme</option>
+                                }
+                                @if (selOnline)
+                                {
+                                    <option value="Online Ödeme" selected>Online kart ile ödeme</option>
+                                }
+                                else
+                                {
+                                    <option value="Online Ödeme">Online kart ile ödeme</option>
+                                }
                             </select>
                         </label>
                         <div class="booking-payment-mix" id="bookingPaymentMix" hidden>
@@ -898,9 +976,9 @@
                     <div class="booking-payment-note" id="bookingPaymentNote" hidden>
                         Online kart ödemesi rezervasyon kaydından sonra ödeme bağlantısı ile tamamlanacaktır. Havale seçtiyseniz dekont veya referans eklemeniz işlemi hızlandırır.
                     </div>
-                </details>
+                </div>
 
-                <button type="submit" class="reserve-btn">Rezervasyon Yap</button>
+                <button type="submit" class="reserve-btn"@Html.Raw(paymentMethodChosen ? "" : " disabled=\"disabled\"")>Rezervasyon Yap</button>
             </form>
 
             <div class="booking-quote-notice" id="bookingQuoteNotice" hidden></div>
@@ -1182,6 +1260,14 @@
             const openProfileCompletionFromBanner = document.getElementById('openProfileCompletionFromBanner');
             const openAmenitiesModal = document.getElementById('openAmenitiesModal');
             const amenitiesModal = document.getElementById('amenitiesModal');
+            const roomDetailModal = document.getElementById('roomDetailModal');
+            const roomDetailModalTitle = document.getElementById('roomDetailModalTitle');
+            const roomDetailModalRoomName = document.getElementById('roomDetailModalRoomName');
+            const roomDetailModalSpecs = document.getElementById('roomDetailModalSpecs');
+            const roomDetailModalCancellation = document.getElementById('roomDetailModalCancellation');
+            const roomDetailModalGalleryBadge = document.getElementById('roomDetailModalGalleryBadge');
+            const roomDetailModalFeatureBadge = document.getElementById('roomDetailModalFeatureBadge');
+            const roomDetailModalGrid = document.getElementById('roomDetailModalGrid');
             const galleryMobileTrack = document.getElementById('galleryMobileTrack');
             const galleryMobileDots = Array.from(document.querySelectorAll('[data-gallery-dot-index]'));
             let adults = parseInt(document.getElementById('adultCountInput')?.value || '2', 10);
@@ -1837,6 +1923,8 @@
             actionBackdrop?.addEventListener('click', function () {
                 closeModal(profileModal);
                 closeModal(infoModal);
+                closeModal(amenitiesModal);
+                closeModal(roomDetailModal);
             });
 
             function showInfoModal(message, isGuest) {
@@ -1869,6 +1957,31 @@
                 return pm.startsWith('Karma');
             }
 
+            function isPaymentMethodChosen() {
+                const v = (paymentMethodSelect?.value || '').trim();
+                return v === 'Kapıda Ödeme' || v === 'Online Ödeme' || v.startsWith('Karma');
+            }
+
+            function isOnlinePaymentSelected() {
+                return (paymentMethodSelect?.value || '').trim() === 'Online Ödeme';
+            }
+
+            let lastQuoteUnavailable = false;
+
+            function syncReserveButtonEnabled() {
+                const reserveButton = bookingForm?.querySelector('.reserve-btn');
+                if (!reserveButton) {
+                    return;
+                }
+
+                const blocked = lastQuoteUnavailable || !isPaymentMethodChosen();
+                if (blocked) {
+                    reserveButton.setAttribute('disabled', 'disabled');
+                } else {
+                    reserveButton.removeAttribute('disabled');
+                }
+            }
+
             function syncPaymentMethodState() {
                 if (!paymentMethodSelect) {
                     return;
@@ -1880,8 +1993,10 @@
                 }
 
                 if (bookingPaymentNote) {
-                    bookingPaymentNote.hidden = pm === 'Kapıda Ödeme';
+                    bookingPaymentNote.hidden = pm === 'Kapıda Ödeme' || pm === '';
                 }
+
+                syncReserveButtonEnabled();
             }
 
             function markProfileCompletionResolved() {
@@ -2133,22 +2248,28 @@
                     if (showNightly) {
                         nightlyList.innerHTML = nightlySeed.rows.map(function (row) {
                             const label = (row.dateText || row.date || '').toString();
-                            const amount = Number(row.totalAmount || row.amount || 0);
-                            return '<div class="nightly-breakdown-row"><span>' + escapeHtml(label) + '</span><strong>' + formatMoney(amount) + '</strong></div>';
+                            const effectiveAmount = Number(row.price || row.totalAmount || row.amount || 0);
+                            const baseAmount = Number(row.basePrice || 0);
+                            const discountAmount = Number(row.discountPrice || 0);
+                            const isDiscounted = !!row.isDiscounted && discountAmount > 0 && baseAmount > discountAmount;
+                            const amountHtml = isDiscounted
+                                ? '<strong><small>' + formatMoney(baseAmount) + '</small>' + formatMoney(effectiveAmount) + '</strong>'
+                                : '<strong>' + formatMoney(effectiveAmount) + '</strong>';
+                            return '<div class="nightly-breakdown-row' + (isDiscounted ? ' nightly-breakdown-row-discount' : '') + '"><span>' + escapeHtml(label) + '</span>' + amountHtml + '</div>';
                         }).join('');
                     } else {
                         nightlyList.innerHTML = '';
                     }
                 }
 
-                const reserveButton = bookingForm?.querySelector('.reserve-btn');
+                lastQuoteUnavailable = anyUnavailable;
                 if (anyUnavailable) {
                     setQuoteNotice(availabilityMessage || 'Seçili tarihler için uygun stok veya satış bulunamadı.', 'warning');
-                    reserveButton?.setAttribute('disabled', 'disabled');
                 } else {
                     setQuoteNotice(availabilityMessage || '', 'info');
-                    reserveButton?.removeAttribute('disabled');
                 }
+
+                syncReserveButtonEnabled();
             }
 
             function initReviewReadMore() {
@@ -2228,6 +2349,49 @@
                 });
             }
 
+            function openRoomDetailModal(button) {
+                if (!button || !roomDetailModal || !roomDetailModalGrid) {
+                    return;
+                }
+
+                let details = [];
+                try {
+                    details = JSON.parse(button.getAttribute('data-room-details') || '[]');
+                } catch (error) {
+                    details = [];
+                }
+
+                const roomName = button.getAttribute('data-room-name') || 'Oda detayları';
+                const specs = button.getAttribute('data-room-specs') || 'Oda bilgileri güncelleniyor.';
+                const cancellation = button.getAttribute('data-room-cancellation') || 'Koşullar rezervasyon adımında yeniden doğrulanır.';
+                const featureCount = button.getAttribute('data-room-feature-count') || String(details.length || 0);
+                const galleryCount = button.getAttribute('data-room-gallery-count') || '0';
+
+                if (roomDetailModalTitle) roomDetailModalTitle.textContent = roomName;
+                if (roomDetailModalRoomName) roomDetailModalRoomName.textContent = roomName;
+                if (roomDetailModalSpecs) roomDetailModalSpecs.textContent = specs;
+                if (roomDetailModalCancellation) roomDetailModalCancellation.textContent = cancellation;
+                if (roomDetailModalGalleryBadge) roomDetailModalGalleryBadge.textContent = galleryCount + ' görsel';
+                if (roomDetailModalFeatureBadge) roomDetailModalFeatureBadge.textContent = featureCount + ' özellik';
+
+                roomDetailModalGrid.innerHTML = '';
+                details.forEach(function (detail) {
+                    const detailName = detail?.name || detail?.Name || '';
+                    const detailIcon = detail?.iconClass || detail?.IconClass || 'fa-circle-check';
+                    if (!detailName) {
+                        return;
+                    }
+
+                    const item = document.createElement('div');
+                    item.className = 'room-detail-modal-item';
+                    item.innerHTML = '<i class="fas ' + detailIcon + '"></i><span></span>';
+                    item.querySelector('span').textContent = detailName;
+                    roomDetailModalGrid.appendChild(item);
+                });
+
+                openModal(roomDetailModal);
+            }
+
             async function loadSelectOptions(url, select, placeholder, selectedText) {
                 if (!select) {
                     return [];
@@ -2300,6 +2464,12 @@
                 openModal(amenitiesModal);
             });
 
+            document.querySelectorAll('[data-room-detail-open]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    openRoomDetailModal(button);
+                });
+            });
+
             activeDraftResumeLink?.addEventListener('click', function (event) {
                 event.preventDefault();
                 resumeDraftFlow();
@@ -2325,6 +2495,14 @@
 
                 if (!ensureGuestCapacity(true)) {
                     event.preventDefault();
+                    return;
+                }
+
+                if (!isPaymentMethodChosen()) {
+                    event.preventDefault();
+                    bookingAdvancedFields?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                    showInfoModal('Rezervasyon için önce ödeme yönteminizi seçin.', false);
                     return;
                 }
 
@@ -2448,7 +2626,27 @@
                 const url = new URL(window.location.href);
                 url.searchParams.set('reviewSort', reviewSortSelect.value || 'new');
                 url.searchParams.set('reviewPage', '1');
-                window.location.href = url.toString();
+                const reviewDynamic = document.getElementById('reviewSectionDynamic');
+                if (!reviewDynamic) {
+                    window.location.href = url.toString();
+                    return;
+                }
+
+                fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function (r) { return r.text(); })
+                    .then(function (html) {
+                        const doc = new DOMParser().parseFromString(html, 'text/html');
+                        const next = doc.getElementById('reviewSectionDynamic');
+                        if (!next) {
+                            window.location.href = url.toString();
+                            return;
+                        }
+                        reviewDynamic.innerHTML = next.innerHTML;
+                        initReviewReadMore();
+                    })
+                    .catch(function () {
+                        window.location.href = url.toString();
+                    });
             });
         })();
     </script>
