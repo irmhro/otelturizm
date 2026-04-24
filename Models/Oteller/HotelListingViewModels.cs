@@ -65,6 +65,8 @@ public class HotelListingCardViewModel
     public string City { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
     public string Neighborhood { get; set; } = string.Empty;
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
     public decimal Rating { get; set; }
     public string RatingText { get; set; } = string.Empty;
     public int ReviewCount { get; set; }
@@ -148,6 +150,9 @@ public class HotelRoomViewModel
     public long RoomTypeId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Specs { get; set; } = string.Empty;
+    public string BedType { get; set; } = string.Empty;
+    public ushort? SquareMeter { get; set; }
+    public string DetailDescription { get; set; } = string.Empty;
     public decimal Price { get; set; }
     public byte MaxGuestCount { get; set; }
     public byte MaxAdultCount { get; set; }

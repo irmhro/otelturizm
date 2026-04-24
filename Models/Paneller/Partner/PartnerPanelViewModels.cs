@@ -57,6 +57,9 @@ public class PartnerDashboardViewModel
     public List<PartnerInventoryAlertViewModel> InventoryAlerts { get; set; } = new();
     public List<PartnerReviewRowViewModel> RecentReviews { get; set; } = new();
     public List<PartnerQuickActionViewModel> QuickActions { get; set; } = new();
+    public int RejectCountLast30Days { get; set; }
+    public bool PenaltyActive { get; set; }
+    public string? PenaltyEndText { get; set; }
 }
 
 public class PartnerQuickActionViewModel
@@ -175,6 +178,7 @@ public class PartnerReservationStatusRequest
     public long ReservationId { get; set; }
     public string ActionType { get; set; } = "approve";
     public string? Reason { get; set; }
+    public string? ReturnUrl { get; set; }
 }
 
 public class PartnerGuestMessageRequest

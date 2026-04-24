@@ -146,6 +146,36 @@ public class PartnerService : IPartnerService
             8,
             cancellationToken);
         model.UpcomingReservations = upcomingReservations.Items;
+        const string dashboardPolicySql = @"
+            SELECT
+                (
+                    SELECT COUNT(*)
+                    FROM rezervasyonlar r
+                    WHERE r.otel_id = @hotelId
+                      AND COALESCE(r.otel_onay_durumu, '') = 'Reddedildi'
+                      AND COALESCE(r.otel_onay_tarihi, r.guncellenme_tarihi, r.olusturulma_tarihi) >= DATEADD(DAY, -30, GETDATE())
+                ) AS reject_count_30,
+                CASE
+                    WHEN o.partner_ceza_bitis_tarihi IS NOT NULL AND o.partner_ceza_bitis_tarihi > GETDATE() THEN 1
+                    ELSE 0
+                END AS ceza_aktif,
+                o.partner_ceza_bitis_tarihi
+            FROM oteller o
+            WHERE o.id = @hotelId;";
+        await using (var policyCommand = new SqlCommand(dashboardPolicySql, connection))
+        {
+            policyCommand.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
+            await using var policyReader = await policyCommand.ExecuteReaderAsync(cancellationToken);
+            if (await policyReader.ReadAsync(cancellationToken))
+            {
+                model.RejectCountLast30Days = SafeInt(policyReader, 0);
+                model.PenaltyActive = SafeBool(policyReader, 1);
+                if (!policyReader.IsDBNull(2))
+                {
+                    model.PenaltyEndText = policyReader.GetDateTime(2).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"));
+                }
+            }
+        }
         model.InventoryAlerts = await LoadInventoryAlertsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
         model.RecentReviews = await LoadReviewsAsync(connection, context.SelectedHotel.HotelId, 4, cancellationToken);
         model.QuickActions = new List<PartnerQuickActionViewModel>

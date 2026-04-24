@@ -896,6 +896,12 @@ public class PublicReservationService : IPublicReservationService
         plan = new ReservationPaymentPlan();
         errorMessage = null;
         var pm = (form.PaymentMethod ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(pm))
+        {
+            errorMessage = "Lütfen ödeme yönteminizi seçin.";
+            return false;
+        }
+
         if (totalAmount <= 0)
         {
             errorMessage = "Toplam tutar hesaplanamadi.";

@@ -58,7 +58,7 @@ public class HomeHotelCardViewModel
     public int DiscountPercent { get; set; }
     public bool HasDiscount { get; set; }
     public string PriceText { get; set; } = "Fiyat icin detay sayfasina bakin";
-    public string PriceNote { get; set; } = "Gecelik taban · vergi öncesi";
+    public string PriceNote { get; set; } = "GÜNLÜK · vergi öncesi";
     public string ImageUrl { get; set; } = string.Empty;
     public string DetailSlug { get; set; } = string.Empty;
     public List<HomeAmenityViewModel> Amenities { get; set; } = new();

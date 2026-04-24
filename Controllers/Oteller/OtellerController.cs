@@ -58,7 +58,8 @@ public class OtellerController : Controller
         model.ReservationForm = new PublicHotelReservationForm
         {
             HotelId = model.Id,
-            RoomTypeId = model.Rooms.FirstOrDefault()?.RoomTypeId ?? 0
+            RoomTypeId = model.Rooms.FirstOrDefault()?.RoomTypeId ?? 0,
+            PaymentMethod = string.Empty
         };
         if (activeDraft is not null && activeDraft.HotelId == model.Id)
         {
@@ -86,6 +87,7 @@ public class OtellerController : Controller
 
         ViewData["Title"] = "Otel Detay";
         ViewData["PageCss"] = "otel-detay";
+        ViewData["SuppressGlobalDraftBanner"] = true;
         return View("~/Views/Oteller/OtelDetay.cshtml", model);
     }
 

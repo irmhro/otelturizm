@@ -279,7 +279,7 @@ public class CampaignService : ICampaignService
                     RatingText = BuildRatingText(rating),
                 ReviewCount = reader.IsDBNull(6) ? 0 : Convert.ToInt32(reader.GetValue(6), CultureInfo.InvariantCulture),
                     StartingPrice = price,
-                    PriceNote = price.HasValue ? "Kampanyalı · gecelik taban (vergi öncesi)" : "Teklif al",
+                    PriceNote = price.HasValue ? "Kampanyalı · günlük (vergi öncesi)" : "Teklif al",
                     Summary = reader.GetString(8),
                     ImageUrl = NormalizeImageUrl(reader.IsDBNull(9) ? null : reader.GetString(9)),
                     IsFeatured = !reader.IsDBNull(10) && reader.GetBoolean(10),

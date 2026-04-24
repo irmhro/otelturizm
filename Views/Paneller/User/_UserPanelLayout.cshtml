@@ -26,10 +26,13 @@
     <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
     <link rel="stylesheet" href="~/assets/css/panel-user-shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/panel-user-shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     @if (!string.IsNullOrWhiteSpace(pageCss))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/assets/css/@(pageCss).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     }
 </head>
 <body>

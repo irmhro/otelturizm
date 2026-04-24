@@ -249,7 +249,7 @@ public class HotelService : IHotelService
                 PriceText = hasDiscount && guestDiscountedPrice.HasValue
                     ? $"TRY {guestDiscountedPrice.Value:N0}"
                     : guestStartingPrice.HasValue ? $"TRY {guestStartingPrice.Value:N0}" : "Teklif Al",
-                PriceNote = guestStartingPrice.HasValue ? "Gecelik taban · KDV dahil" : "Musait fiyat bilgisi bulunamadi",
+                PriceNote = guestStartingPrice.HasValue ? "Vergiler dahil" : "Musait fiyat bilgisi bulunamadi",
                 ImageUrl = NormalizeImageUrl(imageUrl),
                 DetailSlug = BuildSlug(reader.GetString(reader.GetOrdinal("otel_adi")), reader.GetString(reader.GetOrdinal("otel_kodu"))),
                 Amenities = amenities,
@@ -627,6 +627,8 @@ public class HotelService : IHotelService
                 o.sehir,
                 o.ilce,
                 COALESCE(o.mahalle, '') AS mahalle,
+                o.enlem,
+                o.boylam,
                 COALESCE(o.ortalama_puan, 0) AS ortalama_puan,
                 COALESCE(o.toplam_yorum_sayisi, 0) AS toplam_yorum_sayisi,
                 COALESCE(o.kisa_aciklama, '') AS kisa_aciklama,
@@ -773,6 +775,8 @@ public class HotelService : IHotelService
             var district = reader.GetString(reader.GetOrdinal("ilce"));
             var neighborhood = reader.GetString(reader.GetOrdinal("mahalle"));
             var hotelType = reader.GetString(reader.GetOrdinal("otel_turu"));
+            var lat = reader.IsDBNull(reader.GetOrdinal("enlem")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("enlem"));
+            var lon = reader.IsDBNull(reader.GetOrdinal("boylam")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("boylam"));
             var rating = reader.GetDecimal(reader.GetOrdinal("ortalama_puan"));
             var reviewCount = ReadInt(reader, "toplam_yorum_sayisi");
             var summary = reader.GetString(reader.GetOrdinal("kisa_aciklama"));
@@ -832,6 +836,8 @@ public class HotelService : IHotelService
                 City = hotelCity,
                 District = district,
                 Neighborhood = neighborhood,
+                Latitude = lat,
+                Longitude = lon,
                 Rating = rating,
                 RatingText = BuildRatingText(rating),
                 ReviewCount = reviewCount,
@@ -1273,6 +1279,9 @@ public class HotelService : IHotelService
                     RoomTypeId = roomId,
                     Name = roomName,
                     Specs = $"{bedType} · {(squareMeter.HasValue ? $"{squareMeter.Value} m2" : "Metrekare bilgisi bekleniyor")} · Max {maxGuests} Kisi",
+                    BedType = bedType,
+                    SquareMeter = squareMeter,
+                    DetailDescription = BuildRoomDetailDescription(roomName, bedType, squareMeter, maxGuests, maxAdults, maxChildren),
                     Price = roomPrice,
                     MaxGuestCount = maxGuests,
                     MaxAdultCount = maxAdults,
@@ -1504,6 +1513,19 @@ public class HotelService : IHotelService
         return model;
     }
 
+    private static string BuildRoomDetailDescription(string roomName, string bedType, ushort? squareMeter, byte maxGuests, byte maxAdults, byte maxChildren)
+    {
+        var meterText = squareMeter.HasValue
+            ? $"{squareMeter.Value} m2 ferah kullanım alanı"
+            : "konforlu kullanım alanı";
+
+        var childText = maxChildren > 0
+            ? $" {maxChildren} çocuk kapasitesi de sunar."
+            : string.Empty;
+
+        return $"{roomName}, {bedType.ToLowerInvariant()} düzeni ve {meterText} ile öne çıkar. Oda toplamda {maxGuests} misafire kadar uygundur; en fazla {maxAdults} yetişkin kabul eder.{childText}";
+    }
+
     private string? GetConnectionString()
     {
         return _configuration.GetConnectionString("DefaultConnection");
@@ -1607,7 +1629,7 @@ public class HotelService : IHotelService
 
         if (rating >= 4.5m)
         {
-            tags.Add("Yuksek Puanli");
+            // UX karari: "Yuksek Puanli" etiketi kartta gosterilmiyor.
         }
 
         if (reviewCount == 0)
@@ -1938,7 +1960,7 @@ public class HotelService : IHotelService
 
         if (rating >= 4.5m)
         {
-            tags.Add("Yuksek Puanli");
+            // UX karari: "Yuksek Puanli" etiketi anasayfa kartinda gosterilmiyor.
         }
 
         if (startingPrice.HasValue && startingPrice.Value <= 3500m)

@@ -16,13 +16,27 @@
             <label class="full">
                 <span>Doğrulama kanalı</span>
                 <div class="radio-stack">
-                    <label class="radio-option">
-                        <input type="radio" name="Channel" value="email" @(Model.SelectedTwoFactorChannel == "email" ? "checked" : null) />
-                        <span><strong>E-posta güvenlik kodu</strong><small>@(Model.EmailUsableForTwoFactor ? $"Aktif adres: {Model.MaskedEmailAddress}" : "Önce e-posta doğrulaması tamamlanmalı.")</small></span>
+                    <label class="radio-option @(!Model.EmailUsableForTwoFactor ? "is-disabled" : string.Empty)">
+                        <input type="radio" name="Channel" value="email" @(Model.SelectedTwoFactorChannel == "email" ? "checked" : null) @(!Model.EmailUsableForTwoFactor ? "disabled" : null) />
+                        <span>
+                            <strong>E-posta güvenlik kodu</strong>
+                            <small>@(Model.EmailUsableForTwoFactor ? $"Aktif adres: {Model.MaskedEmailAddress}" : "Önce e-posta doğrulaması tamamlanmalı.")</small>
+                        </span>
+                        <span class="twofactor-status @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "email" ? "on" : "off")">
+                            <i class="fas @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "email" ? "fa-toggle-on" : "fa-toggle-off")"></i>
+                            @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "email" ? "Açık" : "Kapalı")
+                        </span>
                     </label>
-                    <label class="radio-option">
-                        <input type="radio" name="Channel" value="whatsapp" @(Model.SelectedTwoFactorChannel == "whatsapp" ? "checked" : null) />
-                        <span><strong>Telefon / WhatsApp kodu</strong><small>@(Model.PhoneUsableForTwoFactor ? $"Doğrulanmış numara: {Model.MaskedPhoneNumber}" : "Telefon kanalı hazır, ancak doğrulanmış WhatsApp numarası gerektirir.")</small></span>
+                    <label class="radio-option @(!Model.PhoneUsableForTwoFactor ? "is-disabled" : string.Empty)">
+                        <input type="radio" name="Channel" value="whatsapp" @(Model.SelectedTwoFactorChannel == "whatsapp" ? "checked" : null) @(!Model.PhoneUsableForTwoFactor ? "disabled" : null) />
+                        <span>
+                            <strong>Telefon / WhatsApp kodu</strong>
+                            <small>@(Model.PhoneUsableForTwoFactor ? $"Doğrulanmış numara: {Model.MaskedPhoneNumber}" : "Telefon / WhatsApp altyapısı geliştirilmekte. Doğrulanmış numara gerektirir.")</small>
+                        </span>
+                        <span class="twofactor-status @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "whatsapp" ? "on" : "off")">
+                            <i class="fas @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "whatsapp" ? "fa-toggle-on" : "fa-toggle-off")"></i>
+                            @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "whatsapp" ? "Açık" : "Kapalı")
+                        </span>
                     </label>
                 </div>
             </label>

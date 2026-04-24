@@ -114,6 +114,44 @@
   .filter-options { display: flex; flex-direction: column; gap: var(--space-3); }
   .filter-options > input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); }
   .filter-check { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: 14px; }
+  .star-filter-option {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 0 2px;
+  }
+  .star-filter-option input { margin: 0; }
+  .star-filter-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+  }
+  .star-filter-visual {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.78);
+      color: #fbbf24;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+      white-space: nowrap;
+  }
+  .star-filter-visual i { font-size: 11px; }
+  .star-filter-text {
+      color: var(--text-dark);
+      font-weight: 700;
+      white-space: nowrap;
+  }
+  .star-filter-count {
+      margin-left: auto;
+      color: var(--text-light);
+      font-weight: 700;
+      font-size: 13px;
+  }
   .rating-stars { display: flex; flex-wrap: wrap; gap: 10px; }
   .rating-chip {
       min-height: 36px;
@@ -389,8 +427,7 @@
 
   .listing-search-lux {
       position: relative;
-      display: grid;
-      grid-template-columns: 1fr 40px 42px;
+      display: flex;
       align-items: center;
       min-height: 48px;
       border-radius: 18px;
@@ -398,12 +435,13 @@
       background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(248,250,252,1) 100%);
       box-shadow: 0 18px 34px rgba(0, 59, 149, 0.08);
       padding: 0 8px;
-      gap: 4px;
+      gap: 8px;
   }
 
   .listing-search-lux > i {
       width: 42px;
       height: 42px;
+      flex: 0 0 42px;
       display: grid;
       place-items: center;
       border-radius: 14px;
@@ -414,6 +452,7 @@
   }
 
   .listing-search-lux input {
+      flex: 1 1 auto;
       border: 0;
       outline: 0;
       background: transparent;
@@ -432,6 +471,7 @@
   .listing-search-clear {
       width: 36px;
       height: 36px;
+      flex: 0 0 36px;
       border-radius: 999px;
       border: 1px solid rgba(15, 23, 42, 0.10);
       background: rgba(255,255,255,0.95);
@@ -442,7 +482,89 @@
       order: 2;
   }
 
-  .listing-search-icon-right { pointer-events: none; }
+  .listing-search-icon-right { pointer-events: none; margin-left: auto; }
+
+  .km-row {
+      display: grid;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(226, 232, 240, 1);
+      background: linear-gradient(180deg, rgba(255,255,255,1), rgba(248,250,252,1));
+  }
+
+  .km-row-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+  }
+
+  .km-row-head strong {
+      color: var(--text-dark);
+      font-size: 15px;
+      font-weight: 800;
+  }
+
+  .km-value {
+      color: var(--primary);
+      font-size: 15px;
+      font-weight: 900;
+      white-space: nowrap;
+  }
+
+  .km-slider-row {
+      display: flex;
+      align-items: center;
+  }
+
+  .km-slider-row input[type="range"] {
+      width: 100%;
+      margin: 0;
+  }
+
+  .km-manual-input {
+      display: grid;
+      gap: 6px;
+      justify-items: center;
+      width: 100%;
+      text-align: center;
+  }
+
+  .km-manual-input span {
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+  }
+
+  .km-manual-input-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+  }
+
+  .km-manual-input input {
+      width: 90px;
+      min-height: 46px;
+      padding: 0 12px;
+      border: 1px solid rgba(203, 213, 225, 1);
+      border-radius: 16px;
+      background: #fff;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-dark);
+  }
+
+  .km-manual-input small {
+      color: #94a3b8;
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      text-transform: none;
+  }
 
   .listing-search-suggestions {
       position: absolute;
@@ -583,38 +705,49 @@
       width: 100%;
       border: 1px solid rgba(226,232,240,1);
       border-radius: 16px;
-      padding: 10px 12px;
+      padding: 12px 14px;
       background: linear-gradient(135deg, rgba(0,59,149,0.06), rgba(255,255,255,1));
       display: grid;
-      grid-template-columns: 42px 1fr;
-      gap: 10px;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
       text-align: left;
       cursor: pointer;
       box-shadow: 0 12px 22px rgba(0, 59, 149, 0.06);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  }
+  .location-btn:hover { border-color: rgba(0,59,149,0.25); box-shadow: 0 16px 28px rgba(0, 59, 149, 0.09); }
+  .location-btn:active { transform: translateY(1px); }
+  .location-btn.active {
+      border-color: rgba(0,59,149,0.35);
+      box-shadow: 0 18px 32px rgba(0, 59, 149, 0.12);
+      background: linear-gradient(135deg, rgba(0,59,149,0.10), rgba(255,255,255,1));
   }
   .location-btn-icon {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: 14px;
       background: rgba(0, 59, 149, 0.08);
       color: var(--primary);
       display: grid;
       place-items: center;
-      font-size: 16px;
+      font-size: 17px;
   }
-  .location-btn-copy strong { display:block; font-size: 14px; font-weight: 900; color: var(--text-dark); }
-  .location-btn-copy small { display:block; margin-top: 2px; font-size: 12px; font-weight: 700; color: var(--text-light); }
+  .location-btn-copy strong { display:block; font-size: 15px; font-weight: 900; color: var(--text-dark); }
+  .location-btn-copy small { display:block; margin-top: 3px; font-size: 12.5px; font-weight: 700; color: var(--text-light); }
 
-  .km-row { padding: 10px 12px; border: 1px solid rgba(226,232,240,1); border-radius: 16px; background: #fff; display:grid; gap: 8px; }
+  .km-row { padding: 12px 14px; border: 1px solid rgba(226,232,240,1); border-radius: 16px; background: #fff; display:grid; gap: 10px; }
   .km-row-head { display:flex; align-items:center; justify-content:space-between; gap: 10px; margin-bottom: 0; }
   .km-row-head strong { font-size: 14px; font-weight: 900; }
-  .km-value { font-size: 13px; font-weight: 900; color: var(--primary); }
-  .km-input-row { display:grid; grid-template-columns: minmax(0, 1fr) 96px; align-items:center; gap:10px; }
-  .km-row input[type="range"] { width: 100%; margin: 0; }
-  .km-manual-input { display:grid; grid-template-columns: 1fr auto; gap:4px 6px; align-items:center; min-width:0; }
-  .km-manual-input span { grid-column: 1 / -1; font-size: 11px; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: .04em; }
-  .km-manual-input input { width: 100%; min-width:0; height:34px; padding:0 10px; border-radius:10px; border:1px solid rgba(226,232,240,1); background:#fff; font-size:13px; font-weight:800; color:var(--text-dark); }
-  .km-manual-input small { font-size: 12px; font-weight: 800; color: var(--text-light); }
+  .km-value { display:inline-flex; align-items:center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; font-size: 13px; font-weight: 900; color: var(--primary); }
+  .km-count { font-size: 11.5px; font-weight: 800; color: var(--text-light); background: rgba(0,59,149,0.06); border: 1px solid rgba(0,59,149,0.10); border-radius: 999px; padding: 4px 8px; }
+  .km-slider-row { display:flex; align-items:center; }
+  .km-row input[type="range"] { width: 100%; margin: 0; accent-color: var(--primary); cursor: pointer; }
+  .km-manual-input { display:grid; gap:6px; justify-items:center; text-align:center; min-width:0; }
+  .km-manual-input span { font-size: 11px; font-weight: 900; color: var(--text-light); text-transform: uppercase; letter-spacing: .04em; }
+  .km-manual-input-row { display:inline-flex; align-items:center; gap:8px; }
+  .km-manual-input input { width: 88px; min-width:0; height:42px; padding:0 12px; border-radius:12px; border:1px solid rgba(226,232,240,1); background:#fff; font-size:18px; font-weight:900; color:var(--text-dark); text-align:center; }
+  .km-manual-input input:focus { outline: 0; border-color: rgba(0,59,149,0.35); box-shadow: 0 0 0 4px rgba(0,59,149,0.08); }
+  .km-manual-input small { font-size: 14px; font-weight: 900; color: var(--text-light); }
 </style>
 
 <section class="hotel-listing-shell listing-template-v41">
@@ -703,23 +836,25 @@
                                     </span>
                                 </button>
 
-                                <div class="km-row">
-                                    <div class="km-row-head">
-                                        <strong>Mesafe</strong>
-                                        <span class="km-value"><span id="distanceKmValue">1</span> km</span>
-                                    </div>
-                                    <div class="km-input-row">
-                                        <input type="range" min="1" max="50" value="1" step="1" id="distanceKmRange" disabled />
+                                  <div class="km-row">
+                                      <div class="km-row-head">
+                                          <strong>Mesafe</strong>
+                                          <span class="km-value"><span><span id="distanceKmValue">1</span> km</span><span class="km-count" id="distanceHotelCount">-</span></span>
+                                      </div>
+                                      <div class="km-slider-row">
+                                          <input type="range" min="1" max="50" value="1" step="1" id="distanceKmRange" disabled />
+                                      </div>
                                         <label class="km-manual-input" for="distanceKmInput">
-                                            <span>El ile</span>
-                                            <input type="number" min="1" max="50" value="1" step="1" id="distanceKmInput" disabled />
-                                            <small>km</small>
+                                            <span>Belirle</span>
+                                            <div class="km-manual-input-row">
+                                                <input type="number" min="1" max="50" value="1" step="1" id="distanceKmInput" disabled />
+                                                <small>km</small>
+                                            </div>
                                         </label>
+                                        <p class="filter-help filter-help-compact">Konum izni verildiğinde seçtiğiniz km çevresindeki oteller gösterilir.</p>
                                     </div>
-                                    <p class="filter-help filter-help-compact">Konum izni verildiğinde seçtiğiniz km çevresindeki oteller gösterilir.</p>
-                                </div>
-                            </div>
-                        </div>
+                              </div>
+                          </div>
                     </details>
 
                     <details class="filter-accordion" open>
@@ -743,14 +878,26 @@
                         </summary>
                         <div class="filter-accordion-body">
                             <div class="filter-options">
-                                @foreach (var star in Model.StarOptions.OrderByDescending(x => x))
-                                {
-                                    var count = hotels.Count(h => (h.StarCount ?? 0) == star);
-                                    <label class="filter-check"><input type="checkbox" class="listing-star-filter" value="@star"> @star Yıldız <span style="margin-left:auto; color:var(--text-light);">@count</span></label>
-                                }
-                            </div>
-                        </div>
-                    </details>
+                                  @foreach (var star in Model.StarOptions.OrderByDescending(x => x))
+                                  {
+                                      var count = hotels.Count(h => (h.StarCount ?? 0) == star);
+                                      <label class="filter-check star-filter-option">
+                                          <input type="checkbox" class="listing-star-filter" value="@star">
+                                          <span class="star-filter-label">
+                                              <span class="star-filter-visual" aria-hidden="true">
+                                                  @for (var starIcon = 0; starIcon < star; starIcon++)
+                                                  {
+                                                      <i class="fas fa-star"></i>
+                                                  }
+                                              </span>
+                                              <span class="star-filter-text">@star yıldız</span>
+                                          </span>
+                                          <span class="star-filter-count">@count</span>
+                                      </label>
+                                  }
+                              </div>
+                          </div>
+                      </details>
 
                     <details class="filter-accordion">
                         <summary class="filter-accordion-summary">
@@ -1046,6 +1193,7 @@
             const distanceKmRange = document.getElementById('distanceKmRange');
             const distanceKmValue = document.getElementById('distanceKmValue');
             const distanceKmInput = document.getElementById('distanceKmInput');
+            const distanceHotelCount = document.getElementById('distanceHotelCount');
             const locationStatusText = document.getElementById('locationStatusText');
             let keywordSuggestionTimer = null;
             let userLocation = null;
@@ -1117,10 +1265,22 @@
                 if (distanceKmInput) {
                     distanceKmInput.disabled = !enabled;
                 }
+                useMyLocationBtn?.classList.toggle('active', !!enabled);
             }
 
             function setLocationStatus(text) {
                 if (locationStatusText) locationStatusText.textContent = text || '';
+            }
+
+            function setDistanceHotelCount(count, active) {
+                if (!distanceHotelCount) return;
+                if (!active) {
+                    distanceHotelCount.textContent = '-';
+                    return;
+                }
+
+                const safeCount = Math.max(0, Number(count || 0));
+                distanceHotelCount.textContent = safeCount + ' otel';
             }
 
             function applyFilters() {
@@ -1137,6 +1297,7 @@
                     .map(x => Number(x.dataset.minScore || '0'))
                     .reduce((acc, v) => Math.max(acc, v), 0);
 
+                let visibleCount = 0;
                 cards.forEach(function (card) {
                     const cardPrice = Number(card.dataset.price || '0');
                     const cardStars = String(card.dataset.stars || '0');
@@ -1159,8 +1320,14 @@
                         || (Number.isFinite(cardLat) && Number.isFinite(cardLon)
                             && haversineKm(userLocation.lat, userLocation.lon, cardLat, cardLon) <= distanceKm);
 
-                    card.hidden = !(keywordOk && priceOk && starOk && ratingOk && amenityOk && featuredOk && distanceOk);
+                    const isVisible = keywordOk && priceOk && starOk && ratingOk && amenityOk && featuredOk && distanceOk;
+                    card.hidden = !isVisible;
+                    if (isVisible) {
+                        visibleCount += 1;
+                    }
                 });
+
+                setDistanceHotelCount(visibleCount, distanceActive);
             }
 
             function hideKeywordSuggestions() {
@@ -1246,22 +1413,60 @@
                 keywordSuggestionTimer = window.setTimeout(loadKeywordSuggestions, 180);
             });
 
-            useMyLocationBtn?.addEventListener('click', function () {
+            function applyLocationSuccess(pos) {
+                userLocation = { lat: Number(pos.coords.latitude), lon: Number(pos.coords.longitude) };
+                enableDistanceFilterUi(true);
+                syncDistanceUi();
+                setLocationStatus('Konum alındı. Mesafeyi belirleyebilirsiniz.');
+                applyFilters();
+            }
+
+            function applyLocationError(error) {
+                enableDistanceFilterUi(false);
+                if (error && error.code === 1) {
+                    setLocationStatus('Konum izni kapalı. Tarayıcıdan izin verin.');
+                    return;
+                }
+                if (error && error.code === 2) {
+                    setLocationStatus('Konum bulunamadı. Tekrar deneyin.');
+                    return;
+                }
+                if (error && error.code === 3) {
+                    setLocationStatus('Konum zaman aşımına uğradı. Tekrar deneyin.');
+                    return;
+                }
+                setLocationStatus('Konum alınamadı. Tekrar deneyin.');
+            }
+
+            function requestUserLocation() {
+                if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    setLocationStatus('Konum için güvenli bağlantı gerekiyor.');
+                    return;
+                }
                 if (!('geolocation' in navigator)) {
                     setLocationStatus('Tarayıcı konumu desteklemiyor.');
                     return;
                 }
+
                 setLocationStatus('Konum alınıyor...');
-                navigator.geolocation.getCurrentPosition(function (pos) {
-                    userLocation = { lat: Number(pos.coords.latitude), lon: Number(pos.coords.longitude) };
-                    enableDistanceFilterUi(true);
-                    syncDistanceUi();
-                    setLocationStatus('Konum alındı. Mesafe seçebilirsiniz.');
-                    applyFilters();
-                }, function () {
-                    setLocationStatus('Konum izni verilmedi.');
-                    enableDistanceFilterUi(false);
-                }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 600000 });
+                const primaryOptions = { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 };
+                const fallbackOptions = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
+
+                navigator.geolocation.getCurrentPosition(
+                    applyLocationSuccess,
+                    function (error) {
+                        if (error && error.code === 3) {
+                            navigator.geolocation.getCurrentPosition(applyLocationSuccess, applyLocationError, fallbackOptions);
+                            return;
+                        }
+                        applyLocationError(error);
+                    },
+                    primaryOptions
+                );
+            }
+
+            useMyLocationBtn?.addEventListener('click', function () {
+                requestUserLocation();
             });
 
             distanceKmRange?.addEventListener('input', function () {
@@ -1286,6 +1491,16 @@
                 }
                 syncDistanceUi();
                 applyFilters();
+            });
+            distanceKmRange?.addEventListener('pointerdown', function () {
+                if (distanceKmRange.disabled) {
+                    requestUserLocation();
+                }
+            });
+            distanceKmInput?.addEventListener('focus', function () {
+                if (distanceKmInput.disabled) {
+                    requestUserLocation();
+                }
             });
             keywordInput?.addEventListener('focus', function () {
                 if (String(keywordInput.value || '').trim().length > 0) {

@@ -1143,7 +1143,7 @@
 }
 
 .home-hotel-tags {
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .amenities {
@@ -1152,15 +1152,25 @@
 
 /* Keep card heights stable by clamping variable content */
 .home-hotel-tags {
-    min-height: 24px;
+    min-height: 0;
     max-height: 24px;
     overflow: hidden;
 }
 
 .amenities {
-    min-height: 44px;
+    min-height: 0;
     max-height: 44px;
     overflow: hidden;
+}
+
+/* Etiket/olanaklar boşsa hiç yer kaplamasın (gereksiz boşluk fix) */
+.home-hotel-tags:empty,
+.amenities:empty {
+    display: none;
+    margin: 0;
+    min-height: 0;
+    max-height: none;
+    padding: 0;
 }
 
 .home-hotel-tags span {

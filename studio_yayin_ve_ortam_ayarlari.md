@@ -12,7 +12,13 @@ Bu dosya, projeyi localde canlıya en yakın şekilde çalıştırıp ardından 
 - Amaç: localde güvenli geliştirme yapıp aynı şema adıyla canlıya kontrollü publish almaktır
 
 ## Zorunlu Operasyon Notu
-- Kullanıcının isteği olmadan bile temel kural korunur: canlıya gönderilen her proje dosyası, kod değişikliği, migration, içerik dosyası veya önemli yapılandırma değişikliği GitHub reposuna da gönderilmiş olmalıdır.
+- Canlıya yükleme ve GitHub push işlemleri varsayılan davranış değildir.
+- Kullanıcı açıkça istemediği sürece:
+  - canlıya publish yapılmaz
+  - canlı veritabanına script çalıştırılmaz
+  - GitHub'a commit/push yapılmaz
+- Kullanıcı açıkça `canlıya yükle`, `canlıya aktar`, `gitupa yükle`, `gitupa gönder`, `pushla` gibi bir talep verdiğinde operasyon başlatılır.
+- Canlıya gönderilen her proje dosyası, kod değişikliği, migration, içerik dosyası veya önemli yapılandırma değişikliği GitHub reposuna da gönderilmiş olmalıdır.
 - Canlıya atılıp GitHub'a gönderilmeyen değişiklik bırakılmaz.
 - Kullanıcı `canlıya yükle` dediğinde bu komut sadece uygulama dosyalarını publish etmek anlamına gelmez.
 - `canlıya yükle` komutu şu anlama gelir: local projedeki gerekli uygulama dosyaları, görseller, upload klasörleri, demo veriler, migration dosyaları ve gerekli veritabanı kayıtları eksiksiz şekilde canlıya senkronlanacaktır.
@@ -26,6 +32,18 @@ Bu dosya, projeyi localde canlıya en yakın şekilde çalıştırıp ardından 
   - canlı veritabanı script/migration kayıtları güncel olmalı
   - localde bulunan önemli veri kayıtları canlıda da var olmalı
   - görsel veya upload dosyaları canlı URL üzerinden erişilebilir olmalı
+
+## Başka Ekip Üyesi İçin Uygulama Kuralı
+- Bu projede başka bir yapay zeka, developer veya operatör çalışacaksa aynı kural geçerlidir:
+  1. Önce localde geliştir ve test et
+  2. Kullanıcı açıkça istemeden canlıya veya GitHub'a hiçbir şey gönderme
+  3. Kullanıcı isterse önce istenen hedefi netleştir:
+     - sadece local değişiklik
+     - sadece GitHub
+     - sadece canlı
+     - GitHub + canlı
+  4. Canlıya çıkan her şeyin GitHub karşılığı bulunmalı
+  5. Canlıya yüklemede sadece kod değil veritabanı ve içerik dosyaları da kontrol edilmeli
 
 ## Local Geliştirme Ayarları
 
@@ -120,6 +138,142 @@ dotnet build --no-restore
 dotnet publish -c Release /p:PublishProfile="Properties\PublishProfiles\IISProfile.pubxml"
 ```
 6. Yayın sonrası canlı site kontrol edilir.
+
+## GitHub'a Gönderme Akışı
+Kullanıcı açıkça isterse uygulanır.
+
+1. Değişen dosyaları kontrol et:
+
+```powershell
+git status --short
+```
+
+2. Yalnızca ilgili dosyaları stage et:
+
+```powershell
+git add -- "Views\\Oteller\\OtelDetay.cshtml" "wwwroot\\assets\\css\\otel-detay.css"
+```
+
+3. Commit oluştur:
+
+```powershell
+git commit -m "Kısa ve açıklayıcı commit mesajı"
+```
+
+4. Push gönder:
+
+```powershell
+git push origin master
+```
+
+Kurallar:
+- İlgisiz kirli dosyaları commit etme
+- Kullanıcı istemeden push atma
+- Canlıya çıkan değişiklikleri push'sız bırakma
+
+## Dosyaları Canlıya Yükleme Akışı
+Kullanıcı açıkça isterse uygulanır.
+
+### Yöntem 1: Publish profil üzerinden
+
+```powershell
+dotnet publish "D:\otelturizm\otelturizmnew.csproj" -c Release /p:PublishProfile="Properties\PublishProfiles\IISProfile.pubxml"
+```
+
+### Yöntem 2: Ayrı publish klasörü + MSDeploy
+
+1. Publish klasörü üret:
+
+```powershell
+dotnet publish "D:\otelturizm\otelturizmnew.csproj" -c Release -o "D:\otelturizm\artifacts\manual-publish"
+```
+
+2. MSDeploy ile gönder:
+
+```powershell
+& "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
+  -verb:sync `
+  -source:contentPath="D:\otelturizm\artifacts\manual-publish" `
+  -dest:contentPath="otelturizm.com",computerName="https://185.111.244.246:8172/msdeploy.axd?site=otelturizm.com",userName="administrator",password="***",authType="Basic" `
+  -allowUntrusted `
+  -enableRule:AppOffline `
+  -enableRule:DoNotDeleteRule
+```
+
+Yükleme kapsamı:
+- derlenmiş uygulama dosyaları
+- `wwwroot` altındaki görseller ve assetler
+- upload klasörleri
+- gerekiyorsa demo içerikleri
+
+Canlı dosya yükleme sonrası en az şu adresler kontrol edilir:
+- `https://otelturizm.com/`
+- `https://otelturizm.com/Oteller`
+- ilgili detay sayfası
+- gerekiyorsa yüklenen görsel URL'si
+
+## Veritabanını Canlıya Aktarma Akışı
+Kullanıcı açıkça isterse uygulanır.
+
+Bu proje EF migration tabanlı değildir. SQL script veya tam yedek yaklaşımı kullanılır.
+
+### Seçenek 1: Script çalıştırma
+
+1. İlgili scripti hazırla:
+- klasör: `D:\otelturizm\Database\MigrationsSql`
+
+2. Localde test et
+
+3. Canlıda çalıştır:
+
+```powershell
+sqlcmd -S 185.111.244.246 -U sa -P "Nusret.34.34.-" -d otelturizm_2026db -i "D:\otelturizm\Database\MigrationsSql\dosya_adi.sql"
+```
+
+4. Gerekirse migration kaydını doğrula:
+- tablo: `schema_migrations`
+
+### Seçenek 2: SSMS ile tam şema/veri taşıma
+- SSMS aç
+- local DB: `otelturizm_2026db`
+- Tasks > Generate Scripts
+- gerekli tablo/şema/veri seçeneklerini aç
+- canlı DB üzerinde scripti çalıştır
+
+### Seçenek 3: Tam yedek / restore
+Sadece kullanıcı açıkça tam taşıma istediyse kullanılır.
+
+Kurallar:
+- canlı DB üzerine işlem yapmadan önce hedef tabloyu ve etkiyi kontrol et
+- tüm DB restore işlemi üretim verisini ezebilir; açık kullanıcı onayı olmadan yapılmaz
+- içerik verisi gerekiyorsa sadece şema değil veri de taşınır
+
+## İçerik ve Görsel Senkronu
+Kod publish edildi diye içerik senkron tamamlandı sayılmaz.
+
+Kontrol edilecek alanlar:
+- `wwwroot/uploads`
+- `wwwroot/assets/img`
+- demo otel / oda / kampanya görselleri
+- public erişen görsellerin fiziksel dosyaları
+- veritabanındaki görsel yollarının canlıda gerçekten dosyaya karşılık gelmesi
+
+Görsel URL testi örneği:
+
+```powershell
+Invoke-WebRequest "https://otelturizm.com/uploads/demo/hotels/seyhli-grand-hotel/hotel-1.jpg" -UseBasicParsing
+```
+
+## Operasyon Sonrası Doğrulama
+İşlem tamamlandı demeden önce şu doğrulamalar yapılır:
+
+1. Build başarılı mı
+2. Canlı site `200` dönüyor mu
+3. İstenen sayfa gerçekten güncel mi
+4. Veritabanı scripti gerçekten işlendi mi
+5. Gerekli içerik kayıtları gerçekten var mı
+6. Görsel URL'leri `200` dönüyor mu
+7. Eğer kullanıcı istediyse GitHub commit ve push tamam mı
 
 ## Publish Öncesi Kontrol Listesi
 - `appsettings.Development.json` local DB'yi gösteriyor mu

@@ -84,6 +84,19 @@
     var weatherThemeTitle = "İlçe bazlı hava durumu";
     var weatherThemeSummary = "Bugün için dengeli bir gezi ritmi planlayabilirsiniz.";
     var weatherAccentIcon = "fa-cloud-sun";
+    var mapLatitude = Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var mapLongitude = Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    string? mapBoundingBox = null;
+
+    if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+    {
+        const decimal mapDelta = 0.0125m;
+        var minLon = (Model.Longitude.Value - mapDelta).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var minLat = (Model.Latitude.Value - mapDelta).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var maxLon = (Model.Longitude.Value + mapDelta).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var maxLat = (Model.Latitude.Value + mapDelta).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        mapBoundingBox = $"{minLon}%2C{minLat}%2C{maxLon}%2C{maxLat}";
+    }
 
     if (todayWeather is not null)
     {
@@ -597,10 +610,19 @@
                                         class="room-detail-btn"
                                         data-room-detail-open
                                         data-room-name="@room.Name"
+                                        data-room-id="@room.RoomTypeId"
                                         data-room-specs="@room.Specs"
+                                        data-room-description="@room.DetailDescription"
+                                        data-room-bed-type="@room.BedType"
+                                        data-room-square-meter="@(room.SquareMeter?.ToString() ?? string.Empty)"
+                                        data-room-max-guests="@room.MaxGuestCount"
+                                        data-room-max-adults="@room.MaxAdultCount"
+                                        data-room-max-children="@room.MaxChildCount"
+                                        data-room-price="@(room.Price > 0m ? Model.GuestInclusiveNightlyFromStoredNet(room.Price).ToString("N0") : string.Empty)"
                                         data-room-cancellation="@room.CancellationText"
                                         data-room-feature-count="@roomAllFeatures.Count"
                                         data-room-gallery-count="@roomGallery.Count"
+                                        data-room-gallery='@roomGalleryJson'
                                         data-room-details='@roomDetailsJson'>
                                     Oda Detay
                                 </button>
@@ -673,18 +695,66 @@
                     </button>
                 </div>
                 <div class="room-detail-modal-body">
+                    <div class="room-detail-modal-gallery">
+                        <div class="room-detail-modal-visual">
+                            <img src="" alt="" id="roomDetailModalImage" />
+                            <button type="button" class="room-detail-modal-gallery-open" id="roomDetailModalGalleryOpen">
+                                <i class="fas fa-images"></i>
+                                Tüm görselleri aç
+                            </button>
+                        </div>
+                        <div class="room-detail-modal-thumb-rail">
+                            <button type="button" class="room-detail-modal-thumb-nav prev" id="roomDetailModalThumbPrev" aria-label="Önceki görseller">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div class="room-detail-modal-thumbs" id="roomDetailModalThumbs"></div>
+                            <button type="button" class="room-detail-modal-thumb-nav next" id="roomDetailModalThumbNext" aria-label="Sonraki görseller">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div class="room-detail-modal-summary">
                         <div class="room-detail-modal-copy">
                             <strong id="roomDetailModalRoomName">Seçilen oda</strong>
                             <p id="roomDetailModalSpecs">Oda detayları burada gösterilir.</p>
+                            <p class="room-detail-modal-description" id="roomDetailModalDescription">Oda sunumu burada gösterilir.</p>
                         </div>
                         <div class="room-detail-modal-meta">
                             <span class="room-detail-modal-badge" id="roomDetailModalGalleryBadge">0 görsel</span>
                             <span class="room-detail-modal-badge" id="roomDetailModalFeatureBadge">0 özellik</span>
                         </div>
                     </div>
+                    <div class="room-detail-modal-stats" id="roomDetailModalStats">
+                        <div class="room-detail-modal-stat">
+                            <span>Yatak Tipi</span>
+                            <strong id="roomDetailModalBedType">-</strong>
+                        </div>
+                        <div class="room-detail-modal-stat">
+                            <span>Metrekare</span>
+                            <strong id="roomDetailModalSquareMeter">-</strong>
+                        </div>
+                        <div class="room-detail-modal-stat">
+                            <span>Kapasite</span>
+                            <strong id="roomDetailModalCapacity">-</strong>
+                        </div>
+                        <div class="room-detail-modal-stat room-detail-modal-stat-price">
+                            <span>Fiyat</span>
+                            <strong id="roomDetailModalPrice">-</strong>
+                            <small>Vergiler dahil</small>
+                        </div>
+                    </div>
                     <div class="room-detail-modal-note" id="roomDetailModalCancellation">Koşullar rezervasyon adımında yeniden doğrulanır.</div>
-                    <div class="room-detail-modal-grid" id="roomDetailModalGrid"></div>
+                    <div class="room-detail-modal-section">
+                        <div class="room-detail-modal-section-head">
+                            <h4>Oda özellikleri</h4>
+                            <span>Tüm mevcut özellikler</span>
+                        </div>
+                        <div class="room-detail-modal-grid" id="roomDetailModalGrid"></div>
+                    </div>
+                    <div class="room-detail-modal-actions">
+                        <button type="button" class="room-detail-modal-secondary" data-close-modal="roomDetailModal">Kapat</button>
+                        <button type="button" class="room-detail-modal-primary" id="roomDetailModalSelectBtn">Odayı Seç</button>
+                    </div>
                 </div>
             </section>
         </article>
@@ -797,7 +867,7 @@
                 {
                     <iframe
                         title="Otel Konum"
-                        src="https://www.openstreetmap.org/export/embed.html?layer=mapnik&marker=@Model.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)%2C@Model.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                        src="https://www.openstreetmap.org/export/embed.html?bbox=@mapBoundingBox&layer=mapnik&marker=@mapLatitude%2C@mapLongitude"
                         loading="lazy"></iframe>
                 }
                 else
@@ -819,9 +889,9 @@
                     <div class="booking-price-main">
                         <strong id="bookingPrice">@(initialInclusiveNightly > 0m ? $"₺{initialInclusiveNightly:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
                         <span class="booking-price-unit"></span>
+                        <span class="booking-price-inclusive-hint" id="bookingPriceHint" title="Tüm vergiler dahil">Vergiler dahil</span>
                     </div>
                 </div>
-                <p class="booking-price-inclusive-hint" id="bookingPriceHint" title="Tüm vergiler dahil">Vergiler dahil</p>
             </div>
 
             <form class="booking-form" id="bookingForm" method="post" action="/oteller/@Model.Slug/rezervasyon" enctype="multipart/form-data">
@@ -978,8 +1048,8 @@
                     </div>
                 </div>
 
-                <button type="submit" class="reserve-btn"@Html.Raw(paymentMethodChosen ? "" : " disabled=\"disabled\"")>Rezervasyon Yap</button>
-            </form>
+                <button type="submit" class="reserve-btn">Rezervasyonu Oluştur</button>
+              </form>
 
             <div class="booking-quote-notice" id="bookingQuoteNotice" hidden></div>
             <div class="price-breakdown" id="priceBreakdown">
@@ -1034,6 +1104,22 @@
     <div class="detail-modal-actions" id="detailInfoModalActions">
         <a href="/kullanici-giris" class="detail-modal-primary">Giriş Yap</a>
         <a href="/kullanici-giris?sekme=kayit" class="detail-modal-secondary">Kayıt Ol</a>
+    </div>
+</section>
+
+<section class="detail-modal detail-confirm-modal" id="reservationConfirmModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="reservationConfirmModalTitle">
+    <button type="button" class="detail-modal-close" data-close-modal="reservationConfirmModal" aria-label="Kapat"><i class="fas fa-times"></i></button>
+    <div class="detail-modal-head">
+        <div>
+            <span class="detail-modal-kicker">Son Kontrol</span>
+            <h3 id="reservationConfirmModalTitle">Rezervasyonu gözden geçirin</h3>
+        </div>
+    </div>
+    <p class="detail-modal-copy">Bilgiler doğruysa rezervasyonu oluşturabilirsiniz. Tarih, oda ve ödeme planını son kez kontrol edin.</p>
+    <div class="reservation-confirm-summary" id="reservationConfirmSummary"></div>
+    <div class="detail-modal-actions">
+        <button type="button" class="detail-modal-secondary" data-close-modal="reservationConfirmModal">Düzenlemeye Dön</button>
+        <button type="button" class="detail-modal-primary" id="reservationConfirmSubmitBtn">Rezervasyonu Oluştur</button>
     </div>
 </section>
 
@@ -1261,8 +1347,13 @@
             const actionBackdrop = document.getElementById('detailActionBackdrop');
             const profileModal = document.getElementById('profileCompletionModal');
             const infoModal = document.getElementById('detailInfoModal');
+            const infoModalTitle = document.getElementById('detailInfoModalTitle');
+            const defaultInfoModalTitle = infoModalTitle?.textContent || 'Önce bir adımı tamamlayalım';
             const infoModalText = document.getElementById('detailInfoModalText');
             const infoModalActions = document.getElementById('detailInfoModalActions');
+            const reservationConfirmModal = document.getElementById('reservationConfirmModal');
+            const reservationConfirmSummary = document.getElementById('reservationConfirmSummary');
+            const reservationConfirmSubmitBtn = document.getElementById('reservationConfirmSubmitBtn');
             const profileFeedback = document.getElementById('profileCompletionFeedback');
             const profileCompletionForm = document.getElementById('profileCompletionForm');
             const startConversationBtn = document.getElementById('startConversationBtn');
@@ -1282,9 +1373,20 @@
             const roomDetailModalTitle = document.getElementById('roomDetailModalTitle');
             const roomDetailModalRoomName = document.getElementById('roomDetailModalRoomName');
             const roomDetailModalSpecs = document.getElementById('roomDetailModalSpecs');
+            const roomDetailModalDescription = document.getElementById('roomDetailModalDescription');
             const roomDetailModalCancellation = document.getElementById('roomDetailModalCancellation');
             const roomDetailModalGalleryBadge = document.getElementById('roomDetailModalGalleryBadge');
             const roomDetailModalFeatureBadge = document.getElementById('roomDetailModalFeatureBadge');
+            const roomDetailModalImage = document.getElementById('roomDetailModalImage');
+            const roomDetailModalThumbs = document.getElementById('roomDetailModalThumbs');
+            const roomDetailModalGalleryOpen = document.getElementById('roomDetailModalGalleryOpen');
+            const roomDetailModalThumbPrev = document.getElementById('roomDetailModalThumbPrev');
+            const roomDetailModalThumbNext = document.getElementById('roomDetailModalThumbNext');
+            const roomDetailModalBedType = document.getElementById('roomDetailModalBedType');
+            const roomDetailModalSquareMeter = document.getElementById('roomDetailModalSquareMeter');
+            const roomDetailModalCapacity = document.getElementById('roomDetailModalCapacity');
+            const roomDetailModalPrice = document.getElementById('roomDetailModalPrice');
+            const roomDetailModalSelectBtn = document.getElementById('roomDetailModalSelectBtn');
             const roomDetailModalGrid = document.getElementById('roomDetailModalGrid');
             const galleryMobileTrack = document.getElementById('galleryMobileTrack');
             const galleryMobileDots = Array.from(document.querySelectorAll('[data-gallery-dot-index]'));
@@ -1294,6 +1396,10 @@
             let latestQuoteRequest = null;
             let activeGalleryIndex = 0;
             let galleryScrollTicking = false;
+            let activeRoomDetailGalleryItems = [];
+            let activeRoomDetailName = 'Oda';
+            let activeRoomDetailRoomId = '';
+            let reservationSubmitConfirmed = false;
 
             function syncGuestInputs() {
                 document.getElementById('adultCount').textContent = adults;
@@ -1589,15 +1695,61 @@
             document.querySelectorAll('.select-room-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
                     const roomId = button.getAttribute('data-room-id');
-                    const firstItem = getRoomItemNodes()[0];
-                    const select = firstItem?.querySelector('[data-field="roomType"]');
-                    if (select && roomId) {
-                        select.value = roomId;
+                    const nodes = getRoomItemNodes();
+
+                    function applyRoomSelectionToIndex(index) {
+                        const target = nodes[index] || null;
+                        const select = target?.querySelector('[data-field="roomType"]');
+                        if (select && roomId) {
+                            select.value = roomId;
+                        }
+                        syncRoomsJsonAndHiddenFields();
+                        ensureGuestCapacity(true);
+                        refreshPriceQuote();
+                        document.querySelector('.booking-sidebar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
-                    syncRoomsJsonAndHiddenFields();
-                    ensureGuestCapacity(true);
-                    refreshPriceQuote();
-                    document.querySelector('.booking-sidebar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                    // tek oda: direkt uygula
+                    if (nodes.length <= 1) {
+                        applyRoomSelectionToIndex(0);
+                        return;
+                    }
+
+                    // çoklu oda: hangi oda güncellensin?
+                    if (!infoModal || !infoModalText || !infoModalActions) {
+                        applyRoomSelectionToIndex(0);
+                        return;
+                    }
+
+                    const pickedTitle = button.closest('.room-card')?.querySelector('.room-card-copy h3')?.textContent?.trim() || 'Seçilen oda';
+                    infoModalText.textContent = '“' + pickedTitle + '” oda tipini hangi oda için uygulayalım?';
+                    const titleEl = document.getElementById('detailInfoModalTitle');
+                    if (titleEl) {
+                        titleEl.innerHTML = '<span class="detail-modal-title-icon" aria-hidden="true"><i class="fas fa-bed"></i></span><span>Oda seçimi</span>';
+                    }
+                    infoModal.classList.add('is-room-pick');
+
+                    infoModalActions.innerHTML =
+                        nodes.map(function (_n, idx) {
+                            return '<button type="button" class="detail-modal-primary room-pick-btn" data-pick-room-index="' + idx + '">Oda ' + (idx + 1) + '</button>';
+                        }).join('') +
+                        '<button type="button" class="detail-modal-secondary" data-close-modal="detailInfoModal">Vazgeç</button>';
+
+                    openModal(infoModal);
+                    infoModalActions.querySelectorAll('[data-pick-room-index]').forEach(function (pickBtn) {
+                        pickBtn.addEventListener('click', function () {
+                            const idx = parseInt(pickBtn.getAttribute('data-pick-room-index') || '0', 10);
+                            closeModal(infoModal);
+                            infoModal.classList.remove('is-room-pick');
+                            applyRoomSelectionToIndex(Number.isFinite(idx) ? idx : 0);
+                        });
+                    });
+                    infoModalActions.querySelectorAll('[data-close-modal]').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            closeModal(infoModal);
+                            infoModal.classList.remove('is-room-pick');
+                        });
+                    });
                 });
             });
 
@@ -1697,6 +1849,11 @@
                         removeBtn.hidden = nodes.length <= 1;
                     }
                 });
+
+                const root = document.getElementById('multiRoomRoot');
+                if (root) {
+                    root.classList.toggle('has-multiple-rooms', nodes.length > 1);
+                }
             }
 
             function addRoomItem(seed) {
@@ -1941,6 +2098,7 @@
             actionBackdrop?.addEventListener('click', function () {
                 closeModal(profileModal);
                 closeModal(infoModal);
+                closeModal(reservationConfirmModal);
                 closeModal(amenitiesModal);
                 closeModal(roomDetailModal);
             });
@@ -1950,14 +2108,48 @@
                     return;
                 }
 
+                infoModal.classList.remove('is-room-pick');
+                infoModal.classList.toggle('is-auth-required', !!isGuest);
+                if (infoModalTitle) {
+                    infoModalTitle.textContent = defaultInfoModalTitle;
+                }
+
                 infoModalText.textContent = message;
                 infoModalActions.innerHTML = isGuest
                     ? '<a href="/kullanici-giris" class="detail-modal-primary">Giriş Yap</a><a href="/kullanici-giris?sekme=kayit" class="detail-modal-secondary">Kayıt Ol</a>'
                     : '<button type="button" class="detail-modal-primary" data-close-modal="detailInfoModal">Tamam</button>';
                 openModal(infoModal);
                 infoModalActions.querySelectorAll('[data-close-modal]').forEach(function (button) {
-                    button.addEventListener('click', function () { closeModal(infoModal); });
+                    button.addEventListener('click', function () {
+                        closeModal(infoModal);
+                        infoModal.classList.remove('is-auth-required');
+                    });
                 });
+            }
+
+            function buildReservationConfirmSummary(items) {
+                if (!reservationConfirmSummary) {
+                    return;
+                }
+
+                const paymentText = (paymentMethodSelect?.value || '').trim() || 'Seçilmedi';
+                reservationConfirmSummary.innerHTML =
+                    '<div class="reservation-confirm-grid">'
+                    + items.map(function (item, index) {
+                        const room = roomOptions.find(function (opt) { return Number(opt.id) === Number(item.roomTypeId); });
+                        const roomName = room?.name || item.roomName || 'Oda seçilmedi';
+                        return '<div class="reservation-confirm-item">'
+                            + '<strong>Oda ' + (index + 1) + '</strong>'
+                            + '<span>' + escapeHtml(roomName) + '</span>'
+                            + '<small>' + escapeHtml(formatDateHuman(item.checkIn)) + ' - ' + escapeHtml(formatDateHuman(item.checkOut)) + '</small>'
+                            + '</div>';
+                    }).join('')
+                    + '<div class="reservation-confirm-item is-accent">'
+                    + '<strong>Ödeme planı</strong>'
+                    + '<span>' + escapeHtml(paymentText) + '</span>'
+                    + '<small>Bilgiler doğruysa sonraki adımda rezervasyon kaydı oluşturulacak.</small>'
+                    + '</div>'
+                    + '</div>';
             }
 
             function resumeDraftFlow() {
@@ -1992,7 +2184,7 @@
                     return;
                 }
 
-                const blocked = lastQuoteUnavailable || !isPaymentMethodChosen();
+                const blocked = lastQuoteUnavailable;
                 if (blocked) {
                     reserveButton.setAttribute('disabled', 'disabled');
                 } else {
@@ -2373,24 +2565,81 @@
                 }
 
                 let details = [];
+                let galleryItems = [];
                 try {
                     details = JSON.parse(button.getAttribute('data-room-details') || '[]');
                 } catch (error) {
                     details = [];
                 }
+                try {
+                    galleryItems = JSON.parse(button.getAttribute('data-room-gallery') || '[]');
+                } catch (error) {
+                    galleryItems = [];
+                }
 
                 const roomName = button.getAttribute('data-room-name') || 'Oda detayları';
                 const specs = button.getAttribute('data-room-specs') || 'Oda bilgileri güncelleniyor.';
+                const description = button.getAttribute('data-room-description') || 'Bu oda için detaylı sunum bilgileri hazırlanıyor.';
+                const bedType = button.getAttribute('data-room-bed-type') || 'Belirtilmedi';
+                const squareMeter = button.getAttribute('data-room-square-meter') || '';
+                const maxGuests = button.getAttribute('data-room-max-guests') || '0';
+                const maxAdults = button.getAttribute('data-room-max-adults') || '0';
+                const maxChildren = button.getAttribute('data-room-max-children') || '0';
+                const priceText = button.getAttribute('data-room-price') || '';
+                const roomId = button.getAttribute('data-room-id') || '';
                 const cancellation = button.getAttribute('data-room-cancellation') || 'Koşullar rezervasyon adımında yeniden doğrulanır.';
                 const featureCount = button.getAttribute('data-room-feature-count') || String(details.length || 0);
                 const galleryCount = button.getAttribute('data-room-gallery-count') || '0';
+                const capacityText = maxChildren && maxChildren !== '0'
+                    ? `${maxGuests} kişi · ${maxAdults} yetişkin + ${maxChildren} çocuk`
+                    : `${maxGuests} kişi · ${maxAdults} yetişkin`;
 
                 if (roomDetailModalTitle) roomDetailModalTitle.textContent = roomName;
                 if (roomDetailModalRoomName) roomDetailModalRoomName.textContent = roomName;
                 if (roomDetailModalSpecs) roomDetailModalSpecs.textContent = specs;
+                if (roomDetailModalDescription) roomDetailModalDescription.textContent = description;
                 if (roomDetailModalCancellation) roomDetailModalCancellation.textContent = cancellation;
                 if (roomDetailModalGalleryBadge) roomDetailModalGalleryBadge.textContent = galleryCount + ' görsel';
                 if (roomDetailModalFeatureBadge) roomDetailModalFeatureBadge.textContent = featureCount + ' özellik';
+                if (roomDetailModalBedType) roomDetailModalBedType.textContent = bedType;
+                if (roomDetailModalSquareMeter) roomDetailModalSquareMeter.textContent = squareMeter ? squareMeter + ' m2' : 'Belirtilmedi';
+                if (roomDetailModalCapacity) roomDetailModalCapacity.textContent = capacityText;
+                if (roomDetailModalPrice) roomDetailModalPrice.textContent = priceText ? ('₺' + priceText) : 'Fiyat bilgisi yok';
+                if (roomDetailModalSelectBtn) {
+                    roomDetailModalSelectBtn.disabled = !roomId || !priceText;
+                    roomDetailModalSelectBtn.dataset.roomId = roomId;
+                }
+
+                activeRoomDetailGalleryItems = Array.isArray(galleryItems) ? galleryItems : [];
+                activeRoomDetailName = roomName;
+                activeRoomDetailRoomId = roomId;
+
+                if (roomDetailModalImage) {
+                    const cover = activeRoomDetailGalleryItems[0] || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 520'%3E%3Crect width='800' height='520' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2364758b' font-family='Arial' font-size='34'%3EOda gorseli hazirlaniyor%3C/text%3E%3C/svg%3E";
+                    roomDetailModalImage.src = cover;
+                    roomDetailModalImage.alt = roomName;
+                }
+                if (roomDetailModalGalleryOpen) {
+                    roomDetailModalGalleryOpen.hidden = activeRoomDetailGalleryItems.length === 0;
+                }
+                if (roomDetailModalThumbs) {
+                    roomDetailModalThumbs.innerHTML = '';
+                    activeRoomDetailGalleryItems.forEach(function (item, index) {
+                        const thumb = document.createElement('button');
+                        thumb.type = 'button';
+                        thumb.className = 'room-detail-modal-thumb' + (index === 0 ? ' active' : '');
+                        thumb.innerHTML = '<img src="' + item + '" alt="' + roomName + ' görsel ' + (index + 1) + '">';
+                        thumb.addEventListener('click', function () {
+                            if (roomDetailModalImage) {
+                                roomDetailModalImage.src = item;
+                            }
+                            roomDetailModalThumbs.querySelectorAll('.room-detail-modal-thumb').forEach(function (node, nodeIndex) {
+                                node.classList.toggle('active', nodeIndex === index);
+                            });
+                        });
+                        roomDetailModalThumbs.appendChild(thumb);
+                    });
+                }
 
                 roomDetailModalGrid.innerHTML = '';
                 details.forEach(function (detail) {
@@ -2406,6 +2655,13 @@
                     item.querySelector('span').textContent = detailName;
                     roomDetailModalGrid.appendChild(item);
                 });
+
+                if (roomDetailModalGrid.children.length === 0) {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'room-detail-modal-item';
+                    fallback.innerHTML = '<i class="fas fa-circle-info"></i><span>Bu oda için ek özellik bilgisi yakında güncellenecek.</span>';
+                    roomDetailModalGrid.appendChild(fallback);
+                }
 
                 openModal(roomDetailModal);
             }
@@ -2488,6 +2744,31 @@
                 });
             });
 
+            roomDetailModalGalleryOpen?.addEventListener('click', function () {
+                if (activeRoomDetailGalleryItems.length > 0) {
+                    openGallery(activeRoomDetailGalleryItems, activeRoomDetailName, 0);
+                }
+            });
+
+            roomDetailModalThumbPrev?.addEventListener('click', function () {
+                roomDetailModalThumbs?.scrollBy({ left: -220, behavior: 'smooth' });
+            });
+
+            roomDetailModalThumbNext?.addEventListener('click', function () {
+                roomDetailModalThumbs?.scrollBy({ left: 220, behavior: 'smooth' });
+            });
+
+            roomDetailModalSelectBtn?.addEventListener('click', function () {
+                if (!activeRoomDetailRoomId) {
+                    return;
+                }
+                const targetButton = document.querySelector('.select-room-btn[data-room-id="' + activeRoomDetailRoomId + '"]');
+                if (targetButton instanceof HTMLElement) {
+                    closeModal(roomDetailModal);
+                    targetButton.click();
+                }
+            });
+
             activeDraftResumeLink?.addEventListener('click', function (event) {
                 event.preventDefault();
                 resumeDraftFlow();
@@ -2520,7 +2801,7 @@
                     event.preventDefault();
                     bookingAdvancedFields?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-                    showInfoModal('Rezervasyon için önce ödeme yönteminizi seçin.', false);
+                    showInfoModal('Lütfen ödeme planı seçiniz.', false);
                     return;
                 }
 
@@ -2534,7 +2815,25 @@
                     event.preventDefault();
                     hydrateProfileAddressSelectors();
                     openModal(profileModal);
+                    return;
                 }
+
+                if (!reservationSubmitConfirmed) {
+                    event.preventDefault();
+                    buildReservationConfirmSummary(items);
+                    openModal(reservationConfirmModal);
+                    return;
+                }
+            });
+
+            reservationConfirmSubmitBtn?.addEventListener('click', function () {
+                if (!bookingForm) {
+                    return;
+                }
+
+                reservationSubmitConfirmed = true;
+                closeModal(reservationConfirmModal);
+                bookingForm.requestSubmit();
             });
 
             profileCompletionForm?.addEventListener('submit', async function (event) {

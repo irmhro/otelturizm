@@ -262,7 +262,7 @@ body.modal-open {
     }
 
     .room-detail-modal-summary {
-        flex-direction: column;
+        padding: 18px;
     }
 
     .room-detail-modal-meta,
@@ -270,7 +270,32 @@ body.modal-open {
         justify-content: flex-start;
     }
 
+    .room-detail-modal-visual {
+        min-height: 220px;
+    }
+
+    .room-detail-modal-thumb-rail {
+        grid-template-columns: 1fr;
+    }
+
+    .room-detail-modal-thumb-nav {
+        display: none;
+    }
+
+    .room-detail-modal-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .room-detail-modal-grid {
         grid-template-columns: 1fr;
+    }
+
+    .room-detail-modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .room-detail-modal-primary,
+    .room-detail-modal-secondary {
+        width: 100%;
     }
 }

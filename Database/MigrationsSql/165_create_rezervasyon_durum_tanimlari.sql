@@ -103,6 +103,9 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    IF TRIGGER_NESTLEVEL() > 1
+        RETURN;
+
     /*
       İş kuralı: rezervasyonlar.durum (metin) ana kaynak; FK id denormalized önbellek.
       Böylece mevcut kod yalnızca durum metnini güncellerken id otomatik eşlenir.
@@ -111,7 +114,8 @@ BEGIN
     SET rezervasyon_durumu_id = d.id
     FROM dbo.rezervasyonlar r
     INNER JOIN inserted i ON i.id = r.id
-    INNER JOIN dbo.rezervasyon_durum_tanimlari d ON d.ad = r.durum;
+    INNER JOIN dbo.rezervasyon_durum_tanimlari d ON d.ad = r.durum
+    WHERE ISNULL(r.rezervasyon_durumu_id, 0) <> d.id;
 END;
 
 GO

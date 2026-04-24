@@ -2,6 +2,29 @@
 
 Bu dokuman, OTELTURIZM projesinde ortak tasarim dilini merkezden yonetmek icin hazirlanmistir.
 
+## KRITIK NOT (PROJE SOZLESMESI): Mobil CSS ve Masaustu CSS AYRI
+
+- Mobil tasarim/override degisiklikleri **asla** ana masaustu CSS dosyasina yazilmaz.
+- Her sayfa icin mobil override katmani `*.mobile.css` dosyasidir (ornegin: `otel-detay.css` + `otel-detay.mobile.css`).
+- Mobil CSS dosyasi temel CSS'i `@import` ile ceker ve sadece mobilde gerekli override'lari icerir.
+- Kural: **Masaustu bozulmasin diye** mobil gelistirme talebi geldiyse degisiklik hedefi varsayilan olarak `*.mobile.css` olmalidir.
+
+## NOT: "Gecisli Kart" (Cok hafif yesil)
+
+Kullanici "gecisli kart" istediginde uygulanacak standart kart dili:
+
+- Kart arka plani: cok hafif yesil -> beyaz gecis
+- Border: yesil ton (cok dusuk opaklik)
+- Golge: yesil ton (cok dusuk opaklik)
+
+Referans stil (masaustu):
+
+```css
+border-color: rgba(16, 185, 129, 0.22);
+background: linear-gradient(180deg, rgba(236, 253, 245, 0.55) 0%, rgba(255, 255, 255, 0.98) 68%);
+box-shadow: 0 10px 24px rgba(16, 185, 129, 0.06);
+```
+
 ## 1) CSS Degiskenleri (Root)
 
 Asagidaki degiskenleri ana CSS dosyanizin basina, `:root` blogu icine ekleyin.

@@ -51,6 +51,19 @@
     </article>
     <article class="partner-section-card">
         <h2>Yaklasan Rezervasyonlar</h2>
+        <div class="partner-policy-alert @(Model.PenaltyActive ? "is-critical" : Model.RejectCountLast30Days >= 3 ? "is-warning" : string.Empty)">
+            <h4>Rezervasyon onay ve red politikasi</h4>
+            <p>Son 30 gundeki red sayiniz: <strong>@Model.RejectCountLast30Days</strong>. Her red icin nedeni detayli ve aydinlatici sekilde yazmaniz zorunludur.</p>
+            <ul>
+                <li>3 red ve uzeri: sistem tesisi 3 gun sureyle listelemeden otomatik kapatir.</li>
+                <li>5 red ve uzeri: kontenjan ve fiyat stratejisinin tekrar yapilandirilmasi onerilir.</li>
+                <li>Onay ve red islemlerinde misafire e-posta bildirimi otomatik gonderilir.</li>
+            </ul>
+            @if (Model.PenaltyActive && !string.IsNullOrWhiteSpace(Model.PenaltyEndText))
+            {
+                <p class="partner-policy-meta">Cezai kapatma bitis tarihi: <strong>@Model.PenaltyEndText</strong></p>
+            }
+        </div>
         @if (Model.UpcomingReservations.Count == 0)
         {
             <div class="partner-empty-state">
@@ -78,6 +91,7 @@
                                     <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
                                     <input type="hidden" name="ReservationId" value="@item.ReservationId" />
                                     <input type="hidden" name="ActionType" value="approve" />
+                                    <input type="hidden" name="ReturnUrl" value="/panel/partner/dashboard?otelId=@Model.Shell.SelectedHotelId" />
                                     <button type="submit" class="partner-dashboard-action-btn is-success">
                                         <i class="fas fa-circle-check"></i>
                                         Onayla
@@ -86,17 +100,15 @@
                             }
                             @if (item.CanReject)
                             {
-                                <form method="post" action="/panel/partner/rezervasyonlar/durum" class="partner-quick-action-form">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
-                                    <input type="hidden" name="ReservationId" value="@item.ReservationId" />
-                                    <input type="hidden" name="ActionType" value="reject" />
-                                    <input type="hidden" name="Reason" value="Panel hızlı aksiyonundan reddedildi." />
-                                    <button type="submit" class="partner-dashboard-action-btn is-danger">
-                                        <i class="fas fa-circle-xmark"></i>
-                                        Reddet
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        class="partner-dashboard-action-btn is-danger"
+                                        data-dashboard-reservation-reject
+                                        data-reservation-id="@item.ReservationId"
+                                        data-reservation-no="@item.ReservationNo"
+                                        data-guest-name="@item.GuestName">
+                                    <i class="fas fa-circle-xmark"></i>
+                                    Reddet
+                                </button>
                             }
                         </div>
                     </div>
@@ -105,6 +117,42 @@
         }
     </article>
 </section>
+
+<dialog id="partner-dashboard-reject-dialog" class="partner-dialog">
+    <div class="partner-dialog-card">
+        <div class="partner-dialog-head">
+            <div>
+                <p class="partner-dialog-kicker">Rezervasyon reddet</p>
+                <h3 id="dashboard-reject-title">Red sebebini belirtin</h3>
+            </div>
+            <button type="button" class="partner-icon-btn" data-close-dashboard-dialog>
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <div class="partner-policy-alert @(Model.PenaltyActive ? "is-critical" : Model.RejectCountLast30Days >= 3 ? "is-warning" : string.Empty)">
+            <p>Bu islem misafire aciklayici bir neden ile bildirilir. Son 30 gunde <strong>@Model.RejectCountLast30Days</strong> red gorunuyor.</p>
+            <ul>
+                <li>3 red ve uzeri durumunda tesis 3 gun otomatik kapanir.</li>
+                <li>5 red ve uzeri durumunda fiyat ve kontenjan stratejisi gozden gecirilmelidir.</li>
+            </ul>
+        </div>
+        <form method="post" action="/panel/partner/rezervasyonlar/durum" class="partner-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+            <input type="hidden" name="ReservationId" id="dashboard-reject-id" value="0" />
+            <input type="hidden" name="ActionType" value="reject" />
+            <input type="hidden" name="ReturnUrl" value="/panel/partner/dashboard?otelId=@Model.Shell.SelectedHotelId" />
+            <label class="partner-form-span">
+                <span>Misafire gidecek detayli red aciklamasi</span>
+                <textarea name="Reason" id="dashboard-reject-reason" rows="6" minlength="15" required placeholder="Odayi neden onaylayamadiginizi, alternatif oneriniz varsa bunu ve misafirin ne yapmasi gerektigini acikca yazin."></textarea>
+            </label>
+            <button type="submit" class="partner-primary-btn partner-form-span">
+                <i class="fas fa-ban"></i>
+                Red sebebi ile kaydet
+            </button>
+        </form>
+    </div>
+</dialog>
 <section class="partner-two-column">
     <article class="partner-section-card">
         <h2>Müsaitlik Uyarıları</h2>
@@ -149,3 +197,37 @@
         }
     </article>
 </section>
+
+@section Scripts {
+<script>
+(() => {
+    const rejectDialog = document.getElementById('partner-dashboard-reject-dialog');
+    if (!rejectDialog) {
+        return;
+    }
+
+    document.querySelectorAll('[data-dashboard-reservation-reject]').forEach((button) => {
+        button.addEventListener('click', () => {
+            document.getElementById('dashboard-reject-id').value = button.dataset.reservationId || '0';
+            document.getElementById('dashboard-reject-title').textContent = `${button.dataset.reservationNo || 'Rezervasyon'} / ${button.dataset.guestName || 'Misafir'} icin red sebebi`;
+            document.getElementById('dashboard-reject-reason').value = '';
+            rejectDialog.showModal();
+        });
+    });
+
+    document.querySelectorAll('[data-close-dashboard-dialog]').forEach((button) => {
+        button.addEventListener('click', () => {
+            button.closest('dialog')?.close();
+        });
+    });
+
+    rejectDialog.addEventListener('click', (event) => {
+        const rect = rejectDialog.getBoundingClientRect();
+        const inDialog = rect.top <= event.clientY && event.clientY <= rect.top + rect.height && rect.left <= event.clientX && event.clientX <= rect.left + rect.width;
+        if (!inDialog) {
+            rejectDialog.close();
+        }
+    });
+})();
+</script>
+}

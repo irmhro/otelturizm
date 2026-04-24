@@ -14,6 +14,7 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     @{
         var pageCss = ViewData["PageCss"] as string;
     }
@@ -27,6 +28,10 @@
     @if (!string.IsNullOrWhiteSpace(pageCssMobile))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCssMobile).css" asp-append-version="true" media="(max-width: 900px)" />
+    }
+    else if (!string.IsNullOrWhiteSpace(pageCss))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCss).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     }
 </head>
 <body>
@@ -44,7 +49,7 @@
     var publicActiveDraft = await ReservationDraftService.GetActiveDraftAsync(publicDraftUserId, publicDraftSessionKey, Context.RequestAborted);
 }
 
-@if (publicActiveDraft is not null)
+@if (publicActiveDraft is not null && ViewData["SuppressGlobalDraftBanner"] as bool? != true)
 {
     <partial name="~/Views/Shared/_ActiveReservationDraftBanner.cshtml" model="publicActiveDraft" />
 }

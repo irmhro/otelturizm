@@ -576,7 +576,7 @@
 }
 
 .weather-popup-title h3 {
-    margin: 0 0 10px;
+    margin: 0 0 6px;
     color: #0f172a;
     font-size: 1.7rem;
 }
@@ -585,6 +585,12 @@
     margin: 0;
     color: #64748b;
     line-height: 1.6;
+}
+
+.weather-popup-kicker {
+    margin-bottom: 10px;
+    letter-spacing: 0.03em;
+    text-transform: none;
 }
 
 .weather-popup-actions {
@@ -709,6 +715,46 @@
     background: rgba(255, 255, 255, 0.82);
     border: 1px solid rgba(226, 232, 240, 0.92);
     backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Günlük kart efekti (duruma göre) */
+.detail-weather-card::before {
+    content: "";
+    position: absolute;
+    inset: -40% -40% auto -40%;
+    height: 140%;
+    border-radius: 999px;
+    opacity: 0.9;
+    filter: blur(26px);
+    transform: rotate(12deg);
+    pointer-events: none;
+}
+
+.detail-weather-card.is-sunny::before {
+    background: radial-gradient(circle at 30% 30%, rgba(255, 214, 74, 0.55), transparent 60%),
+                radial-gradient(circle at 70% 20%, rgba(251, 191, 36, 0.35), transparent 58%);
+}
+
+.detail-weather-card.is-rainy::before {
+    background: radial-gradient(circle at 30% 30%, rgba(96, 165, 250, 0.55), transparent 60%),
+                radial-gradient(circle at 70% 20%, rgba(59, 130, 246, 0.35), transparent 58%);
+}
+
+.detail-weather-card.is-cloudy::before {
+    background: radial-gradient(circle at 30% 30%, rgba(148, 163, 184, 0.45), transparent 60%),
+                radial-gradient(circle at 70% 20%, rgba(203, 213, 225, 0.35), transparent 58%);
+}
+
+.detail-weather-card.is-snowy::before {
+    background: radial-gradient(circle at 30% 30%, rgba(226, 232, 240, 0.75), transparent 60%),
+                radial-gradient(circle at 70% 20%, rgba(148, 163, 184, 0.35), transparent 58%);
+}
+
+.detail-weather-card > * {
+    position: relative;
+    z-index: 1;
 }
 
 .detail-weather-period {
@@ -1289,7 +1335,9 @@
 }
 
 .room-detail-modal {
-    width: min(880px, calc(100% - 32px));
+    width: min(1100px, calc(100% - 32px));
+    max-height: calc(100vh - 44px);
+    overflow: auto;
 }
 
 .room-detail-modal-head {
@@ -1298,28 +1346,130 @@
 
 .room-detail-modal-body {
     display: grid;
-    gap: 18px;
+    gap: 20px;
+}
+
+.room-detail-modal-gallery {
+    display: grid;
+    gap: 12px;
+}
+
+.room-detail-modal-visual {
+    position: relative;
+    min-height: 180px;
+    max-height: 180px;
+    border-radius: 26px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+    border: 1px solid #dbe4f0;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+}
+
+.room-detail-modal-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.room-detail-modal-gallery-open {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    border: 0;
+    border-radius: 999px;
+    padding: 11px 16px;
+    background: rgba(15, 23, 42, 0.8);
+    color: #fff;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.24);
+    cursor: pointer;
+}
+
+.room-detail-modal-thumb-rail {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.room-detail-modal-thumb-nav {
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(148, 163, 184, 0.26);
+    border-radius: 999px;
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+    cursor: pointer;
+}
+
+.room-detail-modal-thumbs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    scroll-behavior: smooth;
+}
+
+.room-detail-modal-thumbs::-webkit-scrollbar {
+    display: none;
+}
+
+.room-detail-modal-thumb {
+    flex: 0 0 88px;
+    height: 68px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: #fff;
+    padding: 0;
+    cursor: pointer;
+    opacity: 0.82;
+    transition: transform 0.18s ease, opacity 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.room-detail-modal-thumb.active {
+    opacity: 1;
+    border-color: rgba(37, 99, 235, 0.78);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14);
+}
+
+.room-detail-modal-thumb:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.room-detail-modal-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .room-detail-modal-summary {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 18px 20px;
-    border-radius: 22px;
-    background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
-    border: 1px solid #dbe4f0;
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
 }
 
 .room-detail-modal-copy {
     display: grid;
-    gap: 6px;
+    gap: 8px;
 }
 
 .room-detail-modal-copy strong {
-    font-size: 1.18rem;
+    font-size: 1.42rem;
     color: #0f172a;
+    line-height: 1.15;
 }
 
 .room-detail-modal-copy p,
@@ -1333,7 +1483,7 @@
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
 .room-detail-modal-badge {
@@ -1347,6 +1497,52 @@
     font-weight: 800;
 }
 
+.room-detail-modal-description {
+    font-size: 0.98rem;
+    max-width: 72ch;
+}
+
+.room-detail-modal-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.room-detail-modal-stat {
+    padding: 16px 18px;
+    border-radius: 20px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    display: grid;
+    gap: 6px;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.04);
+}
+
+.room-detail-modal-stat span {
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.room-detail-modal-stat strong {
+    color: #0f172a;
+    font-size: 1.02rem;
+    line-height: 1.3;
+}
+
+.room-detail-modal-stat-price strong {
+    color: #1d4ed8;
+    font-size: 1.26rem;
+}
+
+.room-detail-modal-stat-price small {
+    color: #0f766e;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
 .room-detail-modal-note {
     padding: 14px 16px;
     border-radius: 18px;
@@ -1355,9 +1551,33 @@
     font-weight: 600;
 }
 
+.room-detail-modal-section {
+    display: grid;
+    gap: 12px;
+}
+
+.room-detail-modal-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.room-detail-modal-section-head h4 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.08rem;
+}
+
+.room-detail-modal-section-head span {
+    color: #64748b;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
 .room-detail-modal-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
 }
 
@@ -1387,6 +1607,40 @@
     color: #334155;
     font-weight: 700;
     line-height: 1.45;
+}
+
+.room-detail-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.room-detail-modal-primary,
+.room-detail-modal-secondary {
+    min-height: 48px;
+    padding: 0 20px;
+    border-radius: 999px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.room-detail-modal-primary {
+    border: 0;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #fff;
+    box-shadow: 0 18px 34px rgba(37, 99, 235, 0.24);
+}
+
+.room-detail-modal-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.room-detail-modal-secondary {
+    border: 1px solid rgba(148, 163, 184, 0.34);
+    background: #fff;
+    color: #0f172a;
 }
 
 .review-summary {
@@ -1945,7 +2199,7 @@
 }
 
 .booking-price-inclusive-hint {
-    margin: 12px 0 0;
+    margin: 0;
     padding: 8px 12px;
     font-size: 0.8rem;
     font-weight: 800;
@@ -2193,6 +2447,19 @@
     border-radius: 16px;
     border: 1px solid #dbe4f0;
     background: #fff;
+}
+
+/* 1'den fazla oda eklendiginde kartlari ayirt etmek icin hafif yesil ton */
+#multiRoomRoot.has-multiple-rooms .multi-room-item {
+    border-color: rgba(16, 185, 129, 0.22);
+    background: linear-gradient(180deg, rgba(236, 253, 245, 0.55) 0%, rgba(255, 255, 255, 0.98) 68%);
+    box-shadow: 0 10px 24px rgba(16, 185, 129, 0.06);
+}
+
+#multiRoomRoot.has-multiple-rooms .multi-room-item-head {
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(16, 185, 129, 0.22);
+    margin-bottom: 10px;
 }
 
 .multi-room-item-head {
@@ -3214,6 +3481,52 @@ body.room-gallery-open {
     flex-wrap: wrap;
 }
 
+.detail-confirm-modal {
+    width: min(760px, calc(100vw - 2rem));
+}
+
+.reservation-confirm-summary {
+    display: grid;
+    gap: 1rem;
+    margin-top: 0.35rem;
+}
+
+.reservation-confirm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.9rem;
+}
+
+.reservation-confirm-item {
+    display: grid;
+    gap: 0.45rem;
+    padding: 1rem 1.1rem;
+    border-radius: 20px;
+    border: 1px solid rgba(30, 64, 175, 0.14);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+}
+
+.reservation-confirm-item.is-accent {
+    background: linear-gradient(135deg, #edf5ff 0%, #f8fbff 100%);
+    border-color: rgba(37, 99, 235, 0.2);
+}
+
+.reservation-confirm-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #6b7a90;
+}
+
+.reservation-confirm-value {
+    font-size: 0.98rem;
+    line-height: 1.6;
+    color: #172033;
+    font-weight: 600;
+}
+
 /* Bilgilendirme popup: daha profesyonel hiyerarşi */
 .detail-info-modal {
     padding-top: 18px;
@@ -3272,6 +3585,108 @@ body.room-gallery-open {
     justify-content: flex-end;
 }
 
+/* Oda seçimi adımı: sadece Oda 1/2/3 butonları şık görünüm */
+.detail-info-modal.is-room-pick .detail-modal-kicker {
+    display: none;
+}
+
+.detail-info-modal.is-room-pick {
+    border-color: rgba(16, 185, 129, 0.22);
+    background: linear-gradient(180deg, rgba(236, 253, 245, 0.55) 0%, rgba(255, 255, 255, 0.98) 68%);
+    box-shadow: 0 32px 80px rgba(15, 23, 42, 0.22), 0 10px 24px rgba(16, 185, 129, 0.06);
+}
+
+.detail-info-modal.is-room-pick {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.detail-info-modal.is-room-pick .detail-modal-hero {
+    margin-bottom: 6px;
+}
+
+.detail-info-modal.is-room-pick .detail-modal-head {
+    justify-content: center;
+    text-align: center;
+}
+
+.detail-info-modal.is-room-pick .detail-modal-head > div {
+    display: grid;
+    justify-items: center;
+}
+
+.detail-info-modal.is-room-pick .detail-modal-copy {
+    text-align: center;
+    max-width: 64ch;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.detail-info-modal.is-room-pick .detail-modal-actions {
+    justify-content: center;
+    gap: 12px;
+}
+
+.detail-modal-title-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.18);
+    color: #047857;
+    margin-bottom: 10px;
+}
+
+.detail-modal-title-icon i {
+    font-size: 1.05rem;
+}
+
+.detail-info-modal.is-room-pick .room-pick-btn {
+    min-width: 96px;
+    padding: 0 20px;
+    box-shadow: 0 16px 30px rgba(29, 78, 216, 0.18);
+}
+
+.detail-info-modal.is-room-pick .room-pick-btn.detail-modal-primary {
+    background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+    box-shadow: 0 16px 30px rgba(16, 185, 129, 0.18);
+}
+
+/* Görüşme başlat: auth gerekli popup (geçişli kart + hizalama) */
+.detail-info-modal.is-auth-required {
+    border-color: rgba(16, 185, 129, 0.22);
+    background: linear-gradient(180deg, rgba(236, 253, 245, 0.55) 0%, rgba(255, 255, 255, 0.98) 68%);
+    box-shadow: 0 32px 80px rgba(15, 23, 42, 0.22), 0 10px 24px rgba(16, 185, 129, 0.06);
+}
+
+.detail-info-modal.is-auth-required .detail-modal-hero-icon {
+    background: rgba(16, 185, 129, 0.12);
+    color: #047857;
+    border-color: rgba(16, 185, 129, 0.18);
+}
+
+.detail-info-modal.is-auth-required .detail-modal-kicker {
+    background: rgba(16, 185, 129, 0.10);
+    border-color: rgba(16, 185, 129, 0.14);
+    color: #047857;
+}
+
+/* Bu modaldaki X her zaman sağ üstte */
+.detail-info-modal > .detail-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    left: auto;
+}
+
+.detail-info-modal.is-auth-required .detail-modal-actions {
+    align-items: center;
+    justify-content: flex-end;
+}
+
 .detail-modal-primary,
 .detail-modal-secondary {
     min-height: 44px;
@@ -3304,6 +3719,47 @@ body.room-gallery-open {
 
 .detail-modal-feedback.success { color: #047857; }
 .detail-modal-feedback.error { color: #b91c1c; }
+
+.reservation-confirm-summary {
+    margin-bottom: 18px;
+}
+
+.reservation-confirm-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.reservation-confirm-item {
+    display: grid;
+    gap: 4px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+}
+
+.reservation-confirm-item strong {
+    color: #0f172a;
+    font-size: 0.96rem;
+    font-weight: 800;
+}
+
+.reservation-confirm-item span {
+    color: #334155;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.reservation-confirm-item small {
+    color: #64748b;
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+
+.reservation-confirm-item.is-accent {
+    border-color: rgba(37, 99, 235, 0.18);
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.92), rgba(255, 255, 255, 1));
+}
 
 .amenities-modal-grid {
     display: grid;
@@ -3964,6 +4420,17 @@ body.room-gallery-open {
 
 .otel-detail-template-v41 .booking-price-main {
     width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 12px;
+}
+
+.otel-detail-template-v41 .booking-price-row {
+    width: 100%;
+}
+
+.otel-detail-template-v41 .booking-price-inclusive-hint {
+    flex-shrink: 0;
 }
 
 @media (max-width: 900px) {

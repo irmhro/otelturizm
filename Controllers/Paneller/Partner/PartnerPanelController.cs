@@ -69,6 +69,11 @@ public class PartnerPanelController : Controller
     {
         var result = await _partnerService.UpdateReservationStatusAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!string.IsNullOrWhiteSpace(request.ReturnUrl) && Url.IsLocalUrl(request.ReturnUrl))
+        {
+            return Redirect(request.ReturnUrl);
+        }
+
         return Redirect($"/panel/partner/rezervasyonlar?otelId={request.HotelId}");
     }
 
