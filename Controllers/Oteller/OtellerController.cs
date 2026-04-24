@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Paneller.User;
@@ -12,14 +13,16 @@ namespace otelturizmnew.Controllers.Oteller;
 public class OtellerController : Controller
 {
     private const string ReservationDraftCookieName = "Otelturizm.ReservationDraftKey";
+    private const string LocationSessionCookieName = "Otelturizm.LocationSession";
     private readonly IHotelService _hotelService;
     private readonly IPublicReservationService _publicReservationService;
     private readonly IWeatherService _weatherService;
     private readonly IUserFavoriteService _userFavoriteService;
     private readonly IUserPanelService _userPanelService;
     private readonly IMessageCenterService _messageCenterService;
+    private readonly ILocationLogService _locationLogService;
 
-    public OtellerController(IHotelService hotelService, IPublicReservationService publicReservationService, IWeatherService weatherService, IUserFavoriteService userFavoriteService, IUserPanelService userPanelService, IMessageCenterService messageCenterService)
+    public OtellerController(IHotelService hotelService, IPublicReservationService publicReservationService, IWeatherService weatherService, IUserFavoriteService userFavoriteService, IUserPanelService userPanelService, IMessageCenterService messageCenterService, ILocationLogService locationLogService)
     {
         _hotelService = hotelService;
         _publicReservationService = publicReservationService;
@@ -27,6 +30,7 @@ public class OtellerController : Controller
         _userFavoriteService = userFavoriteService;
         _userPanelService = userPanelService;
         _messageCenterService = messageCenterService;
+        _locationLogService = locationLogService;
     }
 
     [HttpGet("")]
@@ -224,6 +228,111 @@ public class OtellerController : Controller
         });
     }
 
+    [HttpPost("konum-kaydet")]
+    public async Task<IActionResult> SaveUserLocation([FromBody] UserLocationLogRequest? request, CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            return BadRequest(new { success = false, message = "Konum bilgisi bulunamadı." });
+        }
+
+        if (request.Latitude < -90m || request.Latitude > 90m || request.Longitude < -180m || request.Longitude > 180m)
+        {
+            return BadRequest(new { success = false, message = "Geçersiz koordinat bilgisi." });
+        }
+
+        var userAgent = Request.Headers.UserAgent.ToString();
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var deviceInfo = ParseDeviceInfo(userAgent);
+        await _locationLogService.SaveUserLocationAsync(new LocationLogEntryInput
+        {
+            UserId = GetCurrentUserIdOrNull(),
+            SessionKey = EnsureLocationSessionKey(),
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            RadiusKm = request.RadiusKm,
+            VisibleHotelCount = request.VisibleHotelCount,
+            SearchTerm = request.SearchTerm ?? string.Empty,
+            SearchRegion = request.SearchRegion ?? string.Empty,
+            Source = string.IsNullOrWhiteSpace(request.Source) ? "otel-listeleme" : request.Source.Trim(),
+            UserAgent = userAgent,
+            IpAddress = ipAddress ?? string.Empty,
+            DeviceType = deviceInfo.DeviceType,
+            DeviceModel = deviceInfo.DeviceModel,
+            Platform = deviceInfo.Platform,
+            Browser = deviceInfo.Browser,
+            PhoneHint = deviceInfo.PhoneHint,
+            PageUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}{Request.Path}{Request.QueryString}"
+        }, cancellationToken);
+        return Json(new { success = true });
+    }
+
+    private string EnsureLocationSessionKey()
+    {
+        if (Request.Cookies.TryGetValue(LocationSessionCookieName, out var existing) && !string.IsNullOrWhiteSpace(existing))
+        {
+            return existing;
+        }
+
+        var key = Guid.NewGuid().ToString("N");
+        Response.Cookies.Append(LocationSessionCookieName, key, new CookieOptions
+        {
+            HttpOnly = true,
+            IsEssential = true,
+            SameSite = SameSiteMode.Lax,
+            Secure = Request.IsHttps,
+            Expires = DateTimeOffset.UtcNow.AddYears(1)
+        });
+        return key;
+    }
+
+    private static (string DeviceType, string DeviceModel, string Platform, string Browser, string PhoneHint) ParseDeviceInfo(string? userAgent)
+    {
+        var ua = userAgent ?? string.Empty;
+        var lower = ua.ToLowerInvariant();
+
+        var platform = lower.Contains("android") ? "Android"
+            : lower.Contains("iphone") || lower.Contains("ipad") || lower.Contains("ios") ? "iOS"
+            : lower.Contains("windows") ? "Windows"
+            : lower.Contains("mac os") || lower.Contains("macintosh") ? "macOS"
+            : lower.Contains("linux") ? "Linux"
+            : "Bilinmiyor";
+
+        var browser = lower.Contains("edg/") ? "Edge"
+            : lower.Contains("opr/") || lower.Contains("opera") ? "Opera"
+            : lower.Contains("samsungbrowser") ? "Samsung Internet"
+            : lower.Contains("chrome/") ? "Chrome"
+            : lower.Contains("firefox/") ? "Firefox"
+            : lower.Contains("safari/") ? "Safari"
+            : "Bilinmiyor";
+
+        var deviceType = lower.Contains("mobile") || lower.Contains("iphone") || lower.Contains("android")
+            ? "Mobil"
+            : lower.Contains("ipad") || lower.Contains("tablet")
+                ? "Tablet"
+                : "Masaustu";
+
+        var deviceModel = lower.Contains("iphone") ? "iPhone"
+            : lower.Contains("ipad") ? "iPad"
+            : lower.Contains("samsung") ? "Samsung"
+            : lower.Contains("huawei") ? "Huawei"
+            : lower.Contains("redmi") ? "Redmi"
+            : lower.Contains("xiaomi") ? "Xiaomi"
+            : lower.Contains("poco") ? "Poco"
+            : lower.Contains("oppo") ? "Oppo"
+            : lower.Contains("vivo") ? "Vivo"
+            : lower.Contains("windows") ? "Windows PC"
+            : lower.Contains("macintosh") || lower.Contains("mac os") ? "Mac"
+            : lower.Contains("android") ? "Android Cihaz"
+            : "Bilinmiyor";
+
+        var phoneHint = deviceType == "Mobil" || deviceType == "Tablet"
+            ? $"{platform} · {deviceModel}"
+            : string.Empty;
+
+        return (deviceType, deviceModel, platform, browser, phoneHint);
+    }
+
     private async Task ApplyFavoriteStatesAsync(otelturizmnew.Models.Oteller.HotelListingPageViewModel model, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
@@ -272,6 +381,7 @@ public class OtellerController : Controller
     private async Task<otelturizmnew.Models.Oteller.HotelProfileCompletionPromptViewModel> BuildProfilePromptAsync(long userId, string returnUrl, CancellationToken cancellationToken)
     {
         var profile = await _userPanelService.GetProfileAsync(userId, cancellationToken);
+        var isAdultEligible = IsReservationAdultEligible(profile.Form.BirthDateText);
         return new otelturizmnew.Models.Oteller.HotelProfileCompletionPromptViewModel
         {
             ReturnUrl = returnUrl,
@@ -285,7 +395,9 @@ public class OtellerController : Controller
             Neighborhood = profile.Form.Neighborhood,
             Address = profile.Form.Address,
             IsProfileIncomplete = string.IsNullOrWhiteSpace(profile.Form.Email)
+                                || string.IsNullOrWhiteSpace(profile.Form.Phone)
                                 || string.IsNullOrWhiteSpace(profile.Form.BirthDateText)
+                                || !isAdultEligible
                                 || string.IsNullOrWhiteSpace(profile.Form.Gender)
                                 || string.IsNullOrWhiteSpace(profile.Form.City)
                                 || string.IsNullOrWhiteSpace(profile.Form.District)
@@ -300,9 +412,24 @@ public class OtellerController : Controller
             return "Rezervasyon için e-posta alanı zorunludur.";
         }
 
+        if (string.IsNullOrWhiteSpace(form.Phone))
+        {
+            return "Rezervasyon için telefon numarası zorunludur.";
+        }
+
         if (string.IsNullOrWhiteSpace(form.BirthDateText))
         {
             return "Rezervasyon için doğum tarihi zorunludur.";
+        }
+
+        if (!TryParseBirthDate(form.BirthDateText, out var birthDate))
+        {
+            return "Doğum tarihi geçerli bir formatta girilmelidir.";
+        }
+
+        if (!IsReservationAdultEligible(birthDate))
+        {
+            return "Rezervasyon oluşturabilmek için 18 yaşını doldurmuş olmanız ve doğum gününüzün üzerinden en az 1 gün geçmiş olması gerekir.";
         }
 
         if (string.IsNullOrWhiteSpace(form.Gender))
@@ -328,6 +455,15 @@ public class OtellerController : Controller
         return null;
     }
 
+    private static bool IsReservationAdultEligible(string? birthDateText)
+        => TryParseBirthDate(birthDateText, out var birthDate) && IsReservationAdultEligible(birthDate);
+
+    private static bool IsReservationAdultEligible(DateTime birthDate)
+        => birthDate.Date <= DateTime.Today.AddYears(-18).AddDays(-1);
+
+    private static bool TryParseBirthDate(string? birthDateText, out DateTime birthDate)
+        => DateTime.TryParse(birthDateText, out birthDate);
+
     private string? GetCurrentReservationSessionKey()
         => Request.Cookies.TryGetValue(ReservationDraftCookieName, out var key) ? key : null;
 
@@ -349,4 +485,15 @@ public class OtellerController : Controller
         });
         return key;
     }
+
+public sealed class UserLocationLogRequest
+{
+    public decimal Latitude { get; set; }
+    public decimal Longitude { get; set; }
+    public int? RadiusKm { get; set; }
+    public int? VisibleHotelCount { get; set; }
+    public string? SearchTerm { get; set; }
+    public string? SearchRegion { get; set; }
+    public string? Source { get; set; }
+}
 }

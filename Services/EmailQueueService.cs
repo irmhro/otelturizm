@@ -3,6 +3,7 @@ using System.Data.Common;
 using Microsoft.Data.SqlClient;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Services.Abstractions;
+using System.Text.Json;
 
 namespace otelturizmnew.Services;
 
@@ -32,12 +33,13 @@ public class EmailQueueService : IEmailQueueService
         var renderedSubject = ReplaceTokens(string.IsNullOrWhiteSpace(request.SubjectOverride) ? subject : request.SubjectOverride!, request.Tokens);
         var renderedBody = await _emailTemplateService.RenderTemplateFileAsync(viewPath, request.Tokens, cancellationToken);
         var safeUserId = await ResolveSafeUserIdAsync(connection, transaction, request.UserId, request.RecipientEmail, cancellationToken);
+        var attachmentsJson = BuildAttachmentsJson(request.Attachments);
 
         const string insertSql = @"
             INSERT INTO bildirim_loglari
-            (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, ilgili_tablo, ilgili_kayit_id)
+            (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, ilgili_tablo, ilgili_kayit_id, ekler_json)
             VALUES
-            (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId);";
+            (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId, @attachmentsJson);";
 
         await using var command = new SqlCommand(insertSql, (SqlConnection)connection, (SqlTransaction?)transaction);
         command.Parameters.AddWithValue("@userId", safeUserId);
@@ -48,7 +50,33 @@ public class EmailQueueService : IEmailQueueService
         command.Parameters.AddWithValue("@provider", provider.Provider);
         command.Parameters.AddWithValue("@relatedTable", string.IsNullOrWhiteSpace(request.RelatedTable) ? DBNull.Value : request.RelatedTable);
         command.Parameters.AddWithValue("@relatedId", request.RelatedRecordId.HasValue ? request.RelatedRecordId.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@attachmentsJson", (object?)attachmentsJson ?? DBNull.Value);
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static string? BuildAttachmentsJson(IReadOnlyList<QueuedEmailAttachment>? attachments)
+    {
+        if (attachments is null || attachments.Count == 0)
+        {
+            return null;
+        }
+
+        var normalized = attachments
+            .Where(static a => a is not null && !string.IsNullOrWhiteSpace(a.FilePathOrUrl))
+            .Select(static a => new
+            {
+                fileName = string.IsNullOrWhiteSpace(a.FileName) ? "dosya" : a.FileName.Trim(),
+                path = a.FilePathOrUrl.Trim(),
+                contentType = string.IsNullOrWhiteSpace(a.ContentType) ? "application/octet-stream" : a.ContentType.Trim()
+            })
+            .ToList();
+
+        if (normalized.Count == 0)
+        {
+            return null;
+        }
+
+        return JsonSerializer.Serialize(normalized);
     }
 
     private static async Task<long> ResolveSafeUserIdAsync(

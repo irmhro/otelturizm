@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using System.Globalization;
 using System.Security.Authentication;
 using System.Text.Json;
+using System.Net.Http;
 
 namespace otelturizmnew.Services;
 
@@ -84,7 +85,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
     private static async Task<List<QueuedEmailItem>> LoadPendingEmailsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT TOP (10) id, alici_eposta, konu, gonderilen_icerik, COALESCE(gonderme_denemesi, 1), COALESCE(maksimum_deneme, 3)
+            SELECT TOP (10) id, alici_eposta, konu, gonderilen_icerik, COALESCE(gonderme_denemesi, 1), COALESCE(maksimum_deneme, 3), ekler_json
             FROM bildirim_loglari
             WHERE tur = 'E-posta'
               AND durum = 'Beklemede'
@@ -104,7 +105,8 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 Subject = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
                 HtmlBody = reader.GetString(3),
                 AttemptCount = reader.IsDBNull(4) ? 1 : Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture),
-                MaxAttempts = reader.IsDBNull(5) ? 3 : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture)
+                MaxAttempts = reader.IsDBNull(5) ? 3 : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture),
+                AttachmentsJson = reader.IsDBNull(6) ? null : reader.GetString(6)
             });
         }
 
@@ -193,10 +195,13 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             message.ReplyTo.Add(MailboxAddress.Parse(smtp.ReplyToEmail));
         }
 
-        message.Body = new BodyBuilder
+        var builder = new BodyBuilder
         {
             HtmlBody = item.HtmlBody
-        }.ToMessageBody();
+        };
+
+        await AttachFilesAsync(builder, item.AttachmentsJson, cancellationToken);
+        message.Body = builder.ToMessageBody();
 
         if (smtp.UsePickupDirectoryOnly)
         {
@@ -260,6 +265,69 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         }
 
         throw lastError ?? new InvalidOperationException("SMTP gonderimi basarisiz oldu.");
+    }
+
+    private static async Task AttachFilesAsync(BodyBuilder builder, string? attachmentsJson, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(attachmentsJson))
+        {
+            return;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(attachmentsJson);
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return;
+            }
+
+            foreach (var item in document.RootElement.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var fileName = item.TryGetProperty("fileName", out var fileNameProp) && fileNameProp.ValueKind == JsonValueKind.String
+                    ? fileNameProp.GetString()
+                    : null;
+                var path = item.TryGetProperty("path", out var pathProp) && pathProp.ValueKind == JsonValueKind.String
+                    ? pathProp.GetString()
+                    : null;
+                var contentType = item.TryGetProperty("contentType", out var ctProp) && ctProp.ValueKind == JsonValueKind.String
+                    ? ctProp.GetString()
+                    : "application/octet-stream";
+
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    continue;
+                }
+
+                if (Uri.TryCreate(path, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+                {
+                    using var http = new HttpClient();
+                    var bytes = await http.GetByteArrayAsync(uri, cancellationToken);
+                    builder.Attachments.Add(string.IsNullOrWhiteSpace(fileName) ? "dosya" : fileName, bytes, ContentType.Parse(contentType ?? "application/octet-stream"));
+                    continue;
+                }
+
+                var physicalPath = path;
+                if (!Path.IsPathRooted(physicalPath))
+                {
+                    physicalPath = Path.Combine(Directory.GetCurrentDirectory(), path.TrimStart('~', '/').Replace('/', Path.DirectorySeparatorChar));
+                }
+
+                if (File.Exists(physicalPath))
+                {
+                    builder.Attachments.Add(string.IsNullOrWhiteSpace(fileName) ? Path.GetFileName(physicalPath) : fileName, await File.ReadAllBytesAsync(physicalPath, cancellationToken), ContentType.Parse(contentType ?? "application/octet-stream"));
+                }
+            }
+        }
+        catch
+        {
+            // Ekler parse edilemezse mail yine de gitsin.
+        }
     }
 
     private static async Task SaveToPickupDirectoryAsync(SmtpConfig smtp, MimeMessage message, CancellationToken cancellationToken)
@@ -376,6 +444,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         public string HtmlBody { get; init; } = string.Empty;
         public int AttemptCount { get; init; }
         public int MaxAttempts { get; init; }
+        public string? AttachmentsJson { get; init; }
     }
 
     private sealed class SmtpConfig

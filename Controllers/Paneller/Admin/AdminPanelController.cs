@@ -352,6 +352,92 @@ public class AdminPanelController : Controller
         return RedirectToAction(nameof(Contracts), new { contractId });
     }
 
+    [HttpGet("sozlesmeler/onizleme")]
+    public async Task<IActionResult> ContractPreview([FromQuery] long contractId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return Unauthorized();
+        }
+
+        var preview = await _contractContentService.GetAdminContractPreviewAsync(contractId, cancellationToken);
+        if (preview is null)
+        {
+            return NotFound(new { title = "Sözleşme", html = "<div class=\"text-muted\">İçerik bulunamadı.</div>" });
+        }
+
+        return Json(new { title = preview.Value.Title, html = preview.Value.Html });
+    }
+
+    [HttpPost("sozlesmeler/pdf-yukle")]
+    [ValidateAntiForgeryToken]
+    [RequestFormLimits(MultipartBodyLengthLimit = 52428800)]
+    [RequestSizeLimit(52428800)]
+    public async Task<IActionResult> UploadContractPdf([FromForm] long contractId, IFormFile? pdfFile, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (contractId <= 0)
+        {
+            TempData["AdminError"] = "PDF yüklenecek sözleşme bulunamadı.";
+            return RedirectToAction(nameof(Contracts));
+        }
+
+        if (pdfFile is null || pdfFile.Length <= 0)
+        {
+            TempData["AdminError"] = "Yüklenecek bir PDF seçmelisiniz.";
+            return RedirectToAction(nameof(Contracts), new { contractId });
+        }
+
+        if (!string.Equals(pdfFile.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase)
+            && !Path.GetExtension(pdfFile.FileName).Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["AdminError"] = "Sadece PDF dosyası yükleyebilirsiniz.";
+            return RedirectToAction(nameof(Contracts), new { contractId });
+        }
+
+        var safeFileName = $"{Guid.NewGuid():N}.pdf";
+        var targetDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "contracts", contractId.ToString());
+        Directory.CreateDirectory(targetDirectory);
+        var physicalPath = Path.Combine(targetDirectory, safeFileName);
+        await using (var stream = System.IO.File.Create(physicalPath))
+        {
+            await pdfFile.CopyToAsync(stream, cancellationToken);
+        }
+
+        // DB kaydı migration ile eklenecek tabloya yazılır. Şema yoksa yükleme yine de dosyayı saklar.
+        var relativeUrl = $"/uploads/contracts/{contractId}/{safeFileName}";
+        try
+        {
+            var connectionString = HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection");
+            if (!string.IsNullOrWhiteSpace(connectionString))
+            {
+                await using var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
+                await connection.OpenAsync(cancellationToken);
+                await using var command = new Microsoft.Data.SqlClient.SqlCommand(@"
+                    IF OBJECT_ID('dbo.sozlesme_dosyalari', 'U') IS NOT NULL
+                    BEGIN
+                        INSERT INTO sozlesme_dosyalari (sozlesme_id, dosya_tipi, dosya_adi, dosya_yolu, mime_tipi, olusturulma_tarihi)
+                        VALUES (@contractId, 'pdf', @fileName, @fileUrl, 'application/pdf', SYSUTCDATETIME());
+                    END", connection);
+                command.Parameters.AddWithValue("@contractId", contractId);
+                command.Parameters.AddWithValue("@fileName", Path.GetFileName(pdfFile.FileName));
+                command.Parameters.AddWithValue("@fileUrl", relativeUrl);
+                await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+        }
+        catch
+        {
+            // Migration henüz uygulanmamış olabilir; dosya yine de fiziksel olarak saklandı.
+        }
+
+        TempData["AdminMessage"] = "PDF yüklendi.";
+        return RedirectToAction(nameof(Contracts), new { contractId });
+    }
+
     [HttpPost("komisyonlar/kaydet")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveCommissionRule(AdminCommissionRuleForm request, CancellationToken cancellationToken)

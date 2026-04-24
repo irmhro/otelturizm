@@ -35,6 +35,7 @@ builder.Services.AddHostedService<FavoritePriceAlertBackgroundService>();
 builder.Services.AddScoped<IImageStorageService, ImageStorageService>();
 builder.Services.AddScoped<ISecureFileService, SecureFileService>();
 builder.Services.AddScoped<IMessageCenterService, MessageCenterService>();
+builder.Services.AddScoped<ILocationLogService, LocationLogService>();
 builder.Services.AddScoped<IPartnerService, PartnerService>();
 builder.Services.AddScoped<IPublicReservationService, PublicReservationService>();
 builder.Services.AddScoped<IReservationDraftService, ReservationDraftService>();

@@ -734,6 +734,8 @@
   }
   .location-btn-copy strong { display:block; font-size: 15px; font-weight: 900; color: var(--text-dark); }
   .location-btn-copy small { display:block; margin-top: 3px; font-size: 12.5px; font-weight: 700; color: var(--text-light); }
+  .location-coords { display:none; margin-top: 8px; font-size: 11.5px; font-weight: 700; color: var(--text-light); background: rgba(0,59,149,0.05); border: 1px solid rgba(0,59,149,0.10); border-radius: 12px; padding: 8px 10px; word-break: break-word; }
+  .location-coords.is-visible { display:block; }
 
   .km-row { padding: 12px 14px; border: 1px solid rgba(226,232,240,1); border-radius: 16px; background: #fff; display:grid; gap: 10px; }
   .km-row-head { display:flex; align-items:center; justify-content:space-between; gap: 10px; margin-bottom: 0; }
@@ -831,10 +833,12 @@
                                 <button type="button" class="location-btn" id="useMyLocationBtn">
                                     <span class="location-btn-icon" aria-hidden="true"><i class="fas fa-location-crosshairs"></i></span>
                                     <span class="location-btn-copy">
-                                        <strong>Konumumu kullan</strong>
-                                        <small id="locationStatusText">Yakındaki otelleri listele</small>
+                                        <strong>Sana en yakın otelleri bul</strong>
+                                        <small id="locationStatusText">Konumunu aç, yakınındaki fırsatları hemen listeleyelim.</small>
                                     </span>
                                 </button>
+                                <div class="location-coords" id="locationCoordsText"></div>
+                                <div class="location-insight" id="locationInsightText">Konum aramaları, partnerlerin bölgene otel eklemesi için anonim pazar içgörüsü üretir.</div>
 
                                   <div class="km-row">
                                       <div class="km-row-head">
@@ -844,14 +848,14 @@
                                       <div class="km-slider-row">
                                           <input type="range" min="1" max="50" value="1" step="1" id="distanceKmRange" disabled />
                                       </div>
-                                        <label class="km-manual-input" for="distanceKmInput">
-                                            <span>Belirle</span>
-                                            <div class="km-manual-input-row">
-                                                <input type="number" min="1" max="50" value="1" step="1" id="distanceKmInput" disabled />
-                                                <small>km</small>
-                                            </div>
-                                        </label>
-                                        <p class="filter-help filter-help-compact">Konum izni verildiğinde seçtiğiniz km çevresindeki oteller gösterilir.</p>
+                                      <label class="km-manual-input" for="distanceKmInput">
+                                          <span>Yarıçap belirle</span>
+                                          <div class="km-manual-input-row">
+                                              <input type="number" min="1" max="50" value="1" step="1" id="distanceKmInput" disabled />
+                                              <small>km</small>
+                                          </div>
+                                      </label>
+                                      <p class="filter-help filter-help-compact">Konum izni verildiğinde seçtiğiniz km çevresindeki tüm uygun oteller listelenir.</p>
                                     </div>
                               </div>
                           </div>
@@ -983,7 +987,7 @@
                                          || hotel.CampaignSlugs.Any(x => string.Equals(x, "hafta-sonu-firsatlari", StringComparison.OrdinalIgnoreCase));
                         var isBudget = string.Equals(Model.ActiveTag, "butceme-uygun-oteller", StringComparison.OrdinalIgnoreCase) || (price > 0m && price <= 4000m);
                         var isCampaign = hotel.CampaignSlugs.Count > 0;
-                        var hasDiscount = hotel.CampaignSlugs.Any(x => (x ?? string.Empty).Contains("indirim", StringComparison.OrdinalIgnoreCase));
+                        var hasDiscount = hotel.HasDiscount;
                         <article class="hotel-card listing-hotel-card"
                                  data-keywords="@keywords"
                                  data-price="@price.ToString(CultureInfo.InvariantCulture)"
@@ -1057,7 +1061,7 @@
                                             }
                                             else if (hasDiscount)
                                             {
-                                                <span class="listing-pill discount"><i class="fas fa-tag"></i> İndirim</span>;
+                                                <span class="listing-pill discount"><i class="fas fa-tag"></i> @(string.IsNullOrWhiteSpace(hotel.DiscountName) ? "İndirim" : hotel.DiscountName)</span>;
                                             }
                                         }
                                     </div>
@@ -1103,7 +1107,7 @@
                                             }
                                             if (hasDiscount && pillCountInline < 4)
                                             {
-                                                <span class="listing-pill discount"><i class="fas fa-tag"></i> İndirim</span>;
+                                                <span class="listing-pill discount"><i class="fas fa-tag"></i> @(string.IsNullOrWhiteSpace(hotel.DiscountName) ? "İndirim" : hotel.DiscountName)</span>;
                                                 pillCountInline++;
                                             }
                                             if (isCampaign && pillCountInline < 4)
@@ -1136,14 +1140,41 @@
                                         }
                                         @if (hasDiscount)
                                         {
-                                            <span class="listing-pill discount"><i class="fas fa-tag"></i> İndirim</span>
+                                            <span class="listing-pill discount"><i class="fas fa-tag"></i> @(string.IsNullOrWhiteSpace(hotel.DiscountName) ? "İndirim" : hotel.DiscountName)</span>
                                         }
                                     </div>
                                 </div>
                                 <div class="price-section">
                                     <div class="price-info">
-                                        <span class="current-price">@(price > 0m ? $"₺{price:N0}" : "Teklif Al")</span>
+                                        @if (hotel.HasDiscount && hotel.OriginalPrice.HasValue && hotel.DiscountedPrice.HasValue)
+                                        {
+                                            <span class="old-price">₺@hotel.OriginalPrice.Value.ToString("N0")</span>
+                                            <span class="current-price">₺@hotel.DiscountedPrice.Value.ToString("N0")</span>
+                                            <span class="listing-discount-rate">%@hotel.DiscountPercent</span>
+                                            @if (hotel.DiscountId.HasValue && !string.IsNullOrWhiteSpace(hotel.DiscountName))
+                                            {
+                                                <button type="button"
+                                                        class="discount-info-btn"
+                                                        data-discount-open
+                                                        data-discount-title="@hotel.DiscountName"
+                                                        data-discount-desc="@hotel.DiscountShortDescription"
+                                                        data-discount-image="@hotel.DiscountImageUrl"
+                                                        aria-label="İndirim detayını görüntüle">
+                                                    <i class="fas fa-circle-info" aria-hidden="true"></i>
+                                                </button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="current-price">@(price > 0m ? $"₺{price:N0}" : "Teklif Al")</span>
+                                        }
                                     </div>
+                                    @if (!string.IsNullOrWhiteSpace(hotel.CampaignInfoText))
+                                    {
+                                        <button type="button" class="campaign-info-chip" title="@hotel.CampaignInfoText" aria-label="@hotel.CampaignInfoText">
+                                            <i class="fas fa-badge-percent"></i> Kampanya
+                                        </button>
+                                    }
                                     <span class="price-tax-note">Vergiler dahil</span>
                                     <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="btn-detail">İncele</a>
                                 </div>
@@ -1172,6 +1203,124 @@
     </div>
 </div>
 
+<div class="discount-modal" id="discountModal" hidden aria-hidden="true">
+    <div class="discount-modal-backdrop" data-discount-close></div>
+    <section class="discount-modal-card" role="dialog" aria-modal="true" aria-labelledby="discountModalTitle">
+        <button type="button" class="discount-modal-close" data-discount-close aria-label="Kapat">×</button>
+        <div class="discount-modal-kicker">İndirim Detayı</div>
+        <h3 id="discountModalTitle">İndirim</h3>
+        <p id="discountModalDesc"></p>
+        <div class="discount-modal-visual" id="discountModalVisual" hidden>
+            <img id="discountModalImage" alt="İndirim görseli" />
+        </div>
+    </section>
+</div>
+
+<style>
+    .discount-info-btn {
+        margin-left: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        border: 1px solid rgba(29, 78, 216, 0.22);
+        background: rgba(239, 246, 255, 0.9);
+        color: #1d4ed8;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        vertical-align: middle;
+    }
+
+    .discount-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 5200;
+        display: grid;
+        place-items: center;
+    }
+
+    .discount-modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .discount-modal-card {
+        position: relative;
+        width: min(720px, calc(100vw - 22px));
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(239, 246, 255, 0.92) 0%, rgba(255, 255, 255, 1) 55%);
+        border: 1px solid rgba(29, 78, 216, 0.18);
+        box-shadow: 0 30px 90px rgba(2, 6, 23, 0.32);
+        padding: 18px 18px 16px;
+        overflow: hidden;
+    }
+
+    .discount-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(255, 255, 255, 0.95);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .discount-modal-kicker {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(29, 78, 216, 0.10);
+        border: 1px solid rgba(29, 78, 216, 0.14);
+        color: #1d4ed8;
+        font-size: 0.74rem;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+        margin-bottom: 10px;
+        width: fit-content;
+    }
+
+    .discount-modal-card h3 {
+        margin: 0 0 6px;
+        font-size: 1.55rem;
+        letter-spacing: -0.01em;
+        color: #0f172a;
+    }
+
+    .discount-modal-card p {
+        margin: 0;
+        color: #475569;
+        line-height: 1.6;
+        font-weight: 600;
+    }
+
+    .discount-modal-visual {
+        margin-top: 14px;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: #fff;
+    }
+
+    .discount-modal-visual img {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        display: block;
+    }
+</style>
+
 @section Scripts {
     <script>
         (function () {
@@ -1195,8 +1344,12 @@
             const distanceKmInput = document.getElementById('distanceKmInput');
             const distanceHotelCount = document.getElementById('distanceHotelCount');
             const locationStatusText = document.getElementById('locationStatusText');
+            const locationCoordsText = document.getElementById('locationCoordsText');
+            const locationInsightText = document.getElementById('locationInsightText');
             let keywordSuggestionTimer = null;
             let userLocation = null;
+            let locationLogTimer = null;
+            let lastLocationLogSignature = '';
 
             function normalize(v) {
                 return String(v || '').toLocaleLowerCase('tr-TR');
@@ -1272,6 +1425,24 @@
                 if (locationStatusText) locationStatusText.textContent = text || '';
             }
 
+            function setLocationCoords(lat, lon) {
+                if (!locationCoordsText) return;
+                if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                    locationCoordsText.textContent = '';
+                    locationCoordsText.classList.remove('is-visible');
+                    return;
+                }
+
+                locationCoordsText.textContent = 'Konumunuz: ' + lat.toFixed(6) + ', ' + lon.toFixed(6);
+                locationCoordsText.classList.add('is-visible');
+            }
+
+            function setLocationInsight(text) {
+                if (!locationInsightText) return;
+                locationInsightText.textContent = text || '';
+                locationInsightText.classList.toggle('is-visible', String(text || '').trim().length > 0);
+            }
+
             function setDistanceHotelCount(count, active) {
                 if (!distanceHotelCount) return;
                 if (!active) {
@@ -1281,6 +1452,71 @@
 
                 const safeCount = Math.max(0, Number(count || 0));
                 distanceHotelCount.textContent = safeCount + ' otel';
+            }
+
+            function buildSearchRegionText() {
+                const rawKeyword = String(keywordInput?.value || '').trim();
+                if (rawKeyword.length > 0) {
+                    return rawKeyword;
+                }
+
+                if (userLocation && Number.isFinite(userLocation.lat) && Number.isFinite(userLocation.lon)) {
+                    return userLocation.lat.toFixed(4) + ', ' + userLocation.lon.toFixed(4);
+                }
+
+                return '';
+            }
+
+            function buildLocationLogPayload() {
+                if (!userLocation || !Number.isFinite(userLocation.lat) || !Number.isFinite(userLocation.lon)) {
+                    return null;
+                }
+
+                const visibleCount = cards.filter(card => !card.hidden).length;
+                return {
+                    latitude: Number(userLocation.lat.toFixed(7)),
+                    longitude: Number(userLocation.lon.toFixed(7)),
+                    radiusKm: Number(distanceKmRange?.value || '1'),
+                    visibleHotelCount: visibleCount,
+                    searchTerm: String(keywordInput?.value || '').trim(),
+                    searchRegion: buildSearchRegionText(),
+                    source: 'otel-listeleme-konum'
+                };
+            }
+
+            async function saveUserLocationLog(force) {
+                const payload = buildLocationLogPayload();
+                if (!payload) {
+                    return;
+                }
+
+                const signature = JSON.stringify(payload);
+                if (!force && signature === lastLocationLogSignature) {
+                    return;
+                }
+
+                lastLocationLogSignature = signature;
+
+                try {
+                    await fetch('/oteller/konum-kaydet', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: signature
+                    });
+                } catch (_) {
+                    // Sessiz gec.
+                }
+            }
+
+            function queueLocationLog(force) {
+                window.clearTimeout(locationLogTimer);
+                locationLogTimer = window.setTimeout(function () {
+                    saveUserLocationLog(!!force);
+                }, force ? 0 : 450);
             }
 
             function applyFilters() {
@@ -1328,6 +1564,14 @@
                 });
 
                 setDistanceHotelCount(visibleCount, distanceActive);
+                if (distanceActive) {
+                    setLocationInsight('Bu bölgede şu an ' + visibleCount + ' otel bulundu. Bu aramalar partnerler için güçlü talep sinyali üretir.');
+                    queueLocationLog(false);
+                } else if (userLocation) {
+                    setLocationInsight('Konumun alındı. Mesafe artırıldıkça daha fazla otel ve talep verisi görünür.');
+                } else {
+                    setLocationInsight('Konum aramaları, partnerlerin bölgene otel eklemesi için anonim pazar içgörüsü üretir.');
+                }
             }
 
             function hideKeywordSuggestions() {
@@ -1418,11 +1662,16 @@
                 enableDistanceFilterUi(true);
                 syncDistanceUi();
                 setLocationStatus('Konum alındı. Mesafeyi belirleyebilirsiniz.');
+                setLocationCoords(userLocation.lat, userLocation.lon);
+                setLocationInsight('Konumun alındı. Yakınındaki otelleri ve bu bölgedeki talebi birlikte ölçüyoruz.');
                 applyFilters();
+                queueLocationLog(true);
             }
 
             function applyLocationError(error) {
                 enableDistanceFilterUi(false);
+                setLocationCoords(NaN, NaN);
+                setLocationInsight('Konum paylaşımı açıldığında sana en yakın otelleri tek dokunuşla bulabiliriz.');
                 if (error && error.code === 1) {
                     setLocationStatus('Konum izni kapalı. Tarayıcıdan izin verin.');
                     return;
@@ -1482,6 +1731,9 @@
                     distanceKmRange.value = String(nextValue);
                 }
                 syncDistanceUi();
+                if (userLocation) {
+                    queueLocationLog(false);
+                }
             });
             distanceKmInput?.addEventListener('change', function () {
                 const nextValue = Math.min(50, Math.max(1, Number(distanceKmInput.value || '1')));
@@ -1491,6 +1743,9 @@
                 }
                 syncDistanceUi();
                 applyFilters();
+                if (userLocation) {
+                    queueLocationLog(false);
+                }
             });
             distanceKmRange?.addEventListener('pointerdown', function () {
                 if (distanceKmRange.disabled) {
@@ -1638,6 +1893,15 @@
                 if (minPriceInput) minPriceInput.value = '0';
                 if (maxPriceInput) maxPriceInput.value = '@maxPrice.ToString(CultureInfo.InvariantCulture)';
                 if (maxPriceRange) maxPriceRange.value = '@maxPrice.ToString(CultureInfo.InvariantCulture)';
+                if (distanceKmRange) distanceKmRange.value = '1';
+                if (distanceKmInput) distanceKmInput.value = '1';
+                userLocation = null;
+                lastLocationLogSignature = '';
+                enableDistanceFilterUi(false);
+                setLocationCoords(NaN, NaN);
+                setDistanceHotelCount(0, false);
+                setLocationStatus('Konumunu aç, yakınındaki fırsatları hemen listeleyelim.');
+                setLocationInsight('Konum aramaları, partnerlerin bölgene otel eklemesi için anonim pazar içgörüsü üretir.');
                 applyFilters();
                 sortCards();
                 syncPriceSteps();
@@ -1665,6 +1929,60 @@
             syncPriceSteps();
             syncPriceSliderVisual();
             syncMobileFilterCount();
+        })();
+    </script>
+    <script>
+        (function () {
+            const modal = document.getElementById('discountModal');
+            const title = document.getElementById('discountModalTitle');
+            const desc = document.getElementById('discountModalDesc');
+            const visual = document.getElementById('discountModalVisual');
+            const image = document.getElementById('discountModalImage');
+            if (!modal || !title || !desc || !visual || !image) return;
+
+            function openDiscount(data) {
+                title.textContent = data.title || 'İndirim';
+                desc.textContent = data.desc || '';
+                const img = (data.image || '').trim();
+                if (img) {
+                    image.src = img;
+                    visual.hidden = false;
+                } else {
+                    image.src = '';
+                    visual.hidden = true;
+                }
+                modal.hidden = false;
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeDiscount() {
+                modal.hidden = true;
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+
+            document.addEventListener('click', function (event) {
+                const btn = event.target.closest('[data-discount-open]');
+                if (btn) {
+                    event.preventDefault();
+                    openDiscount({
+                        title: btn.getAttribute('data-discount-title') || '',
+                        desc: btn.getAttribute('data-discount-desc') || '',
+                        image: btn.getAttribute('data-discount-image') || ''
+                    });
+                    return;
+                }
+                if (event.target.closest('[data-discount-close]')) {
+                    closeDiscount();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && !modal.hidden) {
+                    closeDiscount();
+                }
+            });
         })();
     </script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />

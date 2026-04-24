@@ -174,7 +174,13 @@
         }
     </article>
     <article class="partner-section-card">
-        <h2>Son Yorumlar</h2>
+        <div class="partner-section-card-head">
+            <div>
+                <h2>Son Yorumlar</h2>
+                <p>En güncel 2 misafir yorumunu buradan izleyin.</p>
+            </div>
+            <a class="partner-section-link" href="/panel/partner/degerlendirmeler?otelId=@Model.Shell.SelectedHotelId">Tüm Yorumlar</a>
+        </div>
         @if (Model.RecentReviews.Count == 0)
         {
             <div class="partner-empty-state">
@@ -189,6 +195,7 @@
                 {
                     <article class="partner-review-card">
                         <strong>@review.GuestName - @review.ScoreText</strong>
+                        <small>@review.CreatedText</small>
                         <span>@review.Title</span>
                         <p>@review.Comment</p>
                     </article>

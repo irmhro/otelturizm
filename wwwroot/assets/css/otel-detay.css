@@ -1334,6 +1334,68 @@
     background: #eff6ff;
 }
 
+/* Odanı Seç: tıklandıktan sonra 2sn "Odanız seçildi" premium feedback */
+.select-room-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.select-room-btn::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    opacity: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.40), transparent 55%),
+        radial-gradient(circle at 70% 20%, rgba(34, 197, 94, 0.24), transparent 52%),
+        linear-gradient(135deg, rgba(236, 253, 245, 0.92), rgba(255, 255, 255, 0.9));
+    filter: blur(0);
+    transform: translateX(-25%);
+}
+
+.select-room-btn.is-picked-feedback {
+    color: #065f46;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(37, 99, 235, 0.08));
+    box-shadow: 0 14px 30px rgba(16, 185, 129, 0.18);
+    transform: translateY(-1px);
+}
+
+.select-room-btn.is-picked-feedback::after {
+    opacity: 1;
+    animation: roomPickSheen 1.2s ease-in-out infinite;
+}
+
+.select-room-btn.is-picked-feedback::before {
+    content: "✓";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%) scale(0.9);
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: rgba(16, 185, 129, 0.18);
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    color: #047857;
+    font-weight: 900;
+    opacity: 0;
+    animation: roomPickCheck 0.28s ease-out forwards;
+}
+
+@keyframes roomPickSheen {
+    0% { transform: translateX(-35%); opacity: 0.72; }
+    50% { transform: translateX(0%); opacity: 0.95; }
+    100% { transform: translateX(35%); opacity: 0.72; }
+}
+
+@keyframes roomPickCheck {
+    from { opacity: 0; transform: translateY(-50%) scale(0.75); }
+    to { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
 .room-detail-modal {
     width: min(1100px, calc(100% - 32px));
     max-height: calc(100vh - 44px);
@@ -3563,6 +3625,33 @@ body.room-gallery-open {
     min-width: 0;
 }
 
+.detail-modal-kicker-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.detail-modal-kicker-row .detail-modal-kicker {
+    margin-bottom: 0;
+}
+
+.detail-modal-kicker-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(29, 78, 216, 0.12);
+    color: #1d4ed8;
+    border: 1px solid rgba(29, 78, 216, 0.18);
+}
+
+.detail-modal-kicker-icon i {
+    font-size: 0.98rem;
+}
+
 .detail-info-modal .detail-modal-kicker {
     margin-bottom: 6px;
     background: rgba(29, 78, 216, 0.10);
@@ -3685,6 +3774,64 @@ body.room-gallery-open {
 .detail-info-modal.is-auth-required .detail-modal-actions {
     align-items: center;
     justify-content: flex-end;
+}
+
+/* Bilgilendirme (uyarı): kırmızımsı geçişli kart */
+.detail-info-modal.is-warning {
+    border-color: rgba(239, 68, 68, 0.28);
+    background: linear-gradient(180deg, rgba(254, 226, 226, 0.55) 0%, rgba(255, 255, 255, 0.98) 68%);
+    box-shadow: 0 32px 80px rgba(15, 23, 42, 0.22), 0 10px 24px rgba(239, 68, 68, 0.08);
+}
+
+.detail-info-modal.is-warning .detail-modal-hero-icon {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+    border-color: rgba(239, 68, 68, 0.18);
+}
+
+.detail-info-modal.is-warning .detail-modal-kicker {
+    background: rgba(239, 68, 68, 0.10);
+    border-color: rgba(239, 68, 68, 0.14);
+    color: #b91c1c;
+}
+
+.detail-info-modal.is-warning .detail-modal-kicker-icon {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+    border-color: rgba(239, 68, 68, 0.18);
+}
+
+.detail-info-modal.is-warning .detail-modal-primary {
+    background: linear-gradient(135deg, #ef4444 0%, #be123c 100%);
+    box-shadow: 0 16px 30px rgba(239, 68, 68, 0.18);
+}
+
+.detail-info-modal.is-warning .detail-modal-secondary {
+    border-color: rgba(239, 68, 68, 0.22);
+}
+
+/* Modal içi hızlı seçenek butonları (mavimsi "seçenek") */
+.detail-modal-option {
+    min-height: 44px;
+    border-radius: 999px;
+    padding: 0 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    font-weight: 800;
+    cursor: pointer;
+    border: 1px solid rgba(29, 78, 216, 0.20);
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
+    color: #1d4ed8;
+    box-shadow: 0 14px 28px rgba(29, 78, 216, 0.10);
+}
+
+.detail-modal-option:hover {
+    transform: translateY(-1px);
+    border-color: rgba(29, 78, 216, 0.34);
+    box-shadow: 0 18px 34px rgba(29, 78, 216, 0.14);
 }
 
 .detail-modal-primary,

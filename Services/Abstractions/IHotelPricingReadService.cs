@@ -12,9 +12,12 @@ public interface IHotelPricingReadService
 public sealed class RoomNightlyPricePoint
 {
     public DateOnly Date { get; init; }
+    public string DateText { get; init; } = string.Empty;
     public decimal EffectivePrice { get; init; }
     public decimal BasePrice { get; init; }
     public decimal? DiscountPrice { get; init; }
+    public long? DiscountId { get; init; }
+    public bool IsDiscounted { get; init; }
     public short RemainingRooms { get; init; }
     public bool IsClosed { get; init; }
     public bool IsAvailable { get; init; } = true;

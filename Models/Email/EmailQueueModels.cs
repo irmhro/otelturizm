@@ -9,6 +9,14 @@ public class QueuedEmailTemplateRequest
     public string? RelatedTable { get; set; }
     public long? RelatedRecordId { get; set; }
     public string? SubjectOverride { get; set; }
+    public List<QueuedEmailAttachment>? Attachments { get; set; }
+}
+
+public class QueuedEmailAttachment
+{
+    public string FileName { get; set; } = string.Empty;
+    public string FilePathOrUrl { get; set; } = string.Empty;
+    public string ContentType { get; set; } = "application/octet-stream";
 }
 
 public class EmailProviderSettings

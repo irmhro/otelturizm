@@ -13,7 +13,7 @@
             Name = "Standart Oda",
             Specs = "2 Kisi",
             Price = Model.LowestRoomPrice,
-            CancellationText = "Ucretsiz iptal"
+            CancellationText = "Ücretsiz iptal"
         }
     };
     var reservableRoomOptions = roomSelectOptions.Where(x => x.Price > 0m).ToList();
@@ -27,6 +27,8 @@
     var checkInDefault = reservationForm.CheckInDate.ToString("yyyy-MM-dd");
     var checkOutDefault = reservationForm.CheckOutDate.ToString("yyyy-MM-dd");
     var todayDate = DateTime.Today.ToString("yyyy-MM-dd");
+    var reservationAdultCutoffDate = DateTime.Today.AddYears(-18).AddDays(-1);
+    var reservationAdultCutoffText = reservationAdultCutoffDate.ToString("yyyy-MM-dd");
     var locationText = $"{Model.District}, {Model.City}";
     var longDescription = string.IsNullOrWhiteSpace(Model.LongDescription) ? Model.ShortDescription : Model.LongDescription;
     var overallBarWidth = Model.Rating > 0 ? Math.Min(100m, Model.Rating * 10m).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0";
@@ -1089,14 +1091,14 @@
 
 <section class="detail-modal detail-info-modal" id="detailInfoModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="detailInfoModalTitle">
     <button type="button" class="detail-modal-close" data-close-modal="detailInfoModal" aria-label="Kapat"><i class="fas fa-times"></i></button>
-    <div class="detail-modal-hero" aria-hidden="true">
-        <div class="detail-modal-hero-icon">
-            <i class="fas fa-circle-info"></i>
-        </div>
-    </div>
     <div class="detail-modal-head">
         <div>
-            <span class="detail-modal-kicker">Bilgilendirme</span>
+            <div class="detail-modal-kicker-row">
+                <span class="detail-modal-kicker">Bilgilendirme</span>
+                <span class="detail-modal-kicker-icon" aria-hidden="true">
+                    <i class="fas fa-circle-info"></i>
+                </span>
+            </div>
             <h3 id="detailInfoModalTitle">Önce bir adımı tamamlayalım</h3>
         </div>
     </div>
@@ -1133,7 +1135,7 @@
             </div>
             <button type="button" class="detail-modal-close" data-close-modal="profileCompletionModal"><i class="fas fa-times"></i></button>
         </div>
-        <p class="detail-modal-copy">Rezervasyonu tamamlayabilmemiz için e-posta, doğum tarihi, cinsiyet ve adres alanlarının eksiksiz olması gerekiyor.</p>
+        <p class="detail-modal-copy">Rezervasyonu tamamlayabilmemiz için e-posta, telefon, doğum tarihi, cinsiyet, il, ilçe ve mahalle alanlarının eksiksiz olması gerekiyor. 18 yaşını bugün dolduran kullanıcı bugün rezervasyon yapamaz; en erken yarın işlem yapabilir.</p>
 
         <form id="profileCompletionForm" class="detail-profile-form" method="post" action="/oteller/@Model.Slug/profil-bilgilerini-tamamla">
             @Html.AntiForgeryToken()
@@ -1143,11 +1145,11 @@
             </label>
             <label>
                 <span>Telefon</span>
-                <input type="text" name="Phone" value="@Model.ProfilePrompt.Phone" />
+                <input type="text" name="Phone" value="@Model.ProfilePrompt.Phone" required inputmode="tel" autocomplete="tel" />
             </label>
             <label>
                 <span>Doğum Tarihi</span>
-                <input type="date" name="BirthDateText" value="@Model.ProfilePrompt.BirthDateText" required />
+                <input type="date" name="BirthDateText" value="@Model.ProfilePrompt.BirthDateText" required max="@reservationAdultCutoffText" />
             </label>
             <label>
                 <span>Cinsiyet</span>
@@ -1199,6 +1201,7 @@
                 <button type="button" class="detail-modal-secondary" data-close-modal="profileCompletionModal">Şimdilik Vazgeç</button>
                 <button type="submit" class="detail-modal-primary">Bilgileri Kaydet ve Devam Et</button>
             </div>
+            <p class="detail-modal-meta">Rezervasyon için minimum doğum tarihi: @reservationAdultCutoffDate.ToString("dd.MM.yyyy")</p>
             <p class="detail-modal-feedback" id="profileCompletionFeedback" hidden></p>
         </form>
     </section>
@@ -1692,8 +1695,33 @@
                 }
             });
 
+            function showRoomPickedFeedback(button) {
+                if (!button) {
+                    return;
+                }
+
+                if (!button.dataset.originalText) {
+                    button.dataset.originalText = button.textContent?.trim() || 'Odanı Seç';
+                }
+
+                if (button.dataset.pickFeedbackTimer) {
+                    clearTimeout(parseInt(button.dataset.pickFeedbackTimer, 10));
+                }
+
+                button.classList.add('is-picked-feedback');
+                button.textContent = 'Odanız seçildi';
+
+                const timerId = window.setTimeout(function () {
+                    button.classList.remove('is-picked-feedback');
+                    button.textContent = button.dataset.originalText || 'Odanı Seç';
+                    button.dataset.pickFeedbackTimer = '';
+                }, 2000);
+                button.dataset.pickFeedbackTimer = String(timerId);
+            }
+
             document.querySelectorAll('.select-room-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
+                    showRoomPickedFeedback(button);
                     const roomId = button.getAttribute('data-room-id');
                     const nodes = getRoomItemNodes();
 
@@ -2055,6 +2083,84 @@
             const detailAccommodationFraction = @((Model.TaxDisplayAccommodationPercent / 100m).ToString(System.Globalization.CultureInfo.InvariantCulture));
             const detailVatPctLabel = '@Model.TaxDisplayVatPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)';
             const detailAccomPctLabel = '@Model.TaxDisplayAccommodationPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)';
+            const reservationAdultCutoffDate = '@reservationAdultCutoffText';
+            const reservationAdultEligibilityMessage = 'Rezervasyon oluşturabilmek için 18 yaşını doldurmuş olmanız ve doğum gününüzün üzerinden en az 1 gün geçmiş olması gerekir.';
+
+            function parseIsoDate(value) {
+                if (!value || typeof value !== 'string') {
+                    return null;
+                }
+
+                const parts = value.split('-');
+                if (parts.length !== 3) {
+                    return null;
+                }
+
+                const year = Number(parts[0]);
+                const month = Number(parts[1]);
+                const day = Number(parts[2]);
+                if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+                    return null;
+                }
+
+                const parsed = new Date(year, month - 1, day);
+                if (Number.isNaN(parsed.getTime())) {
+                    return null;
+                }
+
+                parsed.setHours(0, 0, 0, 0);
+                return parsed;
+            }
+
+            function validateProfileCompletionData(formData) {
+                const email = (formData.get('Email') || '').toString().trim();
+                const phone = (formData.get('Phone') || '').toString().trim();
+                const birthDateText = (formData.get('BirthDateText') || '').toString().trim();
+                const gender = (formData.get('Gender') || '').toString().trim();
+                const city = (formData.get('City') || '').toString().trim();
+                const district = (formData.get('District') || '').toString().trim();
+                const neighborhood = (formData.get('Neighborhood') || '').toString().trim();
+
+                if (!email) {
+                    return 'Rezervasyon için e-posta alanı zorunludur.';
+                }
+
+                if (!phone) {
+                    return 'Rezervasyon için telefon numarası zorunludur.';
+                }
+
+                if (!birthDateText) {
+                    return 'Rezervasyon için doğum tarihi zorunludur.';
+                }
+
+                const birthDate = parseIsoDate(birthDateText);
+                const cutoffDate = parseIsoDate(reservationAdultCutoffDate);
+                if (!birthDate || !cutoffDate) {
+                    return 'Doğum tarihi geçerli bir formatta girilmelidir.';
+                }
+
+                if (birthDate.getTime() > cutoffDate.getTime()) {
+                    return reservationAdultEligibilityMessage;
+                }
+
+                if (!gender) {
+                    return 'Rezervasyon için cinsiyet seçimi zorunludur.';
+                }
+
+                if (!city) {
+                    return 'Rezervasyon için il seçimi zorunludur.';
+                }
+
+                if (!district) {
+                    return 'Rezervasyon için ilçe seçimi zorunludur.';
+                }
+
+                if (!neighborhood) {
+                    return 'Rezervasyon için mahalle seçimi zorunludur.';
+                }
+
+                return '';
+            }
 
             function openModal(modal) {
                 if (!modal || !actionBackdrop) {
@@ -2103,22 +2209,57 @@
                 closeModal(roomDetailModal);
             });
 
-            function showInfoModal(message, isGuest) {
+            function showInfoModal(message, isGuest, tone) {
                 if (!infoModal || !infoModalText || !infoModalActions) {
                     return;
                 }
 
                 infoModal.classList.remove('is-room-pick');
+                infoModal.classList.remove('is-warning');
                 infoModal.classList.toggle('is-auth-required', !!isGuest);
+
+                const normalizedTone = (tone || '').toString().trim().toLowerCase();
+                if (!isGuest && normalizedTone === 'warning') {
+                    infoModal.classList.add('is-warning');
+                }
                 if (infoModalTitle) {
                     infoModalTitle.textContent = defaultInfoModalTitle;
                 }
 
                 infoModalText.textContent = message;
-                infoModalActions.innerHTML = isGuest
-                    ? '<a href="/kullanici-giris" class="detail-modal-primary">Giriş Yap</a><a href="/kullanici-giris?sekme=kayit" class="detail-modal-secondary">Kayıt Ol</a>'
-                    : '<button type="button" class="detail-modal-primary" data-close-modal="detailInfoModal">Tamam</button>';
+                if (isGuest) {
+                    infoModalActions.innerHTML = '<a href="/kullanici-giris" class="detail-modal-primary">Giriş Yap</a><a href="/kullanici-giris?sekme=kayit" class="detail-modal-secondary">Kayıt Ol</a>';
+                } else if (normalizedTone === 'warning'
+                    && (message || '').toString().trim().toLowerCase().includes('ödeme planı')
+                    && paymentMethodSelect) {
+                    infoModalActions.innerHTML =
+                        '<button type="button" class="detail-modal-option" data-set-payment="Kapıda Ödeme"><i class="fas fa-hand-holding-dollar"></i> Kapıda ödeme</button>'
+                        + '<button type="button" class="detail-modal-option" data-set-payment="Online Ödeme"><i class="fas fa-credit-card"></i> Online kart ile ödeme</button>'
+                        + '<button type="button" class="detail-modal-secondary" data-close-modal="detailInfoModal">Vazgeç</button>';
+                } else {
+                    infoModalActions.innerHTML = '<button type="button" class="detail-modal-primary" data-close-modal="detailInfoModal">Tamam</button>';
+                }
                 openModal(infoModal);
+
+                infoModalActions.querySelectorAll('[data-set-payment]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        const value = (btn.getAttribute('data-set-payment') || '').trim();
+                        if (!paymentMethodSelect || !value) {
+                            return;
+                        }
+                        paymentMethodSelect.value = value;
+                        syncPaymentMethodState();
+                        closeModal(infoModal);
+                        bookingAdvancedFields?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                        if (isOnlinePaymentSelected()) {
+                            // Seçim yapıldı; online şimdilik kapalıysa kullanıcıyı bilgilendir.
+                            window.setTimeout(function () {
+                                showInfoModal('Online ödeme altyapısı şu anda geliştirme aşamasında. Şimdilik kapıda ödeme / nakit seçeneği ile rezervasyon tamamlayabilirsiniz.', false, 'warning');
+                            }, 80);
+                        }
+                    });
+                });
                 infoModalActions.querySelectorAll('[data-close-modal]').forEach(function (button) {
                     button.addEventListener('click', function () {
                         closeModal(infoModal);
@@ -2154,8 +2295,7 @@
 
             function resumeDraftFlow() {
                 if (profileCompletionRequired) {
-                    hydrateProfileAddressSelectors();
-                    openModal(profileModal);
+                    openProfileCompletionModal('Rezervasyona devam edebilmek için profil bilgilerinizi tamamlayın.');
                     return;
                 }
 
@@ -2207,6 +2347,16 @@
                 }
 
                 syncReserveButtonEnabled();
+            }
+
+            function openProfileCompletionModal(message) {
+                hydrateProfileAddressSelectors();
+                if (profileFeedback && message) {
+                    profileFeedback.hidden = false;
+                    profileFeedback.className = 'detail-modal-feedback error';
+                    profileFeedback.textContent = message;
+                }
+                openModal(profileModal);
             }
 
             function markProfileCompletionResolved() {
@@ -2731,8 +2881,7 @@
             });
 
             openProfileCompletionFromBanner?.addEventListener('click', function () {
-                hydrateProfileAddressSelectors();
-                openModal(profileModal);
+                openProfileCompletionModal('Rezervasyonunuza kaldığınız yerden devam etmek için eksik profil bilgilerinizi tamamlayın.');
             });
             openAmenitiesModal?.addEventListener('click', function () {
                 openModal(amenitiesModal);
@@ -2801,7 +2950,7 @@
                     event.preventDefault();
                     bookingAdvancedFields?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-                    showInfoModal('Lütfen ödeme planı seçiniz.', false);
+                    showInfoModal('Lütfen ödeme planı seçiniz.', false, 'warning');
                     return;
                 }
 
@@ -2813,8 +2962,7 @@
 
                 if (profileCompletionRequired) {
                     event.preventDefault();
-                    hydrateProfileAddressSelectors();
-                    openModal(profileModal);
+                    openProfileCompletionModal('Rezervasyon oluşturabilmek için telefon, doğum tarihi, cinsiyet, il, ilçe ve mahalle bilgilerinizi tamamlayın.');
                     return;
                 }
 
@@ -2840,6 +2988,13 @@
                 event.preventDefault();
                 profileFeedback.hidden = true;
                 const formData = new FormData(profileCompletionForm);
+                const validationMessage = validateProfileCompletionData(formData);
+                if (validationMessage) {
+                    profileFeedback.hidden = false;
+                    profileFeedback.className = 'detail-modal-feedback error';
+                    profileFeedback.textContent = validationMessage;
+                    return;
+                }
 
                 try {
                     const response = await fetch(profileCompletionForm.action, {

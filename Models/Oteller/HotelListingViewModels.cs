@@ -71,6 +71,14 @@ public class HotelListingCardViewModel
     public string RatingText { get; set; } = string.Empty;
     public int ReviewCount { get; set; }
     public decimal? StartingPrice { get; set; }
+    public decimal? OriginalPrice { get; set; }
+    public decimal? DiscountedPrice { get; set; }
+    public int DiscountPercent { get; set; }
+    public bool HasDiscount { get; set; }
+    public long? DiscountId { get; set; }
+    public string? DiscountName { get; set; }
+    public string? DiscountShortDescription { get; set; }
+    public string? DiscountImageUrl { get; set; }
     public string PriceNote { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
     public List<string> GalleryImages { get; set; } = new();
@@ -80,6 +88,8 @@ public class HotelListingCardViewModel
     public List<string> Tags { get; set; } = new();
     public List<string> CampaignNames { get; set; } = new();
     public List<string> CampaignSlugs { get; set; } = new();
+    public string CampaignBadgeText { get; set; } = string.Empty;
+    public string CampaignInfoText { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;
 }
 
@@ -154,6 +164,12 @@ public class HotelRoomViewModel
     public ushort? SquareMeter { get; set; }
     public string DetailDescription { get; set; } = string.Empty;
     public decimal Price { get; set; }
+    public decimal? BasePrice { get; set; }
+    public decimal? DiscountPrice { get; set; }
+    public long? DiscountId { get; set; }
+    public string? DiscountName { get; set; }
+    public string? DiscountShortDescription { get; set; }
+    public string? DiscountImageUrl { get; set; }
     public byte MaxGuestCount { get; set; }
     public byte MaxAdultCount { get; set; }
     public byte MaxChildCount { get; set; }

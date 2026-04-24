@@ -194,9 +194,7 @@ public class CampaignService : ICampaignService
                             WHEN ofm.kapali_satis = 1 THEN NULL
                             WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
                             WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                            WHEN ofm.kampanya_id IS NOT NULL
-                                 AND ofm.kampanya_id > 0
-                                 AND ofm.indirimli_fiyat IS NOT NULL
+                            WHEN ofm.indirimli_fiyat IS NOT NULL
                                  AND ofm.indirimli_fiyat > 0
                                  AND ofm.indirimli_fiyat < ofm.gecelik_fiyat
                                 THEN ofm.indirimli_fiyat

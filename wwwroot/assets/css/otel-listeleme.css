@@ -1324,6 +1324,18 @@ body.listing-modal-open {
     gap: 8px;
 }
 
+.listing-template-v41 .listing-discount-rate {
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(225, 29, 72, 0.12);
+    color: #be123c;
+    font-size: 12px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+}
+
 .listing-template-v41 .current-price {
     font-size: 32px;
     font-weight: 800;
@@ -1336,6 +1348,189 @@ body.listing-modal-open {
     font-weight: 700;
     color: #94a3b8;
     text-decoration: line-through;
+}
+
+.listing-template-v41 .campaign-info-chip {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid rgba(59, 130, 246, 0.16);
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: help;
+}
+
+.location-filter-card {
+    display: grid;
+    gap: 12px;
+}
+
+.location-btn {
+    width: 100%;
+    border: 1px solid #dbe3f4;
+    border-radius: 20px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.location-btn:hover,
+.location-btn.active {
+    border-color: rgba(37, 99, 235, 0.28);
+    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.08);
+}
+
+.location-btn-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: #eef4ff;
+    color: #1d4ed8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.location-btn-copy {
+    display: grid;
+    gap: 4px;
+}
+
+.location-btn-copy strong {
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.location-btn-copy small {
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.location-coords,
+.location-insight {
+    display: none;
+    border-radius: 16px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.location-coords.is-visible,
+.location-insight.is-visible {
+    display: block;
+}
+
+.location-coords {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-weight: 700;
+}
+
+.location-insight {
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    color: #1e3a8a;
+}
+
+.km-row {
+    display: grid;
+    gap: 10px;
+    border: 1px solid #dbe3f4;
+    border-radius: 20px;
+    padding: 14px 16px;
+}
+
+.km-row-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.km-row-head strong {
+    color: #0f172a;
+    font-size: 15px;
+}
+
+.km-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #1d4ed8;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.km-count {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.km-slider-row {
+    padding-right: 2px;
+}
+
+.km-slider-row input[type="range"] {
+    width: 100%;
+}
+
+.km-manual-input {
+    display: grid;
+    gap: 8px;
+}
+
+.km-manual-input > span {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.km-manual-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.km-manual-input-row input {
+    width: 110px;
+    min-height: 48px;
+    border: 1px solid #dbe3f4;
+    border-radius: 16px;
+    text-align: center;
+    font-size: 28px;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.km-manual-input-row small {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.filter-help-compact {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 .listing-template-v41 .per-night {

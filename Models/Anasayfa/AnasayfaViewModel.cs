@@ -57,6 +57,10 @@ public class HomeHotelCardViewModel
     public decimal? DiscountedPrice { get; set; }
     public int DiscountPercent { get; set; }
     public bool HasDiscount { get; set; }
+    public long? DiscountId { get; set; }
+    public string? DiscountName { get; set; }
+    public string? DiscountShortDescription { get; set; }
+    public string? DiscountImageUrl { get; set; }
     public string PriceText { get; set; } = "Fiyat icin detay sayfasina bakin";
     public string PriceNote { get; set; } = "GÜNLÜK · vergi öncesi";
     public string ImageUrl { get; set; } = string.Empty;

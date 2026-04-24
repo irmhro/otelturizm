@@ -177,7 +177,7 @@ public class PartnerService : IPartnerService
             }
         }
         model.InventoryAlerts = await LoadInventoryAlertsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
-        model.RecentReviews = await LoadReviewsAsync(connection, context.SelectedHotel.HotelId, 4, cancellationToken);
+        model.RecentReviews = await LoadReviewsAsync(connection, context.SelectedHotel.HotelId, 2, cancellationToken);
         model.QuickActions = new List<PartnerQuickActionViewModel>
         {
             new() { Title = "Yeni fiyat guncelle", Description = "Takvim uzerinden gunluk veya toplu fiyat aksiyonu acin.", IconClass = "fa-calendar-days", Url = $"/panel/partner/takvim-fiyatlar?otelId={context.SelectedHotel.HotelId}", ToneClass = "info" },
@@ -4527,18 +4527,50 @@ public class PartnerService : IPartnerService
             items.Add(new PartnerReviewRowViewModel
             {
                 ReviewId = reader.GetInt64(0),
-                GuestName = reader.GetString(1),
-                Title = reader.GetString(2),
+                GuestName = NormalizeTurkishText(reader.GetString(1)),
+                Title = NormalizeTurkishText(reader.GetString(2)),
                 ScoreText = $"{SafeByte(reader, 3)} / 5",
-                StatusText = reader.GetString(4),
+                StatusText = NormalizeTurkishText(reader.GetString(4)),
                 CreatedText = FormatDateTime(reader.IsDBNull(5) ? null : reader.GetDateTime(5)),
-                Comment = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
-                ResponseText = reader.IsDBNull(7) ? null : reader.GetString(7)
+                Comment = reader.IsDBNull(6) ? string.Empty : NormalizeTurkishText(reader.GetString(6)),
+                ResponseText = reader.IsDBNull(7) ? null : NormalizeTurkishText(reader.GetString(7))
             });
         }
 
         return items;
     }
+
+    private static string NormalizeTurkishText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var text = value.Trim();
+        if (!LooksLikeMojibake(text))
+        {
+            return text;
+        }
+
+        try
+        {
+            var latinBytes = Encoding.GetEncoding(1252).GetBytes(text);
+            var utf8Text = Encoding.UTF8.GetString(latinBytes);
+            return string.IsNullOrWhiteSpace(utf8Text) ? text : utf8Text;
+        }
+        catch
+        {
+            return text;
+        }
+    }
+
+    private static bool LooksLikeMojibake(string value)
+        => value.Contains('Ã')
+           || value.Contains('Å')
+           || value.Contains('Ä')
+           || value.Contains('Ð')
+           || value.Contains('Þ');
 
     private static int SafeInt(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);

@@ -25,6 +25,33 @@ background: linear-gradient(180deg, rgba(236, 253, 245, 0.55) 0%, rgba(255, 255,
 box-shadow: 0 10px 24px rgba(16, 185, 129, 0.06);
 ```
 
+## NOT: "Gecisli Kart" Tonlari (Uyari / Secenek / Tercih)
+
+Kullanicinin talebine gore ayni "gecisli kart" dili farkli tonlarla uygulanir:
+
+- **Uyari (kirmizimsi)**: Odeme planı secilmedi, eksik/hatali adim vb.
+- **Tercih (yesil)**: Oda secimi, onay, auth gerekliligi vb.
+- **Secenek / Bilgi (mavimsi)**: Bilgilendirme, ipucu, yonlendirme vb.
+
+Referans tonlar:
+
+```css
+/* Uyari (kirmizi) */
+border-color: rgba(239, 68, 68, 0.28);
+background: linear-gradient(180deg, rgba(254, 226, 226, 0.55) 0%, rgba(255, 255, 255, 0.98) 68%);
+box-shadow: 0 10px 24px rgba(239, 68, 68, 0.08);
+
+/* Tercih (yesil) */
+border-color: rgba(16, 185, 129, 0.22);
+background: linear-gradient(180deg, rgba(236, 253, 245, 0.55) 0%, rgba(255, 255, 255, 0.98) 68%);
+box-shadow: 0 10px 24px rgba(16, 185, 129, 0.06);
+
+/* Secenek / Bilgi (mavi) */
+border-color: rgba(29, 78, 216, 0.18);
+background: linear-gradient(180deg, rgba(219, 234, 254, 0.45) 0%, rgba(255, 255, 255, 0.98) 70%);
+box-shadow: 0 10px 24px rgba(29, 78, 216, 0.08);
+```
+
 ## 1) CSS Degiskenleri (Root)
 
 Asagidaki degiskenleri ana CSS dosyanizin basina, `:root` blogu icine ekleyin.

@@ -13,4 +13,5 @@ public interface IContractContentService
     Task<AdminContractManagementPageViewModel> GetAdminContractManagementAsync(string fullName, string email, string userRole, long? contractId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveContractAsync(long adminUserId, AdminContractForm request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ResendContractBundleAsync(long adminUserId, long contractId, CancellationToken cancellationToken = default);
+    Task<(string Title, string Html)?> GetAdminContractPreviewAsync(long contractId, CancellationToken cancellationToken = default);
 }

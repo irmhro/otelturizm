@@ -74,51 +74,68 @@ public class HotelService : IHotelService
                 pf.baslangic_fiyat,
                 pf.min_normal_fiyat,
                 pf.min_indirimli_fiyat,
+                pf.indirim_id,
+                COALESCE(fi.indirim_adi, '') AS indirim_adi,
+                COALESCE(fi.kisa_aciklama, '') AS indirim_aciklama,
+                COALESCE(fi.gorsel_url, '') AS indirim_gorsel_url,
                 oz.ozellikler
             FROM oteller o
             LEFT JOIN (
                 SELECT
                     ot.otel_id,
-                    MIN(
+                    best.effective_price AS baslangic_fiyat,
+                    best.base_price AS min_normal_fiyat,
+                    best.discount_price AS min_indirimli_fiyat,
+                    best.discount_id AS indirim_id
+                FROM oda_tipleri ot
+                WHERE ot.aktif_mi = 1
+                OUTER APPLY (
+                    SELECT TOP (1)
                         CASE
                             WHEN ofm.kapali_satis = 1 THEN NULL
                             WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
                             WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                            WHEN ofm.kampanya_id IS NOT NULL
-                                 AND ofm.kampanya_id > 0
-                                 AND ofm.indirimli_fiyat IS NOT NULL
-                                 AND ofm.indirimli_fiyat > 0
-                                 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat
-                                THEN ofm.indirimli_fiyat
+                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
                             ELSE ofm.gecelik_fiyat
-                        END
-                    ) AS baslangic_fiyat,
-                    MIN(
+                        END AS effective_price,
                         CASE
                             WHEN ofm.kapali_satis = 1 THEN NULL
                             WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
                             WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
                             ELSE ofm.gecelik_fiyat
-                        END
-                    ) AS min_normal_fiyat,
-                    MIN(
+                        END AS base_price,
                         CASE
                             WHEN ofm.kapali_satis = 1 THEN NULL
                             WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                            WHEN ofm.kampanya_id IS NULL OR ofm.kampanya_id <= 0 THEN NULL
                             WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
                             WHEN ofm.indirimli_fiyat IS NULL OR ofm.indirimli_fiyat <= 0 THEN NULL
                             WHEN ofm.indirimli_fiyat >= ofm.gecelik_fiyat THEN NULL
                             ELSE ofm.indirimli_fiyat
-                        END
-                    ) AS min_indirimli_fiyat
-                FROM oda_tipleri ot
-                LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
-                    AND ofm.otel_id = ot.otel_id
-                    AND ofm.tarih BETWEEN CAST(SYSUTCDATETIME() AS date) AND DATEADD(DAY, 120, CAST(SYSUTCDATETIME() AS date))
-                WHERE ot.aktif_mi = 1
+                        END AS discount_price,
+                        ofm.kampanya_id AS discount_id
+                    FROM oda_fiyat_musaitlik ofm
+                    WHERE ofm.oda_tip_id = ot.id
+                      AND ofm.otel_id = ot.otel_id
+                      AND ofm.tarih = CAST(SYSUTCDATETIME() AS date)
+                    ORDER BY
+                        CASE
+                            WHEN ofm.kapali_satis = 1 THEN 1 ELSE 0
+                        END ASC,
+                        CASE
+                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN 1 ELSE 0
+                        END ASC,
+                        CASE
+                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN 1 ELSE 0
+                        END ASC,
+                        CASE
+                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                            ELSE ofm.gecelik_fiyat
+                        END ASC,
+                        ofm.id ASC
+                ) best
                 GROUP BY ot.otel_id
             ) pf ON pf.otel_id = o.id
+            LEFT JOIN fiyat_indirimleri fi ON fi.id = pf.indirim_id AND fi.aktif_mi = 1
             LEFT JOIN (
                 SELECT g1.otel_id, g1.gorsel_url
                 FROM (
@@ -175,6 +192,12 @@ public class HotelService : IHotelService
             var minDiscountPrice = reader.IsDBNull(reader.GetOrdinal("min_indirimli_fiyat"))
                 ? (decimal?)null
                 : reader.GetDecimal(reader.GetOrdinal("min_indirimli_fiyat"));
+            var discountId = reader.IsDBNull(reader.GetOrdinal("indirim_id"))
+                ? (long?)null
+                : reader.GetInt64(reader.GetOrdinal("indirim_id"));
+            var discountName = reader.IsDBNull(reader.GetOrdinal("indirim_adi")) ? string.Empty : reader.GetString(reader.GetOrdinal("indirim_adi"));
+            var discountDesc = reader.IsDBNull(reader.GetOrdinal("indirim_aciklama")) ? string.Empty : reader.GetString(reader.GetOrdinal("indirim_aciklama"));
+            var discountImageUrl = reader.IsDBNull(reader.GetOrdinal("indirim_gorsel_url")) ? string.Empty : reader.GetString(reader.GetOrdinal("indirim_gorsel_url"));
             var rawAmenities = reader.IsDBNull(reader.GetOrdinal("ozellikler"))
                 ? string.Empty
                 : reader.GetString(reader.GetOrdinal("ozellikler"));
@@ -246,6 +269,10 @@ public class HotelService : IHotelService
                 DiscountedPrice = guestDiscountedPrice,
                 DiscountPercent = discountPercent,
                 HasDiscount = hasDiscount,
+                DiscountId = hasDiscount ? discountId : null,
+                DiscountName = hasDiscount && !string.IsNullOrWhiteSpace(discountName) ? discountName : null,
+                DiscountShortDescription = hasDiscount && !string.IsNullOrWhiteSpace(discountDesc) ? discountDesc : null,
+                DiscountImageUrl = hasDiscount && !string.IsNullOrWhiteSpace(discountImageUrl) ? NormalizeImageUrl(discountImageUrl) : null,
                 PriceText = hasDiscount && guestDiscountedPrice.HasValue
                     ? $"TRY {guestDiscountedPrice.Value:N0}"
                     : guestStartingPrice.HasValue ? $"TRY {guestStartingPrice.Value:N0}" : "Teklif Al",
@@ -586,6 +613,9 @@ public class HotelService : IHotelService
 
     private async Task<HotelListingPageViewModel> GetHotelListingPageForSqlServerAsync(string? searchTerm, string? campaignTag, string? campaignSlug, int page, CancellationToken cancellationToken, bool allowFuzzyFallback = true)
     {
+        const decimal listingVatPercent = 10m;
+        const decimal listingAccommodationPercent = 2m;
+
         var normalizedSearchTerm = string.IsNullOrWhiteSpace(searchTerm) ? string.Empty : searchTerm.Trim();
         var normalizedSearchKeyword = NormalizeSearchKeyword(normalizedSearchTerm);
         var normalizedCampaignSlug = NormalizeCampaignSlug(campaignSlug);
@@ -636,34 +666,73 @@ public class HotelService : IHotelService
                 COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
                 COALESCE(og3.gorsel_listesi, '') AS gorsel_listesi,
                 pf.baslangic_fiyat,
+                pf.min_normal_fiyat,
+                pf.min_indirimli_fiyat,
+                pf.indirim_id,
+                COALESCE(fi.indirim_adi, '') AS indirim_adi,
+                COALESCE(fi.kisa_aciklama, '') AS indirim_aciklama,
+                COALESCE(fi.gorsel_url, '') AS indirim_gorsel_url,
                 oz.ozellikler,
                 COALESCE(kc.kampanya_adlari, '') AS kampanya_adlari,
-                COALESCE(kc.kampanya_sluglari, '') AS kampanya_sluglari
+                COALESCE(kc.kampanya_sluglari, '') AS kampanya_sluglari,
+                COALESCE(kc.kampanya_badgetext, '') AS kampanya_badgetext
             FROM oteller o
             LEFT JOIN (
                 SELECT
                     ot.otel_id,
-                    MIN(
+                    best.effective_price AS baslangic_fiyat,
+                    best.base_price AS min_normal_fiyat,
+                    best.discount_price AS min_indirimli_fiyat,
+                    best.discount_id AS indirim_id
+                FROM oda_tipleri ot
+                WHERE ot.aktif_mi = 1
+                OUTER APPLY (
+                    SELECT TOP (1)
                         CASE
                             WHEN ofm.kapali_satis = 1 THEN NULL
                             WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
                             WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                            WHEN ofm.kampanya_id IS NOT NULL
-                                 AND ofm.kampanya_id > 0
-                                 AND ofm.indirimli_fiyat IS NOT NULL
-                                 AND ofm.indirimli_fiyat > 0
-                                 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat
-                                THEN ofm.indirimli_fiyat
+                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
                             ELSE ofm.gecelik_fiyat
-                        END
-                    ) AS baslangic_fiyat
-                FROM oda_tipleri ot
-                LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
-                    AND ofm.otel_id = ot.otel_id
-                    AND ofm.tarih BETWEEN CAST(SYSUTCDATETIME() AS date) AND DATEADD(DAY, 120, CAST(SYSUTCDATETIME() AS date))
-                WHERE ot.aktif_mi = 1
+                        END AS effective_price,
+                        CASE
+                            WHEN ofm.kapali_satis = 1 THEN NULL
+                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
+                            ELSE ofm.gecelik_fiyat
+                        END AS base_price,
+                        CASE
+                            WHEN ofm.kapali_satis = 1 THEN NULL
+                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
+                            WHEN ofm.indirimli_fiyat IS NULL OR ofm.indirimli_fiyat <= 0 THEN NULL
+                            WHEN ofm.indirimli_fiyat >= ofm.gecelik_fiyat THEN NULL
+                            ELSE ofm.indirimli_fiyat
+                        END AS discount_price,
+                        ofm.kampanya_id AS discount_id
+                    FROM oda_fiyat_musaitlik ofm
+                    WHERE ofm.oda_tip_id = ot.id
+                      AND ofm.otel_id = ot.otel_id
+                      AND ofm.tarih = CAST(SYSUTCDATETIME() AS date)
+                    ORDER BY
+                        CASE
+                            WHEN ofm.kapali_satis = 1 THEN 1 ELSE 0
+                        END ASC,
+                        CASE
+                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN 1 ELSE 0
+                        END ASC,
+                        CASE
+                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN 1 ELSE 0
+                        END ASC,
+                        CASE
+                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                            ELSE ofm.gecelik_fiyat
+                        END ASC,
+                        ofm.id ASC
+                ) best
                 GROUP BY ot.otel_id
             ) pf ON pf.otel_id = o.id
+            LEFT JOIN fiyat_indirimleri fi ON fi.id = pf.indirim_id AND fi.aktif_mi = 1
             LEFT JOIN (
                 SELECT g1.otel_id, g1.gorsel_url
                 FROM (
@@ -696,12 +765,15 @@ public class HotelService : IHotelService
                 SELECT
                     c.otel_id,
                     STRING_AGG(c.kampanya_adi, '||') WITHIN GROUP (ORDER BY c.kampanya_adi) AS kampanya_adlari,
-                    STRING_AGG(c.seo_slug, '||') WITHIN GROUP (ORDER BY c.kampanya_adi) AS kampanya_sluglari
+                    STRING_AGG(c.seo_slug, '||') WITHIN GROUP (ORDER BY c.kampanya_adi) AS kampanya_sluglari,
+                    MAX(COALESCE(NULLIF(c.kampanya_etiketi, ''), NULLIF(c.promo_badge, ''), c.kampanya_adi)) AS kampanya_badgetext
                 FROM (
                     SELECT DISTINCT
                         ko.otel_id,
                         k.kampanya_adi,
-                        k.seo_slug
+                        k.seo_slug,
+                        k.kampanya_etiketi,
+                        k.promo_badge
                     FROM kampanya_oteller ko
                     JOIN kampanyalar k ON k.id = ko.kampanya_id
                     WHERE ko.katilim_durumu = N'Aktif'
@@ -792,7 +864,16 @@ public class HotelService : IHotelService
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .Take(3)
                     .ToList();
-            var startingPrice = reader.IsDBNull(reader.GetOrdinal("baslangic_fiyat")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("baslangic_fiyat"));
+            var storedStartingPrice = reader.IsDBNull(reader.GetOrdinal("baslangic_fiyat")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("baslangic_fiyat"));
+            var startingPrice = storedStartingPrice.HasValue
+                ? decimal.Round(InclusiveNightlyPricing.StoredNetToGuestDisplay(storedStartingPrice.Value, listingVatPercent, listingAccommodationPercent), 0)
+                : (decimal?)null;
+            var storedNormalPrice = reader.IsDBNull(reader.GetOrdinal("min_normal_fiyat")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("min_normal_fiyat"));
+            var storedDiscountPrice = reader.IsDBNull(reader.GetOrdinal("min_indirimli_fiyat")) ? (decimal?)null : reader.GetDecimal(reader.GetOrdinal("min_indirimli_fiyat"));
+            var discountId = reader.IsDBNull(reader.GetOrdinal("indirim_id")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("indirim_id"));
+            var discountName = reader.IsDBNull(reader.GetOrdinal("indirim_adi")) ? string.Empty : reader.GetString(reader.GetOrdinal("indirim_adi"));
+            var discountDesc = reader.IsDBNull(reader.GetOrdinal("indirim_aciklama")) ? string.Empty : reader.GetString(reader.GetOrdinal("indirim_aciklama"));
+            var discountImageUrl = reader.IsDBNull(reader.GetOrdinal("indirim_gorsel_url")) ? string.Empty : reader.GetString(reader.GetOrdinal("indirim_gorsel_url"));
             var rawAmenities = reader.IsDBNull(reader.GetOrdinal("ozellikler")) ? string.Empty : reader.GetString(reader.GetOrdinal("ozellikler"));
             var campaignNames = reader.IsDBNull(reader.GetOrdinal("kampanya_adlari"))
                 ? new List<string>()
@@ -806,6 +887,9 @@ public class HotelService : IHotelService
                     .Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
+            var campaignBadgeText = reader.IsDBNull(reader.GetOrdinal("kampanya_badgetext"))
+                ? string.Empty
+                : NormalizeTurkishText(reader.GetString(reader.GetOrdinal("kampanya_badgetext")));
 
             var amenities = rawAmenities
                 .Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -825,6 +909,21 @@ public class HotelService : IHotelService
                 }
             }
 
+            decimal? originalPrice = storedNormalPrice.HasValue && storedNormalPrice.Value > 0m
+                ? decimal.Round(InclusiveNightlyPricing.StoredNetToGuestDisplay(storedNormalPrice.Value, listingVatPercent, listingAccommodationPercent), 0)
+                : null;
+            decimal? discountedPrice = storedDiscountPrice.HasValue && storedDiscountPrice.Value > 0m
+                ? decimal.Round(InclusiveNightlyPricing.StoredNetToGuestDisplay(storedDiscountPrice.Value, listingVatPercent, listingAccommodationPercent), 0)
+                : null;
+            var hasDiscount = originalPrice.HasValue
+                && discountedPrice.HasValue
+                && discountedPrice.Value > 0m
+                && discountedPrice.Value < originalPrice.Value;
+            var discountPercent = hasDiscount
+                ? Math.Clamp((int)Math.Round(((originalPrice!.Value - discountedPrice!.Value) / originalPrice.Value) * 100m, MidpointRounding.AwayFromZero), 1, 95)
+                : 0;
+            var campaignInfoText = BuildCampaignInfoText(campaignNames);
+
             model.Hotels.Add(new HotelListingCardViewModel
             {
                 Id = id,
@@ -842,14 +941,26 @@ public class HotelService : IHotelService
                 RatingText = BuildRatingText(rating),
                 ReviewCount = reviewCount,
                 StartingPrice = startingPrice,
-                PriceNote = startingPrice.HasValue ? "Gecelik taban · vergi öncesi" : "Musait fiyat bilgisi bulunamadi",
+                OriginalPrice = hasDiscount ? originalPrice : null,
+                DiscountedPrice = hasDiscount ? discountedPrice : null,
+                DiscountPercent = discountPercent,
+                HasDiscount = hasDiscount,
+                DiscountId = hasDiscount ? discountId : null,
+                DiscountName = hasDiscount && !string.IsNullOrWhiteSpace(discountName) ? discountName : null,
+                DiscountShortDescription = hasDiscount && !string.IsNullOrWhiteSpace(discountDesc) ? discountDesc : null,
+                DiscountImageUrl = hasDiscount && !string.IsNullOrWhiteSpace(discountImageUrl) ? NormalizeImageUrl(discountImageUrl) : null,
+                PriceNote = startingPrice.HasValue ? "Vergiler dahil" : "Musait fiyat bilgisi bulunamadi",
                 ImageUrl = NormalizeImageUrl(imageUrl),
                 GalleryImages = galleryImages,
                 IsFeatured = isFeatured,
                 Amenities = amenities,
                 Tags = tags,
-                CampaignNames = campaignNames,
+                CampaignNames = campaignNames.Select(NormalizeTurkishText).ToList(),
                 CampaignSlugs = campaignSlugs,
+                CampaignBadgeText = string.IsNullOrWhiteSpace(campaignBadgeText)
+                    ? (campaignNames.Count > 0 ? NormalizeTurkishText(campaignNames[0]) : string.Empty)
+                    : campaignBadgeText,
+                CampaignInfoText = campaignInfoText,
                 Summary = string.IsNullOrWhiteSpace(summary)
                     ? "Sehir konaklamasi, esnek rezervasyon ve mobil uyumlu deneyim icin yayindaki tesis."
                     : summary
@@ -1289,7 +1400,7 @@ public class HotelService : IHotelService
                     ImageUrl = roomGalleryImages.FirstOrDefault(),
                     GalleryImages = roomGalleryImages,
                     Features = new List<HotelRoomFeatureViewModel>(),
-                    CancellationText = "Ucretsiz iptal"
+                    CancellationText = "Ücretsiz iptal"
                 });
             }
         }
@@ -1372,6 +1483,45 @@ public class HotelService : IHotelService
             if (lowestRoomPrice > 0m)
             {
                 model.LowestRoomPrice = lowestRoomPrice;
+            }
+
+            const string roomPolicySql = """
+                SELECT ot.id,
+                       COALESCE(NULLIF(ofm.iptal_politikasi_override, ''), N'Ücretsiz iptal') AS iptal_politikasi
+                FROM oda_tipleri ot
+                OUTER APPLY (
+                    SELECT TOP (1) ofm.iptal_politikasi_override
+                    FROM oda_fiyat_musaitlik ofm
+                    WHERE ofm.oda_tip_id = ot.id
+                      AND ofm.otel_id = ot.otel_id
+                      AND ofm.tarih >= CAST(SYSUTCDATETIME() AS date)
+                      AND ofm.iptal_politikasi_override IS NOT NULL
+                      AND LTRIM(RTRIM(ofm.iptal_politikasi_override)) <> ''
+                    ORDER BY ofm.tarih ASC, ofm.id ASC
+                ) ofm
+                WHERE ot.otel_id = @hotelId
+                  AND ot.aktif_mi = 1;
+                """;
+
+            var roomPolicyMap = new Dictionary<long, string>();
+            await using (var roomPolicyCommand = new SqlCommand(roomPolicySql, connection))
+            {
+                roomPolicyCommand.Parameters.AddWithValue("@hotelId", model.Id);
+                await using var roomPolicyReader = await roomPolicyCommand.ExecuteReaderAsync(cancellationToken);
+                while (await roomPolicyReader.ReadAsync(cancellationToken))
+                {
+                    var roomId = roomPolicyReader.GetInt64(0);
+                    var text = roomPolicyReader.IsDBNull(1) ? "Ücretsiz iptal" : NormalizeTurkishText(roomPolicyReader.GetString(1));
+                    roomPolicyMap[roomId] = string.IsNullOrWhiteSpace(text) ? "Ücretsiz iptal" : text;
+                }
+            }
+
+            foreach (var room in model.Rooms)
+            {
+                if (roomPolicyMap.TryGetValue(room.RoomTypeId, out var policyText))
+                {
+                    room.CancellationText = policyText;
+                }
             }
         }
 
@@ -1559,6 +1709,55 @@ public class HotelService : IHotelService
         }
 
         return "/" + imageUrl.TrimStart('~', '/').Replace("\\", "/");
+    }
+
+    private static string NormalizeTurkishText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var text = value.Trim();
+        if (!LooksLikeMojibake(text))
+        {
+            return text;
+        }
+
+        try
+        {
+            var latinBytes = Encoding.GetEncoding(1252).GetBytes(text);
+            var fixedText = Encoding.UTF8.GetString(latinBytes).Trim();
+            return string.IsNullOrWhiteSpace(fixedText) ? text : fixedText;
+        }
+        catch
+        {
+            return text;
+        }
+    }
+
+    private static bool LooksLikeMojibake(string value)
+        => value.Contains('Ã')
+           || value.Contains('Å')
+           || value.Contains('Ä')
+           || value.Contains('Ð')
+           || value.Contains('Þ');
+
+    private static string BuildCampaignInfoText(IEnumerable<string> campaignNames)
+    {
+        var names = campaignNames
+            .Where(static x => !string.IsNullOrWhiteSpace(x))
+            .Select(NormalizeTurkishText)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(3)
+            .ToList();
+
+        return names.Count switch
+        {
+            0 => string.Empty,
+            1 => $"{names[0]} kampanyası bu fiyat için aktif.",
+            _ => $"{string.Join(", ", names)} kampanyaları bu otelde aktif."
+        };
     }
 
     private static List<string> ParseImageList(string? galleryJson)

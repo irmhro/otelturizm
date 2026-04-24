@@ -148,6 +148,8 @@ public class ContractContentService : IContractContentService
         var sectionsHtml = string.Join(Environment.NewLine, contracts.Select(static contract =>
             $"<section style=\"padding:16px 0;border-bottom:1px solid #e5e7eb;\"><h3 style=\"margin:0 0 8px;font-size:18px;\">{contract.Title}</h3><p style=\"margin:0 0 10px;color:#475569;\">{contract.Subtitle}</p><p style=\"margin:0 0 8px;\"><a href=\"{contract.Url}\" style=\"color:#0f4aa3;font-weight:700;text-decoration:none;\">Sözleşmeyi görüntüle</a></p><div style=\"color:#64748b;font-size:13px;\">Versiyon: {contract.VersionText}</div></section>"));
 
+        var attachments = await LoadContractPdfAttachmentsAsync(connection, transaction, contracts.Select(static x => x.ContractId).ToList(), cancellationToken);
+
         await _emailQueueService.QueueTemplateAsync(
             connection,
             transaction,
@@ -158,6 +160,7 @@ public class ContractContentService : IContractContentService
                 TemplateCode = "contract_delivery",
                 RelatedTable = "users",
                 RelatedRecordId = recipient.UserId,
+                Attachments = attachments,
                 Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["recipient_name"] = recipient.FullName,
@@ -377,6 +380,41 @@ public class ContractContentService : IContractContentService
         }
     }
 
+    public async Task<(string Title, string Html)?> GetAdminContractPreviewAsync(long contractId, CancellationToken cancellationToken = default)
+    {
+        if (contractId <= 0)
+        {
+            return null;
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = @"
+            SELECT TOP (1) baslik, COALESCE(ozet_html, ''), COALESCE(icerik_html, '')
+            FROM sozlesmeler
+            WHERE id = @contractId
+            ORDER BY id DESC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@contractId", contractId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        var title = reader.IsDBNull(0) ? "Sözleşme" : reader.GetString(0);
+        var summaryHtml = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+        var contentHtml = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
+
+        var html = string.IsNullOrWhiteSpace(summaryHtml)
+            ? contentHtml
+            : $"<div class=\"legal-contract-summary\">{summaryHtml}</div>{contentHtml}";
+
+        return (title, html);
+    }
+
     private async Task<int> ResendContractBundleInternalAsync(SqlConnection connection, SqlTransaction? transaction, long adminUserId, long contractId, CancellationToken cancellationToken)
     {
         const string contractSql = @"
@@ -433,6 +471,8 @@ public class ContractContentService : IContractContentService
         var sectionsHtml = string.Join(Environment.NewLine, contracts.Select(static contract =>
             $"<section style=\"padding:16px 0;border-bottom:1px solid #e5e7eb;\"><h3 style=\"margin:0 0 8px;font-size:18px;\">{contract.Title}</h3><p style=\"margin:0 0 10px;color:#475569;\">{contract.Subtitle}</p><p style=\"margin:0 0 8px;\"><a href=\"{contract.Url}\" style=\"color:#0f4aa3;font-weight:700;text-decoration:none;\">Sözleşmeyi görüntüle</a></p><div style=\"color:#64748b;font-size:13px;\">Versiyon: {contract.VersionText}</div></section>"));
 
+        var attachments = await LoadContractPdfAttachmentsAsync(connection, transaction, contracts.Select(static x => x.ContractId).ToList(), cancellationToken);
+
         var count = 0;
         foreach (var recipient in recipients)
         {
@@ -446,6 +486,7 @@ public class ContractContentService : IContractContentService
                     TemplateCode = "contract_delivery",
                     RelatedTable = "sozlesmeler",
                     RelatedRecordId = contractId,
+                    Attachments = attachments,
                     Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["recipient_name"] = recipient.FullName,
@@ -485,6 +526,71 @@ public class ContractContentService : IContractContentService
         }
 
         return count;
+    }
+
+    private async Task<List<QueuedEmailAttachment>?> LoadContractPdfAttachmentsAsync(
+        SqlConnection connection,
+        SqlTransaction? transaction,
+        IReadOnlyList<long> contractIds,
+        CancellationToken cancellationToken)
+    {
+        if (contractIds.Count == 0)
+        {
+            return null;
+        }
+
+        // Migration uygulanmamış olabilir.
+        const string sql = @"
+            IF OBJECT_ID('dbo.sozlesme_dosyalari', 'U') IS NULL
+            BEGIN
+                SELECT CAST(NULL AS bigint) AS sozlesme_id, CAST(NULL AS nvarchar(500)) AS dosya_yolu, CAST(NULL AS nvarchar(250)) AS dosya_adi
+                WHERE 1 = 0;
+                RETURN;
+            END
+
+            SELECT s.sozlesme_id, s.dosya_yolu, COALESCE(s.dosya_adi, '') AS dosya_adi
+            FROM sozlesme_dosyalari s
+            INNER JOIN (
+                SELECT sozlesme_id, MAX(id) AS max_id
+                FROM sozlesme_dosyalari
+                WHERE dosya_tipi = 'pdf'
+                  AND sozlesme_id IN (SELECT value FROM STRING_SPLIT(@ids, ','))
+                GROUP BY sozlesme_id
+            ) x ON x.sozlesme_id = s.sozlesme_id AND x.max_id = s.id;";
+
+        var idCsv = string.Join(",", contractIds.Distinct());
+        await using var command = new SqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("@ids", idCsv);
+
+        var attachments = new List<QueuedEmailAttachment>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var contractId = reader.IsDBNull(0) ? 0 : reader.GetInt64(0);
+            var fileUrl = reader.IsDBNull(1) ? null : reader.GetString(1);
+            var fileName = reader.IsDBNull(2) ? null : reader.GetString(2);
+            if (contractId <= 0 || string.IsNullOrWhiteSpace(fileUrl))
+            {
+                continue;
+            }
+
+            var url = fileUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                ? fileUrl
+                : $"{_publicBaseUrl}{fileUrl}";
+
+            var safeFileName = string.IsNullOrWhiteSpace(fileName)
+                ? $"sozlesme-{contractId}.pdf"
+                : (fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? fileName : $"{fileName}.pdf");
+
+            attachments.Add(new QueuedEmailAttachment
+            {
+                FileName = safeFileName,
+                FilePathOrUrl = url,
+                ContentType = "application/pdf"
+            });
+        }
+
+        return attachments.Count == 0 ? null : attachments;
     }
 
     private async Task<ContractDetailPageViewModel?> LoadContractDetailAsync(SqlConnection connection, SqlTransaction? transaction, string slug, CancellationToken cancellationToken)

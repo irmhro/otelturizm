@@ -59,9 +59,7 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
                         WHEN ofm.kapali_satis = 1 THEN NULL
                         WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
                         WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                        WHEN ofm.kampanya_id IS NOT NULL
-                             AND ofm.kampanya_id > 0
-                             AND ofm.indirimli_fiyat IS NOT NULL
+                        WHEN ofm.indirimli_fiyat IS NOT NULL
                              AND ofm.indirimli_fiyat > 0
                              AND ofm.indirimli_fiyat < ofm.gecelik_fiyat
                             THEN ofm.indirimli_fiyat
@@ -149,9 +147,7 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
                         WHEN ofm.kapali_satis = 1 THEN NULL
                         WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
                         WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                        WHEN ofm.kampanya_id IS NOT NULL
-                             AND ofm.kampanya_id > 0
-                             AND ofm.indirimli_fiyat IS NOT NULL
+                        WHEN ofm.indirimli_fiyat IS NOT NULL
                              AND ofm.indirimli_fiyat > 0
                              AND ofm.indirimli_fiyat < ofm.gecelik_fiyat
                             THEN ofm.indirimli_fiyat
@@ -242,7 +238,7 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
               AND tarih BETWEEN @startDate AND @endDate
             ORDER BY tarih ASC;";
 
-        var dailyOverrides = new Dictionary<DateOnly, (decimal BasePrice, decimal? DiscountPrice, short TotalRooms, short SoldRooms, short BlockedRooms, bool IsClosed)>();
+        var dailyOverrides = new Dictionary<DateOnly, (decimal BasePrice, decimal? DiscountPrice, long? DiscountId, short TotalRooms, short SoldRooms, short BlockedRooms, bool IsClosed)>();
         await using (var pricingCommand = CreateCommand(connection, pricingSql))
         {
             AddParameter(pricingCommand, "@roomTypeId", roomTypeId);
@@ -255,9 +251,8 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
                 var date = DateOnly.FromDateTime(pricingReader.GetDateTime(0));
                 var basePrice = pricingReader.IsDBNull(1) ? 0m : pricingReader.GetDecimal(1);
                 var rawDiscountPrice = pricingReader.IsDBNull(2) ? (decimal?)null : pricingReader.GetDecimal(2);
-                var campaignId = pricingReader.IsDBNull(3) ? 0L : pricingReader.GetInt64(3);
-                var validDiscountPrice = campaignId > 0
-                    && rawDiscountPrice.HasValue
+                var rawDiscountId = pricingReader.IsDBNull(3) ? (long?)null : pricingReader.GetInt64(3);
+                var validDiscountPrice = rawDiscountPrice.HasValue
                     && rawDiscountPrice.Value > 0m
                     && basePrice > 0m
                     && rawDiscountPrice.Value < basePrice
@@ -266,6 +261,7 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
                 dailyOverrides[date] = (
                     basePrice,
                     validDiscountPrice,
+                    validDiscountPrice.HasValue ? rawDiscountId : null,
                     pricingReader.IsDBNull(4) ? defaultTotalRooms : pricingReader.GetInt16(4),
                     pricingReader.IsDBNull(5) ? (short)0 : pricingReader.GetInt16(5),
                     pricingReader.IsDBNull(6) ? (short)0 : pricingReader.GetInt16(6),
@@ -278,12 +274,13 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
         {
             if (!dailyOverrides.TryGetValue(date, out var day))
             {
-                day = (0m, null, 0, 0, 0, false);
+                day = (0m, null, null, 0, 0, 0, false);
             }
 
             var remainingRooms = Math.Max(day.TotalRooms - day.SoldRooms - day.BlockedRooms, 0);
-            var effectivePrice = day.DiscountPrice.HasValue && day.DiscountPrice.Value > 0m
-                ? day.DiscountPrice.Value
+            var isDiscounted = day.DiscountPrice.HasValue && day.DiscountPrice.Value > 0m && day.BasePrice > 0m && day.DiscountPrice.Value < day.BasePrice;
+            var effectivePrice = isDiscounted
+                ? day.DiscountPrice!.Value
                 : day.BasePrice > 0m
                     ? day.BasePrice
                     : 0m;
@@ -291,8 +288,11 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
             items.Add(new RoomNightlyPricePoint
             {
                 Date = date,
+                DateText = date.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR")),
                 BasePrice = day.BasePrice,
                 DiscountPrice = day.DiscountPrice,
+                DiscountId = isDiscounted ? day.DiscountId : null,
+                IsDiscounted = isDiscounted,
                 EffectivePrice = effectivePrice,
                 RemainingRooms = Convert.ToInt16(Math.Min(remainingRooms, short.MaxValue), CultureInfo.InvariantCulture),
                 IsClosed = day.IsClosed,

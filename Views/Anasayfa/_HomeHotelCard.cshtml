@@ -99,7 +99,21 @@
                     @if (Model.HasDiscount && Model.OriginalPrice.HasValue && Model.DiscountedPrice.HasValue)
                     {
                         <span class="price-original">Normal Fiyat: <s>TRY @Model.OriginalPrice.Value.ToString("N0")</s></span>
-                        <span class="price-discount-label">İndirim: %@Model.DiscountPercent</span>
+                        <span class="price-discount-label">
+                            İndirim: %@Model.DiscountPercent
+                            @if (Model.DiscountId.HasValue && !string.IsNullOrWhiteSpace(Model.DiscountName))
+                            {
+                                <button type="button"
+                                        class="discount-info-btn"
+                                        data-discount-open
+                                        data-discount-title="@Model.DiscountName"
+                                        data-discount-desc="@Model.DiscountShortDescription"
+                                        data-discount-image="@Model.DiscountImageUrl"
+                                        aria-label="İndirim detayını görüntüle">
+                                    <i class="fas fa-circle-info" aria-hidden="true"></i>
+                                </button>
+                            }
+                        </span>
                         <span class="price-value discounted">İndirimli Fiyatı: TRY @Model.DiscountedPrice.Value.ToString("N0")</span>
                     }
                     else

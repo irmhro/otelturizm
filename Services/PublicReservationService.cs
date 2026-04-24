@@ -1249,6 +1249,7 @@ public class PublicReservationService : IPublicReservationService
         public string Address { get; set; } = string.Empty;
         public DateTime? BirthDate { get; set; }
         public string Gender { get; set; } = string.Empty;
+        public bool IsAgeEligible => BirthDate.HasValue && BirthDate.Value.Date <= DateTime.Today.AddYears(-18).AddDays(-1);
         public bool IsProfileComplete =>
             !string.IsNullOrWhiteSpace(FullName) &&
             !string.IsNullOrWhiteSpace(Email) &&
@@ -1256,8 +1257,7 @@ public class PublicReservationService : IPublicReservationService
             !string.IsNullOrWhiteSpace(City) &&
             !string.IsNullOrWhiteSpace(District) &&
             !string.IsNullOrWhiteSpace(Neighborhood) &&
-            !string.IsNullOrWhiteSpace(Address) &&
-            BirthDate.HasValue &&
+            IsAgeEligible &&
             !string.IsNullOrWhiteSpace(Gender);
     }
 
