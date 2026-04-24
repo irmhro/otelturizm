@@ -1,0 +1,56 @@
+{
+  "slug": "216-pasha-palace",
+  "name": "216 PASHA PALACE",
+  "owner_email": "pashapalacehotel@gmail.com",
+  "owner_name": "216 PASHA PALACE Yetkilisi",
+  "short_description": "Ferhatpaşa Mahallesi'nde, orman yolu üzerinde yer alan 216 Pasha Palace, İstanbul’un gürültüsünden uzak, doğa ile iç içe bir konaklama imkanı sunuyor. Orman manzaralı odaları ile misafirlerine sakin bir ortamda huzurlu bir deneyim vaat ederken, sessiz ve sakin bir konumda bulunuyor. Konum avantajı sayesinde Yeditepe Üniversitesi ve Yedpa İş Merkezi gibi önemli noktalara sadece 4 dakika mesafede yer alıyor. Bu sayede iş seyahati yapanlar için de pratik bir tercih haline geliyor.",
+  "description": "Ferhatpaşa Mahallesi'nde, orman yolu üzerinde yer alan 216 Pasha Palace, İstanbul’un gürültüsünden uzak, doğa ile iç içe bir konaklama imkanı sunuyor. Orman manzaralı odaları ile misafirlerine sakin bir ortamda huzurlu bir deneyim vaat ederken, sessiz ve sakin bir konumda bulunuyor. Konum avantajı sayesinde Yeditepe Üniversitesi ve Yedpa İş Merkezi gibi önemli noktalara sadece 4 dakika mesafede yer alıyor. Bu sayede iş seyahati yapanlar için de pratik bir tercih haline geliyor.",
+  "location_description": "Ferhatpaşa Mahallesi'nde, orman yolu üzerinde yer alan 216 Pasha Palace, İstanbul’un gürültüsünden uzak, doğa ile iç içe bir konaklama imkanı sunuyor. Orman manzaralı odaları ile misafirlerine sakin bir ortamda huzurlu bir deneyim vaat ederken, sessiz ve sakin bir konumda bulunuyor. Konum avantajı sayesinde Yeditepe Üniversitesi ve Yedpa İş Merkezi gibi önemli noktalara sadece 4 dakika mesafede yer alıyor. Bu sayede iş seyahati yapanlar için de pratik bir tercih haline geliyor.",
+  "address": "Ferhatpaşa Mah, Ferhatpaşa Yolu Sk. No: 55, 34888 Ataşehir/İstanbul",
+  "city": "İstanbul",
+  "district": "Ataşehir",
+  "neighborhood": "Ferhatpaşa Mah",
+  "latitude": "40.97869019999999",
+  "longitude": "29.1693931",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-pasha-palace",
+  "cover": "/uploads/216suites/hotels/216-pasha-palace/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-pasha-palace/hotel-01.webp",
+    "/uploads/216suites/hotels/216-pasha-palace/hotel-02.webp",
+    "/uploads/216suites/hotels/216-pasha-palace/hotel-03.webp",
+    "/uploads/216suites/hotels/216-pasha-palace/hotel-04.webp",
+    "/uploads/216suites/hotels/216-pasha-palace/hotel-05.webp",
+    "/uploads/216suites/hotels/216-pasha-palace/hotel-06.webp",
+    "/uploads/216suites/hotels/216-pasha-palace/hotel-07.webp"
+  ],
+  "rooms": [
+    "double-room",
+    "triple-room",
+    "quad-room",
+    "jakuzi-room",
+    "junior-room"
+  ]
+}

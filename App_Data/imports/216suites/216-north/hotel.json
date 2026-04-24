@@ -1,0 +1,54 @@
+{
+  "slug": "216-north",
+  "name": "216 NORTH",
+  "owner_email": "onboarding+216-north@otelturizm.local",
+  "owner_name": "216 NORTH Yetkilisi",
+  "short_description": "216 North Hotel Ağva, İstanbul'un doğal güzellikleriyle ünlü Ağva bölgesinde yer alan huzurlu ve şık bir konaklama tesisidir. Doğayla iç içe bir konumda bulunan tesisimiz, sakin bir tatil geçirmek isteyen misafirlere unutulmaz bir deneyim sunmaktadır. Tesisimiz, modern tasarımı ve konforlu odaları ile her detayda misafirlerimizin rahatını ön planda tutmaktadır. 216 North Hotel Ağva, sadece şehri keşfetmek isteyenler için değil, aynı zamanda doğa ile iç içe bir kaçamak yapmak isteyenler",
+  "description": "216 North Hotel Ağva, İstanbul'un doğal güzellikleriyle ünlü Ağva bölgesinde yer alan huzurlu ve şık bir konaklama tesisidir. Doğayla iç içe bir konumda bulunan tesisimiz, sakin bir tatil geçirmek isteyen misafirlere unutulmaz bir deneyim sunmaktadır. Tesisimiz, modern tasarımı ve konforlu odaları ile her detayda misafirlerimizin rahatını ön planda tutmaktadır. 216 North Hotel Ağva, sadece şehri keşfetmek isteyenler için değil, aynı zamanda doğa ile iç içe bir kaçamak yapmak isteyenler için de ideal bir yerdir. Ağva'nın yeşil doğası ve Nehrin huzur verici manzarası ile konuklarımıza dinlendirici bir atmosfer sunulmaktadır. Özel konsept odaları ile hizmet veren tesisimiz Ağva bölgesinde sizlere harika bir konaklama deneyimi sunuyor",
+  "location_description": "216 North Hotel Ağva, İstanbul'un doğal güzellikleriyle ünlü Ağva bölgesinde yer alan huzurlu ve şık bir konaklama tesisidir. Doğayla iç içe bir konumda bulunan tesisimiz, sakin bir tatil geçirmek isteyen misafirlere unutulmaz bir deneyim sunmaktadır. Tesisimiz, modern tasarımı ve konforlu odaları ile her detayda misafirlerimizin rahatını ön planda tutmaktadır. 216 North Hotel Ağva, sadece şehri keşfetmek isteyenler için değil, aynı zamanda doğa ile iç içe bir kaçamak yapmak isteyenler için de ideal bir yerdir. Ağva'nın yeşil doğası ve Nehrin huzur verici manzarası ile konuklarımıza dinlendirici bir atmosfer sunulmaktadır. Özel konsept odaları ile hizmet veren tesisimiz Ağva bölgesinde sizlere harika bir konaklama deneyimi sunuyor",
+  "address": "Kurfallı, Erseven Sokak No:86, 34983 Şile/İstanbul",
+  "city": "İstanbul",
+  "district": "Şile",
+  "neighborhood": "Kurfallı",
+  "latitude": "41.120489",
+  "longitude": "29.849144099999997",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-north",
+  "cover": "/uploads/216suites/hotels/216-north/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-north/hotel-01.webp",
+    "/uploads/216suites/hotels/216-north/hotel-02.webp",
+    "/uploads/216suites/hotels/216-north/hotel-03.webp",
+    "/uploads/216suites/hotels/216-north/hotel-04.webp",
+    "/uploads/216suites/hotels/216-north/hotel-05.webp",
+    "/uploads/216suites/hotels/216-north/hotel-06.webp",
+    "/uploads/216suites/hotels/216-north/hotel-07.webp"
+  ],
+  "rooms": [
+    "double-room-witj-jakuzi-and-fireplace",
+    "deluxe-room-with-turkish-bath-sauna-and-jacuzzi",
+    "room-with-heated-pool-deluxe-room"
+  ]
+}

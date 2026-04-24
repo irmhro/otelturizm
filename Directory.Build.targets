@@ -1,0 +1,15 @@
+<Project>
+  <!--
+    Windows'ta Visual Studio / dotnet build sırasında,
+    Kestrel çalışan süreç bin\... çıktısını kilitlediği için MSB3027/MSB3026 hatası oluşabiliyor.
+    Bu hedef, build öncesi uygulamanın kullandığı portları dinleyen ve bu projenin
+    Release/Debug çıktısını çalıştıran eski süreçleri kapatır.
+  -->
+  <Target Name="KillLockedDevServerBeforeBuild"
+          BeforeTargets="Build"
+          Condition="'$(OS)' == 'Windows_NT' and '$(BuildingProject)' != 'false'">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;&amp; { $ports=@(5103,7223); foreach($p in $ports){ try { $c=Get-NetTCPConnection -State Listen -LocalPort $p -ErrorAction SilentlyContinue | Select-Object -First 1; if($c -and $c.OwningProcess){ Stop-Process -Id $c.OwningProcess -Force -ErrorAction SilentlyContinue } } catch {} }; $projectRoot=[regex]::Escape('$(MSBuildProjectDirectory)'); Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { $_.Name -in @('dotnet.exe','otelturizmnew.exe') -and $_.CommandLine -and ($_.CommandLine -match $projectRoot -or $_.CommandLine -match 'otelturizmnew') -and ($_.CommandLine -match 'otelturizmnew.dll' -or $_.CommandLine -match 'dotnet run' -or $_.CommandLine -match 'localhost:5103' -or $_.CommandLine -match 'bin\\\\(Debug|Release)\\\\net10.0') } | ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } catch {} } }&quot;"
+          IgnoreExitCode="true" />
+  </Target>
+</Project>
+

@@ -1,0 +1,53 @@
+{
+  "slug": "216-prestige",
+  "name": "216 PRESTIGE",
+  "owner_email": "onboarding+216-prestige@otelturizm.local",
+  "owner_name": "216 PRESTIGE Yetkilisi",
+  "short_description": "216 Prestige Hotel, İstanbul’un merkezi bölgelerinden birinde konforlu ve lüks bir konaklama deneyimi sunmak için tasarlanmış şık bir tesistir. Misafirlerimize eşsiz bir konfor, modern olanaklar ve yüksek kaliteli hizmet anlayışı sunarak, iş ve tatil amaçlı seyahatler için mükemmel bir tercih oluşturmaktadır. Tesisimiz, zarif ve modern tasarımıyla her yaştan misafire hitap etmektedir. 216 Prestige Hotel, geniş ve ferah odalarıyla konuklarının her türlü ihtiyacını karşılayacak şekilde d",
+  "description": "216 Prestige Hotel, İstanbul’un merkezi bölgelerinden birinde konforlu ve lüks bir konaklama deneyimi sunmak için tasarlanmış şık bir tesistir. Misafirlerimize eşsiz bir konfor, modern olanaklar ve yüksek kaliteli hizmet anlayışı sunarak, iş ve tatil amaçlı seyahatler için mükemmel bir tercih oluşturmaktadır. Tesisimiz, zarif ve modern tasarımıyla her yaştan misafire hitap etmektedir. 216 Prestige Hotel, geniş ve ferah odalarıyla konuklarının her türlü ihtiyacını karşılayacak şekilde donatılmıştır. Her odada, yüksek kaliteli mobilyalar, rahat yataklar ve modern banyo olanakları mevcuttur. Konumu itibariyle İstanbul’un en dinamik bölgelerine yakın olan 216 Prestige Hotel, alışveriş merkezleri, restoranlar ve eğlence alanları gibi önemli noktalara kolay erişim imkânı sunmaktadır. Ulaşım açısından oldukça merkezi bir konumda yer alan tesisimiz, toplu taşıma ve ana yollar sayesinde şehrin her yerine rahatça ulaşılabilmektedir.",
+  "location_description": "216 Prestige Hotel, İstanbul’un merkezi bölgelerinden birinde konforlu ve lüks bir konaklama deneyimi sunmak için tasarlanmış şık bir tesistir. Misafirlerimize eşsiz bir konfor, modern olanaklar ve yüksek kaliteli hizmet anlayışı sunarak, iş ve tatil amaçlı seyahatler için mükemmel bir tercih oluşturmaktadır. Tesisimiz, zarif ve modern tasarımıyla her yaştan misafire hitap etmektedir. 216 Prestige Hotel, geniş ve ferah odalarıyla konuklarının her türlü ihtiyacını karşılayacak şekilde donatılmıştır. Her odada, yüksek kaliteli mobilyalar, rahat yataklar ve modern banyo olanakları mevcuttur. Konumu itibariyle İstanbul’un en dinamik bölgelerine yakın olan 216 Prestige Hotel, alışveriş merkezleri, restoranlar ve eğlence alanları gibi önemli noktalara kolay erişim imkânı sunmaktadır. Ulaşım açısından oldukça merkezi bir konumda yer alan tesisimiz, toplu taşıma ve ana yollar sayesinde şehrin her yerine rahatça ulaşılabilmektedir.",
+  "address": "İnkılap, Küçüksu Cd. 97B, 34768 Ümraniye/İstanbul",
+  "city": "İstanbul",
+  "district": "Ümraniye",
+  "neighborhood": "İnkılap",
+  "latitude": "41.0319399",
+  "longitude": "29.1089277",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-prestige",
+  "cover": "/uploads/216suites/hotels/216-prestige/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-prestige/hotel-01.webp",
+    "/uploads/216suites/hotels/216-prestige/hotel-02.webp",
+    "/uploads/216suites/hotels/216-prestige/hotel-03.webp",
+    "/uploads/216suites/hotels/216-prestige/hotel-04.webp",
+    "/uploads/216suites/hotels/216-prestige/hotel-05.webp",
+    "/uploads/216suites/hotels/216-prestige/hotel-06.webp",
+    "/uploads/216suites/hotels/216-prestige/hotel-07.webp"
+  ],
+  "rooms": [
+    "classi-c-room",
+    "classi-c-twin-room"
+  ]
+}

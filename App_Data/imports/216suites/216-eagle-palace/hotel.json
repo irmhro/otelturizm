@@ -1,0 +1,55 @@
+{
+  "slug": "216-eagle-palace",
+  "name": "216 EAGLE PALACE",
+  "owner_email": "eaglepalaceonline@gmail.com",
+  "owner_name": "216 EAGLE PALACE Yetkilisi",
+  "short_description": "2014 yılında hizmet vermeye başladığımız 4 yıldız statüsünde olan tesisimizde, siz değerli misafirlerimize sunduğumuz kişiye özel suit odalar ile birlikte şehrin merkezi konumunda eşsiz konaklama imkanı sunmaktayız. 216 Eagle Palace Suite, İstanbul'un Kartal ilçesinde yer alan lüks bir konaklama tesisi olarak hizmet vermektedir. Konuklarımıza yüksek kaliteli konaklama ve müşteri hizmetleri sunarak unutulmaz bir deneyim yaşatmak için çalışıyoruz. Odalarımız modern ve şık bir tasarımla d",
+  "description": "2014 yılında hizmet vermeye başladığımız 4 yıldız statüsünde olan tesisimizde, siz değerli misafirlerimize sunduğumuz kişiye özel suit odalar ile birlikte şehrin merkezi konumunda eşsiz konaklama imkanı sunmaktayız. 216 Eagle Palace Suite, İstanbul'un Kartal ilçesinde yer alan lüks bir konaklama tesisi olarak hizmet vermektedir. Konuklarımıza yüksek kaliteli konaklama ve müşteri hizmetleri sunarak unutulmaz bir deneyim yaşatmak için çalışıyoruz. Odalarımız modern ve şık bir tasarımla döşenmiştir. Her odada yüksek hızlı Wi-Fi, Smart TV, minibar, kettle, klima, jakuzi ve oturma alanı gibi birçok olanak bulunmaktadır. Konuklarımız, tarihi Yarımada, Kapalıçarşı, Galata Kulesi ve Taksim Meydanı gibi İstanbul'un en ünlü turistik yerlerine ulaşmak için ulaşım araçlarına kolayca erişebilirler. Tesisimizin yer aldığı Kartal ilçesi, İstanbul'un modern ve hızlı gelişen semtlerinden biridir. 216 Eagle Palace Suite olarak, sizlere en iyi hizmeti sunmak için çalışıyoruz. İster iş amaçlı seyahat ediyor olun, isterseniz tatil planları yapıyor olun, konforlu ve lüks bir konaklama deneyimi yaşamanızı sağlamak için buradayız. Sizleri ağırlamak için şimdiden sabırsızlanıyoruz.",
+  "location_description": "216 Eagle Palace Suite, E-5 otoyolu güzergahına yürüme mesafesi yakınlığında olduğundan bütün alternatif ulaşım ağları ile İstanbul'un tüm ilçelerine kolaylıkla ulaşım sağlama imkanı sunmaktadır. Sabiha Gökçen Havalimanı'na 10 km mesafede olup Metro ağını kullanarak 13 dk.' da kolaylıkla ulaşım sağlayabilirsiniz. Yaklaşık 1 km uzaklıktaki Soğanlık Metro durağından Pendik-Kadıköy Metro toplu ulaşım ağını kullanarak popüler bölgelere kolaylıkla erişebilirsiniz.",
+  "address": "Esentepe, Kocatepe Cd. No:16, 34870 Kartal/İstanbul",
+  "city": "İstanbul",
+  "district": "Kartal",
+  "neighborhood": "Esentepe",
+  "latitude": "40.90658419999999",
+  "longitude": "29.192253200000003",
+  "star_count": 4,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-eagle-palace",
+  "cover": "/uploads/216suites/hotels/216-eagle-palace/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-eagle-palace/hotel-01.webp",
+    "/uploads/216suites/hotels/216-eagle-palace/hotel-02.webp",
+    "/uploads/216suites/hotels/216-eagle-palace/hotel-03.webp",
+    "/uploads/216suites/hotels/216-eagle-palace/hotel-04.webp",
+    "/uploads/216suites/hotels/216-eagle-palace/hotel-05.webp",
+    "/uploads/216suites/hotels/216-eagle-palace/hotel-06.webp",
+    "/uploads/216suites/hotels/216-eagle-palace/hotel-07.webp"
+  ],
+  "rooms": [
+    "classi-c-room",
+    "premi-um-room",
+    "room-wi-th-jacuzzi",
+    "twin-room"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "slug": "216-hill",
+  "name": "216 HILL",
+  "owner_email": "pendikhillsuites@gmail.com",
+  "owner_name": "216 HILL Yetkilisi",
+  "short_description": "Pendik’in gözde semtlerinden biri olan Şeyhli’de konumlanan 216 Hill Suite, modern tasarımı ve huzurlu atmosferiyle misafirlerine eşsiz bir konaklama deneyimi sunuyor. Tesisimiz, Sabiha Gökçen Havalimanı’na yalnızca 6 dakikalık mesafede, Pendik Köprüsü’nün üst kısmında yer alıyor. Ulaşım kolaylığı sayesinde, özellikle iş seyahati yapanlar ve şehir dışından gelen misafirlerimiz için ideal bir lokasyon sağlıyor.",
+  "description": "Pendik’in gözde semtlerinden biri olan Şeyhli’de konumlanan 216 Hill Suite, modern tasarımı ve huzurlu atmosferiyle misafirlerine eşsiz bir konaklama deneyimi sunuyor. Tesisimiz, Sabiha Gökçen Havalimanı’na yalnızca 6 dakikalık mesafede, Pendik Köprüsü’nün üst kısmında yer alıyor. Ulaşım kolaylığı sayesinde, özellikle iş seyahati yapanlar ve şehir dışından gelen misafirlerimiz için ideal bir lokasyon sağlıyor.",
+  "location_description": "Pendik’in gözde semtlerinden biri olan Şeyhli’de konumlanan 216 Hill Suite, modern tasarımı ve huzurlu atmosferiyle misafirlerine eşsiz bir konaklama deneyimi sunuyor. Tesisimiz, Sabiha Gökçen Havalimanı’na yalnızca 6 dakikalık mesafede, Pendik Köprüsü’nün üst kısmında yer alıyor. Ulaşım kolaylığı sayesinde, özellikle iş seyahati yapanlar ve şehir dışından gelen misafirlerimiz için ideal bir lokasyon sağlıyor.",
+  "address": "Şeyhli, Akşemsettİn Caddesİ No:4, 34906 Pendik/İstanbul",
+  "city": "İstanbul",
+  "district": "Pendik",
+  "neighborhood": "Şeyhli",
+  "latitude": "40.906074700000005",
+  "longitude": "29.283502299999995",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-hill",
+  "cover": "/uploads/216suites/hotels/216-hill/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-hill/hotel-01.webp",
+    "/uploads/216suites/hotels/216-hill/hotel-02.webp",
+    "/uploads/216suites/hotels/216-hill/hotel-03.webp",
+    "/uploads/216suites/hotels/216-hill/hotel-04.webp",
+    "/uploads/216suites/hotels/216-hill/hotel-05.webp",
+    "/uploads/216suites/hotels/216-hill/hotel-06.webp",
+    "/uploads/216suites/hotels/216-hill/hotel-07.webp"
+  ],
+  "rooms": [
+    "double-room",
+    "junior-room"
+  ]
+}

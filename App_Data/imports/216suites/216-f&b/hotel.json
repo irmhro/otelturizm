@@ -1,0 +1,54 @@
+{
+  "slug": "216-f&b",
+  "name": "216 F&B",
+  "owner_email": "info@216suites.com",
+  "owner_name": "216 F&B Yetkilisi",
+  "short_description": "Tesisimiz, İstanbul'un en canlı ve merkezi bölgelerinden biri olan Kadıköy'de yer almaktadır. Marmaray İstasyonu'na ve Kadıköy Sahili'ne yakın konumu sayesinde, şehrin her köşesine kolayca ulaşılabilir. Ana cadde üzerinde bulunan tesisimiz, ulaşım açısından son derece elverişli olup, Avrupa Yakası'na geçişi oldukça kolaylaştıran bir lokasyondadır. Kadıköy’ün dinamik yaşamına adım attığınızda, çevredeki sosyal olanaklardan, alışveriş merkezlerine ve restoranlara kadar her şeye yakın olm",
+  "description": "Tesisimiz, İstanbul'un en canlı ve merkezi bölgelerinden biri olan Kadıköy'de yer almaktadır. Marmaray İstasyonu'na ve Kadıköy Sahili'ne yakın konumu sayesinde, şehrin her köşesine kolayca ulaşılabilir. Ana cadde üzerinde bulunan tesisimiz, ulaşım açısından son derece elverişli olup, Avrupa Yakası'na geçişi oldukça kolaylaştıran bir lokasyondadır. Kadıköy’ün dinamik yaşamına adım attığınızda, çevredeki sosyal olanaklardan, alışveriş merkezlerine ve restoranlara kadar her şeye yakın olmanın rahatlığını yaşayabilirsiniz. Ayrıca, Marmaray’ın sağladığı avantajlarla Avrupa Yakası’na hızlı ve pratik bir geçiş imkanı sunarak, İstanbul’u keşfetmek için mükemmel bir başlangıç noktasıdır. Tesisimiz, merkezi konumu ve ulaşım kolaylıklarıyla, hem iş seyahati hem de turistik amaçlı konaklamalar için ideal bir tercihtir.",
+  "location_description": "Tesisimiz, İstanbul'un en canlı ve merkezi bölgelerinden biri olan Kadıköy'de yer almaktadır. Marmaray İstasyonu'na ve Kadıköy Sahili'ne yakın konumu sayesinde, şehrin her köşesine kolayca ulaşılabilir. Ana cadde üzerinde bulunan tesisimiz, ulaşım açısından son derece elverişli olup, Avrupa Yakası'na geçişi oldukça kolaylaştıran bir lokasyondadır. Kadıköy’ün dinamik yaşamına adım attığınızda, çevredeki sosyal olanaklardan, alışveriş merkezlerine ve restoranlara kadar her şeye yakın olmanın rahatlığını yaşayabilirsiniz. Ayrıca, Marmaray’ın sağladığı avantajlarla Avrupa Yakası’na hızlı ve pratik bir geçiş imkanı sunarak, İstanbul’u keşfetmek için mükemmel bir başlangıç noktasıdır. Tesisimiz, merkezi konumu ve ulaşım kolaylıklarıyla, hem iş seyahati hem de turistik amaçlı konaklamalar için ideal bir tercihtir.",
+  "address": "Osmanağa, Kuşdili Cd. No:71, 34734 Kadıköy/İstanbul",
+  "city": "İstanbul",
+  "district": "Kadıköy",
+  "neighborhood": "Osmanağa",
+  "latitude": "40.9886507",
+  "longitude": "29.033211399999992",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-f&b",
+  "cover": "/uploads/216suites/hotels/216-f&b/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-f&b/hotel-01.webp",
+    "/uploads/216suites/hotels/216-f&b/hotel-02.webp",
+    "/uploads/216suites/hotels/216-f&b/hotel-03.webp",
+    "/uploads/216suites/hotels/216-f&b/hotel-04.webp",
+    "/uploads/216suites/hotels/216-f&b/hotel-05.webp",
+    "/uploads/216suites/hotels/216-f&b/hotel-06.webp",
+    "/uploads/216suites/hotels/216-f&b/hotel-07.webp"
+  ],
+  "rooms": [
+    "double-room",
+    "jakuzi-room",
+    "junior-room"
+  ]
+}

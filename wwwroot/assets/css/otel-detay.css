@@ -173,10 +173,11 @@
 .gallery-main-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
     display: block;
     transform: none;
+    background: #0b1220;
 }
 
 .gallery-thumb img {
@@ -231,23 +232,31 @@
 .gallery-lightbox {
     position: fixed;
     inset: 0;
-    background: rgba(2, 6, 23, 0.92);
+    background: rgba(2, 6, 23, 0.38);
+    backdrop-filter: blur(26px) saturate(150%);
+    -webkit-backdrop-filter: blur(26px) saturate(150%);
     z-index: 1900;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 20px;
+    justify-content: center;
+    padding: 24px;
 }
 
 .gallery-lightbox-figure {
     margin: 0;
-    width: 100%;
-    height: min(86vh, 820px);
+    width: min(1120px, 100%);
+    height: min(88vh, 860px);
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    gap: 12px;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    gap: 14px;
     justify-items: center;
+    padding: 22px;
+    border-radius: 28px;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.62) 0%, rgba(15, 23, 42, 0.78) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 32px 80px rgba(2, 6, 23, 0.42);
+    backdrop-filter: blur(26px) saturate(160%);
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
 }
 
 .gallery-lightbox-figure img {
@@ -255,6 +264,9 @@
     height: 100%;
     object-fit: contain;
     border-radius: 18px;
+    background: rgba(15, 23, 42, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 26px 70px rgba(2, 6, 23, 0.34);
 }
 
 .gallery-lightbox-figure figcaption {
@@ -265,10 +277,57 @@
 .gallery-lightbox-close,
 .gallery-lightbox-nav {
     border: 1px solid rgba(226, 232, 240, 0.35);
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(15, 23, 42, 0.42);
     color: #f8fafc;
     border-radius: 999px;
     cursor: pointer;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.gallery-lightbox-thumbs {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 2px 4px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.gallery-lightbox-thumbs::-webkit-scrollbar {
+    display: none;
+}
+
+.gallery-lightbox-thumb {
+    flex: 0 0 110px;
+    height: 78px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    opacity: 0.8;
+    padding: 0;
+    scroll-snap-align: center;
+    transition: transform 0.18s ease, opacity 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.gallery-lightbox-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.gallery-lightbox-thumb:hover,
+.gallery-lightbox-thumb.active {
+    opacity: 1;
+    transform: translateY(-1px);
+    border-color: rgba(96, 165, 250, 0.92);
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.18);
 }
 
 .gallery-lightbox-close {
@@ -282,6 +341,20 @@
 .gallery-lightbox-nav {
     width: 46px;
     height: 46px;
+}
+
+.gallery-lightbox-nav.prev {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.gallery-lightbox-nav.next {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .detail-header {
@@ -1354,19 +1427,22 @@
     transform: translateX(-25%);
 }
 
-.select-room-btn.is-picked-feedback {
+.select-room-btn.is-picked-feedback,
+.select-room-btn.is-selected-room {
     color: #065f46;
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(37, 99, 235, 0.08));
     box-shadow: 0 14px 30px rgba(16, 185, 129, 0.18);
     transform: translateY(-1px);
 }
 
-.select-room-btn.is-picked-feedback::after {
+.select-room-btn.is-picked-feedback::after,
+.select-room-btn.is-selected-room::after {
     opacity: 1;
     animation: roomPickSheen 1.2s ease-in-out infinite;
 }
 
-.select-room-btn.is-picked-feedback::before {
+.select-room-btn.is-picked-feedback::before,
+.select-room-btn.is-selected-room::before {
     content: "✓";
     position: absolute;
     left: 12px;
@@ -2448,13 +2524,17 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-/* Ödeme planı + check-in/out: alt alta (masaüstü) */
+/* Ödeme planı + check-in/out: masaüstünde yan yana, mobilde alt alta */
 .otel-detail-template-v41 .booking-advanced-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .booking-advanced-grid > * {
     min-width: 0;
+}
+
+.booking-advanced-grid label > span {
+    white-space: nowrap;
 }
 
 /* Çoklu oda + gün gün fiyat (rezervasyon yan kartı) */
@@ -2821,7 +2901,7 @@
     }
 
     .booking-advanced-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .booking-price-head strong {
@@ -2982,7 +3062,7 @@
     }
 
     .room-gallery-thumbs {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        display: flex;
     }
 
     .amenity-item-lux {
@@ -3312,9 +3392,11 @@ body.room-gallery-open {
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(circle at top, rgba(59, 130, 246, 0.16), transparent 32%),
-        linear-gradient(180deg, rgba(2, 6, 23, 0.82) 0%, rgba(2, 6, 23, 0.9) 100%);
-    backdrop-filter: blur(18px) saturate(140%);
+        radial-gradient(circle at 18% 12%, rgba(59, 130, 246, 0.18), transparent 40%),
+        radial-gradient(circle at 78% 82%, rgba(236, 72, 153, 0.10), transparent 42%),
+        linear-gradient(180deg, rgba(2, 6, 23, 0.36) 0%, rgba(2, 6, 23, 0.52) 100%);
+    backdrop-filter: blur(28px) saturate(150%);
+    -webkit-backdrop-filter: blur(28px) saturate(150%);
 }
 
 .room-gallery-dialog {
@@ -3325,10 +3407,45 @@ body.room-gallery-open {
     width: min(1040px, calc(100% - 32px));
     padding: 24px;
     border-radius: 28px;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.82) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 32px 80px rgba(2, 6, 23, 0.42);
-    backdrop-filter: blur(22px) saturate(140%);
+    background:
+        radial-gradient(circle at 22% 20%, rgba(255, 255, 255, 0.10), transparent 38%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.36) 0%, rgba(15, 23, 42, 0.56) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 34px 90px rgba(2, 6, 23, 0.40);
+    backdrop-filter: blur(26px) saturate(160%);
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
+}
+
+/* Slayt hissi: önceki/sonraki görselleri blur "ambient" olarak arkada göster */
+.room-gallery-dialog::before,
+.room-gallery-dialog::after {
+    content: "";
+    position: absolute;
+    inset: 18px;
+    border-radius: 24px;
+    pointer-events: none;
+    opacity: 0.28;
+    filter: blur(22px) saturate(140%);
+    transform: scale(1.04);
+    background-size: cover;
+    background-position: center;
+    mix-blend-mode: screen;
+    z-index: 0;
+}
+
+.room-gallery-dialog::before {
+    background-image: var(--room-gallery-prev);
+    clip-path: inset(0 52% 0 0 round 24px);
+}
+
+.room-gallery-dialog::after {
+    background-image: var(--room-gallery-next);
+    clip-path: inset(0 0 0 52% round 24px);
+}
+
+.room-gallery-dialog > * {
+    position: relative;
+    z-index: 1;
 }
 
 .room-gallery-close,
@@ -3385,14 +3502,24 @@ body.room-gallery-open {
 }
 
 .room-gallery-thumbs {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    display: flex;
     gap: 10px;
     margin-top: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 2px 2px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.room-gallery-thumbs::-webkit-scrollbar {
+    display: none;
 }
 
 .room-gallery-thumb {
-    height: 84px;
+    flex: 0 0 110px;
+    height: 78px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     overflow: hidden;
@@ -3401,6 +3528,7 @@ body.room-gallery-open {
     cursor: pointer;
     opacity: 0.78;
     transition: transform 0.18s ease, opacity 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    scroll-snap-align: start;
 }
 
 .room-gallery-thumb.active {
@@ -4146,13 +4274,23 @@ body.room-gallery-open {
 }
 
 .room-thumb-strip {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 6px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.room-thumb-strip::-webkit-scrollbar {
+    display: none;
 }
 
 .room-thumb-item {
-    height: 38px;
+    flex: 0 0 52px;
+    height: 40px;
     border: 1px solid rgba(148, 163, 184, 0.24);
     border-radius: 12px;
     overflow: hidden;
@@ -4161,6 +4299,7 @@ body.room-gallery-open {
     cursor: pointer;
     opacity: 0.82;
     transition: transform 0.18s ease, opacity 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    scroll-snap-align: start;
 }
 
 .room-thumb-item:hover,
@@ -4203,7 +4342,7 @@ body.room-gallery-open {
     }
 
     .room-thumb-strip {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
     }
 }
 
@@ -4780,6 +4919,50 @@ body.room-gallery-open {
 .otel-detail-template-v41 .detail-long-copy {
     line-height: 1.6;
     color: var(--text-gray);
+}
+
+/* Otel açıklaması: masaüstünde 5 satır + "Tümünü gör" */
+.hotel-about-text {
+    margin: 0;
+}
+
+@media (min-width: 900px) {
+    .hotel-about-text.is-clamped:not(.is-expanded) {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+        overflow: hidden;
+    }
+
+    .hotel-about-toggle {
+        margin-top: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(37, 99, 235, 0.20);
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.10), rgba(255, 255, 255, 0.92));
+        color: #0b3d8f;
+        font-weight: 900;
+        cursor: pointer;
+        box-shadow: 0 12px 26px rgba(37, 99, 235, 0.12);
+    }
+
+    .hotel-about-toggle:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 34px rgba(37, 99, 235, 0.16);
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(255, 255, 255, 0.95));
+    }
+
+    .hotel-about-toggle::after {
+        content: "›";
+        font-size: 18px;
+        line-height: 1;
+        margin-left: 2px;
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
 }
 
 .otel-detail-template-v41 .featured-amenities-card {

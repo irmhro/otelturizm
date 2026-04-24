@@ -84,14 +84,24 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 
     private static async Task<List<QueuedEmailItem>> LoadPendingEmailsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
-        const string sql = """
-            SELECT TOP (10) id, alici_eposta, konu, gonderilen_icerik, COALESCE(gonderme_denemesi, 1), COALESCE(maksimum_deneme, 3), ekler_json
-            FROM bildirim_loglari
-            WHERE tur = 'E-posta'
-              AND durum = 'Beklemede'
-              AND alici_eposta IS NOT NULL
-            ORDER BY olusturulma_tarihi ASC;
-            """;
+        var hasAttachmentsColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "ekler_json", cancellationToken);
+        var sql = hasAttachmentsColumn
+            ? """
+                SELECT TOP (10) id, alici_eposta, konu, gonderilen_icerik, COALESCE(gonderme_denemesi, 1), COALESCE(maksimum_deneme, 3), ekler_json
+                FROM bildirim_loglari
+                WHERE tur = 'E-posta'
+                  AND durum = 'Beklemede'
+                  AND alici_eposta IS NOT NULL
+                ORDER BY olusturulma_tarihi ASC;
+                """
+            : """
+                SELECT TOP (10) id, alici_eposta, konu, gonderilen_icerik, COALESCE(gonderme_denemesi, 1), COALESCE(maksimum_deneme, 3), NULL AS ekler_json
+                FROM bildirim_loglari
+                WHERE tur = 'E-posta'
+                  AND durum = 'Beklemede'
+                  AND alici_eposta IS NOT NULL
+                ORDER BY olusturulma_tarihi ASC;
+                """;
 
         var items = new List<QueuedEmailItem>();
         await using var command = new SqlCommand(sql, connection);
@@ -111,6 +121,15 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         }
 
         return items;
+    }
+
+    private static async Task<bool> ColumnExistsAsync(SqlConnection connection, string tableName, string columnName, CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand("SELECT COL_LENGTH(@tableName, @columnName);", connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@columnName", columnName);
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
+        return scalar is not null && scalar != DBNull.Value;
     }
 
     private static async Task<SmtpConfig?> LoadActiveSmtpAsync(SqlConnection connection, CancellationToken cancellationToken)

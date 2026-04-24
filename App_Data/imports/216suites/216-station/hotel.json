@@ -1,0 +1,59 @@
+{
+  "slug": "216-station",
+  "name": "216 STATİON",
+  "owner_email": "216station@gmail.com",
+  "owner_name": "216 STATİON Yetkilisi",
+  "short_description": "216 Station Suite, İstanbul’un Gebze Darıca bölgesinde, E-5 Otoyolu üzerinde yer alan modern ve konforlu bir konaklama tesisidir. Tesisimiz, şehrin gürültüsünden uzak, ancak merkezi bir konumda yer alması sayesinde hem iş hem de tatil amaçlı konaklamalar için mükemmel bir tercih sunmaktadır. 216 Station Suite, Gebze Marmaray İstasyonu’na yalnızca 5 dakika mesafededir. Ayrıca, Eskihisar Feribot İskelesi'ne sadece 20 dakika uzaklıkta bulunan tesisimiz, deniz yoluyla Yalova ve Bursa gibi",
+  "description": "216 Station Suite, İstanbul’un Gebze Darıca bölgesinde, E-5 Otoyolu üzerinde yer alan modern ve konforlu bir konaklama tesisidir. Tesisimiz, şehrin gürültüsünden uzak, ancak merkezi bir konumda yer alması sayesinde hem iş hem de tatil amaçlı konaklamalar için mükemmel bir tercih sunmaktadır. 216 Station Suite, Gebze Marmaray İstasyonu’na yalnızca 5 dakika mesafededir. Ayrıca, Eskihisar Feribot İskelesi'ne sadece 20 dakika uzaklıkta bulunan tesisimiz, deniz yoluyla Yalova ve Bursa gibi bölgelere kolay erişim imkanı sağlamaktadır. Bu da 216 Station Suite'i deniz yoluyla seyahat etmeyi tercih eden misafirler için ideal bir konaklama noktası yapmaktadır. Tesisimiz, aynı zamanda Anadolu Sağlık Merkezi’ne sadece 7 dakika mesafede olup, misafirlerimiz için de büyük bir avantaj sağlamaktadır. Modern olanaklarla donatılmış odalarımız, yüksek kaliteli hizmet anlayışımız ve ulaşım kolaylıklarımızla 216 Station Suite, hem iş hem de tatil amaçlı seyahat eden misafirlerimize konforlu bir deneyim sunmaktadır.",
+  "location_description": "216 Station Suite, İstanbul’un Gebze Darıca bölgesinde, E-5 Otoyolu üzerinde yer alan modern ve konforlu bir konaklama tesisidir. Tesisimiz, şehrin gürültüsünden uzak, ancak merkezi bir konumda yer alması sayesinde hem iş hem de tatil amaçlı konaklamalar için mükemmel bir tercih sunmaktadır. 216 Station Suite, Gebze Marmaray İstasyonu’na yalnızca 5 dakika mesafededir. Ayrıca, Eskihisar Feribot İskelesi'ne sadece 20 dakika uzaklıkta bulunan tesisimiz, deniz yoluyla Yalova ve Bursa gibi bölgelere kolay erişim imkanı sağlamaktadır. Bu da 216 Station Suite'i deniz yoluyla seyahat etmeyi tercih eden misafirler için ideal bir konaklama noktası yapmaktadır. Tesisimiz, aynı zamanda Anadolu Sağlık Merkezi’ne sadece 7 dakika mesafede olup, misafirlerimiz için de büyük bir avantaj sağlamaktadır. Modern olanaklarla donatılmış odalarımız, yüksek kaliteli hizmet anlayışımız ve ulaşım kolaylıklarımızla 216 Station Suite, hem iş hem de tatil amaçlı seyahat eden misafirlerimize konforlu bir deneyim sunmaktadır.",
+  "address": "İstasyon Mahallesi 1456 Sokak No:64 Gebze, Darıca",
+  "city": "İstanbul",
+  "district": "Merkez",
+  "neighborhood": "İstasyon Mahallesi 1456 Sokak No:64 Gebze",
+  "latitude": "40.790592471262435",
+  "longitude": "29.40191281321209",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-station",
+  "cover": "/uploads/216suites/hotels/216-station/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-station/hotel-01.webp",
+    "/uploads/216suites/hotels/216-station/hotel-02.webp",
+    "/uploads/216suites/hotels/216-station/hotel-03.webp",
+    "/uploads/216suites/hotels/216-station/hotel-04.webp",
+    "/uploads/216suites/hotels/216-station/hotel-05.webp",
+    "/uploads/216suites/hotels/216-station/hotel-06.webp",
+    "/uploads/216suites/hotels/216-station/hotel-07.webp"
+  ],
+  "rooms": [
+    "double-room",
+    "deluxe-room",
+    "twin-room",
+    "jakuzi-room",
+    "quad-room",
+    "triple-room-109",
+    "2-1-dai-re-esyali",
+    "1-1-dai-re-esyali"
+  ]
+}

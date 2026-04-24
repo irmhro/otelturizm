@@ -1,0 +1,25 @@
+{
+  "source_room_id": 72,
+  "slug": "triple-room-109",
+  "name": "TRIPLE ROOM (109)",
+  "category": "Standart",
+  "capacity_total": 0,
+  "capacity_adult": 0,
+  "capacity_child": 0,
+  "nightly_price": "0.0000",
+  "summary": "TRIPLE ROOM (109)",
+  "size_sqm": null,
+  "bed_type": "1 YATAK 1 L KOLTUK",
+  "bathroom": "",
+  "general": "",
+  "conditions": [
+    "ÜCRETSİZ İptal",
+    "Kredi Kartı Gerekmiyor"
+  ],
+  "features": [
+    "1 YATAK 1 L KOLTUK",
+    "ÜCRETSİZ İptal Kredi Kartı Gerekmiyor"
+  ],
+  "cover": null,
+  "gallery": []
+}

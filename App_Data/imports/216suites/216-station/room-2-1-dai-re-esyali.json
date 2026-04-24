@@ -1,0 +1,25 @@
+{
+  "source_room_id": 73,
+  "slug": "2-1-dai-re-esyali",
+  "name": "2+1 DAİRE EŞYALI",
+  "category": "Standart",
+  "capacity_total": 0,
+  "capacity_adult": 0,
+  "capacity_child": 0,
+  "nightly_price": "0.0000",
+  "summary": "2+1 DAİRE EŞYALI",
+  "size_sqm": null,
+  "bed_type": "4 YATAK",
+  "bathroom": "",
+  "general": "",
+  "conditions": [
+    "ÜCRETSİZ İptal",
+    "Kredi Kartı Gerekmiyor"
+  ],
+  "features": [
+    "4 YATAK",
+    "ÜCRETSİZ İptal Kredi Kartı Gerekmiyor"
+  ],
+  "cover": null,
+  "gallery": []
+}

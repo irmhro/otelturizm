@@ -1,0 +1,56 @@
+{
+  "slug": "216-ruby",
+  "name": "216 RUBY",
+  "owner_email": "216rubysuite@gmail.com",
+  "owner_name": "216 RUBY Yetkilisi",
+  "short_description": "216 Ruby Suite'in tüm konaklama birimleri aydınlık ve modern bir dizayna sahiptir. Tüm Odalarımız şehir manzaralı, Parke zemine sahip odaların tamamında merkezi ısıtma ve soğutma sitemi bulunmaktadır. Elektrikli su ısıtıcısı ve uydu yayını ve Smart T",
+  "description": "216 Ruby Suite'in tüm konaklama birimleri aydınlık ve modern bir dizayna sahiptir. Tüm Odalarımız şehir manzaralı, Parke zemine sahip odaların tamamında merkezi ısıtma ve soğutma sitemi bulunmaktadır. Elektrikli su ısıtıcısı ve uydu yayını ve Smart T",
+  "location_description": "216 Ruby Suite'in tüm konaklama birimleri aydınlık ve modern bir dizayna sahiptir. Tüm Odalarımız şehir manzaralı, Parke zemine sahip odaların tamamında merkezi ısıtma ve soğutma sitemi bulunmaktadır. Elektrikli su ısıtıcısı ve uydu yayını ve Smart T",
+  "address": "Zümrütevler, Okul Sk. No:3, 34852 Maltepe/İstanbul",
+  "city": "İstanbul",
+  "district": "Maltepe",
+  "neighborhood": "Zümrütevler",
+  "latitude": "40.93299117124172",
+  "longitude": "29.141006313216042",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-ruby",
+  "cover": "/uploads/216suites/hotels/216-ruby/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-ruby/hotel-01.webp",
+    "/uploads/216suites/hotels/216-ruby/hotel-02.webp",
+    "/uploads/216suites/hotels/216-ruby/hotel-03.webp",
+    "/uploads/216suites/hotels/216-ruby/hotel-04.webp",
+    "/uploads/216suites/hotels/216-ruby/hotel-05.webp",
+    "/uploads/216suites/hotels/216-ruby/hotel-06.webp",
+    "/uploads/216suites/hotels/216-ruby/hotel-07.webp"
+  ],
+  "rooms": [
+    "classi-c-room",
+    "premi-um-room",
+    "classi-c-twin-room",
+    "terrace-room",
+    "relax-room-wi-th-jacuzzi"
+  ]
+}

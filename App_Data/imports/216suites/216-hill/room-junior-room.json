@@ -1,0 +1,46 @@
+{
+  "source_room_id": 12,
+  "slug": "junior-room",
+  "name": "JUNIOR ROOM",
+  "category": "Standart",
+  "capacity_total": 3,
+  "capacity_adult": 3,
+  "capacity_child": 0,
+  "nightly_price": "3330.0000",
+  "summary": "Gardırop, Oturma grubu, Kettle, Akıllı TV, Klima",
+  "size_sqm": 40,
+  "bed_type": "1 adet Ortopedik Double Yatak, 1 adet Ortopedik Single Yatak",
+  "bathroom": "Duş, havlu seti, saç kurutma makinası, kişiye özel bakım seti",
+  "general": "Gardırop, Oturma grubu, Kettle, Akıllı TV, Klima",
+  "conditions": [
+    "ÜCRETSİZ İptal",
+    "Kredi Kartı Gerekmiyor"
+  ],
+  "features": [
+    "1 adet Ortopedik Double Yatak",
+    "1 adet Ortopedik Single Yatak",
+    "Duş",
+    "havlu seti",
+    "saç kurutma makinası",
+    "kişiye özel bakım seti",
+    "Gardırop",
+    "Oturma grubu",
+    "Kettle",
+    "Akıllı TV",
+    "Klima",
+    "ÜCRETSİZ İptal Kredi Kartı Gerekmiyor"
+  ],
+  "cover": "/uploads/216suites/rooms/216-hill/junior-room/room-01.webp",
+  "gallery": [
+    "/uploads/216suites/rooms/216-hill/junior-room/room-01.webp",
+    "/uploads/216suites/rooms/216-hill/junior-room/room-02.webp",
+    "/uploads/216suites/rooms/216-hill/junior-room/room-03.webp",
+    "/uploads/216suites/rooms/216-hill/junior-room/room-04.webp",
+    "/uploads/216suites/rooms/216-hill/junior-room/room-05.webp",
+    "/uploads/216suites/rooms/216-hill/junior-room/room-06.webp",
+    "/uploads/216suites/rooms/216-hill/junior-room/room-07.webp",
+    "/uploads/216suites/rooms/216-hill/junior-room/room-08.webp",
+    "/uploads/216suites/rooms/216-hill/junior-room/room-09.webp",
+    "/uploads/216suites/rooms/216-hill/junior-room/room-10.webp"
+  ]
+}

@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Caching.Memory;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
 using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
@@ -18,11 +19,13 @@ public class HotelService : IHotelService
 {
     private readonly IConfiguration _configuration;
     private readonly IHotelPricingReadService _hotelPricingReadService;
+    private readonly IMemoryCache _cache;
 
-    public HotelService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService)
+    public HotelService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService, IMemoryCache cache)
     {
         _configuration = configuration;
         _hotelPricingReadService = hotelPricingReadService;
+        _cache = cache;
     }
 
     // Simple local weather placeholder — replace with real API integration (OpenWeatherMap, etc.)
@@ -56,7 +59,23 @@ public class HotelService : IHotelService
         const decimal homepageVatPercent = 10m;
         const decimal homepageAccommodationPercent = 2m;
 
-        const string hotelSql = """
+        var hasDiscountTable = await HotelTableExistsAsync(connection, "fiyat_indirimleri", cancellationToken);
+        var discountSelect = hasDiscountTable
+            ? """
+                COALESCE(fi.indirim_adi, '') AS indirim_adi,
+                COALESCE(fi.kisa_aciklama, '') AS indirim_aciklama,
+                COALESCE(fi.gorsel_url, '') AS indirim_gorsel_url,
+                """
+            : """
+                '' AS indirim_adi,
+                '' AS indirim_aciklama,
+                '' AS indirim_gorsel_url,
+                """;
+        var discountJoin = hasDiscountTable
+            ? "LEFT JOIN fiyat_indirimleri fi ON fi.id = pf.indirim_id AND fi.aktif_mi = 1"
+            : string.Empty;
+
+        var hotelSql = $"""
             SELECT TOP (18)
                 o.id,
                 o.otel_kodu,
@@ -75,9 +94,7 @@ public class HotelService : IHotelService
                 pf.min_normal_fiyat,
                 pf.min_indirimli_fiyat,
                 pf.indirim_id,
-                COALESCE(fi.indirim_adi, '') AS indirim_adi,
-                COALESCE(fi.kisa_aciklama, '') AS indirim_aciklama,
-                COALESCE(fi.gorsel_url, '') AS indirim_gorsel_url,
+                {discountSelect}
                 oz.ozellikler
             FROM oteller o
             LEFT JOIN (
@@ -150,7 +167,7 @@ public class HotelService : IHotelService
                 ) hotel_prices
                 WHERE hotel_prices.rn = 1
             ) pf ON pf.otel_id = o.id
-            LEFT JOIN fiyat_indirimleri fi ON fi.id = pf.indirim_id AND fi.aktif_mi = 1
+            {discountJoin}
             LEFT JOIN (
                 SELECT g1.otel_id, g1.gorsel_url
                 FROM (
@@ -623,7 +640,114 @@ public class HotelService : IHotelService
 
     public async Task<HotelDetailPageViewModel?> GetHotelDetailPageAsync(string slug, CancellationToken cancellationToken = default)
     {
-        return await GetHotelDetailPageForSqlServerAsync(slug, cancellationToken);
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            return null;
+        }
+
+        var cacheKey = $"hotel-detail:v1:{slug.Trim().ToLowerInvariant()}";
+        var cached = await _cache.GetOrCreateAsync(cacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+            entry.SlidingExpiration = TimeSpan.FromSeconds(30);
+            return await GetHotelDetailPageForSqlServerAsync(slug, cancellationToken);
+        });
+
+        return cached is null ? null : CloneHotelDetail(cached);
+    }
+
+    private static HotelDetailPageViewModel CloneHotelDetail(HotelDetailPageViewModel src)
+    {
+        return new HotelDetailPageViewModel
+        {
+            Id = src.Id,
+            Slug = src.Slug,
+            HotelCode = src.HotelCode,
+            Name = src.Name,
+            City = src.City,
+            District = src.District,
+            Address = src.Address,
+            ShortDescription = src.ShortDescription,
+            LongDescription = src.LongDescription,
+            LocationDescription = src.LocationDescription,
+            StarCount = src.StarCount,
+            Rating = src.Rating,
+            RatingText = src.RatingText,
+            ReviewCount = src.ReviewCount,
+            ReviewLocationScore = src.ReviewLocationScore,
+            ReviewRoomScore = src.ReviewRoomScore,
+            ReviewComfortScore = src.ReviewComfortScore,
+            ReviewValueScore = src.ReviewValueScore,
+            ReviewStaffScore = src.ReviewStaffScore,
+            CheckInTime = src.CheckInTime,
+            CheckOutTime = src.CheckOutTime,
+            Latitude = src.Latitude,
+            Longitude = src.Longitude,
+            LowestRoomPrice = src.LowestRoomPrice,
+            TaxDisplayVatPercent = src.TaxDisplayVatPercent,
+            TaxDisplayAccommodationPercent = src.TaxDisplayAccommodationPercent,
+            MainImageUrl = src.MainImageUrl,
+            IsFavorite = src.IsFavorite,
+            IsLoggedInUser = false,
+            HasCompletedReservationAtHotel = false,
+            ConversationInfoMessage = string.Empty,
+            ShouldResumeDraftOnLoad = false,
+            ReservationForm = new(),
+            ActiveDraft = null,
+            ProfilePrompt = new(),
+            GalleryImages = new List<string>(src.GalleryImages),
+            Amenities = src.Amenities.Select(x => new HotelAmenityViewModel
+            {
+                Name = x.Name,
+                IconClass = x.IconClass
+            }).ToList(),
+            Rooms = src.Rooms.Select(r => new HotelRoomViewModel
+            {
+                RoomTypeId = r.RoomTypeId,
+                Name = r.Name,
+                Specs = r.Specs,
+                BedType = r.BedType,
+                SquareMeter = r.SquareMeter,
+                DetailDescription = r.DetailDescription,
+                Price = r.Price,
+                BasePrice = r.BasePrice,
+                DiscountPrice = r.DiscountPrice,
+                DiscountId = r.DiscountId,
+                DiscountName = r.DiscountName,
+                DiscountShortDescription = r.DiscountShortDescription,
+                DiscountImageUrl = r.DiscountImageUrl,
+                MaxGuestCount = r.MaxGuestCount,
+                MaxAdultCount = r.MaxAdultCount,
+                MaxChildCount = r.MaxChildCount,
+                ImageUrl = r.ImageUrl,
+                GalleryImages = new List<string>(r.GalleryImages),
+                Features = r.Features.Select(f => new HotelRoomFeatureViewModel
+                {
+                    Name = f.Name,
+                    IconClass = f.IconClass
+                }).ToList(),
+                CancellationText = r.CancellationText
+            }).ToList(),
+            Reviews = src.Reviews.Select(x => new HotelReviewViewModel
+            {
+                Avatar = x.Avatar,
+                Name = x.Name,
+                DateText = x.DateText,
+                Score = x.Score,
+                Text = x.Text,
+                TravelProfile = x.TravelProfile,
+                SatisfactionLabel = x.SatisfactionLabel
+            }).ToList(),
+            SimilarHotels = src.SimilarHotels.Select(x => new HotelSimilarCardViewModel
+            {
+                Name = x.Name,
+                PriceText = x.PriceText,
+                RatingText = x.RatingText,
+                Slug = x.Slug,
+                ImageUrl = x.ImageUrl
+            }).ToList(),
+            Weather = src.Weather
+        };
     }
 
     private async Task<HotelListingPageViewModel> GetHotelListingPageForSqlServerAsync(string? searchTerm, string? campaignTag, string? campaignSlug, int page, CancellationToken cancellationToken, bool allowFuzzyFallback = true)
@@ -662,6 +786,22 @@ public class HotelService : IHotelService
         var normalizedHotelNameSql = BuildSearchNormalizationSql("o.otel_adi");
         var normalizedCompositeSql = BuildSearchNormalizationSql("CONCAT(o.mahalle, ' ', o.ilce, ' ', o.sehir)");
 
+        var hasDiscountTable = await HotelTableExistsAsync(connection, "fiyat_indirimleri", cancellationToken);
+        var discountSelect = hasDiscountTable
+            ? """
+                COALESCE(fi.indirim_adi, '') AS indirim_adi,
+                COALESCE(fi.kisa_aciklama, '') AS indirim_aciklama,
+                COALESCE(fi.gorsel_url, '') AS indirim_gorsel_url,
+                """
+            : """
+                '' AS indirim_adi,
+                '' AS indirim_aciklama,
+                '' AS indirim_gorsel_url,
+                """;
+        var discountJoin = hasDiscountTable
+            ? "LEFT JOIN fiyat_indirimleri fi ON fi.id = pf.indirim_id AND fi.aktif_mi = 1"
+            : string.Empty;
+
         var sql = $"""
             SELECT
                 o.id,
@@ -684,9 +824,7 @@ public class HotelService : IHotelService
                 pf.min_normal_fiyat,
                 pf.min_indirimli_fiyat,
                 pf.indirim_id,
-                COALESCE(fi.indirim_adi, '') AS indirim_adi,
-                COALESCE(fi.kisa_aciklama, '') AS indirim_aciklama,
-                COALESCE(fi.gorsel_url, '') AS indirim_gorsel_url,
+                {discountSelect}
                 oz.ozellikler,
                 COALESCE(kc.kampanya_adlari, '') AS kampanya_adlari,
                 COALESCE(kc.kampanya_sluglari, '') AS kampanya_sluglari,
@@ -762,7 +900,7 @@ public class HotelService : IHotelService
                 ) hotel_prices
                 WHERE hotel_prices.rn = 1
             ) pf ON pf.otel_id = o.id
-            LEFT JOIN fiyat_indirimleri fi ON fi.id = pf.indirim_id AND fi.aktif_mi = 1
+            {discountJoin}
             LEFT JOIN (
                 SELECT g1.otel_id, g1.gorsel_url
                 FROM (
@@ -1729,6 +1867,11 @@ public class HotelService : IHotelService
         IReadOnlyCollection<long> discountIds,
         CancellationToken cancellationToken)
     {
+        if (!await HotelTableExistsAsync(connection, "fiyat_indirimleri", cancellationToken))
+        {
+            return new Dictionary<long, (string, string?, string?)>();
+        }
+
         var ids = discountIds.Where(static id => id > 0).Distinct().ToList();
         if (ids.Count == 0)
         {

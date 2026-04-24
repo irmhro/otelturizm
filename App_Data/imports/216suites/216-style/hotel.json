@@ -1,0 +1,53 @@
+{
+  "slug": "216-style",
+  "name": "216 STYLE",
+  "owner_email": "216stylesuite@gmail.com",
+  "owner_name": "216 STYLE Yetkilisi",
+  "short_description": "216 Style Suite, İstanbul’un en prestijli ve merkezi bölgelerinden biri olan Kadıköy'de, Marmaray Boğa Heykeli'ne yakın bir konumda yer almaktadır. Fenerbahçe Stadyumu'nun karşısında bulunan tesisimiz, şehri keşfetmek isteyenler için mükemmel bir lokasyonda konforlu bir konaklama deneyimi sunmaktadır. Tesisimiz, zarif ve modern tasarıma sahip odalarıyla, misafirlerine lüks bir konaklama imkânı sağlamaktadır. Balkonlu odalarımız, şehri yüksek bir noktadan izlerken keyifli anlar yaşamanı",
+  "description": "216 Style Suite, İstanbul’un en prestijli ve merkezi bölgelerinden biri olan Kadıköy'de, Marmaray Boğa Heykeli'ne yakın bir konumda yer almaktadır. Fenerbahçe Stadyumu'nun karşısında bulunan tesisimiz, şehri keşfetmek isteyenler için mükemmel bir lokasyonda konforlu bir konaklama deneyimi sunmaktadır. Tesisimiz, zarif ve modern tasarıma sahip odalarıyla, misafirlerine lüks bir konaklama imkânı sağlamaktadır. Balkonlu odalarımız, şehri yüksek bir noktadan izlerken keyifli anlar yaşamanıza olanak tanır. Her detayda şıklığı ve zarafeti bir araya getiren 216 Style Suite, hem iş hem de tatil amaçlı konaklamalar için ideal bir tercihtir. Tesisimiz, Fenerbahçe Stadyumu'na ve çevresindeki sosyal olanaklara olan yakınlığı ile İstanbul’un dinamik yaşamına kolay erişim sağlar. Ayrıca, Marmaray İstasyonu'na da oldukça yakın mesafededir, bu sayede İstanbul'un diğer bölgelerine ulaşım oldukça pratik hale gelmektedir. 216 Style Suite, şıklığı, konforu ve merkezi konumu ile konuklarına unutulmaz bir konaklama deneyimi vaat etmektedir.",
+  "location_description": "216 Style Suite, İstanbul’un en prestijli ve merkezi bölgelerinden biri olan Kadıköy'de, Marmaray Boğa Heykeli'ne yakın bir konumda yer almaktadır. Fenerbahçe Stadyumu'nun karşısında bulunan tesisimiz, şehri keşfetmek isteyenler için mükemmel bir lokasyonda konforlu bir konaklama deneyimi sunmaktadır. Tesisimiz, zarif ve modern tasarıma sahip odalarıyla, misafirlerine lüks bir konaklama imkânı sağlamaktadır. Balkonlu odalarımız, şehri yüksek bir noktadan izlerken keyifli anlar yaşamanıza olanak tanır. Her detayda şıklığı ve zarafeti bir araya getiren 216 Style Suite, hem iş hem de tatil amaçlı konaklamalar için ideal bir tercihtir. Tesisimiz, Fenerbahçe Stadyumu'na ve çevresindeki sosyal olanaklara olan yakınlığı ile İstanbul’un dinamik yaşamına kolay erişim sağlar. Ayrıca, Marmaray İstasyonu'na da oldukça yakın mesafededir, bu sayede İstanbul'un diğer bölgelerine ulaşım oldukça pratik hale gelmektedir. 216 Style Suite, şıklığı, konforu ve merkezi konumu ile konuklarına unutulmaz bir konaklama deneyimi vaat etmektedir.",
+  "address": "Osmanağa, Gezinme Sk. No:14/1, 34714 Kadıköy/İstanbul",
+  "city": "İstanbul",
+  "district": "Kadıköy",
+  "neighborhood": "Osmanağa",
+  "latitude": "40.990764",
+  "longitude": "29.0325079",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-style",
+  "cover": "/uploads/216suites/hotels/216-style/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-style/hotel-01.webp",
+    "/uploads/216suites/hotels/216-style/hotel-02.webp",
+    "/uploads/216suites/hotels/216-style/hotel-03.webp",
+    "/uploads/216suites/hotels/216-style/hotel-04.webp",
+    "/uploads/216suites/hotels/216-style/hotel-05.webp",
+    "/uploads/216suites/hotels/216-style/hotel-06.webp",
+    "/uploads/216suites/hotels/216-style/hotel-07.webp"
+  ],
+  "rooms": [
+    "classi-c-room",
+    "junior-fami-ly-sui-te"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "source_room_id": 70,
+  "slug": "triple-room",
+  "name": "TRIPLE ROOM",
+  "category": "Standart",
+  "capacity_total": 3,
+  "capacity_adult": 3,
+  "capacity_child": 0,
+  "nightly_price": "3000.0000",
+  "summary": "Triple Room, üç misafirin konforlu şekilde konaklayabileceği şekilde tasarlanmıştır. İki ayrı tek kişilik yatak ve bir çift kişilik yatak veya üç tek kişilik yatak düzeniyle, modern dekorasyonu ve kullanışlı donanımıyla rahat bir konaklama sunar.",
+  "size_sqm": 40,
+  "bed_type": "Üç Tek Kişilik Yatak",
+  "bathroom": "Duş, havlu seti, saç kurutma makinası, kişiye özel bakım seti",
+  "general": "Triple Room, üç misafirin konforlu şekilde konaklayabileceği şekilde tasarlanmıştır. İki ayrı tek kişilik yatak ve bir çift kişilik yatak veya üç tek kişilik yatak düzeniyle, modern dekorasyonu ve kullanışlı donanımıyla rahat bir konaklama sunar.",
+  "conditions": [
+    "ÜCRETSİZ İptal",
+    "Kredi Kartı Gerekmiyor"
+  ],
+  "features": [
+    "Üç Tek Kişilik Yatak",
+    "Duş",
+    "havlu seti",
+    "saç kurutma makinası",
+    "kişiye özel bakım seti",
+    "Triple Room",
+    "üç misafirin konforlu şekilde konaklayabileceği şekilde tasarlanmıştır. İki ayrı tek kişilik yatak ve bir çift kişilik yatak veya üç tek kişilik yatak düzeniyle",
+    "modern dekorasyonu ve kullanışlı donanımıyla rahat bir konaklama sunar.",
+    "ÜCRETSİZ İptal Kredi Kartı Gerekmiyor"
+  ],
+  "cover": "/uploads/216suites/rooms/216-castle/triple-room/room-01.webp",
+  "gallery": [
+    "/uploads/216suites/rooms/216-castle/triple-room/room-01.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-02.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-03.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-04.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-05.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-06.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-07.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-08.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-09.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-10.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-11.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-12.webp",
+    "/uploads/216suites/rooms/216-castle/triple-room/room-13.webp"
+  ]
+}

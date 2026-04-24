@@ -825,7 +825,7 @@
 
                     <details class="filter-accordion" open>
                         <summary class="filter-accordion-summary">
-                            <span>Konuma Göre</span>
+                            <span>Konuma Göre Ara</span>
                             <i class="fas fa-chevron-down" aria-hidden="true"></i>
                         </summary>
                         <div class="filter-accordion-body">
@@ -833,9 +833,11 @@
                                 <button type="button" class="location-btn" id="useMyLocationBtn">
                                     <span class="location-btn-icon" aria-hidden="true"><i class="fas fa-location-crosshairs"></i></span>
                                     <span class="location-btn-copy">
+                                        <span class="location-btn-eyebrow">Konuma göre ara</span>
                                         <strong>Sana en yakın otelleri bul</strong>
-                                        <small id="locationStatusText">Konumunu aç, yakınındaki fırsatları hemen listeleyelim.</small>
+                                        <small id="locationStatusText">Konumunu paylaş, koordinatını net alıp otelleri gerçek konumlarına göre km cinsinden listeleyelim.</small>
                                     </span>
+                                    <span class="location-btn-state" id="locationPermissionPill">İzin bekleniyor</span>
                                 </button>
                                 <div class="location-coords" id="locationCoordsText"></div>
                                 <div class="location-insight" id="locationInsightText">Konum aramaları, partnerlerin bölgene otel eklemesi için anonim pazar içgörüsü üretir.</div>
@@ -855,7 +857,7 @@
                                               <small>km</small>
                                           </div>
                                       </label>
-                                      <p class="filter-help filter-help-compact">Konum izni verildiğinde seçtiğiniz km çevresindeki tüm uygun oteller listelenir.</p>
+                                      <p class="filter-help filter-help-compact">İzin verildiğinde koordinatın hassas biçimde alınır ve seçtiğin yarıçap içindeki oteller kendi koordinatlarına göre aranır.</p>
                                     </div>
                               </div>
                           </div>
@@ -1346,10 +1348,12 @@
             const locationStatusText = document.getElementById('locationStatusText');
             const locationCoordsText = document.getElementById('locationCoordsText');
             const locationInsightText = document.getElementById('locationInsightText');
+            const locationPermissionPill = document.getElementById('locationPermissionPill');
             let keywordSuggestionTimer = null;
             let userLocation = null;
             let locationLogTimer = null;
             let lastLocationLogSignature = '';
+            let locationPermissionState = 'prompt';
 
             function normalize(v) {
                 return String(v || '').toLocaleLowerCase('tr-TR');
@@ -1421,19 +1425,53 @@
                 useMyLocationBtn?.classList.toggle('active', !!enabled);
             }
 
+            function setLocationPermissionState(state) {
+                locationPermissionState = state || 'prompt';
+                if (!locationPermissionPill) {
+                    return;
+                }
+
+                locationPermissionPill.classList.remove('is-granted', 'is-denied', 'is-loading', 'is-ready');
+                if (locationPermissionState === 'granted') {
+                    locationPermissionPill.textContent = 'Konum hazır';
+                    locationPermissionPill.classList.add('is-granted');
+                    return;
+                }
+                if (locationPermissionState === 'denied') {
+                    locationPermissionPill.textContent = 'İzin kapalı';
+                    locationPermissionPill.classList.add('is-denied');
+                    return;
+                }
+                if (locationPermissionState === 'loading') {
+                    locationPermissionPill.textContent = 'Konum alınıyor';
+                    locationPermissionPill.classList.add('is-loading');
+                    return;
+                }
+
+                locationPermissionPill.textContent = 'İzin bekleniyor';
+                locationPermissionPill.classList.add('is-ready');
+            }
+
             function setLocationStatus(text) {
                 if (locationStatusText) locationStatusText.textContent = text || '';
             }
 
-            function setLocationCoords(lat, lon) {
+            function setLocationCoords(lat, lon, accuracy) {
                 if (!locationCoordsText) return;
                 if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-                    locationCoordsText.textContent = '';
+                    locationCoordsText.innerHTML = '';
                     locationCoordsText.classList.remove('is-visible');
                     return;
                 }
 
-                locationCoordsText.textContent = 'Konumunuz: ' + lat.toFixed(6) + ', ' + lon.toFixed(6);
+                const accuracyText = Number.isFinite(accuracy) && accuracy > 0
+                    ? '<span>Yaklaşık hassasiyet: ' + Math.round(accuracy) + ' m</span>'
+                    : '<span>Konum doğrulandı</span>';
+
+                locationCoordsText.innerHTML =
+                    '<div class="location-coords-head"><i class="fas fa-location-dot" aria-hidden="true"></i><strong>Neredeyim?</strong></div>' +
+                    '<span>Enlem: ' + lat.toFixed(6) + ' · Boylam: ' + lon.toFixed(6) + '</span>' +
+                    accuracyText;
                 locationCoordsText.classList.add('is-visible');
             }
 
@@ -1565,10 +1603,10 @@
 
                 setDistanceHotelCount(visibleCount, distanceActive);
                 if (distanceActive) {
-                    setLocationInsight('Bu bölgede şu an ' + visibleCount + ' otel bulundu. Bu aramalar partnerler için güçlü talep sinyali üretir.');
+                    setLocationInsight('Seçtiğin ' + distanceKm + ' km yarıçap içinde ' + visibleCount + ' otel bulundu. Sonuçlar otellerin gerçek koordinatlarına göre hesaplanıyor.');
                     queueLocationLog(false);
                 } else if (userLocation) {
-                    setLocationInsight('Konumun alındı. Mesafe artırıldıkça daha fazla otel ve talep verisi görünür.');
+                    setLocationInsight('Konumun doğrulandı. Aşağıdan yarıçapı artırıp otelleri gerçek koordinat mesafesine göre filtreleyebilirsin.');
                 } else {
                     setLocationInsight('Konum aramaları, partnerlerin bölgene otel eklemesi için anonim pazar içgörüsü üretir.');
                 }
@@ -1658,17 +1696,23 @@
             });
 
             function applyLocationSuccess(pos) {
-                userLocation = { lat: Number(pos.coords.latitude), lon: Number(pos.coords.longitude) };
+                userLocation = {
+                    lat: Number(pos.coords.latitude),
+                    lon: Number(pos.coords.longitude),
+                    accuracy: Number(pos.coords.accuracy || 0)
+                };
+                setLocationPermissionState('granted');
                 enableDistanceFilterUi(true);
                 syncDistanceUi();
-                setLocationStatus('Konum alındı. Mesafeyi belirleyebilirsiniz.');
-                setLocationCoords(userLocation.lat, userLocation.lon);
-                setLocationInsight('Konumun alındı. Yakınındaki otelleri ve bu bölgedeki talebi birlikte ölçüyoruz.');
+                setLocationStatus('Konumun doğrulandı. Oteller artık koordinata göre aranıyor.');
+                setLocationCoords(userLocation.lat, userLocation.lon, userLocation.accuracy);
+                setLocationInsight('Konumun doğrulandı. Şimdi yarıçapı km cinsinden belirleyip en yakın otelleri gerçek harita konumlarına göre bulabilirsin.');
                 applyFilters();
                 queueLocationLog(true);
             }
 
             function applyLocationError(error) {
+                setLocationPermissionState(error && error.code === 1 ? 'denied' : 'prompt');
                 enableDistanceFilterUi(false);
                 setLocationCoords(NaN, NaN);
                 setLocationInsight('Konum paylaşımı açıldığında sana en yakın otelleri tek dokunuşla bulabiliriz.');
@@ -1689,14 +1733,17 @@
 
             function requestUserLocation() {
                 if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    setLocationPermissionState('denied');
                     setLocationStatus('Konum için güvenli bağlantı gerekiyor.');
                     return;
                 }
                 if (!('geolocation' in navigator)) {
+                    setLocationPermissionState('denied');
                     setLocationStatus('Tarayıcı konumu desteklemiyor.');
                     return;
                 }
 
+                setLocationPermissionState('loading');
                 setLocationStatus('Konum alınıyor...');
                 const primaryOptions = { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 };
                 const fallbackOptions = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
@@ -1717,6 +1764,41 @@
             useMyLocationBtn?.addEventListener('click', function () {
                 requestUserLocation();
             });
+
+            async function initializeLocationPermissionState() {
+                if (!('permissions' in navigator) || !navigator.permissions?.query) {
+                    setLocationPermissionState('prompt');
+                    return;
+                }
+
+                try {
+                    const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+                    const syncState = function () {
+                        if (permissionStatus.state === 'granted') {
+                            setLocationPermissionState('granted');
+                            setLocationStatus('Konum izni hazır. Net koordinatını almak için dokunabilirsin.');
+                            if (!userLocation) {
+                                requestUserLocation();
+                            }
+                            return;
+                        }
+
+                        if (permissionStatus.state === 'denied') {
+                            setLocationPermissionState('denied');
+                            setLocationStatus('Konum izni kapalı. Tarayıcıdan izin verin.');
+                            return;
+                        }
+
+                        setLocationPermissionState('prompt');
+                        setLocationStatus('Konumunu paylaş, koordinatını net alıp otelleri km cinsinden tarayalım.');
+                    };
+
+                    syncState();
+                    permissionStatus.onchange = syncState;
+                } catch (_) {
+                    setLocationPermissionState('prompt');
+                }
+            }
 
             distanceKmRange?.addEventListener('input', function () {
                 syncDistanceUi();
@@ -1900,7 +1982,8 @@
                 enableDistanceFilterUi(false);
                 setLocationCoords(NaN, NaN);
                 setDistanceHotelCount(0, false);
-                setLocationStatus('Konumunu aç, yakınındaki fırsatları hemen listeleyelim.');
+                setLocationPermissionState('prompt');
+                setLocationStatus('Konumunu paylaş, koordinatını net alıp otelleri km cinsinden tarayalım.');
                 setLocationInsight('Konum aramaları, partnerlerin bölgene otel eklemesi için anonim pazar içgörüsü üretir.');
                 applyFilters();
                 sortCards();
@@ -1929,6 +2012,7 @@
             syncPriceSteps();
             syncPriceSliderVisual();
             syncMobileFilterCount();
+            initializeLocationPermissionState();
         })();
     </script>
     <script>

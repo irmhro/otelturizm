@@ -1,0 +1,34 @@
+{
+  "source_room_id": 10,
+  "slug": "terrace-room",
+  "name": "TERRACE ROOM",
+  "category": "Standart",
+  "capacity_total": 2,
+  "capacity_adult": 2,
+  "capacity_child": 0,
+  "nightly_price": "3300.0000",
+  "summary": "Gardırop, Oturma grubu, Kettle, Akıllı TV, Klima",
+  "size_sqm": 35,
+  "bed_type": "Ortopedik Double Yatak",
+  "bathroom": "Duş, havlu seti, saç kurutma makinası, kişiye özel bakım seti",
+  "general": "Gardırop, Oturma grubu, Kettle, Akıllı TV, Klima",
+  "conditions": [
+    "ÜCRETSİZ İptal",
+    "Kredi Kartı Gerekmiyor"
+  ],
+  "features": [
+    "Ortopedik Double Yatak",
+    "Duş",
+    "havlu seti",
+    "saç kurutma makinası",
+    "kişiye özel bakım seti",
+    "Gardırop",
+    "Oturma grubu",
+    "Kettle",
+    "Akıllı TV",
+    "Klima",
+    "ÜCRETSİZ İptal Kredi Kartı Gerekmiyor"
+  ],
+  "cover": null,
+  "gallery": []
+}

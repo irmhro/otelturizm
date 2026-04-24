@@ -1,0 +1,54 @@
+{
+  "slug": "216-palace",
+  "name": "216 PALACE",
+  "owner_email": "216palace216hotel@gmail.com",
+  "owner_name": "216 PALACE Yetkilisi",
+  "short_description": "Maltepe'de yer alan 216 Palace Maltepe, şehrin dinamik yapısına yakın, aynı zamanda huzurlu bir konaklama deneyimi sunuyor. Tesisimiz, Maltepe Metrosu’na ve Maltepe Sahili’ne yürüme mesafesinde, Maltepe Köprüsü’nün hemen üzerinde konumlanıyor. Bu sayede, İstanbul’un her yerine kolayca ulaşabilirken, deniz manzarası ve sahil keyfini de bir arada yaşayabilirsiniz.",
+  "description": "Maltepe'de yer alan 216 Palace Maltepe, şehrin dinamik yapısına yakın, aynı zamanda huzurlu bir konaklama deneyimi sunuyor. Tesisimiz, Maltepe Metrosu’na ve Maltepe Sahili’ne yürüme mesafesinde, Maltepe Köprüsü’nün hemen üzerinde konumlanıyor. Bu sayede, İstanbul’un her yerine kolayca ulaşabilirken, deniz manzarası ve sahil keyfini de bir arada yaşayabilirsiniz.",
+  "location_description": "Maltepe'de yer alan 216 Palace Maltepe, şehrin dinamik yapısına yakın, aynı zamanda huzurlu bir konaklama deneyimi sunuyor. Tesisimiz, Maltepe Metrosu’na ve Maltepe Sahili’ne yürüme mesafesinde, Maltepe Köprüsü’nün hemen üzerinde konumlanıyor. Bu sayede, İstanbul’un her yerine kolayca ulaşabilirken, deniz manzarası ve sahil keyfini de bir arada yaşayabilirsiniz.",
+  "address": "Zümrütevler, Başöğretmen Cd. No:8/1, 34852 Maltepe/İstanbul",
+  "city": "İstanbul",
+  "district": "Maltepe",
+  "neighborhood": "Zümrütevler",
+  "latitude": "40.937867999999995",
+  "longitude": "29.1412533",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-palace",
+  "cover": "/uploads/216suites/hotels/216-palace/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-palace/hotel-01.webp",
+    "/uploads/216suites/hotels/216-palace/hotel-02.webp",
+    "/uploads/216suites/hotels/216-palace/hotel-03.webp",
+    "/uploads/216suites/hotels/216-palace/hotel-04.webp",
+    "/uploads/216suites/hotels/216-palace/hotel-05.webp",
+    "/uploads/216suites/hotels/216-palace/hotel-06.webp",
+    "/uploads/216suites/hotels/216-palace/hotel-07.webp"
+  ],
+  "rooms": [
+    "double-room",
+    "twin-room",
+    "terrace-room"
+  ]
+}

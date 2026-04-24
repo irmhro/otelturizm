@@ -35,11 +35,20 @@ public class EmailQueueService : IEmailQueueService
         var safeUserId = await ResolveSafeUserIdAsync(connection, transaction, request.UserId, request.RecipientEmail, cancellationToken);
         var attachmentsJson = BuildAttachmentsJson(request.Attachments);
 
-        const string insertSql = @"
-            INSERT INTO bildirim_loglari
-            (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, ilgili_tablo, ilgili_kayit_id, ekler_json)
-            VALUES
-            (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId, @attachmentsJson);";
+        var hasAttachmentsColumn = await ColumnExistsAsync(connection, transaction, "dbo.bildirim_loglari", "ekler_json", cancellationToken);
+        var insertSql = hasAttachmentsColumn
+            ? """
+                INSERT INTO bildirim_loglari
+                (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, ilgili_tablo, ilgili_kayit_id, ekler_json)
+                VALUES
+                (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId, @attachmentsJson);
+                """
+            : """
+                INSERT INTO bildirim_loglari
+                (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, ilgili_tablo, ilgili_kayit_id)
+                VALUES
+                (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId);
+                """;
 
         await using var command = new SqlCommand(insertSql, (SqlConnection)connection, (SqlTransaction?)transaction);
         command.Parameters.AddWithValue("@userId", safeUserId);
@@ -50,8 +59,25 @@ public class EmailQueueService : IEmailQueueService
         command.Parameters.AddWithValue("@provider", provider.Provider);
         command.Parameters.AddWithValue("@relatedTable", string.IsNullOrWhiteSpace(request.RelatedTable) ? DBNull.Value : request.RelatedTable);
         command.Parameters.AddWithValue("@relatedId", request.RelatedRecordId.HasValue ? request.RelatedRecordId.Value : DBNull.Value);
-        command.Parameters.AddWithValue("@attachmentsJson", (object?)attachmentsJson ?? DBNull.Value);
+        if (hasAttachmentsColumn)
+        {
+            command.Parameters.AddWithValue("@attachmentsJson", (object?)attachmentsJson ?? DBNull.Value);
+        }
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task<bool> ColumnExistsAsync(
+        DbConnection connection,
+        DbTransaction? transaction,
+        string tableName,
+        string columnName,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand("SELECT COL_LENGTH(@tableName, @columnName);", (SqlConnection)connection, (SqlTransaction?)transaction);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@columnName", columnName);
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
+        return scalar is not null && scalar != DBNull.Value;
     }
 
     private static string? BuildAttachmentsJson(IReadOnlyList<QueuedEmailAttachment>? attachments)

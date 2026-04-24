@@ -1,0 +1,24 @@
+{
+  "source_room_id": 76,
+  "slug": "parti-al-sea-deluxe-room",
+  "name": "PARTİAL SEA DELUXE ROOM",
+  "category": "Deluxe",
+  "capacity_total": 2,
+  "capacity_adult": 2,
+  "capacity_child": 0,
+  "nightly_price": "3200.0000",
+  "summary": "PARTİAL SEA DELUXE ROOM",
+  "size_sqm": null,
+  "bed_type": "",
+  "bathroom": "",
+  "general": "",
+  "conditions": [
+    "ÜCRETSİZ İptal",
+    "Kredi Kartı Gerekmiyor"
+  ],
+  "features": [
+    "ÜCRETSİZ İptal Kredi Kartı Gerekmiyor"
+  ],
+  "cover": null,
+  "gallery": []
+}

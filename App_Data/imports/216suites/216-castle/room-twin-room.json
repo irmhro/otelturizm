@@ -1,0 +1,47 @@
+{
+  "source_room_id": 69,
+  "slug": "twin-room",
+  "name": "TWIN ROOM",
+  "category": "Standart",
+  "capacity_total": 2,
+  "capacity_adult": 2,
+  "capacity_child": 0,
+  "nightly_price": "2800.0000",
+  "summary": "Twin Room, iki ayrı tek kişilik yatağıyla iki misafirin konforlu şekilde konaklayabileceği şekilde tasarlanmıştır. Modern ve sade dekorasyona sahip odamız, rahat bir atmosfer sunarken günlük ihtiyaçlara cevap veren donanımıyla keyifli bir konaklama deneyimi sağlar. Hem iş hem de tatil amaçlı seyahatler için ideal bir oda tipidir.",
+  "size_sqm": 35,
+  "bed_type": "Standart Twin Yatak",
+  "bathroom": "Duş, havlu seti, saç kurutma makinası, kişiye özel bakım seti",
+  "general": "Twin Room, iki ayrı tek kişilik yatağıyla iki misafirin konforlu şekilde konaklayabileceği şekilde tasarlanmıştır. Modern ve sade dekorasyona sahip odamız, rahat bir atmosfer sunarken günlük ihtiyaçlara cevap veren donanımıyla keyifli bir konaklama deneyimi sağlar. Hem iş hem de tatil amaçlı seyahatler için ideal bir oda tipidir.",
+  "conditions": [
+    "ÜCRETSİZ İptal",
+    "Kredi Kartı Gerekmiyor"
+  ],
+  "features": [
+    "Standart Twin Yatak",
+    "Duş",
+    "havlu seti",
+    "saç kurutma makinası",
+    "kişiye özel bakım seti",
+    "Twin Room",
+    "iki ayrı tek kişilik yatağıyla iki misafirin konforlu şekilde konaklayabileceği şekilde tasarlanmıştır. Modern ve sade dekorasyona sahip odamız",
+    "rahat bir atmosfer sunarken günlük ihtiyaçlara cevap veren donanımıyla keyifli bir konaklama deneyimi sağlar. Hem iş hem de tatil amaçlı seyahatler için ideal bir oda tipidir.",
+    "ÜCRETSİZ İptal Kredi Kartı Gerekmiyor"
+  ],
+  "cover": "/uploads/216suites/rooms/216-castle/twin-room/room-01.webp",
+  "gallery": [
+    "/uploads/216suites/rooms/216-castle/twin-room/room-01.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-02.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-03.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-04.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-05.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-06.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-07.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-08.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-09.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-10.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-11.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-12.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-13.webp",
+    "/uploads/216suites/rooms/216-castle/twin-room/room-14.webp"
+  ]
+}

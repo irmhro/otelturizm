@@ -1,0 +1,56 @@
+{
+  "slug": "216-macity",
+  "name": "216 MACITY",
+  "owner_email": "rhisshotelmaltepe21@gmail.com",
+  "owner_name": "216 MACITY Yetkilisi",
+  "short_description": "216 Macity Hotel, İstanbul’un Maltepe ilçesinde, Maltepe Köprüsü üzerinde merkezi bir konumda yer almaktadır. Maltepe Metro İstasyonu’na yakın mesafesi ile ulaşım açısından oldukça avantajlı bir noktada bulunan tesisimiz, iş seyahati ve tatil amaçlı konaklamalar için mükemmel bir tercihtir. Tesisimiz, konuklarına geniş bir hizmet yelpazesi sunmaktadır. Açık ve kapalı otopark alanlarımız, iş amaçlı konaklayan misafirlerimiz için toplantı salonu da sunulmaktadır.216 Macity Hotel, her tür",
+  "description": "216 Macity Hotel, İstanbul’un Maltepe ilçesinde, Maltepe Köprüsü üzerinde merkezi bir konumda yer almaktadır. Maltepe Metro İstasyonu’na yakın mesafesi ile ulaşım açısından oldukça avantajlı bir noktada bulunan tesisimiz, iş seyahati ve tatil amaçlı konaklamalar için mükemmel bir tercihtir. Tesisimiz, konuklarına geniş bir hizmet yelpazesi sunmaktadır. Açık ve kapalı otopark alanlarımız, iş amaçlı konaklayan misafirlerimiz için toplantı salonu da sunulmaktadır.216 Macity Hotel, her türlü konaklamaya uygun olup, hem iş hem de tatil amaçlı gelen misafirlerimize rahat ve konforlu bir konaklama deneyimi sunmaktadır. İstanbul’un farklı bölgelerine kolay ulaşım imkânı sağlayan tesisimiz, tüm konuklarına kaliteli hizmet ve konforlu bir atmosfer sunmayı hedeflemektedir.",
+  "location_description": "216 Macity Hotel, İstanbul’un Maltepe ilçesinde, Maltepe Köprüsü üzerinde merkezi bir konumda yer almaktadır. Maltepe Metro İstasyonu’na yakın mesafesi ile ulaşım açısından oldukça avantajlı bir noktada bulunan tesisimiz, iş seyahati ve tatil amaçlı konaklamalar için mükemmel bir tercihtir. Tesisimiz, konuklarına geniş bir hizmet yelpazesi sunmaktadır. Açık ve kapalı otopark alanlarımız, iş amaçlı konaklayan misafirlerimiz için toplantı salonu da sunulmaktadır.216 Macity Hotel, her türlü konaklamaya uygun olup, hem iş hem de tatil amaçlı gelen misafirlerimize rahat ve konforlu bir konaklama deneyimi sunmaktadır. İstanbul’un farklı bölgelerine kolay ulaşım imkânı sağlayan tesisimiz, tüm konuklarına kaliteli hizmet ve konforlu bir atmosfer sunmayı hedeflemektedir.",
+  "address": "Zümrütevler Mah. Atatürk Cd. Çamlıklı Sk. No:32A, 34852, Maltepe / İSTANBUL",
+  "city": "İstanbul",
+  "district": "Maltepe",
+  "neighborhood": "Zümrütevler Mah. Atatürk Cd. Çamlıklı Sk. No:32A",
+  "latitude": "40.94105249999999",
+  "longitude": "29.143941400000003",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-macity",
+  "cover": "/uploads/216suites/hotels/216-macity/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-macity/hotel-01.webp",
+    "/uploads/216suites/hotels/216-macity/hotel-02.webp",
+    "/uploads/216suites/hotels/216-macity/hotel-03.webp",
+    "/uploads/216suites/hotels/216-macity/hotel-04.webp",
+    "/uploads/216suites/hotels/216-macity/hotel-05.webp",
+    "/uploads/216suites/hotels/216-macity/hotel-06.webp",
+    "/uploads/216suites/hotels/216-macity/hotel-07.webp"
+  ],
+  "rooms": [
+    "double-room",
+    "twin-room",
+    "triple-room",
+    "quad-room",
+    "jakuzi-room"
+  ]
+}

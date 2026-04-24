@@ -11,6 +11,11 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;artifacts/**;.codex_obj\**;.codex_obj/**</DefaultItemExcludes>
   </PropertyGroup>
 
+  <!-- Release build: avoid locking/copy issues with apphost.exe -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="MailKit" Version="4.16.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" />

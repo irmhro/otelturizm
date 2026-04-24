@@ -1,0 +1,40 @@
+{
+  "source_room_id": 15,
+  "slug": "quad-room",
+  "name": "QUAD ROOM",
+  "category": "Standart",
+  "capacity_total": 4,
+  "capacity_adult": 4,
+  "capacity_child": 0,
+  "nightly_price": "3750.0000",
+  "summary": "Gardırop, Oturma grubu, Kettle, Akıllı TV, Klima",
+  "size_sqm": 35,
+  "bed_type": "4 adet Ortopedik Single Yatak,",
+  "bathroom": "Duş, havlu seti, saç kurutma makinası, kişiye özel bakım seti",
+  "general": "Gardırop, Oturma grubu, Kettle, Akıllı TV, Klima",
+  "conditions": [
+    "ÜCRETSİZ İptal",
+    "Kredi Kartı Gerekmiyor"
+  ],
+  "features": [
+    "4 adet Ortopedik Single Yatak",
+    "Duş",
+    "havlu seti",
+    "saç kurutma makinası",
+    "kişiye özel bakım seti",
+    "Gardırop",
+    "Oturma grubu",
+    "Kettle",
+    "Akıllı TV",
+    "Klima",
+    "ÜCRETSİZ İptal Kredi Kartı Gerekmiyor"
+  ],
+  "cover": "/uploads/216suites/rooms/216-pasha-palace/quad-room/room-01.webp",
+  "gallery": [
+    "/uploads/216suites/rooms/216-pasha-palace/quad-room/room-01.webp",
+    "/uploads/216suites/rooms/216-pasha-palace/quad-room/room-02.webp",
+    "/uploads/216suites/rooms/216-pasha-palace/quad-room/room-03.webp",
+    "/uploads/216suites/rooms/216-pasha-palace/quad-room/room-04.webp",
+    "/uploads/216suites/rooms/216-pasha-palace/quad-room/room-05.webp"
+  ]
+}

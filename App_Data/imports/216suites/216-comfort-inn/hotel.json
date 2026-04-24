@@ -1,0 +1,54 @@
+{
+  "slug": "216-comfort-inn",
+  "name": "216 COMFORT INN",
+  "owner_email": "comforttsuite@gmail.com",
+  "owner_name": "216 COMFORT INN Yetkilisi",
+  "short_description": "Comfort Inn Suite, İstanbul'un Ataşehir ilçesinde yer alan modern bir oteldir. E-5 otoyolu üzerinde konumlandığı için, şehrin diğer bölgelerine kolayca ulaşabilirsiniz.",
+  "description": "Comfort Inn Suite, İstanbul'un Ataşehir ilçesinde yer alan modern bir oteldir. E-5 otoyolu üzerinde konumlandığı için, şehrin diğer bölgelerine kolayca ulaşabilirsiniz.",
+  "location_description": "Comfort Inn Suite, İstanbul'un Ataşehir ilçesinde yer alan modern bir oteldir. E-5 otoyolu üzerinde konumlandığı için, şehrin diğer bölgelerine kolayca ulaşabilirsiniz.",
+  "address": "Yeni Sahra, Dere Sk. No:3, 34746 Ataşehir/İstanbul",
+  "city": "İstanbul",
+  "district": "Ataşehir",
+  "neighborhood": "Yeni Sahra",
+  "latitude": "40.989537000000006",
+  "longitude": "29.083529600000002",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-comfort-inn",
+  "cover": "/uploads/216suites/hotels/216-comfort-inn/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-comfort-inn/hotel-01.webp",
+    "/uploads/216suites/hotels/216-comfort-inn/hotel-02.webp",
+    "/uploads/216suites/hotels/216-comfort-inn/hotel-03.webp",
+    "/uploads/216suites/hotels/216-comfort-inn/hotel-04.webp",
+    "/uploads/216suites/hotels/216-comfort-inn/hotel-05.webp",
+    "/uploads/216suites/hotels/216-comfort-inn/hotel-06.webp",
+    "/uploads/216suites/hotels/216-comfort-inn/hotel-07.webp"
+  ],
+  "rooms": [
+    "classi-c-room",
+    "junior-room",
+    "jakuzi-room"
+  ]
+}

@@ -1,0 +1,155 @@
+[
+  {
+    "slug": "216-bosphorus",
+    "name": "216 BOSPHORUS",
+    "owner_email": "216bosphorus@gmail.com",
+    "city": "İstanbul",
+    "district": "Merkez",
+    "rooms": 5,
+    "gallery": 7
+  },
+  {
+    "slug": "216-castle",
+    "name": "216 CASTLE",
+    "owner_email": "216castlehotel@gmail.com",
+    "city": "Kocaeli",
+    "district": "Gebze",
+    "rooms": 7,
+    "gallery": 7
+  },
+  {
+    "slug": "216-comfort-inn",
+    "name": "216 COMFORT INN",
+    "owner_email": "comforttsuite@gmail.com",
+    "city": "İstanbul",
+    "district": "Ataşehir",
+    "rooms": 3,
+    "gallery": 7
+  },
+  {
+    "slug": "216-eagle-palace",
+    "name": "216 EAGLE PALACE",
+    "owner_email": "eaglepalaceonline@gmail.com",
+    "city": "İstanbul",
+    "district": "Kartal",
+    "rooms": 4,
+    "gallery": 7
+  },
+  {
+    "slug": "216-f&b",
+    "name": "216 F&B",
+    "owner_email": "info@216suites.com",
+    "city": "İstanbul",
+    "district": "Kadıköy",
+    "rooms": 3,
+    "gallery": 7
+  },
+  {
+    "slug": "216-hill",
+    "name": "216 HILL",
+    "owner_email": "pendikhillsuites@gmail.com",
+    "city": "İstanbul",
+    "district": "Pendik",
+    "rooms": 2,
+    "gallery": 7
+  },
+  {
+    "slug": "216-macity",
+    "name": "216 MACITY",
+    "owner_email": "rhisshotelmaltepe21@gmail.com",
+    "city": "İstanbul",
+    "district": "Maltepe",
+    "rooms": 5,
+    "gallery": 7
+  },
+  {
+    "slug": "216-north",
+    "name": "216 NORTH",
+    "owner_email": "onboarding+216-north@otelturizm.local",
+    "city": "İstanbul",
+    "district": "Şile",
+    "rooms": 3,
+    "gallery": 7
+  },
+  {
+    "slug": "216-palace",
+    "name": "216 PALACE",
+    "owner_email": "216palace216hotel@gmail.com",
+    "city": "İstanbul",
+    "district": "Maltepe",
+    "rooms": 3,
+    "gallery": 7
+  },
+  {
+    "slug": "216-pasha-palace",
+    "name": "216 PASHA PALACE",
+    "owner_email": "pashapalacehotel@gmail.com",
+    "city": "İstanbul",
+    "district": "Ataşehir",
+    "rooms": 5,
+    "gallery": 7
+  },
+  {
+    "slug": "216-prestige",
+    "name": "216 PRESTIGE",
+    "owner_email": "onboarding+216-prestige@otelturizm.local",
+    "city": "İstanbul",
+    "district": "Ümraniye",
+    "rooms": 2,
+    "gallery": 7
+  },
+  {
+    "slug": "216-ruby",
+    "name": "216 RUBY",
+    "owner_email": "216rubysuite@gmail.com",
+    "city": "İstanbul",
+    "district": "Maltepe",
+    "rooms": 5,
+    "gallery": 7
+  },
+  {
+    "slug": "216-silver",
+    "name": "216 SILVER",
+    "owner_email": "216silvertuzla@gmail.com",
+    "city": "İstanbul",
+    "district": "Tuzla",
+    "rooms": 4,
+    "gallery": 7
+  },
+  {
+    "slug": "216-star",
+    "name": "216 STAR",
+    "owner_email": "216starsuit@gmail.com",
+    "city": "İstanbul",
+    "district": "Sancaktepe",
+    "rooms": 2,
+    "gallery": 7
+  },
+  {
+    "slug": "216-station",
+    "name": "216 STATİON",
+    "owner_email": "216station@gmail.com",
+    "city": "İstanbul",
+    "district": "Merkez",
+    "rooms": 8,
+    "gallery": 7
+  },
+  {
+    "slug": "216-style",
+    "name": "216 STYLE",
+    "owner_email": "216stylesuite@gmail.com",
+    "city": "İstanbul",
+    "district": "Kadıköy",
+    "rooms": 2,
+    "gallery": 7
+  },
+  {
+    "slug": "216-trend",
+    "name": "216 TREND",
+    "owner_email": "216umraniyesuite@gmail.com",
+    "city": "İstanbul",
+    "district": "Ümraniye",
+    "rooms": 2,
+    "gallery": 7
+  }
+]

@@ -1,0 +1,55 @@
+{
+  "slug": "216-silver",
+  "name": "216 SILVER",
+  "owner_email": "216silvertuzla@gmail.com",
+  "owner_name": "216 SILVER Yetkilisi",
+  "short_description": "216 Silver Suite, İstanbul’un Tuzla Mercan bölgesinde yer alan modern ve şık bir konaklama tesisidir. Geniş ve yeni odalarımız, misafirlerimize kaliteli bir konaklama deneyimi sunmak için özenle tasarlanmıştır. 216 Silver Suite, her türlü konforu ve ihtiyacı karşılamak üzere donatılmış olup, konuklarına unutulmaz bir hizmet sağlamaktadır. Tesisimiz, modern dekorasyonu ve lüks olanaklarıyla rahat bir konaklama imkânı sunarken, her odada şık mobilyalar, yüksek kaliteli yataklar ve gelişm",
+  "description": "216 Silver Suite, İstanbul’un Tuzla Mercan bölgesinde yer alan modern ve şık bir konaklama tesisidir. Geniş ve yeni odalarımız, misafirlerimize kaliteli bir konaklama deneyimi sunmak için özenle tasarlanmıştır. 216 Silver Suite, her türlü konforu ve ihtiyacı karşılamak üzere donatılmış olup, konuklarına unutulmaz bir hizmet sağlamaktadır. Tesisimiz, modern dekorasyonu ve lüks olanaklarıyla rahat bir konaklama imkânı sunarken, her odada şık mobilyalar, yüksek kaliteli yataklar ve gelişmiş teknolojik altyapı yer almaktadır. Konuklar, hem dinlenme hem de iş seyahatleri için ideal olanaklara sahip odalarımızda, rahat bir ortamda vakit geçirebilirler. Geniş ve modern odalarımızla konuklarımızın her türlü ihtiyacına cevap verirken, kaliteli hizmet anlayışımızla her zaman memnuniyetlerini ön planda tutuyoruz. 216 Silver Suite, lüks ve konforu bir arada sunarak, misafirlerine mükemmel bir konaklama deneyimi yaşatmaktadır.",
+  "location_description": "216 Silver Suite, İstanbul’un Tuzla Mercan bölgesinde yer alan modern ve şık bir konaklama tesisidir. Geniş ve yeni odalarımız, misafirlerimize kaliteli bir konaklama deneyimi sunmak için özenle tasarlanmıştır. 216 Silver Suite, her türlü konforu ve ihtiyacı karşılamak üzere donatılmış olup, konuklarına unutulmaz bir hizmet sağlamaktadır. Tesisimiz, modern dekorasyonu ve lüks olanaklarıyla rahat bir konaklama imkânı sunarken, her odada şık mobilyalar, yüksek kaliteli yataklar ve gelişmiş teknolojik altyapı yer almaktadır. Konuklar, hem dinlenme hem de iş seyahatleri için ideal olanaklara sahip odalarımızda, rahat bir ortamda vakit geçirebilirler. Geniş ve modern odalarımızla konuklarımızın her türlü ihtiyacına cevap verirken, kaliteli hizmet anlayışımızla her zaman memnuniyetlerini ön planda tutuyoruz. 216 Silver Suite, lüks ve konforu bir arada sunarak, misafirlerine mükemmel bir konaklama deneyimi yaşatmaktadır.",
+  "address": "Postane, Muhacir Sk. No:5, 34940 Tuzla/İstanbul",
+  "city": "İstanbul",
+  "district": "Tuzla",
+  "neighborhood": "Postane",
+  "latitude": "40.8179817",
+  "longitude": "29.304328100000003",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-silver",
+  "cover": "/uploads/216suites/hotels/216-silver/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-silver/hotel-01.webp",
+    "/uploads/216suites/hotels/216-silver/hotel-02.webp",
+    "/uploads/216suites/hotels/216-silver/hotel-03.webp",
+    "/uploads/216suites/hotels/216-silver/hotel-04.webp",
+    "/uploads/216suites/hotels/216-silver/hotel-05.webp",
+    "/uploads/216suites/hotels/216-silver/hotel-06.webp",
+    "/uploads/216suites/hotels/216-silver/hotel-07.webp"
+  ],
+  "rooms": [
+    "classi-c-room",
+    "premi-um-room",
+    "classi-c-twin-room",
+    "room-wi-th-jacuzzi"
+  ]
+}

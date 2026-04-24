@@ -1,0 +1,25 @@
+{
+  "source_room_id": 75,
+  "slug": "deluxe-room",
+  "name": "DELUXE ROOM",
+  "category": "Deluxe",
+  "capacity_total": 2,
+  "capacity_adult": 2,
+  "capacity_child": 0,
+  "nightly_price": "2950.0000",
+  "summary": "DELUXE ROOM",
+  "size_sqm": null,
+  "bed_type": "1 TANE ÇİFT KİŞİLİK YATAK",
+  "bathroom": "",
+  "general": "",
+  "conditions": [
+    "ÜCRETSİZ İptal",
+    "Kredi Kartı Gerekmiyor"
+  ],
+  "features": [
+    "1 TANE ÇİFT KİŞİLİK YATAK",
+    "ÜCRETSİZ İptal Kredi Kartı Gerekmiyor"
+  ],
+  "cover": null,
+  "gallery": []
+}

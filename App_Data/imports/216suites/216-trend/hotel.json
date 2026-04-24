@@ -1,0 +1,53 @@
+{
+  "slug": "216-trend",
+  "name": "216 TREND",
+  "owner_email": "216umraniyesuite@gmail.com",
+  "owner_name": "216 TREND Yetkilisi",
+  "short_description": "Ümraniye Şerifali bölgesinde konumlanan 216 Trend Suite, şehri keşfetmek isteyenler için mükemmel bir başlangıç noktası. Altınşehir Metro Durağı’na yalnızca 3 dakika, Dudullu Otogarı’na ise 7 dakika mesafede bulunan tesisimiz, ulaşım açısından son derece avantajlı bir lokasyona sahip.Modern ve şık odalarıyla, her konaklama deneyimini özelleştirilmiş bir konfor ile sunuyor. Hem iş hem de tatil amaçlı gelen misafirler için 216 Trend Suite, verimli bir şehir keşfi veya rahat bir dinlenme",
+  "description": "Ümraniye Şerifali bölgesinde konumlanan 216 Trend Suite, şehri keşfetmek isteyenler için mükemmel bir başlangıç noktası. Altınşehir Metro Durağı’na yalnızca 3 dakika, Dudullu Otogarı’na ise 7 dakika mesafede bulunan tesisimiz, ulaşım açısından son derece avantajlı bir lokasyona sahip.Modern ve şık odalarıyla, her konaklama deneyimini özelleştirilmiş bir konfor ile sunuyor. Hem iş hem de tatil amaçlı gelen misafirler için 216 Trend Suite, verimli bir şehir keşfi veya rahat bir dinlenme imkanı sunar. İstanbul’un farklı noktalarına kolay erişim sağlayarak, zamanınızı en verimli şekilde değerlendirmeniz için tasarlanmıştır. 216 Trend Suite, İstanbul’un Ümraniye Şerifali Bölgesi'nde, merkezi bir konumda yer almaktadır. Altınşehir Metro Durağı’na sadece 3 dakika mesafede bulunan tesisimiz, Dudullu Otogarı’na ise yalnızca 7 dakika uzaklıktadır. 216 Trend Suite, İstanbul’un Ümraniye Şerifali Bölgesi'nde yer alan ve ulaşım açısından son derece avantajlı bir konumda bulunan modern bir konaklama tesisidir. Altınşehir Metro Durağı’na sadece 3 dakika mesafede yer alan tesisimiz, Dudullu Otogarı’na da yalnızca 7 dakika uzaklıktadır. E-5 Karayolu ve TEM Otoyolu'na yakınlığı sayesinde, İstanbul'un farklı bölgelerine hızlı ve kolay erişim sağlamaktadır. Ayrıca, çevresindeki alışveriş merkezleri, kafe ve restoranlar, konuklarına zengin bir sosyal yaşam deneyimi sunmaktadır.",
+  "location_description": "Ümraniye Şerifali bölgesinde konumlanan 216 Trend Suite, şehri keşfetmek isteyenler için mükemmel bir başlangıç noktası. Altınşehir Metro Durağı’na yalnızca 3 dakika, Dudullu Otogarı’na ise 7 dakika mesafede bulunan tesisimiz, ulaşım açısından son derece avantajlı bir lokasyona sahip.Modern ve şık odalarıyla, her konaklama deneyimini özelleştirilmiş bir konfor ile sunuyor. Hem iş hem de tatil amaçlı gelen misafirler için 216 Trend Suite, verimli bir şehir keşfi veya rahat bir dinlenme imkanı sunar. İstanbul’un farklı noktalarına kolay erişim sağlayarak, zamanınızı en verimli şekilde değerlendirmeniz için tasarlanmıştır. 216 Trend Suite, İstanbul’un Ümraniye Şerifali Bölgesi'nde, merkezi bir konumda yer almaktadır. Altınşehir Metro Durağı’na sadece 3 dakika mesafede bulunan tesisimiz, Dudullu Otogarı’na ise yalnızca 7 dakika uzaklıktadır. 216 Trend Suite, İstanbul’un Ümraniye Şerifali Bölgesi'nde yer alan ve ulaşım açısından son derece avantajlı bir konumda bulunan modern bir konaklama tesisidir. Altınşehir Metro Durağı’na sadece 3 dakika mesafede yer alan tesisimiz, Dudullu Otogarı’na da yalnızca 7 dakika uzaklıktadır. E-5 Karayolu ve TEM Otoyolu'na yakınlığı sayesinde, İstanbul'un farklı bölgelerine hızlı ve kolay erişim sağlamaktadır. Ayrıca, çevresindeki alışveriş merkezleri, kafe ve restoranlar, konuklarına zengin bir sosyal yaşam deneyimi sunmaktadır.",
+  "address": "Mehmet Akif Mahallesi Tavukçuyolu Caddesi, Dilek Sk. No:2, 34774 Ümraniye/İstanbul",
+  "city": "İstanbul",
+  "district": "Ümraniye",
+  "neighborhood": "Mehmet Akif Mahallesi Tavukçuyolu Caddesi",
+  "latitude": "41.0070145",
+  "longitude": "29.1427876",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-trend",
+  "cover": "/uploads/216suites/hotels/216-trend/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-trend/hotel-01.webp",
+    "/uploads/216suites/hotels/216-trend/hotel-02.webp",
+    "/uploads/216suites/hotels/216-trend/hotel-03.webp",
+    "/uploads/216suites/hotels/216-trend/hotel-04.webp",
+    "/uploads/216suites/hotels/216-trend/hotel-05.webp",
+    "/uploads/216suites/hotels/216-trend/hotel-06.webp",
+    "/uploads/216suites/hotels/216-trend/hotel-07.webp"
+  ],
+  "rooms": [
+    "classi-c-room",
+    "classi-c-twin-room"
+  ]
+}

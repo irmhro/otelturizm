@@ -1,0 +1,53 @@
+{
+  "slug": "216-star",
+  "name": "216 STAR",
+  "owner_email": "216starsuit@gmail.com",
+  "owner_name": "216 STAR Yetkilisi",
+  "short_description": "216 Star Suite, İstanbul’un Sancaktepe ilçesinin Samandıra bölgesinde, konforlu ve modern bir konaklama deneyimi sunan şık bir tesistir. 216 Star Suite, sakin bir atmosferde konforlu bir konaklama deneyimi sunarken, şehir hayatının yoğun temposundan uzaklaşmak isteyen misafirler için ideal bir ortam sunmaktadır. Hem iş hem de tatil amaçlı seyahat eden konuklar için mükemmel bir seçenek olan tesisimiz, İstanbul’un önemli iş ve alışveriş bölgelerine kolay ulaşım imkânı sunmaktadır. Saman",
+  "description": "216 Star Suite, İstanbul’un Sancaktepe ilçesinin Samandıra bölgesinde, konforlu ve modern bir konaklama deneyimi sunan şık bir tesistir. 216 Star Suite, sakin bir atmosferde konforlu bir konaklama deneyimi sunarken, şehir hayatının yoğun temposundan uzaklaşmak isteyen misafirler için ideal bir ortam sunmaktadır. Hem iş hem de tatil amaçlı seyahat eden konuklar için mükemmel bir seçenek olan tesisimiz, İstanbul’un önemli iş ve alışveriş bölgelerine kolay ulaşım imkânı sunmaktadır. Samandıra’nın merkezine yakın konumda bulunan tesisimiz, şehre ve çevresindeki önemli noktalara kolay erişim sağlamaktadır. Aile odalarımız, konuklarımızın konforu ve huzuru için tasarlanmış olup, unutulmaz bir konaklama deneyimi sunmak için her detayıyla özenle hazırlanmıştır.",
+  "location_description": "216 Star Suite, İstanbul’un Sancaktepe ilçesinin Samandıra bölgesinde, konforlu ve modern bir konaklama deneyimi sunan şık bir tesistir. 216 Star Suite, sakin bir atmosferde konforlu bir konaklama deneyimi sunarken, şehir hayatının yoğun temposundan uzaklaşmak isteyen misafirler için ideal bir ortam sunmaktadır. Hem iş hem de tatil amaçlı seyahat eden konuklar için mükemmel bir seçenek olan tesisimiz, İstanbul’un önemli iş ve alışveriş bölgelerine kolay ulaşım imkânı sunmaktadır. Samandıra’nın merkezine yakın konumda bulunan tesisimiz, şehre ve çevresindeki önemli noktalara kolay erişim sağlamaktadır. Aile odalarımız, konuklarımızın konforu ve huzuru için tasarlanmış olup, unutulmaz bir konaklama deneyimi sunmak için her detayıyla özenle hazırlanmıştır.",
+  "address": "Osmangazi, Hilal Cd. 24/A, 34887 Sancaktepe/İstanbul",
+  "city": "İstanbul",
+  "district": "Sancaktepe",
+  "neighborhood": "Osmangazi",
+  "latitude": "40.985784599999995",
+  "longitude": "29.2334182",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-star",
+  "cover": "/uploads/216suites/hotels/216-star/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-star/hotel-01.webp",
+    "/uploads/216suites/hotels/216-star/hotel-02.webp",
+    "/uploads/216suites/hotels/216-star/hotel-03.webp",
+    "/uploads/216suites/hotels/216-star/hotel-04.webp",
+    "/uploads/216suites/hotels/216-star/hotel-05.webp",
+    "/uploads/216suites/hotels/216-star/hotel-06.webp",
+    "/uploads/216suites/hotels/216-star/hotel-07.webp"
+  ],
+  "rooms": [
+    "classi-c-room",
+    "classi-c-twin-room"
+  ]
+}

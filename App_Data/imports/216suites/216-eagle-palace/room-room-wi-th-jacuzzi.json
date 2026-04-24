@@ -1,0 +1,41 @@
+{
+  "source_room_id": 3,
+  "slug": "room-wi-th-jacuzzi",
+  "name": "ROOM WİTH JACUZZİ",
+  "category": "Standart",
+  "capacity_total": 2,
+  "capacity_adult": 2,
+  "capacity_child": 0,
+  "nightly_price": "3880.0000",
+  "summary": "Gardırop, Oturma grubu, Kettle, Akıllı TV, Klima",
+  "size_sqm": 30,
+  "bed_type": "Ortopedik Double Yatak",
+  "bathroom": "Jakuzi, Duş, havlu seti, saç kurutma makinası, kişiye özel bakım seti",
+  "general": "Gardırop, Oturma grubu, Kettle, Akıllı TV, Klima",
+  "conditions": [
+    "ÜCRETSİZ İptal",
+    "Kredi Kartı Gerekmiyor"
+  ],
+  "features": [
+    "Ortopedik Double Yatak",
+    "Jakuzi",
+    "Duş",
+    "havlu seti",
+    "saç kurutma makinası",
+    "kişiye özel bakım seti",
+    "Gardırop",
+    "Oturma grubu",
+    "Kettle",
+    "Akıllı TV",
+    "Klima",
+    "ÜCRETSİZ İptal Kredi Kartı Gerekmiyor"
+  ],
+  "cover": "/uploads/216suites/rooms/216-eagle-palace/room-wi-th-jacuzzi/room-01.webp",
+  "gallery": [
+    "/uploads/216suites/rooms/216-eagle-palace/room-wi-th-jacuzzi/room-01.webp",
+    "/uploads/216suites/rooms/216-eagle-palace/room-wi-th-jacuzzi/room-02.webp",
+    "/uploads/216suites/rooms/216-eagle-palace/room-wi-th-jacuzzi/room-03.webp",
+    "/uploads/216suites/rooms/216-eagle-palace/room-wi-th-jacuzzi/room-04.webp",
+    "/uploads/216suites/rooms/216-eagle-palace/room-wi-th-jacuzzi/room-05.webp"
+  ]
+}

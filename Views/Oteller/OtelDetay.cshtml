@@ -239,6 +239,7 @@
     <figure class="gallery-lightbox-figure">
         <img src="" alt="@Model.Name tam ekran galeri" id="galleryLightboxImage" />
         <figcaption id="galleryLightboxCaption"></figcaption>
+        <div class="gallery-lightbox-thumbs" id="galleryLightboxThumbs" aria-label="Galeri küçük görseller"></div>
     </figure>
     <button type="button" class="gallery-lightbox-nav next" id="galleryLightboxNext" aria-label="Sonraki gorsel">
         <i class="fas fa-chevron-right"></i>
@@ -460,12 +461,13 @@
         <article class="content-card">
             <div class="section-head">
                 <h2>Tesis Hakkinda</h2>
-                <p>@longDescription</p>
+                <p class="hotel-about-text" id="hotelAboutText">
+                    @(!string.IsNullOrWhiteSpace(Model.LocationDescription) ? Model.LocationDescription : longDescription)
+                </p>
+                <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden>
+                    Tümünü gör
+                </button>
             </div>
-            @if (!string.IsNullOrWhiteSpace(Model.LocationDescription))
-            {
-                <p class="detail-long-copy">@Model.LocationDescription</p>
-            }
         </article>
 
         <article class="content-card">
@@ -475,12 +477,15 @@
             </div>
 
             <div class="room-list">
+                @{
+                    var roomGalleryMap = new Dictionary<long, List<string>>();
+                    var roomDetailsMap = new Dictionary<long, object>();
+                }
                 @foreach (var room in Model.Rooms)
                 {
                     var roomGallery = room.GalleryImages.Count > 0
                         ? room.GalleryImages
                         : (!string.IsNullOrWhiteSpace(room.ImageUrl) ? new List<string> { room.ImageUrl } : new List<string>());
-                    var roomGalleryJson = System.Text.Json.JsonSerializer.Serialize(roomGallery);
                     var roomCoverImage = !string.IsNullOrWhiteSpace(room.ImageUrl)
                         ? room.ImageUrl
                         : roomGallery.FirstOrDefault();
@@ -494,7 +499,7 @@
                                         <button type="button"
                                                 class="room-gallery-trigger"
                                                 data-room-name="@room.Name"
-                                                data-room-gallery='@roomGalleryJson'
+                                                data-room-id="@room.RoomTypeId"
                                                 data-room-gallery-start="0"
                                                 aria-label="@room.Name galerisi">
                                             <img src="@roomCoverImage" alt="@room.Name" />
@@ -510,12 +515,12 @@
                                     @if (roomGallery.Count > 1)
                                     {
                                         <div class="room-thumb-strip" aria-label="@room.Name gorselleri">
-                                            @for (var imageIndex = 0; imageIndex < roomGallery.Count; imageIndex++)
+                                            @for (var imageIndex = 0; imageIndex < Math.Min(roomGallery.Count, 6); imageIndex++)
                                             {
                                                 <button type="button"
                                                         class="room-gallery-trigger room-thumb-item @(imageIndex == 0 ? "active" : string.Empty)"
                                                         data-room-name="@room.Name"
-                                                        data-room-gallery='@roomGalleryJson'
+                                                        data-room-id="@room.RoomTypeId"
                                                         data-room-gallery-start="@imageIndex"
                                                         aria-label="@room.Name gorsel @(imageIndex + 1)">
                                                     <img src="@roomGallery[imageIndex]" alt="@room.Name gorsel @(imageIndex + 1)" />
@@ -571,8 +576,8 @@
                                             })
                                             .ToList();
                                     }
-
-                                    var roomDetailsJson = System.Text.Json.JsonSerializer.Serialize(roomAllFeatures);
+                                    roomGalleryMap[room.RoomTypeId] = roomGallery;
+                                    roomDetailsMap[room.RoomTypeId] = roomAllFeatures;
                                 }
                                 @if (roomTopFeatures.Count > 0)
                                 {
@@ -624,8 +629,7 @@
                                         data-room-cancellation="@room.CancellationText"
                                         data-room-feature-count="@roomAllFeatures.Count"
                                         data-room-gallery-count="@roomGallery.Count"
-                                        data-room-gallery='@roomGalleryJson'
-                                        data-room-details='@roomDetailsJson'>
+                                        >
                                     Oda Detay
                                 </button>
                                 @if (room.Price > 0m)
@@ -920,6 +924,11 @@
                     </div>
                 }
             </div>
+
+            <script>
+                window.__hotelRoomGalleries = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(roomGalleryMap));
+                window.__hotelRoomDetails = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(roomDetailsMap));
+            </script>
         </article>
 
     </div>
@@ -1078,7 +1087,7 @@
                             </label>
                         </div>
                         <label>
-                            <span>Check-in / Check-out</span>
+                            <span>Giriş / Çıkış</span>
                             <input type="text" value="@(Model.CheckInTime?.ToString(@"hh\:mm") ?? "14:00") / @(Model.CheckOutTime?.ToString(@"hh\:mm") ?? "12:00")" readonly />
                         </label>
                     </div>
@@ -1164,6 +1173,15 @@
         <button type="button" class="detail-modal-primary" id="reservationConfirmSubmitBtn">Rezervasyonu Oluştur</button>
     </div>
 </section>
+
+@if (Model.ActiveDraft is not null && Model.IsLoggedInUser)
+{
+    <form id="cancelDraftForm" method="post" action="/rezervasyon-taslagi/iptal" hidden>
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="draftId" value="@Model.ActiveDraft.DraftId" />
+        <input type="hidden" name="returnUrl" value="/oteller/@Model.Slug" />
+    </form>
+}
 
 @if (Model.IsLoggedInUser)
 {
@@ -1383,6 +1401,7 @@
             const lightbox = document.getElementById('galleryLightbox');
             const lightboxImage = document.getElementById('galleryLightboxImage');
             const lightboxCaption = document.getElementById('galleryLightboxCaption');
+            const lightboxThumbs = document.getElementById('galleryLightboxThumbs');
             const lightboxClose = document.getElementById('galleryLightboxClose');
             const lightboxPrev = document.getElementById('galleryLightboxPrev');
             const lightboxNext = document.getElementById('galleryLightboxNext');
@@ -1429,6 +1448,10 @@
             const openProfileCompletionFromBanner = document.getElementById('openProfileCompletionFromBanner');
             const openAmenitiesModal = document.getElementById('openAmenitiesModal');
             const amenitiesModal = document.getElementById('amenitiesModal');
+            const cancelDraftForm = document.getElementById('cancelDraftForm');
+            const activeDraftResumeUrl = '@(Model.ActiveDraft?.ResumeUrl ?? "")';
+            const activeDraftPromptMessage = '@(Model.ActiveDraft?.Message ?? "")';
+            const shouldPromptActiveDraft = @((Model.ActiveDraft is not null && Model.IsLoggedInUser && !Model.ShouldResumeDraftOnLoad) ? "true" : "false");
             const roomDetailModal = document.getElementById('roomDetailModal');
             const roomDetailModalTitle = document.getElementById('roomDetailModalTitle');
             const roomDetailModalRoomName = document.getElementById('roomDetailModalRoomName');
@@ -1634,6 +1657,39 @@
                 setActiveMobileDot(safeIndex);
             }
 
+            function syncLightboxThumbs() {
+                if (!lightboxThumbs || !Array.isArray(galleryImages) || !galleryImages.length) {
+                    return;
+                }
+
+                lightboxThumbs.innerHTML = galleryImages.map(function (src, idx) {
+                    const isActive = idx === activeGalleryIndex;
+                    return '<button type="button" class="gallery-lightbox-thumb' + (isActive ? ' active' : '') + '" data-lightbox-thumb-index="' + idx + '" aria-label="Gorsel ' + (idx + 1) + '">' +
+                        '<img src="' + src + '" alt="Kucuk gorsel ' + (idx + 1) + '" />' +
+                        '</button>';
+                }).join('');
+
+                lightboxThumbs.querySelectorAll('[data-lightbox-thumb-index]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        const idx = parseInt(btn.getAttribute('data-lightbox-thumb-index') || '0', 10);
+                        activeGalleryIndex = Math.min(Math.max(idx, 0), galleryImages.length - 1);
+                        if (lightboxImage) {
+                            lightboxImage.src = galleryImages[activeGalleryIndex];
+                        }
+                        if (lightboxCaption) {
+                            lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
+                        }
+                        syncMainImage(activeGalleryIndex);
+                        scrollMobileTrackTo(activeGalleryIndex);
+                        syncLightboxThumbs();
+                    });
+                });
+
+                // aktif thumb görünür kalsın
+                const active = lightboxThumbs.querySelector('.gallery-lightbox-thumb.active');
+                active?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+
             function openLightbox(index) {
                 if (!lightbox || !lightboxImage || !Array.isArray(galleryImages) || !galleryImages.length) {
                     return;
@@ -1646,6 +1702,7 @@
                 }
                 lightbox.hidden = false;
                 document.body.style.overflow = 'hidden';
+                syncLightboxThumbs();
             }
 
             function closeLightbox() {
@@ -1655,6 +1712,9 @@
 
                 lightbox.hidden = true;
                 document.body.style.overflow = '';
+                if (lightboxThumbs) {
+                    lightboxThumbs.innerHTML = '';
+                }
             }
 
             function moveLightbox(step) {
@@ -1671,6 +1731,7 @@
                 }
                 syncMainImage(activeGalleryIndex);
                 scrollMobileTrackTo(activeGalleryIndex);
+                syncLightboxThumbs();
             }
 
             document.querySelectorAll('.gallery-thumb').forEach(function (button) {
@@ -1752,33 +1813,49 @@
                 }
             });
 
-            function showRoomPickedFeedback(button) {
-                if (!button) {
-                    return;
-                }
-
+            function ensureSelectButtonOriginalText(button) {
+                if (!button) return;
                 if (!button.dataset.originalText) {
                     button.dataset.originalText = button.textContent?.trim() || 'Odanı Seç';
                 }
+            }
 
-                if (button.dataset.pickFeedbackTimer) {
-                    clearTimeout(parseInt(button.dataset.pickFeedbackTimer, 10));
-                }
+            function getRoomSelectionMap() {
+                const nodes = getRoomItemNodes();
+                const map = new Map(); // roomTypeId(string) -> [index...]
+                nodes.forEach(function (node, idx) {
+                    const select = node?.querySelector('[data-field="roomType"]');
+                    const value = (select && 'value' in select) ? String(select.value || '') : '';
+                    if (!value) return;
+                    const arr = map.get(value) || [];
+                    arr.push(idx);
+                    map.set(value, arr);
+                });
+                return map;
+            }
 
-                button.classList.add('is-picked-feedback');
-                button.textContent = 'Odanız seçildi';
+            function updateSelectRoomButtons() {
+                const selectionMap = getRoomSelectionMap();
+                document.querySelectorAll('.select-room-btn').forEach(function (btn) {
+                    ensureSelectButtonOriginalText(btn);
+                    const roomId = String(btn.getAttribute('data-room-id') || '');
+                    const indexes = roomId ? (selectionMap.get(roomId) || []) : [];
+                    if (!indexes.length) {
+                        btn.classList.remove('is-selected-room');
+                        btn.textContent = btn.dataset.originalText || 'Odanı Seç';
+                        return;
+                    }
 
-                const timerId = window.setTimeout(function () {
-                    button.classList.remove('is-picked-feedback');
-                    button.textContent = button.dataset.originalText || 'Odanı Seç';
-                    button.dataset.pickFeedbackTimer = '';
-                }, 2000);
-                button.dataset.pickFeedbackTimer = String(timerId);
+                    btn.classList.add('is-selected-room');
+                    const lastPicked = parseInt(btn.dataset.lastPickedRoomIndex || '', 10);
+                    const preferIndex = Number.isFinite(lastPicked) && indexes.includes(lastPicked) ? lastPicked : indexes[0];
+                    const extra = indexes.length > 1 ? ' (+' + (indexes.length - 1) + ')' : '';
+                    btn.textContent = 'Oda ' + (preferIndex + 1) + ' seçili' + extra;
+                });
             }
 
             document.querySelectorAll('.select-room-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
-                    showRoomPickedFeedback(button);
                     const roomId = button.getAttribute('data-room-id');
                     const nodes = getRoomItemNodes();
 
@@ -1792,6 +1869,8 @@
                         ensureGuestCapacity(true);
                         refreshPriceQuote();
                         document.querySelector('.booking-sidebar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        button.dataset.lastPickedRoomIndex = String(index);
+                        updateSelectRoomButtons();
                     }
 
                     // tek oda: direkt uygula
@@ -1838,6 +1917,8 @@
                 });
             });
 
+            updateSelectRoomButtons();
+
             document.querySelectorAll('.guest-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
                     const target = button.getAttribute('data-target');
@@ -1874,6 +1955,49 @@
                     syncGuestInputs();
                 });
             });
+
+            (function initHotelAboutClamp() {
+                const textEl = document.getElementById('hotelAboutText');
+                const toggleEl = document.getElementById('hotelAboutToggle');
+                if (!(textEl instanceof HTMLElement) || !(toggleEl instanceof HTMLButtonElement)) {
+                    return;
+                }
+
+                // Sadece masaüstünde (>= 900px) 5 satır kısaltma uygula
+                const media = window.matchMedia('(min-width: 900px)');
+
+                function computeNeedsToggle() {
+                    // Clamp aktifken yüksekliği ölç
+                    textEl.classList.add('is-clamped');
+                    const needs = textEl.scrollHeight > textEl.clientHeight + 1;
+                    textEl.classList.toggle('has-toggle', needs);
+                    toggleEl.hidden = !needs;
+                    toggleEl.textContent = 'Tümünü gör';
+                    textEl.classList.remove('is-expanded');
+                }
+
+                function applyMode() {
+                    if (!media.matches) {
+                        textEl.classList.remove('is-clamped', 'is-expanded', 'has-toggle');
+                        toggleEl.hidden = true;
+                        return;
+                    }
+                    computeNeedsToggle();
+                }
+
+                toggleEl.addEventListener('click', function () {
+                    const expanded = textEl.classList.toggle('is-expanded');
+                    toggleEl.textContent = expanded ? 'Kapat' : 'Tümünü gör';
+                });
+
+                applyMode();
+                media.addEventListener?.('change', applyMode);
+                window.addEventListener('resize', function () {
+                    if (media.matches && !textEl.classList.contains('is-expanded')) {
+                        computeNeedsToggle();
+                    }
+                });
+            })();
 
             function normalizeRoomItemDates(item) {
                 const todayText = '@todayDate';
@@ -2359,6 +2483,51 @@
                 document.querySelector('.booking-sidebar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
 
+            function openActiveDraftPrompt() {
+                if (!infoModal || !infoModalText || !infoModalActions) {
+                    return;
+                }
+
+                const msg = (activeDraftPromptMessage || '').trim()
+                    || 'Yarım kalan bir rezervasyon taslağınız var. Devam etmek veya iptal etmek ister misiniz?';
+                infoModalText.textContent = msg;
+                const titleEl = document.getElementById('detailInfoModalTitle');
+                if (titleEl) {
+                    titleEl.innerHTML = '<span class="detail-modal-title-icon" aria-hidden="true"><i class="fas fa-triangle-exclamation"></i></span><span>Rezervasyon taslağı</span>';
+                }
+
+                infoModal.classList.add('is-warning');
+                infoModalActions.innerHTML =
+                    '<button type="button" class="detail-modal-primary" id="activeDraftContinueBtn">Devam Et</button>'
+                    + '<button type="button" class="detail-modal-secondary" id="activeDraftCancelBtn">İptal Et</button>'
+                    + '<button type="button" class="detail-modal-secondary" data-close-modal="detailInfoModal">Şimdi değil</button>';
+
+                openModal(infoModal);
+
+                document.getElementById('activeDraftContinueBtn')?.addEventListener('click', function () {
+                    closeModal(infoModal);
+                    infoModal.classList.remove('is-warning');
+                    if ((activeDraftResumeUrl || '').trim()) {
+                        window.location.href = activeDraftResumeUrl;
+                    } else {
+                        resumeDraftFlow();
+                    }
+                });
+                document.getElementById('activeDraftCancelBtn')?.addEventListener('click', function () {
+                    closeModal(infoModal);
+                    infoModal.classList.remove('is-warning');
+                    if (cancelDraftForm instanceof HTMLFormElement) {
+                        cancelDraftForm.submit();
+                    }
+                });
+                infoModalActions.querySelectorAll('[data-close-modal]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        closeModal(infoModal);
+                        infoModal.classList.remove('is-warning');
+                    });
+                });
+            }
+
             function isPaymentMixScenario() {
                 const pm = (paymentMethodSelect?.value || '').trim();
                 return pm.startsWith('Karma');
@@ -2531,6 +2700,9 @@
                         };
                     }));
                 }
+
+                // oda kartlarındaki "Oda 1/2 seçili" etiketlerini senkron tut
+                updateSelectRoomButtons?.();
             }
 
             async function refreshPriceQuote() {
@@ -2774,12 +2946,16 @@
                 let details = [];
                 let galleryItems = [];
                 try {
-                    details = JSON.parse(button.getAttribute('data-room-details') || '[]');
+                    const id = Number(button.getAttribute('data-room-id') || '0');
+                    const map = window.__hotelRoomDetails || {};
+                    details = (id && map && map[id]) ? map[id] : [];
                 } catch (error) {
                     details = [];
                 }
                 try {
-                    galleryItems = JSON.parse(button.getAttribute('data-room-gallery') || '[]');
+                    const id = Number(button.getAttribute('data-room-id') || '0');
+                    const map = window.__hotelRoomGalleries || {};
+                    galleryItems = (id && map && map[id]) ? map[id] : [];
                 } catch (error) {
                     galleryItems = [];
                 }
@@ -3038,7 +3214,11 @@
 
                 reservationSubmitConfirmed = true;
                 closeModal(reservationConfirmModal);
-                bookingForm.requestSubmit();
+                if (typeof bookingForm.requestSubmit === 'function') {
+                    bookingForm.requestSubmit();
+                } else {
+                    bookingForm.submit();
+                }
             });
 
             profileCompletionForm?.addEventListener('submit', async function (event) {
@@ -3132,6 +3312,12 @@
                 resumeDraftFlow();
             }
 
+            if (shouldPromptActiveDraft) {
+                window.setTimeout(function () {
+                    openActiveDraftPrompt();
+                }, 80);
+            }
+
             // init first room row (single-room compatible)
             if (getRoomItemNodes().length === 0) {
                 addRoomItem({
@@ -3185,12 +3371,24 @@
             const mainImage = document.getElementById('roomGalleryMainImage');
             const title = document.getElementById('roomGalleryTitle');
             const thumbs = document.getElementById('roomGalleryThumbs');
+            const dialog = modal?.querySelector('.room-gallery-dialog') || null;
             const prevButton = document.getElementById('roomGalleryPrev');
             const nextButton = document.getElementById('roomGalleryNext');
             const triggers = document.querySelectorAll('.room-gallery-trigger');
             let galleryItems = [];
             let currentIndex = 0;
             let currentRoomName = '';
+
+            function setAmbientSources() {
+                if (!(dialog instanceof HTMLElement) || !Array.isArray(galleryItems) || galleryItems.length === 0) {
+                    return;
+                }
+
+                const prevIndex = (currentIndex - 1 + galleryItems.length) % galleryItems.length;
+                const nextIndex = (currentIndex + 1) % galleryItems.length;
+                dialog.style.setProperty('--room-gallery-prev', 'url(\"' + (galleryItems[prevIndex] || '') + '\")');
+                dialog.style.setProperty('--room-gallery-next', 'url(\"' + (galleryItems[nextIndex] || '') + '\")');
+            }
 
             function renderGallery() {
                 if (!mainImage || !title || !thumbs || galleryItems.length === 0) {
@@ -3213,6 +3411,8 @@
                         renderGallery();
                     });
                 });
+
+                setAmbientSources();
             }
 
             function openGallery(items, roomName, startIndex) {
@@ -3239,10 +3439,11 @@
 
             triggers.forEach(function (trigger) {
                 trigger.addEventListener('click', function () {
-                    const rawGallery = trigger.getAttribute('data-room-gallery') || '[]';
+                    const id = Number(trigger.getAttribute('data-room-id') || '0');
                     const startIndex = Number(trigger.getAttribute('data-room-gallery-start') || '0');
                     try {
-                        const items = JSON.parse(rawGallery);
+                        const map = window.__hotelRoomGalleries || {};
+                        const items = (id && map && map[id]) ? map[id] : [];
                         openGallery(Array.isArray(items) ? items : [], trigger.getAttribute('data-room-name') || 'Oda', startIndex);
                     } catch (_error) {
                         openGallery([], trigger.getAttribute('data-room-name') || 'Oda', startIndex);

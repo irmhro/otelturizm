@@ -1,0 +1,58 @@
+{
+  "slug": "216-castle",
+  "name": "216 CASTLE",
+  "owner_email": "216castlehotel@gmail.com",
+  "owner_name": "216 CASTLE Yetkilisi",
+  "short_description": "Gebze Eskihisar’da, tarihi Eskihisar Kalesi’nin yanı başında ve büyüleyici Marmara Denizi manzarasına hakim konumuyla yer alan 216 Castle, misafirlerine konfor ve huzuru bir arada sunan seçkin bir 4 yıldızlı oteldir. 30, 45 ve 70 m² büyüklüklerinde, ev sıcaklığını hissettiren toplam 45 modern odası, usta şeflerimizin hazırladığı özel lezzetlerden oluşan zengin mutfağı, donanımlı toplantı ve etkinlik salonları ile iş ve tatil amaçlı konaklamalar için ideal bir deneyim sunar. Rahatlatıcı",
+  "description": "Gebze Eskihisar’da, tarihi Eskihisar Kalesi’nin yanı başında ve büyüleyici Marmara Denizi manzarasına hakim konumuyla yer alan 216 Castle, misafirlerine konfor ve huzuru bir arada sunan seçkin bir 4 yıldızlı oteldir. 30, 45 ve 70 m² büyüklüklerinde, ev sıcaklığını hissettiren toplam 45 modern odası, usta şeflerimizin hazırladığı özel lezzetlerden oluşan zengin mutfağı, donanımlı toplantı ve etkinlik salonları ile iş ve tatil amaçlı konaklamalar için ideal bir deneyim sunar. Rahatlatıcı Türk hamamı, sauna olanakları ve yüksek hijyen standartlarına uygun servis anlayışımızla misafirlerimize güvenli ve keyifli bir konaklama sağlıyoruz. Müşteri memnuniyetini odak noktası edinen, eğitimli ve güler yüzlü ekibimiz, tüm ihtiyaç ve beklentilerinizi karşılamak için her an yanınızdadır. 216 Castle, konfor, manzara ve kusursuz hizmetin birleştiği benzersiz bir konaklama deneyimi sunar.",
+  "location_description": "Gebze Eskihisar’da, tarihi Eskihisar Kalesi’nin yanı başında ve büyüleyici Marmara Denizi manzarasına hakim konumuyla yer alan 216 Castle, misafirlerine konfor ve huzuru bir arada sunan seçkin bir 4 yıldızlı oteldir. 30, 45 ve 70 m² büyüklüklerinde, ev sıcaklığını hissettiren toplam 45 modern odası, usta şeflerimizin hazırladığı özel lezzetlerden oluşan zengin mutfağı, donanımlı toplantı ve etkinlik salonları ile iş ve tatil amaçlı konaklamalar için ideal bir deneyim sunar. Rahatlatıcı Türk hamamı, sauna olanakları ve yüksek hijyen standartlarına uygun servis anlayışımızla misafirlerimize güvenli ve keyifli bir konaklama sağlıyoruz. Müşteri memnuniyetini odak noktası edinen, eğitimli ve güler yüzlü ekibimiz, tüm ihtiyaç ve beklentilerinizi karşılamak için her an yanınızdadır. 216 Castle, konfor, manzara ve kusursuz hizmetin birleştiği benzersiz bir konaklama deneyimi sunar.",
+  "address": "Eskihisar Mah. Zeki Acar Cad Ener Demir Çelik İnş. Sit. Otel Apt. No.: 13/A, 41400 Gebze/Kocaeli",
+  "city": "Kocaeli",
+  "district": "Gebze",
+  "neighborhood": "Eskihisar Mah. Zeki Acar Cad Ener Demir Çelik İnş. Sit. Otel Apt. No.: 13/A",
+  "latitude": "40.770064399999995",
+  "longitude": "29.428609899999998",
+  "star_count": 4,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-castle",
+  "cover": "/uploads/216suites/hotels/216-castle/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-castle/hotel-01.webp",
+    "/uploads/216suites/hotels/216-castle/hotel-02.webp",
+    "/uploads/216suites/hotels/216-castle/hotel-03.webp",
+    "/uploads/216suites/hotels/216-castle/hotel-04.webp",
+    "/uploads/216suites/hotels/216-castle/hotel-05.webp",
+    "/uploads/216suites/hotels/216-castle/hotel-06.webp",
+    "/uploads/216suites/hotels/216-castle/hotel-07.webp"
+  ],
+  "rooms": [
+    "double-room",
+    "parti-al-sea-double-room",
+    "twin-room",
+    "triple-room",
+    "jakuzi-room",
+    "deluxe-room",
+    "parti-al-sea-deluxe-room"
+  ]
+}

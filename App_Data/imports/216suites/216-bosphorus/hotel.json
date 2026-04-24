@@ -1,0 +1,56 @@
+{
+  "slug": "216-bosphorus",
+  "name": "216 BOSPHORUS",
+  "owner_email": "216bosphorus@gmail.com",
+  "owner_name": "216 BOSPHORUS Yetkilisi",
+  "short_description": "216 Bosphorus Suite, İstanbul’un Üsküdar bölgesinde, sahil üstünde yer alan modern ve şık bir konaklama tesisidir. Boğaz manzaralı odalarımız, konuklarımıza eşsiz bir Boğaz manzarası eşliğinde konforlu bir deneyim sunmaktadır. Her detayda zarafetin ve rahatlığın ön planda tutulduğu tesisimiz, iş ve tatil amaçlı konaklamalar için ideal bir tercihtir.Modern tasarımı ve geniş odalarıyla misafirlerine yüksek standartlarda konfor sunmaktadır. Tesisimizde, konuklarımıza 24 saat açık resepsiy",
+  "description": "216 Bosphorus Suite, İstanbul’un Üsküdar bölgesinde, sahil üstünde yer alan modern ve şık bir konaklama tesisidir. Boğaz manzaralı odalarımız, konuklarımıza eşsiz bir Boğaz manzarası eşliğinde konforlu bir deneyim sunmaktadır. Her detayda zarafetin ve rahatlığın ön planda tutulduğu tesisimiz, iş ve tatil amaçlı konaklamalar için ideal bir tercihtir.Modern tasarımı ve geniş odalarıyla misafirlerine yüksek standartlarda konfor sunmaktadır. Tesisimizde, konuklarımıza 24 saat açık resepsiyon, ücretsiz Wi-Fi, günlük temizlik hizmetleri gibi olanaklar sunulurken, hem iş hem de dinlenme amacıyla gelenler için her türlü ihtiyaca hitap edilmektedir. Sahil kenarındaki lokasyonu sayesinde, misafirlerimize Üsküdar Sahili’ne ve çevresindeki sosyal olanaklara kolay erişim imkanı sağlanmaktadır. Bunun yanı sıra, 216 Bosphorus Suite, İstanbul’un önemli noktalarına ve tarihi semtlerine yakın konumuyla öne çıkmaktadır. Kuzguncuk gibi tarihi bölgeler ve Üsküdar Sahili’nde keyifli yürüyüşler yapma imkânı, misafirlerimize kültürel bir zenginlik sunmaktadır. Ayrıca, tesisimizden Avrupa Yakası’na kolay geçiş sağlayan ulaşım seçenekleri ile İstanbul’un her köşesine rahatça ulaşabilirsiniz.",
+  "location_description": "216 Bosphorus Suite, İstanbul’un Üsküdar bölgesinde, sahil üstünde yer alan modern ve şık bir konaklama tesisidir. Boğaz manzaralı odalarımız, konuklarımıza eşsiz bir Boğaz manzarası eşliğinde konforlu bir deneyim sunmaktadır. Her detayda zarafetin ve rahatlığın ön planda tutulduğu tesisimiz, iş ve tatil amaçlı konaklamalar için ideal bir tercihtir.Modern tasarımı ve geniş odalarıyla misafirlerine yüksek standartlarda konfor sunmaktadır. Tesisimizde, konuklarımıza 24 saat açık resepsiyon, ücretsiz Wi-Fi, günlük temizlik hizmetleri gibi olanaklar sunulurken, hem iş hem de dinlenme amacıyla gelenler için her türlü ihtiyaca hitap edilmektedir. Sahil kenarındaki lokasyonu sayesinde, misafirlerimize Üsküdar Sahili’ne ve çevresindeki sosyal olanaklara kolay erişim imkanı sağlanmaktadır. Bunun yanı sıra, 216 Bosphorus Suite, İstanbul’un önemli noktalarına ve tarihi semtlerine yakın konumuyla öne çıkmaktadır. Kuzguncuk gibi tarihi bölgeler ve Üsküdar Sahili’nde keyifli yürüyüşler yapma imkânı, misafirlerimize kültürel bir zenginlik sunmaktadır. Ayrıca, tesisimizden Avrupa Yakası’na kolay geçiş sağlayan ulaşım seçenekleri ile İstanbul’un her köşesine rahatça ulaşabilirsiniz.",
+  "address": "Pasalimanı Caddesi No 22 Uskudar, İstanbul Türkiye",
+  "city": "İstanbul",
+  "district": "Merkez",
+  "neighborhood": "Pasalimanı Caddesi No 22 Uskudar",
+  "latitude": "41.02975997122823",
+  "longitude": "29.015824713218322",
+  "star_count": null,
+  "check_in_time": "En erken saat 14:00 ve sonrası",
+  "check_out_time": "En geç saat 12:00 ve öncesi",
+  "children_policy": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+  "pet_policy": "Evcil hayvan kabul edilmemektedir.",
+  "rules": {
+    "Check-in": "En erken saat 14:00 ve sonrası",
+    "Check-out": "En geç saat 12:00 ve öncesi",
+    "Çocuklar": "2 yaşına kadar olan bebekler ücretsizdir. Her bir oda için 6 yaşına kadar 1 çocuk ücretsizdir.",
+    "Evcil Hayvan": "Evcil hayvan kabul edilmemektedir."
+  },
+  "features": [
+    "Fön Makinası",
+    "Minibar",
+    "Ücretsiz WiFi",
+    "Oda Telefonu",
+    "Klima",
+    "Ücretsiz Park",
+    "İkramlar",
+    "Netflix",
+    "Amazon Prime",
+    "Exxen"
+  ],
+  "page_url": "https://216suites.com/oteller/216-bosphorus",
+  "cover": "/uploads/216suites/hotels/216-bosphorus/hotel-01.webp",
+  "gallery": [
+    "/uploads/216suites/hotels/216-bosphorus/hotel-01.webp",
+    "/uploads/216suites/hotels/216-bosphorus/hotel-02.webp",
+    "/uploads/216suites/hotels/216-bosphorus/hotel-03.webp",
+    "/uploads/216suites/hotels/216-bosphorus/hotel-04.webp",
+    "/uploads/216suites/hotels/216-bosphorus/hotel-05.webp",
+    "/uploads/216suites/hotels/216-bosphorus/hotel-06.webp",
+    "/uploads/216suites/hotels/216-bosphorus/hotel-07.webp"
+  ],
+  "rooms": [
+    "classi-c-room",
+    "junior-room-parti-al-vi-ew",
+    "kismi-bogaz-manzara-deluxe-bosphorus-si-de-vi-ew",
+    "tam-bogaz-manzara-bosphorus-vi-ew",
+    "standart-room-wi-th-li-mi-ted-bosphorus-vi-ew"
+  ]
+}
