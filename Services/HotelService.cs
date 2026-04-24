@@ -82,58 +82,73 @@ public class HotelService : IHotelService
             FROM oteller o
             LEFT JOIN (
                 SELECT
-                    ot.otel_id,
-                    best.effective_price AS baslangic_fiyat,
-                    best.base_price AS min_normal_fiyat,
-                    best.discount_price AS min_indirimli_fiyat,
-                    best.discount_id AS indirim_id
-                FROM oda_tipleri ot
-                WHERE ot.aktif_mi = 1
-                OUTER APPLY (
-                    SELECT TOP (1)
-                        CASE
-                            WHEN ofm.kapali_satis = 1 THEN NULL
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
-                            ELSE ofm.gecelik_fiyat
-                        END AS effective_price,
-                        CASE
-                            WHEN ofm.kapali_satis = 1 THEN NULL
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                            ELSE ofm.gecelik_fiyat
-                        END AS base_price,
-                        CASE
-                            WHEN ofm.kapali_satis = 1 THEN NULL
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                            WHEN ofm.indirimli_fiyat IS NULL OR ofm.indirimli_fiyat <= 0 THEN NULL
-                            WHEN ofm.indirimli_fiyat >= ofm.gecelik_fiyat THEN NULL
-                            ELSE ofm.indirimli_fiyat
-                        END AS discount_price,
-                        ofm.kampanya_id AS discount_id
-                    FROM oda_fiyat_musaitlik ofm
-                    WHERE ofm.oda_tip_id = ot.id
-                      AND ofm.otel_id = ot.otel_id
-                      AND ofm.tarih = CAST(SYSUTCDATETIME() AS date)
-                    ORDER BY
-                        CASE
-                            WHEN ofm.kapali_satis = 1 THEN 1 ELSE 0
-                        END ASC,
-                        CASE
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN 1 ELSE 0
-                        END ASC,
-                        CASE
-                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN 1 ELSE 0
-                        END ASC,
-                        CASE
-                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
-                            ELSE ofm.gecelik_fiyat
-                        END ASC,
-                        ofm.id ASC
-                ) best
-                GROUP BY ot.otel_id
+                    hotel_prices.otel_id,
+                    hotel_prices.effective_price AS baslangic_fiyat,
+                    hotel_prices.base_price AS min_normal_fiyat,
+                    hotel_prices.discount_price AS min_indirimli_fiyat,
+                    hotel_prices.discount_id AS indirim_id
+                FROM (
+                    SELECT
+                        ot.otel_id,
+                        best.effective_price,
+                        best.base_price,
+                        best.discount_price,
+                        best.discount_id,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY ot.otel_id
+                            ORDER BY
+                                CASE WHEN best.effective_price IS NULL THEN 1 ELSE 0 END,
+                                best.effective_price ASC,
+                                ot.id ASC
+                        ) AS rn
+                    FROM oda_tipleri ot
+                    OUTER APPLY (
+                        SELECT TOP (1)
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
+                                WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                                ELSE ofm.gecelik_fiyat
+                            END AS effective_price,
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
+                                ELSE ofm.gecelik_fiyat
+                            END AS base_price,
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
+                                WHEN ofm.indirimli_fiyat IS NULL OR ofm.indirimli_fiyat <= 0 THEN NULL
+                                WHEN ofm.indirimli_fiyat >= ofm.gecelik_fiyat THEN NULL
+                                ELSE ofm.indirimli_fiyat
+                            END AS discount_price,
+                            ofm.kampanya_id AS discount_id
+                        FROM oda_fiyat_musaitlik ofm
+                        WHERE ofm.oda_tip_id = ot.id
+                          AND ofm.otel_id = ot.otel_id
+                          AND ofm.tarih = CAST(SYSUTCDATETIME() AS date)
+                        ORDER BY
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN 1 ELSE 0
+                            END ASC,
+                            CASE
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN 1 ELSE 0
+                            END ASC,
+                            CASE
+                                WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN 1 ELSE 0
+                            END ASC,
+                            CASE
+                                WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                                ELSE ofm.gecelik_fiyat
+                            END ASC,
+                            ofm.id ASC
+                    ) best
+                    WHERE ot.aktif_mi = 1
+                ) hotel_prices
+                WHERE hotel_prices.rn = 1
             ) pf ON pf.otel_id = o.id
             LEFT JOIN fiyat_indirimleri fi ON fi.id = pf.indirim_id AND fi.aktif_mi = 1
             LEFT JOIN (
@@ -679,58 +694,73 @@ public class HotelService : IHotelService
             FROM oteller o
             LEFT JOIN (
                 SELECT
-                    ot.otel_id,
-                    best.effective_price AS baslangic_fiyat,
-                    best.base_price AS min_normal_fiyat,
-                    best.discount_price AS min_indirimli_fiyat,
-                    best.discount_id AS indirim_id
-                FROM oda_tipleri ot
-                WHERE ot.aktif_mi = 1
-                OUTER APPLY (
-                    SELECT TOP (1)
-                        CASE
-                            WHEN ofm.kapali_satis = 1 THEN NULL
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
-                            ELSE ofm.gecelik_fiyat
-                        END AS effective_price,
-                        CASE
-                            WHEN ofm.kapali_satis = 1 THEN NULL
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                            ELSE ofm.gecelik_fiyat
-                        END AS base_price,
-                        CASE
-                            WHEN ofm.kapali_satis = 1 THEN NULL
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                            WHEN ofm.indirimli_fiyat IS NULL OR ofm.indirimli_fiyat <= 0 THEN NULL
-                            WHEN ofm.indirimli_fiyat >= ofm.gecelik_fiyat THEN NULL
-                            ELSE ofm.indirimli_fiyat
-                        END AS discount_price,
-                        ofm.kampanya_id AS discount_id
-                    FROM oda_fiyat_musaitlik ofm
-                    WHERE ofm.oda_tip_id = ot.id
-                      AND ofm.otel_id = ot.otel_id
-                      AND ofm.tarih = CAST(SYSUTCDATETIME() AS date)
-                    ORDER BY
-                        CASE
-                            WHEN ofm.kapali_satis = 1 THEN 1 ELSE 0
-                        END ASC,
-                        CASE
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN 1 ELSE 0
-                        END ASC,
-                        CASE
-                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN 1 ELSE 0
-                        END ASC,
-                        CASE
-                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
-                            ELSE ofm.gecelik_fiyat
-                        END ASC,
-                        ofm.id ASC
-                ) best
-                GROUP BY ot.otel_id
+                    hotel_prices.otel_id,
+                    hotel_prices.effective_price AS baslangic_fiyat,
+                    hotel_prices.base_price AS min_normal_fiyat,
+                    hotel_prices.discount_price AS min_indirimli_fiyat,
+                    hotel_prices.discount_id AS indirim_id
+                FROM (
+                    SELECT
+                        ot.otel_id,
+                        best.effective_price,
+                        best.base_price,
+                        best.discount_price,
+                        best.discount_id,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY ot.otel_id
+                            ORDER BY
+                                CASE WHEN best.effective_price IS NULL THEN 1 ELSE 0 END,
+                                best.effective_price ASC,
+                                ot.id ASC
+                        ) AS rn
+                    FROM oda_tipleri ot
+                    OUTER APPLY (
+                        SELECT TOP (1)
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
+                                WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                                ELSE ofm.gecelik_fiyat
+                            END AS effective_price,
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
+                                ELSE ofm.gecelik_fiyat
+                            END AS base_price,
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN NULL
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
+                                WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
+                                WHEN ofm.indirimli_fiyat IS NULL OR ofm.indirimli_fiyat <= 0 THEN NULL
+                                WHEN ofm.indirimli_fiyat >= ofm.gecelik_fiyat THEN NULL
+                                ELSE ofm.indirimli_fiyat
+                            END AS discount_price,
+                            ofm.kampanya_id AS discount_id
+                        FROM oda_fiyat_musaitlik ofm
+                        WHERE ofm.oda_tip_id = ot.id
+                          AND ofm.otel_id = ot.otel_id
+                          AND ofm.tarih = CAST(SYSUTCDATETIME() AS date)
+                        ORDER BY
+                            CASE
+                                WHEN ofm.kapali_satis = 1 THEN 1 ELSE 0
+                            END ASC,
+                            CASE
+                                WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN 1 ELSE 0
+                            END ASC,
+                            CASE
+                                WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN 1 ELSE 0
+                            END ASC,
+                            CASE
+                                WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                                ELSE ofm.gecelik_fiyat
+                            END ASC,
+                            ofm.id ASC
+                    ) best
+                    WHERE ot.aktif_mi = 1
+                ) hotel_prices
+                WHERE hotel_prices.rn = 1
             ) pf ON pf.otel_id = o.id
             LEFT JOIN fiyat_indirimleri fi ON fi.id = pf.indirim_id AND fi.aktif_mi = 1
             LEFT JOIN (
