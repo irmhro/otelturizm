@@ -4,6 +4,7 @@
 @{
     ViewData["PageCss"] = "otel-listeleme";
     ViewData["PageCssMobile"] = "otel-listeleme.mobile";
+    ViewData["SuppressGlobalDraftBanner"] = true;
 
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
     var minPrice = 0m;
@@ -108,8 +109,8 @@
   .filter-card { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light); padding: var(--space-5); margin-bottom: var(--space-4); }
   .filter-section { margin-bottom: var(--space-6); }
   .filter-section h4 { font-size: 15px; font-weight: 700; margin-bottom: var(--space-4); }
-  .price-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-4) 0; }
-  .price-range input { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--border-light); border-radius: var(--radius-md); }
+  .price-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: 14px 0 2px; }
+  .price-range input { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: rgba(248,250,252,1); font-weight: 700; }
   .filter-options { display: flex; flex-direction: column; gap: var(--space-3); }
   .filter-options > input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); }
   .filter-check { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: 14px; }
@@ -370,7 +371,8 @@
   .filter-accordion-summary i { color: var(--text-light); transition: transform 0.2s ease; }
   .filter-accordion[open] .filter-accordion-summary i { transform: rotate(180deg); }
   .filter-accordion-body { padding-bottom: var(--space-2); }
-  .filter-help { margin-top: 10px; color: var(--text-light); font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+  .filter-help { margin-top: 10px; color: var(--text-light); font-size: 12.5px; font-weight: 600; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .filter-help-compact { margin-top: 8px; }
 
   /* Desktop-only: lighter headings + tighter spacing (desing.md rhythm) */
   @@media (min-width: 901px) {
@@ -388,7 +390,7 @@
   .listing-search-lux {
       position: relative;
       display: grid;
-      grid-template-columns: 42px 1fr 40px;
+      grid-template-columns: 1fr 40px 42px;
       align-items: center;
       min-height: 48px;
       border-radius: 18px;
@@ -408,6 +410,7 @@
       background: rgba(0, 59, 149, 0.08);
       color: var(--primary);
       font-size: 16px;
+      order: 3;
   }
 
   .listing-search-lux input {
@@ -418,6 +421,7 @@
       font-size: 14px;
       padding: 10px 6px;
       min-width: 0;
+      order: 1;
   }
 
   .listing-search-lux:focus-within {
@@ -435,7 +439,10 @@
       place-items: center;
       color: #0f172a;
       cursor: pointer;
+      order: 2;
   }
+
+  .listing-search-icon-right { pointer-events: none; }
 
   .listing-search-suggestions {
       position: absolute;
@@ -488,7 +495,7 @@
       --slider-pos: 100%;
       margin-top: 4px;
       position: relative;
-      padding-top: 18px;
+      padding-top: 14px;
   }
   .price-slider-track {
       height: 10px;
@@ -569,6 +576,45 @@
   .price-slider-labels span:nth-child(2),
   .price-slider-labels span:nth-child(3) { text-align: center; }
   .price-slider-labels span:nth-child(4) { text-align: right; }
+
+  /* Konuma göre filtre */
+  .location-filter-card { display: grid; gap: 10px; }
+  .location-btn {
+      width: 100%;
+      border: 1px solid rgba(226,232,240,1);
+      border-radius: 16px;
+      padding: 10px 12px;
+      background: linear-gradient(135deg, rgba(0,59,149,0.06), rgba(255,255,255,1));
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 10px;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 12px 22px rgba(0, 59, 149, 0.06);
+  }
+  .location-btn-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: rgba(0, 59, 149, 0.08);
+      color: var(--primary);
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+  }
+  .location-btn-copy strong { display:block; font-size: 14px; font-weight: 900; color: var(--text-dark); }
+  .location-btn-copy small { display:block; margin-top: 2px; font-size: 12px; font-weight: 700; color: var(--text-light); }
+
+  .km-row { padding: 10px 12px; border: 1px solid rgba(226,232,240,1); border-radius: 16px; background: #fff; display:grid; gap: 8px; }
+  .km-row-head { display:flex; align-items:center; justify-content:space-between; gap: 10px; margin-bottom: 0; }
+  .km-row-head strong { font-size: 14px; font-weight: 900; }
+  .km-value { font-size: 13px; font-weight: 900; color: var(--primary); }
+  .km-input-row { display:grid; grid-template-columns: minmax(0, 1fr) 96px; align-items:center; gap:10px; }
+  .km-row input[type="range"] { width: 100%; margin: 0; }
+  .km-manual-input { display:grid; grid-template-columns: 1fr auto; gap:4px 6px; align-items:center; min-width:0; }
+  .km-manual-input span { grid-column: 1 / -1; font-size: 11px; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: .04em; }
+  .km-manual-input input { width: 100%; min-width:0; height:34px; padding:0 10px; border-radius:10px; border:1px solid rgba(226,232,240,1); background:#fff; font-size:13px; font-weight:800; color:var(--text-dark); }
+  .km-manual-input small { font-size: 12px; font-weight: 800; color: var(--text-light); }
 </style>
 
 <section class="hotel-listing-shell listing-template-v41">
@@ -597,14 +643,14 @@
                         </summary>
                         <div class="filter-accordion-body">
                             <div class="listing-search-lux">
-                                <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
                                 <input type="text" id="listingKeywordInput" placeholder="Otel adı / il / ilçe / mahalle">
                                 <button type="button" class="listing-search-clear" id="listingKeywordClear" aria-label="Aramayı temizle" hidden>
                                     <i class="fas fa-xmark" aria-hidden="true"></i>
                                 </button>
+                                <i class="fas fa-magnifying-glass listing-search-icon-right" aria-hidden="true"></i>
                                 <div class="listing-search-suggestions" id="listingKeywordSuggestions" hidden></div>
                             </div>
-                            <p class="filter-help">İl, ilçe, mahalle veya otel adı ile arayabilirsiniz.</p>
+                            <p class="filter-help">İl/ilçe/mahalle veya otel adı ile arayın.</p>
                         </div>
                     </details>
 
@@ -638,6 +684,40 @@
                             <div class="price-range">
                                 <input type="number" placeholder="Min ₺" value="@minPrice" id="listingMinPriceInput">
                                 <input type="number" placeholder="Max ₺" value="@maxPrice" id="listingMaxPriceInput">
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="filter-accordion" open>
+                        <summary class="filter-accordion-summary">
+                            <span>Konuma Göre</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="location-filter-card">
+                                <button type="button" class="location-btn" id="useMyLocationBtn">
+                                    <span class="location-btn-icon" aria-hidden="true"><i class="fas fa-location-crosshairs"></i></span>
+                                    <span class="location-btn-copy">
+                                        <strong>Konumumu kullan</strong>
+                                        <small id="locationStatusText">Yakındaki otelleri listele</small>
+                                    </span>
+                                </button>
+
+                                <div class="km-row">
+                                    <div class="km-row-head">
+                                        <strong>Mesafe</strong>
+                                        <span class="km-value"><span id="distanceKmValue">1</span> km</span>
+                                    </div>
+                                    <div class="km-input-row">
+                                        <input type="range" min="1" max="50" value="1" step="1" id="distanceKmRange" disabled />
+                                        <label class="km-manual-input" for="distanceKmInput">
+                                            <span>El ile</span>
+                                            <input type="number" min="1" max="50" value="1" step="1" id="distanceKmInput" disabled />
+                                            <small>km</small>
+                                        </label>
+                                    </div>
+                                    <p class="filter-help filter-help-compact">Konum izni verildiğinde seçtiğiniz km çevresindeki oteller gösterilir.</p>
+                                </div>
                             </div>
                         </div>
                     </details>
@@ -762,6 +842,8 @@
                                  data-price="@price.ToString(CultureInfo.InvariantCulture)"
                                  data-rating="@hotel.Rating.ToString(CultureInfo.InvariantCulture)"
                                  data-stars="@(hotel.StarCount ?? 0)"
+                                 data-lat="@(hotel.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)"
+                                 data-lon="@(hotel.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)"
                                  data-amenities="@amenityText"
                                  data-featured="@(hotel.IsFeatured ? "1" : "0")">
                             <div class="card-image">
@@ -779,6 +861,15 @@
                                    aria-label="@hotel.Name detay sayfasına git">
                                     <img src="@(string.IsNullOrWhiteSpace(mainCardImage) ? "/assets/img/placeholder-hotel.jpg" : mainCardImage)" alt="@hotel.Name">
                                 </a>
+                                @if (hotel.StarCount.HasValue && hotel.StarCount.Value > 0)
+                                {
+                                    <span class="card-star-badge" aria-label="@($"{hotel.StarCount.Value} yıldızlı otel")">
+                                        @for (var i = 0; i < hotel.StarCount.Value; i++)
+                                        {
+                                            <i class="fas fa-star" aria-hidden="true"></i>
+                                        }
+                                    </span>
+                                }
                                 <span class="image-rating" aria-label="Misafir puanı">
                                     @hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) <i class="fas fa-star" aria-hidden="true"></i>
                                 </span>
@@ -905,8 +996,8 @@
                                 <div class="price-section">
                                     <div class="price-info">
                                         <span class="current-price">@(price > 0m ? $"₺{price:N0}" : "Teklif Al")</span>
-                                        <span style="font-size:13px; color:var(--text-gray);">/ gece</span>
                                     </div>
+                                    <span class="price-tax-note">Vergiler dahil</span>
                                     <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="btn-detail">İncele</a>
                                 </div>
                             </div>
@@ -951,7 +1042,13 @@
             const clearAllBtn = document.getElementById('clearAllFiltersBtn');
             const keywordClearBtn = document.getElementById('listingKeywordClear');
             const keywordSuggestions = document.getElementById('listingKeywordSuggestions');
+            const useMyLocationBtn = document.getElementById('useMyLocationBtn');
+            const distanceKmRange = document.getElementById('distanceKmRange');
+            const distanceKmValue = document.getElementById('distanceKmValue');
+            const distanceKmInput = document.getElementById('distanceKmInput');
+            const locationStatusText = document.getElementById('locationStatusText');
             let keywordSuggestionTimer = null;
+            let userLocation = null;
 
             function normalize(v) {
                 return String(v || '').toLocaleLowerCase('tr-TR');
@@ -991,6 +1088,41 @@
                 if (wrap) wrap.style.setProperty('--slider-pos', Math.max(0, Math.min(100, pct)).toFixed(2) + '%');
             }
 
+            function toRad(d) { return (d * Math.PI) / 180; }
+
+            function haversineKm(aLat, aLon, bLat, bLon) {
+                const R = 6371;
+                const dLat = toRad(bLat - aLat);
+                const dLon = toRad(bLon - aLon);
+                const lat1 = toRad(aLat);
+                const lat2 = toRad(bLat);
+                const s1 = Math.sin(dLat / 2);
+                const s2 = Math.sin(dLon / 2);
+                const h = s1 * s1 + Math.cos(lat1) * Math.cos(lat2) * s2 * s2;
+                return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+            }
+
+            function syncDistanceUi() {
+                if (!distanceKmRange || !distanceKmValue) return;
+                distanceKmValue.textContent = String(distanceKmRange.value || '1');
+                if (distanceKmInput) {
+                    distanceKmInput.value = String(distanceKmRange.value || '1');
+                }
+            }
+
+            function enableDistanceFilterUi(enabled) {
+                if (distanceKmRange) {
+                    distanceKmRange.disabled = !enabled;
+                }
+                if (distanceKmInput) {
+                    distanceKmInput.disabled = !enabled;
+                }
+            }
+
+            function setLocationStatus(text) {
+                if (locationStatusText) locationStatusText.textContent = text || '';
+            }
+
             function applyFilters() {
                 const keyword = normalize(keywordInput?.value || '');
                 const minPrice = Number(minPriceInput?.value || '0');
@@ -998,6 +1130,8 @@
                 const selectedAmenities = amenityChecks.filter(x => x.checked).map(x => normalize(x.value));
                 const selectedStars = starChecks.filter(x => x.checked).map(x => String(x.value));
                 const featuredOnly = featuredChecks.some(x => x.checked);
+                const distanceKm = Number(distanceKmRange?.value || '0');
+                const distanceActive = !!(userLocation && distanceKmRange && !distanceKmRange.disabled && distanceKm > 0);
                 const minScore = ratingChips
                     .filter(x => x.classList.contains('active'))
                     .map(x => Number(x.dataset.minScore || '0'))
@@ -1010,6 +1144,10 @@
                     const cardKeywords = normalize(card.dataset.keywords || '');
                     const cardAmenities = normalize(card.dataset.amenities || '');
                     const isFeatured = (card.dataset.featured || '0') === '1';
+                    const cardLatRaw = String(card.dataset.lat || '').trim();
+                    const cardLonRaw = String(card.dataset.lon || '').trim();
+                    const cardLat = cardLatRaw ? Number(cardLatRaw) : NaN;
+                    const cardLon = cardLonRaw ? Number(cardLonRaw) : NaN;
 
                     const keywordOk = !keyword || cardKeywords.indexOf(keyword) > -1;
                     const priceOk = cardPrice >= minPrice && (maxPrice <= 0 || cardPrice <= maxPrice);
@@ -1017,8 +1155,11 @@
                     const ratingOk = minScore <= 0 || cardRating >= minScore;
                     const amenityOk = selectedAmenities.length === 0 || selectedAmenities.every(x => cardAmenities.indexOf(x) > -1);
                     const featuredOk = !featuredOnly || isFeatured;
+                    const distanceOk = !distanceActive
+                        || (Number.isFinite(cardLat) && Number.isFinite(cardLon)
+                            && haversineKm(userLocation.lat, userLocation.lon, cardLat, cardLon) <= distanceKm);
 
-                    card.hidden = !(keywordOk && priceOk && starOk && ratingOk && amenityOk && featuredOk);
+                    card.hidden = !(keywordOk && priceOk && starOk && ratingOk && amenityOk && featuredOk && distanceOk);
                 });
             }
 
@@ -1103,6 +1244,48 @@
                 if (keywordClearBtn) keywordClearBtn.hidden = String(keywordInput.value || '').trim().length === 0;
                 syncMobileFilterCount();
                 keywordSuggestionTimer = window.setTimeout(loadKeywordSuggestions, 180);
+            });
+
+            useMyLocationBtn?.addEventListener('click', function () {
+                if (!('geolocation' in navigator)) {
+                    setLocationStatus('Tarayıcı konumu desteklemiyor.');
+                    return;
+                }
+                setLocationStatus('Konum alınıyor...');
+                navigator.geolocation.getCurrentPosition(function (pos) {
+                    userLocation = { lat: Number(pos.coords.latitude), lon: Number(pos.coords.longitude) };
+                    enableDistanceFilterUi(true);
+                    syncDistanceUi();
+                    setLocationStatus('Konum alındı. Mesafe seçebilirsiniz.');
+                    applyFilters();
+                }, function () {
+                    setLocationStatus('Konum izni verilmedi.');
+                    enableDistanceFilterUi(false);
+                }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 600000 });
+            });
+
+            distanceKmRange?.addEventListener('input', function () {
+                syncDistanceUi();
+            });
+            distanceKmRange?.addEventListener('change', function () {
+                syncDistanceUi();
+                applyFilters();
+            });
+            distanceKmInput?.addEventListener('input', function () {
+                const nextValue = Math.min(50, Math.max(1, Number(distanceKmInput.value || '1')));
+                if (distanceKmRange) {
+                    distanceKmRange.value = String(nextValue);
+                }
+                syncDistanceUi();
+            });
+            distanceKmInput?.addEventListener('change', function () {
+                const nextValue = Math.min(50, Math.max(1, Number(distanceKmInput.value || '1')));
+                distanceKmInput.value = String(nextValue);
+                if (distanceKmRange) {
+                    distanceKmRange.value = String(nextValue);
+                }
+                syncDistanceUi();
+                applyFilters();
             });
             keywordInput?.addEventListener('focus', function () {
                 if (String(keywordInput.value || '').trim().length > 0) {

@@ -1,5 +1,20 @@
 @model otelturizmnew.Models.Anasayfa.HomeHotelCardViewModel
 
+@{
+    var priceNote = (Model.PriceNote ?? string.Empty)
+        .Replace("KDV dahil", "Vergiler dahil", StringComparison.OrdinalIgnoreCase)
+        .Replace("Kdv dahil", "Vergiler dahil", StringComparison.OrdinalIgnoreCase)
+        .Replace("GÜNLÜK - ", string.Empty, StringComparison.OrdinalIgnoreCase)
+        .Replace("Gunluk - ", string.Empty, StringComparison.OrdinalIgnoreCase)
+        .Replace("Günlük - ", string.Empty, StringComparison.OrdinalIgnoreCase)
+        .Trim();
+
+    if (string.IsNullOrWhiteSpace(priceNote))
+    {
+        priceNote = "Vergiler dahil";
+    }
+}
+
 <article class="home-hotel-card">
     <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@Model.DetailSlug" class="home-hotel-card-link">
         <div class="card-image-shell">
@@ -14,9 +29,14 @@
                 }
             </div>
 
-            @if (Model.IsSmartPrice)
+            @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
             {
-                <span class="badge-smart"><i class="fas fa-bolt"></i> Akıllı Fiyat</span>
+                <span class="card-star-badge" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
+                    @for (var i = 0; i < Model.StarCount.Value; i++)
+                    {
+                        <i class="fas fa-star" aria-hidden="true"></i>
+                    }
+                </span>
             }
 
             <button class="favorite-btn @(Model.IsFavorite ? "active" : string.Empty)" type="button" data-hotel-id="@Model.Id" data-source-page="Anasayfa" aria-label="Favorilere ekle">
@@ -28,16 +48,6 @@
             <div class="hotel-name-row">
                 <h3 class="hotel-name hotel-name-inline-title">
                     @Model.Name
-                    @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
-                    {
-                        <span class="home-hotel-stars-inline" aria-hidden="true">
-                            @for (var i = 0; i < Model.StarCount.Value; i++)
-                            {
-                                <text>★</text>
-                            }
-                        </span>
-                        <span class="sr-only">@($"{Model.StarCount.Value} yıldızlı otel")</span>
-                    }
                 </h3>
             </div>
 
@@ -56,6 +66,13 @@
             <div class="home-hotel-tags">
                 @foreach (var tag in Model.Tags)
                 {
+                    if (string.Equals(tag, "Öne Çıkan", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(tag, "One Cikan", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(tag, "Hafta Sonu Seçimi", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(tag, "Hafta Sonu Secimi", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
                     <span>@tag</span>
                 }
             </div>
@@ -87,10 +104,10 @@
                     }
                     else
                     {
-                        <span class="price-from">Baslayan fiyatlarla</span>
+                        <span class="price-from">Başlayan fiyatlarla</span>
                         <span class="price-value">@Model.PriceText</span>
                     }
-                    <span class="price-note">@Model.PriceNote</span>
+                    <span class="price-note">@priceNote</span>
                 </div>
             </div>
         </div>

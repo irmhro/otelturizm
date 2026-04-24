@@ -1282,13 +1282,13 @@ body.listing-modal-open {
 }
 
 .listing-template-v41 .hotel-location {
-    margin-top: 8px;
+    margin-top: 6px;
     color: var(--listing-muted);
     font-size: 14px;
 }
 
 .listing-template-v41 .features {
-    margin-top: 10px;
+    margin-top: 6px;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -1341,6 +1341,15 @@ body.listing-modal-open {
 .listing-template-v41 .per-night {
     font-size: 13px;
     color: var(--listing-muted);
+}
+
+.listing-template-v41 .price-tax-note {
+    display: inline-flex;
+    align-items: center;
+    color: var(--listing-muted);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
 }
 
 .listing-template-v41 .btn-detail {
@@ -1429,6 +1438,10 @@ body.listing-modal-open {
 
     .listing-template-v41 .price-info {
         justify-content: flex-start;
+    }
+
+    .listing-template-v41 .price-tax-note {
+        width: 100%;
     }
 }
 
@@ -1770,6 +1783,33 @@ body.listing-modal-open {
     z-index: 2;
 }
 
+/* Hotel star badge (image top-left) */
+.listing-template-v41 .card-star-badge {
+    position: absolute;
+    top: var(--space-3);
+    left: var(--space-3);
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.28);
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+    pointer-events: none;
+}
+
+.listing-template-v41 .card-star-badge i {
+    color: #fbbf24;
+}
+
 .listing-template-v41 .listing-badges-inline {
     display: none;
     flex-wrap: wrap;
@@ -1806,32 +1846,30 @@ body.listing-modal-open {
     .listing-template-v41 .listing-badges-mobile { display: none; }
 }
 
-/* Mobile: price single line, button below */
+/* Mobile: keep all hotels in a vertical list */
 @media (max-width: 639px) {
-    /* Mobile: single card per view with swipe (horizontal snap) */
     .listing-template-v41 .hotel-list {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         gap: 12px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 2px 2px 10px;
-        scroll-snap-type: x mandatory;
-        scroll-padding-left: 2px;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
+        overflow: visible;
+        padding: 2px 0 10px;
+        scroll-snap-type: none;
+        scroll-padding-left: 0;
+        -webkit-overflow-scrolling: auto;
+        scrollbar-width: auto;
     }
 
     .listing-template-v41 .hotel-list::-webkit-scrollbar {
-        display: none;
+        display: initial;
     }
 
     .listing-template-v41 .hotel-card {
-        flex: 0 0 calc(100% - 4px);
-        scroll-snap-align: start;
+        flex: 1 1 auto;
+        width: 100%;
+        scroll-snap-align: none;
+        min-height: 0;
     }
-
-    .listing-template-v41 .hotel-card { min-height: 0; }
 
     .listing-template-v41 .price-section {
         flex-direction: row;
@@ -2103,12 +2141,13 @@ body.listing-modal-open {
 
     .listing-template-v41 .hotel-location {
         font-size: 0.82rem;
-        margin: 6px 0 10px;
+        margin: 6px 0 6px;
     }
 
     .listing-template-v41 .features {
         gap: 8px;
-        margin-bottom: 10px;
+        margin-top: 4px;
+        margin-bottom: 8px;
     }
 
     .listing-template-v41 .feature-tag {
