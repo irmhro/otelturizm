@@ -2680,6 +2680,35 @@
     margin-top: 12px;
 }
 
+.nightly-breakdown-room {
+    border-top: 1px dashed rgba(148, 163, 184, 0.75);
+    padding-top: 10px;
+}
+
+.nightly-breakdown-room:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.nightly-breakdown-room-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 6px;
+}
+
+.nightly-breakdown-room-head strong {
+    color: #0f172a;
+    font-weight: 900;
+    font-size: 0.92rem;
+}
+
+.nightly-breakdown-room-head small {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
 .nightly-breakdown-row {
     display: flex;
     align-items: center;

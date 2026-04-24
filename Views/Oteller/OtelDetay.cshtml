@@ -2742,7 +2742,7 @@
                 };
 
                 const perRoom = [];
-                const nightlySeed = { rows: [] };
+                const nightlySeed = { byRoom: [] };
                 let anyUnavailable = false;
                 let availabilityMessage = '';
 
@@ -2777,8 +2777,14 @@
                             totalAmount: total
                         });
 
-                        if (perRoom.length === 1 && Array.isArray(quote.nightlyBreakdown)) {
-                            nightlySeed.rows = quote.nightlyBreakdown;
+                        if (Array.isArray(quote.nightlyBreakdown) && quote.nightlyBreakdown.length > 0) {
+                            nightlySeed.byRoom.push({
+                                index: perRoom.length - 1,
+                                roomName: item.roomName,
+                                checkIn: item.checkIn,
+                                checkOut: item.checkOut,
+                                rows: quote.nightlyBreakdown
+                            });
                         }
 
                         if (quote.isAvailable === false) {
@@ -2832,19 +2838,25 @@
                 breakdown.innerHTML = buildMultiRoomBreakdownHtml(perRoom, totals);
 
                 if (nightlyDetails && nightlyList) {
-                    const showNightly = roomNodes.length === 1 && Array.isArray(nightlySeed.rows) && nightlySeed.rows.length > 0;
+                    const showNightly = Array.isArray(nightlySeed.byRoom) && nightlySeed.byRoom.some(function (x) {
+                        return Array.isArray(x.rows) && x.rows.length > 0;
+                    });
                     nightlyDetails.hidden = !showNightly;
                     if (showNightly) {
-                        nightlyList.innerHTML = nightlySeed.rows.map(function (row) {
-                            const label = (row.dateText || row.date || '').toString();
-                            const effectiveAmount = Number(row.price || row.totalAmount || row.amount || 0);
-                            const baseAmount = Number(row.basePrice || 0);
-                            const discountAmount = Number(row.discountPrice || 0);
-                            const isDiscounted = !!row.isDiscounted && discountAmount > 0 && baseAmount > discountAmount;
-                            const amountHtml = isDiscounted
-                                ? '<strong><small>' + formatMoney(baseAmount) + '</small>' + formatMoney(effectiveAmount) + '</strong>'
-                                : '<strong>' + formatMoney(effectiveAmount) + '</strong>';
-                            return '<div class="nightly-breakdown-row' + (isDiscounted ? ' nightly-breakdown-row-discount' : '') + '"><span>' + escapeHtml(label) + '</span>' + amountHtml + '</div>';
+                        nightlyList.innerHTML = nightlySeed.byRoom.map(function (roomBlock) {
+                            const header = '<div class="nightly-breakdown-room-head"><strong>Oda ' + (Number(roomBlock.index || 0) + 1) + '</strong><small>' + escapeHtml((roomBlock.roomName || 'Oda').toString()) + ' · ' + escapeHtml((roomBlock.checkIn || '-').toString()) + ' → ' + escapeHtml((roomBlock.checkOut || '-').toString()) + '</small></div>';
+                            const rowsHtml = (roomBlock.rows || []).map(function (row) {
+                                const label = (row.dateText || row.date || '').toString();
+                                const effectiveAmount = Number(row.price || row.totalAmount || row.amount || 0);
+                                const baseAmount = Number(row.basePrice || 0);
+                                const discountAmount = Number(row.discountPrice || 0);
+                                const isDiscounted = !!row.isDiscounted && discountAmount > 0 && baseAmount > discountAmount;
+                                const amountHtml = isDiscounted
+                                    ? '<strong><small>' + formatMoney(baseAmount) + '</small>' + formatMoney(effectiveAmount) + '</strong>'
+                                    : '<strong>' + formatMoney(effectiveAmount) + '</strong>';
+                                return '<div class="nightly-breakdown-row' + (isDiscounted ? ' nightly-breakdown-row-discount' : '') + '"><span>' + escapeHtml(label) + '</span>' + amountHtml + '</div>';
+                            }).join('');
+                            return '<div class="nightly-breakdown-room">' + header + rowsHtml + '</div>';
                         }).join('');
                     } else {
                         nightlyList.innerHTML = '';
