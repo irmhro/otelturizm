@@ -1422,6 +1422,51 @@
     gap: 14px;
 }
 
+.review-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.review-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.review-toolbar-left strong {
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.review-toolbar-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(29, 78, 216, 0.08);
+    color: #1d4ed8;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.review-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.review-sort span {
+    font-size: 0.94rem;
+    font-weight: 700;
+    color: #334155;
+}
+
 /* Review modal: default hidden (fix: sayfa altında "Misafir yorumu" kalması) */
 .review-modal {
     display: none;
@@ -1479,13 +1524,15 @@
 
 /* Sırala select görünümü */
 .review-sort select {
-    padding: 10px 12px;
-    border-radius: 12px;
+    padding: 8px 38px 8px 12px;
+    border-radius: 10px;
     border: 1px solid #dbe4f0;
     background: #fff;
     font-weight: 700;
     color: #0f172a;
-    min-width: 140px;
+    min-width: 118px;
+    font-size: 0.92rem;
+    line-height: 1.2;
 }
 
 .review-sort select:focus {
@@ -1495,8 +1542,8 @@
 }
 
 .review-card {
-    padding: 20px;
-    border-radius: 20px;
+    padding: 18px 20px;
+    border-radius: 18px;
     background: #f8fafc;
 }
 
@@ -1504,7 +1551,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .review-avatar {
@@ -1525,18 +1572,37 @@
     margin: 0;
 }
 
+.review-meta h4 {
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.3;
+    color: #0f172a;
+}
+
 .review-meta p,
 .review-card p {
     color: #64748b;
 }
 
+.review-meta p {
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.review-card p {
+    font-size: 0.98rem;
+    line-height: 1.65;
+    font-weight: 500;
+}
+
 .review-chip {
     margin-left: auto;
-    padding: 8px 12px;
+    padding: 8px 11px;
     border-radius: 999px;
     color: #fff;
     background: #1d4ed8;
-    font-weight: 700;
+    font-size: 0.9rem;
+    font-weight: 800;
 }
 
 .review-tags {
@@ -3065,6 +3131,21 @@ body.room-gallery-open {
     border-radius: 50%;
     border: 1px solid #dbe4f0;
     background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #0f172a;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.detail-modal-close:hover {
+    background: rgba(15, 23, 42, 0.06);
+    border-color: rgba(148, 163, 184, 0.65);
+}
+
+.detail-modal-close:active {
+    transform: scale(0.96);
 }
 
 .detail-modal-copy {
@@ -3104,6 +3185,64 @@ body.room-gallery-open {
     justify-content: flex-end;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+/* Bilgilendirme popup: daha profesyonel hiyerarşi */
+.detail-info-modal {
+    padding-top: 18px;
+}
+
+.detail-info-modal .detail-modal-hero {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.detail-info-modal .detail-modal-hero-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    background: rgba(29, 78, 216, 0.12);
+    color: #1d4ed8;
+    border: 1px solid rgba(29, 78, 216, 0.18);
+}
+
+.detail-info-modal .detail-modal-hero-icon i {
+    font-size: 1.05rem;
+}
+
+.detail-info-modal .detail-modal-head {
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.detail-info-modal .detail-modal-head > div {
+    min-width: 0;
+}
+
+.detail-info-modal .detail-modal-kicker {
+    margin-bottom: 6px;
+    background: rgba(29, 78, 216, 0.10);
+    border: 1px solid rgba(29, 78, 216, 0.14);
+}
+
+.detail-info-modal .detail-modal-head h3 {
+    font-size: 1.55rem;
+    letter-spacing: -0.01em;
+}
+
+.detail-info-modal .detail-modal-copy {
+    margin-top: 2px;
+    margin-bottom: 16px;
+    font-size: 1.02rem;
+    color: #52627a;
+}
+
+.detail-info-modal .detail-modal-actions {
+    justify-content: flex-end;
 }
 
 .detail-modal-primary,
@@ -3539,9 +3678,10 @@ body.room-gallery-open {
 }
 
 .otel-detail-template-v41 .room-price-box strong {
-    font-size: 2.05rem;
+    font-size: 1.95rem;
     line-height: 1;
     letter-spacing: -0.02em;
+    font-weight: 800;
 }
 
 .otel-detail-template-v41 .room-price-tax-label {
@@ -3582,7 +3722,7 @@ body.room-gallery-open {
 }
 
 .otel-detail-template-v41 .booking-price-head strong {
-    font-size: 2.65rem;
+    font-size: 1.95rem;
     font-weight: 800;
     line-height: 1;
     letter-spacing: -0.02em;
@@ -3956,6 +4096,14 @@ body.room-gallery-open {
 
 .otel-detail-template-v41 .rating-number {
     font-size: 1.95rem;
+}
+
+.otel-detail-template-v41 .review-toolbar {
+    margin-bottom: 12px;
+}
+
+.otel-detail-template-v41 .review-sort select {
+    min-height: 40px;
 }
 
 .otel-detail-template-v41 .detail-actions {
