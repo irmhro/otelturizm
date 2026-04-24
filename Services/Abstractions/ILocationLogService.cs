@@ -13,6 +13,7 @@ public sealed class LocationLogEntryInput
     public decimal Longitude { get; set; }
     public int? RadiusKm { get; set; }
     public int? VisibleHotelCount { get; set; }
+    public string ListedHotelIds { get; set; } = string.Empty;
     public string SearchTerm { get; set; } = string.Empty;
     public string SearchRegion { get; set; } = string.Empty;
     public string Source { get; set; } = "otel-listeleme";

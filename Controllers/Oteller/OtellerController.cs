@@ -229,6 +229,7 @@ public class OtellerController : Controller
     }
 
     [HttpPost("konum-kaydet")]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> SaveUserLocation([FromBody] UserLocationLogRequest? request, CancellationToken cancellationToken)
     {
         if (request is null)
@@ -244,27 +245,36 @@ public class OtellerController : Controller
         var userAgent = Request.Headers.UserAgent.ToString();
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
         var deviceInfo = ParseDeviceInfo(userAgent);
-        await _locationLogService.SaveUserLocationAsync(new LocationLogEntryInput
+        try
         {
-            UserId = GetCurrentUserIdOrNull(),
-            SessionKey = EnsureLocationSessionKey(),
-            Latitude = request.Latitude,
-            Longitude = request.Longitude,
-            RadiusKm = request.RadiusKm,
-            VisibleHotelCount = request.VisibleHotelCount,
-            SearchTerm = request.SearchTerm ?? string.Empty,
-            SearchRegion = request.SearchRegion ?? string.Empty,
-            Source = string.IsNullOrWhiteSpace(request.Source) ? "otel-listeleme" : request.Source.Trim(),
-            UserAgent = userAgent,
-            IpAddress = ipAddress ?? string.Empty,
-            DeviceType = deviceInfo.DeviceType,
-            DeviceModel = deviceInfo.DeviceModel,
-            Platform = deviceInfo.Platform,
-            Browser = deviceInfo.Browser,
-            PhoneHint = deviceInfo.PhoneHint,
-            PageUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}{Request.Path}{Request.QueryString}"
-        }, cancellationToken);
-        return Json(new { success = true });
+            await _locationLogService.SaveUserLocationAsync(new LocationLogEntryInput
+            {
+                UserId = GetCurrentUserIdOrNull(),
+                SessionKey = EnsureLocationSessionKey(),
+                Latitude = request.Latitude,
+                Longitude = request.Longitude,
+                RadiusKm = request.RadiusKm,
+                VisibleHotelCount = request.VisibleHotelCount,
+                ListedHotelIds = request.ListedHotelIds ?? string.Empty,
+                SearchTerm = request.SearchTerm ?? string.Empty,
+                SearchRegion = request.SearchRegion ?? string.Empty,
+                Source = string.IsNullOrWhiteSpace(request.Source) ? "otel-listeleme" : request.Source.Trim(),
+                UserAgent = userAgent,
+                IpAddress = ipAddress ?? string.Empty,
+                DeviceType = deviceInfo.DeviceType,
+                DeviceModel = deviceInfo.DeviceModel,
+                Platform = deviceInfo.Platform,
+                Browser = deviceInfo.Browser,
+                PhoneHint = deviceInfo.PhoneHint,
+                PageUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}{Request.Path}{Request.QueryString}"
+            }, cancellationToken);
+
+            return Json(new { success = true });
+        }
+        catch
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { success = false });
+        }
     }
 
     private string EnsureLocationSessionKey()
@@ -506,8 +516,9 @@ public sealed class UserLocationLogRequest
     public decimal Longitude { get; set; }
     public int? RadiusKm { get; set; }
     public int? VisibleHotelCount { get; set; }
+    public string? ListedHotelIds { get; set; }
     public string? SearchTerm { get; set; }
     public string? SearchRegion { get; set; }
     public string? Source { get; set; }
-}
+  }
 }
