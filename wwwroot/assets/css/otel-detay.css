@@ -134,6 +134,34 @@
     position: relative;
 }
 
+.gallery-main-image::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--hotel-main-ambient);
+    background-size: cover;
+    background-position: center;
+    transform: scale(1.12);
+    filter: blur(26px) saturate(135%);
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.gallery-main-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 50% 40%, rgba(2, 6, 23, 0.08), rgba(2, 6, 23, 0.34)),
+        linear-gradient(90deg, rgba(2, 6, 23, 0.42), rgba(2, 6, 23, 0.08), rgba(2, 6, 23, 0.42));
+    pointer-events: none;
+}
+
+.gallery-main-image > * {
+    position: relative;
+    z-index: 1;
+}
+
 .gallery-star-badge {
     position: absolute;
     top: 12px;
@@ -257,6 +285,39 @@
     box-shadow: 0 32px 80px rgba(2, 6, 23, 0.42);
     backdrop-filter: blur(26px) saturate(160%);
     -webkit-backdrop-filter: blur(26px) saturate(160%);
+    position: relative;
+    overflow: hidden;
+}
+
+.gallery-lightbox-figure::before,
+.gallery-lightbox-figure::after {
+    content: "";
+    position: absolute;
+    inset: 18px;
+    border-radius: 24px;
+    pointer-events: none;
+    opacity: 0.26;
+    filter: blur(22px) saturate(140%);
+    transform: scale(1.04);
+    background-size: cover;
+    background-position: center;
+    mix-blend-mode: screen;
+    z-index: 0;
+}
+
+.gallery-lightbox-figure::before {
+    background-image: var(--hotel-gallery-prev);
+    clip-path: inset(0 52% 0 0 round 24px);
+}
+
+.gallery-lightbox-figure::after {
+    background-image: var(--hotel-gallery-next);
+    clip-path: inset(0 0 0 52% round 24px);
+}
+
+.gallery-lightbox-figure > * {
+    position: relative;
+    z-index: 1;
 }
 
 .gallery-lightbox-figure img {
@@ -1413,6 +1474,39 @@
     overflow: hidden;
 }
 
+.select-room-btn.is-selected-room {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding-right: 16px;
+}
+
+.select-room-btn.is-selected-room .select-room-btn-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 22px; /* ✓ ikon balonu için boşluk */
+    white-space: nowrap;
+}
+
+.select-room-btn.is-selected-room .select-room-btn-count {
+    min-width: 28px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4, 120, 87, 0.16);
+    border: 1px solid rgba(16, 185, 129, 0.34);
+    color: #065f46;
+    font-weight: 900;
+    font-size: 0.82rem;
+    box-shadow: 0 10px 18px rgba(16, 185, 129, 0.18);
+    flex-shrink: 0;
+}
+
 .select-room-btn::after {
     content: "";
     position: absolute;
@@ -2535,6 +2629,26 @@
 
 .booking-advanced-grid label > span {
     white-space: nowrap;
+}
+
+/* Ödeme planı / Giriş-Çıkış: label + input/select aynı satır */
+.booking-advanced-grid > label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.booking-advanced-grid > label > span {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.booking-advanced-grid > label > input,
+.booking-advanced-grid > label > select {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 340px;
 }
 
 /* Çoklu oda + gün gün fiyat (rezervasyon yan kartı) */

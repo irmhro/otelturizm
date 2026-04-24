@@ -156,7 +156,7 @@
 </section>
 
 <section class="gallery-grid">
-    <div class="gallery-main-image">
+    <div class="gallery-main-image" style="--hotel-main-ambient: url('@mainImage');">
         @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
         {
             <div class="gallery-star-badge" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
@@ -951,6 +951,16 @@
                 <input type="hidden" id="profileCompletionRequired" value="@(Model.ProfilePrompt.IsProfileIncomplete && Model.IsLoggedInUser ? "true" : "false")" />
                 <input type="hidden" name="RoomsJson" id="roomsJsonInput" value="" />
 
+                @if (Model.IsLoggedInUser && Model.ProfilePrompt.IsProfileIncomplete)
+                {
+                    <div class="detail-inline-feedback info" style="margin: 0 0 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                        <span>Rezervasyon oluşturabilmek için profil bilgilerin eksiksiz olmalı (Ad, Soyad, Telefon, Doğum tarihi, adres alanları). Eksik bilgileri tamamla ve kaldığın yerden devam et.</span>
+                        <button type="button" class="detail-modal-primary" id="openProfileCompletionFromBanner" style="padding: 8px 12px; border-radius: 999px;">
+                            Bilgileri tamamla
+                        </button>
+                    </div>
+                }
+
                 <div class="multi-room" id="multiRoomRoot">
                     <div class="multi-room-head">
                         <span class="multi-room-title">Oda seçimi</span>
@@ -1198,6 +1208,14 @@
         <form id="profileCompletionForm" class="detail-profile-form" method="post" action="/oteller/@Model.Slug/profil-bilgilerini-tamamla">
             @Html.AntiForgeryToken()
             <label>
+                <span>Ad</span>
+                <input type="text" name="FirstName" value="@Model.ProfilePrompt.FirstName" required autocomplete="given-name" />
+            </label>
+            <label>
+                <span>Soyad</span>
+                <input type="text" name="LastName" value="@Model.ProfilePrompt.LastName" required autocomplete="family-name" />
+            </label>
+            <label>
                 <span>E-posta</span>
                 <input type="email" name="Email" value="@Model.ProfilePrompt.Email" />
             </label>
@@ -1246,8 +1264,6 @@
                 <span>Açık Adres</span>
                 <textarea name="Address" rows="3">@Model.ProfilePrompt.Address</textarea>
             </label>
-            <input type="hidden" name="FirstName" value="" />
-            <input type="hidden" name="LastName" value="" />
             <input type="hidden" name="IdentityNumber" value="" />
             <input type="hidden" name="PostalCode" value="" />
             <input type="hidden" name="RoomPreference" value="" />
@@ -1398,6 +1414,7 @@
         (function () {
             const galleryImages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(gallery));
             const mainImage = document.getElementById('mainGalleryImage');
+            const mainImageWrap = document.querySelector('.gallery-main-image');
             const lightbox = document.getElementById('galleryLightbox');
             const lightboxImage = document.getElementById('galleryLightboxImage');
             const lightboxCaption = document.getElementById('galleryLightboxCaption');
@@ -1405,6 +1422,7 @@
             const lightboxClose = document.getElementById('galleryLightboxClose');
             const lightboxPrev = document.getElementById('galleryLightboxPrev');
             const lightboxNext = document.getElementById('galleryLightboxNext');
+            const lightboxFigure = lightbox?.querySelector('.gallery-lightbox-figure') || null;
             const saveButton = document.getElementById('saveHotelBtn');
             const bookingForm = document.getElementById('bookingForm');
             const paymentMethodSelect = document.getElementById('paymentMethodSelect');
@@ -1483,6 +1501,11 @@
             let activeRoomDetailName = 'Oda';
             let activeRoomDetailRoomId = '';
             let reservationSubmitConfirmed = false;
+
+            // İlk yüklemede de seçili görselin blur arkaplanını set et
+            if (mainImageWrap instanceof HTMLElement && mainImage instanceof HTMLImageElement && mainImage.src) {
+                mainImageWrap.style.setProperty('--hotel-main-ambient', 'url(\"' + mainImage.src + '\")');
+            }
 
             function syncGuestInputs() {
                 document.getElementById('adultCount').textContent = adults;
@@ -1650,6 +1673,9 @@
                 const safeIndex = Math.min(Math.max(index, 0), galleryImages.length - 1);
                 activeGalleryIndex = safeIndex;
                 mainImage.src = galleryImages[safeIndex];
+                if (mainImageWrap instanceof HTMLElement) {
+                    mainImageWrap.style.setProperty('--hotel-main-ambient', 'url(\"' + (galleryImages[safeIndex] || '') + '\")');
+                }
                 document.querySelectorAll('.gallery-thumb, .gallery-filmstrip-thumb').forEach(function (thumb) {
                     const thumbIndex = parseInt(thumb.getAttribute('data-gallery-index') || '0', 10);
                     thumb.classList.toggle('active', thumbIndex === safeIndex);
@@ -1681,6 +1707,7 @@
                         }
                         syncMainImage(activeGalleryIndex);
                         scrollMobileTrackTo(activeGalleryIndex);
+                        setHotelLightboxAmbientSources();
                         syncLightboxThumbs();
                     });
                 });
@@ -1690,18 +1717,30 @@
                 active?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             }
 
+            function setHotelLightboxAmbientSources() {
+                if (!(lightboxFigure instanceof HTMLElement) || !Array.isArray(galleryImages) || galleryImages.length === 0) {
+                    return;
+                }
+
+                const prevIndex = (activeGalleryIndex - 1 + galleryImages.length) % galleryImages.length;
+                const nextIndex = (activeGalleryIndex + 1) % galleryImages.length;
+                lightboxFigure.style.setProperty('--hotel-gallery-prev', 'url(\"' + (galleryImages[prevIndex] || '') + '\")');
+                lightboxFigure.style.setProperty('--hotel-gallery-next', 'url(\"' + (galleryImages[nextIndex] || '') + '\")');
+            }
+
             function openLightbox(index) {
                 if (!lightbox || !lightboxImage || !Array.isArray(galleryImages) || !galleryImages.length) {
                     return;
                 }
 
-                activeGalleryIndex = Math.min(Math.max(index, 0), galleryImages.length - 1);
+                syncMainImage(index);
                 lightboxImage.src = galleryImages[activeGalleryIndex];
                 if (lightboxCaption) {
                     lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
                 }
                 lightbox.hidden = false;
                 document.body.style.overflow = 'hidden';
+                setHotelLightboxAmbientSources();
                 syncLightboxThumbs();
             }
 
@@ -1714,6 +1753,10 @@
                 document.body.style.overflow = '';
                 if (lightboxThumbs) {
                     lightboxThumbs.innerHTML = '';
+                }
+                if (lightboxFigure instanceof HTMLElement) {
+                    lightboxFigure.style.removeProperty('--hotel-gallery-prev');
+                    lightboxFigure.style.removeProperty('--hotel-gallery-next');
                 }
             }
 
@@ -1731,6 +1774,7 @@
                 }
                 syncMainImage(activeGalleryIndex);
                 scrollMobileTrackTo(activeGalleryIndex);
+                setHotelLightboxAmbientSources();
                 syncLightboxThumbs();
             }
 
@@ -1843,14 +1887,21 @@
                     if (!indexes.length) {
                         btn.classList.remove('is-selected-room');
                         btn.textContent = btn.dataset.originalText || 'Odanı Seç';
+                        btn.removeAttribute('title');
                         return;
                     }
 
                     btn.classList.add('is-selected-room');
                     const lastPicked = parseInt(btn.dataset.lastPickedRoomIndex || '', 10);
                     const preferIndex = Number.isFinite(lastPicked) && indexes.includes(lastPicked) ? lastPicked : indexes[0];
-                    const extra = indexes.length > 1 ? ' (+' + (indexes.length - 1) + ')' : '';
-                    btn.textContent = 'Oda ' + (preferIndex + 1) + ' seçili' + extra;
+                    const listLabel = indexes.map(function (i) { return 'Oda ' + (i + 1); }).join(', ');
+                    btn.title = 'Seçili: ' + listLabel;
+
+                    // Daha anlaşılır: seçili oda + toplam adet rozeti
+                    const count = indexes.length;
+                    btn.innerHTML =
+                        '<span class="select-room-btn-text">Oda ' + (preferIndex + 1) + ' seçili</span>'
+                        + (count > 1 ? '<span class="select-room-btn-count" aria-label="' + count + ' adet oda seçili">' + count + '</span>' : '');
                 });
             }
 
@@ -2295,6 +2346,8 @@
 
             function validateProfileCompletionData(formData) {
                 const email = (formData.get('Email') || '').toString().trim();
+                const firstName = (formData.get('FirstName') || '').toString().trim();
+                const lastName = (formData.get('LastName') || '').toString().trim();
                 const phone = (formData.get('Phone') || '').toString().trim();
                 const birthDateText = (formData.get('BirthDateText') || '').toString().trim();
                 const gender = (formData.get('Gender') || '').toString().trim();
@@ -2304,6 +2357,14 @@
 
                 if (!email) {
                     return 'Rezervasyon için e-posta alanı zorunludur.';
+                }
+
+                if (!firstName) {
+                    return 'Rezervasyon için ad alanı zorunludur.';
+                }
+
+                if (!lastName) {
+                    return 'Rezervasyon için soyad alanı zorunludur.';
                 }
 
                 if (!phone) {

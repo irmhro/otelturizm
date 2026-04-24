@@ -385,6 +385,8 @@ public class OtellerController : Controller
         return new otelturizmnew.Models.Oteller.HotelProfileCompletionPromptViewModel
         {
             ReturnUrl = returnUrl,
+            FirstName = profile.Form.FirstName,
+            LastName = profile.Form.LastName,
             Email = profile.Form.Email,
             Phone = profile.Form.Phone,
             BirthDateText = profile.Form.BirthDateText,
@@ -394,7 +396,9 @@ public class OtellerController : Controller
             District = profile.Form.District,
             Neighborhood = profile.Form.Neighborhood,
             Address = profile.Form.Address,
-            IsProfileIncomplete = string.IsNullOrWhiteSpace(profile.Form.Email)
+            IsProfileIncomplete = string.IsNullOrWhiteSpace(profile.Form.FirstName)
+                                || string.IsNullOrWhiteSpace(profile.Form.LastName)
+                                || string.IsNullOrWhiteSpace(profile.Form.Email)
                                 || string.IsNullOrWhiteSpace(profile.Form.Phone)
                                 || string.IsNullOrWhiteSpace(profile.Form.BirthDateText)
                                 || !isAdultEligible
@@ -407,6 +411,16 @@ public class OtellerController : Controller
 
     private static string? ValidateReservationProfile(UserProfileForm form)
     {
+        if (string.IsNullOrWhiteSpace(form.FirstName))
+        {
+            return "Rezervasyon için ad alanı zorunludur.";
+        }
+
+        if (string.IsNullOrWhiteSpace(form.LastName))
+        {
+            return "Rezervasyon için soyad alanı zorunludur.";
+        }
+
         if (string.IsNullOrWhiteSpace(form.Email))
         {
             return "Rezervasyon için e-posta alanı zorunludur.";

@@ -189,6 +189,8 @@ public class HotelProfileCompletionPromptViewModel
 {
     public bool IsProfileIncomplete { get; set; }
     public string ReturnUrl { get; set; } = string.Empty;
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }
     public string? BirthDateText { get; set; }

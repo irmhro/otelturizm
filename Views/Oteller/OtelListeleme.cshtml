@@ -294,17 +294,21 @@
   .apply-btn.secondary { background: rgba(0,59,149,0.10); color: var(--primary); border: 1px solid rgba(0,59,149,0.18); }
 
   .mobile-filter-bar {
-      position: sticky;
-      top: var(--header-height);
-      z-index: 60;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: auto;
+      z-index: 140;
       margin: 0;
-      padding: 10px 0;
+      padding: 10px 0 env(safe-area-inset-bottom);
       border-radius: 0;
-      border-bottom: 1px solid rgba(226, 232, 240, 1);
-      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.90));
+      border-top: 1px solid rgba(226, 232, 240, 1);
+      border-bottom: 0;
+      background: rgba(255,255,255,0.88);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      box-shadow: 0 14px 26px rgba(0, 59, 149, 0.08);
+      box-shadow: 0 -18px 48px rgba(15, 23, 42, 0.12);
       display: none;
   }
 
@@ -317,9 +321,9 @@
   .mobile-filter-bar-btn {
       width: 100%;
       min-height: 48px;
-      border-radius: 16px;
-      border: 1px solid rgba(0, 59, 149, 0.14);
-      background: linear-gradient(135deg, rgba(0,59,149,0.08), rgba(255,255,255,0.96));
+      border-radius: 999px;
+      border: 1px solid rgba(0, 59, 149, 0.16);
+      background: rgba(0,59,149,0.06);
       color: #0f172a;
       display: flex;
       align-items: center;
@@ -328,7 +332,10 @@
       padding: 0 14px;
       font-weight: 900;
       cursor: pointer;
+      box-shadow: 0 18px 40px rgba(0, 59, 149, 0.10);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
   }
+  .mobile-filter-bar-btn:hover { border-color: rgba(0, 59, 149, 0.28); background: rgba(0, 59, 149, 0.08); }
 
   .mobile-filter-bar-btn:active {
       transform: translateY(1px);
@@ -389,6 +396,7 @@
     .results-container { flex-direction: column; }
     .filter-sidebar { width: 100%; display: none; }
     .mobile-filter-bar { display: block; }
+    .hotel-listing-shell { padding-bottom: 112px; }
   }
   @@media (max-width: 639px) { .card-image { height: 200px; } }
 
@@ -706,21 +714,21 @@
       border: 1px solid rgba(226,232,240,1);
       border-radius: 16px;
       padding: 12px 14px;
-      background: linear-gradient(135deg, rgba(0,59,149,0.06), rgba(255,255,255,1));
-      display: grid;
-      grid-template-columns: 44px 1fr;
+      background: #fff;
+      display: flex;
+      align-items: center;
       gap: 12px;
       text-align: left;
       cursor: pointer;
-      box-shadow: 0 12px 22px rgba(0, 59, 149, 0.06);
-      transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+      box-shadow: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background 0.18s ease;
   }
-  .location-btn:hover { border-color: rgba(0,59,149,0.25); box-shadow: 0 16px 28px rgba(0, 59, 149, 0.09); }
+  .location-btn:hover { border-color: rgba(0,59,149,0.25); background: rgba(0,59,149,0.03); }
   .location-btn:active { transform: translateY(1px); }
   .location-btn.active {
       border-color: rgba(0,59,149,0.35);
-      box-shadow: 0 18px 32px rgba(0, 59, 149, 0.12);
-      background: linear-gradient(135deg, rgba(0,59,149,0.10), rgba(255,255,255,1));
+      box-shadow: 0 0 0 4px rgba(0,59,149,0.08);
+      background: rgba(0,59,149,0.04);
   }
   .location-btn-icon {
       width: 44px;
@@ -732,19 +740,36 @@
       place-items: center;
       font-size: 17px;
   }
+  .location-btn-copy { flex: 1; min-width: 0; }
   .location-btn-copy strong { display:block; font-size: 15px; font-weight: 900; color: var(--text-dark); }
   .location-btn-copy small { display:block; margin-top: 3px; font-size: 12.5px; font-weight: 700; color: var(--text-light); }
-  .location-coords { display:none; margin-top: 8px; font-size: 11.5px; font-weight: 700; color: var(--text-light); background: rgba(0,59,149,0.05); border: 1px solid rgba(0,59,149,0.10); border-radius: 12px; padding: 8px 10px; word-break: break-word; }
+  .location-btn-state {
+      flex: 0 0 auto;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(226,232,240,1);
+      background: #f8fafc;
+      color: var(--text-light);
+      white-space: nowrap;
+  }
+  .location-btn-state.is-ready { background: rgba(0,59,149,0.06); border-color: rgba(0,59,149,0.12); color: var(--primary); }
+  .location-btn-state.is-loading { background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.22); color: #92400e; }
+  .location-btn-state.is-granted { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.26); color: #065f46; }
+  .location-btn-state.is-denied { background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.20); color: #991b1b; }
+  .location-coords { display:none; margin-top: 2px; font-size: 11.5px; font-weight: 700; color: var(--text-light); background: transparent; border: 0; border-left: 3px solid rgba(0,59,149,0.14); border-radius: 0; padding: 2px 0 2px 10px; word-break: break-word; }
   .location-coords.is-visible { display:block; }
+  .location-insight { margin-top: -2px; font-size: 11.5px; color: var(--text-light); background: transparent; border: 0; padding: 0; }
 
-  .km-row { padding: 12px 14px; border: 1px solid rgba(226,232,240,1); border-radius: 16px; background: #fff; display:grid; gap: 10px; }
+  .km-row { padding: 12px 0 0; border: 0; border-top: 1px solid rgba(226,232,240,1); border-radius: 0; background: transparent; display:grid; gap: 10px; }
   .km-row-head { display:flex; align-items:center; justify-content:space-between; gap: 10px; margin-bottom: 0; }
   .km-row-head strong { font-size: 14px; font-weight: 900; }
   .km-value { display:inline-flex; align-items:center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; font-size: 13px; font-weight: 900; color: var(--primary); }
   .km-count { font-size: 11.5px; font-weight: 800; color: var(--text-light); background: rgba(0,59,149,0.06); border: 1px solid rgba(0,59,149,0.10); border-radius: 999px; padding: 4px 8px; }
   .km-slider-row { display:flex; align-items:center; }
   .km-row input[type="range"] { width: 100%; margin: 0; accent-color: var(--primary); cursor: pointer; }
-  .km-manual-input { display:grid; gap:6px; justify-items:center; text-align:center; min-width:0; }
+  .km-manual-input { display:grid; gap:6px; justify-items:start; text-align:left; min-width:0; }
   .km-manual-input span { font-size: 11px; font-weight: 900; color: var(--text-light); text-transform: uppercase; letter-spacing: .04em; }
   .km-manual-input-row { display:inline-flex; align-items:center; gap:8px; }
   .km-manual-input input { width: 88px; min-width:0; height:42px; padding:0 12px; border-radius:12px; border:1px solid rgba(226,232,240,1); background:#fff; font-size:18px; font-weight:900; color:var(--text-dark); text-align:center; }
@@ -833,9 +858,9 @@
                                 <button type="button" class="location-btn" id="useMyLocationBtn">
                                     <span class="location-btn-icon" aria-hidden="true"><i class="fas fa-location-crosshairs"></i></span>
                                     <span class="location-btn-copy">
-                                        <span class="location-btn-eyebrow">Konuma göre ara</span>
+                                        <span class="location-btn-eyebrow">Canlı konum filtresi</span>
                                         <strong>Sana en yakın otelleri bul</strong>
-                                        <small id="locationStatusText">Konumunu paylaş, koordinatını net alıp otelleri gerçek konumlarına göre km cinsinden listeleyelim.</small>
+                                        <small id="locationStatusText">Konumunu aç, koordinatını net alalım ve otelleri gerçek enlem-boylam bilgisine göre km çapında listeleyelim.</small>
                                     </span>
                                     <span class="location-btn-state" id="locationPermissionPill">İzin bekleniyor</span>
                                 </button>
@@ -1349,6 +1374,7 @@
             const locationCoordsText = document.getElementById('locationCoordsText');
             const locationInsightText = document.getElementById('locationInsightText');
             const locationPermissionPill = document.getElementById('locationPermissionPill');
+            const locationStorageKey = 'otelturizm.last-user-location';
             let keywordSuggestionTimer = null;
             let userLocation = null;
             let locationLogTimer = null;
@@ -1431,24 +1457,29 @@
                     return;
                 }
 
-                locationPermissionPill.classList.remove('is-granted', 'is-denied', 'is-loading', 'is-ready');
+                locationPermissionPill.classList.remove('is-granted', 'is-denied', 'is-loading', 'is-ready', 'is-approximate');
                 if (locationPermissionState === 'granted') {
-                    locationPermissionPill.textContent = 'Konum hazır';
+                    locationPermissionPill.textContent = 'Konum açık';
                     locationPermissionPill.classList.add('is-granted');
                     return;
                 }
+                if (locationPermissionState === 'approximate') {
+                    locationPermissionPill.textContent = 'Yaklaşık konum';
+                    locationPermissionPill.classList.add('is-approximate');
+                    return;
+                }
                 if (locationPermissionState === 'denied') {
-                    locationPermissionPill.textContent = 'İzin kapalı';
+                    locationPermissionPill.textContent = 'Tarayıcıdan aç';
                     locationPermissionPill.classList.add('is-denied');
                     return;
                 }
                 if (locationPermissionState === 'loading') {
-                    locationPermissionPill.textContent = 'Konum alınıyor';
+                    locationPermissionPill.textContent = 'Alınıyor';
                     locationPermissionPill.classList.add('is-loading');
                     return;
                 }
 
-                locationPermissionPill.textContent = 'İzin bekleniyor';
+                locationPermissionPill.textContent = 'İzin ver';
                 locationPermissionPill.classList.add('is-ready');
             }
 
@@ -1464,7 +1495,10 @@
                     return;
                 }
 
-                const accuracyText = Number.isFinite(accuracy) && accuracy > 0
+                const isApproximate = !!(userLocation && userLocation.approximate);
+                const accuracyText = isApproximate
+                    ? '<span>Yaklaşık konum kullanılıyor' + (userLocation.source ? ' · ' + userLocation.source : '') + '</span>'
+                    : Number.isFinite(accuracy) && accuracy > 0
                     ? '<span>Yaklaşık hassasiyet: ' + Math.round(accuracy) + ' m</span>'
                     : '<span>Konum doğrulandı</span>';
 
@@ -1473,6 +1507,54 @@
                     '<span>Enlem: ' + lat.toFixed(6) + ' · Boylam: ' + lon.toFixed(6) + '</span>' +
                     accuracyText;
                 locationCoordsText.classList.add('is-visible');
+            }
+
+            function persistLocationSnapshot(lat, lon, accuracy) {
+                try {
+                    localStorage.setItem(locationStorageKey, JSON.stringify({
+                        lat: Number(lat || 0),
+                        lon: Number(lon || 0),
+                        accuracy: Number(accuracy || 0),
+                        approximate: !!(userLocation && userLocation.approximate),
+                        source: String(userLocation?.source || ''),
+                        savedAt: new Date().toISOString()
+                    }));
+                } catch (_) {
+                    // Sessiz geç.
+                }
+            }
+
+            function readPersistedLocationSnapshot() {
+                try {
+                    const raw = localStorage.getItem(locationStorageKey);
+                    if (!raw) {
+                        return null;
+                    }
+
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || !Number.isFinite(parsed.lat) || !Number.isFinite(parsed.lon)) {
+                        return null;
+                    }
+
+                    return {
+                        lat: Number(parsed.lat),
+                        lon: Number(parsed.lon),
+                        accuracy: Number(parsed.accuracy || 0),
+                        approximate: !!parsed.approximate,
+                        source: String(parsed.source || ''),
+                        savedAt: parsed.savedAt || ''
+                    };
+                } catch (_) {
+                    return null;
+                }
+            }
+
+            function clearPersistedLocationSnapshot() {
+                try {
+                    localStorage.removeItem(locationStorageKey);
+                } catch (_) {
+                    // Sessiz geç.
+                }
             }
 
             function setLocationInsight(text) {
@@ -1518,7 +1600,9 @@
                     visibleHotelCount: visibleCount,
                     searchTerm: String(keywordInput?.value || '').trim(),
                     searchRegion: buildSearchRegionText(),
-                    source: 'otel-listeleme-konum'
+                    source: userLocation.approximate
+                        ? 'otel-listeleme-konum-yaklasik'
+                        : 'otel-listeleme-konum'
                 };
             }
 
@@ -1699,36 +1783,119 @@
                 userLocation = {
                     lat: Number(pos.coords.latitude),
                     lon: Number(pos.coords.longitude),
-                    accuracy: Number(pos.coords.accuracy || 0)
+                    accuracy: Number(pos.coords.accuracy || 0),
+                    approximate: false,
+                    source: 'tarayici-konum'
                 };
+                persistLocationSnapshot(userLocation.lat, userLocation.lon, userLocation.accuracy);
                 setLocationPermissionState('granted');
                 enableDistanceFilterUi(true);
                 syncDistanceUi();
                 setLocationStatus('Konumun doğrulandı. Oteller artık koordinata göre aranıyor.');
                 setLocationCoords(userLocation.lat, userLocation.lon, userLocation.accuracy);
-                setLocationInsight('Konumun doğrulandı. Şimdi yarıçapı km cinsinden belirleyip en yakın otelleri gerçek harita konumlarına göre bulabilirsin.');
+                setLocationInsight('Konumun doğrulandı. Şimdi yarıçapı belirleyip en yakın otelleri gerçek harita konumlarına göre bulabilirsin.');
                 applyFilters();
                 queueLocationLog(true);
             }
 
-            function applyLocationError(error) {
-                setLocationPermissionState(error && error.code === 1 ? 'denied' : 'prompt');
-                enableDistanceFilterUi(false);
+            async function requestApproximateLocation() {
+                const providers = [
+                    {
+                        url: 'https://ipwho.is/',
+                        parse: function (data) {
+                            if (!data || data.success === false) {
+                                return null;
+                            }
+
+                            return {
+                                lat: Number(data.latitude),
+                                lon: Number(data.longitude),
+                                source: 'ipwho.is'
+                            };
+                        }
+                    },
+                    {
+                        url: 'https://ipapi.co/json/',
+                        parse: function (data) {
+                            if (!data) {
+                                return null;
+                            }
+
+                            return {
+                                lat: Number(data.latitude),
+                                lon: Number(data.longitude),
+                                source: 'ipapi.co'
+                            };
+                        }
+                    }
+                ];
+
+                for (const provider of providers) {
+                    try {
+                        const response = await fetch(provider.url, { headers: { 'Accept': 'application/json' } });
+                        if (!response.ok) {
+                            continue;
+                        }
+
+                        const payload = await response.json();
+                        const parsed = provider.parse(payload);
+                        if (parsed && Number.isFinite(parsed.lat) && Number.isFinite(parsed.lon)) {
+                            return parsed;
+                        }
+                    } catch (_) {
+                        // Sonraki sağlayıcıyı dene.
+                    }
+                }
+
+                return null;
+            }
+
+            async function applyApproximateLocationFallback(reasonText) {
+                const approximateLocation = await requestApproximateLocation();
+                if (!approximateLocation) {
+                    setLocationPermissionState('prompt');
+                    setLocationStatus(reasonText || 'Konum alınamadı. Tekrar deneyin.');
+                    setLocationInsight('Tarayıcı veya Windows tam konumu veremedi. Konumu tekrar deneyebilir ya da tarayıcı ayarlarından konum hizmetini açabilirsiniz.');
+                    return;
+                }
+
+                userLocation = {
+                    lat: approximateLocation.lat,
+                    lon: approximateLocation.lon,
+                    accuracy: 0,
+                    approximate: true,
+                    source: approximateLocation.source
+                };
+
+                persistLocationSnapshot(userLocation.lat, userLocation.lon, 0);
+                setLocationPermissionState('approximate');
+                enableDistanceFilterUi(true);
+                syncDistanceUi();
+                setLocationCoords(userLocation.lat, userLocation.lon, 0);
+                setLocationStatus('Tam konum alınamadı; yaklaşık konumla arama aktif. Daha hassas sonuç için Windows ve tarayıcı konum hizmetini açabilirsiniz.');
+                setLocationInsight('Yaklaşık konum bulundu. Şimdi yarıçapı belirleyip yakındaki otelleri km çapında arayabilirsin.');
+                applyFilters();
+                queueLocationLog(true);
+            }
+
+            async function applyLocationError(error) {
                 setLocationCoords(NaN, NaN);
-                setLocationInsight('Konum paylaşımı açıldığında sana en yakın otelleri tek dokunuşla bulabiliriz.');
                 if (error && error.code === 1) {
-                    setLocationStatus('Konum izni kapalı. Tarayıcıdan izin verin.');
+                    clearPersistedLocationSnapshot();
+                }
+                if (error && error.code === 1) {
+                    await applyApproximateLocationFallback('Tarayıcı konum izni kapalı. Yaklaşık konum deneniyor.');
                     return;
                 }
                 if (error && error.code === 2) {
-                    setLocationStatus('Konum bulunamadı. Tekrar deneyin.');
+                    await applyApproximateLocationFallback('Tarayıcı tam konumu bulamadı. Yaklaşık konum deneniyor.');
                     return;
                 }
                 if (error && error.code === 3) {
-                    setLocationStatus('Konum zaman aşımına uğradı. Tekrar deneyin.');
+                    await applyApproximateLocationFallback('Konum zaman aşımına uğradı. Yaklaşık konum deneniyor.');
                     return;
                 }
-                setLocationStatus('Konum alınamadı. Tekrar deneyin.');
+                await applyApproximateLocationFallback('Konum alınamadı. Yaklaşık konum deneniyor.');
             }
 
             function requestUserLocation() {
@@ -1766,8 +1933,29 @@
             });
 
             async function initializeLocationPermissionState() {
+                const persistedLocation = readPersistedLocationSnapshot();
+                if (persistedLocation) {
+                    userLocation = {
+                        lat: persistedLocation.lat,
+                        lon: persistedLocation.lon,
+                        accuracy: persistedLocation.accuracy,
+                        approximate: !!persistedLocation.approximate,
+                        source: String(persistedLocation.source || '')
+                    };
+                    enableDistanceFilterUi(true);
+                    syncDistanceUi();
+                    setLocationCoords(userLocation.lat, userLocation.lon, userLocation.accuracy);
+                    setDistanceHotelCount(cards.filter(card => !card.hidden).length, true);
+                    setLocationInsight('Son doğrulanan konumun yüklendi. Yarıçapı değiştirerek otelleri gerçek koordinat mesafesine göre filtreleyebilirsin.');
+                }
+
                 if (!('permissions' in navigator) || !navigator.permissions?.query) {
-                    setLocationPermissionState('prompt');
+                    setLocationPermissionState(persistedLocation
+                        ? (persistedLocation.approximate ? 'approximate' : 'granted')
+                        : 'prompt');
+                    setLocationStatus(persistedLocation
+                        ? 'Son doğrulanan konumun hazır. İstersen yeniden ölçüm alabilirsin.'
+                        : 'Konumunu paylaş, koordinatını net alıp otelleri km çapında tarayalım.');
                     return;
                 }
 
@@ -1775,22 +1963,38 @@
                     const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
                     const syncState = function () {
                         if (permissionStatus.state === 'granted') {
-                            setLocationPermissionState('granted');
-                            setLocationStatus('Konum izni hazır. Net koordinatını almak için dokunabilirsin.');
-                            if (!userLocation) {
+                            setLocationPermissionState(userLocation?.approximate ? 'approximate' : 'granted');
+                            setLocationStatus(persistedLocation
+                                ? 'Konum izni açık. Son doğrulanan koordinatın hazır; istersen yeniden ölçüm alabilirsin.'
+                                : 'Konum izni açık. Konumunu almak için dokunabilirsin.');
+                            enableDistanceFilterUi(true);
+                            if (!userLocation || !persistedLocation) {
                                 requestUserLocation();
                             }
                             return;
                         }
 
                         if (permissionStatus.state === 'denied') {
-                            setLocationPermissionState('denied');
-                            setLocationStatus('Konum izni kapalı. Tarayıcıdan izin verin.');
+                            if (persistedLocation && userLocation) {
+                                setLocationPermissionState(userLocation.approximate ? 'approximate' : 'granted');
+                                setLocationStatus('Son doğrulanan konumun hazır. Daha hassas sonuç için tarayıcı konum iznini açabilirsiniz.');
+                                enableDistanceFilterUi(true);
+                                return;
+                            }
+
+                            setLocationPermissionState('prompt');
+                            userLocation = null;
+                            enableDistanceFilterUi(false);
+                            setLocationCoords(NaN, NaN);
+                            clearPersistedLocationSnapshot();
+                            setLocationStatus('Konum izni kapalıysa yaklaşık konumla devam edebiliriz. Konumu kullan butonuna tekrar dokunun.');
                             return;
                         }
 
-                        setLocationPermissionState('prompt');
-                        setLocationStatus('Konumunu paylaş, koordinatını net alıp otelleri km cinsinden tarayalım.');
+                        setLocationPermissionState(persistedLocation ? 'granted' : 'prompt');
+                        setLocationStatus(persistedLocation
+                            ? 'Son doğrulanan koordinatın hazır. Yeni ölçüm almak için dokunabilirsin.'
+                            : 'Konumunu paylaş, koordinatını net alıp otelleri km çapında tarayalım.');
                     };
 
                     syncState();
@@ -1979,6 +2183,7 @@
                 if (distanceKmInput) distanceKmInput.value = '1';
                 userLocation = null;
                 lastLocationLogSignature = '';
+                clearPersistedLocationSnapshot();
                 enableDistanceFilterUi(false);
                 setLocationCoords(NaN, NaN);
                 setDistanceHotelCount(0, false);

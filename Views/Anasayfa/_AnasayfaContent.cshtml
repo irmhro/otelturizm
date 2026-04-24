@@ -2,6 +2,7 @@
 
 @{
     var categoryShowcaseHotels = Model.PopularHotels.Count > 0 ? Model.PopularHotels : Model.WeekendHotels;
+    var todayIso = DateTime.Today.ToString("yyyy-MM-dd");
     var homepageCategorySections = new[]
     {
         new { Key = "haftasonu-firsatlari", Title = "Hafta Sonu Fırsatları" },
@@ -68,12 +69,12 @@
                     <div class="fancy-controls">
                         <label class="pill pill-checkin">
                             <i class="fa-regular fa-calendar"></i>
-                            <input type="date" name="checkIn" />
+                            <input type="date" name="checkIn" min="@todayIso" />
                         </label>
 
                         <label class="pill pill-checkout">
                             <i class="fa-regular fa-calendar"></i>
-                            <input type="date" name="checkOut" />
+                            <input type="date" name="checkOut" min="@todayIso" />
                         </label>
 
                         <label class="pill pill-guests">
