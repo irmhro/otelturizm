@@ -2929,6 +2929,7 @@
                     && !String(baseTag || '').trim()
                     && !String(baseCampaign || '').trim();
                 const MAX_PRELOAD_NOSEARCH = 50;
+                const BUFFER_CARDS = 16; // 6 gorunen + altta en az 10 hazir
 
                 function buildPageUrl(page) {
                     const params = new URLSearchParams(window.location.search);
@@ -2943,6 +2944,7 @@
                     const cardsNow = Array.from(listView.querySelectorAll('.listing-hotel-card'));
                     if (isNoSearchContext && cardsNow.length >= MAX_PRELOAD_NOSEARCH) return;
                     if (loading) return;
+                    if (cardsNow.length >= BUFFER_CARDS && !isNoSearchContext) return;
                     if (!Number.isFinite(currentPage) || !Number.isFinite(totalPages) || currentPage >= totalPages) return;
                     loading = true;
                     const nextPage = currentPage + 1;
@@ -3084,7 +3086,7 @@
                     const dt = dtMs / 16.67; // ~60fps units
 
                     // sürtünme (makara hissi) - daha yavaş / daha yumuşak
-                    const friction = 0.90;
+                    const friction = 0.92;
                     v = v * Math.pow(friction, dt);
 
                     // hız çok küçükse durdur (hizalama yapma)
@@ -3123,9 +3125,9 @@
                     }
 
                     const delta = Math.max(-160, Math.min(160, (e.deltaY || 0)));
-                    const accel = 0.52; // wheel -> velocity (daha yavaş)
+                    const accel = 0.38; // wheel -> velocity (daha yavaş)
                     v += delta * accel;
-                    v = Math.max(-78, Math.min(78, v)); // üst hız limiti
+                    v = Math.max(-55, Math.min(55, v)); // üst hız limiti
                     pulseCrank(delta);
 
                     if (!animating) {
