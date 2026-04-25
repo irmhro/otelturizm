@@ -3012,10 +3012,19 @@ public class PartnerService : IPartnerService
             WHERE o.partner_id IS NOT NULL
               AND (
                   o.otel_kodu = @hotelCode
+                  OR REPLACE(REPLACE(LOWER(o.otel_kodu), '_', '-'), ' ', '-') = @hotelCodeSlug
+                  OR LOWER(o.otel_adi) = @hotelName
+                  OR LOWER(o.eposta) = @email
                   OR (@hotelCode IS NULL)
               )
             ORDER BY
-                CASE WHEN o.otel_kodu = @hotelCode THEN 0 ELSE 1 END,
+                CASE
+                    WHEN o.otel_kodu = @hotelCode THEN 0
+                    WHEN REPLACE(REPLACE(LOWER(o.otel_kodu), '_', '-'), ' ', '-') = @hotelCodeSlug THEN 1
+                    WHEN LOWER(o.otel_adi) = @hotelName THEN 2
+                    WHEN LOWER(o.eposta) = @email THEN 3
+                    ELSE 4
+                END,
                 o.id ASC;";
 
         long hotelId = 0;
@@ -3023,6 +3032,9 @@ public class PartnerService : IPartnerService
         await using (var pickCommand = new SqlCommand(pickHotelSql, connection))
         {
             pickCommand.Parameters.AddWithValue("@hotelCode", "216-eagle-palace");
+            pickCommand.Parameters.AddWithValue("@hotelCodeSlug", "216-eagle-palace");
+            pickCommand.Parameters.AddWithValue("@hotelName", "216 eagle palace");
+            pickCommand.Parameters.AddWithValue("@email", "kurumsal@otelturizm.com");
             await using var reader = await pickCommand.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
             {
