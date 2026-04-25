@@ -6,7 +6,7 @@
 /* Mobil menü (drawer) buton yüksekliklerini eşitle */
 .mobile-menu-drawer {
   --drawer-cta-height: 52px;
-  --drawer-tile-height: 46px; /* Kurumsal/Firma yüksekliği hedefi */
+  --drawer-tile-height: 42px; /* %20 daha kısa (52px -> ~42px) */
 }
 
 .mobile-menu-drawer .drawer-action,

@@ -768,7 +768,7 @@ public class HotelService : IHotelService
             CampaignSlug = normalizedCampaignSlug,
             ActiveTag = normalizedTag,
             CurrentPage = Math.Max(page, 1),
-            PageSize = 8
+            PageSize = 7
         };
 
         var connectionString = GetConnectionString();
@@ -955,7 +955,8 @@ public class HotelService : IHotelService
             LEFT JOIN (
                 SELECT
                     oi.otel_id,
-                    STRING_AGG(oo.ozellik_adi, '||') WITHIN GROUP (ORDER BY oo.one_cikan_ozellik DESC, oo.siralama ASC) AS ozellikler
+                    STRING_AGG(CONCAT(oo.ozellik_adi, '::', COALESCE(oo.ozellik_ikon, 'fa-circle-check')), '||')
+                        WITHIN GROUP (ORDER BY oo.one_cikan_ozellik DESC, oo.siralama ASC) AS ozellikler
                 FROM otel_ozellik_iliskileri oi
                 JOIN otel_ozellikleri oo ON oo.id = oi.ozellik_id AND oo.aktif_mi = 1
                 GROUP BY oi.otel_id
@@ -1059,14 +1060,23 @@ public class HotelService : IHotelService
                 ? string.Empty
                 : NormalizeTurkishText(reader.GetString(reader.GetOrdinal("kampanya_badgetext")));
 
-            var amenities = rawAmenities
+            var amenityItems = rawAmenities
                 .Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(ParseAmenity)
+                .Where(x => !string.IsNullOrWhiteSpace(x.Label))
+                .GroupBy(x => x.Label, StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.First())
                 .ToList();
-            if (amenities.Count == 0)
+            if (amenityItems.Count == 0)
             {
-                amenities.AddRange(new[] { "24 Saat Resepsiyon", "Ucretsiz WiFi", "Restoran" });
+                amenityItems.AddRange(new[]
+                {
+                    new HomeAmenityViewModel { Label = "24 Saat Resepsiyon", IconClass = "fa-clock" },
+                    new HomeAmenityViewModel { Label = "WiFi", IconClass = "fa-wifi" },
+                    new HomeAmenityViewModel { Label = "Restoran", IconClass = "fa-utensils" }
+                });
             }
+            var amenities = amenityItems.Select(x => x.Label).ToList();
 
             var tags = BuildTags(isFeatured, rating, reviewCount, startingPrice);
             foreach (var campaignName in campaignNames.Take(2))
@@ -1122,6 +1132,11 @@ public class HotelService : IHotelService
                 GalleryImages = galleryImages,
                 IsFeatured = isFeatured,
                 Amenities = amenities,
+                AmenityItems = amenityItems.Select(x => new HotelAmenityViewModel
+                {
+                    Name = x.Label,
+                    IconClass = x.IconClass
+                }).ToList(),
                 Tags = tags,
                 CampaignNames = campaignNames.Select(NormalizeTurkishText).ToList(),
                 CampaignSlugs = campaignSlugs,
@@ -1500,12 +1515,59 @@ public class HotelService : IHotelService
             await using var amenitiesReader = await amenitiesCommand.ExecuteReaderAsync(cancellationToken);
             while (await amenitiesReader.ReadAsync(cancellationToken))
             {
-                var amenityName = amenitiesReader.GetString(0);
+                var amenityName = NormalizeTurkishText(amenitiesReader.GetString(0));
                 var amenityIcon = amenitiesReader.GetString(1);
                 model.Amenities.Add(new HotelAmenityViewModel
                 {
                     Name = NormalizeAmenityLabel(amenityName),
                     IconClass = NormalizeAmenityIcon(amenityIcon, amenityName)
+                });
+            }
+        }
+
+        const string roomFeaturesSql = """
+            SELECT
+                rfo.oda_tip_id,
+                ro.ozellik_adi,
+                COALESCE(ro.ozellik_ikon, 'fa-circle-check') AS ozellik_ikon
+            FROM oda_tipi_ozellikleri rfo
+            JOIN oda_ozellikleri ro
+                ON ro.id = rfo.ozellik_id
+               AND ro.aktif_mi = 1
+            WHERE rfo.oda_tip_id IN (SELECT id FROM oda_tipleri WHERE otel_id = @hotelId AND aktif_mi = 1)
+            ORDER BY rfo.oda_tip_id ASC, ro.siralama ASC, ro.id ASC;
+            """;
+        var roomFeatureMap = new Dictionary<long, List<HotelRoomFeatureViewModel>>();
+        await using (var roomFeaturesCommand = new SqlCommand(roomFeaturesSql, connection))
+        {
+            roomFeaturesCommand.Parameters.AddWithValue("@hotelId", model.Id);
+            await using var roomFeaturesReader = await roomFeaturesCommand.ExecuteReaderAsync(cancellationToken);
+            while (await roomFeaturesReader.ReadAsync(cancellationToken))
+            {
+                var roomId = roomFeaturesReader.GetInt64(0);
+                var featureName = NormalizeTurkishText(roomFeaturesReader.IsDBNull(1) ? string.Empty : roomFeaturesReader.GetString(1));
+                var featureIcon = NormalizeFeatureIcon(roomFeaturesReader.IsDBNull(2) ? "fa-circle-check" : roomFeaturesReader.GetString(2), featureName);
+
+                if (string.IsNullOrWhiteSpace(featureName))
+                {
+                    continue;
+                }
+
+                if (!roomFeatureMap.TryGetValue(roomId, out var features))
+                {
+                    features = new List<HotelRoomFeatureViewModel>();
+                    roomFeatureMap[roomId] = features;
+                }
+
+                if (features.Any(x => string.Equals(x.Name, featureName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                features.Add(new HotelRoomFeatureViewModel
+                {
+                    Name = featureName,
+                    IconClass = featureIcon
                 });
             }
         }
@@ -1567,7 +1629,9 @@ public class HotelService : IHotelService
                     MaxChildCount = maxChildren,
                     ImageUrl = roomGalleryImages.FirstOrDefault(),
                     GalleryImages = roomGalleryImages,
-                    Features = new List<HotelRoomFeatureViewModel>(),
+                    Features = roomFeatureMap.TryGetValue(roomId, out var roomFeatures)
+                        ? roomFeatures
+                        : new List<HotelRoomFeatureViewModel>(),
                     CancellationText = "Ücretsiz iptal"
                 });
             }
@@ -2553,7 +2617,7 @@ public class HotelService : IHotelService
         }
 
         var parts = raw.Split("::", StringSplitOptions.TrimEntries);
-        var label = parts[0];
+        var label = NormalizeTurkishText(parts[0]);
         var icon = parts.Length > 1 ? parts[1] : "fa-circle-check";
 
         return new HomeAmenityViewModel
@@ -2565,6 +2629,7 @@ public class HotelService : IHotelService
 
     private static string NormalizeAmenityLabel(string label)
     {
+        label = NormalizeTurkishText(label);
         return label switch
         {
             "Ücretsiz WiFi" => "WiFi",
@@ -2590,17 +2655,76 @@ public class HotelService : IHotelService
 
     private static string NormalizeAmenityIcon(string icon, string label)
     {
-        return icon switch
+        var normalized = NormalizeFeatureIcon(icon, label);
+        return label switch
+        {
+            "Ücretsiz WiFi" => "fa-wifi",
+            "Açık Yüzme Havuzu" => "fa-water-ladder",
+            "Kapalı Yüzme Havuzu" => "fa-water-ladder",
+            "SPA ve Sağlık Merkezi" => "fa-spa",
+            _ => normalized
+        };
+    }
+
+    private static string NormalizeFeatureIcon(string icon, string label)
+    {
+        var cleanedIcon = (icon ?? string.Empty).Trim();
+        var normalizedLabel = NormalizeTurkishText(label);
+        return cleanedIcon switch
         {
             "fa-swimming-pool" => "fa-water-ladder",
             "fa-hot-tub" => "fa-spa",
+            "fa-water" when normalizedLabel.Contains("Havuz", StringComparison.OrdinalIgnoreCase) => "fa-water-ladder",
+            "fa-parking" => "fa-square-parking",
+            "fa-dog" => "fa-paw",
+            "fa-glass-cheers" => "fa-martini-glass-citrus",
+            "fa-cocktail" => "fa-martini-glass-citrus",
+            "fa-coffee" => "fa-mug-hot",
+            "fa-child" => "fa-children",
+            "fa-tshirt" => "fa-shirt",
+            "fa-desk" => "fa-table",
+            "fa-glass" => "fa-wine-bottle",
+            "fa-refrigerator" => "fa-temperature-low",
+            "fa-microwave" => "fa-kitchen-set",
+            "fa-hands" => "fa-hand-sparkles",
             _ => label switch
             {
                 "Ücretsiz WiFi" => "fa-wifi",
                 "Açık Yüzme Havuzu" => "fa-water-ladder",
                 "Kapalı Yüzme Havuzu" => "fa-water-ladder",
                 "SPA ve Sağlık Merkezi" => "fa-spa",
-                _ => icon
+                "Wi-Fi" => "fa-wifi",
+                "Minibar" => "fa-wine-bottle",
+                "Fön Makinası" => "fa-wind",
+                "Saç Kurutma Makinesi" => "fa-wind",
+                _ when normalizedLabel.Contains("WiFi", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Wifi", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("İnternet", StringComparison.OrdinalIgnoreCase) => "fa-wifi",
+                _ when normalizedLabel.Contains("Duş", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Banyo", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Küvet", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Jakuzi", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Havlu", StringComparison.OrdinalIgnoreCase) => "fa-bath",
+                _ when normalizedLabel.Contains("Saç Kurutma", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Fön", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Fon", StringComparison.OrdinalIgnoreCase) => "fa-wind",
+                _ when normalizedLabel.Contains("Bakım", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Kozmetik", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Sabun", StringComparison.OrdinalIgnoreCase) => "fa-pump-soap",
+                _ when normalizedLabel.Contains("Gardırop", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Dolap", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Kıyafet", StringComparison.OrdinalIgnoreCase) => "fa-shirt",
+                _ when normalizedLabel.Contains("Yatak", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Kanepe", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Koltuk", StringComparison.OrdinalIgnoreCase) => "fa-bed",
+                _ when normalizedLabel.Contains("Mutfak", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Mikrodalga", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Ocak", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Fırın", StringComparison.OrdinalIgnoreCase) => "fa-kitchen-set",
+                _ when normalizedLabel.Contains("Kettle", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Kahve", StringComparison.OrdinalIgnoreCase)
+                    || normalizedLabel.Contains("Çay", StringComparison.OrdinalIgnoreCase) => "fa-mug-hot",
+                _ => string.IsNullOrWhiteSpace(cleanedIcon) ? "fa-circle-check" : cleanedIcon
             }
         };
     }

@@ -85,6 +85,7 @@ public class HotelListingCardViewModel
     public bool IsFeatured { get; set; }
     public bool IsFavorite { get; set; }
     public List<string> Amenities { get; set; } = new();
+    public List<HotelAmenityViewModel> AmenityItems { get; set; } = new();
     public List<string> Tags { get; set; } = new();
     public List<string> CampaignNames { get; set; } = new();
     public List<string> CampaignSlugs { get; set; } = new();

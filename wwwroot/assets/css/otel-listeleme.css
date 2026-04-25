@@ -1327,17 +1327,24 @@ body.listing-modal-open {
 /* Desktop: "Vergiler dahil" fiyat grubunun yanında kalsın */
 @media (min-width: 901px) {
     .listing-template-v41 .price-section {
-        justify-content: flex-start;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "price btn"
+            "tax   btn";
+        align-items: center;
+        column-gap: 16px;
+        row-gap: 4px;
+        justify-content: unset;
     }
 
-    .listing-template-v41 .btn-detail {
-        margin-left: auto;
-    }
-
+    .listing-template-v41 .price-info { grid-area: price; }
     .listing-template-v41 .price-tax-note {
-        order: 2;
-        margin-left: 10px;
+        grid-area: tax;
+        margin-left: 0;
+        justify-self: start;
     }
+    .listing-template-v41 .btn-detail { grid-area: btn; }
 
     /* Kampanya çipi varsa, vergiden sonra gelsin */
     .listing-template-v41 .campaign-info-chip {
@@ -1520,6 +1527,17 @@ body.listing-modal-open {
     gap: 4px;
 }
 
+.location-coords.is-clickable {
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.location-coords.is-clickable:hover {
+    border-color: rgba(37, 99, 235, 0.32);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.10);
+    transform: translateY(-1px);
+}
+
 .location-coords strong,
 .location-coords span {
     display: block;
@@ -1650,6 +1668,31 @@ body.listing-modal-open {
 .listing-template-v41 .per-night {
     font-size: 13px;
     color: var(--listing-muted);
+}
+
+/* Listing: konum ikonuna hafif renkli nabız */
+.listing-template-v41 .hotel-location i,
+.listing-template-v41 .hotel-location .fa-map-pin {
+    display: inline-block;
+    animation: listingLocationPulse 2.4s ease-in-out infinite;
+    transform-origin: 50% 60%;
+    will-change: transform, filter, color;
+}
+
+@keyframes listingLocationPulse {
+    0%   { color: #ef4444; transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 rgba(239, 68, 68, 0)); }
+    33%  { color: #f59e0b; transform: translateY(-0.5px) scale(1.03); filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.22)); }
+    66%  { color: #10b981; transform: translateY(0) scale(1.05); filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.22)); }
+    100% { color: #ef4444; transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 rgba(239, 68, 68, 0)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .listing-template-v41 .hotel-location i,
+    .listing-template-v41 .hotel-location .fa-map-pin {
+        animation: none;
+        filter: none;
+        color: var(--listing-muted);
+    }
 }
 
 .listing-template-v41 .price-tax-note {
@@ -2044,6 +2087,89 @@ body.listing-modal-open {
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
+}
+
+/* Desktop "makara" görünümü: liste kendi penceresinde akar */
+@media (min-width: 901px) {
+    .listing-template-v41 .listing-reel-viewport {
+        flex: 1;
+        min-width: 0;
+        /* Makara: normal scroll + scrollbar gizli (baş/son sabit kalsın) */
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 6px;
+        position: relative;
+        scroll-behavior: auto;
+        scrollbar-gutter: stable both-edges;
+        scrollbar-width: none;
+    }
+
+    .listing-template-v41 .listing-reel-viewport::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+
+    /* Sağ kenarda "kurma kolu / çark" efekti */
+    .listing-template-v41 .listing-reel-crank {
+        position: sticky;
+        top: 140px;
+        margin-left: auto;
+        width: 42px;
+        height: 110px;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+        z-index: 4;
+        float: right;
+        transform: translateX(8px);
+    }
+
+    .listing-template-v41 .listing-reel-crank .reel-crank-knob {
+        position: absolute;
+        top: 6px;
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.18);
+        box-shadow: 0 10px 18px rgba(2, 6, 23, 0.10);
+        opacity: 0.85;
+    }
+
+    .listing-template-v41 .listing-reel-crank .reel-crank-gear {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.55);
+        background: rgba(255,255,255,0.82);
+        box-shadow: 0 18px 36px rgba(2, 6, 23, 0.10);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        transform: rotate(calc(var(--crank-rot, 0) * 1deg));
+        transition: transform 0.08s linear;
+    }
+
+    .listing-template-v41 .listing-reel-crank.is-cranking .reel-crank-gear {
+        box-shadow: 0 22px 46px rgba(0, 59, 149, 0.14);
+        border-color: rgba(0, 59, 149, 0.22);
+    }
+
+    .listing-template-v41 .listing-reel-crank .reel-crank-gear::before,
+    .listing-template-v41 .listing-reel-crank .reel-crank-gear::after {
+        content: '';
+        position: absolute;
+        inset: 7px;
+        border-radius: 999px;
+        border: 1px dashed rgba(148, 163, 184, 0.55);
+    }
+
+    .listing-template-v41 .listing-reel-crank .reel-crank-gear::after {
+        inset: 15px;
+        border-style: solid;
+        border-color: rgba(148, 163, 184, 0.40);
+        opacity: 0.9;
+    }
 }
 
 .listing-template-v41 .listing-badges-under {
@@ -2639,6 +2765,56 @@ body.listing-modal-open {
     gap: 10px;
     justify-content: center;
     margin-top: 24px;
+}
+
+#listingInfiniteSentinel {
+    height: 1px;
+}
+
+.listing-pagination .page-btn,
+.listing-pagination .page-num {
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--listing-border);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--listing-text);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.92rem;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.listing-pagination .page-btn:hover,
+.listing-pagination .page-num:hover {
+    transform: translateY(-1px);
+    border-color: rgba(0, 59, 149, 0.20);
+    box-shadow: 0 16px 30px rgba(0, 59, 149, 0.10);
+}
+
+.listing-pagination .page-num.active {
+    border-color: transparent;
+    background: linear-gradient(135deg, #003b95, #2563eb);
+    color: #fff;
+    box-shadow: 0 18px 32px rgba(0, 59, 149, 0.18);
+}
+
+.listing-pagination .page-btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.listing-pagination .page-ellipsis {
+    min-height: 40px;
+    padding: 0 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--listing-muted);
+    font-weight: 900;
 }
 
 .listing-page-link.active {

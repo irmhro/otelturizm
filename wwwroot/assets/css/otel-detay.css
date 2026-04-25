@@ -269,6 +269,18 @@
     overflow: hidden;
 }
 
+/* Slayt ekrani: mobil tarayici bar degisimlerinde kayma olmasin */
+.gallery-lightbox,
+.gallery-lightbox-figure {
+    box-sizing: border-box;
+}
+
+.gallery-lightbox {
+    height: 100dvh;
+    width: 100vw;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+
 .gallery-lightbox::before {
     content: "";
     position: absolute;
@@ -301,8 +313,8 @@
 
 .gallery-lightbox-figure {
     margin: 0;
-    width: min(1120px, 100%);
-    height: min(88vh, 860px);
+    width: min(1120px, calc(100vw - 32px));
+    height: min(calc(100dvh - 64px), 860px);
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto auto;
     gap: 14px;
@@ -352,6 +364,7 @@
 .gallery-lightbox-figure img {
     width: 100%;
     height: 100%;
+    display: block;
     object-fit: contain;
     border-radius: 18px;
     background: rgba(15, 23, 42, 0.28);
@@ -2651,6 +2664,13 @@
 /* Ödeme planı + check-in/out: masaüstünde yan yana, mobilde alt alta */
 .otel-detail-template-v41 .booking-advanced-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Masaüstü: Ödeme planı tek satır, altında Giriş/Çıkış tek satır */
+@media (min-width: 901px) {
+    .otel-detail-template-v41 .booking-advanced-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .booking-advanced-grid > * {

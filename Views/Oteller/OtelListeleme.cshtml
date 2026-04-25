@@ -7,11 +7,17 @@
     ViewData["SuppressGlobalDraftBanner"] = true;
 
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
-    var minPrice = 0m;
-    var computedMax = hotels.Where(x => (x.StartingPrice ?? 0m) > 0m).Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Max();
+    var pricedHotels = hotels.Where(x => (x.StartingPrice ?? 0m) > 0m).ToList();
+    var computedMin = pricedHotels.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Min();
+    var minPrice = computedMin > 0m ? computedMin : (Model.MinPrice > 0m ? Model.MinPrice : 0m);
+    var computedMax = pricedHotels.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Max();
     var maxPrice = computedMax > 0m
         ? computedMax
         : (Model.MaxPrice > 0m ? Model.MaxPrice : 15000m);
+    if (maxPrice > 0m && minPrice > maxPrice)
+    {
+        minPrice = maxPrice;
+    }
     var titleText = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Oteller" : Model.SearchLabel;
     var cityText = string.IsNullOrWhiteSpace(Model.City) ? titleText : Model.City;
     var amenityCounts = hotels
@@ -52,6 +58,10 @@
         .GroupBy(h => NormalizeToken(h.Neighborhood))
         .ToDictionary(g => g.Key, g => g.Min(x => x.StartingPrice ?? decimal.MaxValue), StringComparer.OrdinalIgnoreCase);
 }
+
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      crossorigin="anonymous" />
 
 <style>
   :root {
@@ -656,9 +666,12 @@
       z-index: 2;
   }
   .price-slider-dot[data-price-dot="0"] { left: 0%; }
-  .price-slider-dot[data-price-dot="1"] { left: 33.333%; }
-  .price-slider-dot[data-price-dot="2"] { left: 66.666%; }
-  .price-slider-dot[data-price-dot="3"] { left: 100%; }
+  .price-slider-dot[data-price-dot="1"] { left: 16.666%; }
+  .price-slider-dot[data-price-dot="2"] { left: 33.333%; }
+  .price-slider-dot[data-price-dot="3"] { left: 50%; }
+  .price-slider-dot[data-price-dot="4"] { left: 66.666%; }
+  .price-slider-dot[data-price-dot="5"] { left: 83.333%; }
+  .price-slider-dot[data-price-dot="6"] { left: 100%; }
 
   #listingPriceMaxRange {
       width: 100%;
@@ -693,20 +706,6 @@
       box-shadow: 0 12px 26px rgba(0,59,149,0.28), 0 0 0 6px rgba(0,59,149,0.12);
       cursor: pointer;
   }
-  .price-slider-labels {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 16px;
-      color: var(--text-light);
-      font-size: 12px;
-      font-weight: 700;
-  }
-  .price-slider-labels span:nth-child(1) { text-align: left; }
-  .price-slider-labels span:nth-child(2),
-  .price-slider-labels span:nth-child(3) { text-align: center; }
-  .price-slider-labels span:nth-child(4) { text-align: right; }
-
   /* Konuma göre filtre */
   .location-filter-card {
       display: grid;
@@ -809,21 +808,38 @@
         <div class="mobile-filter-bar-inner">
             <nav class="mobile-filter-dock" aria-label="Hızlı filtreler">
                 <button type="button" class="dock-btn" data-mobile-filter-target="location" aria-haspopup="dialog" aria-controls="listingFilterModal">
-                    <span class="dock-ico" aria-hidden="true"><i class="fas fa-location-dot"></i></span>
+                    <span class="dock-ico dock-ico-location" aria-hidden="true">
+                        <span class="dock-radar" aria-hidden="true">
+                            <span class="dock-radar-ring"></span>
+                            <span class="dock-radar-ring"></span>
+                            <span class="dock-radar-ring"></span>
+                            <span class="dock-radar-dot"></span>
+                        </span>
+                        <i class="fas fa-location-dot"></i>
+                    </span>
                     <span class="dock-txt">Konum</span>
                 </button>
                 <button type="button" class="dock-btn" data-mobile-filter-target="search" aria-haspopup="dialog" aria-controls="listingFilterModal">
-                    <span class="dock-ico" aria-hidden="true"><i class="fas fa-magnifying-glass"></i></span>
+                    <span class="dock-ico dock-ico-search" aria-hidden="true">
+                        <span class="dock-scan" aria-hidden="true"></span>
+                        <i class="fas fa-magnifying-glass"></i>
+                    </span>
                     <span class="dock-txt">Ara</span>
                 </button>
                 <button type="button" class="dock-btn" data-mobile-filter-target="price" aria-haspopup="dialog" aria-controls="listingFilterModal">
-                    <span class="dock-ico" aria-hidden="true"><i class="fas fa-tag"></i></span>
+                    <span class="dock-ico dock-ico-price" aria-hidden="true">
+                        <span class="dock-price-bars" aria-hidden="true">
+                            <span class="dock-price-bar"></span>
+                            <span class="dock-price-bar"></span>
+                            <span class="dock-price-bar"></span>
+                        </span>
+                    </span>
                     <span class="dock-txt">Fiyat</span>
                     <span class="dock-badge" id="mobileFilterCount" hidden>0</span>
                 </button>
-                <button type="button" class="dock-btn" data-mobile-filter-target="rating" aria-haspopup="dialog" aria-controls="listingFilterModal">
-                    <span class="dock-ico" aria-hidden="true"><i class="fas fa-star"></i></span>
-                    <span class="dock-txt">Yorum</span>
+                <button type="button" class="dock-btn" data-mobile-filter-target="all" aria-haspopup="dialog" aria-controls="listingFilterModal">
+                    <span class="dock-ico dock-ico-all" aria-hidden="true"><i class="fas fa-sliders"></i></span>
+                    <span class="dock-txt">Filtreler</span>
                 </button>
             </nav>
         </div>
@@ -862,25 +878,37 @@
                                     <span class="price-slider-dot" data-price-dot="1"></span>
                                     <span class="price-slider-dot" data-price-dot="2"></span>
                                     <span class="price-slider-dot" data-price-dot="3"></span>
+                                    <span class="price-slider-dot" data-price-dot="4"></span>
+                                    <span class="price-slider-dot" data-price-dot="5"></span>
+                                    <span class="price-slider-dot" data-price-dot="6"></span>
                                 </div>
                                 <input type="range"
-                                       min="@Math.Floor(minPrice)"
-                                       max="@Math.Ceiling(maxPrice)"
-                                       value="@maxPrice"
+                                       min="@Math.Floor(minPrice).ToString(CultureInfo.InvariantCulture)"
+                                       max="@Math.Ceiling(maxPrice).ToString(CultureInfo.InvariantCulture)"
+                                       value="@maxPrice.ToString(CultureInfo.InvariantCulture)"
                                        step="1"
                                        id="listingPriceMaxRange"
                                        aria-label="Maksimum fiyat" />
-                                <div class="price-slider-labels" aria-hidden="true">
-                                    <span id="priceStep0"></span>
-                                    <span id="priceStep1"></span>
-                                    <span id="priceStep2"></span>
-                                    <span id="priceStep3"></span>
-                                </div>
                             </div>
                             <div class="price-range">
-                                <input type="number" placeholder="Min ₺" value="@minPrice" id="listingMinPriceInput">
-                                <input type="number" placeholder="Max ₺" value="@maxPrice" id="listingMaxPriceInput">
+                                <input type="number"
+                                       placeholder="Min ₺"
+                                       value="@minPrice.ToString(CultureInfo.InvariantCulture)"
+                                       min="@Math.Floor(minPrice).ToString(CultureInfo.InvariantCulture)"
+                                       max="@Math.Ceiling(maxPrice).ToString(CultureInfo.InvariantCulture)"
+                                       step="1"
+                                       inputmode="numeric"
+                                       id="listingMinPriceInput">
+                                <input type="number"
+                                       placeholder="Max ₺"
+                                       value="@maxPrice.ToString(CultureInfo.InvariantCulture)"
+                                       min="@Math.Floor(minPrice).ToString(CultureInfo.InvariantCulture)"
+                                       max="@Math.Ceiling(maxPrice).ToString(CultureInfo.InvariantCulture)"
+                                       step="1"
+                                       inputmode="numeric"
+                                       id="listingMaxPriceInput">
                             </div>
+                            <p class="filter-help filter-help-compact" id="priceAutoRelaxNote" hidden></p>
                         </div>
                     </details>
 
@@ -1009,6 +1037,7 @@
                 </div>
             </aside>
 
+            <div class="listing-reel-viewport" id="listingReelViewport">
             <div class="hotel-list" id="hotelListView">
                 @if (!hotels.Any())
                 {
@@ -1145,9 +1174,9 @@
                                         }
                                     </div>
                                     <div class="features features-desktop">
-                                        @foreach (var amenity in hotel.Amenities.Take(4))
+                                        @foreach (var amenity in (hotel.AmenityItems?.Count > 0 ? hotel.AmenityItems.Take(4) : Enumerable.Empty<otelturizmnew.Models.Oteller.HotelAmenityViewModel>()))
                                         {
-                                            <span class="feature-tag"><i class="fas fa-check"></i> @amenity</span>
+                                            <span class="feature-tag"><i class="fas @amenity.IconClass"></i> @amenity.Name</span>
                                         }
                                     </div>
 
@@ -1198,9 +1227,9 @@
                                     </div>
 
                                     <div class="features features-mobile">
-                                        @foreach (var amenity in hotel.Amenities.Take(2))
+                                        @foreach (var amenity in (hotel.AmenityItems?.Count > 0 ? hotel.AmenityItems.Take(2) : Enumerable.Empty<otelturizmnew.Models.Oteller.HotelAmenityViewModel>()))
                                         {
-                                            <span class="feature-tag"><i class="fas fa-check"></i> @amenity</span>
+                                            <span class="feature-tag"><i class="fas @amenity.IconClass"></i> @amenity.Name</span>
                                         }
                                     </div>
 
@@ -1262,6 +1291,62 @@
                     }
                 }
             </div>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="listing-pagination" aria-label="Sayfalama">
+                    @{
+                        var current = Math.Max(Model.CurrentPage, 1);
+                        var total = Math.Max(Model.TotalPages, 1);
+                        var start = Math.Max(1, current - 2);
+                        var end = Math.Min(total, current + 2);
+                        if (current <= 3) { start = 1; end = Math.Min(total, 5); }
+                        if (current >= total - 2) { end = total; start = Math.Max(1, total - 4); }
+                    }
+
+                    <a class="page-btn @(current <= 1 ? "disabled" : string.Empty)"
+                       href="@(current <= 1 ? "#" : Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = Model.ActiveTag, kampanya = Model.CampaignSlug, page = current - 1 }))"
+                       aria-disabled="@(current <= 1 ? "true" : "false")">Önceki</a>
+
+                    @if (start > 1)
+                    {
+                        <a class="page-num" href="@Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = Model.ActiveTag, kampanya = Model.CampaignSlug, page = 1 })">1</a>
+                        @if (start > 2)
+                        {
+                            <span class="page-ellipsis" aria-hidden="true">…</span>
+                        }
+                    }
+
+                    @for (var p = start; p <= end; p++)
+                    {
+                        <a class="page-num @(p == current ? "active" : string.Empty)"
+                           href="@Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = Model.ActiveTag, kampanya = Model.CampaignSlug, page = p })"
+                           aria-current="@(p == current ? "page" : null)">@p</a>
+                    }
+
+                    @if (end < total)
+                    {
+                        @if (end < total - 1)
+                        {
+                            <span class="page-ellipsis" aria-hidden="true">…</span>
+                        }
+                        <a class="page-num" href="@Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = Model.ActiveTag, kampanya = Model.CampaignSlug, page = total })">@total</a>
+                    }
+
+                    <a class="page-btn @(current >= total ? "disabled" : string.Empty)"
+                       href="@(current >= total ? "#" : Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = Model.ActiveTag, kampanya = Model.CampaignSlug, page = current + 1 }))"
+                       aria-disabled="@(current >= total ? "true" : "false")">Sonraki</a>
+                </nav>
+            }
+
+            <div id="listingInfiniteSentinel"
+                 data-current-page="@Model.CurrentPage"
+                 data-total-pages="@Model.TotalPages"
+                 data-search-term="@Model.SearchTerm"
+                 data-active-tag="@Model.ActiveTag"
+                 data-campaign="@Model.CampaignSlug"
+                 aria-hidden="true"></div>
 
         </div>
     </div>
@@ -1291,6 +1376,23 @@
         <p id="discountModalDesc"></p>
         <div class="discount-modal-visual" id="discountModalVisual" hidden>
             <img id="discountModalImage" alt="İndirim görseli" />
+        </div>
+    </section>
+</div>
+
+<div class="location-map-modal" id="locationMapModal" hidden aria-hidden="true">
+    <div class="location-map-backdrop" data-location-map-close></div>
+    <section class="location-map-card" role="dialog" aria-modal="true" aria-labelledby="locationMapTitle">
+        <button type="button" class="location-map-close" data-location-map-close aria-label="Haritayı kapat">×</button>
+        <div class="location-map-kicker">Konum Haritası</div>
+        <h3 id="locationMapTitle">Neredeyim?</h3>
+        <p class="location-map-meta" id="locationMapMeta">Konumun ve listelenen oteller harita üzerinde gösterilir.</p>
+        <div class="location-map-helper" id="locationMapHelper" hidden>
+            Yaklaşık konum bulundu. Haritada bulunduğun noktayı seç, daha doğru sonuçları ona göre gösterelim.
+        </div>
+        <div class="location-map-canvas" id="locationMapCanvas" aria-label="Konum ve otel haritası"></div>
+        <div class="location-map-actions" id="locationMapActions" hidden>
+            <button type="button" class="location-map-primary" id="locationMapConfirmBtn" disabled>Konumumu Buraya Sabitle</button>
         </div>
     </section>
 </div>
@@ -1398,9 +1500,152 @@
         object-fit: cover;
         display: block;
     }
+
+    .location-map-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 5300;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+    }
+
+    .location-map-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.54);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .location-map-card {
+        position: relative;
+        width: min(720px, calc(100vw - 24px));
+        max-height: min(82vh, 760px);
+        padding: 22px;
+        border-radius: 28px;
+        background: linear-gradient(180deg, rgba(247, 250, 255, 0.98) 0%, rgba(255, 255, 255, 1) 52%);
+        border: 1px solid rgba(191, 219, 254, 0.8);
+        box-shadow: 0 28px 80px rgba(2, 32, 71, 0.24);
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .location-map-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        background: rgba(255, 255, 255, 0.94);
+        font-size: 22px;
+        color: #0f172a;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .location-map-kicker {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: rgba(29, 78, 216, 0.08);
+        border: 1px solid rgba(29, 78, 216, 0.14);
+        color: #1d4ed8;
+        font-size: 0.74rem;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+        margin-bottom: 10px;
+        width: fit-content;
+    }
+
+    .location-map-card h3 {
+        margin: 0 0 6px;
+        color: #0f172a;
+        font-size: 1.5rem;
+        letter-spacing: -0.01em;
+    }
+
+    .location-map-meta {
+        margin: 0 0 14px;
+        color: #475569;
+        font-size: 0.95rem;
+        line-height: 1.55;
+        font-weight: 600;
+    }
+
+    .location-map-helper {
+        margin: 0 0 14px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #eff6ff, #eef2ff);
+        border: 1px solid rgba(191, 219, 254, 0.95);
+        color: #1e3a8a;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        font-weight: 700;
+    }
+
+    .location-map-canvas {
+        width: 100%;
+        height: min(54vh, 460px);
+        border-radius: 22px;
+        overflow: hidden;
+        border: 1px solid rgba(191, 219, 254, 0.9);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+        background: #dbeafe;
+    }
+
+    .location-map-canvas .leaflet-popup-content-wrapper {
+        border-radius: 14px;
+    }
+
+    .location-map-canvas .leaflet-popup-content {
+        margin: 12px 14px;
+        font-family: var(--font-main);
+        font-size: 0.88rem;
+        line-height: 1.45;
+    }
+
+    .location-map-canvas .leaflet-popup-content a {
+        color: #003B95;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .location-map-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 14px;
+    }
+
+    .location-map-primary {
+        min-height: 46px;
+        padding: 0 18px;
+        border: 0;
+        border-radius: 999px;
+        background: #003b95;
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 800;
+        box-shadow: 0 16px 30px rgba(0, 59, 149, 0.18);
+        cursor: pointer;
+    }
+
+    .location-map-primary:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
 </style>
 
 @section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
     <script>
         (function () {
             const listView = document.getElementById('hotelListView');
@@ -1409,7 +1654,11 @@
             const minPriceInput = document.getElementById('listingMinPriceInput');
             const maxPriceInput = document.getElementById('listingMaxPriceInput');
             const maxPriceRange = document.getElementById('listingPriceMaxRange');
-            const cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
+            let cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
+            function refreshCards() {
+                cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
+                return cards;
+            }
             const amenityChecks = Array.from(document.querySelectorAll('.listing-amenity-filter'));
             const starChecks = Array.from(document.querySelectorAll('.listing-star-filter'));
             const ratingChips = Array.from(document.querySelectorAll('.rating-chip'));
@@ -1425,16 +1674,66 @@
             const locationStatusText = document.getElementById('locationStatusText');
             const locationCoordsText = document.getElementById('locationCoordsText');
             const locationInsightText = document.getElementById('locationInsightText');
+            const locationMapModal = document.getElementById('locationMapModal');
+            const locationMapCanvas = document.getElementById('locationMapCanvas');
+            const locationMapMeta = document.getElementById('locationMapMeta');
+            const locationMapHelper = document.getElementById('locationMapHelper');
+            const locationMapActions = document.getElementById('locationMapActions');
+            const locationMapConfirmBtn = document.getElementById('locationMapConfirmBtn');
             const locationStorageKey = 'otelturizm.last-user-location';
             const defaultLocationRadiusKm = 15;
+            const priceAutoRelaxNote = document.getElementById('priceAutoRelaxNote');
+            let reelResetToTop = null;
             let keywordSuggestionTimer = null;
             let userLocation = null;
             let locationLogTimer = null;
             let lastLocationLogSignature = '';
             let locationPermissionState = 'prompt';
+            let priceAutoRelaxing = false;
+            let locationLeafletMap = null;
+            let locationLeafletLayer = null;
+            let locationMapPickMode = false;
+            let locationPickedLatLng = null;
+            let locationPickedMarker = null;
+            let hasPromptedManualLocation = false;
+            const defaultMaxPrice = Number(maxPriceRange?.max || maxPriceInput?.value || '0');
+            let clientFilterPoolLoading = false;
+            let clientFilterPoolReady = false;
 
             function normalize(v) {
                 return String(v || '').toLocaleLowerCase('tr-TR');
+            }
+
+            function parseFilterNumber(value) {
+                const raw = String(value ?? '').trim();
+                if (!raw) return 0;
+                const parsed = Number(raw.replace(',', '.'));
+                return Number.isFinite(parsed) ? parsed : 0;
+            }
+
+            async function ensureClientFilterPoolLoaded() {
+                if (clientFilterPoolReady || clientFilterPoolLoading) {
+                    return;
+                }
+
+                if (typeof window.ensureListingCardsLoaded !== 'function') {
+                    return;
+                }
+
+                clientFilterPoolLoading = true;
+                try {
+                    await window.ensureListingCardsLoaded();
+                    refreshCards();
+                    clientFilterPoolReady = true;
+                } catch (_) {
+                    // sessiz
+                } finally {
+                    clientFilterPoolLoading = false;
+                }
+            }
+
+            function isMobileViewport() {
+                return window.innerWidth <= 900;
             }
 
             function formatTry(amount) {
@@ -1444,31 +1743,54 @@
             }
 
             function syncPriceSteps() {
-                const min = Number(minPriceInput?.value || '0');
-                const max = Number(maxPriceRange?.max || maxPriceInput?.value || '0');
+                const min = parseFilterNumber(minPriceInput?.value || '0');
+                const max = parseFilterNumber(maxPriceRange?.max || maxPriceInput?.value || '0');
                 if (!Number.isFinite(max) || max <= 0) return;
                 const a = Math.max(0, Math.min(min, max));
                 const b = max;
-                const s1 = a + (b - a) * 0.33;
-                const s2 = a + (b - a) * 0.66;
-                const step0 = document.getElementById('priceStep0');
-                const step1 = document.getElementById('priceStep1');
-                const step2 = document.getElementById('priceStep2');
-                const step3 = document.getElementById('priceStep3');
-                if (step0) step0.textContent = formatTry(a);
-                if (step1) step1.textContent = formatTry(s1);
-                if (step2) step2.textContent = formatTry(s2);
-                if (step3) step3.textContent = formatTry(b);
+                const labels = Array.from({ length: 7 }, function (_, index) {
+                    const ratio = index / 6;
+                    return a + ((b - a) * ratio);
+                });
+
+                labels.forEach(function (value, index) {
+                    const node = document.getElementById('priceStep' + index);
+                    if (node) {
+                        node.textContent = formatTry(value);
+                    }
+                });
             }
 
             function syncPriceSliderVisual() {
                 if (!maxPriceRange) return;
-                const min = Number(maxPriceRange.min || '0');
-                const max = Number(maxPriceRange.max || '0');
-                const val = Number(maxPriceRange.value || '0');
+                const min = parseFilterNumber(maxPriceRange.min || '0');
+                const max = parseFilterNumber(maxPriceRange.max || '0');
+                const val = parseFilterNumber(maxPriceRange.value || '0');
                 const pct = max > min ? ((val - min) / (max - min)) * 100 : 100;
                 const wrap = maxPriceRange.closest('.price-slider-wrap');
                 if (wrap) wrap.style.setProperty('--slider-pos', Math.max(0, Math.min(100, pct)).toFixed(2) + '%');
+            }
+
+            function normalizePriceInputs(syncSlider) {
+                const floorMin = parseFilterNumber(maxPriceRange?.min || minPriceInput?.min || '0');
+                const ceilMax = parseFilterNumber(maxPriceRange?.max || maxPriceInput?.max || '0');
+                let minValue = parseFilterNumber(minPriceInput?.value || floorMin);
+                let maxValue = parseFilterNumber(maxPriceInput?.value || ceilMax);
+
+                minValue = Math.max(floorMin, Math.min(minValue, ceilMax));
+                maxValue = Math.max(floorMin, Math.min(maxValue, ceilMax));
+
+                if (maxValue < minValue) {
+                    if (document.activeElement === minPriceInput) {
+                        maxValue = minValue;
+                    } else {
+                        minValue = maxValue;
+                    }
+                }
+
+                if (minPriceInput) minPriceInput.value = String(Math.round(minValue));
+                if (maxPriceInput) maxPriceInput.value = String(Math.round(maxValue));
+                if (syncSlider && maxPriceRange) maxPriceRange.value = String(Math.round(maxValue));
             }
 
             function toRad(d) { return (d * Math.PI) / 180; }
@@ -1539,6 +1861,7 @@
                 if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
                     locationCoordsText.innerHTML = '';
                     locationCoordsText.classList.remove('is-visible');
+                    locationCoordsText.classList.remove('is-clickable');
                     return;
                 }
 
@@ -1554,6 +1877,185 @@
                     '<span>Enlem: ' + lat.toFixed(6) + ' · Boylam: ' + lon.toFixed(6) + '</span>' +
                     accuracyText;
                 locationCoordsText.classList.add('is-visible');
+                locationCoordsText.classList.add('is-clickable');
+            }
+
+            function collectVisibleHotelsForMap() {
+                return cards
+                    .filter(card => !card.hidden)
+                    .map(function (card) {
+                        const lat = Number(card.dataset.lat || '');
+                        const lon = Number(card.dataset.lon || '');
+                        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                            return null;
+                        }
+
+                        const title = String(card.querySelector('.hotel-name')?.textContent || '').trim() || 'Otel';
+                        const href = String(card.querySelector('a[href*="/oteller/"]')?.getAttribute('href') || '').trim();
+                        return { lat, lon, title, href };
+                    })
+                    .filter(Boolean);
+            }
+
+            function closeLocationMapModal() {
+                if (!locationMapModal) return;
+                locationMapModal.hidden = true;
+                locationMapModal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                locationMapPickMode = false;
+                locationPickedLatLng = null;
+                if (locationMapConfirmBtn) {
+                    locationMapConfirmBtn.disabled = true;
+                }
+            }
+
+            function applyManualMapSelection() {
+                if (!locationPickedLatLng) {
+                    return;
+                }
+
+                userLocation = {
+                    lat: Number(locationPickedLatLng.lat),
+                    lon: Number(locationPickedLatLng.lng),
+                    accuracy: 0,
+                    approximate: false,
+                    source: 'harita-secimi'
+                };
+
+                if (distanceKmRange) distanceKmRange.value = String(defaultLocationRadiusKm);
+                if (distanceKmInput) distanceKmInput.value = String(defaultLocationRadiusKm);
+                persistLocationSnapshot(userLocation.lat, userLocation.lon, 0);
+                setLocationPermissionState('granted');
+                enableDistanceFilterUi(true);
+                syncDistanceUi();
+                setLocationCoords(userLocation.lat, userLocation.lon, 0);
+                setLocationInsight('Haritada seçtiğin konuma göre yakın oteller listelendi.');
+                applyFilters();
+                sortCards();
+                ensureClientFilterPoolLoaded().then(function () {
+                    applyFilters();
+                    sortCards();
+                    syncMobileFilterCount();
+                });
+                queueLocationLog(true);
+                closeLocationMapModal();
+            }
+
+            function openLocationMapModal(options) {
+                if (!locationMapModal || !locationMapCanvas || !window.L) {
+                    return;
+                }
+                if (!userLocation || !Number.isFinite(userLocation.lat) || !Number.isFinite(userLocation.lon)) {
+                    return;
+                }
+
+                const settings = options || {};
+                locationMapPickMode = !!settings.pickMode;
+                locationPickedLatLng = null;
+                if (locationMapConfirmBtn) {
+                    locationMapConfirmBtn.disabled = true;
+                }
+                if (locationMapHelper) {
+                    locationMapHelper.hidden = !locationMapPickMode;
+                }
+                if (locationMapActions) {
+                    locationMapActions.hidden = !locationMapPickMode || isMobileViewport();
+                }
+                const visibleHotels = collectVisibleHotelsForMap();
+                locationMapModal.hidden = false;
+                locationMapModal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+
+                if (!locationLeafletMap) {
+                    locationLeafletMap = window.L.map(locationMapCanvas, {
+                        zoomControl: true,
+                        scrollWheelZoom: false
+                    });
+                    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '&copy; OpenStreetMap katkıda bulunanlar'
+                    }).addTo(locationLeafletMap);
+                }
+
+                if (locationLeafletLayer) {
+                    locationLeafletLayer.clearLayers();
+                } else {
+                    locationLeafletLayer = window.L.layerGroup().addTo(locationLeafletMap);
+                }
+                if (locationPickedMarker) {
+                    locationPickedMarker.remove();
+                    locationPickedMarker = null;
+                }
+                locationLeafletMap.off('click');
+
+                const bounds = [];
+                const userLatLng = [userLocation.lat, userLocation.lon];
+                bounds.push(userLatLng);
+
+                window.L.marker(userLatLng)
+                    .addTo(locationLeafletLayer)
+                    .bindPopup('<strong>Konumunuz</strong><br>Enlem: ' + userLocation.lat.toFixed(6) + '<br>Boylam: ' + userLocation.lon.toFixed(6));
+
+                visibleHotels.forEach(function (hotel) {
+                    const hotelLatLng = [hotel.lat, hotel.lon];
+                    bounds.push(hotelLatLng);
+                    const popupHtml = hotel.href
+                        ? '<strong>' + hotel.title + '</strong><br><a href="' + hotel.href + '">Detay sayfasına git</a>'
+                        : '<strong>' + hotel.title + '</strong>';
+                    window.L.circleMarker(hotelLatLng, {
+                        radius: 8,
+                        color: '#003B95',
+                        weight: 2,
+                        fillColor: '#2563eb',
+                        fillOpacity: 0.9
+                    })
+                        .addTo(locationLeafletLayer)
+                        .bindPopup(popupHtml)
+                        .bindTooltip(hotel.title, { direction: 'top', offset: [0, -6] });
+                });
+
+                if (locationMapMeta) {
+                    locationMapMeta.textContent = locationMapPickMode
+                        ? 'Mavi işaretler listede çıkan otelleri gösterir. Haritada bulunduğun noktaya tıklayıp konumunu sabitleyebilirsin.'
+                        : (visibleHotels.length > 0
+                            ? 'Konumun ve listelenen ' + visibleHotels.length + ' otel aynı harita üzerinde gösteriliyor.'
+                            : 'Konumun haritada gösteriliyor. Listede koordinatlı otel bulunamadı.');
+                }
+
+                if (locationMapPickMode) {
+                    locationLeafletMap.on('click', function (event) {
+                        locationPickedLatLng = event.latlng;
+                        if (locationPickedMarker) {
+                            locationPickedMarker.setLatLng(event.latlng);
+                        } else {
+                            locationPickedMarker = window.L.marker(event.latlng, {
+                                draggable: true
+                            }).addTo(locationLeafletMap);
+                            locationPickedMarker.on('dragend', function () {
+                                locationPickedLatLng = locationPickedMarker.getLatLng();
+                            });
+                        }
+
+                        if (locationMapConfirmBtn) {
+                            locationMapConfirmBtn.disabled = false;
+                        }
+
+                        if (isMobileViewport()) {
+                            window.setTimeout(function () {
+                                applyManualMapSelection();
+                            }, 80);
+                        }
+                    });
+                }
+
+                window.setTimeout(function () {
+                    locationLeafletMap.invalidateSize();
+                    if (bounds.length > 1) {
+                        locationLeafletMap.fitBounds(bounds, { padding: [28, 28] });
+                    } else {
+                        locationLeafletMap.setView(userLatLng, 13);
+                    }
+                }, 80);
             }
 
             function persistLocationSnapshot(lat, lon, accuracy) {
@@ -1696,9 +2198,10 @@
             }
 
             function applyFilters() {
+                refreshCards();
                 const keyword = normalize(keywordInput?.value || '');
-                const minPrice = Number(minPriceInput?.value || '0');
-                const maxPrice = Number(maxPriceInput?.value || '0');
+                const minPrice = Math.max(0, parseFilterNumber(minPriceInput?.value || '0'));
+                const maxPrice = Math.max(0, parseFilterNumber(maxPriceInput?.value || '0'));
                 const selectedAmenities = amenityChecks.filter(x => x.checked).map(x => normalize(x.value));
                 const selectedStars = starChecks.filter(x => x.checked).map(x => String(x.value));
                 const featuredOnly = featuredChecks.some(x => x.checked);
@@ -1710,6 +2213,7 @@
                     .reduce((acc, v) => Math.max(acc, v), 0);
 
                 let visibleCount = 0;
+                let cheapestNonPriceMatch = Number.POSITIVE_INFINITY;
                 cards.forEach(function (card) {
                     const cardPrice = Number(card.dataset.price || '0');
                     const cardStars = String(card.dataset.stars || '0');
@@ -1732,12 +2236,39 @@
                         || (Number.isFinite(cardLat) && Number.isFinite(cardLon)
                             && haversineKm(userLocation.lat, userLocation.lon, cardLat, cardLon) <= distanceKm);
 
+                    const nonPriceOk = keywordOk && starOk && ratingOk && amenityOk && featuredOk && distanceOk;
+                    if (nonPriceOk && Number.isFinite(cardPrice) && cardPrice > 0) {
+                        cheapestNonPriceMatch = Math.min(cheapestNonPriceMatch, cardPrice);
+                    }
+
                     const isVisible = keywordOk && priceOk && starOk && ratingOk && amenityOk && featuredOk && distanceOk;
                     card.hidden = !isVisible;
                     if (isVisible) {
                         visibleCount += 1;
                     }
                 });
+
+                // Fiyat filtresi yüzünden liste boş kalmasın: en düşük uygun fiyata otomatik çek.
+                const priceFilterActive = (minPrice > 0) || (maxPrice > 0 && defaultMaxPrice > 0 && maxPrice < defaultMaxPrice);
+                if (!priceAutoRelaxing && priceFilterActive && visibleCount === 0 && Number.isFinite(cheapestNonPriceMatch) && cheapestNonPriceMatch !== Number.POSITIVE_INFINITY) {
+                    priceAutoRelaxing = true;
+                    const newMax = Math.max(0, Math.round(cheapestNonPriceMatch));
+                    if (minPriceInput) minPriceInput.value = '0';
+                    if (maxPriceInput) maxPriceInput.value = String(newMax);
+                    if (maxPriceRange) maxPriceRange.value = String(newMax);
+                    syncPriceSteps();
+                    syncPriceSliderVisual();
+                    if (priceAutoRelaxNote) {
+                        priceAutoRelaxNote.textContent = 'Bu fiyatta sonuç bulunamadı. En düşük fiyat gösteriliyor.';
+                        priceAutoRelaxNote.hidden = false;
+                    }
+                    applyFilters();
+                    priceAutoRelaxing = false;
+                    return;
+                } else if (priceAutoRelaxNote) {
+                    priceAutoRelaxNote.hidden = true;
+                    priceAutoRelaxNote.textContent = '';
+                }
 
                 setDistanceHotelCount(visibleCount, distanceActive);
                 if (distanceActive) {
@@ -1747,6 +2278,19 @@
                     setLocationInsight('Konumun doğrulandı. Aşağıdan yarıçapı artırıp otelleri gerçek koordinat mesafesine göre filtreleyebilirsin.');
                 } else {
                     setLocationInsight('Konum aramaları, partnerlerin bölgene otel eklemesi için anonim pazar içgörüsü üretir.');
+                }
+
+                // Desktop makara: filtre sonrası üstte yarım kart kalmasın.
+                if (typeof reelResetToTop === 'function') {
+                    reelResetToTop();
+                }
+
+                if ((distanceActive || priceFilterActive) && !clientFilterPoolReady && !clientFilterPoolLoading) {
+                    ensureClientFilterPoolLoaded().then(function () {
+                        applyFilters();
+                        sortCards();
+                        syncMobileFilterCount();
+                    });
                 }
             }
 
@@ -1851,6 +2395,12 @@
                 setLocationCoords(userLocation.lat, userLocation.lon, userLocation.accuracy);
                 setLocationInsight('Yakındaki otelleri görmek için yarıçapı ayarlayabilirsin.');
                 applyFilters();
+                sortCards();
+                ensureClientFilterPoolLoaded().then(function () {
+                    applyFilters();
+                    sortCards();
+                    syncMobileFilterCount();
+                });
                 queueLocationLog(true);
             }
 
@@ -1933,7 +2483,20 @@
                 setLocationStatus('Yaklaşık konum hazır.');
                 setLocationInsight('Yakındaki otelleri görmek için yarıçapı ayarlayabilirsin.');
                 applyFilters();
+                sortCards();
+                ensureClientFilterPoolLoaded().then(function () {
+                    applyFilters();
+                    sortCards();
+                    syncMobileFilterCount();
+                });
                 queueLocationLog(true);
+
+                if (!hasPromptedManualLocation && window.innerWidth > 900) {
+                    hasPromptedManualLocation = true;
+                    window.setTimeout(function () {
+                        openLocationMapModal({ pickMode: true });
+                    }, 180);
+                }
             }
 
             async function applyLocationError(error) {
@@ -2151,22 +2714,42 @@
                     hideKeywordSuggestions();
                 }
             });
+            locationCoordsText?.addEventListener('click', function () {
+                if (!locationCoordsText.classList.contains('is-visible')) {
+                    return;
+                }
+                openLocationMapModal({ pickMode: !!(userLocation && userLocation.approximate) });
+            });
+            locationMapConfirmBtn?.addEventListener('click', function () {
+                applyManualMapSelection();
+            });
             minPriceInput?.addEventListener('input', function () {
+                normalizePriceInputs(false);
                 applyFilters();
                 sortCards();
-                syncPriceSteps();
-                syncPriceSliderVisual();
+                syncMobileFilterCount();
+            });
+            minPriceInput?.addEventListener('change', function () {
+                normalizePriceInputs(false);
+                applyFilters();
+                sortCards();
                 syncMobileFilterCount();
             });
             maxPriceInput?.addEventListener('input', function () {
-                if (maxPriceRange) maxPriceRange.value = maxPriceInput.value;
+                normalizePriceInputs(false);
                 applyFilters();
                 sortCards();
-                syncPriceSliderVisual();
+                syncMobileFilterCount();
+            });
+            maxPriceInput?.addEventListener('change', function () {
+                normalizePriceInputs(false);
+                applyFilters();
+                sortCards();
                 syncMobileFilterCount();
             });
             maxPriceRange?.addEventListener('input', function () {
                 if (maxPriceInput) maxPriceInput.value = maxPriceRange.value;
+                normalizePriceInputs(true);
                 applyFilters();
                 sortCards();
                 syncPriceSliderVisual();
@@ -2208,6 +2791,14 @@
                     price: 'Fiyat Aralığı',
                     rating: 'Misafir Puanı'
                 };
+
+                if (target === 'all') {
+                    if (modalTitle) {
+                        modalTitle.textContent = 'Filtreler';
+                    }
+                    openMobileFilters();
+                    return;
+                }
 
                 openMobileFilters();
 
@@ -2282,7 +2873,7 @@
                 ratingChips.forEach(x => x.classList.remove('active'));
                 if (keywordInput) keywordInput.value = '';
                 hideKeywordSuggestions();
-                if (minPriceInput) minPriceInput.value = '0';
+                if (minPriceInput) minPriceInput.value = '@minPrice.ToString(CultureInfo.InvariantCulture)';
                 if (maxPriceInput) maxPriceInput.value = '@maxPrice.ToString(CultureInfo.InvariantCulture)';
                 if (maxPriceRange) maxPriceRange.value = '@maxPrice.ToString(CultureInfo.InvariantCulture)';
                 if (distanceKmRange) distanceKmRange.value = String(defaultLocationRadiusKm);
@@ -2318,12 +2909,293 @@
                 filterCount.hidden = active <= 0;
             }
 
+            // Desktop: film-rulosu/makara (ekranda 7 kart sabit, wheel ile kartlar alttan girer üstten çıkar)
+            (function setupDesktopReelScroll() {
+                if (window.innerWidth <= 900) return;
+                const reelViewport = document.getElementById('listingReelViewport');
+                const sentinel = document.getElementById('listingInfiniteSentinel');
+                if (!reelViewport || !sentinel || !listView) return;
+
+                const pager = document.querySelector('.listing-pagination');
+                if (pager) pager.style.display = 'none';
+
+                let loading = false;
+                let currentPage = Number(sentinel.getAttribute('data-current-page') || '1');
+                const totalPages = Number(sentinel.getAttribute('data-total-pages') || '1');
+                const baseSearch = sentinel.getAttribute('data-search-term') || '';
+                const baseTag = sentinel.getAttribute('data-active-tag') || '';
+                const baseCampaign = sentinel.getAttribute('data-campaign') || '';
+                const isNoSearchContext = !String(baseSearch || '').trim()
+                    && !String(baseTag || '').trim()
+                    && !String(baseCampaign || '').trim();
+                const MAX_PRELOAD_NOSEARCH = 50;
+
+                function buildPageUrl(page) {
+                    const params = new URLSearchParams(window.location.search);
+                    if (baseSearch) params.set('q', baseSearch);
+                    if (baseTag) params.set('etiket', baseTag);
+                    if (baseCampaign) params.set('kampanya', baseCampaign);
+                    params.set('page', String(page));
+                    return window.location.pathname + '?' + params.toString();
+                }
+
+                async function loadNextPageIfNeeded() {
+                    const cardsNow = Array.from(listView.querySelectorAll('.listing-hotel-card'));
+                    if (isNoSearchContext && cardsNow.length >= MAX_PRELOAD_NOSEARCH) return;
+                    if (loading) return;
+                    if (!Number.isFinite(currentPage) || !Number.isFinite(totalPages) || currentPage >= totalPages) return;
+                    loading = true;
+                    const nextPage = currentPage + 1;
+                    try {
+                        const response = await fetch(buildPageUrl(nextPage), {
+                            credentials: 'same-origin',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        if (!response.ok) return;
+                        const html = await response.text();
+                        const doc = new DOMParser().parseFromString(html, 'text/html');
+                        const newCards = Array.from(doc.querySelectorAll('.listing-hotel-card'));
+                        if (newCards.length === 0) return;
+                        newCards.forEach(function (card) {
+                            listView.appendChild(document.importNode(card, true));
+                        });
+                        refreshCards();
+                        currentPage = nextPage;
+                        sentinel.setAttribute('data-current-page', String(currentPage));
+                    } catch (_) {
+                        // sessiz
+                    } finally {
+                        loading = false;
+                    }
+                }
+
+                window.ensureListingCardsLoaded = async function () {
+                    let guard = 0;
+                    while (guard < 50 && Number.isFinite(currentPage) && Number.isFinite(totalPages) && currentPage < totalPages) {
+                        const before = Array.from(listView.querySelectorAll('.listing-hotel-card')).length;
+                        await loadNextPageIfNeeded();
+                        const after = Array.from(listView.querySelectorAll('.listing-hotel-card')).length;
+                        if (after <= before) {
+                            break;
+                        }
+                        guard += 1;
+                    }
+                };
+
+                function getStepHeight() {
+                    const first = listView.querySelector('.listing-hotel-card');
+                    if (!first) return 320;
+                    const rect = first.getBoundingClientRect();
+                    const gap = 20;
+                    return Math.max(220, rect.height + gap);
+                }
+
+                function ensureViewportHeight() {
+                    const step = getStepHeight();
+                    // 6 kart görünsün
+                    reelViewport.style.height = (step * 6) + 'px';
+                }
+
+                // Sağdaki "kurma kolu/çark" efekti
+                const crank = document.getElementById('listingReelCrank');
+                function pulseCrank(delta) {
+                    if (!crank) return;
+                    crank.classList.add('is-cranking');
+                    const prev = Number(crank.style.getPropertyValue('--crank-rot') || '0');
+                    const next = prev + (delta / 6);
+                    crank.style.setProperty('--crank-rot', String(next));
+                    window.clearTimeout(crank.__t);
+                    crank.__t = window.setTimeout(function () {
+                        crank.classList.remove('is-cranking');
+                    }, 140);
+                }
+
+                let stepHeight = 0;
+                let offset = 0; // 0..stepHeight
+                let raf = 0;
+                let v = 0; // velocity
+                let animating = false;
+                let lastFrameTs = 0;
+                let settling = false;
+
+                function setTransform(withEase) {
+                    if (withEase) {
+                        listView.style.transition = 'transform 160ms cubic-bezier(0.22, 1.05, 0.4, 1.02)';
+                    } else {
+                        listView.style.transition = 'none';
+                    }
+                    listView.style.transform = 'translateY(' + (-offset).toFixed(2) + 'px)';
+                }
+
+                function schedule() {
+                    if (!raf) {
+                        raf = window.requestAnimationFrame(function () {
+                            raf = 0;
+                            setTransform(false);
+                        });
+                    }
+                }
+                function shiftDownOne() {
+                    const first = listView.querySelector('.listing-hotel-card');
+                    if (!first) return;
+                    listView.appendChild(first);
+                }
+                function shiftUpOne() {
+                    const cardsNow = Array.from(listView.querySelectorAll('.listing-hotel-card'));
+                    const last = cardsNow[cardsNow.length - 1];
+                    if (!last) return;
+                    listView.insertBefore(last, cardsNow[0]);
+                }
+
+                function maybeSoftSettleToZero() {
+                    // Sert hizalama yok: sadece zaten neredeyse 0'da ise yumuşak toparla.
+                    if (!stepHeight) return;
+                    const threshold = stepHeight * 0.06;
+                    if (offset <= threshold) {
+                        settling = true;
+                        const start = offset;
+                        const startTs = performance.now();
+                        const dur = 180;
+                        function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+                        function frame(now) {
+                            const t = Math.max(0, Math.min(1, (now - startTs) / dur));
+                            offset = start * (1 - easeOut(t));
+                            setTransform(true);
+                            if (t < 1) {
+                                requestAnimationFrame(frame);
+                            } else {
+                                offset = 0;
+                                setTransform(false);
+                                settling = false;
+                            }
+                        }
+                        requestAnimationFrame(frame);
+                    }
+                }
+
+                function animate(ts) {
+                    if (!animating) {
+                        lastFrameTs = ts;
+                        return;
+                    }
+
+                    const dtMs = Math.min(32, Math.max(8, ts - (lastFrameTs || ts)));
+                    lastFrameTs = ts;
+                    const dt = dtMs / 16.67; // ~60fps units
+
+                    // sürtünme (makara hissi) - daha yavaş / daha yumuşak
+                    const friction = 0.90;
+                    v = v * Math.pow(friction, dt);
+
+                    // hız çok küçükse durdur (hizalama yapma)
+                    if (Math.abs(v) < 0.12) {
+                        v = 0;
+                        animating = false;
+                        if (!settling) {
+                            maybeSoftSettleToZero();
+                        }
+                        return;
+                    }
+
+                    offset += v * dt;
+
+                    // kart çevrimleri (yumuşak akış sırasında)
+                    while (offset >= stepHeight) {
+                        offset -= stepHeight;
+                        shiftDownOne();
+                        loadNextPageIfNeeded();
+                    }
+                    while (offset < 0) {
+                        offset += stepHeight;
+                        shiftUpOne();
+                    }
+
+                    schedule();
+                    window.requestAnimationFrame(animate);
+                }
+
+                function onWheel(e) {
+                    // Döngü: her zaman döner. DB yükü: no-search'te max 50 otel.
+                    e.preventDefault();
+                    if (!stepHeight) {
+                        stepHeight = getStepHeight();
+                        ensureViewportHeight();
+                    }
+
+                    const delta = Math.max(-160, Math.min(160, (e.deltaY || 0)));
+                    const accel = 0.52; // wheel -> velocity (daha yavaş)
+                    v += delta * accel;
+                    v = Math.max(-78, Math.min(78, v)); // üst hız limiti
+                    pulseCrank(delta);
+
+                    if (!animating) {
+                        animating = true;
+                        lastFrameTs = 0;
+                        window.requestAnimationFrame(animate);
+                    }
+                }
+
+                // initial
+                ensureViewportHeight();
+                reelViewport.style.overflow = 'hidden';
+                reelViewport.style.position = 'relative';
+                listView.style.willChange = 'transform';
+                listView.style.transform = 'translateY(0px)';
+                listView.style.transition = 'none';
+
+                // Filtre uygulandiginda listeyi üstten tam baslat.
+                reelResetToTop = function () {
+                    // Animasyon varsa durdur.
+                    v = 0;
+                    animating = false;
+                    lastFrameTs = 0;
+                    offset = 0;
+                    setTransform(false);
+                };
+
+                reelViewport.addEventListener('wheel', onWheel, { passive: false });
+
+                // Aramasız girişte 50 oteli önceden getir (8 sayfa civarı), sonra loop bu havuzda döner.
+                if (isNoSearchContext) {
+                    (async function warmUpNoSearchPool() {
+                        for (let i = 0; i < 12; i += 1) {
+                            const cardsNow = Array.from(listView.querySelectorAll('.listing-hotel-card'));
+                            if (cardsNow.length >= MAX_PRELOAD_NOSEARCH) break;
+                            const before = cardsNow.length;
+                            await loadNextPageIfNeeded();
+                            const after = Array.from(listView.querySelectorAll('.listing-hotel-card')).length;
+                            if (after <= before) break;
+                        }
+                    })();
+                }
+
+                window.addEventListener('resize', function () {
+                    ensureViewportHeight();
+                    stepHeight = 0;
+                    offset = 0;
+                    listView.style.transform = 'translateY(0px)';
+                });
+            })();
+
             applyFilters();
             sortCards();
             syncPriceSteps();
             syncPriceSliderVisual();
             syncMobileFilterCount();
             initializeLocationPermissionState();
+
+            document.addEventListener('click', function (event) {
+                const closeTarget = event.target instanceof HTMLElement ? event.target.closest('[data-location-map-close]') : null;
+                if (closeTarget) {
+                    closeLocationMapModal();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && locationMapModal && !locationMapModal.hidden) {
+                    closeLocationMapModal();
+                }
+            });
         })();
     </script>
     <script>
