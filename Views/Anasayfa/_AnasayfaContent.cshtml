@@ -207,9 +207,6 @@
         function syncDateMins() {
             if (checkInEl) {
                 checkInEl.min = todayIso;
-                if (checkInEl.value && checkInEl.value < todayIso) {
-                    checkInEl.value = todayIso;
-                }
             }
             if (checkOutEl) {
                 const minOut = checkInEl?.value ? addDaysIso(checkInEl.value, 1) : todayIso;
