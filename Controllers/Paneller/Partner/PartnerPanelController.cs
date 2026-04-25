@@ -25,10 +25,19 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> Index(long? otelId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetDashboardAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Paneli";
-        ViewData["PageCssPath"] = "paneller/partner/dashboard";
-        return View("~/Views/Paneller/Partner/Dashboard.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetDashboardAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Partner Paneli";
+            ViewData["PageCssPath"] = "paneller/partner/dashboard";
+            return View("~/Views/Paneller/Partner/Dashboard.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Paneli";
+            ViewData["PageCssPath"] = "paneller/partner/dashboard";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpGet("guvenlik")]
@@ -57,10 +66,19 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> Reservations(long? otelId, DateTime? dateFrom, DateTime? dateTo, string? status, string? paymentMethod, int page = 1, int pageSize = 10, long? conversationId = null, CancellationToken cancellationToken = default)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetReservationsAsync(GetUserId(), otelId, dateFrom, dateTo, status, paymentMethod, page, pageSize, conversationId, cancellationToken);
-        ViewData["Title"] = "Partner Rezervasyonlar";
-        ViewData["PageCssPath"] = "paneller/partner/reservations";
-        return View("~/Views/Paneller/Partner/Reservations.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetReservationsAsync(GetUserId(), otelId, dateFrom, dateTo, status, paymentMethod, page, pageSize, conversationId, cancellationToken);
+            ViewData["Title"] = "Partner Rezervasyonlar";
+            ViewData["PageCssPath"] = "paneller/partner/reservations";
+            return View("~/Views/Paneller/Partner/Reservations.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Rezervasyonlar";
+            ViewData["PageCssPath"] = "paneller/partner/reservations";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpPost("rezervasyonlar/durum")]
@@ -102,20 +120,38 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> Pricing(long? otelId, long? roomId, string? month, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetPricingAsync(GetUserId(), otelId, roomId, month, cancellationToken);
-        ViewData["Title"] = "Partner Takvim ve Fiyatlar";
-        ViewData["PageCssPath"] = "paneller/partner/pricing";
-        return View("~/Views/Paneller/Partner/Pricing.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetPricingAsync(GetUserId(), otelId, roomId, month, cancellationToken);
+            ViewData["Title"] = "Partner Takvim ve Fiyatlar";
+            ViewData["PageCssPath"] = "paneller/partner/pricing";
+            return View("~/Views/Paneller/Partner/Pricing.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Takvim ve Fiyatlar";
+            ViewData["PageCssPath"] = "paneller/partner/pricing";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpGet("kampanyalar")]
     public async Task<IActionResult> Campaigns(long? otelId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetCampaignsAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Kampanyalar";
-        ViewData["PageCssPath"] = "paneller/partner/campaigns";
-        return View("~/Views/Paneller/Partner/Campaigns.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetCampaignsAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Partner Kampanyalar";
+            ViewData["PageCssPath"] = "paneller/partner/campaigns";
+            return View("~/Views/Paneller/Partner/Campaigns.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Kampanyalar";
+            ViewData["PageCssPath"] = "paneller/partner/campaigns";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpPost("kampanyalar/katil")]
@@ -162,10 +198,19 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> Rooms(long? otelId, long? roomId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetRoomsAsync(GetUserId(), otelId, roomId, cancellationToken);
-        ViewData["Title"] = "Partner Oda Yönetimi";
-        ViewData["PageCssPath"] = "paneller/partner/rooms";
-        return View("~/Views/Paneller/Partner/Rooms.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetRoomsAsync(GetUserId(), otelId, roomId, cancellationToken);
+            ViewData["Title"] = "Partner Oda Yönetimi";
+            ViewData["PageCssPath"] = "paneller/partner/rooms";
+            return View("~/Views/Paneller/Partner/Rooms.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Oda Yönetimi";
+            ViewData["PageCssPath"] = "paneller/partner/rooms";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpPost("oda-yonetimi/kaydet")]
@@ -224,10 +269,19 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> HotelInfo(long? otelId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetHotelInfoAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Otel Bilgileri";
-        ViewData["PageCssPath"] = "paneller/partner/hotel-info";
-        return View("~/Views/Paneller/Partner/HotelInfo.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetHotelInfoAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Partner Otel Bilgileri";
+            ViewData["PageCssPath"] = "paneller/partner/hotel-info";
+            return View("~/Views/Paneller/Partner/HotelInfo.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Otel Bilgileri";
+            ViewData["PageCssPath"] = "paneller/partner/hotel-info";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpPost("otel-bilgileri/kaydet")]
@@ -243,10 +297,19 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> Photos(long? otelId, long? photoId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetPhotosAsync(GetUserId(), otelId, photoId, cancellationToken);
-        ViewData["Title"] = "Partner Fotoğraflar";
-        ViewData["PageCssPath"] = "paneller/partner/photos";
-        return View("~/Views/Paneller/Partner/Photos.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetPhotosAsync(GetUserId(), otelId, photoId, cancellationToken);
+            ViewData["Title"] = "Partner Fotoğraflar";
+            ViewData["PageCssPath"] = "paneller/partner/photos";
+            return View("~/Views/Paneller/Partner/Photos.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Fotoğraflar";
+            ViewData["PageCssPath"] = "paneller/partner/photos";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpGet("fotograflar/yukle")]
@@ -320,10 +383,19 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> Performance(long? otelId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetPerformanceAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Performans";
-        ViewData["PageCssPath"] = "paneller/partner/performance";
-        return View("~/Views/Paneller/Partner/Performance.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetPerformanceAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Partner Performans";
+            ViewData["PageCssPath"] = "paneller/partner/performance";
+            return View("~/Views/Paneller/Partner/Performance.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Performans";
+            ViewData["PageCssPath"] = "paneller/partner/performance";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpPost("performans/rakip-kaydet")]
@@ -348,10 +420,19 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> Reviews(long? otelId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetReviewsAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Değerlendirmeler";
-        ViewData["PageCssPath"] = "paneller/partner/reviews";
-        return View("~/Views/Paneller/Partner/Reviews.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetReviewsAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Partner Değerlendirmeler";
+            ViewData["PageCssPath"] = "paneller/partner/reviews";
+            return View("~/Views/Paneller/Partner/Reviews.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Değerlendirmeler";
+            ViewData["PageCssPath"] = "paneller/partner/reviews";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpPost("degerlendirmeler/yanitla")]
@@ -376,10 +457,19 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> Finance(long? otelId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetFinanceAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Finans";
-        ViewData["PageCssPath"] = "paneller/partner/finance";
-        return View("~/Views/Paneller/Partner/Finance.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetFinanceAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Partner Finans";
+            ViewData["PageCssPath"] = "paneller/partner/finance";
+            return View("~/Views/Paneller/Partner/Finance.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Finans";
+            ViewData["PageCssPath"] = "paneller/partner/finance";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpPost("finans/banka-kaydet")]
@@ -419,10 +509,19 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> Preferences(long? otelId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetApplicationAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner Başvuru ve Evraklar";
-        ViewData["PageCssPath"] = "paneller/partner/preferences";
-        return View("~/Views/Paneller/Partner/Preferences.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetApplicationAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Partner Başvuru ve Evraklar";
+            ViewData["PageCssPath"] = "paneller/partner/preferences";
+            return View("~/Views/Paneller/Partner/Preferences.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner Başvuru ve Evraklar";
+            ViewData["PageCssPath"] = "paneller/partner/preferences";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpPost("tercihler/kaydet")]
@@ -459,10 +558,19 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> Support(long? otelId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var model = await _partnerService.GetSupportAsync(GetUserId(), otelId, cancellationToken);
-        ViewData["Title"] = "Partner 7/24 Destek";
-        ViewData["PageCssPath"] = "paneller/partner/support";
-        return View("~/Views/Paneller/Partner/Support.cshtml", model);
+        try
+        {
+            var model = await _partnerService.GetSupportAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Partner 7/24 Destek";
+            ViewData["PageCssPath"] = "paneller/partner/support";
+            return View("~/Views/Paneller/Partner/Support.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Partner 7/24 Destek";
+            ViewData["PageCssPath"] = "paneller/partner/support";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
     }
 
     [HttpPost("724-destek/talep-olustur")]

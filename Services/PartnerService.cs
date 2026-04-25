@@ -2962,7 +2962,14 @@ public class PartnerService : IPartnerService
         var hotels = await GetManagedHotelsAsync(connection, userId, cancellationToken);
         if (hotels.Count == 0)
         {
-            throw new InvalidOperationException("Bu kullanici icin yetkili otel bulunamadi.");
+            // Partner paneli: bazı kullanıcılar (özellikle demo / kurulum aşaması) için henüz otel yetkisi tanımlı olmayabilir.
+            // Bu durumda sistemin patlaması yerine mümkünse demo oteli otomatik ilişkilendir, değilse controller tarafında uyarı ekranı gösterilecek.
+            await TryAutoAssignDefaultHotelForKnownUsersAsync(connection, userId, cancellationToken);
+            hotels = await GetManagedHotelsAsync(connection, userId, cancellationToken);
+            if (hotels.Count == 0)
+            {
+                throw new InvalidOperationException("Bu kullanici icin yetkili otel bulunamadi.");
+            }
         }
 
         var selectedHotel = hotelId.HasValue
@@ -2971,6 +2978,88 @@ public class PartnerService : IPartnerService
 
         var shell = await BuildShellAsync(connection, userId, selectedHotel, hotels, title, subtitle, activeSectionKey, cancellationToken);
         return new PartnerContext(selectedHotel, shell);
+    }
+
+    private static async Task TryAutoAssignDefaultHotelForKnownUsersAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        if (!await TableExistsAsync(connection, "users", cancellationToken)
+            || !await TableExistsAsync(connection, "oteller", cancellationToken)
+            || !await TableExistsAsync(connection, "otel_kullanici_sahiplikleri", cancellationToken))
+        {
+            return;
+        }
+
+        const string emailSql = "SELECT TOP (1) eposta FROM users WHERE id = @userId;";
+        string email = string.Empty;
+        await using (var emailCommand = new SqlCommand(emailSql, connection))
+        {
+            emailCommand.Parameters.AddWithValue("@userId", userId);
+            var emailObj = await emailCommand.ExecuteScalarAsync(cancellationToken);
+            email = emailObj?.ToString() ?? string.Empty;
+        }
+
+        // İstek: kurumsal@otelturizm.com için bir otel tanımla.
+        if (!string.Equals(email?.Trim(), "kurumsal@otelturizm.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        // İstek: 216-eagle-palace otelini bu e-postaya bağla.
+        // Partner panel, otel_kullanici_sahiplikleri üzerinden çalışıyor. PartnerId zorunlu olduğu için partner_id NULL olmayan bir oteli seçiyoruz.
+        const string pickHotelSql = @"
+            SELECT TOP (1) o.id, o.partner_id
+            FROM oteller o
+            WHERE o.partner_id IS NOT NULL
+              AND (
+                  o.otel_kodu = @hotelCode
+                  OR (@hotelCode IS NULL)
+              )
+            ORDER BY
+                CASE WHEN o.otel_kodu = @hotelCode THEN 0 ELSE 1 END,
+                o.id ASC;";
+
+        long hotelId = 0;
+        long partnerId = 0;
+        await using (var pickCommand = new SqlCommand(pickHotelSql, connection))
+        {
+            pickCommand.Parameters.AddWithValue("@hotelCode", "216-eagle-palace");
+            await using var reader = await pickCommand.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                hotelId = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture);
+                partnerId = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture);
+            }
+        }
+
+        if (hotelId <= 0 || partnerId <= 0)
+        {
+            return;
+        }
+
+        // Zaten tanımlıysa tekrar ekleme.
+        const string existsSql = @"
+            SELECT COUNT(*)
+            FROM otel_kullanici_sahiplikleri
+            WHERE otel_id = @hotelId AND user_id = @userId AND aktif_mi = 1;";
+        await using (var existsCommand = new SqlCommand(existsSql, connection))
+        {
+            existsCommand.Parameters.AddWithValue("@hotelId", hotelId);
+            existsCommand.Parameters.AddWithValue("@userId", userId);
+            var exists = Convert.ToInt32(await existsCommand.ExecuteScalarAsync(cancellationToken) ?? 0) > 0;
+            if (exists) return;
+        }
+
+        const string insertSql = @"
+            INSERT INTO otel_kullanici_sahiplikleri
+            (otel_id, user_id, partner_id, rol, ana_sorumlu_mu, aktif_mi, olusturulma_tarihi)
+            VALUES
+            (@hotelId, @userId, @partnerId, 'owner', 1, 1, SYSUTCDATETIME());";
+
+        await using var insertCommand = new SqlCommand(insertSql, connection);
+        insertCommand.Parameters.AddWithValue("@hotelId", hotelId);
+        insertCommand.Parameters.AddWithValue("@userId", userId);
+        insertCommand.Parameters.AddWithValue("@partnerId", partnerId);
+        await insertCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private async Task<PartnerShellViewModel> BuildShellAsync(SqlConnection connection, long userId, PartnerHotelContext selectedHotel, IReadOnlyList<PartnerHotelContext> hotels, string title, string subtitle, string activeSectionKey, CancellationToken cancellationToken)

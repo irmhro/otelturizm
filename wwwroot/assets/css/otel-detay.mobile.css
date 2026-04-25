@@ -4,6 +4,42 @@
 
 /* Not: Bu dosya sadece mobilde yüklenir ve `otel-detay.css` üstüne override eder. */
 
+/* Mobilde taşma/overflow engeli: 414x896 gibi dar ekranlarda sağa-sola kayma olmamalı */
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+.otel-detail-template-v41 {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    padding: 10px 0 18px;
+}
+
+/* Sayfa içindeki ana bloklar asla genişliği aşmasın */
+.otel-detail-template-v41 .detail-breadcrumb,
+.otel-detail-template-v41 .gallery-filmstrip-wrap,
+.otel-detail-template-v41 .detail-header,
+.otel-detail-template-v41 .detail-grid,
+.otel-detail-template-v41 .gallery-mobile-strip {
+    width: min(var(--page-max-width), calc(100% - 24px));
+    max-width: calc(100% - 24px);
+}
+
+/* Breadcrumb taşmasını engelle */
+.detail-breadcrumb-left {
+    flex-wrap: wrap;
+    row-gap: 10px;
+}
+
+.detail-breadcrumb-context {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* Mobil galeri: tek kart 3'lü */
 .detail-mobile-gallery {
     width: min(var(--page-max-width), calc(100% - 24px));
@@ -19,6 +55,7 @@
     display: block !important;
     width: min(var(--page-max-width), calc(100% - 32px));
     margin: 8px auto 0;
+    overflow: hidden;
 }
 
 .gallery-filmstrip {
@@ -27,9 +64,11 @@
     overflow-x: auto;
     overflow-y: hidden;
     padding-bottom: 2px;
+    padding-inline: 2px;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    max-width: 100%;
 }
 
 .gallery-filmstrip::-webkit-scrollbar {
@@ -44,6 +83,7 @@
     opacity: 0.88;
     transform: none;
     box-shadow: none;
+    max-width: 76px;
 }
 
 .gallery-filmstrip-thumb.active {
@@ -122,6 +162,26 @@
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+    font-size: 1.6rem;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+}
+
+/* Mobil header: PDF gibi kompakt kart */
+.detail-header.hotel-title-section {
+    padding: 14px 14px 12px;
+    border-radius: 22px;
+}
+
+.detail-header.hotel-title-section .hotel-name {
+    gap: 8px;
+}
+
+.detail-header.hotel-title-section .detail-location {
+    font-size: 0.92rem;
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 /* Mobil aksiyonlar: sadece Favorim */
@@ -138,6 +198,32 @@
     font-weight: 900;
     border-color: rgba(225, 29, 72, 0.28);
     background: linear-gradient(135deg, rgba(225, 29, 72, 0.10), rgba(29, 78, 216, 0.08));
+}
+
+/* Hava durumu + yorum + kaydet: PDF düzeni */
+.detail-utility-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: stretch;
+    width: 100%;
+}
+
+.weather-inline-trigger {
+    width: 100%;
+    min-height: 56px;
+    border-radius: 18px;
+}
+
+.rating-summary {
+    min-height: 56px;
+    border-radius: 18px;
+    width: auto;
+}
+
+/* Kaydet butonu, hava+yorum satırının altına daha temiz otursun */
+#saveHotelBtn.favorite-btn {
+    margin-top: 10px;
 }
 
 /* Hava durumu yorum satırında (puan ile aynı satır) */

@@ -51,7 +51,8 @@
 
 @media (max-width: 768px) {
     .partner-panel-shell {
-        width: min(100% - 32px, 100%);
+        /* CSS min() içinde çıkarma ifadesi geçersizdi; mobilde genişlik bazen uygulanmıyordu */
+        width: calc(100% - 32px);
     }
 
     .partner-hero,

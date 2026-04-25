@@ -1826,8 +1826,19 @@
             }
 
             function setLocationStatus(text) {
-                // UI sade: uzun izin metinlerini göstermiyoruz.
-                if (locationStatusText) locationStatusText.textContent = '';
+                if (!locationStatusText) return;
+                const safeText = String(text || '').trim();
+                locationStatusText.textContent = safeText;
+            }
+
+            function ensureDistanceControlsEnabled() {
+                if (distanceKmRange) {
+                    distanceKmRange.disabled = false;
+                }
+                if (distanceKmInput) {
+                    distanceKmInput.disabled = false;
+                }
+                useMyLocationBtn?.classList.add('active');
             }
 
             function setLocationCoords(lat, lon, accuracy) {
@@ -1901,6 +1912,7 @@
                 persistLocationSnapshot(userLocation.lat, userLocation.lon, 0);
                 setLocationPermissionState('granted');
                 enableDistanceFilterUi(true);
+                ensureDistanceControlsEnabled();
                 syncDistanceUi();
                 setLocationCoords(userLocation.lat, userLocation.lon, 0);
                 setLocationInsight('Haritada seçtiğin konuma göre yakın oteller listelendi.');
@@ -2397,6 +2409,7 @@
                 persistLocationSnapshot(userLocation.lat, userLocation.lon, userLocation.accuracy);
                 setLocationPermissionState('granted');
                 enableDistanceFilterUi(true);
+                ensureDistanceControlsEnabled();
                 syncDistanceUi();
                 setLocationStatus('Konum hazır.');
                 setLocationCoords(userLocation.lat, userLocation.lon, userLocation.accuracy);
@@ -2485,6 +2498,7 @@
                 persistLocationSnapshot(userLocation.lat, userLocation.lon, 0);
                 setLocationPermissionState('approximate');
                 enableDistanceFilterUi(true);
+                ensureDistanceControlsEnabled();
                 syncDistanceUi();
                 setLocationCoords(userLocation.lat, userLocation.lon, 0);
                 setLocationStatus('Yaklaşık konum hazır.');
@@ -2576,6 +2590,7 @@
                     if (distanceKmRange) distanceKmRange.value = String(defaultLocationRadiusKm);
                     if (distanceKmInput) distanceKmInput.value = String(defaultLocationRadiusKm);
                     enableDistanceFilterUi(true);
+                    ensureDistanceControlsEnabled();
                     syncDistanceUi();
                     setLocationCoords(userLocation.lat, userLocation.lon, userLocation.accuracy);
                     setDistanceHotelCount(cards.filter(card => !card.hidden).length, true);
@@ -2595,12 +2610,21 @@
                 try {
                     const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
                     const syncState = function () {
+                        if (userLocation && Number.isFinite(userLocation.lat) && Number.isFinite(userLocation.lon)) {
+                            enableDistanceFilterUi(true);
+                            ensureDistanceControlsEnabled();
+                            setLocationPermissionState(userLocation.approximate ? 'approximate' : 'granted');
+                            setLocationStatus(userLocation.approximate ? 'Yaklaşık konum hazır.' : 'Konum hazır.');
+                            return;
+                        }
+
                         if (permissionStatus.state === 'granted') {
                             setLocationPermissionState(userLocation?.approximate ? 'approximate' : 'granted');
                             setLocationStatus(persistedLocation
                                 ? 'Konum hazır.'
                                 : 'İzin verip konumunu kullan.');
                             enableDistanceFilterUi(true);
+                            ensureDistanceControlsEnabled();
                             if (!userLocation || !persistedLocation) {
                                 requestUserLocation();
                             }
@@ -2612,6 +2636,7 @@
                                 setLocationPermissionState(userLocation.approximate ? 'approximate' : 'granted');
                                 setLocationStatus('Son doğrulanan konumun hazır. Daha hassas sonuç için tarayıcı konum iznini açabilirsiniz.');
                                 enableDistanceFilterUi(true);
+                                ensureDistanceControlsEnabled();
                                 return;
                             }
 
@@ -2639,6 +2664,11 @@
 
             distanceKmRange?.addEventListener('input', function () {
                 syncDistanceUi();
+                if (userLocation) {
+                    applyFilters();
+                    sortCards();
+                    syncMobileFilterCount();
+                }
             });
             distanceKmRange?.addEventListener('change', function () {
                 syncDistanceUi();
