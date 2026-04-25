@@ -196,7 +196,7 @@
             </div>
         </div>
 
-        <form method="post" action="/panel/partner/takvim-fiyatlar/toplu-guncelle" class="partner-pricing-form-grid">
+        <form method="post" action="/panel/partner/takvim-fiyatlar/toplu-guncelle" class="partner-pricing-form-grid" id="partnerBulkPricingForm">
             @Html.AntiForgeryToken()
             <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
             <input type="hidden" name="ViewRoomId" value="@Model.SelectedRoomId" />
@@ -229,14 +229,14 @@
             </label>
             <label>
                 <span>Normal fiyat (vergi dahil)</span>
-                <input type="number" step="0.01" name="BasePrice" value="@(Model.BulkForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Bos birak: mevcut fiyat kalsin" title="KDV ve konaklama vergisi dahil gece tutari" />
+                <input type="number" step="0.01" name="BasePrice" value="@(Model.BulkForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Bos birak: mevcut fiyat kalsin" title="KDV ve konaklama vergisi dahil gece tutari" inputmode="decimal" />
             </label>
             <label>
                 <span>Kampanyali fiyat (vergi dahil)</span>
-                <input type="number" step="0.01" name="DiscountPrice" value="@(Model.BulkForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Opsiyonel" title="KDV ve konaklama vergisi dahil" />
+                <input type="number" step="0.01" name="DiscountPrice" id="partnerBulkDiscountPrice" value="@(Model.BulkForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Opsiyonel" title="KDV ve konaklama vergisi dahil" inputmode="decimal" />
             </label>
             <label class="partner-inline-toggle">
-                <input type="checkbox" name="ClearDiscountPrice" value="true" />
+                <input type="checkbox" name="ClearDiscountPrice" value="true" id="partnerBulkClearDiscount" />
                 <span>Kampanyali fiyati temizle</span>
             </label>
             <label>
@@ -261,13 +261,16 @@
             </label>
             <label>
                 <span>İndirim seçimi</span>
-                <select name="DiscountId">
+                <select name="DiscountId" id="partnerBulkDiscountId">
                     <option value="">İndirim uygulanmayacak</option>
                     @foreach (var discount in Model.AvailableDiscounts)
                     {
                         <option value="@discount.DiscountId">@discount.DiscountName</option>
                     }
                 </select>
+                <small class="partner-field-hint" id="partnerBulkDiscountHint" style="display:none;">
+                    İndirimli fiyat girdiyseniz indirim seçimi zorunludur.
+                </small>
             </label>
             <label>
                 <span>İndirim etiketi (opsiyonel)</span>
@@ -442,6 +445,34 @@
                     closeEditor();
                 }
             });
+
+            // Bulk form: indirimli fiyat -> indirim seçimi zorunlu.
+            const bulkDiscountPrice = document.getElementById('partnerBulkDiscountPrice');
+            const bulkDiscountId = document.getElementById('partnerBulkDiscountId');
+            const bulkClear = document.getElementById('partnerBulkClearDiscount');
+            const bulkHint = document.getElementById('partnerBulkDiscountHint');
+
+            function bulkSyncDiscountRequired() {
+                if (!bulkDiscountPrice || !bulkDiscountId || !bulkClear) return;
+                const hasDiscountPrice = String(bulkDiscountPrice.value || '').trim().length > 0 && Number(bulkDiscountPrice.value) > 0;
+                const clearing = !!bulkClear.checked;
+                const required = hasDiscountPrice && !clearing;
+                bulkDiscountId.required = required;
+                if (bulkHint) bulkHint.style.display = required ? 'block' : 'none';
+            }
+            bulkDiscountPrice?.addEventListener('input', bulkSyncDiscountRequired);
+            bulkClear?.addEventListener('change', bulkSyncDiscountRequired);
+            bulkSyncDiscountRequired();
+
+            // Daily editor: indirimli fiyat -> indirim seçimi zorunlu.
+            function dailySyncDiscountRequired() {
+                const hasDiscount = String(discountPriceInput?.value || '').trim().length > 0 && Number(discountPriceInput.value) > 0;
+                const clearing = !!clearDiscountInput?.checked;
+                if (campaignSelect) campaignSelect.required = hasDiscount && !clearing;
+            }
+            discountPriceInput?.addEventListener('input', dailySyncDiscountRequired);
+            clearDiscountInput?.addEventListener('change', dailySyncDiscountRequired);
+            dailySyncDiscountRequired();
         })();
     </script>
 }

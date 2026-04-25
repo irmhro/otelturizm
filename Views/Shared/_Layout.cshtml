@@ -41,6 +41,33 @@
 }
 <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
 
+<script>
+// Canlıda "from service worker" kaynaklı düzensiz açılış / asset 500 sorunlarını engellemek için:
+// Önceden register olmuş SW varsa unregister edip cache'i temizle.
+(function () {
+    try {
+        if (!('serviceWorker' in navigator)) return;
+        const key = 'otelturizm_sw_cleanup_done_v1';
+        if (sessionStorage.getItem(key) === '1') return;
+        sessionStorage.setItem(key, '1');
+
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+            if (!regs || !regs.length) return;
+            regs.forEach(function (r) { try { r.unregister(); } catch (e) { } });
+            if (window.caches && caches.keys) {
+                caches.keys().then(function (keys) {
+                    keys.forEach(function (k) { try { caches.delete(k); } catch (e) { } });
+                });
+            }
+            // Bir kere yenile: SW kontrolünden tamamen çıksın.
+            setTimeout(function () {
+                try { window.location.reload(); } catch (e) { }
+            }, 350);
+        });
+    } catch (e) { }
+})();
+</script>
+
 @{
     var publicDraftRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     long? publicDraftUserId = long.TryParse(publicDraftRaw, out var parsedPublicDraftUserId) ? parsedPublicDraftUserId : null;

@@ -57,8 +57,15 @@ public class PartnerPanelController : Controller
     public async Task<IActionResult> SaveTwoFactor(otelturizmnew.Models.Paneller.User.UserTwoFactorForm form, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
-        var result = await _authService.SaveTwoFactorSecurityAsync(GetUserId(), form, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        try
+        {
+            var result = await _authService.SaveTwoFactorSecurityAsync(GetUserId(), form, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Güvenlik ayarları kaydedilemedi: {ex.Message}";
+        }
         return Redirect("/panel/partner/guvenlik");
     }
 
@@ -85,13 +92,21 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateReservationStatus(PartnerReservationStatusRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.UpdateReservationStatusAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.UpdateReservationStatusAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Rezervasyon durumu güncellenemedi: {ex.Message}";
+        }
+
         if (!string.IsNullOrWhiteSpace(request.ReturnUrl) && Url.IsLocalUrl(request.ReturnUrl))
         {
             return Redirect(request.ReturnUrl);
         }
-
         return Redirect($"/panel/partner/rezervasyonlar?otelId={request.HotelId}");
     }
 
@@ -99,8 +114,17 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendGuestMessage(PartnerGuestMessageRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.SendGuestMessageAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.SendGuestMessageAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Misafire mesaj gönderilemedi: {ex.Message}";
+        }
+
         var conversationQuery = request.ConversationId.HasValue && request.ConversationId.Value > 0
             ? $"&conversationId={request.ConversationId.Value}"
             : string.Empty;
@@ -158,8 +182,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> JoinCampaign(PartnerCampaignJoinRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.JoinCampaignAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.JoinCampaignAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Kampanyaya katılım kaydedilemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/kampanyalar?otelId={request.HotelId}");
     }
 
@@ -167,8 +199,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> LeaveCampaign(long hotelId, long campaignId, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.LeaveCampaignAsync(GetUserId(), hotelId, campaignId, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.LeaveCampaignAsync(GetUserId(), hotelId, campaignId, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Kampanyadan çıkış kaydedilemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/kampanyalar?otelId={hotelId}");
     }
 
@@ -176,8 +216,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ApplyBulkPricing(PartnerBulkPricingUpdateRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.ApplyBulkPricingAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.ApplyBulkPricingAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Toplu fiyat güncelleme uygulanamadı: {ex.Message}";
+        }
         var roomId = request.ViewRoomId ?? request.RoomId ?? request.SelectedRoomIds.FirstOrDefault();
         var roomQuery = roomId > 0 ? $"&roomId={roomId}" : string.Empty;
         var monthQuery = !string.IsNullOrWhiteSpace(request.ViewMonth) ? $"&month={Uri.EscapeDataString(request.ViewMonth)}" : string.Empty;
@@ -188,8 +236,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ApplyDailyPricing(PartnerDailyPricingUpdateRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.ApplyDailyPricingAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.ApplyDailyPricingAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Gün fiyat güncelleme uygulanamadı: {ex.Message}";
+        }
         var monthQuery = !string.IsNullOrWhiteSpace(request.ViewMonth) ? $"&month={Uri.EscapeDataString(request.ViewMonth)}" : string.Empty;
         return Redirect($"/panel/partner/takvim-fiyatlar?otelId={request.HotelId}&roomId={request.RoomId}{monthQuery}");
     }
@@ -213,26 +269,55 @@ public class PartnerPanelController : Controller
         }
     }
 
+    // Geriye dönük uyumluluk: eski/yanlış URL'ler 404 vermesin.
+    [HttpGet("rooms")]
+    public IActionResult RoomsLegacy(long? otelId, long? roomId)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        var hotelQuery = otelId.HasValue ? $"otelId={otelId.Value}" : string.Empty;
+        var roomQuery = roomId.HasValue ? $"roomId={roomId.Value}" : string.Empty;
+        var join = !string.IsNullOrWhiteSpace(hotelQuery) && !string.IsNullOrWhiteSpace(roomQuery) ? "&" : string.Empty;
+        var qs = !string.IsNullOrWhiteSpace(hotelQuery) || !string.IsNullOrWhiteSpace(roomQuery)
+            ? "?" + hotelQuery + join + roomQuery
+            : string.Empty;
+        return Redirect("/panel/partner/oda-yonetimi" + qs);
+    }
+
     [HttpPost("oda-yonetimi/kaydet")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveRoom(PartnerRoomUpsertRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.UpsertRoomAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
-        if (request.RoomId.HasValue && request.RoomId.Value > 0)
+        try
         {
-            return Redirect($"/panel/partner/oda-yonetimi?otelId={request.HotelId}&roomId={request.RoomId.Value}#room-form");
+            var result = await _partnerService.UpsertRoomAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            // Canlıda "Error." sayfası yerine panel içinde hata göstermek için yakala.
+            TempData["PartnerError"] = $"Oda kaydedilemedi: {ex.Message}";
         }
 
-        return Redirect($"/panel/partner/oda-yonetimi?otelId={request.HotelId}#room-form");
+        var roomQuery = request.RoomId.HasValue && request.RoomId.Value > 0
+            ? $"&roomId={request.RoomId.Value}"
+            : string.Empty;
+        return Redirect($"/panel/partner/oda-yonetimi?otelId={request.HotelId}{roomQuery}#room-form");
     }
 
     [HttpPost("oda-yonetimi/sil")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteRoom(long hotelId, long roomId, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.DeleteRoomAsync(GetUserId(), hotelId, roomId, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.DeleteRoomAsync(GetUserId(), hotelId, roomId, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Oda tipi silinemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/oda-yonetimi?otelId={hotelId}");
     }
 
@@ -242,8 +327,16 @@ public class PartnerPanelController : Controller
     [RequestSizeLimit(157286400)]
     public async Task<IActionResult> UploadRoomPhotos(PartnerRoomPhotoUploadRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.UploadRoomPhotosAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.UploadRoomPhotosAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Oda görselleri yüklenemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/oda-yonetimi?otelId={request.HotelId}&roomId={request.RoomId}#room-gallery");
     }
 
@@ -251,8 +344,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetRoomCover(long hotelId, long roomId, long photoId, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.SetRoomCoverAsync(GetUserId(), hotelId, roomId, photoId, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.SetRoomCoverAsync(GetUserId(), hotelId, roomId, photoId, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Kapak görseli ayarlanamadı: {ex.Message}";
+        }
         return Redirect($"/panel/partner/oda-yonetimi?otelId={hotelId}&roomId={roomId}#room-gallery");
     }
 
@@ -260,8 +361,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteRoomPhoto(long hotelId, long roomId, long photoId, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.DeleteRoomPhotoAsync(GetUserId(), hotelId, roomId, photoId, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.DeleteRoomPhotoAsync(GetUserId(), hotelId, roomId, photoId, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Oda görseli silinemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/oda-yonetimi?otelId={hotelId}&roomId={roomId}#room-gallery");
     }
 
@@ -327,19 +436,34 @@ public class PartnerPanelController : Controller
     [RequestSizeLimit(314572800)]
     public async Task<IActionResult> UploadPhotos(PartnerPhotoUploadRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.UploadPhotosAsync(GetUserId(), request, cancellationToken);
-        if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
         {
-            Response.StatusCode = result.Success ? StatusCodes.Status200OK : StatusCodes.Status400BadRequest;
-            return Json(new
+            var result = await _partnerService.UploadPhotosAsync(GetUserId(), request, cancellationToken);
+            if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
             {
-                success = result.Success,
-                message = result.Message,
-                redirectUrl = $"/panel/partner/fotograflar?otelId={request.HotelId}"
-            });
+                Response.StatusCode = result.Success ? StatusCodes.Status200OK : StatusCodes.Status400BadRequest;
+                return Json(new
+                {
+                    success = result.Success,
+                    message = result.Message,
+                    redirectUrl = $"/panel/partner/fotograflar?otelId={request.HotelId}"
+                });
+            }
+
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+            {
+                Response.StatusCode = StatusCodes.Status500InternalServerError;
+                return Json(new { success = false, message = ex.Message, redirectUrl = $"/panel/partner/fotograflar?otelId={request.HotelId}" });
+            }
+
+            TempData["PartnerError"] = $"Fotoğraf yüklenemedi: {ex.Message}";
         }
 
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
         return Redirect($"/panel/partner/fotograflar?otelId={request.HotelId}");
     }
 
@@ -347,8 +471,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetCover(long hotelId, long photoId, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.SetCoverPhotoAsync(GetUserId(), hotelId, photoId, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.SetCoverPhotoAsync(GetUserId(), hotelId, photoId, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Kapak fotoğrafı ayarlanamadı: {ex.Message}";
+        }
         return Redirect($"/panel/partner/fotograflar?otelId={hotelId}");
     }
 
@@ -356,8 +488,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdatePhoto(PartnerPhotoEditForm request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.UpdatePhotoAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.UpdatePhotoAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Fotoğraf güncellenemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/fotograflar?otelId={request.HotelId}");
     }
 
@@ -365,8 +505,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeletePhoto(long hotelId, long photoId, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.DeletePhotoAsync(GetUserId(), hotelId, photoId, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.DeletePhotoAsync(GetUserId(), hotelId, photoId, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Fotoğraf silinemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/fotograflar?otelId={hotelId}");
     }
 
@@ -374,8 +522,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> BulkDeletePhotos(PartnerPhotoBulkDeleteRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.BulkDeletePhotosAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.BulkDeletePhotosAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Toplu fotoğraf silme işlemi başarısız: {ex.Message}";
+        }
         return Redirect($"/panel/partner/fotograflar?otelId={request.HotelId}");
     }
 
@@ -402,8 +558,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveCompetitor(PartnerCompetitorUpsertRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.SaveCompetitorAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.SaveCompetitorAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Rakip kaydedilemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/performans?otelId={request.HotelId}");
     }
 
@@ -439,8 +603,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReplyReview(PartnerReviewReplyRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.ReplyToReviewAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.ReplyToReviewAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Yorum yanıtı kaydedilemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/degerlendirmeler?otelId={request.HotelId}");
     }
 
@@ -448,8 +620,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReportReview(PartnerReviewReportRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.ReportReviewAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.ReportReviewAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Yorum raporlanamadı: {ex.Message}";
+        }
         return Redirect($"/panel/partner/degerlendirmeler?otelId={request.HotelId}");
     }
 
@@ -476,8 +656,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveBankInfo(PartnerBankInfoForm request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.SaveBankInfoAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.SaveBankInfoAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Banka bilgileri kaydedilemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/finans?otelId={request.HotelId}");
     }
 
@@ -529,8 +717,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SavePreferences(PartnerApplicationProfileForm request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.SaveApplicationAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.SaveApplicationAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Başvuru bilgileri kaydedilemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/basvuru-ve-evraklar?otelId={request.HotelId}");
     }
 
@@ -540,8 +736,16 @@ public class PartnerPanelController : Controller
     [RequestSizeLimit(52428800)]
     public async Task<IActionResult> UploadApplicationDocument(PartnerApplicationDocumentUploadForm request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.UploadApplicationDocumentAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.UploadApplicationDocumentAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Evrak yüklenemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/basvuru-ve-evraklar?otelId={request.HotelId}");
     }
 
@@ -549,8 +753,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteApplicationDocument(long hotelId, long documentId, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.DeleteApplicationDocumentAsync(GetUserId(), hotelId, documentId, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.DeleteApplicationDocumentAsync(GetUserId(), hotelId, documentId, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Evrak silinemedi: {ex.Message}";
+        }
         return Redirect($"/panel/partner/basvuru-ve-evraklar?otelId={hotelId}");
     }
 
@@ -577,8 +789,16 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateTicket(PartnerSupportCreateTicketRequest request, CancellationToken cancellationToken)
     {
-        var result = await _partnerService.CreateSupportTicketAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.CreateSupportTicketAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Destek talebi oluşturulamadı: {ex.Message}";
+        }
         return Redirect($"/panel/partner/724-destek?otelId={request.HotelId}");
     }
 

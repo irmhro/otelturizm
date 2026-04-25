@@ -41,6 +41,13 @@ bld/
 # Visual Studio 2017 auto generated files
 Generated\ Files/
 
+# Codex/Cursor publish artifacts (local only)
+.codex-build/
+.codex-publish/
+.codex-temp/
+codex-temp/
+tmp/
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*

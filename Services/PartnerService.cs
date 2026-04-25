@@ -824,6 +824,15 @@ public class PartnerService : IPartnerService
             return (false, "Baslangic tarihi bitis tarihinden buyuk olamaz.");
         }
 
+        // Kural: indirimli fiyat giriliyorsa indirim seçimi zorunlu (kampanya_id boş kalamaz).
+        if (!request.ClearDiscountPrice && request.DiscountPrice.HasValue)
+        {
+            if (!request.DiscountId.HasValue || request.DiscountId.Value <= 0)
+            {
+                return (false, "İndirimli fiyat girmek için indirim seçmelisiniz.");
+            }
+        }
+
         var selectedRoomIds = request.SelectedRoomIds
             .Where(static item => item > 0)
             .Distinct()
@@ -1203,39 +1212,41 @@ public class PartnerService : IPartnerService
 
     public async Task<(bool Success, string Message)> UpsertRoomAsync(long userId, PartnerRoomUpsertRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.RoomName) || request.BasePrice <= 0)
+        try
         {
-            return (false, "Oda adi ve taban fiyat zorunludur.");
-        }
+            if (string.IsNullOrWhiteSpace(request.RoomName) || request.BasePrice <= 0)
+            {
+                return (false, "Oda adi ve taban fiyat zorunludur.");
+            }
 
-        if (request.TotalRooms <= 0)
-        {
-            return (false, "Toplam oda sayisi en az 1 olmalidir.");
-        }
+            if (request.TotalRooms <= 0)
+            {
+                return (false, "Toplam oda sayisi en az 1 olmalidir.");
+            }
 
-        if (request.MaxAdults < 1)
-        {
-            return (false, "Maksimum yetişkin sayısı en az 1 olmalıdır.");
-        }
+            if (request.MaxAdults < 1)
+            {
+                return (false, "Maksimum yetişkin sayısı en az 1 olmalıdır.");
+            }
 
-        var totalCapacity = request.MaxAdults + request.MaxChildren + request.MaxBabies;
-        if (totalCapacity <= 0)
-        {
-            return (false, "Oda kişi kapasitesi en az 1 olmalıdır.");
-        }
+            var totalCapacity = request.MaxAdults + request.MaxChildren + request.MaxBabies;
+            if (totalCapacity <= 0)
+            {
+                return (false, "Oda kişi kapasitesi en az 1 olmalıdır.");
+            }
 
-        await using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
-        var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
-        var inclusiveTax = await LoadInclusiveTaxPercentsAsync(connection, request.HotelId, cancellationToken);
-        var storedNetBasePrice = InclusiveNightlyPricing.PartnerGrossEntryToStoredNet(request.BasePrice, inclusiveTax.VatPercent, inclusiveTax.AccommodationPercent);
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+            var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+            var inclusiveTax = await LoadInclusiveTaxPercentsAsync(connection, request.HotelId, cancellationToken);
+            var storedNetBasePrice = InclusiveNightlyPricing.PartnerGrossEntryToStoredNet(request.BasePrice, inclusiveTax.VatPercent, inclusiveTax.AccommodationPercent);
 
-        var featuresJson = string.IsNullOrWhiteSpace(request.RoomFeaturesText)
-            ? null
-            : JsonSerializer.Serialize(request.RoomFeaturesText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-        if (request.RoomId.HasValue)
-        {
-            const string updateSql = @"
+            var featuresJson = string.IsNullOrWhiteSpace(request.RoomFeaturesText)
+                ? null
+                : JsonSerializer.Serialize(request.RoomFeaturesText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            if (request.RoomId.HasValue)
+            {
+                const string updateSql = @"
                 UPDATE oda_tipleri
                 SET oda_adi = @roomName,
                     oda_kategorisi = @roomCategory,
@@ -1253,34 +1264,47 @@ public class PartnerService : IPartnerService
                     aktif_mi = @active
                 WHERE id = @roomId AND otel_id = @hotelId;";
 
-            await using var updateCommand = new SqlCommand(updateSql, connection);
-            BindRoomCommand(updateCommand, request, hotel, featuresJson, storedNetBasePrice);
-            updateCommand.Parameters.AddWithValue("@roomId", request.RoomId.Value);
-            await updateCommand.ExecuteNonQueryAsync(cancellationToken);
-            await SyncRoomFeatureRelationsAsync(connection, request.RoomId.Value, request.RoomFeaturesText, cancellationToken);
-            await SyncHotelRoomCountAsync(connection, hotel.HotelId, cancellationToken);
-            return (true, "Oda tipi guncellendi.");
-        }
+                await using var updateCommand = new SqlCommand(updateSql, connection);
+                BindRoomCommand(updateCommand, request, hotel, featuresJson, storedNetBasePrice);
+                updateCommand.Parameters.AddWithValue("@roomId", request.RoomId.Value);
+                await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+                await SyncRoomFeatureRelationsAsync(connection, request.RoomId.Value, request.RoomFeaturesText, cancellationToken);
+                await SyncHotelRoomCountAsync(connection, hotel.HotelId, cancellationToken);
+                return (true, "Oda tipi guncellendi.");
+            }
 
-        const string insertSql = @"
+            const string insertSql = @"
             INSERT INTO oda_tipleri
             (otel_id, oda_tip_kodu, oda_adi, oda_kategorisi, maksimum_kisi_sayisi, maksimum_yetiskin_sayisi, maksimum_cocuk_sayisi, yatak_tipi, oda_metrekare, manzara_tipi, standart_gecelik_fiyat, toplam_oda_sayisi, kapak_fotografi, ozellikler, aktif_mi)
             VALUES
             (@hotelId, @roomCode, @roomName, @roomCategory, @maxPeople, @maxAdults, @maxChildren, @bedType, @roomSize, @viewType, @basePrice, @totalRooms, @coverPhoto, @features, @active);
             SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
-        await using var insertCommand = new SqlCommand(insertSql, connection);
-        BindRoomCommand(insertCommand, request, hotel, featuresJson, storedNetBasePrice);
-        insertCommand.Parameters.AddWithValue("@roomCode", BuildRoomCode(hotel.HotelId));
-        var createdRoomIdRaw = await insertCommand.ExecuteScalarAsync(cancellationToken);
-        var createdRoomId = Convert.ToInt64(createdRoomIdRaw ?? 0L, CultureInfo.InvariantCulture);
-        if (createdRoomId > 0)
-        {
-            await SyncRoomFeatureRelationsAsync(connection, createdRoomId, request.RoomFeaturesText, cancellationToken);
-        }
+            await using var insertCommand = new SqlCommand(insertSql, connection);
+            BindRoomCommand(insertCommand, request, hotel, featuresJson, storedNetBasePrice);
+            insertCommand.Parameters.AddWithValue("@roomCode", BuildRoomCode(hotel.HotelId));
+            var createdRoomIdRaw = await insertCommand.ExecuteScalarAsync(cancellationToken);
+            var createdRoomId = Convert.ToInt64(createdRoomIdRaw ?? 0L, CultureInfo.InvariantCulture);
+            if (createdRoomId > 0)
+            {
+                await SyncRoomFeatureRelationsAsync(connection, createdRoomId, request.RoomFeaturesText, cancellationToken);
+            }
 
-        await SyncHotelRoomCountAsync(connection, hotel.HotelId, cancellationToken);
-        return (true, "Yeni oda tipi eklendi.");
+            await SyncHotelRoomCountAsync(connection, hotel.HotelId, cancellationToken);
+            return (true, "Yeni oda tipi eklendi.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return (false, ex.Message);
+        }
+        catch (SqlException ex)
+        {
+            return (false, $"Veritabanı hatası: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Beklenmeyen hata: {ex.Message}");
+        }
     }
 
     public async Task<(bool Success, string Message)> DeleteRoomAsync(long userId, long hotelId, long roomId, CancellationToken cancellationToken = default)
