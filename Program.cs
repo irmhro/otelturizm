@@ -41,6 +41,7 @@ builder.Services.AddScoped<IPartnerService, PartnerService>();
 builder.Services.AddScoped<IPublicReservationService, PublicReservationService>();
 builder.Services.AddScoped<IReservationDraftService, ReservationDraftService>();
 builder.Services.AddScoped<ISalesService, SalesService>();
+builder.Services.AddScoped<ISitemapService, SitemapService>();
 builder.Services.AddScoped<IUserFavoriteService, UserFavoriteService>();
 builder.Services.AddScoped<IUserPanelService, UserPanelService>();
 builder.Services.AddScoped<ISessionSecurityService, SessionSecurityService>();
@@ -49,6 +50,7 @@ builder.Services.AddScoped<ISupportService, SupportService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IWeatherService, WeatherService>();
 builder.Services.AddHttpClient<IWhatsAppCloudApiService, WhatsAppCloudApiService>();
+builder.Services.AddHostedService<SitemapRefreshBackgroundService>();
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 300 * 1024 * 1024;

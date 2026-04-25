@@ -60,6 +60,9 @@
             <div class="footer-bottom-top">
                 <div class="footer-copyright">&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</div>
                 <div class="footer-agency-wrap">
+                    <div class="footer-agency-note footer-agency-note-inline" aria-label="Seyahat acentası bilgisi">
+                        Seyahat Acentası Adı: 216 SPECIAL KARTAL TURİZM SEYAHAT ACENTASI 18355 · BTK: İSTANBUL ASYA
+                    </div>
                     <div class="trust-badges">
                         <span class="trust-badge"><i class="fas fa-shield-alt"></i> TURSAB</span>
                         <span class="trust-badge"><i class="fas fa-lock"></i> PCI DSS</span>
@@ -75,5 +78,38 @@
         </div>
     </div>
 </footer>
+
+<script>
+    (function () {
+        try {
+            const storageKey = 'otelturizm.sitemap.refresh.lastPing';
+            const refreshIntervalMs = 3 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            const lastPing = Number(localStorage.getItem(storageKey) || '0');
+
+            if ((now - lastPing) < refreshIntervalMs) {
+                return;
+            }
+
+            fetch('/seo/sitemap-refresh', {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                keepalive: true,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(function (response) {
+                if (response && response.ok) {
+                    localStorage.setItem(storageKey, String(now));
+                }
+            }).catch(function () {
+                // sessiz
+            });
+        } catch (_) {
+            // sessiz
+        }
+    })();
+</script>
 
 

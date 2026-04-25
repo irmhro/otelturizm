@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /admin/
+Disallow: /panel
+Disallow: /panel/
+Disallow: /api/
+Disallow: /kullanici-giris
+Disallow: /partner-giris
+Disallow: /firma-giris
+Disallow: /admin-giris
+Disallow: /kullanici-giris-2fa
+Disallow: /sifremi-unuttum
+Disallow: /eposta-dogrula
+Disallow: /seo/sitemap-refresh
+
+Sitemap: https://otelturizm.com/sitemap.xml

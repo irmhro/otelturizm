@@ -9,15 +9,15 @@
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
     var pricedHotels = hotels.Where(x => (x.StartingPrice ?? 0m) > 0m).ToList();
     var computedMin = pricedHotels.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Min();
-    var minPrice = computedMin > 0m ? computedMin : (Model.MinPrice > 0m ? Model.MinPrice : 0m);
     var computedMax = pricedHotels.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Max();
-    var maxPrice = computedMax > 0m
-        ? computedMax
-        : (Model.MaxPrice > 0m ? Model.MaxPrice : 15000m);
-    if (maxPrice > 0m && minPrice > maxPrice)
-    {
-        minPrice = maxPrice;
-    }
+    // Fiyat araligi: sayfadaki 7 otel yerine, mümkünse servis tarafindan gelen global max'ı baz al.
+    // Böylece kullanıcı manuel max değeri (örn. 4424) yazabilir.
+    // Yeni istek: 0'dan baslamasın; otel fiyatlarına göre min->max oluştur.
+    var priceBoundMin = computedMin > 0m ? computedMin : (Model.MinPrice > 0m ? Model.MinPrice : 0m);
+    var priceBoundMax = computedMax > 0m ? computedMax : (Model.MaxPrice > 0m ? Model.MaxPrice : 0m);
+    var hasValidPriceRange = priceBoundMin > 0m && priceBoundMax > 0m && priceBoundMax >= priceBoundMin;
+    var minPrice = hasValidPriceRange ? priceBoundMin : 0m;
+    var maxPrice = hasValidPriceRange ? priceBoundMax : 0m;
     var titleText = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Oteller" : Model.SearchLabel;
     var cityText = string.IsNullOrWhiteSpace(Model.City) ? titleText : Model.City;
     var amenityCounts = hotels
@@ -866,51 +866,39 @@
                         </div>
                     </details>
 
-                    <details class="filter-accordion" id="filterPrice" open>
-                        <summary class="filter-accordion-summary">
-                            <span>Fiyat Aralığı</span>
-                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                        </summary>
-                        <div class="filter-accordion-body">
-                            <div class="price-slider-wrap">
-                                <div class="price-slider-track" aria-hidden="true">
-                                    <span class="price-slider-dot" data-price-dot="0"></span>
-                                    <span class="price-slider-dot" data-price-dot="1"></span>
-                                    <span class="price-slider-dot" data-price-dot="2"></span>
-                                    <span class="price-slider-dot" data-price-dot="3"></span>
-                                    <span class="price-slider-dot" data-price-dot="4"></span>
-                                    <span class="price-slider-dot" data-price-dot="5"></span>
-                                    <span class="price-slider-dot" data-price-dot="6"></span>
+                    @if (hasValidPriceRange)
+                    {
+                        <details class="filter-accordion" id="filterPrice" open>
+                            <summary class="filter-accordion-summary">
+                                <span>Fiyat Aralığı</span>
+                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                            </summary>
+                            <div class="filter-accordion-body">
+                                <div class="price-slider-wrap">
+                                    <div class="price-slider-track" aria-hidden="true">
+                                        <span class="price-slider-dot" data-price-dot="0"></span>
+                                        <span class="price-slider-dot" data-price-dot="1"></span>
+                                        <span class="price-slider-dot" data-price-dot="2"></span>
+                                        <span class="price-slider-dot" data-price-dot="3"></span>
+                                        <span class="price-slider-dot" data-price-dot="4"></span>
+                                        <span class="price-slider-dot" data-price-dot="5"></span>
+                                        <span class="price-slider-dot" data-price-dot="6"></span>
+                                    </div>
+                                    <input type="range"
+                                           min="@Math.Floor(priceBoundMin).ToString(CultureInfo.InvariantCulture)"
+                                           max="@Math.Ceiling(priceBoundMax).ToString(CultureInfo.InvariantCulture)"
+                                           value="@maxPrice.ToString(CultureInfo.InvariantCulture)"
+                                           step="1"
+                                           id="listingPriceMaxRange"
+                                           aria-label="Maksimum fiyat" />
+                                    <div class="price-slider-live" aria-live="polite">
+                                        <span id="priceSliderLiveValue"></span>
+                                    </div>
                                 </div>
-                                <input type="range"
-                                       min="@Math.Floor(minPrice).ToString(CultureInfo.InvariantCulture)"
-                                       max="@Math.Ceiling(maxPrice).ToString(CultureInfo.InvariantCulture)"
-                                       value="@maxPrice.ToString(CultureInfo.InvariantCulture)"
-                                       step="1"
-                                       id="listingPriceMaxRange"
-                                       aria-label="Maksimum fiyat" />
+                                <p class="filter-help filter-help-compact" id="priceAutoRelaxNote" hidden></p>
                             </div>
-                            <div class="price-range">
-                                <input type="number"
-                                       placeholder="Min ₺"
-                                       value="@minPrice.ToString(CultureInfo.InvariantCulture)"
-                                       min="@Math.Floor(minPrice).ToString(CultureInfo.InvariantCulture)"
-                                       max="@Math.Ceiling(maxPrice).ToString(CultureInfo.InvariantCulture)"
-                                       step="1"
-                                       inputmode="numeric"
-                                       id="listingMinPriceInput">
-                                <input type="number"
-                                       placeholder="Max ₺"
-                                       value="@maxPrice.ToString(CultureInfo.InvariantCulture)"
-                                       min="@Math.Floor(minPrice).ToString(CultureInfo.InvariantCulture)"
-                                       max="@Math.Ceiling(maxPrice).ToString(CultureInfo.InvariantCulture)"
-                                       step="1"
-                                       inputmode="numeric"
-                                       id="listingMaxPriceInput">
-                            </div>
-                            <p class="filter-help filter-help-compact" id="priceAutoRelaxNote" hidden></p>
-                        </div>
-                    </details>
+                        </details>
+                    }
 
                     <details class="filter-accordion" id="filterLocation" open>
                         <summary class="filter-accordion-summary">
@@ -1651,9 +1639,10 @@
             const listView = document.getElementById('hotelListView');
             const sortSelect = document.getElementById('listingSortSelect');
             const keywordInput = document.getElementById('listingKeywordInput');
-            const minPriceInput = document.getElementById('listingMinPriceInput');
-            const maxPriceInput = document.getElementById('listingMaxPriceInput');
+            const minPriceInput = document.getElementById('listingMinPriceInput'); // kaldırıldıysa null
+            const maxPriceInput = document.getElementById('listingMaxPriceInput'); // kaldırıldıysa null
             const maxPriceRange = document.getElementById('listingPriceMaxRange');
+            const priceSliderLiveValue = document.getElementById('priceSliderLiveValue');
             let cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
             function refreshCards() {
                 cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
@@ -1742,9 +1731,14 @@
                 return '₺' + Math.round(n).toLocaleString('tr-TR');
             }
 
+            function syncPriceLive() {
+                if (!priceSliderLiveValue || !maxPriceRange) return;
+                priceSliderLiveValue.textContent = formatTry(maxPriceRange.value || '0');
+            }
+
             function syncPriceSteps() {
-                const min = parseFilterNumber(minPriceInput?.value || '0');
-                const max = parseFilterNumber(maxPriceRange?.max || maxPriceInput?.value || '0');
+                const min = parseFilterNumber(maxPriceRange?.min || '0');
+                const max = parseFilterNumber(maxPriceRange?.max || '0');
                 if (!Number.isFinite(max) || max <= 0) return;
                 const a = Math.max(0, Math.min(min, max));
                 const b = max;
@@ -1771,27 +1765,7 @@
                 if (wrap) wrap.style.setProperty('--slider-pos', Math.max(0, Math.min(100, pct)).toFixed(2) + '%');
             }
 
-            function normalizePriceInputs(syncSlider) {
-                const floorMin = parseFilterNumber(maxPriceRange?.min || minPriceInput?.min || '0');
-                const ceilMax = parseFilterNumber(maxPriceRange?.max || maxPriceInput?.max || '0');
-                let minValue = parseFilterNumber(minPriceInput?.value || floorMin);
-                let maxValue = parseFilterNumber(maxPriceInput?.value || ceilMax);
-
-                minValue = Math.max(floorMin, Math.min(minValue, ceilMax));
-                maxValue = Math.max(floorMin, Math.min(maxValue, ceilMax));
-
-                if (maxValue < minValue) {
-                    if (document.activeElement === minPriceInput) {
-                        maxValue = minValue;
-                    } else {
-                        minValue = maxValue;
-                    }
-                }
-
-                if (minPriceInput) minPriceInput.value = String(Math.round(minValue));
-                if (maxPriceInput) maxPriceInput.value = String(Math.round(maxValue));
-                if (syncSlider && maxPriceRange) maxPriceRange.value = String(Math.round(maxValue));
-            }
+            // Not: Manuel min/max inputlar kaldırıldığı için normalizePriceInputs artık kullanılmıyor.
 
             function toRad(d) { return (d * Math.PI) / 180; }
 
@@ -2200,13 +2174,15 @@
             function applyFilters() {
                 refreshCards();
                 const keyword = normalize(keywordInput?.value || '');
-                const minPrice = Math.max(0, parseFilterNumber(minPriceInput?.value || '0'));
-                const maxPrice = Math.max(0, parseFilterNumber(maxPriceInput?.value || '0'));
+                const minPrice = Math.max(0, parseFilterNumber(maxPriceRange?.min || '0'));
+                const maxPrice = Math.max(0, parseFilterNumber(maxPriceRange?.value || '0'));
                 const selectedAmenities = amenityChecks.filter(x => x.checked).map(x => normalize(x.value));
                 const selectedStars = starChecks.filter(x => x.checked).map(x => String(x.value));
                 const featuredOnly = featuredChecks.some(x => x.checked);
                 const distanceKm = Number(distanceKmRange?.value || '0');
-                const distanceActive = !!(userLocation && distanceKmRange && !distanceKmRange.disabled && distanceKm > 0);
+                // Konuma göre filtre: UI disabled olsa bile (bazı cihazlarda state kaçabiliyor)
+                // koordinat geldiyse 15km default ile filtre çalışmalı.
+                const distanceActive = !!(userLocation && distanceKm > 0);
                 const minScore = ratingChips
                     .filter(x => x.classList.contains('active'))
                     .map(x => Number(x.dataset.minScore || '0'))
@@ -2227,7 +2203,7 @@
                     const cardLon = cardLonRaw ? Number(cardLonRaw) : NaN;
 
                     const keywordOk = !keyword || cardKeywords.indexOf(keyword) > -1;
-                    const priceOk = cardPrice >= minPrice && (maxPrice <= 0 || cardPrice <= maxPrice);
+                    const priceOk = (!maxPriceRange) || (cardPrice >= minPrice && cardPrice <= maxPrice);
                     const starOk = selectedStars.length === 0 || selectedStars.includes(cardStars);
                     const ratingOk = minScore <= 0 || cardRating >= minScore;
                     const amenityOk = selectedAmenities.length === 0 || selectedAmenities.every(x => cardAmenities.indexOf(x) > -1);
@@ -2249,15 +2225,15 @@
                 });
 
                 // Fiyat filtresi yüzünden liste boş kalmasın: en düşük uygun fiyata otomatik çek.
-                const priceFilterActive = (minPrice > 0) || (maxPrice > 0 && defaultMaxPrice > 0 && maxPrice < defaultMaxPrice);
+                const defaultMax = Number(maxPriceRange?.max || defaultMaxPrice || '0');
+                const priceFilterActive = !!(maxPriceRange && Number.isFinite(defaultMax) && defaultMax > 0 && maxPrice > 0 && maxPrice < defaultMax);
                 if (!priceAutoRelaxing && priceFilterActive && visibleCount === 0 && Number.isFinite(cheapestNonPriceMatch) && cheapestNonPriceMatch !== Number.POSITIVE_INFINITY) {
                     priceAutoRelaxing = true;
                     const newMax = Math.max(0, Math.round(cheapestNonPriceMatch));
-                    if (minPriceInput) minPriceInput.value = '0';
-                    if (maxPriceInput) maxPriceInput.value = String(newMax);
                     if (maxPriceRange) maxPriceRange.value = String(newMax);
                     syncPriceSteps();
                     syncPriceSliderVisual();
+                    syncPriceLive();
                     if (priceAutoRelaxNote) {
                         priceAutoRelaxNote.textContent = 'Bu fiyatta sonuç bulunamadı. En düşük fiyat gösteriliyor.';
                         priceAutoRelaxNote.hidden = false;
@@ -2375,6 +2351,37 @@
                 if (keywordClearBtn) keywordClearBtn.hidden = String(keywordInput.value || '').trim().length === 0;
                 syncMobileFilterCount();
                 keywordSuggestionTimer = window.setTimeout(loadKeywordSuggestions, 180);
+            });
+            // Mobilde: il/ilçe/mahalle araması yazılır yazılmaz server tarafı aramayı tetikle (page=1).
+            // Çünkü client-side filtre sadece yüklenen kartları (örn. ilk 7) daraltır.
+            let keywordServerTimer = null;
+            function buildListingUrlWithQuery(nextQ) {
+                const url = new URL(window.location.href);
+                const qValue = String(nextQ || '').trim();
+                if (qValue) url.searchParams.set('q', qValue);
+                else url.searchParams.delete('q');
+                url.searchParams.delete('page');
+                return url.toString();
+            }
+            function maybeNavigateForKeyword() {
+                if (!isMobileViewport() || !keywordInput) return;
+                const typed = String(keywordInput.value || '').trim();
+                const current = (new URL(window.location.href)).searchParams.get('q') || '';
+                if (typed === String(current).trim()) return;
+                // 1 karakterle sayfa yenilemeyelim; 2+ ise hemen uygula.
+                if (typed.length > 0 && typed.length < 2) return;
+                window.location.href = buildListingUrlWithQuery(typed);
+            }
+            keywordInput?.addEventListener('input', function () {
+                window.clearTimeout(keywordServerTimer);
+                keywordServerTimer = window.setTimeout(maybeNavigateForKeyword, 450);
+            });
+            keywordInput?.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    window.clearTimeout(keywordServerTimer);
+                    maybeNavigateForKeyword();
+                }
             });
 
             function applyLocationSuccess(pos) {
@@ -2550,6 +2557,9 @@
             }
 
             useMyLocationBtn?.addEventListener('click', function () {
+                // Hem masaüstü hem mobilde önce gerçek tarayıcı konumunu dene.
+                // Masaüstünde tam konum alınamazsa mevcut fallback akışı yaklaşık konumu dener
+                // ve gerekirse haritadan seçimi açar.
                 requestUserLocation();
             });
 
@@ -2723,36 +2733,11 @@
             locationMapConfirmBtn?.addEventListener('click', function () {
                 applyManualMapSelection();
             });
-            minPriceInput?.addEventListener('input', function () {
-                normalizePriceInputs(false);
-                applyFilters();
-                sortCards();
-                syncMobileFilterCount();
-            });
-            minPriceInput?.addEventListener('change', function () {
-                normalizePriceInputs(false);
-                applyFilters();
-                sortCards();
-                syncMobileFilterCount();
-            });
-            maxPriceInput?.addEventListener('input', function () {
-                normalizePriceInputs(false);
-                applyFilters();
-                sortCards();
-                syncMobileFilterCount();
-            });
-            maxPriceInput?.addEventListener('change', function () {
-                normalizePriceInputs(false);
-                applyFilters();
-                sortCards();
-                syncMobileFilterCount();
-            });
             maxPriceRange?.addEventListener('input', function () {
-                if (maxPriceInput) maxPriceInput.value = maxPriceRange.value;
-                normalizePriceInputs(true);
                 applyFilters();
                 sortCards();
                 syncPriceSliderVisual();
+                syncPriceLive();
                 syncMobileFilterCount();
             });
 
@@ -3012,150 +2997,120 @@
                     }, 140);
                 }
 
+                // Reel: DOM'u taşımadan (append/insert) scrollTop ile inertia.
+                // Böylece kartlarda "yenilenme" hissi oluşmaz ve yarım kart kayması doğal görünür.
                 let stepHeight = 0;
-                let offset = 0; // 0..stepHeight
-                let raf = 0;
-                let v = 0; // velocity
-                let animating = false;
-                let lastFrameTs = 0;
-                let settling = false;
+                let targetScrollTop = 0;
+                let scrollV = 0; // velocity
+                let scrolling = false;
+                let lastTs = 0;
 
-                function setTransform(withEase) {
-                    if (withEase) {
-                        listView.style.transition = 'transform 160ms cubic-bezier(0.22, 1.05, 0.4, 1.02)';
-                    } else {
-                        listView.style.transition = 'none';
+                function clampScrollTop(value) {
+                    const max = Math.max(0, (reelViewport.scrollHeight || 0) - (reelViewport.clientHeight || 0));
+                    if (max <= 0) return 0;
+                    // Sürekli döngü: sona gelince başa, başa gelince sona sar.
+                    // (DOM taşımıyoruz; scrollTop sararak loop hissi veriyoruz.)
+                    if (value > max) {
+                        return (value - max);
                     }
-                    listView.style.transform = 'translateY(' + (-offset).toFixed(2) + 'px)';
+                    if (value < 0) {
+                        return (max + value);
+                    }
+                    return value;
                 }
 
-                function schedule() {
-                    if (!raf) {
-                        raf = window.requestAnimationFrame(function () {
-                            raf = 0;
-                            setTransform(false);
-                        });
-                    }
-                }
-                function shiftDownOne() {
-                    const first = listView.querySelector('.listing-hotel-card');
-                    if (!first) return;
-                    listView.appendChild(first);
-                }
-                function shiftUpOne() {
-                    const cardsNow = Array.from(listView.querySelectorAll('.listing-hotel-card'));
-                    const last = cardsNow[cardsNow.length - 1];
-                    if (!last) return;
-                    listView.insertBefore(last, cardsNow[0]);
+                function ensureStep() {
+                    if (!stepHeight) stepHeight = getStepHeight();
+                    ensureViewportHeight();
                 }
 
-                function maybeSoftSettleToZero() {
-                    // Sert hizalama yok: sadece zaten neredeyse 0'da ise yumuşak toparla.
-                    if (!stepHeight) return;
-                    const threshold = stepHeight * 0.06;
-                    if (offset <= threshold) {
-                        settling = true;
-                        const start = offset;
-                        const startTs = performance.now();
-                        const dur = 180;
-                        function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
-                        function frame(now) {
-                            const t = Math.max(0, Math.min(1, (now - startTs) / dur));
-                            offset = start * (1 - easeOut(t));
-                            setTransform(true);
-                            if (t < 1) {
-                                requestAnimationFrame(frame);
-                            } else {
-                                offset = 0;
-                                setTransform(false);
-                                settling = false;
-                            }
-                        }
-                        requestAnimationFrame(frame);
-                    }
-                }
-
-                function animate(ts) {
-                    if (!animating) {
-                        lastFrameTs = ts;
-                        return;
-                    }
-
-                    const dtMs = Math.min(32, Math.max(8, ts - (lastFrameTs || ts)));
-                    lastFrameTs = ts;
-                    const dt = dtMs / 16.67; // ~60fps units
-
-                    // sürtünme (makara hissi) - daha yavaş / daha yumuşak
-                    const friction = 0.92;
-                    v = v * Math.pow(friction, dt);
-
-                    // hız çok küçükse durdur (hizalama yapma)
-                    if (Math.abs(v) < 0.12) {
-                        v = 0;
-                        animating = false;
-                        if (!settling) {
-                            maybeSoftSettleToZero();
-                        }
-                        return;
-                    }
-
-                    offset += v * dt;
-
-                    // kart çevrimleri (yumuşak akış sırasında)
-                    while (offset >= stepHeight) {
-                        offset -= stepHeight;
-                        shiftDownOne();
+                function maybePrefetchNearBottom() {
+                    ensureStep();
+                    const threshold = stepHeight * 3; // alta yaklaşınca
+                    const remain = (reelViewport.scrollHeight - (reelViewport.scrollTop + reelViewport.clientHeight));
+                    if (remain <= threshold) {
                         loadNextPageIfNeeded();
                     }
-                    while (offset < 0) {
-                        offset += stepHeight;
-                        shiftUpOne();
+                }
+
+                function tick(ts) {
+                    if (!scrolling) {
+                        lastTs = ts;
+                        return;
+                    }
+                    const dtMs = Math.min(34, Math.max(10, ts - (lastTs || ts)));
+                    lastTs = ts;
+                    const dt = dtMs / 16.67;
+
+                    // sürtünme: ipeksi akış
+                    const friction = 0.86;
+                    scrollV = scrollV * Math.pow(friction, dt);
+
+                    if (Math.abs(scrollV) < 0.10) {
+                        scrollV = 0;
+                        scrolling = false;
+                        maybePrefetchNearBottom();
+                        // Üstte kart yarım kalmasın: en yakın kart sınırına yumuşak hizala.
+                        ensureStep();
+                        if (stepHeight > 0) {
+                            const st = reelViewport.scrollTop || 0;
+                            const snapped = Math.round(st / stepHeight) * stepHeight;
+                            reelViewport.scrollTo({ top: clampScrollTop(snapped), behavior: 'smooth' });
+                            targetScrollTop = reelViewport.scrollTop || 0;
+                        }
+                        return;
                     }
 
-                    schedule();
-                    window.requestAnimationFrame(animate);
+                    targetScrollTop = clampScrollTop(targetScrollTop + (scrollV * dt));
+                    reelViewport.scrollTop = targetScrollTop;
+                    maybePrefetchNearBottom();
+                    window.requestAnimationFrame(tick);
                 }
 
                 function onWheel(e) {
-                    // Döngü: her zaman döner. DB yükü: no-search'te max 50 otel.
                     e.preventDefault();
-                    if (!stepHeight) {
-                        stepHeight = getStepHeight();
-                        ensureViewportHeight();
-                    }
+                    ensureStep();
 
-                    const delta = Math.max(-160, Math.min(160, (e.deltaY || 0)));
-                    const accel = 0.38; // wheel -> velocity (daha yavaş)
-                    v += delta * accel;
-                    v = Math.max(-55, Math.min(55, v)); // üst hız limiti
+                    const delta = Math.max(-180, Math.min(180, (e.deltaY || 0)));
+                    const accel = 0.55; // wheel -> velocity (yumuşak)
+                    scrollV += delta * accel;
+                    scrollV = Math.max(-95, Math.min(95, scrollV));
                     pulseCrank(delta);
 
-                    if (!animating) {
-                        animating = true;
-                        lastFrameTs = 0;
-                        window.requestAnimationFrame(animate);
+                    if (!scrolling) {
+                        scrolling = true;
+                        targetScrollTop = reelViewport.scrollTop || 0;
+                        lastTs = 0;
+                        window.requestAnimationFrame(tick);
                     }
                 }
 
                 // initial
                 ensureViewportHeight();
-                reelViewport.style.overflow = 'hidden';
+                // 6.5 kart görünsün (yarım kart kayması hissi)
+                stepHeight = 0;
+                (function setHalfCardViewport() {
+                    const step = getStepHeight();
+                    reelViewport.style.height = (step * 6.5) + 'px';
+                })();
+                reelViewport.style.overflowY = 'auto';
+                reelViewport.style.overflowX = 'hidden';
                 reelViewport.style.position = 'relative';
-                listView.style.willChange = 'transform';
-                listView.style.transform = 'translateY(0px)';
-                listView.style.transition = 'none';
+                listView.style.willChange = 'auto';
 
                 // Filtre uygulandiginda listeyi üstten tam baslat.
                 reelResetToTop = function () {
-                    // Animasyon varsa durdur.
-                    v = 0;
-                    animating = false;
-                    lastFrameTs = 0;
-                    offset = 0;
-                    setTransform(false);
+                    scrollV = 0;
+                    scrolling = false;
+                    targetScrollTop = 0;
+                    reelViewport.scrollTop = 0;
                 };
 
                 reelViewport.addEventListener('wheel', onWheel, { passive: false });
+                reelViewport.addEventListener('scroll', function () {
+                    // Kullanıcı trackpad ile doğal scroll ederse de prefetch çalışsın.
+                    maybePrefetchNearBottom();
+                }, { passive: true });
 
                 // Aramasız girişte 50 oteli önceden getir (8 sayfa civarı), sonra loop bu havuzda döner.
                 if (isNoSearchContext) {
@@ -3174,8 +3129,9 @@
                 window.addEventListener('resize', function () {
                     ensureViewportHeight();
                     stepHeight = 0;
-                    offset = 0;
-                    listView.style.transform = 'translateY(0px)';
+                    // yarım kart görünümü korunmalı
+                    const step = getStepHeight();
+                    reelViewport.style.height = (step * 6.5) + 'px';
                 });
             })();
 

@@ -2033,6 +2033,8 @@ body.listing-modal-open {
     width: 280px;
     flex-shrink: 0;
     display: block;
+    position: relative;
+    z-index: 20;
 }
 
 .listing-template-v41 .filter-card {
@@ -2065,6 +2067,35 @@ body.listing-modal-open {
     padding: 10px;
     border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
+    background: #fff;
+    color: #0f172a;
+    -webkit-text-fill-color: #0f172a;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+}
+
+.listing-template-v41 .price-slider-wrap {
+    position: relative;
+}
+
+.listing-template-v41 .price-slider-live {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: 0.01em;
+}
+
+.listing-template-v41 .price-slider-live span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(0, 59, 149, 0.06);
+    border: 1px solid rgba(0, 59, 149, 0.12);
 }
 
 .listing-template-v41 .filter-options {
@@ -2104,6 +2135,7 @@ body.listing-modal-open {
         scroll-behavior: auto;
         scrollbar-gutter: stable both-edges;
         scrollbar-width: none;
+        z-index: 1;
     }
 
     .listing-template-v41 .listing-reel-viewport::-webkit-scrollbar {
@@ -2171,6 +2203,15 @@ body.listing-modal-open {
         border-color: rgba(148, 163, 184, 0.40);
         opacity: 0.9;
     }
+}
+
+/* Input'lar her zaman tıklanabilir/yazılabilir kalsın */
+.listing-template-v41 #listingKeywordInput,
+.listing-template-v41 #listingMinPriceInput,
+.listing-template-v41 #listingMaxPriceInput {
+    position: relative;
+    z-index: 25;
+    pointer-events: auto;
 }
 
 .listing-template-v41 .listing-badges-under {

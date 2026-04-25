@@ -267,6 +267,10 @@
     justify-content: center;
     padding: 24px;
     overflow: hidden;
+    /* Masaüstü: sağ/sol kaçma olmasın */
+    max-width: 100%;
+    overscroll-behavior: none;
+    touch-action: none;
 }
 
 /* Slayt ekrani: mobil tarayici bar degisimlerinde kayma olmasin */
@@ -277,7 +281,7 @@
 
 .gallery-lightbox {
     height: 100dvh;
-    width: 100vw;
+    width: 100%;
     padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
 
@@ -313,7 +317,7 @@
 
 .gallery-lightbox-figure {
     margin: 0;
-    width: min(1120px, calc(100vw - 32px));
+    width: min(1120px, calc(100% - 32px));
     height: min(calc(100dvh - 64px), 860px);
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto auto;
@@ -328,6 +332,8 @@
     -webkit-backdrop-filter: blur(26px) saturate(160%);
     position: relative;
     overflow: hidden;
+    /* Yatay kayma olmasın */
+    max-width: 100%;
 }
 
 .gallery-lightbox-figure::before,
@@ -3121,9 +3127,98 @@
         overflow: hidden;
     }
 
+    /* Oda kartı: 3 özellik yan yana (mobil) */
+    .room-feature-preview {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .room-feature-chip {
+        width: 100%;
+        justify-content: center;
+        padding: 8px 10px;
+        font-size: 0.78rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* "Diğer özellikler" butonu: çerçeve/çentik bozulmasını düzelt */
+    .room-feature-more-inline {
+        margin-top: 10px;
+    }
+
+    .room-feature-more-btn {
+        width: 100%;
+        min-height: 42px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+        color: #0f172a;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    .room-feature-more-btn i {
+        color: #1d4ed8;
+    }
+
+    .room-feature-panel {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .room-feature-panel-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
     .gallery-lightbox {
         grid-template-columns: 1fr;
         padding: 14px;
+    }
+
+    /* Mobil: son görselde lightbox kaymasını engelle (sabit yükseklik + sabit satırlar) */
+    .gallery-lightbox-figure {
+        width: 100%;
+        height: calc(100dvh - 28px);
+        max-height: none;
+        padding: 14px;
+        gap: 10px;
+        grid-template-rows: minmax(0, 1fr) 20px 86px;
+        border-radius: 22px;
+    }
+
+    .gallery-lightbox-figure figcaption {
+        min-height: 20px;
+        line-height: 20px;
+        font-size: 0.92rem;
+        justify-self: center;
+    }
+
+    .gallery-lightbox-thumbs {
+        height: 86px;
+        align-self: end;
+        overscroll-behavior: contain;
+        scroll-padding-inline: 18px;
+    }
+
+    .gallery-lightbox-thumb {
+        flex-basis: 100px;
+        height: 72px;
     }
 
     .gallery-lightbox-nav {
@@ -3552,6 +3647,22 @@ body.room-gallery-open {
     margin-top: 12px;
 }
 
+.room-feature-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.room-feature-row .room-feature-preview {
+    margin-top: 0;
+}
+
+.room-feature-row .room-feature-more-inline {
+    margin-top: 0;
+}
+
 .room-feature-chip {
     display: inline-flex;
     align-items: center;
@@ -3567,6 +3678,36 @@ body.room-gallery-open {
 
 .room-feature-more {
     margin-top: 10px;
+}
+
+.room-feature-more-btn {
+    min-height: 40px;
+    padding: 8px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.50);
+    background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+    color: #0f172a;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.room-feature-more-btn:focus-visible {
+    outline: 2px solid rgba(29, 78, 216, 0.65);
+    outline-offset: 3px;
+}
+
+.room-feature-panel {
+    margin-top: 10px;
+}
+
+.room-feature-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
 }
 
 .room-feature-more summary {
@@ -4516,12 +4657,46 @@ body.room-gallery-open {
 }
 
 @media (max-width: 900px) {
-    .gallery-filmstrip {
-        display: none;
+    /* Mobil: otel görselleri -> ana görsel altında tek sıra thumb (filmstrip) */
+    .gallery-mobile-strip {
+        display: none !important;
     }
 
     .gallery-filmstrip-wrap {
+        display: block;
+        width: min(var(--page-max-width), calc(100% - 32px));
+        margin: 8px auto 0;
+    }
+
+    .gallery-filmstrip {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 2px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .gallery-filmstrip::-webkit-scrollbar {
         display: none;
+    }
+
+    .gallery-filmstrip-thumb {
+        flex: 0 0 76px; /* ekranda ~4 thumb görünsün */
+        height: 56px;
+        border-radius: 14px;
+        scroll-snap-align: start;
+        opacity: 0.88;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .gallery-filmstrip-thumb.active {
+        opacity: 1;
+        border-color: rgba(29, 78, 216, 0.55);
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
     }
 
     .room-card-media,

@@ -579,35 +579,37 @@
                                     roomGalleryMap[room.RoomTypeId] = roomGallery;
                                     roomDetailsMap[room.RoomTypeId] = roomAllFeatures;
                                 }
-                                @if (roomTopFeatures.Count > 0)
-                                {
-                                    <div class="room-feature-preview">
-                                        @foreach (var feature in roomTopFeatures)
-                                        {
-                                            <span class="room-feature-chip"><i class="fas @feature.IconClass"></i> @feature.Name</span>
-                                        }
-                                    </div>
-                                }
-                                @if ((room.Features?.Count ?? 0) > 5)
-                                {
-                                    <div class="room-feature-more-inline" data-room-feature-wrap>
-                                        <button type="button"
-                                                class="room-feature-more-btn"
-                                                data-room-feature-toggle
-                                                aria-expanded="false">
-                                            Diğer özellikler
-                                            <i class="fas fa-angle-down" aria-hidden="true"></i>
-                                        </button>
-                                        <div class="room-feature-panel" data-room-feature-panel hidden>
-                                            <div class="room-feature-panel-grid">
-                                                @foreach (var feature in (room.Features ?? Enumerable.Empty<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>()))
-                                                {
-                                                    <span class="room-feature-chip room-feature-chip-full"><i class="fas @feature.IconClass"></i> @feature.Name</span>
-                                                }
+                                <div class="room-feature-row">
+                                    @if (roomTopFeatures.Count > 0)
+                                    {
+                                        <div class="room-feature-preview">
+                                            @foreach (var feature in roomTopFeatures)
+                                            {
+                                                <span class="room-feature-chip"><i class="fas @feature.IconClass"></i> @feature.Name</span>
+                                            }
+                                        </div>
+                                    }
+                                    @if ((room.Features?.Count ?? 0) > 5)
+                                    {
+                                        <div class="room-feature-more-inline" data-room-feature-wrap>
+                                            <button type="button"
+                                                    class="room-feature-more-btn"
+                                                    data-room-feature-toggle
+                                                    aria-expanded="false">
+                                                Diğer özellikler
+                                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                                            </button>
+                                            <div class="room-feature-panel" data-room-feature-panel hidden>
+                                                <div class="room-feature-panel-grid">
+                                                    @foreach (var feature in (room.Features ?? Enumerable.Empty<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>()))
+                                                    {
+                                                        <span class="room-feature-chip room-feature-chip-full"><i class="fas @feature.IconClass"></i> @feature.Name</span>
+                                                    }
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                }
+                                    }
+                                </div>
                                 <span class="cancellation-badge"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
                             </div>
                         </div>
@@ -1501,6 +1503,8 @@
             let activeRoomDetailName = 'Oda';
             let activeRoomDetailRoomId = '';
             let reservationSubmitConfirmed = false;
+            let lightboxScrollY = 0;
+            let lightboxPrevBodyStyles = null;
 
             // İlk yüklemede de seçili görselin blur arkaplanını set et
             if (mainImageWrap instanceof HTMLElement && mainImage instanceof HTMLImageElement && mainImage.src) {
@@ -1743,7 +1747,30 @@
                     lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
                 }
                 lightbox.hidden = false;
+                // Scroll kilidi + scrollbar zıplamasını engelle
+                lightboxScrollY = window.scrollY || 0;
+                const docEl = document.documentElement;
+                const sbw = Math.max(0, (window.innerWidth || 0) - (docEl?.clientWidth || 0));
+                lightboxPrevBodyStyles = {
+                    overflow: document.body.style.overflow || '',
+                    position: document.body.style.position || '',
+                    top: document.body.style.top || '',
+                    left: document.body.style.left || '',
+                    right: document.body.style.right || '',
+                    width: document.body.style.width || '',
+                    paddingRight: document.body.style.paddingRight || '',
+                    docOverflow: docEl?.style.overflow || ''
+                };
+                if (docEl) docEl.style.overflow = 'hidden';
                 document.body.style.overflow = 'hidden';
+                document.body.style.position = 'fixed';
+                document.body.style.top = (-lightboxScrollY) + 'px';
+                document.body.style.left = '0';
+                document.body.style.right = '0';
+                document.body.style.width = '100%';
+                if (sbw > 0) {
+                    document.body.style.paddingRight = sbw + 'px';
+                }
                 setHotelLightboxAmbientSources();
                 syncLightboxThumbs();
             }
@@ -1754,7 +1781,28 @@
                 }
 
                 lightbox.hidden = true;
-                document.body.style.overflow = '';
+                // Scroll kilidini geri al + eski scroll pozisyonuna dön
+                const docEl = document.documentElement;
+                if (lightboxPrevBodyStyles) {
+                    document.body.style.overflow = lightboxPrevBodyStyles.overflow;
+                    document.body.style.position = lightboxPrevBodyStyles.position;
+                    document.body.style.top = lightboxPrevBodyStyles.top;
+                    document.body.style.left = lightboxPrevBodyStyles.left;
+                    document.body.style.right = lightboxPrevBodyStyles.right;
+                    document.body.style.width = lightboxPrevBodyStyles.width;
+                    document.body.style.paddingRight = lightboxPrevBodyStyles.paddingRight;
+                    if (docEl) docEl.style.overflow = lightboxPrevBodyStyles.docOverflow;
+                } else {
+                    document.body.style.overflow = '';
+                    document.body.style.position = '';
+                    document.body.style.top = '';
+                    document.body.style.left = '';
+                    document.body.style.right = '';
+                    document.body.style.width = '';
+                    document.body.style.paddingRight = '';
+                    if (docEl) docEl.style.overflow = '';
+                }
+                window.scrollTo(0, lightboxScrollY || 0);
                 if (lightboxThumbs) {
                     lightboxThumbs.innerHTML = '';
                 }
@@ -1858,11 +1906,7 @@
             lightboxClose?.addEventListener('click', closeLightbox);
             lightboxPrev?.addEventListener('click', function () { moveLightbox(-1); });
             lightboxNext?.addEventListener('click', function () { moveLightbox(1); });
-            lightbox?.addEventListener('click', function (event) {
-                if (event.target === lightbox) {
-                    closeLightbox();
-                }
-            });
+            // Not: Lightbox arkaplanina tıklayınca kapanmasın (sadece X / ESC).
 
             function ensureSelectButtonOriginalText(button) {
                 if (!button) return;

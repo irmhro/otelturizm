@@ -2,10 +2,84 @@
 
 /* ===== OTEL DETAY MOBIL OVERRIDE (max-width: 900px) ===== */
 
+/* Not: Bu dosya sadece mobilde yüklenir ve `otel-detay.css` üstüne override eder. */
+
 /* Mobil galeri: tek kart 3'lü */
 .detail-mobile-gallery {
     width: min(var(--page-max-width), calc(100% - 24px));
     margin: 0 auto;
+}
+
+/* ===== PDF'e göre: Otel galeri thumb şeridi (tek sıra) ===== */
+.gallery-mobile-strip {
+    display: none !important;
+}
+
+.gallery-filmstrip-wrap {
+    display: block !important;
+    width: min(var(--page-max-width), calc(100% - 32px));
+    margin: 8px auto 0;
+}
+
+.gallery-filmstrip {
+    display: flex !important;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.gallery-filmstrip::-webkit-scrollbar {
+    display: none;
+}
+
+.gallery-filmstrip-thumb {
+    flex: 0 0 76px; /* ekranda ~4 thumb */
+    height: 56px;
+    border-radius: 14px;
+    scroll-snap-align: start;
+    opacity: 0.88;
+    transform: none;
+    box-shadow: none;
+}
+
+.gallery-filmstrip-thumb.active {
+    opacity: 1;
+    border-color: rgba(29, 78, 216, 0.55);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+}
+
+/* Lightbox: mobilde son görselde kaymayı engelle */
+.gallery-lightbox-figure {
+    width: 100%;
+    height: calc(100dvh - 28px);
+    max-height: none;
+    padding: 14px;
+    gap: 10px;
+    grid-template-rows: minmax(0, 1fr) 20px 86px;
+    border-radius: 22px;
+}
+
+.gallery-lightbox-figure figcaption {
+    min-height: 20px;
+    line-height: 20px;
+    font-size: 0.92rem;
+    justify-self: center;
+}
+
+.gallery-lightbox-thumbs {
+    height: 86px;
+    align-self: end;
+    overscroll-behavior: contain;
+    scroll-padding-inline: 18px;
+}
+
+.gallery-lightbox-thumb {
+    flex-basis: 100px;
+    height: 72px;
 }
 
 .detail-mobile-gallery-card {
