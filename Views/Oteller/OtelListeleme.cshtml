@@ -1725,6 +1725,10 @@
                 return window.innerWidth <= 900;
             }
 
+            function isDesktopViewport() {
+                return !isMobileViewport();
+            }
+
             function formatTry(amount) {
                 const n = Number(amount || 0);
                 if (!Number.isFinite(n)) return '₺0';
@@ -1915,6 +1919,7 @@
                 ensureDistanceControlsEnabled();
                 syncDistanceUi();
                 setLocationCoords(userLocation.lat, userLocation.lon, 0);
+                setLocationStatus('Konum doğrulandı.');
                 setLocationInsight('Haritada seçtiğin konuma göre yakın oteller listelendi.');
                 applyFilters();
                 sortCards();
@@ -2512,7 +2517,7 @@
                 });
                 queueLocationLog(true);
 
-                if (!hasPromptedManualLocation && window.innerWidth > 900) {
+                if (!hasPromptedManualLocation && isDesktopViewport()) {
                     hasPromptedManualLocation = true;
                     window.setTimeout(function () {
                         openLocationMapModal({ pickMode: true });
@@ -2554,14 +2559,29 @@
 
                 setLocationPermissionState('loading');
                 setLocationStatus('Konum alınıyor...');
-                const primaryOptions = { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 };
-                const fallbackOptions = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
+                const mobile = isMobileViewport();
+                const primaryOptions = mobile
+                    ? { enableHighAccuracy: true, timeout: 25000, maximumAge: 0 }
+                    : { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 };
+                const fallbackOptions = mobile
+                    ? { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
+                    : { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
+
+                function handleLocationSuccess(pos) {
+                    const accuracy = Number(pos?.coords?.accuracy || 0);
+                    if (isDesktopViewport() && Number.isFinite(accuracy) && accuracy > 1500) {
+                        applyApproximateLocationFallback('Konum yaklaşık bulundu. Haritadan noktanı seçerek doğrulayabilirsin.');
+                        return;
+                    }
+
+                    applyLocationSuccess(pos);
+                }
 
                 navigator.geolocation.getCurrentPosition(
-                    applyLocationSuccess,
+                    handleLocationSuccess,
                     function (error) {
                         if (error && error.code === 3) {
-                            navigator.geolocation.getCurrentPosition(applyLocationSuccess, applyLocationError, fallbackOptions);
+                            navigator.geolocation.getCurrentPosition(handleLocationSuccess, applyLocationError, fallbackOptions);
                             return;
                         }
                         applyLocationError(error);
@@ -2681,6 +2701,9 @@
                 }
                 syncDistanceUi();
                 if (userLocation) {
+                    applyFilters();
+                    sortCards();
+                    syncMobileFilterCount();
                     queueLocationLog(false);
                 }
             });
@@ -2906,6 +2929,7 @@
                 sortCards();
                 syncPriceSteps();
                 syncPriceSliderVisual();
+                syncDistanceUi();
                 syncMobileFilterCount();
             });
 
