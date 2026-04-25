@@ -1726,6 +1726,10 @@
                 const nextIndex = (activeGalleryIndex + 1) % galleryImages.length;
                 lightboxFigure.style.setProperty('--hotel-gallery-prev', 'url(\"' + (galleryImages[prevIndex] || '') + '\")');
                 lightboxFigure.style.setProperty('--hotel-gallery-next', 'url(\"' + (galleryImages[nextIndex] || '') + '\")');
+
+                if (lightbox instanceof HTMLElement) {
+                    lightbox.style.setProperty('--hotel-gallery-active', 'url(\"' + (galleryImages[activeGalleryIndex] || '') + '\")');
+                }
             }
 
             function openLightbox(index) {
@@ -1757,6 +1761,9 @@
                 if (lightboxFigure instanceof HTMLElement) {
                     lightboxFigure.style.removeProperty('--hotel-gallery-prev');
                     lightboxFigure.style.removeProperty('--hotel-gallery-next');
+                }
+                if (lightbox instanceof HTMLElement) {
+                    lightbox.style.removeProperty('--hotel-gallery-active');
                 }
             }
 

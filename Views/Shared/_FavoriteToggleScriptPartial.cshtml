@@ -48,7 +48,7 @@
             return /giri[sş]/i.test(t) && /favori/i.test(t);
         }
 
-        const defaultLoginBody = 'Kullanıcı hesabınızla giriş yaptığınızda otelleri favorilere ekleyebilir, Favorilerim sayfasından takip edebilirsiniz. İndirim olduğunda haberdar olmak için giriş sonrası ilgili otelde \"İndirime düşünce bildir\" seçeneğini açabilirsiniz.';
+        const defaultLoginBody = 'Favori eklemek için giriş yapın.';
 
         function ensureLoginPrompt() {
             let backdrop = document.getElementById('favoriteLoginPrompt');
@@ -68,76 +68,17 @@
                     <div class="favorite-login-prompt__icon"><i class="fas fa-heart"></i></div>
                     <strong id="favoritePromptTitle">Favorilere eklemek için giriş yapın</strong>
                     <p id="favoritePromptMessage">${defaultLoginBody}</p>
-                    <div class="favorite-login-prompt__hint">
-                        <span class="favorite-login-prompt__hint-label">Neden favoriye eklemeliyim?</span>
-                        <button type="button" class="favorite-login-prompt__hint-info" aria-expanded="false" aria-controls="favoriteHintSheetCard" id="favoriteHintOpenBtn">
-                            <i class="fas fa-circle-info"></i>
-                        </button>
-                    </div>
                     <div class="favorite-login-prompt__actions">
                         <a class="favorite-login-prompt__primary" id="favoritePromptLoginButton" href="/kullanici-giris">Giriş Yap</a>
                         <a class="favorite-login-prompt__secondary" id="favoritePromptRegisterButton" href="/kullanici-giris?sekme=kayit">Kayıt Ol</a>
-                    </div>
-                </div>
-                <div class="favorite-hint-sheet" id="favoriteHintSheet" hidden>
-                    <div class="favorite-hint-sheet__backdrop" data-hint-close></div>
-                    <div class="favorite-hint-sheet__card" id="favoriteHintSheetCard" role="dialog" aria-modal="true" aria-labelledby="favoriteHintTitle">
-                        <strong id="favoriteHintTitle" class="favorite-hint-sheet__title">Favorilerin faydası</strong>
-                        <p class="favorite-hint-sheet__text">Favoriye eklediğiniz otellerde fiyat indirimi olursa sizi haberdar edebiliriz. Bu ayarı giriş yaptıktan sonra Favorilerim sayfasındaki \"İndirime düşünce bildir\" butonundan açabilirsiniz.</p>
-                        <button type="button" class="favorite-hint-sheet__ok" data-hint-close>Tamam</button>
                     </div>
                 </div>
             `;
 
             document.body.appendChild(backdrop);
 
-            const hintSheet = backdrop.querySelector('#favoriteHintSheet');
-            const hintOpen = backdrop.querySelector('#favoriteHintOpenBtn');
-
-            function closeHintSheet() {
-                if (!hintSheet) {
-                    return;
-                }
-                hintSheet.hidden = true;
-                hintSheet.classList.remove('is-visible');
-                if (hintOpen) {
-                    hintOpen.setAttribute('aria-expanded', 'false');
-                }
-            }
-
-            function openHintSheet() {
-                if (!hintSheet) {
-                    return;
-                }
-                hintSheet.hidden = false;
-                hintSheet.classList.add('is-visible');
-                if (hintOpen) {
-                    hintOpen.setAttribute('aria-expanded', 'true');
-                }
-                const okBtn = hintSheet.querySelector('.favorite-hint-sheet__ok');
-                if (okBtn) {
-                    okBtn.focus();
-                }
-            }
-
-            if (hintOpen) {
-                hintOpen.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openHintSheet();
-                });
-            }
-
-            hintSheet.querySelectorAll('[data-hint-close]').forEach(function (el) {
-                el.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    closeHintSheet();
-                });
-            });
-
             backdrop.querySelectorAll('[data-favorite-modal-close]').forEach(function (element) {
                 element.addEventListener('click', function () {
-                    closeHintSheet();
                     backdrop.classList.remove('is-visible');
                     document.body.classList.remove('favorite-modal-open');
                 });
@@ -145,11 +86,6 @@
 
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
-                    if (hintSheet && hintSheet.classList.contains('is-visible')) {
-                        closeHintSheet();
-                        event.stopPropagation();
-                        return;
-                    }
                     backdrop.classList.remove('is-visible');
                     document.body.classList.remove('favorite-modal-open');
                 }

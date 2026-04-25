@@ -2,3 +2,51 @@
 
 /* Mobile overrides live here.
    Loaded only on (max-width: 900px) via layout. */
+
+/* Mobil menü (drawer) buton yüksekliklerini eşitle */
+.mobile-menu-drawer {
+  --drawer-cta-height: 52px;
+  --drawer-tile-height: 46px; /* Kurumsal/Firma yüksekliği hedefi */
+}
+
+.mobile-menu-drawer .drawer-action,
+.mobile-menu-drawer .feature-tile,
+.mobile-menu-drawer .drawer-link {
+  min-height: var(--drawer-cta-height);
+  height: var(--drawer-cta-height);
+  display: flex;
+  align-items: center;
+}
+
+/* Üst aksiyon butonları (Giriş Yap / Kayıt Ol) */
+.mobile-menu-drawer .drawer-auth-row .drawer-action {
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: 16px;
+}
+
+/* Orta kart butonları (Oteller / Kampanyalar / ...) */
+.mobile-menu-drawer .feature-tile {
+  min-height: var(--drawer-tile-height);
+  height: var(--drawer-tile-height);
+  padding: 0 12px;
+  border-radius: 16px;
+}
+
+/* Alt row (Kurumsal / Firma) ile aynı hizaya getir */
+.mobile-menu-drawer .drawer-corp-row .drawer-action {
+  min-height: var(--drawer-tile-height);
+  height: var(--drawer-tile-height);
+  justify-content: center;
+  padding: 0 12px;
+  border-radius: 16px;
+}
+
+/* İkonlar vertical-center ve sabit genişlikte */
+.mobile-menu-drawer .drawer-action i,
+.mobile-menu-drawer .feature-tile i,
+.mobile-menu-drawer .drawer-link i {
+  width: 22px;
+  text-align: center;
+  flex: 0 0 22px;
+}

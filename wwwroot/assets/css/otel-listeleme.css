@@ -1324,6 +1324,27 @@ body.listing-modal-open {
     gap: 8px;
 }
 
+/* Desktop: "Vergiler dahil" fiyat grubunun yanında kalsın */
+@media (min-width: 901px) {
+    .listing-template-v41 .price-section {
+        justify-content: flex-start;
+    }
+
+    .listing-template-v41 .btn-detail {
+        margin-left: auto;
+    }
+
+    .listing-template-v41 .price-tax-note {
+        order: 2;
+        margin-left: 10px;
+    }
+
+    /* Kampanya çipi varsa, vergiden sonra gelsin */
+    .listing-template-v41 .campaign-info-chip {
+        order: 20;
+    }
+}
+
 .listing-template-v41 .listing-discount-rate {
     min-height: 26px;
     padding: 0 10px;

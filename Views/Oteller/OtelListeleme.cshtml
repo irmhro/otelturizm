@@ -807,23 +807,32 @@
 <section class="hotel-listing-shell listing-template-v41">
     <div class="mobile-filter-bar" id="mobileFilterBar">
         <div class="mobile-filter-bar-inner">
-            <button type="button" class="mobile-filter-bar-btn" id="mobileFilterBarBtn" aria-haspopup="dialog" aria-controls="listingFilterModal">
-                <span class="mobile-filter-bar-left">
-                    <span class="mobile-filter-bar-icon" aria-hidden="true"><i class="fas fa-sliders"></i></span>
-                    <span class="mobile-filter-bar-meta">
-                        <span>Filtreler</span>
-                        <small>Aramayı özelleştir</small>
-                    </span>
-                </span>
-                <span class="mobile-filter-bar-count" id="mobileFilterCount" hidden>0</span>
-            </button>
+            <nav class="mobile-filter-dock" aria-label="Hızlı filtreler">
+                <button type="button" class="dock-btn" data-mobile-filter-target="location" aria-haspopup="dialog" aria-controls="listingFilterModal">
+                    <span class="dock-ico" aria-hidden="true"><i class="fas fa-location-dot"></i></span>
+                    <span class="dock-txt">Konum</span>
+                </button>
+                <button type="button" class="dock-btn" data-mobile-filter-target="search" aria-haspopup="dialog" aria-controls="listingFilterModal">
+                    <span class="dock-ico" aria-hidden="true"><i class="fas fa-magnifying-glass"></i></span>
+                    <span class="dock-txt">Ara</span>
+                </button>
+                <button type="button" class="dock-btn" data-mobile-filter-target="price" aria-haspopup="dialog" aria-controls="listingFilterModal">
+                    <span class="dock-ico" aria-hidden="true"><i class="fas fa-tag"></i></span>
+                    <span class="dock-txt">Fiyat</span>
+                    <span class="dock-badge" id="mobileFilterCount" hidden>0</span>
+                </button>
+                <button type="button" class="dock-btn" data-mobile-filter-target="rating" aria-haspopup="dialog" aria-controls="listingFilterModal">
+                    <span class="dock-ico" aria-hidden="true"><i class="fas fa-star"></i></span>
+                    <span class="dock-txt">Yorum</span>
+                </button>
+            </nav>
         </div>
     </div>
     <div class="listing-container">
         <div class="results-container">
             <aside class="filter-sidebar">
                 <div class="filter-card" id="listingFilterCard">
-                    <details class="filter-accordion" open>
+                    <details class="filter-accordion" id="filterSearch" open>
                         <summary class="filter-accordion-summary">
                             <span>Gelişmiş Arama</span>
                             <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -841,7 +850,7 @@
                         </div>
                     </details>
 
-                    <details class="filter-accordion" open>
+                    <details class="filter-accordion" id="filterPrice" open>
                         <summary class="filter-accordion-summary">
                             <span>Fiyat Aralığı</span>
                             <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -875,7 +884,7 @@
                         </div>
                     </details>
 
-                    <details class="filter-accordion" open>
+                    <details class="filter-accordion" id="filterLocation" open>
                         <summary class="filter-accordion-summary">
                             <span>Konuma Göre Ara</span>
                             <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -954,7 +963,7 @@
                           </div>
                       </details>
 
-                    <details class="filter-accordion">
+                    <details class="filter-accordion" id="filterRating">
                         <summary class="filter-accordion-summary">
                             <span>Misafir Puanı</span>
                             <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -1056,13 +1065,31 @@
                                         ? galleryImagesSafe
                                         : new List<string> { hotel.ImageUrl };
                                     var mainCardImage = images.FirstOrDefault();
+                                    var mosaicImages = images.Where(x => !string.IsNullOrWhiteSpace(x)).Take(4).ToList();
+                                    if (mosaicImages.Count == 0 && !string.IsNullOrWhiteSpace(mainCardImage))
+                                    {
+                                        mosaicImages.Add(mainCardImage);
+                                    }
+                                    while (mosaicImages.Count < 4 && mosaicImages.Count > 0)
+                                    {
+                                        mosaicImages.Add(mosaicImages[0]);
+                                    }
                                 }
                                 <a asp-controller="Oteller"
                                    asp-action="OtelDetay"
                                    asp-route-slug="@hotel.Slug"
                                    class="card-image-link"
                                    aria-label="@hotel.Name detay sayfasına git">
-                                    <img src="@(string.IsNullOrWhiteSpace(mainCardImage) ? "/assets/img/placeholder-hotel.jpg" : mainCardImage)" alt="@hotel.Name">
+                                    <img class="card-main-image" src="@(string.IsNullOrWhiteSpace(mainCardImage) ? "/assets/img/placeholder-hotel.jpg" : mainCardImage)" alt="@hotel.Name">
+                                    @if (mosaicImages.Count > 1)
+                                    {
+                                        <div class="card-image-mosaic" aria-hidden="true">
+                                            @for (var mi = 0; mi < mosaicImages.Count; mi++)
+                                            {
+                                                <img src="@mosaicImages[mi]" alt="" loading="lazy" />
+                                            }
+                                        </div>
+                                    }
                                 </a>
                                 @if (hotel.StarCount.HasValue && hotel.StarCount.Value > 0)
                                 {
@@ -2147,7 +2174,7 @@
             });
 
             const filterCard = document.getElementById('listingFilterCard');
-            const barBtn = document.getElementById('mobileFilterBarBtn');
+            const dockButtons = Array.from(document.querySelectorAll('[data-mobile-filter-target]'));
             const modal = document.getElementById('listingFilterModal');
             const modalOverlay = document.getElementById('listingFilterModalOverlay');
             const modalClose = document.getElementById('listingFilterModalClose');
@@ -2156,6 +2183,7 @@
             const modalClear = document.getElementById('listingFilterClearBtn');
             const desktopSidebar = document.querySelector('.filter-sidebar');
             const filterCount = document.getElementById('mobileFilterCount');
+            const modalTitle = modal?.querySelector('.modal-header h3');
 
             function openMobileFilters() {
                 if (!modal || !modalHost || !filterCard) return;
@@ -2165,6 +2193,46 @@
                 if (filterCard.parentElement !== modalHost) {
                     modalHost.appendChild(filterCard);
                 }
+            }
+
+            function openMobileFilterSection(target) {
+                const idMap = {
+                    location: 'filterLocation',
+                    search: 'filterSearch',
+                    price: 'filterPrice',
+                    rating: 'filterRating'
+                };
+                const titleMap = {
+                    location: 'Konuma Göre Ara',
+                    search: 'Otel adı / il / ilçe / mahalle',
+                    price: 'Fiyat Aralığı',
+                    rating: 'Misafir Puanı'
+                };
+
+                openMobileFilters();
+
+                const sectionId = idMap[target] || '';
+                const section = sectionId ? document.getElementById(sectionId) : null;
+                if (modalTitle) {
+                    modalTitle.textContent = titleMap[target] || 'Filtreler';
+                }
+
+                // Only keep target open for a focused popup experience.
+                if (filterCard) {
+                    filterCard.querySelectorAll('details.filter-accordion').forEach(function (d) {
+                        if (d && d.id && d.id === sectionId) {
+                            d.setAttribute('open', '');
+                        } else {
+                            d.removeAttribute('open');
+                        }
+                    });
+                }
+
+                window.setTimeout(function () {
+                    if (section) {
+                        section.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                    }
+                }, 60);
             }
 
             function closeMobileFilters() {
@@ -2177,7 +2245,12 @@
                 }
             }
 
-            barBtn?.addEventListener('click', openMobileFilters);
+            dockButtons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const target = btn.getAttribute('data-mobile-filter-target') || '';
+                    openMobileFilterSection(target);
+                });
+            });
             modalOverlay?.addEventListener('click', closeMobileFilters);
             modalClose?.addEventListener('click', closeMobileFilters);
             modalApply?.addEventListener('click', closeMobileFilters);

@@ -768,7 +768,7 @@ public class HotelService : IHotelService
             CampaignSlug = normalizedCampaignSlug,
             ActiveTag = normalizedTag,
             CurrentPage = Math.Max(page, 1),
-            PageSize = 15
+            PageSize = 8
         };
 
         var connectionString = GetConnectionString();

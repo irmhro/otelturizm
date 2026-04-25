@@ -1,4 +1,177 @@
 @media (max-width: 900px) {
+    /* Mobile bottom dock (WOW bar) */
+    .mobile-filter-bar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        z-index: 140;
+        display: block !important;
+        margin: 0;
+        padding: 4px 0 calc(4px + env(safe-area-inset-bottom));
+        border-top: 1px solid rgba(226, 232, 240, 1);
+        background: rgba(255,255,255,0.82);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        box-shadow: 0 -14px 40px rgba(2, 6, 23, 0.10);
+    }
+
+    .mobile-filter-bar-inner {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    .mobile-filter-dock {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0;
+        width: 100%;
+        padding: 4px 8px;
+        border-radius: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .dock-btn {
+        position: relative;
+        border: 0;
+        background: transparent;
+        display: grid;
+        justify-items: center;
+        gap: 2px;
+        padding: 6px 4px;
+        border-radius: 12px;
+        cursor: pointer;
+        color: #0f172a;
+        transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .dock-btn:active {
+        transform: translateY(1px) scale(0.99);
+    }
+
+    .dock-btn:hover {
+        background: rgba(0, 59, 149, 0.05);
+    }
+
+    .dock-ico {
+        width: 30px;
+        height: 30px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: rgba(0, 59, 149, 0.06);
+        border: 1px solid rgba(0, 59, 149, 0.10);
+        color: rgba(0, 59, 149, 0.95);
+        box-shadow: 0 14px 26px rgba(0, 59, 149, 0.10);
+    }
+
+    .dock-btn[data-mobile-filter-target="location"] .dock-ico {
+        background: rgba(16,185,129,0.10);
+        border-color: rgba(16,185,129,0.18);
+        color: #059669;
+        box-shadow: 0 14px 26px rgba(16,185,129,0.14);
+    }
+
+    .dock-btn[data-mobile-filter-target="rating"] .dock-ico {
+        background: rgba(251,191,36,0.12);
+        border-color: rgba(251,191,36,0.22);
+        color: #b45309;
+        box-shadow: 0 14px 26px rgba(251,191,36,0.16);
+    }
+
+    .dock-txt {
+        font-size: 10px;
+        font-weight: 900;
+        color: rgba(15, 23, 42, 0.82);
+        line-height: 1;
+    }
+
+    .dock-badge {
+        position: absolute;
+        top: 6px;
+        right: 10px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 56, 92, 0.14);
+        color: #ff385c;
+        border: 1px solid rgba(255, 56, 92, 0.22);
+        font-weight: 900;
+        font-size: 11px;
+    }
+
+    /* Keep page content above dock */
+    .hotel-listing-shell {
+        padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    }
+
+    /* Mobil filtre popup'ı: daha minimal başlık + butonlar */
+    .filter-modal .modal-content {
+        padding: 12px;
+        border-radius: 22px 22px 0 0;
+        max-height: 90vh;
+    }
+
+    .filter-modal .modal-header {
+        margin: -12px -12px 10px;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(226, 232, 240, 1);
+    }
+
+    .filter-modal .modal-header h3 {
+        font-size: 16px;
+        font-weight: 900;
+    }
+
+    .filter-modal .close-modal {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        box-shadow: 0 10px 20px rgba(2,32,71,0.10);
+    }
+
+    .filter-modal .modal-body-scroll {
+        max-height: calc(90vh - 150px);
+        padding: 4px 2px 8px;
+    }
+
+    .filter-modal .modal-footer {
+        padding-top: 10px;
+    }
+
+    .filter-modal .apply-btn {
+        padding: 12px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 900;
+        margin-top: 8px;
+    }
+
+    .filter-modal .apply-btn.secondary {
+        padding: 12px;
+    }
+
+    .filter-modal .filter-accordion-summary {
+        padding: 8px 0;
+        font-size: 14px;
+        font-weight: 850;
+    }
+
+    .filter-modal .filter-help {
+        margin-top: 6px;
+        font-size: 12px;
+    }
+
     .listing-hero-panel,
     .listing-toolbar-bar,
     .listing-hero-stats {
@@ -90,5 +263,114 @@
     .hotel-tag-pill {
         min-height: 30px;
         font-size: 0.74rem;
+    }
+
+    /* Otel kartını sadeleştir: etiket/özellik butonlarını gizle */
+    .listing-badges-mobile,
+    .listing-badges-inline,
+    .listing-badges-under,
+    .features,
+    .feature-tag,
+    .campaign-info-chip,
+    .listing-discount-rate,
+    .discount-info-btn {
+        display: none !important;
+    }
+
+    /* Görseli 4'lü mozaik (mobil) */
+    .hotel-card .card-image-link { position: relative; }
+    .hotel-card .card-main-image { display: none; }
+    .hotel-card .card-image-mosaic {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+        gap: 2px;
+        background: rgba(226, 232, 240, 1);
+        overflow: hidden;
+        border-radius: 0;
+    }
+    .hotel-card .card-image-mosaic img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        background: #e2e8f0;
+    }
+
+    /* Otel kartı fiyat satırı: mobilde her şey solda */
+    .hotel-card .price-section {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "info btn"
+            "tax  btn";
+        align-items: end;
+        column-gap: 12px;
+        row-gap: 2px;
+    }
+
+    .hotel-card .price-section .price-info {
+        grid-area: info;
+        width: 100%;
+        display: flex;
+        align-items: baseline;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+
+    .hotel-card .price-section .price-tax-note {
+        grid-area: tax;
+        margin-left: 0;
+        white-space: nowrap;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--text-light);
+    }
+
+    .hotel-card .price-section .btn-detail {
+        grid-area: btn;
+        margin-left: 0;
+        align-self: center;
+        padding: 10px 16px;
+        font-weight: 900;
+        border-radius: 999px;
+    }
+
+    .hotel-card .current-price {
+        font-size: 24px;
+        font-weight: 950;
+        letter-spacing: -0.01em;
+    }
+    .hotel-card .old-price { font-size: 13px; }
+
+    /* Yıldız rozeti: görselin sol üstünde, mobilde belirgin */
+    .hotel-card .card-image {
+        position: relative;
+    }
+
+    .hotel-card .card-star-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 3;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(2, 6, 23, 0.62);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: #fff;
+        box-shadow: 0 14px 28px rgba(2, 6, 23, 0.24);
+        pointer-events: none;
+    }
+
+    .hotel-card .card-star-badge i {
+        font-size: 12px;
+        color: #fbbf24;
     }
 }
