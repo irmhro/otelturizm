@@ -8,7 +8,17 @@
     @foreach (var metric in Model.Metrics)
     {
         <div class="col-lg-3 col-md-6 col-12">
-            <div class="small-box bg-info">
+            @{
+                var tone = string.IsNullOrWhiteSpace(metric.ToneClass) ? "info" : metric.ToneClass;
+                var toneClass = tone switch
+                {
+                    "success" => "bg-success",
+                    "warning" => "bg-warning",
+                    "danger" => "bg-danger",
+                    _ => "bg-info"
+                };
+            }
+            <div class="small-box @toneClass">
                 <div class="inner">
                     <h3>@metric.Value</h3>
                     <p>@metric.Label</p>
@@ -104,6 +114,62 @@
                         }
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Otel KPI (Ciro / Komisyon / İptal / Yorum)</h3>
+                <div class="card-tools">
+                    <span class="badge badge-light">En yüksek ciroya göre</span>
+                </div>
+            </div>
+            <div class="card-body table-responsive p-0">
+                @if (Model.HotelKpis.Count == 0)
+                {
+                    <div class="p-3 text-muted">Henüz KPI kaydı yok.</div>
+                }
+                else
+                {
+                    <table class="table table-hover text-nowrap">
+                        <thead>
+                        <tr>
+                            <th>Otel</th>
+                            <th>Konum</th>
+                            <th>Durum</th>
+                            <th>Rez.</th>
+                            <th>İptal</th>
+                            <th>İptal %</th>
+                            <th>Ciro</th>
+                            <th>Komisyon</th>
+                            <th>Yorum</th>
+                            <th>Puan</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var row in Model.HotelKpis)
+                        {
+                            var cancelTone = row.CancelRatePercent >= 20 ? "badge-danger" : row.CancelRatePercent >= 10 ? "badge-warning" : "badge-success";
+                            <tr>
+                                <td><strong>@row.HotelName</strong><div><a href="/admin/otel-detay/@row.HotelId">Detay</a></div></td>
+                                <td>@row.CityLabel</td>
+                                <td><span class="badge badge-info">@row.PublishStatus</span></td>
+                                <td>@row.ReservationCount</td>
+                                <td>@row.CancelledCount</td>
+                                <td><span class="badge @cancelTone">@row.CancelRatePercent.ToString("0.0")%</span></td>
+                                <td><strong>@row.GrossRevenue.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR")) TL</strong></td>
+                                <td>@row.CommissionAmount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR")) TL</td>
+                                <td>@row.ReviewCount</td>
+                                <td>@row.AverageScore.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                }
             </div>
         </div>
     </div>

@@ -1,0 +1,8 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminSectionPageViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+@await Html.PartialAsync("~/Views/Paneller/Admin/_AdminSectionPage.cshtml", Model)
+

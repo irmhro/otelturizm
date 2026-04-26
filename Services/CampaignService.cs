@@ -21,7 +21,7 @@ public class CampaignService : ICampaignService
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
     }
 
-    public async Task<CampaignListingPageViewModel> GetCampaignListingPageAsync(CancellationToken cancellationToken = default)
+    public async Task<CampaignListingPageViewModel> GetCampaignListingPageAsync(string? preset = null, CancellationToken cancellationToken = default)
     {
         var model = new CampaignListingPageViewModel();
 
@@ -56,9 +56,17 @@ public class CampaignService : ICampaignService
             WHERE k.aktif_mi = 1
               AND k.gorunurluk_durumu = 'Yayında'
               AND SYSUTCDATETIME() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
+              AND (
+                    @preset = ''
+                    OR k.kampanya_etiketi LIKE '%' + @preset + '%'
+                    OR k.promo_badge LIKE '%' + @preset + '%'
+                    OR k.kampanya_adi LIKE '%' + @preset + '%'
+                    OR k.kampanya_kodu LIKE '%' + @preset + '%'
+                  )
             ORDER BY k.one_cikan_kampanya DESC, k.aktif_sayfa_vitrini DESC, k.siralama ASC, k.id ASC;";
 
         await using var command = CreateCommand(connection, sql);
+        AddParameter(command, "@preset", (preset ?? string.Empty).Trim());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -90,7 +98,14 @@ public class CampaignService : ICampaignService
         return model;
     }
 
-    public async Task<CampaignDetailPageViewModel?> GetCampaignDetailPageAsync(string slug, CancellationToken cancellationToken = default)
+    public async Task<CampaignDetailPageViewModel?> GetCampaignDetailPageAsync(
+        string slug,
+        string? q = null,
+        string? city = null,
+        string? district = null,
+        decimal? minPrice = null,
+        decimal? maxPrice = null,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(slug))
         {
@@ -285,6 +300,49 @@ public class CampaignService : ICampaignService
                     Tags = hotelTags
                 });
             }
+        }
+
+        var query = (q ?? string.Empty).Trim();
+        var cityFilter = (city ?? string.Empty).Trim();
+        var districtFilter = (district ?? string.Empty).Trim();
+        if (!string.IsNullOrWhiteSpace(query) || !string.IsNullOrWhiteSpace(cityFilter) || !string.IsNullOrWhiteSpace(districtFilter) || minPrice.HasValue || maxPrice.HasValue)
+        {
+            var normalizedQuery = query.ToLowerInvariant();
+            model.Hotels = model.Hotels
+                .Where(h =>
+                {
+                    if (!string.IsNullOrWhiteSpace(normalizedQuery))
+                    {
+                        var hay = $"{h.Name} {h.City} {h.District} {h.HotelCode}".ToLowerInvariant();
+                        if (!hay.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return false;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(cityFilter) && !string.Equals(h.City ?? string.Empty, cityFilter, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(districtFilter) && !string.Equals(h.District ?? string.Empty, districtFilter, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+
+                    var price = h.StartingPrice;
+                    if (minPrice.HasValue && price.HasValue && price.Value < minPrice.Value)
+                    {
+                        return false;
+                    }
+                    if (maxPrice.HasValue && price.HasValue && price.Value > maxPrice.Value)
+                    {
+                        return false;
+                    }
+
+                    return true;
+                })
+                .ToList();
         }
 
         model.HotelCount = model.Hotels.Count;

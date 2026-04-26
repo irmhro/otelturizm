@@ -16,12 +16,12 @@
         <p>Oda seçin, ayı değiştirin ve seçili tarih aralığında birden fazla oda tipi için tek seferde güncelleme yapın.</p>
     </div>
     <div class="partner-pricing-month-nav">
-        <a class="partner-secondary-btn" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.PreviousMonthKey">
+        <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.PreviousMonthKey">
             <i class="fas fa-chevron-left"></i>
             Önceki ay
         </a>
-        <div class="partner-pricing-month-pill">@Model.MonthLabel</div>
-        <a class="partner-secondary-btn" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.NextMonthKey">
+        <div class="partner-pricing-month-pill ot-badge ot-badge--info">@Model.MonthLabel</div>
+        <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.NextMonthKey">
             Sonraki ay
             <i class="fas fa-chevron-right"></i>
         </a>
@@ -54,7 +54,7 @@
     }
 </section>
 
-<section class="partner-section-card partner-pricing-room-filter">
+<section class="partner-section-card partner-pricing-room-filter ot-card">
     <div class="partner-section-head">
         <div>
             <h2>Görüntülenen oda tipi</h2>
@@ -65,7 +65,7 @@
         @foreach (var room in Model.Rooms)
         {
             <a href="/panel/partner/takvim-fiyatlar?otelId=@Model.SelectedHotelId&roomId=@room.RoomId&month=@Model.MonthKey"
-               class="partner-room-chip @(room.RoomId == Model.SelectedRoomId ? "active" : string.Empty)">
+               class="partner-room-chip @(room.RoomId == Model.SelectedRoomId ? "active" : string.Empty) ot-card">
                 <span class="partner-room-chip-title">@room.RoomName</span>
                 <span class="partner-room-chip-meta">@room.BasePriceText · @room.StockText</span>
             </a>
@@ -74,16 +74,16 @@
 </section>
 
 <section class="partner-pricing-layout">
-    <article class="partner-section-card partner-calendar-panel">
+    <article class="partner-section-card partner-calendar-panel ot-card">
         <div class="partner-section-head partner-calendar-head">
             <div>
                 <h2>Aylık fiyat takvimi</h2>
                 <p>@(Model.SelectedRoomId.HasValue ? Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId.Value)?.RoomName : "Oda seçiniz")</p>
             </div>
             <div class="partner-calendar-legend">
-                <span><i class="fas fa-circle legend-discount"></i> Kampanyalı</span>
-                <span><i class="fas fa-circle legend-warning"></i> Son odalar</span>
-                <span><i class="fas fa-circle legend-closed"></i> Satışa kapalı</span>
+                <span class="ot-badge"><i class="fas fa-circle legend-discount"></i> Kampanyalı</span>
+                <span class="ot-badge"><i class="fas fa-circle legend-warning"></i> Son odalar</span>
+                <span class="ot-badge ot-badge--danger"><i class="fas fa-circle legend-closed"></i> Satışa kapalı</span>
             </div>
         </div>
         <div class="partner-calendar-insight">
@@ -124,7 +124,7 @@
                                 <strong>@day.Date.ToString("dd-MM-yyyy")</strong>
                                 <span>@day.WeekdayLabel</span>
                             </div>
-                            <b class="partner-calendar-status">@day.StatusText</b>
+                            <b class="partner-calendar-status ot-badge">@day.StatusText</b>
                         </div>
                         <div class="partner-calendar-price-block">
                             @if (day.HasDiscount)
@@ -143,7 +143,7 @@
                         </div>
                         @if (!string.IsNullOrWhiteSpace(day.CampaignLabel))
                         {
-                            <span class="partner-calendar-tag">@day.CampaignLabel</span>
+                            <span class="partner-calendar-tag ot-badge ot-badge--info">@day.CampaignLabel</span>
                         }
                         @if (!string.IsNullOrWhiteSpace(day.PriceNote))
                         {
@@ -159,7 +159,7 @@
                                     <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
                                     <input type="hidden" name="Date" value="@day.Date.ToString("yyyy-MM-dd")" />
                                     <input type="hidden" name="SaleStatusAction" value="open" />
-                                    <button type="submit" class="partner-calendar-inline-btn is-open">
+                                    <button type="submit" class="partner-calendar-inline-btn is-open ot-btn ot-btn--success">
                                         <i class="fas fa-lock-open"></i> Satisa Ac
                                     </button>
                                 </form>
@@ -170,11 +170,11 @@
                                     <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
                                     <input type="hidden" name="Date" value="@day.Date.ToString("yyyy-MM-dd")" />
                                     <input type="hidden" name="SaleStatusAction" value="close" />
-                                    <button type="submit" class="partner-calendar-inline-btn is-close">
+                                    <button type="submit" class="partner-calendar-inline-btn is-close ot-btn ot-btn--danger">
                                         <i class="fas fa-lock"></i> Satisa Kapat
                                     </button>
                                 </form>
-                                <button type="button" class="partner-calendar-edit-btn"
+                                <button type="button" class="partner-calendar-edit-btn ot-btn ot-btn--ghost"
                                         data-open-daily-editor="true"
                                         data-date="@day.Date.ToString("yyyy-MM-dd")">
                                     <i class="fas fa-pen"></i>
@@ -188,7 +188,7 @@
         }
     </article>
 
-    <aside class="partner-section-card partner-bulk-panel">
+    <aside class="partner-section-card partner-bulk-panel ot-card">
         <div class="partner-section-head">
             <div>
                 <h2>Çoklu fiyat güncelleme</h2>
@@ -280,7 +280,7 @@
                 <span>Takvim notu</span>
                 <textarea name="PriceNote" placeholder="Orn. Bu tarihte kahvalti dahil fiyat uygulaniyor."></textarea>
             </label>
-            <button type="submit" class="partner-primary-btn partner-form-span">
+            <button type="submit" class="partner-primary-btn partner-form-span ot-btn ot-btn--primary">
                 <i class="fas fa-floppy-disk"></i>
                 Takvim ve fiyat kurallarini uygula
             </button>

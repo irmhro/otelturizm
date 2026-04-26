@@ -12,6 +12,7 @@ using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.Partner;
 using otelturizmnew.Pricing;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Utils;
 
 namespace otelturizmnew.Services;
 
@@ -967,6 +968,10 @@ public class PartnerService : IPartnerService
                     var campaignLabel = !string.IsNullOrWhiteSpace(request.CampaignLabel)
                         ? request.CampaignLabel.Trim()
                         : existing?.CampaignLabel;
+                    if (string.IsNullOrWhiteSpace(campaignLabel) && discount is not null && !string.IsNullOrWhiteSpace(discount.DiscountName))
+                    {
+                        campaignLabel = discount.DiscountName;
+                    }
                     var priceNote = !string.IsNullOrWhiteSpace(request.PriceNote)
                         ? request.PriceNote.Trim()
                         : existing?.PriceNote;
@@ -2921,6 +2926,387 @@ public class PartnerService : IPartnerService
         return model;
     }
 
+    public async Task<PartnerCompanyPricingPageViewModel> GetCompanyPricingAsync(long userId, long? hotelId = null, long? companyId = null, long? roomId = null, string? month = null, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var context = await BuildContextAsync(connection, userId, hotelId, "Firma Fiyatları", "Firmalara özel günlük fiyatlarla kurumsal satış hacmini artırın.", "company-pricing", cancellationToken);
+        var selectedHotelId = context.SelectedHotel.HotelId;
+
+        var monthAnchor = ParseMonthAnchor(month);
+        var monthStart = new DateOnly(monthAnchor.Year, monthAnchor.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+        var model = new PartnerCompanyPricingPageViewModel
+        {
+            Shell = context.Shell,
+            HotelId = selectedHotelId,
+            MonthAnchor = monthStart
+        };
+
+        // Companies (only approved & active)
+        const string companySql = @"
+            SELECT TOP (500) id, firma_adi, COALESCE(onay_durumu,'Beklemede')
+            FROM firmalar
+            WHERE aktif_mi = 1
+            ORDER BY CASE COALESCE(onay_durumu,'Beklemede') WHEN 'Onaylandı' THEN 0 WHEN 'Beklemede' THEN 1 ELSE 2 END, firma_adi;";
+        await using (var companyCmd = new SqlCommand(companySql, connection))
+        await using (var companyReader = await companyCmd.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await companyReader.ReadAsync(cancellationToken))
+            {
+                var id = companyReader.GetInt64(0);
+                model.Companies.Add(new PartnerCompanyOptionViewModel
+                {
+                    CompanyId = id,
+                    CompanyName = companyReader.GetString(1),
+                    StatusText = companyReader.GetString(2),
+                    IsSelected = companyId.HasValue && companyId.Value == id
+                });
+            }
+        }
+
+        var selectedCompanyId = companyId ?? model.Companies.FirstOrDefault(x => x.StatusText == "Onaylandı")?.CompanyId ?? model.Companies.FirstOrDefault()?.CompanyId;
+        model.SelectedCompanyId = selectedCompanyId;
+        model.SelectedCompanyName = model.Companies.FirstOrDefault(x => x.CompanyId == selectedCompanyId)?.CompanyName ?? string.Empty;
+
+        // Rooms
+        const string roomSql = @"
+            SELECT id, oda_adi
+            FROM oda_tipleri
+            WHERE otel_id = @hotelId AND aktif_mi = 1
+            ORDER BY oda_adi;";
+        await using (var roomCmd = new SqlCommand(roomSql, connection))
+        {
+            roomCmd.Parameters.AddWithValue("@hotelId", selectedHotelId);
+            await using var roomReader = await roomCmd.ExecuteReaderAsync(cancellationToken);
+            while (await roomReader.ReadAsync(cancellationToken))
+            {
+                var id = roomReader.GetInt64(0);
+                model.Rooms.Add(new PartnerCompanyRoomOptionViewModel
+                {
+                    RoomTypeId = id,
+                    RoomName = roomReader.GetString(1),
+                    IsSelected = roomId.HasValue && roomId.Value == id
+                });
+            }
+        }
+
+        var selectedRoomId = roomId ?? model.Rooms.FirstOrDefault()?.RoomTypeId;
+        model.SelectedRoomId = selectedRoomId;
+
+        model.BulkForm = new PartnerCompanyBulkPricingUpdateRequest
+        {
+            HotelId = selectedHotelId,
+            CompanyId = selectedCompanyId ?? 0,
+            RoomTypeId = selectedRoomId ?? 0,
+            StartDate = monthStart,
+            EndDate = monthEnd,
+            CompanyNightlyPrice = 0m,
+            CloseSales = false
+        };
+
+        model.PreviousMonthQuery = $"/panel/partner/firma-fiyatlari?otelId={selectedHotelId}&companyId={selectedCompanyId}&roomId={selectedRoomId}&month={monthStart.AddMonths(-1):yyyy-MM}";
+        model.NextMonthQuery = $"/panel/partner/firma-fiyatlari?otelId={selectedHotelId}&companyId={selectedCompanyId}&roomId={selectedRoomId}&month={monthStart.AddMonths(1):yyyy-MM}";
+
+        var safeCompanyId = selectedCompanyId.GetValueOrDefault();
+        var safeRoomId = selectedRoomId.GetValueOrDefault();
+        if (safeCompanyId <= 0 || safeRoomId <= 0)
+        {
+            return model;
+        }
+
+        // Load firm prices map
+        var firmPrices = new Dictionary<DateOnly, (decimal Price, bool Closed)>();
+        const string firmSql = @"
+            SELECT tarih, firma_gecelik_fiyat, kapali_satis
+            FROM firma_oda_fiyat_musaitlik
+            WHERE firma_id = @companyId
+              AND otel_id = @hotelId
+              AND oda_tip_id = @roomTypeId
+              AND tarih BETWEEN @startDate AND @endDate;";
+        await using (var firmCmd = new SqlCommand(firmSql, connection))
+        {
+            firmCmd.Parameters.AddWithValue("@companyId", safeCompanyId);
+            firmCmd.Parameters.AddWithValue("@hotelId", selectedHotelId);
+            firmCmd.Parameters.AddWithValue("@roomTypeId", safeRoomId);
+            firmCmd.Parameters.AddWithValue("@startDate", monthStart.ToDateTime(TimeOnly.MinValue));
+            firmCmd.Parameters.AddWithValue("@endDate", monthEnd.ToDateTime(TimeOnly.MinValue));
+            await using var firmReader = await firmCmd.ExecuteReaderAsync(cancellationToken);
+            while (await firmReader.ReadAsync(cancellationToken))
+            {
+                var date = DateOnly.FromDateTime(firmReader.GetDateTime(0));
+                var price = firmReader.GetDecimal(1);
+                var closed = !firmReader.IsDBNull(2) && firmReader.GetBoolean(2);
+                firmPrices[date] = (price, closed);
+            }
+        }
+
+        // Load base prices map (oda_fiyat_musaitlik)
+        var basePrices = new Dictionary<DateOnly, decimal>();
+        const string baseSql = @"
+            SELECT tarih,
+                   CASE
+                       WHEN indirimli_fiyat IS NOT NULL AND indirimli_fiyat > 0 AND indirimli_fiyat < gecelik_fiyat THEN indirimli_fiyat
+                       ELSE gecelik_fiyat
+                   END AS effective_price
+            FROM oda_fiyat_musaitlik
+            WHERE otel_id = @hotelId
+              AND oda_tip_id = @roomTypeId
+              AND tarih BETWEEN @startDate AND @endDate;";
+        await using (var baseCmd = new SqlCommand(baseSql, connection))
+        {
+            baseCmd.Parameters.AddWithValue("@hotelId", selectedHotelId);
+            baseCmd.Parameters.AddWithValue("@roomTypeId", safeRoomId);
+            baseCmd.Parameters.AddWithValue("@startDate", monthStart.ToDateTime(TimeOnly.MinValue));
+            baseCmd.Parameters.AddWithValue("@endDate", monthEnd.ToDateTime(TimeOnly.MinValue));
+            await using var baseReader = await baseCmd.ExecuteReaderAsync(cancellationToken);
+            while (await baseReader.ReadAsync(cancellationToken))
+            {
+                var date = DateOnly.FromDateTime(baseReader.GetDateTime(0));
+                var price = baseReader.IsDBNull(1) ? 0m : baseReader.GetDecimal(1);
+                if (price > 0m) basePrices[date] = price;
+            }
+        }
+
+        var culture = CultureInfo.GetCultureInfo("tr-TR");
+        for (var day = monthStart; day <= monthEnd; day = day.AddDays(1))
+        {
+            var firmHas = firmPrices.TryGetValue(day, out var fp);
+            var baseHas = basePrices.TryGetValue(day, out var bp);
+            var isClosed = firmHas && fp.Closed;
+            model.Days.Add(new PartnerCompanyPricingDayViewModel
+            {
+                Date = day,
+                DateText = day.ToString("dd MMM", culture),
+                CompanyPrice = firmHas ? fp.Price : null,
+                BasePrice = baseHas ? bp : null,
+                IsClosed = isClosed,
+                CompanyPriceText = firmHas ? fp.Price.ToString("N0", culture) + " ₺" : "-",
+                BasePriceText = baseHas ? bp.ToString("N0", culture) + " ₺" : "-"
+            });
+        }
+
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> ApplyCompanyBulkPricingAsync(long userId, PartnerCompanyBulkPricingUpdateRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.HotelId <= 0 || request.CompanyId <= 0 || request.RoomTypeId <= 0)
+        {
+            return (false, "Otel, firma ve oda seçilmelidir.");
+        }
+        if (request.EndDate < request.StartDate)
+        {
+            return (false, "Bitiş tarihi başlangıçtan önce olamaz.");
+        }
+        if (request.CompanyNightlyPrice <= 0)
+        {
+            return (false, "Firma gecelik fiyatı 0'dan büyük olmalıdır.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await EnsurePartnerHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+
+        await using var tx = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            for (var date = request.StartDate; date <= request.EndDate; date = date.AddDays(1))
+            {
+                const string upsertSql = @"
+                    IF EXISTS (SELECT 1 FROM firma_oda_fiyat_musaitlik WHERE firma_id=@companyId AND otel_id=@hotelId AND oda_tip_id=@roomTypeId AND tarih=@date)
+                    BEGIN
+                        UPDATE firma_oda_fiyat_musaitlik
+                        SET firma_gecelik_fiyat=@price,
+                            kapali_satis=@closed,
+                            fiyat_notu=@note,
+                            guncelleyen_kullanici_id=@userId,
+                            guncellenme_tarihi=SYSUTCDATETIME()
+                        WHERE firma_id=@companyId AND otel_id=@hotelId AND oda_tip_id=@roomTypeId AND tarih=@date;
+                    END
+                    ELSE
+                    BEGIN
+                        INSERT INTO firma_oda_fiyat_musaitlik
+                        (firma_id, otel_id, oda_tip_id, tarih, firma_gecelik_fiyat, kapali_satis, fiyat_notu, guncelleyen_kullanici_id)
+                        VALUES
+                        (@companyId, @hotelId, @roomTypeId, @date, @price, @closed, @note, @userId);
+                    END";
+                await using var cmd = new SqlCommand(upsertSql, connection, (SqlTransaction)tx);
+                cmd.Parameters.AddWithValue("@companyId", request.CompanyId);
+                cmd.Parameters.AddWithValue("@hotelId", request.HotelId);
+                cmd.Parameters.AddWithValue("@roomTypeId", request.RoomTypeId);
+                cmd.Parameters.AddWithValue("@date", date.ToDateTime(TimeOnly.MinValue));
+                cmd.Parameters.AddWithValue("@price", request.CompanyNightlyPrice);
+                cmd.Parameters.AddWithValue("@closed", request.CloseSales ? 1 : 0);
+                cmd.Parameters.AddWithValue("@note", string.IsNullOrWhiteSpace(request.Note) ? DBNull.Value : request.Note.Trim());
+                cmd.Parameters.AddWithValue("@userId", userId);
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await tx.CommitAsync(cancellationToken);
+            return (true, "Firma fiyatları kaydedildi.");
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return (false, "Firma fiyatları kaydedilemedi: " + ex.Message);
+        }
+    }
+
+    public async Task<PartnerListingSubscriptionsPageViewModel> GetListingSubscriptionsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var context = await BuildContextAsync(
+            connection,
+            userId,
+            hotelId,
+            "Aboneliklerim",
+            "İl/ilçe/mahalle aramalarında 1-2-3 sabit çıkmak için abonelik taleplerinizi yönetin.",
+            "ListingSubscriptions",
+            cancellationToken);
+
+        var model = new PartnerListingSubscriptionsPageViewModel
+        {
+            Shell = context.Shell,
+            SelectedHotelId = context.SelectedHotel.HotelId,
+            SelectedHotelName = context.SelectedHotel.HotelName
+        };
+
+        model.Form.HotelId = context.SelectedHotel.HotelId;
+        model.Form.ScopeType = "IL";
+        model.Form.DesiredRank = 1;
+        model.Form.DayCount = 7;
+
+        if (!await TableExistsAsync(connection, "otel_liste_abonelikleri", cancellationToken))
+        {
+            return model;
+        }
+
+        const string sql = @"
+            SELECT TOP (120)
+                a.id,
+                a.kapsam_tipi,
+                a.kapsam_degeri,
+                a.hedef_sira,
+                a.durum,
+                a.baslangic_utc,
+                a.bitis_utc,
+                COALESCE(a.partner_notu,'')
+            FROM otel_liste_abonelikleri a
+            WHERE a.otel_id = @hotelId
+            ORDER BY a.olusturulma_tarihi DESC, a.id DESC;";
+
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var start = reader.IsDBNull(5) ? (DateTime?)null : reader.GetDateTime(5);
+            var end = reader.IsDBNull(6) ? (DateTime?)null : reader.GetDateTime(6);
+            model.Items.Add(new PartnerListingSubscriptionRowViewModel
+            {
+                Id = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture),
+                ScopeType = reader.IsDBNull(1) ? "-" : reader.GetString(1),
+                ScopeValue = reader.IsDBNull(2) ? "-" : reader.GetString(2),
+                DesiredRank = reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3), CultureInfo.InvariantCulture),
+                Status = reader.IsDBNull(4) ? "-" : reader.GetString(4),
+                StartText = start.HasValue ? start.Value.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR")) : "-",
+                EndText = end.HasValue ? end.Value.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR")) : "-",
+                Note = reader.IsDBNull(7) ? string.Empty : reader.GetString(7)
+            });
+        }
+
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> CreateListingSubscriptionAsync(long userId, PartnerListingSubscriptionCreateRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.HotelId <= 0)
+        {
+            return (false, "Otel seçimi zorunludur.");
+        }
+
+        var scopeType = (request.ScopeType ?? string.Empty).Trim().ToUpperInvariant();
+        if (scopeType is not ("IL" or "ILCE" or "MAHALLE"))
+        {
+            return (false, "Kapsam tipi geçersiz (IL/ILCE/MAHALLE).");
+        }
+
+        if (request.DesiredRank is < 1 or > 3)
+        {
+            return (false, "Hedef sıra 1-3 arasında olmalıdır.");
+        }
+
+        var dayCount = Math.Clamp(request.DayCount, 1, 30);
+        var scopeValue = (request.ScopeValue ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(scopeValue))
+        {
+            return (false, "Kapsam değeri zorunludur.");
+        }
+
+        var normalized = SearchNormalize.Keyword(scopeValue);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return (false, "Kapsam değeri normalize edilemedi.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+
+        if (!await TableExistsAsync(connection, "otel_liste_abonelikleri", cancellationToken))
+        {
+            return (false, "Abonelik tablosu bulunamadı. Migration uygulanmamış olabilir.");
+        }
+
+        var now = DateTime.UtcNow;
+        var startUtc = now;
+        var endUtc = now.AddDays(dayCount);
+
+        const string sql = @"
+            INSERT INTO otel_liste_abonelikleri
+            (otel_id, kapsam_tipi, kapsam_degeri, kapsam_degeri_normalized, hedef_sira, baslangic_utc, bitis_utc, durum, talep_eden_user_id, partner_notu, olusturulma_tarihi)
+            VALUES
+            (@hotelId, @scopeType, @scopeValue, @scopeNorm, @rank, @startUtc, @endUtc, N'Beklemede', @userId, @note, SYSUTCDATETIME());";
+
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@hotelId", request.HotelId);
+        cmd.Parameters.AddWithValue("@scopeType", scopeType);
+        cmd.Parameters.AddWithValue("@scopeValue", scopeValue);
+        cmd.Parameters.AddWithValue("@scopeNorm", normalized);
+        cmd.Parameters.AddWithValue("@rank", request.DesiredRank);
+        cmd.Parameters.AddWithValue("@startUtc", startUtc);
+        cmd.Parameters.AddWithValue("@endUtc", endUtc);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        cmd.Parameters.AddWithValue("@note", string.IsNullOrWhiteSpace(request.PartnerNote) ? (object)DBNull.Value : request.PartnerNote.Trim());
+        await cmd.ExecuteNonQueryAsync(cancellationToken);
+
+        return (true, $"Abonelik talebiniz alındı. Kapsam: {scopeValue} · Sıra: {request.DesiredRank} · Süre: {dayCount} gün");
+    }
+
+    private static DateOnly ParseMonthAnchor(string? month)
+    {
+        if (!string.IsNullOrWhiteSpace(month) && DateTime.TryParse(month + "-01", out var dt))
+        {
+            return new DateOnly(dt.Year, dt.Month, 1);
+        }
+        return new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
+    }
+
+    private static async Task EnsurePartnerHotelAccessAsync(SqlConnection connection, long userId, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT COUNT(*) FROM otel_kullanici_sahiplikleri WHERE user_id=@userId AND otel_id=@hotelId AND aktif_mi=1;";
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        cmd.Parameters.AddWithValue("@hotelId", hotelId);
+        var count = Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+        if (count <= 0) throw new InvalidOperationException("Bu otel için yetkiniz yok.");
+    }
+
     public async Task<(bool Success, string Message)> CreateSupportTicketAsync(long userId, PartnerSupportCreateTicketRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Subject) || string.IsNullOrWhiteSpace(request.Message))
@@ -3973,7 +4359,7 @@ public class PartnerService : IPartnerService
         {
             items.Add(new PartnerAmenityOptionViewModel
             {
-                AmenityId = reader.GetInt64(0),
+                AmenityId = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture),
                 Name = reader.GetString(1),
                 IconClass = reader.GetString(2),
                 IsSelected = SafeInt(reader, 3) == 1

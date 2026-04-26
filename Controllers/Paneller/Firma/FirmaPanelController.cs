@@ -85,6 +85,27 @@ public class FirmaPanelController : Controller
         return View("~/Views/Paneller/Firma/Reservations.cshtml", model);
     }
 
+    [HttpGet("yeni-rezervasyon")]
+    public async Task<IActionResult> CreateReservation([FromQuery] long? hotelId = null, [FromQuery] long? roomTypeId = null, [FromQuery] string? search = null, CancellationToken cancellationToken = default)
+    {
+        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        var model = await _firmaService.GetCreateReservationAsync(GetUserId(), hotelId, roomTypeId, search, cancellationToken);
+        ApplyFeedback(model.Shell);
+        ViewData["Title"] = "Yeni Rezervasyon";
+        ViewData["PageCssPath"] = "paneller/firma/create-reservation";
+        return View("~/Views/Paneller/Firma/CreateReservation.cshtml", model);
+    }
+
+    [HttpPost("yeni-rezervasyon")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateReservationPost(otelturizmnew.Models.Paneller.Firma.FirmaReservationCreateModel model, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        var result = await _firmaService.CreateReservationAsync(GetUserId(), model, cancellationToken);
+        SetFeedback(result.Success, result.Message);
+        return Redirect("/panel/firma/yeni-rezervasyon");
+    }
+
     [HttpGet("mesajlar")]
     public async Task<IActionResult> Messages([FromQuery] long? conversationId, CancellationToken cancellationToken)
     {

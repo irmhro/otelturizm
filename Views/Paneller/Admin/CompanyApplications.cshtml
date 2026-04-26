@@ -1,7 +1,105 @@
 @using otelturizmnew.Models.Paneller.Admin
-@model AdminSectionPageViewModel
+@model AdminCompanyApplicationsPageViewModel
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
+    var success = TempData["AdminCompanyMessage"] as string;
+    var error = TempData["AdminCompanyError"] as string;
 }
-<partial name="~/Views/Paneller/Admin/_AdminSectionPage.cshtml" model="Model" />
+
+@if (!string.IsNullOrWhiteSpace(success))
+{
+    <div class="alert alert-success">@success</div>
+}
+@if (!string.IsNullOrWhiteSpace(error))
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="row">
+    @foreach (var card in Model.SummaryCards)
+    {
+        <div class="col-lg-3 col-md-6 col-12">
+            <div class="small-box bg-light">
+                <div class="inner">
+                    <h3>@card.Value</h3>
+                    <p>@card.Label</p>
+                    <small>@card.Description</small>
+                </div>
+                <div class="icon"><i class="fas @card.IconClass"></i></div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Firma Başvuruları</h3>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover text-nowrap mb-0">
+                    <thead>
+                    <tr>
+                        <th>Firma</th>
+                        <th>Vergi No</th>
+                        <th>Yetkili</th>
+                        <th>İletişim</th>
+                        <th>Durum</th>
+                        <th>Kayıt</th>
+                        <th>İşlem</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var row in Model.Applications)
+                    {
+                        var badge = row.StatusToneClass switch
+                        {
+                            "success" => "badge-success",
+                            "danger" => "badge-danger",
+                            "warning" => "badge-warning",
+                            _ => "badge-info"
+                        };
+                        <tr>
+                            <td><strong>@row.CompanyName</strong><div class="text-muted">ID: @row.CompanyId</div></td>
+                            <td>@row.TaxNo</td>
+                            <td>@row.ContactName</td>
+                            <td>
+                                <div>@row.ContactEmail</div>
+                                <div class="text-muted">@row.ContactPhone</div>
+                            </td>
+                            <td><span class="badge @badge">@row.StatusText</span></td>
+                            <td>@row.CreatedAtText</td>
+                            <td>
+                                <form method="post" action="/admin/firma-basvurulari/guncelle" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="CompanyId" value="@row.CompanyId" />
+                                    <input type="hidden" name="TargetStatus" value="Onaylandı" />
+                                    <button type="submit" class="btn btn-success btn-sm">Onayla</button>
+                                </form>
+                                <form method="post" action="/admin/firma-basvurulari/guncelle" class="d-inline ml-1">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="CompanyId" value="@row.CompanyId" />
+                                    <input type="hidden" name="TargetStatus" value="Askıda" />
+                                    <button type="submit" class="btn btn-warning btn-sm">Askıya Al</button>
+                                </form>
+                                <form method="post" action="/admin/firma-basvurulari/guncelle" class="d-inline ml-1">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="CompanyId" value="@row.CompanyId" />
+                                    <input type="hidden" name="TargetStatus" value="Reddedildi" />
+                                    <button type="submit" class="btn btn-danger btn-sm">Reddet</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+                @if (Model.Applications.Count == 0)
+                {
+                    <div class="p-3 text-muted">Firma başvurusu bulunamadı.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

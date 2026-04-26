@@ -68,7 +68,7 @@
                 <form method="post" action="/admin/oteller/aktive-et" onsubmit="return confirm('Oteli tekrar aktif duruma almak istediginize emin misiniz?');">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" />
-                    <button type="submit" class="admin-action-btn primary"><i class="fas fa-power-off"></i> Oteli Aktif Et</button>
+                    <button type="submit" class="admin-action-btn primary ot-btn ot-btn--success"><i class="fas fa-power-off"></i> Oteli Aktif Et</button>
                 </form>
             }
             else
@@ -76,7 +76,7 @@
                 <form method="post" action="/admin/oteller/pasife-al" onsubmit="return confirm('Oteli pasif duruma almak istediginize emin misiniz?');">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" />
-                    <button type="submit" class="admin-action-btn danger"><i class="fas fa-ban"></i> Oteli Pasife Al</button>
+                    <button type="submit" class="admin-action-btn danger ot-btn ot-btn--danger"><i class="fas fa-ban"></i> Oteli Pasife Al</button>
                 </form>
             }
         }
@@ -96,7 +96,7 @@
 </nav>
 
 <section class="admin-detail-grid">
-    <article class="admin-section-card admin-detail-main-card admin-anchor-target" id="section-temel-kayit">
+    <article class="admin-section-card admin-detail-main-card admin-anchor-target ot-card" id="section-temel-kayit">
         <div class="admin-section-head">
             <div>
                 <p class="mini-caption">OTELLER TABLOSU</p>
@@ -173,11 +173,11 @@
             <label class="span-3"><span>Kisa aciklama</span><textarea name="ShortDescription">@Model.HotelForm.ShortDescription</textarea></label>
             <label class="span-3"><span>Uzun aciklama</span><textarea name="Description">@Model.HotelForm.Description</textarea></label>
             <label class="span-3"><span>Konum aciklamasi</span><textarea name="LocationDescription">@Model.HotelForm.LocationDescription</textarea></label>
-            <div class="span-3 admin-form-actions"><button type="submit" class="admin-action-btn primary"><i class="fas fa-floppy-disk"></i> Otel kaydini guncelle</button></div>
+            <div class="span-3 admin-form-actions"><button type="submit" class="admin-action-btn primary ot-btn ot-btn--primary"><i class="fas fa-floppy-disk"></i> Otel kaydini guncelle</button></div>
         </form>
     </article>
 
-    <aside class="admin-section-card admin-side-card admin-anchor-target" id="section-bagli-odalar">
+    <aside class="admin-section-card admin-side-card admin-anchor-target ot-card" id="section-bagli-odalar">
         <div class="admin-section-head"><div><p class="mini-caption">ODA TIPLERI</p><h2>Bagli odalar</h2></div></div>
         <div class="admin-linked-list">
             @foreach (var room in Model.Rooms)
@@ -189,12 +189,12 @@
                         <small>@room.PriceText · @room.CapacityText · @room.StockText</small>
                     </div>
                     <div class="admin-inline-actions">
-                        <a href="/admin/oteller/duzenle/@Model.HotelForm.HotelId?roomId=@room.RoomId" class="admin-action-btn secondary">Duzenle</a>
+                        <a href="/admin/oteller/duzenle/@Model.HotelForm.HotelId?roomId=@room.RoomId" class="admin-action-btn secondary ot-btn ot-btn--ghost">Duzenle</a>
                         <form method="post" action="/admin/oteller/oda-pasife-al" onsubmit="return confirm('Oda tipi pasife alinsin mi?');">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" />
                             <input type="hidden" name="roomId" value="@room.RoomId" />
-                            <button type="submit" class="admin-action-btn danger">Pasife al</button>
+                            <button type="submit" class="admin-action-btn danger ot-btn ot-btn--danger">Pasife al</button>
                         </form>
                     </div>
                 </article>
@@ -204,7 +204,7 @@
 </section>
 
 <section class="admin-detail-grid secondary">
-    <article class="admin-section-card admin-anchor-target" id="section-yeni-oda">
+    <article class="admin-section-card admin-anchor-target ot-card" id="section-yeni-oda">
         <div class="admin-section-head"><div><p class="mini-caption">ODA TIPLERI TABLOSU</p><h2>@(Model.IsEditingRoom ? "Oda tipini duzenle" : "Yeni oda tipi ekle")</h2></div></div>
         <form method="post" action="/admin/oteller/oda-kaydet" class="admin-form-grid">
             @Html.AntiForgeryToken()
@@ -238,11 +238,11 @@
             <label class="span-3"><span>Oda ozellikleri</span><textarea name="FeaturesText">@Model.RoomForm.FeaturesText</textarea></label>
             <label class="checkbox"><input type="checkbox" name="IsActive" value="true" checked="@Model.RoomForm.IsActive" /><span>Aktif</span></label>
             <label><span>Siralama</span><input type="number" name="SortOrder" value="@Model.RoomForm.SortOrder" /></label>
-            <div class="span-3 admin-form-actions"><button type="submit" class="admin-action-btn primary"><i class="fas fa-floppy-disk"></i> Oda kaydini kaydet</button></div>
+            <div class="span-3 admin-form-actions"><button type="submit" class="admin-action-btn primary ot-btn ot-btn--primary"><i class="fas fa-floppy-disk"></i> Oda kaydini kaydet</button></div>
         </form>
     </article>
 
-    <article class="admin-section-card admin-anchor-target" id="section-otel-galeri">
+    <article class="admin-section-card admin-anchor-target ot-card" id="section-otel-galeri">
         <div class="admin-section-head"><div><p class="mini-caption">OTEL GORSELLERI</p><h2>Otel galerisi</h2></div></div>
         <form method="post" action="/admin/oteller/otel-fotograf-yukle" enctype="multipart/form-data" class="admin-form-grid compact">
             @Html.AntiForgeryToken()
@@ -253,7 +253,7 @@
             <label class="checkbox"><input type="checkbox" name="MakeCover" value="true" checked="@Model.HotelPhotoUploadForm.MakeCover" /><span>Kapak yap</span></label>
             <label class="span-2"><span>Aciklama</span><textarea name="Description">@Model.HotelPhotoUploadForm.Description</textarea></label>
             <label class="span-2"><span>Dosyalar</span><input type="file" name="Files" accept="image/*" multiple /></label>
-            <div class="span-2 admin-form-actions"><button type="submit" class="admin-action-btn primary">Otel gorseli yukle</button></div>
+            <div class="span-2 admin-form-actions"><button type="submit" class="admin-action-btn primary ot-btn ot-btn--primary">Otel gorseli yukle</button></div>
         </form>
 
         @if (Model.HotelPhotos.Count > 0)
@@ -292,7 +292,7 @@
     </article>
 </section>
 
-<section class="admin-section-card admin-anchor-target" id="section-oda-gorselleri">
+<section class="admin-section-card admin-anchor-target ot-card" id="section-oda-gorselleri">
     <div class="admin-section-head"><div><p class="mini-caption">ODA GORSELLERI</p><h2>@(string.IsNullOrWhiteSpace(Model.SelectedRoomName) ? "Oda secin" : Model.SelectedRoomName)</h2></div></div>
     @if (!Model.SelectedRoomId.HasValue)
     {
@@ -309,7 +309,7 @@
             <label class="checkbox"><input type="checkbox" name="MakeCover" value="true" checked="@Model.RoomPhotoUploadForm.MakeCover" /><span>Kapak yap</span></label>
             <label class="span-2"><span>Aciklama</span><textarea name="Description">@Model.RoomPhotoUploadForm.Description</textarea></label>
             <label class="span-2"><span>Dosyalar</span><input type="file" name="Files" accept="image/*" multiple /></label>
-            <div class="span-2 admin-form-actions"><button type="submit" class="admin-action-btn primary">Oda gorseli yukle</button></div>
+            <div class="span-2 admin-form-actions"><button type="submit" class="admin-action-btn primary ot-btn ot-btn--primary">Oda gorseli yukle</button></div>
         </form>
 
         @if (Model.RoomPhotos.Count > 0)

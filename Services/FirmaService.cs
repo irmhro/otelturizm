@@ -15,12 +15,14 @@ public class FirmaService : IFirmaService
 {
     private readonly string _connectionString;
     private readonly IMessageCenterService _messageCenterService;
+    private readonly IEmailQueueService _emailQueueService;
 
-    public FirmaService(IConfiguration configuration, IMessageCenterService messageCenterService)
+    public FirmaService(IConfiguration configuration, IMessageCenterService messageCenterService, IEmailQueueService emailQueueService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _messageCenterService = messageCenterService;
+        _emailQueueService = emailQueueService;
     }
 
     public async Task<FirmaLandingPageViewModel> GetLandingPageAsync(CancellationToken cancellationToken = default)
@@ -158,6 +160,372 @@ public class FirmaService : IFirmaService
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Rezervasyonlar", "Firma adına oluşturulan tüm konaklama kayıtlarını görün.", "reservations", cancellationToken);
         return new FirmaReservationsPageViewModel { Shell = context.Shell, Reservations = await LoadReservationsAsync(connection, context.FirmaId, 200, cancellationToken) };
+    }
+
+    public async Task<FirmaCreateReservationPageViewModel> GetCreateReservationAsync(long userId, long? hotelId = null, long? roomTypeId = null, string? search = null, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var context = await BuildContextAsync(connection, userId, "Yeni Rezervasyon", "Firma fiyatı ile standart fiyatı karşılaştırıp tek ekranda rezervasyon açın.", "create-reservation", cancellationToken);
+
+        var model = new FirmaCreateReservationPageViewModel { Shell = context.Shell };
+        model.Form.HotelId = hotelId.GetValueOrDefault();
+        model.Form.RoomTypeId = roomTypeId.GetValueOrDefault();
+        model.HotelSearch = search;
+
+        model.Employees = (await LoadEmployeesAsync(connection, context.FirmaId, 200, cancellationToken))
+            .Select(static item => new FirmaEmployeeOptionViewModel
+            {
+                UserId = item.UserId,
+                FullName = item.FullName,
+                Email = item.Email,
+                Department = item.Department
+            })
+            .ToList();
+
+        // Hotels: approved/published + optional search (otel/sehir/ilce/mahalle)
+        const string hotelsSql = @"
+            SELECT TOP (300) id, CONCAT(otel_adi, ' · ', ilce, ', ', sehir)
+            FROM oteller
+            WHERE onay_durumu = 'Onaylandı'
+              AND yayin_durumu IN ('Yayında','Bakımda')
+              AND (@q IS NULL OR @q = '' OR otel_adi LIKE '%' + @q + '%' OR sehir LIKE '%' + @q + '%' OR ilce LIKE '%' + @q + '%' OR mahalle LIKE '%' + @q + '%')
+            ORDER BY one_cikan_otel DESC, otel_adi ASC;";
+        await using (var cmd = new SqlCommand(hotelsSql, connection))
+        await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
+        {
+            cmd.Parameters.AddWithValue("@q", string.IsNullOrWhiteSpace(search) ? (object)DBNull.Value : search.Trim());
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                model.Hotels.Add(new FirmaSelectOption { Value = reader.GetInt64(0), Label = reader.GetString(1) });
+            }
+        }
+
+        if (model.Form.HotelId <= 0)
+        {
+            model.Form.HotelId = model.Hotels.FirstOrDefault()?.Value ?? 0;
+        }
+
+        // Rooms for selected hotel
+        const string roomsSql = @"
+            SELECT id, oda_adi
+            FROM oda_tipleri
+            WHERE otel_id = @hotelId AND aktif_mi = 1
+            ORDER BY oda_adi;";
+        await using (var roomCmd = new SqlCommand(roomsSql, connection))
+        {
+            roomCmd.Parameters.AddWithValue("@hotelId", model.Form.HotelId);
+            await using var roomReader = await roomCmd.ExecuteReaderAsync(cancellationToken);
+            while (await roomReader.ReadAsync(cancellationToken))
+            {
+                model.RoomTypes.Add(new FirmaSelectOption { Value = roomReader.GetInt64(0), Label = roomReader.GetString(1) });
+            }
+        }
+
+        if (model.Form.RoomTypeId <= 0)
+        {
+            model.Form.RoomTypeId = model.RoomTypes.FirstOrDefault()?.Value ?? 0;
+        }
+
+        model.Compare = await BuildPriceCompareAsync(connection, context.FirmaId, model.Form, cancellationToken);
+        return model;
+    }
+
+    public async Task<(bool Success, string Message, long? ReservationId)> CreateReservationAsync(long userId, FirmaReservationCreateModel model, CancellationToken cancellationToken = default)
+    {
+        if (model.HotelId <= 0 || model.RoomTypeId <= 0)
+        {
+            return (false, "Otel ve oda tipi seçilmelidir.", null);
+        }
+        if (model.CheckOutDate <= model.CheckInDate)
+        {
+            return (false, "Çıkış tarihi giriş tarihinden sonra olmalıdır.", null);
+        }
+        if (model.RoomCount <= 0)
+        {
+            return (false, "Oda sayısı 1 veya daha büyük olmalıdır.", null);
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var context = await BuildContextAsync(connection, userId, string.Empty, string.Empty, "create-reservation", cancellationToken);
+
+        var compare = await BuildPriceCompareAsync(connection, context.FirmaId, model, cancellationToken);
+        if (compare.CompanyTotal <= 0m)
+        {
+            return (false, "Fiyat hesaplanamadı. Tarih/oda seçimlerini kontrol edin.", null);
+        }
+
+        var reservationNo = await GenerateFirmaReservationNoAsync(connection, cancellationToken);
+
+        await using var tx = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // partner recipient email
+            var partnerRecipient = await ResolvePartnerRecipientAsync(connection, (SqlTransaction)tx, model.HotelId, cancellationToken);
+
+            const string insertSql = @"
+                INSERT INTO rezervasyonlar
+                (
+                    rezervasyon_no, otel_id, oda_tip_id, kullanici_id,
+                    firma_id, firma_calisan_id,
+                    misafir_ad_soyad, misafir_eposta, misafir_telefon, misafir_notu,
+                    giris_tarihi, cikis_tarihi, yetiskin_sayisi, cocuk_sayisi, oda_sayisi,
+                    gecelik_fiyat, toplam_oda_tutari, vergi_tutari, toplam_tutar,
+                    durum, rezervasyon_durumu_id, odeme_durumu, otel_onay_durumu, firma_onay_durumu,
+                    kaynak, rezervasyon_kanali, musteri_talep_notu
+                )
+                VALUES
+                (
+                    @reservationNo, @hotelId, @roomTypeId, @userId,
+                    @firmaId, @firmaEmployeeId,
+                    @guestName, @guestEmail, @guestPhone, @note,
+                    @checkIn, @checkOut, @adultCount, @childCount, @roomCount,
+                    @nightlyPrice, @roomTotal, 0, @totalAmount,
+                    'Onay Bekliyor', (SELECT TOP (1) id FROM dbo.rezervasyon_durum_tanimlari WHERE kod = N'OnayBekliyor'), 'Beklemede', 'Beklemede', 'Beklemede',
+                    'Firma', 'Firma Paneli', @note
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS bigint);";
+
+            var guestName = await ResolveGuestNameAsync(connection, (SqlTransaction)tx, context.FirmaId, model.EmployeeUserId, cancellationToken);
+            var (companyEmail, companyName) = await LoadCompanyContactAsync(connection, (SqlTransaction)tx, context.FirmaId, cancellationToken);
+            var employeeEmail = model.EmployeeUserId.HasValue ? await ResolveEmployeeEmailAsync(connection, (SqlTransaction)tx, model.EmployeeUserId.Value, cancellationToken) : null;
+
+            var guestEmail = string.IsNullOrWhiteSpace(employeeEmail) ? (companyEmail ?? string.Empty) : employeeEmail!;
+            long reservationId;
+            await using (var cmd = new SqlCommand(insertSql, connection, (SqlTransaction)tx))
+            {
+                cmd.Parameters.AddWithValue("@reservationNo", reservationNo);
+                cmd.Parameters.AddWithValue("@hotelId", model.HotelId);
+                cmd.Parameters.AddWithValue("@roomTypeId", model.RoomTypeId);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@firmaId", context.FirmaId);
+                cmd.Parameters.AddWithValue("@firmaEmployeeId", model.EmployeeUserId.HasValue ? model.EmployeeUserId.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@guestName", guestName);
+                cmd.Parameters.AddWithValue("@guestEmail", guestEmail);
+                cmd.Parameters.AddWithValue("@guestPhone", DBNull.Value);
+                cmd.Parameters.AddWithValue("@note", string.IsNullOrWhiteSpace(model.Note) ? DBNull.Value : model.Note.Trim());
+                cmd.Parameters.AddWithValue("@checkIn", model.CheckInDate.ToDateTime(TimeOnly.MinValue));
+                cmd.Parameters.AddWithValue("@checkOut", model.CheckOutDate.ToDateTime(TimeOnly.MinValue));
+                cmd.Parameters.AddWithValue("@adultCount", model.AdultCount);
+                cmd.Parameters.AddWithValue("@childCount", model.ChildCount);
+                cmd.Parameters.AddWithValue("@roomCount", model.RoomCount);
+                cmd.Parameters.AddWithValue("@nightlyPrice", compare.CompanyTotal / Math.Max(1, (model.CheckOutDate.DayNumber - model.CheckInDate.DayNumber) * model.RoomCount));
+                cmd.Parameters.AddWithValue("@roomTotal", compare.CompanyTotal);
+                cmd.Parameters.AddWithValue("@totalAmount", compare.CompanyTotal);
+                reservationId = Convert.ToInt64(await cmd.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
+            }
+
+            // Email queue: company + employees + partner
+            var tokenMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["booking_reference"] = reservationNo,
+                ["hotel_name"] = await LoadHotelNameAsync(connection, (SqlTransaction)tx, model.HotelId, cancellationToken),
+                ["check_in_date"] = model.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                ["check_out_date"] = model.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                ["total_price"] = compare.CompanyTotal.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
+                ["company_name"] = companyName ?? "Firma"
+            };
+
+            if (!string.IsNullOrWhiteSpace(companyEmail))
+            {
+                await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)tx, new otelturizmnew.Models.Email.QueuedEmailTemplateRequest
+                {
+                    UserId = userId,
+                    RecipientEmail = companyEmail,
+                    TemplateCode = "firma_reservation_created_company",
+                    RelatedTable = "rezervasyonlar",
+                    RelatedRecordId = reservationId,
+                    Tokens = tokenMap
+                }, cancellationToken);
+            }
+
+            foreach (var emailItem in SplitEmails(model.EmployeeEmailsCsv).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)tx, new otelturizmnew.Models.Email.QueuedEmailTemplateRequest
+                {
+                    UserId = userId,
+                    RecipientEmail = emailItem,
+                    TemplateCode = "firma_reservation_created_company",
+                    RelatedTable = "rezervasyonlar",
+                    RelatedRecordId = reservationId,
+                    Tokens = tokenMap
+                }, cancellationToken);
+            }
+
+            await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)tx, new otelturizmnew.Models.Email.QueuedEmailTemplateRequest
+            {
+                UserId = partnerRecipient.UserId,
+                RecipientEmail = partnerRecipient.Email,
+                TemplateCode = "firma_reservation_created_partner",
+                RelatedTable = "rezervasyonlar",
+                RelatedRecordId = reservationId,
+                Tokens = new Dictionary<string, string>(tokenMap, StringComparer.OrdinalIgnoreCase)
+                {
+                    ["hotel_manager_name"] = "Partner Yetkilisi"
+                }
+            }, cancellationToken);
+
+            await tx.CommitAsync(cancellationToken);
+            return (true, $"Firma rezervasyonu oluşturuldu: {reservationNo}", reservationId);
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return (false, "Rezervasyon oluşturulamadı: " + ex.Message, null);
+        }
+    }
+
+    private async Task<FirmaReservationPriceCompareViewModel> BuildPriceCompareAsync(SqlConnection connection, long firmaId, FirmaReservationCreateModel model, CancellationToken cancellationToken)
+    {
+        var culture = CultureInfo.GetCultureInfo("tr-TR");
+        var nightCount = Math.Max(1, model.CheckOutDate.DayNumber - model.CheckInDate.DayNumber);
+        var start = model.CheckInDate;
+        var end = model.CheckOutDate.AddDays(-1);
+        decimal standardSum = 0m;
+        decimal companySum = 0m;
+        var hasCompanyAny = false;
+
+        // Query both firm daily override + base ofm effective
+        const string sql = @"
+            SELECT d.tarih,
+                   f.firma_gecelik_fiyat,
+                   f.kapali_satis,
+                   CASE
+                       WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                       ELSE ofm.gecelik_fiyat
+                   END AS base_price
+            FROM
+            (
+                SELECT DATEADD(DAY, v.number, @startDate) AS tarih
+                FROM master..spt_values v
+                WHERE v.type = 'P' AND v.number BETWEEN 0 AND DATEDIFF(DAY, @startDate, @endDate)
+            ) d
+            LEFT JOIN firma_oda_fiyat_musaitlik f
+                ON f.firma_id = @firmaId AND f.otel_id=@hotelId AND f.oda_tip_id=@roomTypeId AND f.tarih = d.tarih
+            LEFT JOIN oda_fiyat_musaitlik ofm
+                ON ofm.otel_id=@hotelId AND ofm.oda_tip_id=@roomTypeId AND ofm.tarih = d.tarih
+            ORDER BY d.tarih;";
+
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@startDate", start.ToDateTime(TimeOnly.MinValue));
+        cmd.Parameters.AddWithValue("@endDate", end.ToDateTime(TimeOnly.MinValue));
+        cmd.Parameters.AddWithValue("@firmaId", firmaId);
+        cmd.Parameters.AddWithValue("@hotelId", model.HotelId);
+        cmd.Parameters.AddWithValue("@roomTypeId", model.RoomTypeId);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var firmPrice = reader.IsDBNull(1) ? (decimal?)null : reader.GetDecimal(1);
+            var firmClosed = !reader.IsDBNull(2) && reader.GetBoolean(2);
+            var basePrice = reader.IsDBNull(3) ? 0m : reader.GetDecimal(3);
+            if (basePrice > 0m)
+            {
+                standardSum += basePrice;
+            }
+
+            if (!firmClosed && firmPrice.HasValue && firmPrice.Value > 0m)
+            {
+                companySum += firmPrice.Value;
+                hasCompanyAny = true;
+            }
+            else
+            {
+                companySum += basePrice;
+            }
+        }
+
+        standardSum *= Math.Max(1, model.RoomCount);
+        companySum *= Math.Max(1, model.RoomCount);
+
+        return new FirmaReservationPriceCompareViewModel
+        {
+            StandardTotal = standardSum,
+            CompanyTotal = companySum,
+            StandardTotalText = standardSum <= 0 ? "-" : standardSum.ToString("N0", culture) + " ₺",
+            CompanyTotalText = companySum <= 0 ? "-" : companySum.ToString("N0", culture) + " ₺",
+            SavingsText = (standardSum - companySum) <= 0 ? "0 ₺" : (standardSum - companySum).ToString("N0", culture) + " ₺",
+            NightCountText = $"{nightCount} gece · {model.RoomCount} oda",
+            HasCompanyPrice = hasCompanyAny,
+            Note = hasCompanyAny ? "Firma günlük fiyatları uygulandı." : "Firma günlük fiyatı yoksa standart fiyat baz alındı."
+        };
+    }
+
+    private static IEnumerable<string> SplitEmails(string? csv)
+    {
+        if (string.IsNullOrWhiteSpace(csv)) yield break;
+        foreach (var item in csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (item.Contains('@')) yield return item;
+        }
+    }
+
+    private static async Task<string> ResolveGuestNameAsync(SqlConnection connection, SqlTransaction tx, long firmaId, long? employeeUserId, CancellationToken cancellationToken)
+    {
+        if (employeeUserId.HasValue && employeeUserId.Value > 0)
+        {
+            await using var cmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF(ad_soyad,''),'Firma Personeli') FROM users WHERE id=@id;", connection, tx);
+            cmd.Parameters.AddWithValue("@id", employeeUserId.Value);
+            var raw = await cmd.ExecuteScalarAsync(cancellationToken);
+            if (raw is not null and not DBNull) return Convert.ToString(raw, CultureInfo.InvariantCulture) ?? "Firma Personeli";
+        }
+        await using var firmCmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF(firma_adi,''),'Firma') FROM firmalar WHERE id=@id;", connection, tx);
+        firmCmd.Parameters.AddWithValue("@id", firmaId);
+        var firmRaw = await firmCmd.ExecuteScalarAsync(cancellationToken);
+        return firmRaw is null or DBNull ? "Firma" : Convert.ToString(firmRaw, CultureInfo.InvariantCulture) ?? "Firma";
+    }
+
+    private static async Task<(string? Email, string? CompanyName)> LoadCompanyContactAsync(SqlConnection connection, SqlTransaction tx, long firmaId, CancellationToken cancellationToken)
+    {
+        await using var cmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF(firma_eposta,''), NULLIF(yetkili_eposta,''), NULL), COALESCE(NULLIF(firma_adi,''),NULL) FROM firmalar WHERE id=@id;", connection, tx);
+        cmd.Parameters.AddWithValue("@id", firmaId);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken)) return (null, null);
+        var email = reader.IsDBNull(0) ? null : reader.GetString(0);
+        var name = reader.IsDBNull(1) ? null : reader.GetString(1);
+        return (email, name);
+    }
+
+    private static async Task<string?> ResolveEmployeeEmailAsync(SqlConnection connection, SqlTransaction tx, long userId, CancellationToken cancellationToken)
+    {
+        await using var cmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF(eposta,''), NULL) FROM users WHERE id=@id;", connection, tx);
+        cmd.Parameters.AddWithValue("@id", userId);
+        var raw = await cmd.ExecuteScalarAsync(cancellationToken);
+        return raw is null or DBNull ? null : Convert.ToString(raw, CultureInfo.InvariantCulture);
+    }
+
+    private static async Task<string> LoadHotelNameAsync(SqlConnection connection, SqlTransaction tx, long hotelId, CancellationToken cancellationToken)
+    {
+        await using var cmd = new SqlCommand("SELECT TOP (1) otel_adi FROM oteller WHERE id=@id;", connection, tx);
+        cmd.Parameters.AddWithValue("@id", hotelId);
+        var raw = await cmd.ExecuteScalarAsync(cancellationToken);
+        return raw is null or DBNull ? "Otel" : Convert.ToString(raw, CultureInfo.InvariantCulture) ?? "Otel";
+    }
+
+    private static async Task<(long UserId, string Email)> ResolvePartnerRecipientAsync(SqlConnection connection, SqlTransaction tx, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP (1) COALESCE(o.user_id, oks.user_id, 1), COALESCE(o.satis_kontak_eposta, u.eposta, o.eposta, 'partner@otelturizm.com')
+            FROM oteller o
+            LEFT JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = o.id AND oks.aktif_mi = 1
+            LEFT JOIN users u ON u.id = COALESCE(o.user_id, oks.user_id)
+            WHERE o.id = @hotelId
+            ORDER BY oks.ana_sorumlu_mu DESC, oks.id ASC;";
+        await using var cmd = new SqlCommand(sql, connection, tx);
+        cmd.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            return (reader.IsDBNull(0) ? 1L : reader.GetInt64(0), reader.GetString(1));
+        }
+        return (1, "partner@otelturizm.com");
+    }
+
+    private static async Task<string> GenerateFirmaReservationNoAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        await using var cmd = new SqlCommand("SELECT COUNT(*) + 1 FROM rezervasyonlar WHERE CAST(olusturulma_tarihi AS date) = CAST(GETDATE() AS date);", connection);
+        var seq = Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+        return $"FRM-{DateTime.Now:yyyyMMdd}-{seq:0000}";
     }
 
     public async Task<FirmaMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default)

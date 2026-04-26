@@ -1,0 +1,121 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerCompanyPricingPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+}
+
+<section class="partner-panel-card ot-card">
+    <div class="partner-card-head">
+        <div>
+            <h2>Firmalara Özel Günlük Fiyat</h2>
+            <p>Seçili firma için oda bazlı günlük fiyat tanımlayın. Firma fiyatı yoksa standart takvim fiyatı baz alınır.</p>
+        </div>
+        <div class="partner-inline-actions">
+            <a class="partner-btn-light ot-btn ot-btn--ghost" href="@Model.PreviousMonthQuery"><i class="fas fa-chevron-left"></i> Önceki Ay</a>
+            <a class="partner-btn-light ot-btn ot-btn--ghost" href="@Model.NextMonthQuery">Sonraki Ay <i class="fas fa-chevron-right"></i></a>
+        </div>
+    </div>
+
+    <div class="partner-grid-3">
+        <div>
+            <label>Firma</label>
+            <select onchange="if(this.value){ window.location=this.value; }">
+                @foreach (var company in Model.Companies)
+                {
+                    <option value="/panel/partner/firma-fiyatlari?otelId=@Model.HotelId&companyId=@company.CompanyId&roomId=@(Model.SelectedRoomId ?? 0)&month=@Model.MonthAnchor.ToString("yyyy-MM")"
+                            selected="@(company.IsSelected ? "selected" : null)">
+                        @company.CompanyName (@company.StatusText)
+                    </option>
+                }
+            </select>
+        </div>
+        <div>
+            <label>Oda Tipi</label>
+            <select onchange="if(this.value){ window.location=this.value; }">
+                @foreach (var room in Model.Rooms)
+                {
+                    <option value="/panel/partner/firma-fiyatlari?otelId=@Model.HotelId&companyId=@(Model.SelectedCompanyId ?? 0)&roomId=@room.RoomTypeId&month=@Model.MonthAnchor.ToString("yyyy-MM")"
+                            selected="@(room.RoomTypeId == Model.SelectedRoomId ? "selected" : null)">
+                        @room.RoomName
+                    </option>
+                }
+            </select>
+        </div>
+        <div>
+            <label>Ay</label>
+            <input type="month" value="@Model.MonthAnchor.ToString("yyyy-MM")"
+                   onchange="window.location='/panel/partner/firma-fiyatlari?otelId=@Model.HotelId&companyId=@(Model.SelectedCompanyId ?? 0)&roomId=@(Model.SelectedRoomId ?? 0)&month='+this.value" />
+        </div>
+    </div>
+</section>
+
+<section class="partner-panel-card ot-card">
+    <div class="partner-card-head">
+        <div>
+            <h2>Toplu Güncelle</h2>
+            <p>Tarih aralığı seçip firma gecelik fiyatını uygulayın.</p>
+        </div>
+    </div>
+
+    <form method="post" action="/panel/partner/firma-fiyatlari/toplu-guncelle" class="partner-form-grid">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="HotelId" value="@Model.HotelId" />
+        <input type="hidden" name="CompanyId" value="@(Model.SelectedCompanyId ?? 0)" />
+        <input type="hidden" name="RoomTypeId" value="@(Model.SelectedRoomId ?? 0)" />
+        <div>
+            <label>Başlangıç</label>
+            <input type="date" name="StartDate" value="@Model.BulkForm.StartDate.ToString("yyyy-MM-dd")" required />
+        </div>
+        <div>
+            <label>Bitiş</label>
+            <input type="date" name="EndDate" value="@Model.BulkForm.EndDate.ToString("yyyy-MM-dd")" required />
+        </div>
+        <div>
+            <label>Firma Gecelik Fiyat</label>
+            <input type="number" step="0.01" name="CompanyNightlyPrice" value="@Model.BulkForm.CompanyNightlyPrice" required />
+        </div>
+        <div class="partner-check">
+            <label><input type="checkbox" name="CloseSales" value="true" @(Model.BulkForm.CloseSales ? "checked" : null) /> Kapalı satış</label>
+        </div>
+        <div class="span-2">
+            <label>Not</label>
+            <input type="text" name="Note" value="@Model.BulkForm.Note" placeholder="Opsiyonel" />
+        </div>
+        <div class="span-2 partner-form-actions">
+            <button type="submit" class="partner-btn-primary ot-btn ot-btn--primary">Kaydet</button>
+        </div>
+    </form>
+</section>
+
+<section class="partner-panel-card ot-card">
+    <div class="partner-card-head">
+        <div>
+            <h2>Ay Takvimi</h2>
+            <p>Firma fiyatı varsa gösterilir; yoksa standart fiyat referans olur.</p>
+        </div>
+    </div>
+
+    <div class="company-price-grid">
+        @foreach (var day in Model.Days)
+        {
+            <article class="company-price-day @(day.IsClosed ? "is-closed" : "")">
+                <div class="top">
+                    <strong>@day.DateText</strong>
+                    @if (day.IsClosed)
+                    {
+                        <span class="pill danger ot-badge ot-badge--danger">Kapalı</span>
+                    }
+                    else
+                    {
+                        <span class="pill ot-badge ot-badge--success">Açık</span>
+                    }
+                </div>
+                <div class="prices">
+                    <div><small>Firma</small><b>@day.CompanyPriceText</b></div>
+                    <div><small>Standart</small><span>@day.BasePriceText</span></div>
+                </div>
+            </article>
+        }
+    </div>
+</section>
+

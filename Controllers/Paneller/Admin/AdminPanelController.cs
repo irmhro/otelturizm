@@ -18,14 +18,18 @@ public class AdminPanelController : Controller
     private readonly IContractContentService _contractContentService;
     private readonly IDevelopmentRequestService _developmentRequestService;
     private readonly IPhoneVerificationService _phoneVerificationService;
+    private readonly IAuditLogService _auditLogService;
+    private readonly IImageStorageService _imageStorageService;
 
-    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService)
+    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService)
     {
         _adminService = adminService;
         _adminHotelManagementService = adminHotelManagementService;
         _contractContentService = contractContentService;
         _developmentRequestService = developmentRequestService;
         _phoneVerificationService = phoneVerificationService;
+        _auditLogService = auditLogService;
+        _imageStorageService = imageStorageService;
     }
 
     [HttpGet("")]
@@ -41,6 +45,20 @@ public class AdminPanelController : Controller
         ViewData["Title"] = "Admin Dashboard";
         ViewData["PageCss"] = "panel-admin-dashboard";
         return View("~/Views/Paneller/Admin/Dashboard.cshtml", model);
+    }
+
+    [HttpGet("sistem-sagligi")]
+    public async Task<IActionResult> SystemHealth(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetSystemHealthAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCss"] = "panel-admin-section";
+        return View("~/Views/Paneller/Admin/SystemHealth.cshtml", model);
     }
 
     [HttpGet("kullanicilar")]
@@ -481,7 +499,78 @@ public class AdminPanelController : Controller
     }
 
     [HttpGet("firma-basvurulari")]
-    public Task<IActionResult> CompanyApplications(CancellationToken cancellationToken) => RenderSectionAsync("company-applications", "CompanyApplications", cancellationToken);
+    public async Task<IActionResult> CompanyApplications(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetCompanyApplicationsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCss"] = "panel-admin-section";
+        return View("~/Views/Paneller/Admin/CompanyApplications.cshtml", model);
+    }
+
+    [HttpPost("firma-basvurulari/guncelle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateCompanyApplicationStatus(AdminCompanyApplicationDecisionRequest request, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.ReviewCompanyApplicationAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "AdminCompanyMessage" : "AdminCompanyError"] = result.Message;
+        return RedirectToAction(nameof(CompanyApplications));
+    }
+
+    [HttpGet("otel-liste-abonelikleri")]
+    public async Task<IActionResult> ListingSubscriptions(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetListingSubscriptionsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCss"] = "panel-admin-section";
+        return View("~/Views/Paneller/Admin/ListingSubscriptions.cshtml", model);
+    }
+
+    [HttpPost("otel-liste-abonelikleri/guncelle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateListingSubscription(AdminListingSubscriptionDecisionRequest request, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.ReviewListingSubscriptionAsync(GetUserId(), request, cancellationToken);
+        if (result.Success)
+        {
+            try
+            {
+                await _auditLogService.TryLogAdminActionAsync(
+                    GetUserId(),
+                    $"listing_subscription_{request.Action}",
+                    "otel_liste_abonelikleri",
+                    request.SubscriptionId.ToString(),
+                    string.IsNullOrWhiteSpace(request.AdminNote) ? result.Message : request.AdminNote.Trim(),
+                    HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    cancellationToken);
+            }
+            catch
+            {
+                // audit fail-safe
+            }
+        }
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(ListingSubscriptions));
+    }
 
     [HttpGet("gelistirme-talepleri")]
     public async Task<IActionResult> DevelopmentRequests([FromQuery] string? q, [FromQuery] string? status, [FromQuery] string? priority, [FromQuery] long? developerUserId, CancellationToken cancellationToken)
@@ -511,13 +600,10 @@ public class AdminPanelController : Controller
         string? imageUrl = null;
         if (form.VisualFile is not null && form.VisualFile.Length > 0)
         {
-            var fileName = $"{Guid.NewGuid():N}-{Path.GetFileName(form.VisualFile.FileName)}";
-            var targetDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "developer", "admin");
-            Directory.CreateDirectory(targetDirectory);
-            var physicalPath = Path.Combine(targetDirectory, fileName);
-            await using var stream = System.IO.File.Create(physicalPath);
-            await form.VisualFile.CopyToAsync(stream, cancellationToken);
-            imageUrl = $"/uploads/developer/admin/{fileName}";
+            var adminUserId = GetUserId();
+            var targetDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "developer", "admin", adminUserId.ToString());
+            var saved = await _imageStorageService.SaveAsWebpAsync(form.VisualFile, targetDir, "admin-request", cancellationToken);
+            imageUrl = $"/uploads/developer/admin/{adminUserId}/{saved.FileName}";
         }
 
         var result = await _developmentRequestService.SaveAdminRequestAsync(GetUserId(), form, imageUrl, cancellationToken);
@@ -622,6 +708,15 @@ public class AdminPanelController : Controller
 
     [HttpGet("log-kayitlari")]
     public Task<IActionResult> Logs(CancellationToken cancellationToken) => RenderSectionAsync("logs", "Logs", cancellationToken);
+
+    [HttpGet("konum-arama-loglari")]
+    public Task<IActionResult> GeoSearchLogs(CancellationToken cancellationToken) => RenderSectionAsync("geo-search-logs", "GeoSearchLogs", cancellationToken);
+
+    [HttpGet("otel-koordinat-degisimleri")]
+    public Task<IActionResult> HotelCoordinateChanges(CancellationToken cancellationToken) => RenderSectionAsync("hotel-coordinate-changes", "HotelCoordinateChanges", cancellationToken);
+
+    [HttpGet("firma-rezervasyonlari")]
+    public Task<IActionResult> CompanyReservations(CancellationToken cancellationToken) => RenderSectionAsync("company-reservations", "CompanyReservations", cancellationToken);
 
     [HttpGet("yedekleme")]
     public Task<IActionResult> Backups(CancellationToken cancellationToken) => RenderSectionAsync("backups", "Backups", cancellationToken);

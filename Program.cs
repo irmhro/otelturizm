@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 using otelturizmnew.Data;
 using otelturizmnew.Services;
 using otelturizmnew.Services.Abstractions;
@@ -47,6 +48,7 @@ builder.Services.AddScoped<IUserPanelService, UserPanelService>();
 builder.Services.AddScoped<ISessionSecurityService, SessionSecurityService>();
 builder.Services.AddScoped<ILoginTwoFactorService, LoginTwoFactorService>();
 builder.Services.AddScoped<ISupportService, SupportService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IWeatherService, WeatherService>();
 builder.Services.AddHttpClient<IWhatsAppCloudApiService, WhatsAppCloudApiService>();
@@ -147,6 +149,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.Use(async (context, next) =>
 {
+    var sw = Stopwatch.StartNew();
     if (!context.Response.Headers.ContainsKey("X-Content-Type-Options"))
     {
         context.Response.Headers["X-Content-Type-Options"] = "nosniff";
@@ -158,7 +161,37 @@ app.Use(async (context, next) =>
 
     var tracker = context.RequestServices.GetRequiredService<ISessionSecurityService>();
     await tracker.TrackAsync(context, context.RequestAborted);
-    await next();
+
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        try
+        {
+            var audit = context.RequestServices.GetRequiredService<IAuditLogService>();
+            await audit.TryLogExceptionAsync(context, ex, context.RequestAborted);
+        }
+        catch
+        {
+            // fail-safe
+        }
+        throw;
+    }
+    finally
+    {
+        sw.Stop();
+        try
+        {
+            var audit = context.RequestServices.GetRequiredService<IAuditLogService>();
+            await audit.TryLogApiRequestAsync(context, context.Response.StatusCode, sw.ElapsedMilliseconds, context.RequestAborted);
+        }
+        catch
+        {
+            // fail-safe
+        }
+    }
 });
 app.UseAuthorization();
 

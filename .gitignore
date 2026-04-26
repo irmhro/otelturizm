@@ -48,6 +48,14 @@ Generated\ Files/
 codex-temp/
 tmp/
 
+# Local publish / deploy output (do not commit)
+yayinla2355/
+yay?nla2355/
+yay�nla2355/
+
+# Workspace reference docs (do not commit)
+proje verileri/
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*

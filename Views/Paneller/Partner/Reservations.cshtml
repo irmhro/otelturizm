@@ -25,7 +25,7 @@
             <p>Onay, red, detay ve misafir mesajı aksiyonlarını tek ekranda yönetin.</p>
         </div>
         <div class="partner-reservation-toolbar-actions">
-            <a href="/panel/partner/rezervasyonlar/disa-aktar?otelId=@Model.Shell.SelectedHotelId" class="partner-secondary-btn">
+            <a href="/panel/partner/rezervasyonlar/disa-aktar?otelId=@Model.Shell.SelectedHotelId" class="partner-secondary-btn ot-btn ot-btn--ghost">
                 <i class="fas fa-download"></i>
                 Dışa aktar
             </a>
@@ -69,7 +69,7 @@
             </select>
         </label>
         <input type="hidden" name="page" value="1" />
-        <button type="submit" class="partner-primary-btn">
+        <button type="submit" class="partner-primary-btn ot-btn ot-btn--primary">
             <i class="fas fa-filter"></i>
             Filtrele
         </button>
@@ -123,7 +123,7 @@
                         <small>@row.NightCount gece</small>
                     </td>
                     <td>
-                        <span class="partner-status-pill">@row.StatusLabel</span>
+                        <span class="partner-status-pill ot-badge">@row.StatusLabel</span>
                         @if (!string.IsNullOrWhiteSpace(row.CancellationReason))
                         {
                             <small>Iptal: @row.CancellationReason</small>
@@ -150,7 +150,7 @@
                                     <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
                                     <input type="hidden" name="ReservationId" value="@row.ReservationId" />
                                     <input type="hidden" name="ActionType" value="approve" />
-                                    <button type="submit" class="partner-icon-btn is-success" title="Onayla">
+                                    <button type="submit" class="partner-icon-btn is-success ot-btn ot-btn--success" title="Onayla">
                                         <i class="fas fa-check"></i>
                                     </button>
                                 </form>
@@ -158,7 +158,7 @@
                             @if (row.CanReject)
                             {
                                 <button type="button"
-                                        class="partner-icon-btn is-danger"
+                                        class="partner-icon-btn is-danger ot-btn ot-btn--danger"
                                         title="Reddet"
                                         data-reservation-reject
                                         data-reservation-id="@row.ReservationId"
@@ -168,7 +168,7 @@
                                 </button>
                             }
                             <button type="button"
-                                    class="partner-icon-btn"
+                                    class="partner-icon-btn ot-btn ot-btn--ghost"
                                     title="Detay gor"
                                     data-reservation-detail
                                     data-reservation-no="@row.ReservationNo"
@@ -192,7 +192,7 @@
                             @if (row.CanMessageGuest)
                             {
                                 <button type="button"
-                                        class="partner-icon-btn is-info"
+                                        class="partner-icon-btn is-info ot-btn ot-btn--primary"
                                         title="Misafire mesaj"
                                         data-reservation-message
                                         data-reservation-id="@row.ReservationId"
@@ -213,12 +213,12 @@
             Toplam <strong>@Model.TotalCount</strong> kayit · Sayfa <strong>@Model.CurrentPage</strong> / <strong>@Model.TotalPages</strong>
         </div>
         <div class="partner-pagination-actions">
-            <a class="partner-secondary-btn @(hasPrevPage ? string.Empty : "is-disabled")"
+            <a class="partner-secondary-btn @(hasPrevPage ? string.Empty : "is-disabled") ot-btn ot-btn--ghost"
                href="@(hasPrevPage ? $"/panel/partner/rezervasyonlar?otelId={Model.Shell.SelectedHotelId}&dateFrom={Model.Filters.DateFrom}&dateTo={Model.Filters.DateTo}&status={Model.Filters.Status}&paymentMethod={Model.Filters.PaymentMethod}&pageSize={Model.PageSize}&conversationId={Model.SelectedConversationId}&page={Model.CurrentPage - 1}" : "#")">
                 <i class="fas fa-chevron-left"></i>
                 Onceki
             </a>
-            <a class="partner-secondary-btn @(hasNextPage ? string.Empty : "is-disabled")"
+            <a class="partner-secondary-btn @(hasNextPage ? string.Empty : "is-disabled") ot-btn ot-btn--ghost"
                href="@(hasNextPage ? $"/panel/partner/rezervasyonlar?otelId={Model.Shell.SelectedHotelId}&dateFrom={Model.Filters.DateFrom}&dateTo={Model.Filters.DateTo}&status={Model.Filters.Status}&paymentMethod={Model.Filters.PaymentMethod}&pageSize={Model.PageSize}&conversationId={Model.SelectedConversationId}&page={Model.CurrentPage + 1}" : "#")">
                 Sonraki
                 <i class="fas fa-chevron-right"></i>

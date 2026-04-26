@@ -64,7 +64,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             return;
         }
 
-        var pendingEmails = await LoadPendingEmailsAsync(connection, cancellationToken);
+        var pendingEmails = await ClaimPendingEmailsAsync(connection, cancellationToken);
         foreach (var item in pendingEmails)
         {
             try
@@ -82,25 +82,55 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         }
     }
 
-    private static async Task<List<QueuedEmailItem>> LoadPendingEmailsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    private static async Task<List<QueuedEmailItem>> ClaimPendingEmailsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         var hasAttachmentsColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "ekler_json", cancellationToken);
         var sql = hasAttachmentsColumn
             ? """
-                SELECT TOP (10) id, alici_eposta, konu, gonderilen_icerik, COALESCE(gonderme_denemesi, 1), COALESCE(maksimum_deneme, 3), ekler_json
-                FROM bildirim_loglari
-                WHERE tur = 'E-posta'
-                  AND durum = 'Beklemede'
-                  AND alici_eposta IS NOT NULL
-                ORDER BY olusturulma_tarihi ASC;
+                ;WITH cte AS (
+                    SELECT TOP (10) id
+                    FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
+                    WHERE tur = 'E-posta'
+                      AND durum = 'Beklemede'
+                      AND alici_eposta IS NOT NULL
+                    ORDER BY olusturulma_tarihi ASC
+                )
+                UPDATE b
+                SET durum = 'İşleniyor',
+                    guncellenme_tarihi = SYSUTCDATETIME()
+                OUTPUT
+                    inserted.id,
+                    inserted.alici_eposta,
+                    inserted.konu,
+                    inserted.gonderilen_icerik,
+                    COALESCE(inserted.gonderme_denemesi, 1),
+                    COALESCE(inserted.maksimum_deneme, 3),
+                    inserted.ekler_json
+                FROM bildirim_loglari b
+                INNER JOIN cte ON cte.id = b.id;
                 """
             : """
-                SELECT TOP (10) id, alici_eposta, konu, gonderilen_icerik, COALESCE(gonderme_denemesi, 1), COALESCE(maksimum_deneme, 3), NULL AS ekler_json
-                FROM bildirim_loglari
-                WHERE tur = 'E-posta'
-                  AND durum = 'Beklemede'
-                  AND alici_eposta IS NOT NULL
-                ORDER BY olusturulma_tarihi ASC;
+                ;WITH cte AS (
+                    SELECT TOP (10) id
+                    FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
+                    WHERE tur = 'E-posta'
+                      AND durum = 'Beklemede'
+                      AND alici_eposta IS NOT NULL
+                    ORDER BY olusturulma_tarihi ASC
+                )
+                UPDATE b
+                SET durum = 'İşleniyor',
+                    guncellenme_tarihi = SYSUTCDATETIME()
+                OUTPUT
+                    inserted.id,
+                    inserted.alici_eposta,
+                    inserted.konu,
+                    inserted.gonderilen_icerik,
+                    COALESCE(inserted.gonderme_denemesi, 1),
+                    COALESCE(inserted.maksimum_deneme, 3),
+                    NULL AS ekler_json
+                FROM bildirim_loglari b
+                INNER JOIN cte ON cte.id = b.id;
                 """;
 
         var items = new List<QueuedEmailItem>();

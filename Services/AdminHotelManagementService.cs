@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Linq;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
@@ -148,6 +149,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsureHotelExistsAsync(connection, request.HotelId, cancellationToken);
+        var (previousLatitude, previousLongitude) = await LoadHotelCoordinatesAsync(connection, request.HotelId, cancellationToken);
 
         const string sql = @"
             UPDATE oteller
@@ -293,7 +295,98 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         command.Parameters.AddWithValue("@isRecommended", request.IsRecommended ? 1 : 0);
         await command.ExecuteNonQueryAsync(cancellationToken);
 
+        await TryLogCoordinateChangeAsync(
+            connection,
+            adminUserId,
+            request.HotelId,
+            request.HotelName,
+            previousLatitude,
+            previousLongitude,
+            request.Latitude,
+            request.Longitude,
+            cancellationToken);
+
         return (true, "Otel bilgileri admin panelinden guncellendi.");
+    }
+
+    private static async Task<(decimal? Latitude, decimal? Longitude)> LoadHotelCoordinatesAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT TOP (1) enlem, boylam FROM oteller WHERE id = @hotelId;";
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return (null, null);
+        }
+
+        decimal? lat = reader.IsDBNull(0) ? null : Convert.ToDecimal(reader.GetValue(0), CultureInfo.InvariantCulture);
+        decimal? lng = reader.IsDBNull(1) ? null : Convert.ToDecimal(reader.GetValue(1), CultureInfo.InvariantCulture);
+        return (lat, lng);
+    }
+
+    private async Task TryLogCoordinateChangeAsync(
+        SqlConnection connection,
+        long adminUserId,
+        long hotelId,
+        string hotelName,
+        decimal? previousLat,
+        decimal? previousLng,
+        decimal? newLat,
+        decimal? newLng,
+        CancellationToken cancellationToken)
+    {
+        if (previousLat == newLat && previousLng == newLng)
+        {
+            return;
+        }
+
+        const string existsSql = "SELECT CASE WHEN OBJECT_ID(N'dbo.otel_koordinat_degisim_loglari', N'U') IS NULL THEN 0 ELSE 1 END;";
+        await using (var existsCmd = new SqlCommand(existsSql, connection))
+        {
+            var existsObj = await existsCmd.ExecuteScalarAsync(cancellationToken);
+            var exists = existsObj is not null && Convert.ToInt32(existsObj, CultureInfo.InvariantCulture) == 1;
+            if (!exists)
+            {
+                return;
+            }
+        }
+
+        const string adminNameSql = "SELECT TOP (1) COALESCE(NULLIF(ad_soyad,''), '-') FROM users WHERE id = @id;";
+        string adminName;
+        await using (var adminCmd = new SqlCommand(adminNameSql, connection))
+        {
+            adminCmd.Parameters.AddWithValue("@id", adminUserId);
+            var raw = await adminCmd.ExecuteScalarAsync(cancellationToken);
+            adminName = raw is null or DBNull ? "-" : Convert.ToString(raw, CultureInfo.InvariantCulture) ?? "-";
+        }
+
+        const string insertSql = @"
+            INSERT INTO dbo.otel_koordinat_degisim_loglari
+            (
+                admin_kullanici_id, admin_ad_soyad, otel_id, otel_adi,
+                onceki_enlem, onceki_boylam, yeni_enlem, yeni_boylam,
+                ip_adresi, notlar
+            )
+            VALUES
+            (
+                @adminUserId, @adminName, @hotelId, @hotelName,
+                @prevLat, @prevLng, @newLat, @newLng,
+                @ip, @note
+            );";
+
+        await using var insertCmd = new SqlCommand(insertSql, connection);
+        insertCmd.Parameters.AddWithValue("@adminUserId", adminUserId);
+        insertCmd.Parameters.AddWithValue("@adminName", adminName);
+        insertCmd.Parameters.AddWithValue("@hotelId", hotelId);
+        insertCmd.Parameters.AddWithValue("@hotelName", hotelName);
+        insertCmd.Parameters.AddWithValue("@prevLat", previousLat.HasValue ? previousLat.Value : DBNull.Value);
+        insertCmd.Parameters.AddWithValue("@prevLng", previousLng.HasValue ? previousLng.Value : DBNull.Value);
+        insertCmd.Parameters.AddWithValue("@newLat", newLat.HasValue ? newLat.Value : DBNull.Value);
+        insertCmd.Parameters.AddWithValue("@newLng", newLng.HasValue ? newLng.Value : DBNull.Value);
+        insertCmd.Parameters.AddWithValue("@ip", DBNull.Value);
+        insertCmd.Parameters.AddWithValue("@note", "Admin panelinden koordinat güncellendi.");
+        await insertCmd.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public async Task<(bool Success, string Message)> SaveRoomAsync(AdminRoomEditForm request, CancellationToken cancellationToken = default)

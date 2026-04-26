@@ -75,7 +75,37 @@ public class SalesPanelController : Controller
         if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var result = await _salesService.CreateReservationAsync(GetUserId(), model, cancellationToken);
         SetFeedback(result.Success, result.Message);
+        if (result.Success && result.ReservationId.HasValue && result.ReservationId.Value > 0)
+        {
+            TempData["SalesLastReservationId"] = result.ReservationId.Value.ToString();
+            TempData["SalesLastReservationEmail"] = (model.CustomerEmail ?? string.Empty).Trim();
+        }
         return Redirect("/panel/satis/yeni-rezervasyon");
+    }
+
+    [HttpGet("rezervasyon-pdf/{reservationId:long}")]
+    public async Task<IActionResult> ReservationPdf(long reservationId, CancellationToken cancellationToken)
+    {
+        if (!IsSalesUser()) return Redirect("/kullanici-giris");
+        var dashboard = await _salesService.GetDashboardAsync(GetUserId(), cancellationToken);
+        ApplyFeedback(dashboard.Shell);
+        dashboard.Shell.ActiveSectionKey = "reservations";
+        dashboard.Shell.PanelTitle = "Rezervasyon PDF";
+        dashboard.Shell.PanelSubtitle = "E-posta olmayan misafirler için anında PDF üretin, indirin ve paylaşın.";
+        ViewData["SalesShell"] = dashboard.Shell;
+        ViewData["Title"] = "Rezervasyon PDF";
+        ViewData["PageCssPath"] = "paneller/satis/reservation-pdf";
+        ViewData["ReservationId"] = reservationId;
+        return View("~/Views/Paneller/Satis/ReservationPdf.cshtml");
+    }
+
+    [HttpGet("api/rezervasyon-pdf/{reservationId:long}")]
+    public async Task<IActionResult> ReservationPdfData(long reservationId, CancellationToken cancellationToken)
+    {
+        if (!IsSalesUser()) return Unauthorized();
+        var data = await _salesService.GetReservationPdfDataAsync(GetUserId(), reservationId, cancellationToken);
+        if (data is null) return NotFound(new { success = false, message = "Rezervasyon bulunamadı." });
+        return Ok(new { success = true, data });
     }
 
     [HttpGet("yeni-rezervasyon/otel-asistani")]

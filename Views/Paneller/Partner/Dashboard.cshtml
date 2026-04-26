@@ -1,10 +1,31 @@
 @using System.Globalization
 @model otelturizmnew.Models.Paneller.Partner.PartnerDashboardViewModel
 @{ Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml"; ViewData["PartnerShell"] = Model.Shell; }
+<section class="partner-section-card ot-card" style="margin-bottom:14px;">
+    <div class="partner-row-between">
+        <div>
+            <h2>Operasyon Merkezi</h2>
+            <p class="partner-muted">Seçili otel: <strong>@(string.IsNullOrWhiteSpace(Model.Shell.SelectedHotelName) ? "-" : Model.Shell.SelectedHotelName)</strong></p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+            <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/rezervasyonlar?otelId=@Model.Shell.SelectedHotelId"><i class="fas fa-list"></i> Rezervasyonlar</a>
+            <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/takvim-fiyatlar?otelId=@Model.Shell.SelectedHotelId"><i class="fas fa-calendar-days"></i> Takvim & Fiyat</a>
+            <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/fotograflar?otelId=@Model.Shell.SelectedHotelId"><i class="fas fa-camera"></i> Fotoğraflar</a>
+            <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/otel-bilgileri?otelId=@Model.Shell.SelectedHotelId"><i class="fas fa-hotel"></i> Otel Bilgileri</a>
+        </div>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+        <span class="ot-badge ot-badge--warning"><i class="fas fa-hourglass-half"></i> @Model.Shell.PendingReservations bekleyen</span>
+        <span class="ot-badge"><i class="fas fa-headset"></i> @Model.Shell.OpenSupportTickets destek</span>
+        <span class="ot-badge ot-badge--danger"><i class="fas fa-box-open"></i> @Model.Shell.LowStockAlerts stok uyarısı</span>
+        <span class="ot-badge ot-badge--info"><i class="fas fa-star"></i> @Model.Shell.UnansweredReviews yorum</span>
+    </div>
+</section>
+
 <section class="partner-grid partner-dashboard-grid">
     @foreach (var card in Model.SummaryCards)
     {
-        <article class="partner-stat-card @card.ToneClass">
+        <article class="partner-stat-card @card.ToneClass ot-card">
             <i class="fas @card.IconClass"></i>
             <strong>@card.Value</strong>
             <span>@card.Label</span>
@@ -15,7 +36,7 @@
 <section class="partner-dashboard-actions">
     @foreach (var action in Model.QuickActions)
     {
-        <a href="@action.Url" class="partner-dashboard-action-card @action.ToneClass">
+        <a href="@action.Url" class="partner-dashboard-action-card @action.ToneClass ot-card">
             <i class="fas @action.IconClass"></i>
             <div>
                 <strong>@action.Title</strong>
@@ -92,7 +113,7 @@
                                     <input type="hidden" name="ReservationId" value="@item.ReservationId" />
                                     <input type="hidden" name="ActionType" value="approve" />
                                     <input type="hidden" name="ReturnUrl" value="/panel/partner/dashboard?otelId=@Model.Shell.SelectedHotelId" />
-                                    <button type="submit" class="partner-dashboard-action-btn is-success">
+                                    <button type="submit" class="partner-dashboard-action-btn is-success ot-btn ot-btn--success">
                                         <i class="fas fa-circle-check"></i>
                                         Onayla
                                     </button>
@@ -101,7 +122,7 @@
                             @if (item.CanReject)
                             {
                                 <button type="button"
-                                        class="partner-dashboard-action-btn is-danger"
+                                        class="partner-dashboard-action-btn is-danger ot-btn ot-btn--danger"
                                         data-dashboard-reservation-reject
                                         data-reservation-id="@item.ReservationId"
                                         data-reservation-no="@item.ReservationNo"
@@ -146,7 +167,7 @@
                 <span>Misafire gidecek detayli red aciklamasi</span>
                 <textarea name="Reason" id="dashboard-reject-reason" rows="6" minlength="15" required placeholder="Odayi neden onaylayamadiginizi, alternatif oneriniz varsa bunu ve misafirin ne yapmasi gerektigini acikca yazin."></textarea>
             </label>
-            <button type="submit" class="partner-primary-btn partner-form-span">
+            <button type="submit" class="partner-primary-btn partner-form-span ot-btn ot-btn--danger">
                 <i class="fas fa-ban"></i>
                 Red sebebi ile kaydet
             </button>

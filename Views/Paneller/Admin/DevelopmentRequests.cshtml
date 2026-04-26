@@ -7,12 +7,12 @@
 <section class="admin-users-page admin-development-page">
     @if (TempData["AdminMessage"] is string successMessage)
     {
-        <div class="admin-inline-status success">@successMessage</div>
+        <div class="admin-inline-status success ot-card">@successMessage</div>
     }
 
     @if (TempData["AdminError"] is string errorMessage)
     {
-        <div class="admin-inline-status error">@errorMessage</div>
+        <div class="admin-inline-status error ot-card">@errorMessage</div>
     }
 
     <section class="admin-users-summary-grid">
@@ -52,19 +52,19 @@
                     <option value="@developer.UserId" selected="@(developer.IsSelected ? "selected" : null)">@developer.FullName</option>
                 }
             </select>
-            <button type="submit" class="admin-toolbar-search">Filtrele</button>
+            <button type="submit" class="admin-toolbar-search ot-btn ot-btn--primary">Filtrele</button>
         </form>
     </section>
 
     <section class="admin-development-list">
         @foreach (var request in Model.Requests)
         {
-            <article class="admin-development-card">
+            <article class="admin-development-card ot-card">
                 <div class="admin-development-card-head">
                     <div>
                         <div class="admin-development-chip-row">
-                            <span class="developer-chip @request.PriorityToneClass">@request.Priority</span>
-                            <span class="developer-chip status @request.StatusToneClass">@request.Status</span>
+                            <span class="developer-chip @request.PriorityToneClass ot-badge">@request.Priority</span>
+                            <span class="developer-chip status @request.StatusToneClass ot-badge">@request.Status</span>
                         </div>
                         <h2>@request.Title</h2>
                         <p>@request.Description</p>
@@ -131,14 +131,14 @@
                             <label class="full"><span>Aciklama</span><textarea name="Description" rows="5" required>@request.AdminForm.Description</textarea></label>
                             <label class="full"><span>Admin cevabi</span><textarea name="ReplyMessage" rows="4" placeholder="Developer tarafina not, tarih veya kontrol donusu yazin."></textarea></label>
                             <label><span>Gorsel</span><input type="file" name="VisualFile" accept="image/*" /></label>
-                            <button type="submit" class="primary-btn">Kaydet</button>
+                            <button type="submit" class="primary-btn ot-btn ot-btn--success">Kaydet</button>
                         </form>
 
                         <form method="post" asp-action="DeleteDevelopmentRequest" class="admin-development-delete-form">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="requestId" value="@request.RequestId" />
                             <textarea name="note" rows="3" placeholder="Silme veya reddetme notu"></textarea>
-                            <button type="submit" class="ghost-danger-btn">Talebi Sil / Reddet</button>
+                            <button type="submit" class="ghost-danger-btn ot-btn ot-btn--danger">Talebi Sil / Reddet</button>
                         </form>
                     </div>
                 </div>

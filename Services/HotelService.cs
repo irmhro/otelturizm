@@ -802,6 +802,29 @@ public class HotelService : IHotelService
             ? "LEFT JOIN fiyat_indirimleri fi ON fi.id = pf.indirim_id AND fi.aktif_mi = 1"
             : string.Empty;
 
+        var hasSubscriptionTable = await HotelTableExistsAsync(connection, "otel_liste_abonelikleri", cancellationToken);
+        var subscriptionApplySql = hasSubscriptionTable
+            ? $"""
+                OUTER APPLY (
+                    SELECT TOP (1)
+                        a.hedef_sira AS pin_rank
+                    FROM otel_liste_abonelikleri a
+                    WHERE a.otel_id = o.id
+                      AND a.durum = N'Onaylandı'
+                      AND SYSUTCDATETIME() BETWEEN a.baslangic_utc AND a.bitis_utc
+                      AND (
+                            @searchTermNormalized <> ''
+                            AND (
+                                ({normalizedCitySql} = @searchTermNormalized AND a.kapsam_tipi = N'IL' AND a.kapsam_degeri_normalized = @searchTermNormalized)
+                                OR ({normalizedDistrictSql} = @searchTermNormalized AND a.kapsam_tipi = N'ILCE' AND a.kapsam_degeri_normalized = @searchTermNormalized)
+                                OR ({normalizedNeighborhoodSql} = @searchTermNormalized AND a.kapsam_tipi = N'MAHALLE' AND a.kapsam_degeri_normalized = @searchTermNormalized)
+                            )
+                          )
+                    ORDER BY a.hedef_sira ASC, a.bitis_utc DESC, a.id DESC
+                ) subs
+                """
+            : "OUTER APPLY (SELECT CAST(NULL AS int) AS pin_rank) subs";
+
         var sql = $"""
             SELECT
                 o.id,
@@ -961,6 +984,7 @@ public class HotelService : IHotelService
                 JOIN otel_ozellikleri oo ON oo.id = oi.ozellik_id AND oo.aktif_mi = 1
                 GROUP BY oi.otel_id
             ) oz ON oz.otel_id = o.id
+            {subscriptionApplySql}
             WHERE o.yayin_durumu = N'Yayında'
               AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
               AND (
@@ -987,6 +1011,8 @@ public class HotelService : IHotelService
                     OR {normalizedCompositeSql} LIKE '%' + @searchTermNormalized + '%'
                   )
             ORDER BY
+                CASE WHEN subs.pin_rank IS NULL THEN 1 ELSE 0 END,
+                subs.pin_rank ASC,
                 CASE
                     WHEN {normalizedHotelNameSql} = @searchTermNormalized THEN 0
                     WHEN {normalizedDistrictSql} = @searchTermNormalized THEN 1

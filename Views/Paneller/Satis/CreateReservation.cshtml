@@ -2,8 +2,32 @@
 @{
     Layout = "~/Views/Paneller/Satis/_SalesPanelLayout.cshtml";
     ViewData["SalesShell"] = Model.Shell;
+    var lastReservationIdRaw = TempData["SalesLastReservationId"] as string;
+    var lastReservationEmail = TempData["SalesLastReservationEmail"] as string ?? string.Empty;
+    var hasLastReservationId = long.TryParse(lastReservationIdRaw, out var lastReservationId) && lastReservationId > 0;
 }
-<section class="sales-panel-card sales-search-card">
+@if (hasLastReservationId)
+{
+    <section class="sales-panel-card sales-success-card ot-card">
+        <div class="sales-card-head">
+            <h2>Rezervasyon Kaydı Oluşturuldu</h2>
+            <span>E-posta yoksa PDF çıktısını indirip misafire iletebilirsiniz.</span>
+        </div>
+        <div class="sales-success-actions">
+            <a class="sales-success-action ot-btn ot-btn--ghost" href="/panel/satis/rezervasyonlarim">Rezervasyonlarıma git</a>
+            <a class="sales-success-action is-primary ot-btn ot-btn--primary" href="/panel/satis/rezervasyon-pdf/@lastReservationId">PDF indir / yazdır</a>
+            @if (!string.IsNullOrWhiteSpace(lastReservationEmail))
+            {
+                <span class="sales-soft-pill ot-badge ot-badge--info"><i class="fas fa-envelope"></i> Misafire e-posta kuyruğa alındı</span>
+            }
+            else
+            {
+                <span class="sales-soft-pill ot-badge ot-badge--warning"><i class="fas fa-file-pdf"></i> Misafir e-postasız (PDF ile paylaşın)</span>
+            }
+        </div>
+    </section>
+}
+<section class="sales-panel-card sales-search-card ot-card">
     <div class="sales-card-head sales-card-head-stack">
         <div>
             <h2>Otel Bulma Asistanı</h2>
@@ -29,22 +53,22 @@
         <input type="number" step="0.1" min="0" max="5" name="minimumRating" value="@Model.Form.SearchMinimumRating" placeholder="Min yıldız" />
         <input type="number" min="0" name="minimumReviewCount" value="@Model.Form.SearchMinimumReviewCount" placeholder="Min yorum" />
         <input type="text" name="feature" value="@Model.Form.SearchFeature" placeholder="Özellik" />
-        <button type="submit">Filtrele</button>
+        <button type="submit" class="ot-btn ot-btn--primary">Filtrele</button>
     </form>
     <div class="sales-assistant-scenarios" data-sales-assistant-scenarios>
-        <button type="button" class="sales-assistant-scenario" data-scenario="cheap">
+        <button type="button" class="sales-assistant-scenario ot-btn ot-btn--ghost" data-scenario="cheap">
             <i class="fas fa-tags"></i>
             <span>En ucuz 5</span>
         </button>
-        <button type="button" class="sales-assistant-scenario" data-scenario="rating4">
+        <button type="button" class="sales-assistant-scenario ot-btn ot-btn--ghost" data-scenario="rating4">
             <i class="fas fa-star"></i>
             <span>4+ puan</span>
         </button>
-        <button type="button" class="sales-assistant-scenario" data-scenario="center">
+        <button type="button" class="sales-assistant-scenario ot-btn ot-btn--ghost" data-scenario="center">
             <i class="fas fa-map-location-dot"></i>
             <span>Merkezde</span>
         </button>
-        <button type="button" class="sales-assistant-scenario" data-scenario="reset">
+        <button type="button" class="sales-assistant-scenario ot-btn ot-btn--ghost" data-scenario="reset">
             <i class="fas fa-rotate-left"></i>
             <span>Standart Liste</span>
         </button>
@@ -73,7 +97,7 @@
         {
             @foreach (var hotel in Model.HotelSearchResults)
             {
-                <article class="sales-hotel-card @(hotel.HotelId == Model.Form.HotelId ? "selected" : string.Empty)">
+                    <article class="sales-hotel-card @(hotel.HotelId == Model.Form.HotelId ? "selected" : string.Empty) ot-card">
                     <div>
                         <strong>@hotel.HotelName</strong>
                         <p>@hotel.LocationText · @hotel.RatingText yıldız · @hotel.ReviewCountText</p>
@@ -81,7 +105,7 @@
                         <div class="sales-badges">
                             @foreach (var badge in hotel.FeatureBadges)
                             {
-                                <span>@badge</span>
+                                <span class="ot-badge">@badge</span>
                             }
                         </div>
                     </div>
@@ -89,7 +113,7 @@
                         <span>@hotel.PriceText</span>
                         <small>@hotel.Phone</small>
                         <small>@hotel.TodayDemandText</small>
-                        <a href="/panel/satis/yeni-rezervasyon?hotelId=@hotel.HotelId&customerId=@Model.Form.CustomerId&searchTerm=@Model.Form.SearchTerm&city=@Model.Form.SearchCity&district=@Model.Form.SearchDistrict&neighborhood=@Model.Form.SearchNeighborhood&feature=@Model.Form.SearchFeature&minimumRating=@Model.Form.SearchMinimumRating&minimumReviewCount=@Model.Form.SearchMinimumReviewCount&minPrice=@Model.Form.SearchMinPrice&maxPrice=@Model.Form.SearchMaxPrice">Bu oteli seç</a>
+                        <a class="ot-btn ot-btn--primary" href="/panel/satis/yeni-rezervasyon?hotelId=@hotel.HotelId&customerId=@Model.Form.CustomerId&searchTerm=@Model.Form.SearchTerm&city=@Model.Form.SearchCity&district=@Model.Form.SearchDistrict&neighborhood=@Model.Form.SearchNeighborhood&feature=@Model.Form.SearchFeature&minimumRating=@Model.Form.SearchMinimumRating&minimumReviewCount=@Model.Form.SearchMinimumReviewCount&minPrice=@Model.Form.SearchMinPrice&maxPrice=@Model.Form.SearchMaxPrice">Bu oteli seç</a>
                     </div>
                 </article>
             }
@@ -97,7 +121,7 @@
     </div>
 </section>
 <section class="sales-grid cols-2">
-    <article class="sales-panel-card">
+    <article class="sales-panel-card ot-card">
         <div class="sales-card-head"><h2>Yeni Rezervasyon</h2><span>Müşteri ve oda bilgisi</span></div>
         @if (!string.IsNullOrWhiteSpace(Model.SelectedHotelSummary))
         {
@@ -116,7 +140,7 @@
             </div>
             <div>
                 <label>E-posta</label>
-                <input type="email" name="CustomerEmail" value="@Model.Form.CustomerEmail" required />
+                <input type="email" name="CustomerEmail" value="@Model.Form.CustomerEmail" placeholder="Varsa e-posta (yoksa boş bırak)" />
             </div>
             <div>
                 <label>Telefon</label>
@@ -185,11 +209,11 @@
                 <textarea name="DemandNote">@Model.Form.DemandNote</textarea>
             </div>
             <div class="span-2 sales-form-actions">
-                <button type="submit">Rezervasyonu Tamamla</button>
+                <button type="submit" class="ot-btn ot-btn--primary">Rezervasyonu Tamamla</button>
             </div>
         </form>
     </article>
-    <article class="sales-panel-card">
+    <article class="sales-panel-card ot-card">
         <div class="sales-card-head"><h2>Uygun Oda ve Fiyat Özeti</h2><span>Çağrı sırasında hızlı karar desteği</span></div>
         <div class="sales-room-list">
             @foreach (var room in Model.AvailableRooms)

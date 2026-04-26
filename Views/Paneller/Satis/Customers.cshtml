@@ -4,7 +4,7 @@
     ViewData["SalesShell"] = Model.Shell;
 }
 <section class="sales-grid cols-2 sales-customers-grid">
-    <article class="sales-panel-card">
+    <article class="sales-panel-card ot-card">
         <div class="sales-card-head sales-card-head-stack">
             <div>
                 <h2>Müşteri Havuzu</h2>
@@ -13,20 +13,20 @@
         </div>
         <form method="get" class="sales-search-inline sales-search-inline-strong">
             <input type="text" name="search" value="@Model.Search" placeholder="Örn: 0555, ayşe yıldız, ayse@firma.com" />
-            <button type="submit">Müşteriyi Bul</button>
+            <button type="submit" class="ot-btn ot-btn--primary">Müşteriyi Bul</button>
         </form>
         <div class="sales-customer-list">
             @foreach (var item in Model.Customers)
             {
-                <article class="sales-customer-card sales-customer-card-rich">
+                <article class="sales-customer-card sales-customer-card-rich ot-card">
                     <div>
                         <strong>@item.FullName</strong>
                         <p>@item.Email · @item.Phone</p>
                         <small>@item.CustomerCode · @item.MembershipLevel</small>
                         <div class="sales-badges">
-                            <span>@item.ReservationCountText</span>
-                            <span>@item.TotalSpendText</span>
-                            <span>@item.LocationText</span>
+                        <span class="ot-badge">@item.ReservationCountText</span>
+                        <span class="ot-badge">@item.TotalSpendText</span>
+                        <span class="ot-badge">@item.LocationText</span>
                         </div>
                         @if (!string.IsNullOrWhiteSpace(item.LastRequestSummary))
                         {
@@ -35,13 +35,13 @@
                     </div>
                     <div class="sales-hotel-card-side">
                         <span>Son işlem: @item.LastStayText</span>
-                        <a href="/panel/satis/yeni-rezervasyon?customerId=@item.CustomerId">Bu müşteri ile rezervasyon aç</a>
+                    <a class="ot-btn ot-btn--primary" href="/panel/satis/yeni-rezervasyon?customerId=@item.CustomerId">Bu müşteri ile rezervasyon aç</a>
                     </div>
                 </article>
             }
         </div>
     </article>
-    <article class="sales-panel-card">
+    <article class="sales-panel-card ot-card">
         <div class="sales-card-head">
             <h2>Yeni Müşteri Ekle</h2>
             <span>Çağrı sırasında hızlı kayıt oluştur</span>
@@ -49,7 +49,7 @@
         <form method="post" action="/panel/satis/musteri-yonetimi/yeni" class="sales-form-grid">
             @Html.AntiForgeryToken()
             <div><label>Ad Soyad</label><input type="text" name="FullName" required /></div>
-            <div><label>E-posta</label><input type="email" name="Email" required /></div>
+            <div><label>E-posta</label><input type="email" name="Email" placeholder="Varsa e-posta (yoksa boş bırak)" /></div>
             <div><label>Telefon</label><input type="text" name="Phone" required /></div>
             <div><label>Şehir</label><input type="text" name="City" placeholder="Örn: İstanbul" /></div>
             <div>
@@ -62,7 +62,7 @@
                 </select>
             </div>
             <div class="span-2"><label>Not</label><textarea name="Note" placeholder="Tercihleri, kurumsal bilgisi veya özel notlar"></textarea></div>
-            <div class="span-2 sales-form-actions"><button type="submit">Müşteri Kaydet</button></div>
+            <div class="span-2 sales-form-actions"><button type="submit" class="ot-btn ot-btn--success">Müşteri Kaydet</button></div>
         </form>
     </article>
 </section>

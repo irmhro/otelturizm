@@ -1,0 +1,8 @@
+.partner-grid-3 {
+    grid-template-columns: 1fr;
+}
+
+.company-price-grid {
+    grid-template-columns: repeat(2, 1fr);
+}
+

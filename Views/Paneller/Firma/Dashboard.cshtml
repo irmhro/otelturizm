@@ -1,6 +1,6 @@
 @model otelturizmnew.Models.Paneller.Firma.FirmaDashboardPageViewModel
 @{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
-<section class="firma-phone-card">
+<section class="firma-phone-card ot-card">
     <div>
         <p class="firma-kicker">WHATSAPP TELEFON DOĞRULAMASI</p>
         <h2>@Model.PhoneVerification.StatusText</h2>
@@ -11,13 +11,13 @@
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@Context.Request.Query["returnUrl"]" />
         <input type="text" name="phoneNumber" value="@(string.IsNullOrWhiteSpace(Model.PhoneVerification.PhoneNumber) ? Model.PhoneVerification.PhoneNumberE164 : Model.PhoneVerification.PhoneNumber)" placeholder="05xx xxx xx xx" />
-        <button type="submit" class="firma-btn-primary">Kod Gönder</button>
+        <button type="submit" class="firma-btn-primary ot-btn ot-btn--primary">Kod Gönder</button>
     </form>
     <form method="post" action="/panel/firma/telefon-kodu-dogrula" class="firma-phone-form">
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@Context.Request.Query["returnUrl"]" />
         <input type="text" name="verificationCode" maxlength="8" placeholder="WhatsApp kodu" />
-        <button type="submit" class="firma-btn-light">Kodu Doğrula</button>
+        <button type="submit" class="firma-btn-light ot-btn ot-btn--ghost">Kodu Doğrula</button>
     </form>
 </section>
 <section class="firma-grid">

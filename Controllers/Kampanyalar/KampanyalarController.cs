@@ -18,18 +18,25 @@ public class KampanyalarController : Controller
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index([FromQuery] string? preset, CancellationToken cancellationToken)
     {
-        var model = await _campaignService.GetCampaignListingPageAsync(cancellationToken);
-        ViewData["Title"] = "Kampanyalar";
+        var model = await _campaignService.GetCampaignListingPageAsync(preset, cancellationToken);
+        ViewData["Title"] = string.IsNullOrWhiteSpace(preset) ? "Kampanyalar" : $"Kampanyalar · {preset}";
         ViewData["PageCss"] = "kampanyalar";
         return View("~/Views/Kampanyalar/Index.cshtml", model);
     }
 
     [HttpGet("{slug}")]
-    public async Task<IActionResult> Detail(string slug, CancellationToken cancellationToken)
+    public async Task<IActionResult> Detail(
+        string slug,
+        [FromQuery] string? q,
+        [FromQuery] string? city,
+        [FromQuery] string? district,
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice,
+        CancellationToken cancellationToken)
     {
-        var model = await _campaignService.GetCampaignDetailPageAsync(slug, cancellationToken);
+        var model = await _campaignService.GetCampaignDetailPageAsync(slug, q, city, district, minPrice, maxPrice, cancellationToken);
         if (model is null)
         {
             return NotFound();

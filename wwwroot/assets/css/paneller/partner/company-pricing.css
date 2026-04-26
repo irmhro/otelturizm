@@ -1,0 +1,68 @@
+.partner-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+}
+
+.company-price-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+}
+
+.company-price-day {
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.85);
+    padding: 12px;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.company-price-day.is-closed {
+    opacity: 0.72;
+    background: rgba(248, 250, 252, 0.7);
+}
+
+.company-price-day .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.company-price-day .pill {
+    font-size: 12px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    background: rgba(248, 250, 252, 0.9);
+}
+
+.company-price-day .pill.danger {
+    background: rgba(239, 68, 68, 0.10);
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+.company-price-day .prices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.company-price-day small {
+    display: block;
+    color: rgba(71, 85, 105, 1);
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.company-price-day b {
+    font-size: 15px;
+    letter-spacing: -0.01em;
+}
+

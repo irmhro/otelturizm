@@ -231,6 +231,29 @@ public class SalesReservationPriceSummaryViewModel
     public decimal TotalAmount { get; set; }
 }
 
+public class SalesReservationPdfDataViewModel
+{
+    public long ReservationId { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string HotelPhone { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
+    public DateOnly CheckInDate { get; set; }
+    public DateOnly CheckOutDate { get; set; }
+    public int NightCount { get; set; }
+    public int AdultCount { get; set; }
+    public int ChildCount { get; set; }
+    public int RoomCount { get; set; }
+    public string GuestFullName { get; set; } = string.Empty;
+    public string GuestEmail { get; set; } = string.Empty;
+    public string GuestPhone { get; set; } = string.Empty;
+    public decimal NightlyPrice { get; set; }
+    public decimal RoomTotal { get; set; }
+    public decimal TaxAmount { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string CreatedAtText { get; set; } = string.Empty;
+}
+
 public class SalesSelectOption
 {
     public long Value { get; set; }

@@ -1,0 +1,6 @@
+.partner-subscription-grid{
+  grid-template-columns: 1fr;
+}
+.partner-table{
+  min-width: 640px;
+}

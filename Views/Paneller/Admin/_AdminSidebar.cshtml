@@ -33,6 +33,10 @@
                 <span class="admin-sidebar-link-icon"><i class="fas fa-table-columns"></i></span>
                 <span>Panel Özeti</span>
             </a>
+            <a asp-controller="AdminPanel" asp-action="SystemHealth" class="admin-sidebar-link standalone @Active("SystemHealth")">
+                <span class="admin-sidebar-link-icon"><i class="fas fa-heart-pulse"></i></span>
+                <span>Sistem Sağlığı</span>
+            </a>
 
             <p class="admin-sidebar-section-title">Yönetim</p>
             <section class="admin-sidebar-group @(IsOpen("Hotels", "ActiveHotels", "PendingHotels", "Campaigns", "Reviews") ? "open" : string.Empty)">
@@ -68,6 +72,8 @@
                 </button>
                 <div class="admin-sidebar-group-body">
                     <a asp-controller="AdminPanel" asp-action="Reservations" class="admin-sidebar-link @Active("Reservations")"><span>Rezervasyonlar</span></a>
+                    <a asp-controller="AdminPanel" asp-action="CompanyReservations" class="admin-sidebar-link @Active("CompanyReservations")"><span>Firma Rezervasyonları</span></a>
+                    <a asp-controller="AdminPanel" asp-action="ListingSubscriptions" class="admin-sidebar-link @Active("ListingSubscriptions")"><span>Otel Liste Abonelikleri</span></a>
                     <a asp-controller="AdminPanel" asp-action="Payments" class="admin-sidebar-link @Active("Payments")"><span>Ödemeler</span></a>
                     <a asp-controller="AdminPanel" asp-action="Invoices" class="admin-sidebar-link @Active("Invoices")"><span>Faturalar</span></a>
                     <a asp-controller="AdminPanel" asp-action="Commissions" class="admin-sidebar-link @Active("Commissions")"><span>Komisyonlar</span></a>
@@ -135,6 +141,8 @@
                     <a asp-controller="AdminPanel" asp-action="Complaints" class="admin-sidebar-link @Active("Complaints")"><span>Şikayetler</span></a>
                     <a asp-controller="AdminPanel" asp-action="Backups" class="admin-sidebar-link @Active("Backups")"><span>Yedekleme</span></a>
                     <a asp-controller="AdminPanel" asp-action="Logs" class="admin-sidebar-link @Active("Logs")"><span>Log Kayıtları</span><strong>@Badge(Model.CriticalLogs)</strong></a>
+                    <a asp-controller="AdminPanel" asp-action="GeoSearchLogs" class="admin-sidebar-link @Active("GeoSearchLogs")"><span>Konum Arama Logları</span></a>
+                    <a asp-controller="AdminPanel" asp-action="HotelCoordinateChanges" class="admin-sidebar-link @Active("HotelCoordinateChanges")"><span>Otel Koordinat Değişimleri</span></a>
                 </div>
             </section>
         </nav>

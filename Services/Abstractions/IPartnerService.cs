@@ -45,4 +45,10 @@ public interface IPartnerService
     Task<(bool Success, string Message)> DeleteApplicationDocumentAsync(long userId, long hotelId, long documentId, CancellationToken cancellationToken = default);
     Task<PartnerSupportPageViewModel> GetSupportAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> CreateSupportTicketAsync(long userId, PartnerSupportCreateTicketRequest request, CancellationToken cancellationToken = default);
+
+    Task<PartnerCompanyPricingPageViewModel> GetCompanyPricingAsync(long userId, long? hotelId = null, long? companyId = null, long? roomId = null, string? month = null, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> ApplyCompanyBulkPricingAsync(long userId, PartnerCompanyBulkPricingUpdateRequest request, CancellationToken cancellationToken = default);
+
+    Task<PartnerListingSubscriptionsPageViewModel> GetListingSubscriptionsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> CreateListingSubscriptionAsync(long userId, PartnerListingSubscriptionCreateRequest request, CancellationToken cancellationToken = default);
 }

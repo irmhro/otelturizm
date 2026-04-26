@@ -21,6 +21,7 @@ public class AdminDashboardViewModel
     public List<AdminChartBarViewModel> ReservationChart { get; set; } = new();
     public List<AdminActivityViewModel> Activities { get; set; } = new();
     public List<AdminDashboardHotelRowViewModel> HighlightHotels { get; set; } = new();
+    public List<AdminDashboardHotelKpiRowViewModel> HotelKpis { get; set; } = new();
 }
 
 public class AdminSectionPageViewModel
@@ -69,6 +70,21 @@ public class AdminDashboardHotelRowViewModel
     public string ReservationText { get; set; } = "0";
 }
 
+public class AdminDashboardHotelKpiRowViewModel
+{
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public string CityLabel { get; set; } = string.Empty;
+    public string PublishStatus { get; set; } = string.Empty;
+    public int ReservationCount { get; set; }
+    public int CancelledCount { get; set; }
+    public decimal GrossRevenue { get; set; }
+    public decimal CommissionAmount { get; set; }
+    public int ReviewCount { get; set; }
+    public decimal AverageScore { get; set; }
+    public decimal CancelRatePercent => ReservationCount <= 0 ? 0m : Math.Round(CancelledCount * 100m / ReservationCount, 1, MidpointRounding.AwayFromZero);
+}
+
 public class AdminSummaryCardViewModel
 {
     public string Label { get; set; } = string.Empty;
@@ -113,6 +129,33 @@ public class AdminPartnerApplicationDecisionRequest
 {
     public long PartnerId { get; set; }
     public string TargetStatus { get; set; } = "Onaylandi";
+    public string? Note { get; set; }
+}
+
+public class AdminCompanyApplicationRowViewModel
+{
+    public long CompanyId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string TaxNo { get; set; } = string.Empty;
+    public string ContactName { get; set; } = string.Empty;
+    public string ContactEmail { get; set; } = string.Empty;
+    public string ContactPhone { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string StatusToneClass { get; set; } = "warning";
+    public string CreatedAtText { get; set; } = string.Empty;
+}
+
+public class AdminCompanyApplicationsPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public List<AdminCompanyApplicationRowViewModel> Applications { get; set; } = new();
+}
+
+public class AdminCompanyApplicationDecisionRequest
+{
+    public long CompanyId { get; set; }
+    public string TargetStatus { get; set; } = "Onaylandı"; // Beklemede/Onaylandı/Reddedildi/Askıda
     public string? Note { get; set; }
 }
 

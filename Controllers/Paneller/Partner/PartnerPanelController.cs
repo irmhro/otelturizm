@@ -159,6 +159,76 @@ public class PartnerPanelController : Controller
         }
     }
 
+    [HttpGet("firma-fiyatlari")]
+    public async Task<IActionResult> CompanyPricing(long? otelId, long? companyId, long? roomId, string? month, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var model = await _partnerService.GetCompanyPricingAsync(GetUserId(), otelId, companyId, roomId, month, cancellationToken);
+            ViewData["Title"] = "Firmalara Özel Fiyatlar";
+            ViewData["PageCssPath"] = "paneller/partner/company-pricing";
+            return View("~/Views/Paneller/Partner/CompanyPricing.cshtml", model);
+        }
+        catch (InvalidOperationException)
+        {
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpGet("aboneliklerim")]
+    public async Task<IActionResult> ListingSubscriptions(long? otelId, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var model = await _partnerService.GetListingSubscriptionsAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Aboneliklerim";
+            ViewData["PageCssPath"] = "paneller/partner/listing-subscriptions";
+            return View("~/Views/Paneller/Partner/ListingSubscriptions.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Aboneliklerim";
+            ViewData["PageCssPath"] = "paneller/partner/listing-subscriptions";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpPost("aboneliklerim/talep-olustur")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateListingSubscription(PartnerListingSubscriptionCreateRequest request, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.CreateListingSubscriptionAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Abonelik talebi oluşturulamadı: {ex.Message}";
+        }
+
+        return Redirect($"/panel/partner/aboneliklerim?otelId={request.HotelId}");
+    }
+
+    [HttpPost("firma-fiyatlari/toplu-guncelle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApplyCompanyBulkPricing(otelturizmnew.Models.Paneller.Partner.PartnerCompanyBulkPricingUpdateRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _partnerService.ApplyCompanyBulkPricingAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+            return Redirect($"/panel/partner/firma-fiyatlari?otelId={request.HotelId}&companyId={request.CompanyId}&roomId={request.RoomTypeId}&month={request.StartDate:yyyy-MM}");
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = "Firma fiyatları kaydedilemedi: " + ex.Message;
+            return Redirect("/panel/partner/firma-fiyatlari");
+        }
+    }
+
     [HttpGet("kampanyalar")]
     public async Task<IActionResult> Campaigns(long? otelId, CancellationToken cancellationToken)
     {

@@ -21,6 +21,7 @@ public interface ISalesService
         string? feature = null,
         CancellationToken cancellationToken = default);
     Task<(bool Success, string Message, long? ReservationId)> CreateReservationAsync(long userId, SalesReservationCreateModel model, CancellationToken cancellationToken = default);
+    Task<SalesReservationPdfDataViewModel?> GetReservationPdfDataAsync(long userId, long reservationId, CancellationToken cancellationToken = default);
     Task<SalesCustomersPageViewModel> GetCustomersAsync(long userId, string? search = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> CreateCustomerAsync(long userId, SalesCustomerCreateModel model, CancellationToken cancellationToken = default);
     Task<SalesAvailabilityPageViewModel> GetAvailabilityAsync(long userId, long? hotelId = null, long? roomTypeId = null, string? search = null, DateOnly? month = null, CancellationToken cancellationToken = default);

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
@@ -253,9 +254,9 @@ public class SalesService : ISalesService
 
     public async Task<(bool Success, string Message, long? ReservationId)> CreateReservationAsync(long userId, SalesReservationCreateModel model, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(model.CustomerFullName) || string.IsNullOrWhiteSpace(model.CustomerEmail) || string.IsNullOrWhiteSpace(model.CustomerPhone))
+        if (string.IsNullOrWhiteSpace(model.CustomerFullName) || string.IsNullOrWhiteSpace(model.CustomerPhone))
         {
-            return (false, "Müşteri adı, e-posta ve telefon zorunludur.", null);
+            return (false, "Müşteri adı ve telefon zorunludur. E-posta yoksa boş bırakabilirsiniz; sistem PDF çıktısı üretir.", null);
         }
         if (model.HotelId <= 0 || model.RoomTypeId <= 0)
         {
@@ -268,6 +269,13 @@ public class SalesService : ISalesService
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await EnsureSalesUserAsync(connection, userId, cancellationToken);
+
+        var customerEmailRaw = (model.CustomerEmail ?? string.Empty).Trim();
+        var customerPhoneRaw = (model.CustomerPhone ?? string.Empty).Trim();
+        var customerEmailForUser = string.IsNullOrWhiteSpace(customerEmailRaw)
+            ? BuildPlaceholderEmail(customerPhoneRaw)
+            : customerEmailRaw;
+
         var hotelInfo = await GetHotelSummaryAsync(connection, model.HotelId, cancellationToken);
         var roomName = await GetRoomNameAsync(connection, model.RoomTypeId, model.HotelId, cancellationToken);
         var summary = await BuildPriceSummaryAsync(connection, model.RoomTypeId, model.CheckInDate, model.CheckOutDate, model.RoomCount, cancellationToken);
@@ -276,7 +284,7 @@ public class SalesService : ISalesService
         try
         {
             var salesCustomerId = await EnsureSalesCustomerAsync(connection, (SqlTransaction)transaction, userId, model, cancellationToken);
-            var publicUserId = await EnsurePublicCustomerUserAsync(connection, (SqlTransaction)transaction, model, cancellationToken);
+            var publicUserId = await EnsurePublicCustomerUserAsync(connection, (SqlTransaction)transaction, model, customerEmailForUser, cancellationToken);
             var reservationNo = await GenerateReservationNoAsync(connection, (SqlTransaction)transaction, cancellationToken);
 
             var insertSql = $@"
@@ -309,8 +317,8 @@ public class SalesService : ISalesService
                 command.Parameters.AddWithValue("@salesUserId", userId);
                 command.Parameters.AddWithValue("@salesCustomerId", salesCustomerId);
                 command.Parameters.AddWithValue("@fullName", model.CustomerFullName.Trim());
-                command.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
-                command.Parameters.AddWithValue("@phone", model.CustomerPhone.Trim());
+                command.Parameters.AddWithValue("@email", customerEmailRaw);
+                command.Parameters.AddWithValue("@phone", customerPhoneRaw);
                 command.Parameters.AddWithValue("@note", model.DemandNote ?? string.Empty);
                 command.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(model.CustomerCity) ? DBNull.Value : model.CustomerCity.Trim());
                 command.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(model.CustomerDistrict) ? DBNull.Value : model.CustomerDistrict.Trim());
@@ -345,26 +353,29 @@ public class SalesService : ISalesService
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
 
-            await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
+            if (!string.IsNullOrWhiteSpace(customerEmailRaw))
             {
-                UserId = publicUserId,
-                RecipientEmail = model.CustomerEmail.Trim(),
-                TemplateCode = "reservation_received_customer",
-                RelatedTable = "rezervasyonlar",
-                RelatedRecordId = reservationId,
-                Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
                 {
-                    ["user_first_name"] = SplitFirstName(model.CustomerFullName),
-                    ["booking_reference"] = reservationNo,
-                    ["hotel_name"] = hotelInfo.HotelName,
-                    ["check_in_date"] = model.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
-                    ["check_out_date"] = model.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
-                    ["total_price"] = summary.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
-                    ["room_type_name"] = roomName,
-                    ["booking_details_link"] = "/panel/user/rezervasyonlarim",
-                    ["hotel_address"] = hotelInfo.HotelName
-                }
-            }, cancellationToken);
+                    UserId = publicUserId,
+                    RecipientEmail = customerEmailRaw,
+                    TemplateCode = "reservation_received_customer",
+                    RelatedTable = "rezervasyonlar",
+                    RelatedRecordId = reservationId,
+                    Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["user_first_name"] = SplitFirstName(model.CustomerFullName),
+                        ["booking_reference"] = reservationNo,
+                        ["hotel_name"] = hotelInfo.HotelName,
+                        ["check_in_date"] = model.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["check_out_date"] = model.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["total_price"] = summary.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
+                        ["room_type_name"] = roomName,
+                        ["booking_details_link"] = "/panel/user/rezervasyonlarim",
+                        ["hotel_address"] = hotelInfo.HotelName
+                    }
+                }, cancellationToken);
+            }
             await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
             {
                 UserId = partnerRecipient.UserId,
@@ -378,8 +389,8 @@ public class SalesService : ISalesService
                     ["hotel_name"] = hotelInfo.HotelName,
                     ["booking_reference"] = reservationNo,
                     ["guest_full_name"] = model.CustomerFullName.Trim(),
-                    ["guest_email"] = model.CustomerEmail.Trim(),
-                    ["guest_phone"] = model.CustomerPhone.Trim(),
+                    ["guest_email"] = customerEmailRaw,
+                    ["guest_phone"] = customerPhoneRaw,
                     ["total_price"] = summary.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
                     ["check_in_date"] = model.CheckInDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
                     ["check_out_date"] = model.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
@@ -400,9 +411,9 @@ public class SalesService : ISalesService
 
     public async Task<(bool Success, string Message)> CreateCustomerAsync(long userId, SalesCustomerCreateModel model, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Phone))
+        if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.Phone))
         {
-            return (false, "Ad soyad, e-posta ve telefon zorunludur.");
+            return (false, "Ad soyad ve telefon zorunludur. E-posta yoksa boş bırakabilirsiniz.");
         }
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
@@ -413,7 +424,7 @@ public class SalesService : ISalesService
             var reservationModel = new SalesReservationCreateModel
             {
                 CustomerFullName = model.FullName,
-                CustomerEmail = model.Email,
+                CustomerEmail = model.Email ?? string.Empty,
                 CustomerPhone = model.Phone,
                 CustomerCity = model.City,
                 DemandNote = model.Note
@@ -430,7 +441,10 @@ public class SalesService : ISalesService
                 await noteCommand.ExecuteNonQueryAsync(cancellationToken);
             }
 
-            await EnsurePublicCustomerUserAsync(connection, (SqlTransaction)transaction, reservationModel, cancellationToken);
+            var emailForUser = string.IsNullOrWhiteSpace(reservationModel.CustomerEmail)
+                ? BuildPlaceholderEmail(reservationModel.CustomerPhone)
+                : reservationModel.CustomerEmail.Trim();
+            await EnsurePublicCustomerUserAsync(connection, (SqlTransaction)transaction, reservationModel, emailForUser, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return (true, "Müşteri kaydı oluşturuldu.");
         }
@@ -439,6 +453,61 @@ public class SalesService : ISalesService
             await transaction.RollbackAsync(cancellationToken);
             return (false, $"Müşteri kaydı sırasında hata oluştu: {ex.Message}");
         }
+    }
+
+    public async Task<SalesReservationPdfDataViewModel?> GetReservationPdfDataAsync(long userId, long reservationId, CancellationToken cancellationToken = default)
+    {
+        if (reservationId <= 0) return null;
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await EnsureSalesUserAsync(connection, userId, cancellationToken);
+
+        const string sql = @"
+            SELECT
+                r.id, r.rezervasyon_no, o.otel_adi, COALESCE(o.rezervasyon_telefonu, o.telefon_1, ''),
+                ot.oda_adi,
+                CAST(r.giris_tarihi AS date), CAST(r.cikis_tarihi AS date),
+                r.yetiskin_sayisi, r.cocuk_sayisi, r.oda_sayisi,
+                COALESCE(r.misafir_ad_soyad,''), COALESCE(r.misafir_eposta,''), COALESCE(r.misafir_telefon,''),
+                COALESCE(r.gecelik_fiyat,0), COALESCE(r.toplam_oda_tutari,0), COALESCE(r.vergi_tutari,0), COALESCE(r.toplam_tutar,0),
+                FORMAT(r.olusturulma_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR')
+            FROM rezervasyonlar r
+            INNER JOIN oteller o ON o.id = r.otel_id
+            INNER JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
+            WHERE r.id = @reservationId
+              AND r.satis_temsilcisi_id = @userId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@reservationId", reservationId);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken)) return null;
+
+        var checkIn = DateOnly.FromDateTime(reader.GetDateTime(5));
+        var checkOut = DateOnly.FromDateTime(reader.GetDateTime(6));
+        var nightCount = Math.Max(1, checkOut.DayNumber - checkIn.DayNumber);
+
+        return new SalesReservationPdfDataViewModel
+        {
+            ReservationId = reader.GetInt64(0),
+            ReservationNo = reader.GetString(1),
+            HotelName = reader.GetString(2),
+            HotelPhone = reader.GetString(3),
+            RoomName = reader.GetString(4),
+            CheckInDate = checkIn,
+            CheckOutDate = checkOut,
+            NightCount = nightCount,
+            AdultCount = ReadInt(reader, 7),
+            ChildCount = ReadInt(reader, 8),
+            RoomCount = ReadInt(reader, 9),
+            GuestFullName = reader.GetString(10),
+            GuestEmail = reader.GetString(11),
+            GuestPhone = reader.GetString(12),
+            NightlyPrice = ReadDecimal(reader, 13),
+            RoomTotal = ReadDecimal(reader, 14),
+            TaxAmount = ReadDecimal(reader, 15),
+            TotalAmount = ReadDecimal(reader, 16),
+            CreatedAtText = reader.GetString(17)
+        };
     }
 
     private async Task<SalesPanelShellViewModel> BuildShellAsync(SqlConnection connection, long userId, string activeSectionKey, string title, string subtitle, CancellationToken cancellationToken)
@@ -943,13 +1012,13 @@ public class SalesService : ISalesService
         return Convert.ToInt64(await insertCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
     }
 
-    private async Task<long> EnsurePublicCustomerUserAsync(SqlConnection connection, SqlTransaction transaction, SalesReservationCreateModel model, CancellationToken cancellationToken)
+    private async Task<long> EnsurePublicCustomerUserAsync(SqlConnection connection, SqlTransaction transaction, SalesReservationCreateModel model, string emailForUser, CancellationToken cancellationToken)
     {
         const string findSql = "SELECT TOP (1) id FROM users WHERE eposta = @email OR (telefon = @phone AND @phone <> '') ORDER BY id;";
         await using (var findCommand = new SqlCommand(findSql, connection, (SqlTransaction)transaction))
         {
-            findCommand.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
-            findCommand.Parameters.AddWithValue("@phone", model.CustomerPhone.Trim());
+            findCommand.Parameters.AddWithValue("@email", emailForUser.Trim());
+            findCommand.Parameters.AddWithValue("@phone", (model.CustomerPhone ?? string.Empty).Trim());
             var existing = await findCommand.ExecuteScalarAsync(cancellationToken);
             if (existing is not null and not DBNull) return Convert.ToInt64(existing, CultureInfo.InvariantCulture);
         }
@@ -962,13 +1031,21 @@ public class SalesService : ISalesService
             SELECT CAST(SCOPE_IDENTITY() AS bigint);";
         await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
         insertCommand.Parameters.AddWithValue("@fullName", model.CustomerFullName.Trim());
-        insertCommand.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
-        insertCommand.Parameters.AddWithValue("@phone", model.CustomerPhone.Trim());
+        insertCommand.Parameters.AddWithValue("@email", emailForUser.Trim());
+        insertCommand.Parameters.AddWithValue("@phone", (model.CustomerPhone ?? string.Empty).Trim());
         insertCommand.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(model.CustomerCity) ? DBNull.Value : model.CustomerCity.Trim());
         insertCommand.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(model.CustomerDistrict) ? DBNull.Value : model.CustomerDistrict.Trim());
         insertCommand.Parameters.AddWithValue("@neighborhood", string.IsNullOrWhiteSpace(model.CustomerNeighborhood) ? DBNull.Value : model.CustomerNeighborhood.Trim());
         insertCommand.Parameters.AddWithValue("@address", string.IsNullOrWhiteSpace(model.CustomerAddress) ? DBNull.Value : model.CustomerAddress.Trim());
         return Convert.ToInt64(await insertCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
+    }
+
+    private static string BuildPlaceholderEmail(string phone)
+    {
+        var digits = new string((phone ?? string.Empty).Where(char.IsDigit).ToArray());
+        if (string.IsNullOrWhiteSpace(digits)) digits = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
+        if (digits.Length > 25) digits = digits[^25..];
+        return $"noemail_{digits}@guest.otelturizm.local";
     }
 
     private async Task<string> GenerateReservationNoAsync(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
