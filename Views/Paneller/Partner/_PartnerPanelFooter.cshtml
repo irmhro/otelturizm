@@ -1,4 +1,8 @@
 @model otelturizmnew.Models.Paneller.Partner.PartnerShellViewModel
+@inject otelturizmnew.Services.Abstractions.ITimeZoneService TimeZoneService
+@{
+    var localNow = TimeZoneService.ToLocal(DateTime.UtcNow);
+}
 <footer class="partner-panel-footer">
     <div class="partner-footer-main">
         <span>@Model.SelectedHotelName için panel işlemleri aktif.</span>
@@ -6,8 +10,9 @@
     </div>
     <div class="partner-footer-legal">
         <div class="partner-footer-meta">
-            <span class="partner-footer-copyright">&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</span>
+            <span class="partner-footer-copyright">&copy; @localNow.Year Otelturizm. Tüm hakları saklıdır.</span>
             <span class="partner-footer-agency">216 SPECİAL KARTAL TURİZM SEYEHAT ACENTASI</span>
+            <span class="partner-footer-agency text-muted">Saat: @localNow.ToString("dd.MM.yyyy HH:mm")</span>
         </div>
         <div class="partner-footer-links">
             <a asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>

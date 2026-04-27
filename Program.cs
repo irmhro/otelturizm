@@ -16,8 +16,11 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Threading.RateLimiting;
 using otelturizmnew.Data;
+using otelturizmnew.Middleware;
 using otelturizmnew.Services;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Services.Health;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,6 +84,8 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
+
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddLocalization();
 var supportedCultures = new[]
@@ -147,9 +152,12 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAddressLookupService, AddressLookupService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICurrencyFormatter, CurrencyFormatter>();
+builder.Services.AddScoped<IUserPreferenceService, UserPreferenceService>();
+builder.Services.AddScoped<IPublicTextService, PublicTextService>();
 builder.Services.AddScoped<ITimeZoneService, TimeZoneService>();
 builder.Services.AddScoped<ICacheSingleFlight, CacheSingleFlight>();
 builder.Services.AddSingleton<ISlowSqlTracker, SlowSqlTracker>();
+builder.Services.AddScoped<IIdempotencyService, IdempotencyService>();
 builder.Services.AddScoped<IAdminHotelManagementService, AdminHotelManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IContractContentService, ContractContentService>();
@@ -164,6 +172,8 @@ builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
 builder.Services.AddHostedService<EmailDeliveryBackgroundService>();
 builder.Services.AddHostedService<FavoritePriceAlertBackgroundService>();
+builder.Services.AddHostedService<ReservationsArchiveBackgroundService>();
+builder.Services.AddScoped<IUploadAuditService, UploadAuditService>();
 builder.Services.AddScoped<IImageStorageService, ImageStorageService>();
 builder.Services.AddScoped<ISecureFileService, SecureFileService>();
 builder.Services.AddScoped<IMessageCenterService, MessageCenterService>();
@@ -183,9 +193,30 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IDevelopmentAccessService, DevelopmentAccessService>();
 builder.Services.AddScoped<IUploadScanService, NoOpUploadScanService>();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpClient<IWeatherService, WeatherService>();
-builder.Services.AddHttpClient<IWhatsAppCloudApiService, WhatsAppCloudApiService>();
+builder.Services.AddSingleton<otelturizmnew.Utils.ExternalServiceCircuitBreaker>();
+builder.Services.AddSingleton<IPublicGrowthSignalsService, PublicGrowthSignalsService>();
+builder.Services.AddSingleton<CommerceMetricsAccumulator>();
+builder.Services.AddSingleton<HotelPresenceTracker>();
+builder.Services.AddSingleton<IReservationVelocityGuard, ReservationVelocityGuard>();
+builder.Services.AddSingleton<IGrowthGovernanceService, GrowthGovernanceService>();
+builder.Services.AddSingleton<IDeadLinkRedirectService, DeadLinkRedirectService>();
+builder.Services.AddSingleton<SqlConnectionHealthCheck>();
+builder.Services.AddHealthChecks()
+    .AddCheck<SqlConnectionHealthCheck>("sql_server");
+builder.Services.AddScoped<IOutboxPublisher, OutboxPublisherStub>();
+builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
+builder.Services.AddSingleton<IPaymentOrchestrationAdvisor, PaymentOrchestrationAdvisor>();
+
+builder.Services.AddHttpClient<IWeatherService, WeatherService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(8);
+});
+builder.Services.AddHttpClient<IWhatsAppCloudApiService, WhatsAppCloudApiService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddHostedService<SitemapRefreshBackgroundService>();
+builder.Services.AddHostedService<UploadOrphanCleanupBackgroundService>();
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 300 * 1024 * 1024;
@@ -258,6 +289,36 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+static string BuildReservationCreatePartitionKey(HttpContext httpContext)
+{
+    var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    var user = httpContext.User?.Identity?.Name;
+    if (!string.IsNullOrWhiteSpace(user))
+    {
+        return ip + ":u:" + user.Trim();
+    }
+
+    if (httpContext.Request.Cookies.TryGetValue("Otelturizm.ReservationDraftKey", out var sessionKey) && !string.IsNullOrWhiteSpace(sessionKey))
+    {
+        return ip + ":s:" + sessionKey.Trim();
+    }
+
+    return ip + ":anon";
+}
+
+static string BuildQuoteAndGrowthPartitionKey(HttpContext httpContext)
+{
+    var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    if (httpContext.Request.Cookies.TryGetValue("Otelturizm.ClientFp", out var fp) && !string.IsNullOrWhiteSpace(fp))
+    {
+        var fpTrim = fp.ToString().Trim();
+        var slice = fpTrim.Length <= 32 ? fpTrim : fpTrim[..32];
+        return $"{ip}:{slice}";
+    }
+
+    return ip;
+}
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -313,10 +374,21 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("quote-strict", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            partitionKey: BuildQuoteAndGrowthPartitionKey(httpContext),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 120,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("growth-ingest", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: BuildQuoteAndGrowthPartitionKey(httpContext),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 180,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -332,7 +404,20 @@ builder.Services.AddRateLimiter(options =>
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
             }));
+
+    // p107: rezervasyon create için ayrı policy (double submit/abuse guard)
+    options.AddPolicy("reservation-create", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: BuildReservationCreatePartitionKey(httpContext),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 8,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
 });
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -401,6 +486,9 @@ app.UseResponseCompression();
 app.UseRequestLocalization(app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<RequestLocalizationOptions>>().Value);
 app.UseCookiePolicy();
 
+// p112: 404/4xx için kullanıcı dostu sayfa (SEO + UX)
+app.UseStatusCodePagesWithReExecute("/Home/HttpStatus", "?code={0}");
+
 // p65: OutputCache vary-by dilin doğru çalışması için seçilen culture'ı header'a yansıt.
 // Cookie ile culture seçildiğinde Accept-Language değişmediği için cache yanlış dil döndürebilir.
 app.Use((context, next) =>
@@ -443,6 +531,7 @@ app.Use(async (context, next) =>
 });
 
 app.UseRouting();
+app.UseMiddleware<GrowthFingerprintMiddleware>();
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseOutputCache();
@@ -592,6 +681,10 @@ app.Use(async (context, next) =>
 });
 
 app.MapStaticAssets();
+
+app.MapHealthChecks("/health/platform")
+    .AllowAnonymous()
+    .ExcludeFromDescription();
 
 // p55: Health endpoints
 app.MapGet("/health/live", () => Results.Json(new { status = "live" }))

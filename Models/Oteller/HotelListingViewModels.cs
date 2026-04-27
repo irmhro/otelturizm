@@ -148,6 +148,15 @@ public class HotelDetailPageViewModel
     public List<HotelReviewViewModel> Reviews { get; set; } = new();
     public List<HotelSimilarCardViewModel> SimilarHotels { get; set; } = new();
     public HotelWeatherWidgetViewModel? Weather { get; set; }
+
+    /// <summary>Kısa TTL ile üretilen tahmini aktif görüntüleyici bandı (growth vitrin).</summary>
+    public int ActiveViewerBand { get; set; }
+
+    /// <summary>Canlı oturum sayacı (heartbeat, kısa TTL).</summary>
+    public int LivePresenceCount { get; set; }
+
+    /// <summary>?trip= veya çerez ile gelen kullanıcı niyeti etiketi (segmentasyon).</summary>
+    public string IntentSegmentLabel { get; set; } = string.Empty;
 }
 
 public class HotelAmenityViewModel

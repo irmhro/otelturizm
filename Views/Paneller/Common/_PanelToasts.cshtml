@@ -1,0 +1,54 @@
+@{
+    var success = TempData["AdminSuccess"] as string
+                  ?? TempData["PartnerSuccess"] as string
+                  ?? TempData["FirmaSuccess"] as string
+                  ?? TempData["SalesSuccess"] as string
+                  ?? TempData["UserSuccess"] as string;
+    var error = TempData["AdminError"] as string
+                ?? TempData["PartnerError"] as string
+                ?? TempData["FirmaError"] as string
+                ?? TempData["SalesError"] as string
+                ?? TempData["UserError"] as string;
+    var warning = TempData["AdminWarning"] as string
+                  ?? TempData["PartnerWarning"] as string
+                  ?? TempData["FirmaWarning"] as string
+                  ?? TempData["SalesWarning"] as string
+                  ?? TempData["UserWarning"] as string;
+}
+
+@if (!string.IsNullOrWhiteSpace(success) || !string.IsNullOrWhiteSpace(error) || !string.IsNullOrWhiteSpace(warning))
+{
+    <div class="ot-toast-stack" aria-live="polite" aria-atomic="true">
+        @if (!string.IsNullOrWhiteSpace(success))
+        {
+            <div class="ot-toast ot-toast--success" data-timeout-ms="5500">
+                <i class="fas fa-circle-check" aria-hidden="true"></i>
+                <div>
+                    <p class="ot-toast__title">Başarılı</p>
+                    <p class="ot-toast__text">@success</p>
+                </div>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(warning))
+        {
+            <div class="ot-toast ot-toast--warning" data-timeout-ms="6500">
+                <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                <div>
+                    <p class="ot-toast__title">Uyarı</p>
+                    <p class="ot-toast__text">@warning</p>
+                </div>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(error))
+        {
+            <div class="ot-toast ot-toast--danger" data-timeout-ms="8500">
+                <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+                <div>
+                    <p class="ot-toast__title">Hata</p>
+                    <p class="ot-toast__text">@error</p>
+                </div>
+            </div>
+        }
+    </div>
+}
+

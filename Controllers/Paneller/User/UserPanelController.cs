@@ -60,6 +60,7 @@ public class UserPanelController : Controller
         ViewData["PanelSubtitle"] = "Hesabini yonet, rezervasyonlarini takip et ve ozel firsatlari kesfet.";
         ViewData["FavoriteCount"] = model.FavoriteCount;
         ViewData["ReservationCount"] = model.TotalReservationCount;
+        ViewData["MessageCount"] = model.MessageCount;
         return View("~/Views/Paneller/User/Index.cshtml", model);
     }
 
@@ -442,6 +443,8 @@ public class UserPanelController : Controller
 
     [HttpPost("profil-bilgilerim/profil-resmi-yukle")]
     [ValidateAntiForgeryToken]
+    [RequestFormLimits(MultipartBodyLengthLimit = 6291456)]
+    [RequestSizeLimit(6291456)]
     public async Task<IActionResult> UploadProfileImage(IFormFile profileImage, CancellationToken cancellationToken)
     {
         if (!CanAccessUserPanel())
@@ -459,7 +462,14 @@ public class UserPanelController : Controller
         var targetDir = Path.Combine(_environment.WebRootPath, "uploads", "user", "avatars", userId.ToString());
         try
         {
-            var saved = await _imageStorageService.SaveAsWebpAsync(profileImage, targetDir, "avatar", cancellationToken);
+            var saved = await _imageStorageService.SaveAsWebpAsync(profileImage, new otelturizmnew.Services.Abstractions.ImageSaveRequest(
+                TargetDirectory: targetDir,
+                FilePrefix: "avatar",
+                Category: "user-avatar",
+                OwnerUserId: userId,
+                QualityProfile: otelturizmnew.Services.Abstractions.ImageQualityProfile.Avatar,
+                GenerateThumbnails: true
+            ), cancellationToken);
             var webPath = $"/uploads/user/avatars/{userId}/{saved.FileName}";
 
             await _userPanelService.SaveProfileImageAsync(userId, webPath, "upload", cancellationToken);
@@ -495,6 +505,8 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("mesajlarim/gonder")]
+    [RequestFormLimits(MultipartBodyLengthLimit = 31457280)]
+    [RequestSizeLimit(31457280)]
     public async Task<IActionResult> SendMessage(MessageSendRequest form, List<IFormFile>? attachments, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())

@@ -1,4 +1,8 @@
 <footer class="site-footer">
+@inject otelturizmnew.Services.Abstractions.ITimeZoneService TimeZoneService
+@{
+    var localNow = TimeZoneService.ToLocal(DateTime.UtcNow);
+}
     <div class="footer-pattern"></div>
     <div class="footer-container">
         <div class="footer-grid">
@@ -58,10 +62,13 @@
 
         <div class="footer-bottom">
             <div class="footer-bottom-top">
-                <div class="footer-copyright">&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</div>
+                <div class="footer-copyright">&copy; @localNow.Year Otelturizm. Tüm hakları saklıdır.</div>
                 <div class="footer-agency-wrap">
                     <div class="footer-agency-note footer-agency-note-inline" aria-label="Seyahat acentası bilgisi">
                         216 SPECIAL KARTAL TURİZM SEYAHAT ACENTASI 18355
+                    </div>
+                    <div class="footer-agency-note footer-agency-note-inline text-muted" aria-label="Yerel saat">
+                        Saat: @localNow.ToString("dd.MM.yyyy HH:mm")
                     </div>
                     <div class="trust-badges">
                         <span class="trust-badge"><i class="fas fa-shield-alt"></i> TURSAB</span>

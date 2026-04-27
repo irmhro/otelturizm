@@ -360,6 +360,14 @@
                 return;
             }
 
+            function preload(index) {
+                const src = galleryImages[index];
+                if (!src) return;
+                const img = new Image();
+                img.decoding = 'async';
+                img.src = src;
+            }
+
             const prevIndex = (activeGalleryIndex - 1 + galleryImages.length) % galleryImages.length;
             const nextIndex = (activeGalleryIndex + 1) % galleryImages.length;
             lightboxFigure.style.setProperty('--hotel-gallery-prev', 'url(\"' + (galleryImages[prevIndex] || '') + '\")');
@@ -368,6 +376,10 @@
             if (lightbox instanceof HTMLElement) {
                 lightbox.style.setProperty('--hotel-gallery-active', 'url(\"' + (galleryImages[activeGalleryIndex] || '') + '\")');
             }
+
+            // p125: adjacent prefetch
+            preload(prevIndex);
+            preload(nextIndex);
         }
 
         function openLightbox(index) {
@@ -589,6 +601,118 @@
             }
             if (event.key === 'Escape') {
                 closeDiscount();
+            }
+        });
+    })();
+
+    // p101: client-side rezervasyon doğrulama (server ile aynı temel guard'lar)
+    (function () {
+        const bookingForm = document.getElementById('bookingForm');
+        if (!bookingForm) {
+            return;
+        }
+
+        function ensureErrorNode(input) {
+            if (!input || !(input instanceof HTMLElement)) return null;
+            const existing = input.parentElement?.querySelector?.('.ot-field-error');
+            if (existing) return existing;
+            const el = document.createElement('div');
+            el.className = 'ot-field-error';
+            el.setAttribute('role', 'alert');
+            el.hidden = true;
+            input.parentElement?.appendChild(el);
+            return el;
+        }
+
+        function clearError(input) {
+            const node = ensureErrorNode(input);
+            if (node) {
+                node.hidden = true;
+                node.textContent = '';
+            }
+            if (input instanceof HTMLElement) {
+                input.removeAttribute('aria-invalid');
+            }
+        }
+
+        function setError(input, message) {
+            const node = ensureErrorNode(input);
+            if (node) {
+                node.hidden = false;
+                node.textContent = message || 'Lütfen bu alanı kontrol edin.';
+            }
+            if (input instanceof HTMLElement) {
+                input.setAttribute('aria-invalid', 'true');
+            }
+        }
+
+        function parseDate(value) {
+            // yyyy-MM-dd
+            if (!value || String(value).length < 10) return null;
+            const parts = String(value).slice(0, 10).split('-');
+            if (parts.length !== 3) return null;
+            const y = Number(parts[0]), m = Number(parts[1]), d = Number(parts[2]);
+            if (!y || !m || !d) return null;
+            return new Date(Date.UTC(y, m - 1, d));
+        }
+
+        function daysBetween(a, b) {
+            const ms = b.getTime() - a.getTime();
+            return Math.floor(ms / (24 * 60 * 60 * 1000));
+        }
+
+        bookingForm.addEventListener('submit', function (e) {
+            const checkInInput = document.getElementById('checkInDateInput');
+            const checkOutInput = document.getElementById('checkOutDateInput');
+            const adultInput = document.getElementById('adultCountInput');
+            const childInput = document.getElementById('childCountInput');
+            const roomCountInput = document.getElementById('roomCountInput');
+
+            const checkIn = checkInInput?.value || '';
+            const checkOut = checkOutInput?.value || '';
+            const adults = Number(adultInput?.value || '2');
+            const children = Number(childInput?.value || '0');
+            const roomCount = Number(roomCountInput?.value || '1');
+
+            clearError(checkInInput);
+            clearError(checkOutInput);
+            clearError(adultInput);
+            clearError(childInput);
+            clearError(roomCountInput);
+
+            const inDt = parseDate(checkIn);
+            const outDt = parseDate(checkOut);
+            if (!inDt || !outDt) {
+                e.preventDefault();
+                setError(checkInInput, 'Giriş tarihini seçin.');
+                setError(checkOutInput, 'Çıkış tarihini seçin.');
+                (checkInInput || checkOutInput)?.focus?.();
+                return;
+            }
+            const nights = daysBetween(inDt, outDt);
+            if (nights <= 0 || nights > 60) {
+                e.preventDefault();
+                setError(checkOutInput, 'Konaklama süresi 1-60 gece aralığında olmalıdır.');
+                checkOutInput?.focus?.();
+                return;
+            }
+            if (adults < 1 || adults > 12) {
+                e.preventDefault();
+                setError(adultInput, 'Yetişkin sayısı 1-12 aralığında olmalıdır.');
+                adultInput?.focus?.();
+                return;
+            }
+            if (children < 0 || children > 10) {
+                e.preventDefault();
+                setError(childInput, 'Çocuk sayısı 0-10 aralığında olmalıdır.');
+                childInput?.focus?.();
+                return;
+            }
+            if (roomCount < 1 || roomCount > 50) {
+                e.preventDefault();
+                setError(roomCountInput, 'Oda sayısı 1-50 aralığında olmalıdır.');
+                roomCountInput?.focus?.();
+                return;
             }
         });
     })();

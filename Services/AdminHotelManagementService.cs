@@ -538,7 +538,16 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             var shouldMakeCover = request.MakeCover;
             foreach (var file in request.Files.Where(static item => item.Length > 0))
             {
-                var storedImage = await _imageStorageService.SaveAsWebpAsync(file, targetDirectory, $"admin-otel-{hotel.HotelId}", cancellationToken);
+                var storedImage = await _imageStorageService.SaveAsWebpAsync(file, new otelturizmnew.Services.Abstractions.ImageSaveRequest(
+                    TargetDirectory: targetDirectory,
+                    FilePrefix: $"admin-otel-{hotel.HotelId}",
+                    Category: "admin-hotel-photo",
+                    OwnerUserId: adminUserId,
+                    ContextTable: "oteller",
+                    ContextId: hotel.HotelId,
+                    QualityProfile: otelturizmnew.Services.Abstractions.ImageQualityProfile.HotelPhoto,
+                    GenerateThumbnails: true
+                ), cancellationToken);
                 var relativePath = $"/uploads/hotels/admin/{hotel.HotelId}/{storedImage.FileName}";
                 savedPhysicalPaths.Add(Path.Combine(targetDirectory, storedImage.FileName));
 
@@ -722,7 +731,16 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             var shouldMakeCover = request.MakeCover;
             foreach (var file in request.Files.Where(static item => item.Length > 0))
             {
-                var storedImage = await _imageStorageService.SaveAsWebpAsync(file, targetDirectory, $"admin-oda-{room.RoomId}", cancellationToken);
+                var storedImage = await _imageStorageService.SaveAsWebpAsync(file, new otelturizmnew.Services.Abstractions.ImageSaveRequest(
+                    TargetDirectory: targetDirectory,
+                    FilePrefix: $"admin-oda-{room.RoomId}",
+                    Category: "admin-room-photo",
+                    OwnerUserId: adminUserId,
+                    ContextTable: "oda_tipleri",
+                    ContextId: room.RoomId,
+                    QualityProfile: otelturizmnew.Services.Abstractions.ImageQualityProfile.RoomPhoto,
+                    GenerateThumbnails: true
+                ), cancellationToken);
                 var relativePath = $"/uploads/hotels/admin/{request.HotelId}/rooms/{request.RoomId}/{storedImage.FileName}";
                 savedPhysicalPaths.Add(Path.Combine(targetDirectory, storedImage.FileName));
 

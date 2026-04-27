@@ -24,6 +24,7 @@
             }
 
             button.classList.toggle('active', isFavorite);
+            button.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
 
             const icon = button.querySelector('i');
             if (icon) {
@@ -132,6 +133,11 @@
                 return;
             }
 
+            // p128: optimistic UI + rollback
+            const prev = button.classList.contains('active');
+            const optimistic = !prev;
+            syncButtons(hotelId, optimistic);
+
             button.dataset.loading = 'true';
             button.classList.add('is-loading');
 
@@ -160,6 +166,7 @@
                 }
 
                 if (response.status === 401 || response.status === 403) {
+                    syncButtons(hotelId, prev);
                     showLoginPrompt(
                         payload && payload.message ? payload.message : '',
                         payload && payload.loginUrl ? payload.loginUrl : '/kullanici-giris',
@@ -169,6 +176,7 @@
                 }
 
                 if (!response.ok || !payload || payload.success !== true) {
+                    syncButtons(hotelId, prev);
                     if (!payload && response.status === 400) {
                         window.alert('Favori işlemi güvenlik doğrulamasından geçemedi. Sayfayı yenileyip tekrar deneyin.');
                         return;
@@ -182,6 +190,7 @@
             }
             catch (error) {
                 console.error(error);
+                syncButtons(hotelId, prev);
                 window.alert('Favori işlemi sırasında bağlantı hatası oluştu.');
             }
             finally {

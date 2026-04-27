@@ -35,12 +35,23 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             {
                 await ProcessQueueAsync(stoppingToken);
             }
+            catch (TaskCanceledException)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "E-posta kuyruğu işlenirken hata oluştu.");
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(20), stoppingToken);
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(20), stoppingToken);
+            }
+            catch (TaskCanceledException)
+            {
+                break;
+            }
         }
     }
 
@@ -123,7 +134,8 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         }
 
         var hasUpdatedAtColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "guncellenme_tarihi", cancellationToken);
-        var pendingEmails = await ClaimPendingEmailsAsync(connection, hasUpdatedAtColumn, cancellationToken);
+        var hasNextAttemptColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "sonraki_deneme_utc", cancellationToken);
+        var pendingEmails = await ClaimPendingEmailsAsync(connection, hasUpdatedAtColumn, hasNextAttemptColumn, cancellationToken);
         foreach (var item in pendingEmails)
         {
             try
@@ -134,7 +146,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             }
             catch (Exception ex)
             {
-                await MarkEmailFailedAsync(connection, item, ex.Message, cancellationToken);
+                await MarkEmailFailedAsync(connection, item, ex.Message, hasNextAttemptColumn, cancellationToken);
                 await MarkSmtpFailureAsync(connection, ex.Message, cancellationToken);
                 _logger.LogError(ex, "E-posta gonderimi basarisiz. Alici={Recipient}, Konu={Subject}, KuyrukId={QueueId}", item.RecipientEmail, item.Subject, item.Id);
             }
@@ -190,12 +202,20 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         };
     }
 
-    private static async Task<List<QueuedEmailItem>> ClaimPendingEmailsAsync(SqlConnection connection, bool hasUpdatedAtColumn, CancellationToken cancellationToken)
+    private static async Task<List<QueuedEmailItem>> ClaimPendingEmailsAsync(SqlConnection connection, bool hasUpdatedAtColumn, bool hasNextAttemptColumn, CancellationToken cancellationToken)
     {
         var hasAttachmentsColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "ekler_json", cancellationToken);
         var updateSet = hasUpdatedAtColumn
             ? "durum = 'İşleniyor', guncellenme_tarihi = SYSUTCDATETIME()"
             : "durum = 'İşleniyor'";
+        if (hasNextAttemptColumn)
+        {
+            updateSet += ", sonraki_deneme_utc = NULL";
+        }
+
+        var nextAttemptWhere = hasNextAttemptColumn
+            ? "AND (sonraki_deneme_utc IS NULL OR sonraki_deneme_utc <= SYSUTCDATETIME())"
+            : string.Empty;
 
         var sql = hasAttachmentsColumn
             ? """
@@ -205,6 +225,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                     WHERE tur = 'E-posta'
                       AND durum = 'Beklemede'
                       AND alici_eposta IS NOT NULL
+                      __NEXT_ATTEMPT_WHERE__
                     ORDER BY olusturulma_tarihi ASC
                 )
                 UPDATE b
@@ -227,6 +248,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                     WHERE tur = 'E-posta'
                       AND durum = 'Beklemede'
                       AND alici_eposta IS NOT NULL
+                      __NEXT_ATTEMPT_WHERE__
                     ORDER BY olusturulma_tarihi ASC
                 )
                 UPDATE b
@@ -243,6 +265,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 INNER JOIN cte ON cte.id = b.id;
                 """;
         sql = sql.Replace("__UPDATE_SET__", updateSet, StringComparison.Ordinal);
+        sql = sql.Replace("__NEXT_ATTEMPT_WHERE__", nextAttemptWhere, StringComparison.Ordinal);
 
         var items = new List<QueuedEmailItem>();
         await using var command = new SqlCommand(sql, connection);
@@ -576,24 +599,54 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task MarkEmailFailedAsync(SqlConnection connection, QueuedEmailItem item, string errorMessage, CancellationToken cancellationToken)
+    private static async Task MarkEmailFailedAsync(SqlConnection connection, QueuedEmailItem item, string errorMessage, bool hasNextAttemptColumn, CancellationToken cancellationToken)
     {
         var nextAttempt = item.AttemptCount + 1;
         var finalStatus = nextAttempt > item.MaxAttempts ? "Başarısız" : "Beklemede";
+        var delaySeconds = ComputeBackoffSeconds(nextAttempt);
 
-        await using var command = new SqlCommand("""
+        var sql = hasNextAttemptColumn && finalStatus == "Beklemede"
+            ? """
+            UPDATE bildirim_loglari
+            SET durum = @status,
+                gonderme_denemesi = @attemptCount,
+                hata_kodu = 'SMTP',
+                hata_mesaji = @error,
+                sonraki_deneme_utc = DATEADD(SECOND, @delaySec, SYSUTCDATETIME())
+            WHERE id = @id;
+            """
+            : """
             UPDATE bildirim_loglari
             SET durum = @status,
                 gonderme_denemesi = @attemptCount,
                 hata_kodu = 'SMTP',
                 hata_mesaji = @error
             WHERE id = @id;
-            """, connection);
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@status", finalStatus);
         command.Parameters.AddWithValue("@attemptCount", nextAttempt);
         command.Parameters.AddWithValue("@error", errorMessage.Length > 500 ? errorMessage[..500] : errorMessage);
+        if (hasNextAttemptColumn && finalStatus == "Beklemede")
+        {
+            command.Parameters.AddWithValue("@delaySec", delaySeconds);
+        }
         command.Parameters.AddWithValue("@id", item.Id);
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static int ComputeBackoffSeconds(int attempt)
+    {
+        var a = Math.Max(1, attempt);
+        return a switch
+        {
+            1 => 10,
+            2 => 30,
+            3 => 90,
+            4 => 180,
+            _ => 300
+        };
     }
 
     private sealed class QueuedEmailItem

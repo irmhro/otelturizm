@@ -17,13 +17,15 @@ public class FirmaService : IFirmaService
     private readonly string _connectionString;
     private readonly IMessageCenterService _messageCenterService;
     private readonly IEmailQueueService _emailQueueService;
+    private readonly ILogger<FirmaService> _logger;
 
-    public FirmaService(IConfiguration configuration, IMessageCenterService messageCenterService, IEmailQueueService emailQueueService)
+    public FirmaService(IConfiguration configuration, IMessageCenterService messageCenterService, IEmailQueueService emailQueueService, ILogger<FirmaService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _messageCenterService = messageCenterService;
         _emailQueueService = emailQueueService;
+        _logger = logger;
     }
 
     public async Task<FirmaLandingPageViewModel> GetLandingPageAsync(CancellationToken cancellationToken = default)
@@ -507,6 +509,16 @@ public class FirmaService : IFirmaService
             }, cancellationToken);
 
             await tx.CommitAsync(cancellationToken);
+            _logger.LogInformation(
+                "RESERVATION_AUDIT create source=firma userId={UserId} firmaId={FirmaId} reservationId={ReservationId} reservationNo={ReservationNo} hotelId={HotelId} roomTypeId={RoomTypeId} total={Total} rooms={Rooms}",
+                userId,
+                context.FirmaId,
+                reservationId,
+                reservationNo,
+                model.HotelId,
+                model.RoomTypeId,
+                compare.CompanyTotal,
+                model.RoomCount);
             return (true, $"Firma rezervasyonu oluşturuldu: {reservationNo}", reservationId);
         }
         catch (Exception ex)

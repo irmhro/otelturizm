@@ -4,13 +4,14 @@ using System.Xml.Linq;
 using Microsoft.Data.SqlClient;
 using otelturizmnew.Models.Seo;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Utils;
 
 namespace otelturizmnew.Services;
 
 public sealed class SitemapService : ISitemapService
 {
     private static readonly SemaphoreSlim SyncLock = new(1, 1);
-    private static readonly string[] SitemapLocales = ["tr-TR", "en-US"];
+    private static readonly string[] SitemapLocales = ["tr-TR", "en-US", "en-GB", "de-DE", "fr-FR", "es-ES"];
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromDays(3);
 
     private readonly IConfiguration _configuration;
@@ -55,17 +56,44 @@ public sealed class SitemapService : ISitemapService
                 regionalFiles = await BuildRegionalSitemapsAsync(connection, cancellationToken);
             }
 
+            // p169: multi-instance çakışmalarına karşı dosya kilidi (best-effort)
+            await using var lockHandle = TryAcquireFileLock(GetSitemapLockFilePath());
+            if (lockHandle is null)
+            {
+                return;
+            }
+
             await SaveRegionalSitemapsAsync(regionalFiles, cancellationToken);
 
             var xml = await BuildSitemapXmlAsync(
                 regionalFiles.Select(static file => file.PublicUrl).ToList(),
                 cancellationToken);
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-            await File.WriteAllTextAsync(filePath, xml, new UTF8Encoding(false), cancellationToken);
+            await AtomicFileWriter.WriteFileAtomicAsync(filePath, async (stream, ct) =>
+            {
+                var bytes = new UTF8Encoding(false).GetBytes(xml);
+                await stream.WriteAsync(bytes, ct);
+            }, cancellationToken);
         }
         finally
         {
             SyncLock.Release();
+        }
+    }
+
+    private string GetSitemapLockFilePath()
+        => Path.Combine(Path.GetDirectoryName(GetSitemapFilePath())!, ".sitemap.lock");
+
+    private static FileStream? TryAcquireFileLock(string absoluteLockPath)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(absoluteLockPath)!);
+            return new FileStream(absoluteLockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        }
+        catch
+        {
+            return null;
         }
     }
 

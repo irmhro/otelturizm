@@ -1,5 +1,6 @@
 @using System.Security.Claims
 @using otelturizmnew.Constants
+@inject otelturizmnew.Services.Abstractions.IPublicTextService T
 @{
     var homeAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
     var homeAuthenticated = User.Identity?.IsAuthenticated == true;
@@ -26,6 +27,7 @@
     var currentCulture = System.Globalization.CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
     var currentLang = (System.Globalization.CultureInfo.CurrentUICulture?.TwoLetterISOLanguageName ?? "tr").ToLowerInvariant();
     var currentFlag = currentLang switch { "en" => "gb", "fr" => "fr", "de" => "de", "es" => "es", _ => "tr" };
+    var currentCurrency = (Context.Request.Cookies["ot_currency"] ?? "TRY").Trim().ToUpperInvariant();
 }
 
 <header class="site-header" id="mainHeader">
@@ -34,16 +36,16 @@
         <link rel="stylesheet" href="~/assets/vendor/flag-icons/css/flag-icon.min.css" asp-append-version="true" />
         <div class="utility-container">
             <div class="utility-left">
-                <span><i class="fas fa-shield-alt"></i> Güvenli Odeme</span>
+                <span><i class="fas fa-shield-alt"></i> @T.Get("safe_payment")</span>
                 <span>
                     <i class="fas fa-headset"></i>
-                    7/24 Destek
+                    @T.Get("support_24_7")
                     <span class="support-contact">
                         <i class="fas fa-envelope"></i>
                         <a href="mailto:destek@otelturizm.com">destek@otelturizm.com</a>
                     </span>
                 </span>
-                <span><i class="fas fa-tag"></i> En Iyi Fiyat</span>
+                <span><i class="fas fa-tag"></i> @T.Get("best_price")</span>
             </div>
             <div class="utility-right">
                 <div class="dropdown language-dropdown" id="languageDropdown">
@@ -60,7 +62,17 @@
                     </ul>
                 </div>
 
-                <!-- currency selector removed -->
+                <div class="dropdown language-dropdown" id="currencyDropdown">
+                    <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+                        <span class="dropdown-label">@currentCurrency</span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li class="dropdown-item"><a href="/currency/set?code=TRY&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))">₺ TRY</a></li>
+                        <li class="dropdown-item"><a href="/currency/set?code=USD&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))">$ USD</a></li>
+                        <li class="dropdown-item"><a href="/currency/set?code=EUR&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))">€ EUR</a></li>
+                        <li class="dropdown-item"><a href="/currency/set?code=GBP&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))">£ GBP</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -77,7 +89,7 @@
 
         <div class="search-wrapper">
             <form class="search-container public-header-search-form" method="get" action="/oteller" autocomplete="off">
-                <input type="text" class="search-input" id="publicHeaderSearchInput" name="q" placeholder="Otel adı, il, ilçe, mahalle veya bölge ara">
+                <input type="text" class="search-input" id="publicHeaderSearchInput" name="q" placeholder="@T.Get("search_placeholder")">
                 <input type="hidden" id="publicHeaderSelectedType" value="" />
                 <input type="hidden" id="publicHeaderSelectedSlug" value="" />
                 <button type="submit" class="search-btn header-search-btn" aria-label="Ara">

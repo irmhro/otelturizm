@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Data.SqlClient;
 using otelturizmnew.Models.Oteller;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Utils;
 
 namespace otelturizmnew.Services;
 
@@ -10,12 +11,15 @@ public class WeatherService : IWeatherService
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
+    private readonly ExternalServiceCircuitBreaker _breaker;
+    private readonly ICacheSingleFlight _singleFlight;
 
-    public WeatherService(HttpClient httpClient, IConfiguration configuration)
+    public WeatherService(HttpClient httpClient, IConfiguration configuration, ExternalServiceCircuitBreaker breaker, ICacheSingleFlight singleFlight)
     {
         _httpClient = httpClient;
         _configuration = configuration;
-        _httpClient.Timeout = TimeSpan.FromSeconds(10);
+        _breaker = breaker;
+        _singleFlight = singleFlight;
     }
 
     public async Task<HotelWeatherWidgetViewModel?> GetForecastAsync(string district, string city, decimal? latitude = null, decimal? longitude = null, CancellationToken cancellationToken = default)
@@ -32,7 +36,8 @@ public class WeatherService : IWeatherService
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum" +
             "&timezone=Europe%2FIstanbul&forecast_days=5";
 
-        using var forecastResponse = await _httpClient.GetAsync(forecastUrl, cancellationToken);
+        using var forecastResponse = await _breaker.ExecuteAsync("weather-forecast", async ct => await _httpClient.GetAsync(forecastUrl, ct), cancellationToken: cancellationToken)
+            ?? throw new HttpRequestException("Weather forecast request blocked by circuit breaker.");
         if (!forecastResponse.IsSuccessStatusCode)
         {
             return null;
@@ -134,7 +139,8 @@ public class WeatherService : IWeatherService
         foreach (var query in queries.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             var url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(query)}&count=8&language=tr&format=json";
-            using var response = await _httpClient.GetAsync(url, cancellationToken);
+            using var response = await _breaker.ExecuteAsync("weather-geocoding", async ct => await _httpClient.GetAsync(url, ct), cancellationToken: cancellationToken)
+                ?? throw new HttpRequestException("Weather geocoding request blocked by circuit breaker.");
             if (!response.IsSuccessStatusCode)
             {
                 continue;

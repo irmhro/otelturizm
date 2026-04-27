@@ -3,16 +3,19 @@ using System.Text;
 using System.Text.Json;
 using otelturizmnew.Models.TelefonDogrulama;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Utils;
 
 namespace otelturizmnew.Services;
 
 public class WhatsAppCloudApiService : IWhatsAppCloudApiService
 {
     private readonly HttpClient _httpClient;
+    private readonly ExternalServiceCircuitBreaker _breaker;
 
-    public WhatsAppCloudApiService(HttpClient httpClient)
+    public WhatsAppCloudApiService(HttpClient httpClient, ExternalServiceCircuitBreaker breaker)
     {
         _httpClient = httpClient;
+        _breaker = breaker;
     }
 
     public async Task<WhatsAppCloudSendResult> SendVerificationTemplateAsync(WhatsAppCloudSendRequest request, CancellationToken cancellationToken = default)
@@ -52,7 +55,8 @@ public class WhatsAppCloudApiService : IWhatsAppCloudApiService
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", request.AccessToken);
         httpRequest.Content = new StringContent(requestPayload, Encoding.UTF8, "application/json");
 
-        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        using var response = await _breaker.ExecuteAsync("whatsapp-cloud", async ct => await _httpClient.SendAsync(httpRequest, ct), cancellationToken: cancellationToken)
+            ?? throw new HttpRequestException("WhatsApp request blocked by circuit breaker.");
         var responsePayload = await response.Content.ReadAsStringAsync(cancellationToken);
         var result = new WhatsAppCloudSendResult
         {

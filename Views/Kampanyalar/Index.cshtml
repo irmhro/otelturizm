@@ -1,5 +1,28 @@
 @model otelturizmnew.Models.Kampanyalar.CampaignListingPageViewModel
 
+@{
+    ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.PageDescription)
+        ? "Otelturizm kampanyalarını keşfedin. Sezon fırsatları ve özel indirimleri görüntüleyin."
+        : Model.PageDescription;
+    var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
+                  ?? "https://otelturizm.com";
+    ViewData["Canonical"] = $"{baseUrl}/kampanyalar";
+    try
+    {
+        var breadcrumbJsonLd = new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "BreadcrumbList",
+            ["itemListElement"] = new object[]
+            {
+                new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Kampanyalar", ["item"] = $"{baseUrl}/kampanyalar" }
+            }
+        };
+        ViewData["JsonLd"] = System.Text.Json.JsonSerializer.Serialize(breadcrumbJsonLd);
+    }
+    catch { }
+}
+
 <section class="campaign-page-hero">
     <div class="campaign-page-hero__copy">
         <span class="campaign-page-kicker">Aktif kampanya vitrini</span>

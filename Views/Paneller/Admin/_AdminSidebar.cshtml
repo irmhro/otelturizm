@@ -59,7 +59,7 @@
                 </div>
             </section>
 
-            <section class="admin-sidebar-group @(IsOpen("Reservations", "Payments", "Invoices", "Commissions", "Contracts", "Reports") ? "open" : string.Empty)">
+            <section class="admin-sidebar-group @(IsOpen("Reservations", "Payments", "Invoices", "Commissions", "Contracts", "Reports", "CommerceInsight") ? "open" : string.Empty)">
                 <button type="button" class="admin-sidebar-group-toggle" data-admin-accordion="group">
                     <span class="admin-sidebar-group-meta">
                         <span class="admin-sidebar-link-icon"><i class="fas fa-wallet"></i></span>
@@ -79,6 +79,7 @@
                     <a asp-controller="AdminPanel" asp-action="Commissions" class="admin-sidebar-link @Active("Commissions")"><span>Komisyonlar</span></a>
                     <a asp-controller="AdminPanel" asp-action="Contracts" class="admin-sidebar-link @Active("Contracts")"><span>Sözleşmeler</span></a>
                     <a asp-controller="AdminPanel" asp-action="Reports" class="admin-sidebar-link @Active("Reports")"><span>Gelir / Komisyon Raporu</span></a>
+                    <a asp-controller="AdminPanel" asp-action="CommerceInsight" class="admin-sidebar-link @Active("CommerceInsight")"><span>Ticari içgörü</span></a>
                 </div>
             </section>
 

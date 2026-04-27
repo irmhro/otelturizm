@@ -387,3 +387,9 @@ tmp_*.log
 
 # Local duplicate/copy assets (Windows)
 * - Kopya.*
+
+# Yerel Release publish ciktisi (tools/Release/Publish-To-YayinKlasoru.ps1)
+yayinlanacakderlenmisdosyalar/
+
+# Sunucu yukleme paketi (tools/Release/Publish-To-Yayinla.ps1)
+yayinla/

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Hosting;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 using Microsoft.AspNetCore.OutputCaching;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Paneller.Admin;
@@ -32,8 +33,9 @@ public class AdminPanelController : Controller
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOutputCacheStore _outputCacheStore;
     private readonly ISecureFileService _secureFileService;
+    private readonly IGrowthGovernanceService _growthGovernance;
 
-    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService)
+    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance)
     {
         _adminService = adminService;
         _adminHotelManagementService = adminHotelManagementService;
@@ -48,6 +50,7 @@ public class AdminPanelController : Controller
         _httpClientFactory = httpClientFactory;
         _outputCacheStore = outputCacheStore;
         _secureFileService = secureFileService;
+        _growthGovernance = growthGovernance;
     }
 
     private async Task EvictPublicOutputCacheAsync(CancellationToken cancellationToken)
@@ -57,6 +60,26 @@ public class AdminPanelController : Controller
         await _outputCacheStore.EvictByTagAsync("public", cancellationToken);
         await _outputCacheStore.EvictByTagAsync("public-short", cancellationToken);
         await _outputCacheStore.EvictByTagAsync("public-medium", cancellationToken);
+    }
+
+    // p181: Kritik admin aksiyonlarında gerekçe zorunlu
+    private bool TryValidateCriticalReason(string? reason, out string error)
+    {
+        if (!CanPerformCriticalAdminActions())
+        {
+            error = "Bu işlem için yetkiniz yok.";
+            return false;
+        }
+
+        var r = (reason ?? string.Empty).Trim();
+        if (r.Length < 5 || r.Length > 240)
+        {
+            error = "Gerekçe 5-240 karakter olmalı.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
     }
 
     [HttpGet("")]
@@ -253,11 +276,17 @@ public class AdminPanelController : Controller
 
     [HttpPost("sistem-sagligi/email-test-modu")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ToggleEmailTestMode([FromForm] bool enabled, CancellationToken cancellationToken)
+    public async Task<IActionResult> ToggleEmailTestMode([FromForm] bool enabled, [FromForm] string? reason, CancellationToken cancellationToken)
     {
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!TryValidateCriticalReason(reason, out var reasonError))
+        {
+            TempData["AdminError"] = reasonError;
+            return RedirectToAction(nameof(SystemHealth));
         }
 
         var connectionString = HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection");
@@ -282,6 +311,15 @@ public class AdminPanelController : Controller
             ? $"E-posta servisi test modu {(enabled ? "AÇILDI" : "KAPATILDI")}."
             : "Aktif e-posta servisi bulunamadı (email_services.aktif_mi=1).";
 
+        await _auditLogService.TryLogAdminActionAsync(
+            GetUserId(),
+            "email_test_mode",
+            "email_services",
+            enabled ? "1" : "0",
+            $"Gerekçe: {reason}",
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
+
         return RedirectToAction(nameof(SystemHealth));
     }
 
@@ -295,6 +333,348 @@ public class AdminPanelController : Controller
 
         var rows = slowSqlTracker.GetTop(take);
         return Ok(new { ok = true, rows });
+    }
+
+    // p182: Admin işlem logları
+    [HttpGet("islem-loglari")]
+    public async Task<IActionResult> AdminActionLogs([FromQuery] long? adminUserId, [FromQuery] string? actionType, [FromQuery] string? targetTable, [FromQuery] string? q, [FromQuery] string? sort, [FromQuery] int page, [FromQuery] int pageSize, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var filter = new AdminActionLogFilter
+        {
+            AdminUserId = adminUserId,
+            ActionType = actionType,
+            TargetTable = targetTable,
+            Query = q,
+            Sort = sort,
+            Page = page <= 0 ? 1 : page,
+            PageSize = pageSize <= 0 ? 50 : pageSize
+        };
+
+        var model = await _adminService.GetAdminActionLogsAsync(GetFullName(), GetEmail(), GetUserRole(), filter, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/AdminActionLogs.cshtml", model);
+    }
+
+    [HttpGet("islem-loglari/csv")]
+    public async Task<IActionResult> ExportAdminActionLogsCsv([FromQuery] long? adminUserId, [FromQuery] string? actionType, [FromQuery] string? targetTable, [FromQuery] string? q, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var filter = new AdminActionLogFilter
+        {
+            AdminUserId = adminUserId,
+            ActionType = actionType,
+            TargetTable = targetTable,
+            Query = q,
+            Sort = "date_desc",
+            Page = 1,
+            PageSize = 5000
+        };
+
+        var csv = await _adminService.ExportAdminActionLogsCsvAsync(filter, cancellationToken);
+        var bytes = Encoding.UTF8.GetBytes(csv);
+        return File(bytes, "text/csv; charset=utf-8", $"admin-islem-loglari-{DateTime.UtcNow:yyyyMMdd-HHmm}.csv");
+    }
+
+    // p183: Rezervasyonlar tek liste
+    [HttpGet("rezervasyonlar-tek-liste")]
+    public async Task<IActionResult> UnifiedReservations([FromQuery] string? q, [FromQuery] string? status, [FromQuery] int page, [FromQuery] int pageSize, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetUnifiedReservationsAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, page, pageSize, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/UnifiedReservations.cshtml", model);
+    }
+
+    // p184: Email kuyruk yönetimi
+    [HttpGet("email-kuyruk")]
+    public async Task<IActionResult> EmailQueue([FromQuery] string? status, [FromQuery] string? q, [FromQuery] int page, [FromQuery] int pageSize, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var filter = new AdminEmailQueueFilter { Status = status, Query = q, Page = page <= 0 ? 1 : page, PageSize = pageSize <= 0 ? 50 : pageSize };
+        var model = await _adminService.GetEmailQueueAsync(GetFullName(), GetEmail(), GetUserRole(), filter, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/EmailQueue.cshtml", model);
+    }
+
+    [HttpPost("email-kuyruk/retry")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EmailQueueForceRetry([FromForm] long id, [FromForm] string? reason, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!TryValidateCriticalReason(reason, out var err))
+        {
+            TempData["AdminError"] = err;
+            return RedirectToAction(nameof(EmailQueue));
+        }
+
+        var result = await _adminService.ForceRetryEmailAsync(GetUserId(), id, reason!, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        await _auditLogService.TryLogAdminActionAsync(GetUserId(), "email_force_retry", "bildirim_loglari", id.ToString(), $"Gerekçe: {reason}", HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        return RedirectToAction(nameof(EmailQueue));
+    }
+
+    [HttpPost("email-kuyruk/fail")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EmailQueueMarkFailed([FromForm] long id, [FromForm] string? reason, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!TryValidateCriticalReason(reason, out var err))
+        {
+            TempData["AdminError"] = err;
+            return RedirectToAction(nameof(EmailQueue));
+        }
+
+        var result = await _adminService.MarkEmailFailedAsync(GetUserId(), id, reason!, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        await _auditLogService.TryLogAdminActionAsync(GetUserId(), "email_mark_failed", "bildirim_loglari", id.ToString(), $"Gerekçe: {reason}", HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        return RedirectToAction(nameof(EmailQueue));
+    }
+
+    // p185: Cache evict manuel
+    [HttpPost("cache/evict-public")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EvictPublicCache([FromForm] string? reason, [FromForm] string? returnTo, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!TryValidateCriticalReason(reason, out var err))
+        {
+            TempData["AdminError"] = err;
+            return string.Equals(returnTo, "commerce", StringComparison.OrdinalIgnoreCase)
+                ? RedirectToAction(nameof(CommerceInsight))
+                : RedirectToAction(nameof(SystemHealth));
+        }
+
+        await EvictPublicOutputCacheAsync(cancellationToken);
+        TempData["AdminMessage"] = "Public cache temizlendi.";
+        await _auditLogService.TryLogAdminActionAsync(GetUserId(), "cache_evict_public", "output_cache", null, $"Gerekçe: {reason}", HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        return string.Equals(returnTo, "commerce", StringComparison.OrdinalIgnoreCase)
+            ? RedirectToAction(nameof(CommerceInsight))
+            : RedirectToAction(nameof(SystemHealth));
+    }
+
+    // p186: Sitemap refresh manuel
+    [HttpPost("sitemap/refresh")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RefreshSitemap([FromForm] string? reason, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!TryValidateCriticalReason(reason, out var err))
+        {
+            TempData["AdminError"] = err;
+            return RedirectToAction(nameof(SystemHealth));
+        }
+
+        await _sitemapService.EnsureFreshSitemapAsync(force: true, cancellationToken);
+        TempData["AdminMessage"] = "Sitemap refresh tetiklendi.";
+        await _auditLogService.TryLogAdminActionAsync(GetUserId(), "sitemap_refresh", "sitemap", null, $"Gerekçe: {reason}", HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        return RedirectToAction(nameof(SystemHealth));
+    }
+
+    // p187: rate limit stats
+    [HttpGet("rate-limit")]
+    public async Task<IActionResult> RateLimitStats([FromQuery] int windowHours, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetRateLimitStatsAsync(GetFullName(), GetEmail(), GetUserRole(), windowHours <= 0 ? 24 : windowHours, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/RateLimitStats.cshtml", model);
+    }
+
+    // p188+p189: security/upload events (Serilog JSON dosyasından)
+    [HttpGet("guvenlik-olaylari")]
+    public async Task<IActionResult> SecurityEvents([FromQuery] int take, CancellationToken cancellationToken)
+        => await RenderLogEventsAsync("SECURITY_EVENT", take, cancellationToken);
+
+    [HttpGet("upload-gecmisi")]
+    public async Task<IActionResult> UploadHistory([FromQuery] int take, CancellationToken cancellationToken)
+        => await RenderLogEventsAsync("UPLOAD_AUDIT", take, cancellationToken);
+
+    private async Task<IActionResult> RenderLogEventsAsync(string eventType, int take, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var shell = (await _adminService.GetSectionPageAsync("security", GetFullName(), GetEmail(), GetUserRole(), cancellationToken)).Shell;
+        shell.PanelTitle = eventType == "UPLOAD_AUDIT" ? "Upload Geçmişi" : "Güvenlik Olayları";
+        shell.PanelSubtitle = "Uygulama loglarından son event kayıtları (read-only).";
+
+        var model = new AdminLogEventsPageViewModel { Shell = shell, EventType = eventType, Take = Math.Clamp(take <= 0 ? 200 : take, 50, 500) };
+        try
+        {
+            var logRoot = Path.Combine(_environment.ContentRootPath, "App_Data", "logs");
+            if (!Directory.Exists(logRoot))
+            {
+                model.Warning = $"Log klasörü bulunamadı: {logRoot}";
+            }
+            else
+            {
+                var latest = new DirectoryInfo(logRoot)
+                    .GetFiles("app-*.json")
+                    .OrderByDescending(f => f.LastWriteTimeUtc)
+                    .FirstOrDefault();
+
+                if (latest is null)
+                {
+                    model.Warning = "Log dosyası bulunamadı (app-*.json).";
+                }
+                else
+                {
+                    model.Rows = ReadCompactJsonEvents(latest.FullName, eventType, model.Take);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            model.Warning = "Log okunurken hata oluştu: " + ex.Message;
+        }
+
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/LogEvents.cshtml", model);
+    }
+
+    private static List<AdminLogEventRowViewModel> ReadCompactJsonEvents(string filePath, string eventType, int take)
+    {
+        var results = new List<AdminLogEventRowViewModel>(take);
+        foreach (var line in System.IO.File.ReadLines(filePath).Reverse())
+        {
+            if (results.Count >= take) break;
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            if (!line.Contains(eventType, StringComparison.OrdinalIgnoreCase)) continue;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(line);
+                var root = doc.RootElement;
+                var ts = root.TryGetProperty("@t", out var tEl) && DateTimeOffset.TryParse(tEl.GetString(), out var parsed)
+                    ? parsed
+                    : (DateTimeOffset?)null;
+                var msg = root.TryGetProperty("@m", out var mEl) ? (mEl.GetString() ?? "") : "";
+                results.Add(new AdminLogEventRowViewModel
+                {
+                    Timestamp = ts,
+                    EventType = eventType,
+                    Message = msg,
+                    Raw = line.Length > 900 ? line[..900] + "…" : line
+                });
+            }
+            catch
+            {
+                results.Add(new AdminLogEventRowViewModel
+                {
+                    Timestamp = null,
+                    EventType = eventType,
+                    Message = "-",
+                    Raw = line.Length > 900 ? line[..900] + "…" : line
+                });
+            }
+        }
+        return results;
+    }
+
+    // p190: settings monitor
+    [HttpGet("ayarlar-monitor")]
+    public async Task<IActionResult> SettingsMonitor(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetSettingsMonitorAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/SettingsMonitor.cshtml", model);
+    }
+
+    [HttpGet("ticari-icgoru")]
+    public async Task<IActionResult> CommerceInsight([FromQuery] long hotelId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetCommerceInsightPageAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/CommerceInsight.cshtml", model);
+    }
+
+    [HttpPost("ticari-icgoru/growth-kill")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CommerceGrowthKill([FromForm] bool enableEmergencyKill, [FromForm] string? reason, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!TryValidateCriticalReason(reason, out var err))
+        {
+            TempData["AdminError"] = err;
+            return RedirectToAction(nameof(CommerceInsight));
+        }
+
+        _growthGovernance.SetEmergencyKillSwitch(enableEmergencyKill);
+        TempData["AdminMessage"] = enableEmergencyKill
+            ? "Growth acil kill-switch acildi (tum yuzde rollout bayraklari kapali)."
+            : "Growth acil kill-switch kapatildi.";
+        await _auditLogService.TryLogAdminActionAsync(
+            GetUserId(),
+            "growth_emergency_kill_switch",
+            "growth",
+            enableEmergencyKill ? "1" : "0",
+            $"Gerekce: {reason}",
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
+        return RedirectToAction(nameof(CommerceInsight));
     }
 
     private static List<string> ExtractInternalRoutesFromViews(string viewsRoot)

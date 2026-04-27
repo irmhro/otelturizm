@@ -6,6 +6,20 @@ public class AdminSystemHealthPageViewModel
     public List<AdminSystemHealthCheckItemViewModel> Checks { get; set; } = new();
     public List<AdminSystemHealthQueueRowViewModel> Queues { get; set; } = new();
     public AdminInternalLinkCheckViewModel LinkCheck { get; set; } = new();
+
+    /// <summary>ASP.NET Health Checks özet raporu (paket 246).</summary>
+    public string PlatformHealthAggregateStatus { get; set; } = string.Empty;
+    public double PlatformHealthTotalDurationMs { get; set; }
+    public List<AdminPlatformHealthProbeViewModel> PlatformHealthProbes { get; set; } = new();
+    public string? PlatformHealthError { get; set; }
+}
+
+public sealed class AdminPlatformHealthProbeViewModel
+{
+    public string Name { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public double DurationMs { get; set; }
+    public string? Detail { get; set; }
 }
 
 public class AdminSystemHealthCheckItemViewModel

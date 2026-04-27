@@ -5,6 +5,7 @@ using otelturizmnew.Constants;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.Firma;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Utils;
 
 namespace otelturizmnew.Controllers.Paneller.Firma;
 
@@ -15,12 +16,14 @@ public class FirmaPanelController : Controller
     private readonly IFirmaService _firmaService;
     private readonly IPhoneVerificationService _phoneVerificationService;
     private readonly IAuthService _authService;
+    private readonly IIdempotencyService _idempotency;
 
-    public FirmaPanelController(IFirmaService firmaService, IPhoneVerificationService phoneVerificationService, IAuthService authService)
+    public FirmaPanelController(IFirmaService firmaService, IPhoneVerificationService phoneVerificationService, IAuthService authService, IIdempotencyService idempotency)
     {
         _firmaService = firmaService;
         _phoneVerificationService = phoneVerificationService;
         _authService = authService;
+        _idempotency = idempotency;
     }
 
     [HttpGet("")]
@@ -113,10 +116,16 @@ public class FirmaPanelController : Controller
 
     [HttpPost("yeni-rezervasyon")]
     [ValidateAntiForgeryToken]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("reservation-create")]
     public async Task<IActionResult> CreateReservationPost(otelturizmnew.Models.Paneller.Firma.FirmaReservationCreateModel model, CancellationToken cancellationToken)
     {
         if (!IsFirmaUser()) return Redirect("/kullanici-giris");
-        var result = await _firmaService.CreateReservationAsync(GetUserId(), model, cancellationToken);
+        var idemKey = IdempotencyKey.ForObject($"firma-res-create:{GetUserId()}", model);
+        var result = await _idempotency.GetOrCreateAsync(
+            idemKey,
+            async ct => await _firmaService.CreateReservationAsync(GetUserId(), model, ct),
+            ttl: TimeSpan.FromSeconds(25),
+            cancellationToken: cancellationToken);
         SetFeedback(result.Success, result.Message);
         return Redirect("/panel/firma/yeni-rezervasyon");
     }
@@ -199,6 +208,8 @@ public class FirmaPanelController : Controller
 
     [HttpPost("mesajlar/gonder")]
     [ValidateAntiForgeryToken]
+    [RequestFormLimits(MultipartBodyLengthLimit = 31457280)]
+    [RequestSizeLimit(31457280)]
     public async Task<IActionResult> SendMessage(MessageSendRequest form, List<IFormFile>? attachments, CancellationToken cancellationToken)
     {
         if (!IsFirmaUser()) return Redirect("/kullanici-giris");

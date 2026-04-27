@@ -35,12 +35,43 @@ public class SecureFilesController : Controller
 
         Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
         Response.Headers.Pragma = "no-cache";
-        return PhysicalFile(file.AbsolutePath, file.ContentType, file.OriginalFileName, enableRangeProcessing: true);
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+
+        var safeName = SanitizeDownloadName(file.OriginalFileName);
+        Response.Headers["Content-Disposition"] = BuildContentDispositionAttachment(safeName);
+        return PhysicalFile(file.AbsolutePath, file.ContentType, safeName, enableRangeProcessing: true);
     }
 
     private long GetCurrentUserId()
     {
         var raw = User.FindFirstValue(AuthClaimTypes.UserId) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
         return long.TryParse(raw, out var userId) ? userId : 0;
+    }
+
+    private static string SanitizeDownloadName(string? fileName)
+    {
+        var name = Path.GetFileName(fileName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "download";
+        }
+
+        // çok uzun isimler browserlarda sorun çıkarabiliyor
+        if (name.Length > 180)
+        {
+            var ext = Path.GetExtension(name);
+            var baseName = Path.GetFileNameWithoutExtension(name);
+            baseName = baseName.Length > 160 ? baseName[..160] : baseName;
+            name = baseName + ext;
+        }
+
+        return name;
+    }
+
+    private static string BuildContentDispositionAttachment(string fileName)
+    {
+        // RFC 5987
+        var encoded = Uri.EscapeDataString(fileName);
+        return $"attachment; filename=\"{fileName.Replace("\"", string.Empty)}\"; filename*=UTF-8''{encoded}";
     }
 }

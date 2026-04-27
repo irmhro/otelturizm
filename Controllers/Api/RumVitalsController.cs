@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using otelturizmnew.Services;
 
 namespace otelturizmnew.Controllers.Api;
 
@@ -6,10 +7,12 @@ namespace otelturizmnew.Controllers.Api;
 public sealed class RumVitalsController : ControllerBase
 {
     private readonly ILogger<RumVitalsController> _logger;
+    private readonly CommerceMetricsAccumulator _metrics;
 
-    public RumVitalsController(ILogger<RumVitalsController> logger)
+    public RumVitalsController(ILogger<RumVitalsController> logger, CommerceMetricsAccumulator metrics)
     {
         _logger = logger;
+        _metrics = metrics;
     }
 
     [HttpPost("/rum/vitals")]
@@ -25,6 +28,12 @@ public sealed class RumVitalsController : ControllerBase
         var safe = payload.Normalize(HttpContext);
         _logger.LogInformation("RUM_VITALS {Metric}={Value} {Unit} route={Route} page={Page} nav={NavType} ua={Ua}",
             safe.Metric, safe.Value, safe.Unit, safe.Route, safe.Page, safe.NavType, safe.Ua);
+
+        if (!string.IsNullOrWhiteSpace(safe.Metric) && safe.Value is { } v && double.IsFinite(v))
+        {
+            var routeKey = string.IsNullOrWhiteSpace(safe.Route) ? "/" : safe.Route;
+            _metrics.RecordRum(routeKey, safe.Metric.Trim(), v);
+        }
 
         return Ok(new { ok = true });
     }

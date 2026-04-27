@@ -6,8 +6,15 @@ namespace otelturizmnew.Controllers.Locale;
 [Route("locale")]
 public class LocaleController : Controller
 {
+    private readonly otelturizmnew.Services.Abstractions.IUserPreferenceService _prefs;
+
+    public LocaleController(otelturizmnew.Services.Abstractions.IUserPreferenceService prefs)
+    {
+        _prefs = prefs;
+    }
+
     [HttpGet("set")]
-    public IActionResult Set([FromQuery] string? lang, [FromQuery] string? returnUrl = null)
+    public async Task<IActionResult> Set([FromQuery] string? lang, [FromQuery] string? returnUrl = null, CancellationToken cancellationToken = default)
     {
         var normalized = NormalizeCulture(lang);
         var cookieValue = CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(normalized));
@@ -24,6 +31,15 @@ public class LocaleController : Controller
                 Expires = DateTimeOffset.UtcNow.AddYears(1),
                 Path = "/"
             });
+
+        if (User?.Identity?.IsAuthenticated == true)
+        {
+            var userId = TryGetUserId();
+            if (userId > 0)
+            {
+                await _prefs.TryPersistLocaleAsync(userId, normalized, cancellationToken);
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
@@ -42,6 +58,12 @@ public class LocaleController : Controller
         }
 
         return Redirect("/");
+    }
+
+    private long TryGetUserId()
+    {
+        var idClaim = User.Claims.FirstOrDefault(x => x.Type is "id" or "userId" or "sub")?.Value;
+        return long.TryParse(idClaim, out var id) ? id : 0;
     }
 
     private static string NormalizeCulture(string? value)

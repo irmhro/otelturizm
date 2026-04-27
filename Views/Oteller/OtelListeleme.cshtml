@@ -5,6 +5,27 @@
     ViewData["PageCss"] = "otel-listeleme";
     ViewData["PageCssMobile"] = "otel-listeleme.mobile";
     ViewData["SuppressGlobalDraftBanner"] = true;
+    ViewData["Title"] = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Oteller" : Model.SearchLabel;
+    var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
+                  ?? "https://otelturizm.com";
+    ViewData["Canonical"] = $"{baseUrl}/oteller";
+    ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.SearchLabel)
+        ? "Türkiye genelinde otelleri filtreleyin, fiyatları karşılaştırın ve güvenle rezervasyon oluşturun."
+        : $"{Model.SearchLabel} için otelleri filtreleyin, fiyatları karşılaştırın ve güvenle rezervasyon oluşturun.";
+    try
+    {
+        var breadcrumbJsonLd = new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "BreadcrumbList",
+            ["itemListElement"] = new object[]
+            {
+                new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Oteller", ["item"] = $"{baseUrl}/oteller" }
+            }
+        };
+        ViewData["JsonLd"] = System.Text.Json.JsonSerializer.Serialize(breadcrumbJsonLd);
+    }
+    catch { }
 
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
     var pricedHotels = hotels.Where(x => (x.StartingPrice ?? 0m) > 0m).ToList();
@@ -1106,7 +1127,7 @@
                                         <div class="card-image-mosaic" aria-hidden="true">
                                             @for (var mi = 0; mi < mosaicImages.Count; mi++)
                                             {
-                                                <img src="@mosaicImages[mi]" alt="" loading="lazy" />
+                                                <img src="@mosaicImages[mi]" alt="" loading="lazy" decoding="async" />
                                             }
                                         </div>
                                     }
@@ -1127,7 +1148,8 @@
                                         class="wishlist-btn favorite-btn @(hotel.IsFavorite ? "active" : string.Empty)"
                                         data-hotel-id="@hotel.Id"
                                         data-source-page="OtelListeleme"
-                                        aria-label="Favorilere ekle">
+                                        aria-label="Favorilere ekle"
+                                        aria-pressed="@(hotel.IsFavorite ? "true" : "false")">
                                     <i class="@(hotel.IsFavorite ? "fas" : "far") fa-heart"></i>
                                 </button>
                             </div>
@@ -1392,6 +1414,7 @@
 
 @section Scripts {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+    <script src="~/assets/js/otel-listeleme-enhancements.js" asp-append-version="true"></script>
     @{
         var nonce = Context.Items["CspNonce"] as string;
     }

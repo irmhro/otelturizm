@@ -3,6 +3,68 @@
 @{
     ViewData["Title"] = Model.Name;
     ViewData["SuppressGlobalDraftBanner"] = true;
+    var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
+                  ?? "https://otelturizm.com";
+    ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.ShortDescription)
+        ? $"{Model.Name} · {Model.District}, {Model.City}. Oda seçeneklerini inceleyin ve güvenle rezervasyon oluşturun."
+        : Model.ShortDescription;
+    ViewData["Canonical"] = $"{baseUrl}/oteller/{Model.Slug}";
+    ViewData["OgImage"] = Model.MainImageUrl;
+
+    try
+    {
+        var hotelJsonLd = new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "Hotel",
+            ["name"] = Model.Name,
+            ["url"] = $"{baseUrl}/oteller/{Model.Slug}",
+            ["image"] = string.IsNullOrWhiteSpace(Model.MainImageUrl) ? null : Model.MainImageUrl,
+            ["address"] = new Dictionary<string, object?>
+            {
+                ["@type"] = "PostalAddress",
+                ["addressLocality"] = Model.District,
+                ["addressRegion"] = Model.City,
+                ["addressCountry"] = "TR"
+            },
+            ["geo"] = (Model.Latitude.HasValue && Model.Longitude.HasValue)
+                ? new Dictionary<string, object?>
+                {
+                    ["@type"] = "GeoCoordinates",
+                    ["latitude"] = Model.Latitude.Value,
+                    ["longitude"] = Model.Longitude.Value
+                }
+                : null,
+            ["aggregateRating"] = Model.Rating > 0
+                ? new Dictionary<string, object?>
+                {
+                    ["@type"] = "AggregateRating",
+                    ["ratingValue"] = Model.Rating,
+                    ["bestRating"] = 10,
+                    ["worstRating"] = 0
+                }
+                : null
+        };
+
+        var breadcrumbJsonLd = new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "BreadcrumbList",
+            ["itemListElement"] = new object[]
+            {
+                new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Oteller", ["item"] = $"{baseUrl}/oteller" },
+                new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 2, ["name"] = Model.Name, ["item"] = $"{baseUrl}/oteller/{Model.Slug}" }
+            }
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(new object[] { breadcrumbJsonLd, hotelJsonLd },
+            new System.Text.Json.JsonSerializerOptions { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull });
+        ViewData["JsonLd"] = json;
+    }
+    catch
+    {
+        // fail-safe
+    }
     var gallery = Model.GalleryImages.Count > 0 ? Model.GalleryImages : new List<string> { Model.MainImageUrl };
     var mainImage = gallery.FirstOrDefault() ?? string.Empty;
     var roomSelectOptions = Model.Rooms.Count > 0 ? Model.Rooms : new List<otelturizmnew.Models.Oteller.HotelRoomViewModel>
@@ -167,7 +229,7 @@
             </div>
         }
         <button type="button" class="gallery-main-trigger" data-gallery-index="0" aria-label="Galeriyi ac">
-            <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" />
+            <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" fetchpriority="high" decoding="async" />
         </button>
     </div>
     <div class="gallery-side-grid">
@@ -252,6 +314,21 @@
             @Model.Name
         </h1>
         <p class="detail-location"><i class="fas fa-location-dot"></i> @Model.Address</p>
+        @if (Model.ActiveViewerBand > 0)
+        {
+            <p class="detail-social-proof text-muted small mb-1" role="status">
+                <i class="fas fa-eye" aria-hidden="true"></i>
+                Son dakikalarda bu otele yaklaşık <strong>@Model.ActiveViewerBand</strong> ilgi gösterdi.
+            </p>
+        }
+        <p class="detail-live-presence text-muted small mb-1" id="livePresenceLine" role="status" hidden>
+            <i class="fas fa-users" aria-hidden="true"></i>
+            Şu anda bu otelin sayfasında yaklaşık <strong id="livePresenceCount">@Model.LivePresenceCount</strong> aktif oturum var.
+        </p>
+        @if (!string.IsNullOrWhiteSpace(Model.IntentSegmentLabel))
+        {
+            <p class="detail-intent text-muted small mb-0">Seyahat profili: @Model.IntentSegmentLabel</p>
+        }
 
     </div>
     <div class="header-right-stack">
@@ -429,6 +506,28 @@
     if (totalReviewPages <= 0) totalReviewPages = 1;
     if (reviewPage > totalReviewPages) reviewPage = totalReviewPages;
     var pagedReviews = sortedReviews.Skip((reviewPage - 1) * reviewPageSize).Take(reviewPageSize).ToList();
+}
+
+@if (Model.SimilarHotels.Count > 0)
+{
+    <section class="similar-hotels-strip container-fluid px-0 mb-4" aria-label="Benzer oteller">
+        <h2 class="h5 mb-3">Aynı bölgede öne çıkanlar</h2>
+        <div class="row g-3">
+            @foreach (var sim in Model.SimilarHotels)
+            {
+                <div class="col-6 col-md-4 col-lg-2">
+                    <a href="/oteller/@sim.Slug" class="card h-100 text-decoration-none shadow-sm border-0">
+                        <img src="@sim.ImageUrl" class="card-img-top" alt="@sim.Name" style="object-fit:cover;height:96px;" loading="lazy" />
+                        <div class="card-body p-2">
+                            <div class="small fw-bold text-dark">@sim.Name</div>
+                            <div class="small text-muted">@sim.RatingText</div>
+                            <div class="small text-primary">@sim.PriceText</div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </section>
 }
 
 <section class="detail-grid">
@@ -952,6 +1051,13 @@
                 <input type="hidden" name="HotelId" value="@Model.Id" />
                 <input type="hidden" id="profileCompletionRequired" value="@(Model.ProfilePrompt.IsProfileIncomplete && Model.IsLoggedInUser ? "true" : "false")" />
                 <input type="hidden" name="RoomsJson" id="roomsJsonInput" value="" />
+
+                <nav class="booking-stepper" aria-label="Rezervasyon adımları">
+                    <span class="booking-step"><span class="booking-step__num">1</span> Tarih &amp; Oda</span>
+                    <span class="booking-step"><span class="booking-step__num">2</span> Misafir</span>
+                    <span class="booking-step"><span class="booking-step__num">3</span> Ödeme</span>
+                    <span class="booking-step"><span class="booking-step__num">4</span> Onay</span>
+                </nav>
 
                 @if (Model.IsLoggedInUser && Model.ProfilePrompt.IsProfileIncomplete)
                 {
@@ -3593,6 +3699,31 @@
             });
         })();
         */
+    </script>
+    <script nonce="@nonce">
+        (function () {
+            var hid = @Model.Id;
+            var elCount = document.getElementById('livePresenceCount');
+            var line = document.getElementById('livePresenceLine');
+            var tabId = sessionStorage.getItem('otelPresenceTab');
+            if (!tabId) {
+                tabId = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : ('t' + Math.random().toString(36).slice(2));
+                sessionStorage.setItem('otelPresenceTab', tabId);
+            }
+            function beat() {
+                fetch('/api/hotel-presence/beat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hotelId: hid, tabId: tabId })
+                }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+                    if (!j || !j.ok) return;
+                    if (elCount) elCount.textContent = j.active;
+                    if (line) line.hidden = false;
+                }).catch(function () { });
+            }
+            beat();
+            setInterval(beat, 45000);
+        })();
     </script>
     <script src="~/assets/js/otel-detay.js" asp-append-version="true"></script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />

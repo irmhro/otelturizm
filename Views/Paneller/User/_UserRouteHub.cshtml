@@ -2,6 +2,7 @@
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
     var favoriteCount = ViewData["FavoriteCount"] as int? ?? 0;
     var reservationCount = ViewData["ReservationCount"] as int? ?? 0;
+    var messageCount = ViewData["MessageCount"] as int? ?? 0;
 }
 
 <section class="panel-route-hub" aria-label="Kullanıcı paneli hızlı menü">
@@ -32,6 +33,10 @@
             <a asp-action="Messages" class="route-hub-link @(currentAction == "Messages" ? "active" : "")">
                 <i class="fas fa-envelope"></i>
                 <span>Mesajlarim</span>
+                @if (messageCount > 0)
+                {
+                    <em class="warn">@messageCount</em>
+                }
             </a>
         </div>
     </div>

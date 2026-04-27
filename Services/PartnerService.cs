@@ -1037,6 +1037,13 @@ public class PartnerService : IPartnerService
                 cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
+            _logger.LogInformation(
+                "PRICING_AUDIT_TRAIL hotelId={HotelId} userId={UserId} roomTypeCount={RoomTypes} dateFrom={From:o} dateTo={To:o}",
+                hotel.HotelId,
+                userId,
+                rooms.Count,
+                request.DateFrom,
+                request.DateTo);
             return (true, $"{rooms.Count} oda tipi icin takvim ve fiyat kurallari guncellendi.");
         }
         catch (Exception ex)

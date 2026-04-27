@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="~/vendor/AdminLTE-3.2.0/plugins/icheck-bootstrap/icheck-bootstrap.min.css" />
     <link rel="stylesheet" href="~/vendor/AdminLTE-3.2.0/dist/css/adminlte.min.css" />
     <link rel="stylesheet" href="~/assets/css/paneller/panel-tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-standards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/panel-admin-shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/panel-admin-shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     @if (!string.IsNullOrWhiteSpace(pageCssPath))
@@ -52,6 +53,7 @@
 
             <section class="content admin-content-body">
                 <div class="container-fluid">
+                    <partial name="~/Views/Paneller/Common/_PanelToasts.cshtml" />
                     @RenderBody()
                 </div>
             </section>
@@ -67,6 +69,7 @@
     <script src="~/vendor/AdminLTE-3.2.0/plugins/jquery/jquery.min.js"></script>
     <script src="~/vendor/AdminLTE-3.2.0/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/vendor/AdminLTE-3.2.0/dist/js/adminlte.min.js"></script>
+    <script src="~/assets/js/panel-toasts.js" asp-append-version="true"></script>
     <script nonce="@nonce">
         (function () {
             document.querySelectorAll('[data-admin-accordion="group"]').forEach(function (toggle) {

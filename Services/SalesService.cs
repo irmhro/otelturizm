@@ -16,12 +16,14 @@ public class SalesService : ISalesService
 {
     private readonly string _connectionString;
     private readonly IEmailQueueService _emailQueueService;
+    private readonly ILogger<SalesService> _logger;
 
-    public SalesService(IConfiguration configuration, IEmailQueueService emailQueueService)
+    public SalesService(IConfiguration configuration, IEmailQueueService emailQueueService, ILogger<SalesService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _emailQueueService = emailQueueService;
+        _logger = logger;
     }
 
     public async Task<SalesDashboardPageViewModel> GetDashboardAsync(long userId, CancellationToken cancellationToken = default)
@@ -400,6 +402,15 @@ public class SalesService : ISalesService
             }, cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
+            _logger.LogInformation(
+                "RESERVATION_AUDIT create source=sales salesUserId={SalesUserId} reservationId={ReservationId} reservationNo={ReservationNo} hotelId={HotelId} roomTypeId={RoomTypeId} total={Total} rooms={Rooms}",
+                userId,
+                reservationId,
+                reservationNo,
+                model.HotelId,
+                model.RoomTypeId,
+                summary.TotalAmount,
+                model.RoomCount);
             return (true, $"Rezervasyon başarıyla oluşturuldu: {reservationNo}", reservationId);
         }
         catch (Exception ex)

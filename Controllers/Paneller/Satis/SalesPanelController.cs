@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Paneller.Satis;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Utils;
 
 namespace otelturizmnew.Controllers.Paneller.Satis;
 
@@ -13,11 +14,13 @@ public class SalesPanelController : Controller
 {
     private readonly ISalesService _salesService;
     private readonly IAuthService _authService;
+    private readonly IIdempotencyService _idempotency;
 
-    public SalesPanelController(ISalesService salesService, IAuthService authService)
+    public SalesPanelController(ISalesService salesService, IAuthService authService, IIdempotencyService idempotency)
     {
         _salesService = salesService;
         _authService = authService;
+        _idempotency = idempotency;
     }
 
     [HttpGet("")]
@@ -70,10 +73,16 @@ public class SalesPanelController : Controller
 
     [HttpPost("yeni-rezervasyon")]
     [ValidateAntiForgeryToken]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("reservation-create")]
     public async Task<IActionResult> CreateReservationPost(SalesReservationCreateModel model, CancellationToken cancellationToken)
     {
         if (!IsSalesUser()) return Redirect("/kullanici-giris");
-        var result = await _salesService.CreateReservationAsync(GetUserId(), model, cancellationToken);
+        var idemKey = IdempotencyKey.ForObject($"sales-res-create:{GetUserId()}", model);
+        var result = await _idempotency.GetOrCreateAsync(
+            idemKey,
+            async ct => await _salesService.CreateReservationAsync(GetUserId(), model, ct),
+            ttl: TimeSpan.FromSeconds(25),
+            cancellationToken: cancellationToken);
         SetFeedback(result.Success, result.Message);
         if (result.Success && result.ReservationId.HasValue && result.ReservationId.Value > 0)
         {
@@ -103,9 +112,18 @@ public class SalesPanelController : Controller
     public async Task<IActionResult> ReservationPdfData(long reservationId, CancellationToken cancellationToken)
     {
         if (!IsSalesUser()) return Unauthorized();
-        var data = await _salesService.GetReservationPdfDataAsync(GetUserId(), reservationId, cancellationToken);
-        if (data is null) return NotFound(new { success = false, message = "Rezervasyon bulunamadı." });
-        return Ok(new { success = true, data });
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(8)); // p166: timebox
+        try
+        {
+            var data = await _salesService.GetReservationPdfDataAsync(GetUserId(), reservationId, cts.Token);
+            if (data is null) return NotFound(new { success = false, message = "Rezervasyon bulunamadı." });
+            return Ok(new { success = true, data });
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            return StatusCode(504, new { success = false, message = "PDF verisi hazırlanırken zaman aşımı oluştu. Lütfen tekrar deneyin." });
+        }
     }
 
     [HttpGet("yeni-rezervasyon/otel-asistani")]

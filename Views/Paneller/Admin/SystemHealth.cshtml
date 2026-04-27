@@ -42,6 +42,51 @@
     </div>
 
     <div class="system-health-grid">
+        <section class="system-health-panel system-health-panel--platform">
+            <div class="system-health-panel__head">
+                <div>
+                    <span class="system-health-panel__eyebrow">Health Checks API</span>
+                    <h3>Platform prob’ları (ASP.NET)</h3>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.PlatformHealthAggregateStatus))
+                {
+                    <span class="system-health-pill @(Model.PlatformHealthAggregateStatus.Equals("Healthy", StringComparison.OrdinalIgnoreCase) ? "is-success" : "is-danger")">@Model.PlatformHealthAggregateStatus</span>
+                }
+            </div>
+            <div class="system-health-checklist">
+                @if (!string.IsNullOrWhiteSpace(Model.PlatformHealthError))
+                {
+                    <article class="system-health-check is-danger">
+                        <div class="system-health-check__body">
+                            <strong>Health raporu alınamadı</strong>
+                            <p>@Model.PlatformHealthError</p>
+                        </div>
+                    </article>
+                }
+                else if (Model.PlatformHealthProbes.Count == 0)
+                {
+                    <p class="text-muted mb-0 small">Henüz kayıtlı prob yok.</p>
+                }
+                else
+                {
+                    <p class="text-muted small mb-2">Toplam süre: <strong>@Model.PlatformHealthTotalDurationMs.ToString("F1")</strong> ms · Uç: <code>/health/platform</code></p>
+                    @foreach (var p in Model.PlatformHealthProbes)
+                    {
+                        var tone = p.Status.Equals("Healthy", StringComparison.OrdinalIgnoreCase) ? "is-success" : (p.Status.Equals("Degraded", StringComparison.OrdinalIgnoreCase) ? "is-warning" : "is-danger");
+                        <article class="system-health-check @tone">
+                            <div class="system-health-check__status">
+                                <span class="system-health-pill @tone">@p.Status</span>
+                            </div>
+                            <div class="system-health-check__body">
+                                <strong>@p.Name</strong>
+                                <p class="mb-0">@((p.Detail ?? "-") + " · " + p.DurationMs.ToString("F1") + " ms")</p>
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+        </section>
+
         <section class="system-health-panel">
             <div class="system-health-panel__head">
                 <div>
@@ -161,6 +206,7 @@
                     <form method="post" action="/admin/sistem-sagligi/email-test-modu" class="system-health-inline-form">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="enabled" value="true" />
+                        <input type="text" name="reason" class="form-control form-control-sm" style="width:200px;display:inline-block;margin-right:8px;" placeholder="Gerekçe" required minlength="5" maxlength="240" />
                         <button type="submit" class="system-health-chip-btn is-warning">
                             <i class="fas fa-vial"></i>
                             Test modu
@@ -169,6 +215,7 @@
                     <form method="post" action="/admin/sistem-sagligi/email-test-modu" class="system-health-inline-form">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="enabled" value="false" />
+                        <input type="text" name="reason" class="form-control form-control-sm" style="width:200px;display:inline-block;margin-right:8px;" placeholder="Gerekçe" required minlength="5" maxlength="240" />
                         <button type="submit" class="system-health-chip-btn is-success">
                             <i class="fas fa-paper-plane"></i>
                             Gerçek gönderim
@@ -178,6 +225,36 @@
             </div>
             <div class="system-health-note">
                 Bu kontrol, <code>email_services</code> tablosundaki aktif kaydın <code>test_modu</code> alanını değiştirir. Development ortamında test modunda bile e-postalar pickup klasörüne kaydedilebilir.
+            </div>
+        </section>
+
+        <section class="system-health-panel">
+            <div class="system-health-panel__head system-health-panel__head--split">
+                <div>
+                    <span class="system-health-panel__eyebrow">Operasyon</span>
+                    <h3>Cache / Sitemap</h3>
+                </div>
+                <div class="system-health-actions">
+                    <form method="post" action="/admin/cache/evict-public" class="system-health-inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="text" name="reason" class="form-control form-control-sm" style="width:220px;display:inline-block;margin-right:8px;" placeholder="Cache temizleme gerekçesi" required minlength="5" maxlength="240" />
+                        <button type="submit" class="system-health-chip-btn is-danger">
+                            <i class="fas fa-broom"></i>
+                            Public cache temizle
+                        </button>
+                    </form>
+                    <form method="post" action="/admin/sitemap/refresh" class="system-health-inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="text" name="reason" class="form-control form-control-sm" style="width:220px;display:inline-block;margin-right:8px;" placeholder="Sitemap gerekçesi" required minlength="5" maxlength="240" />
+                        <button type="submit" class="system-health-chip-btn is-info">
+                            <i class="fas fa-rotate"></i>
+                            Sitemap refresh
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="system-health-note">
+                Bu işlemler kritik operasyon aksiyonlarıdır; zorunlu gerekçe ile <code>admin_islem_loglari</code> içine yazılır.
             </div>
         </section>
 

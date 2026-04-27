@@ -1,7 +1,12 @@
 <footer class="main-footer">
-    <strong>Copyright &copy; @DateTime.Now.Year <a href="/">Otelturizm</a>.</strong>
+@inject otelturizmnew.Services.Abstractions.ITimeZoneService TimeZoneService
+@{
+    var localNow = TimeZoneService.ToLocal(DateTime.UtcNow);
+}
+    <strong>Copyright &copy; @localNow.Year <a href="/">Otelturizm</a>.</strong>
     Tüm hakları saklıdır.
     <div class="float-right d-none d-sm-inline-block">
         <b>Admin Panel</b> v1
+        <span class="ml-2 text-muted">Saat: @localNow.ToString("dd.MM.yyyy HH:mm")</span>
     </div>
 </footer>

@@ -121,14 +121,35 @@
 
     const loadData = function () {
         setStatus("Rezervasyon bilgileri alınıyor...");
-        return fetch("/panel/satis/api/rezervasyon-pdf/" + reservationId, { headers: { "Accept": "application/json" } })
-            .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (payload) {
-                if (!payload || payload.success !== true || !payload.data) {
-                    throw new Error((payload && payload.message) || "Rezervasyon verisi alınamadı.");
-                }
-                return payload.data;
-            });
+        const url = "/panel/satis/api/rezervasyon-pdf/" + reservationId;
+        const attempt = function (tryIndex) {
+            const controller = ("AbortController" in window) ? new AbortController() : null;
+            const timeoutId = setTimeout(function () {
+                try { controller && controller.abort(); } catch { }
+            }, 8000);
+
+            return fetch(url, {
+                headers: { "Accept": "application/json" },
+                signal: controller ? controller.signal : undefined
+            })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (payload) {
+                    if (!payload || payload.success !== true || !payload.data) {
+                        throw new Error((payload && payload.message) || "Rezervasyon verisi alınamadı.");
+                    }
+                    return payload.data;
+                })
+                .catch(function (err) {
+                    if (tryIndex < 2) {
+                        setStatus("Bağlantı yavaş. Tekrar deneniyor...");
+                        return new Promise(function (resolve) { setTimeout(resolve, 450); }).then(function () { return attempt(tryIndex + 1); });
+                    }
+                    throw err;
+                })
+                .finally(function () { clearTimeout(timeoutId); });
+        };
+
+        return attempt(0);
     };
 
     const createPdf = function () {

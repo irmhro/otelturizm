@@ -1,10 +1,3 @@
-@{
-    Layout = null;
-    var firstName = ViewData["user_first_name"]?.ToString() ?? "Misafir";
-    var verificationCode = ViewData["verification_code"]?.ToString() ?? "------";
-    var channel = ViewData["verification_channel"]?.ToString() ?? "e-posta";
-    var loginTime = ViewData["login_time"]?.ToString() ?? DateTime.Now.ToString("dd.MM.yyyy HH:mm");
-}
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -25,13 +18,13 @@
                     </tr>
                     <tr>
                         <td style="padding:32px;">
-                            <p style="margin:0 0 14px;font-size:16px;">Merhaba <strong>@firstName</strong>,</p>
-                            <p style="margin:0 0 16px;font-size:15px;line-height:1.7;">Hesabınıza giriş yapmak için @channel üzerinden doğrulama istediniz. Aşağıdaki tek kullanımlık güvenlik kodunu giriş ekranına yazın.</p>
+                            <p style="margin:0 0 14px;font-size:16px;">Merhaba <strong>{{user_first_name}}</strong>,</p>
+                            <p style="margin:0 0 16px;font-size:15px;line-height:1.7;">Hesabınıza giriş yapmak için {{verification_channel}} üzerinden doğrulama istediniz. Aşağıdaki tek kullanımlık güvenlik kodunu giriş ekranına yazın.</p>
                             <div style="margin:24px 0;padding:18px 24px;border-radius:18px;background:#eef4ff;border:1px solid #c9d9ff;text-align:center;">
                                 <div style="font-size:13px;color:#47618c;text-transform:uppercase;letter-spacing:.18em;">Güvenlik Kodu</div>
-                                <div style="margin-top:10px;font-size:34px;font-weight:800;letter-spacing:.28em;color:#0f3d91;">@verificationCode</div>
+                                <div style="margin-top:10px;font-size:34px;font-weight:800;letter-spacing:.28em;color:#0f3d91;">{{verification_code}}</div>
                             </div>
-                            <p style="margin:0 0 12px;font-size:14px;color:#50617a;">İstek zamanı: <strong>@loginTime</strong></p>
+                            <p style="margin:0 0 12px;font-size:14px;color:#50617a;">İstek zamanı: <strong>{{login_time}}</strong></p>
                             <p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#50617a;">Bu kod birkaç dakika içinde kullanılmalıdır. Giriş işlemini siz başlatmadıysanız şifrenizi değiştirin ve destek ekibimizle iletişime geçin.</p>
                         </td>
                     </tr>

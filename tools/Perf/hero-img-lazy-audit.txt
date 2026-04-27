@@ -1,0 +1,4 @@
+﻿# Hero img lazy-loading audit
+# Generated at: 2026-04-27T19:58:50.8355862+03:00
+# ViewsRoot: .\Views
+

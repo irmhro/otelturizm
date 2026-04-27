@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Http;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Utils;
 
 namespace otelturizmnew.Services;
 
@@ -12,6 +13,8 @@ public class SecureFileService : ISecureFileService
     private readonly string _connectionString;
     private readonly IWebHostEnvironment _environment;
     private readonly IUploadScanService _uploadScanService;
+    private readonly IUploadAuditService _uploadAuditService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     private const long MaxUploadBytes = 25 * 1024 * 1024; // 25 MB (mesaj eki / dekont / sözleşme gibi kullanım için)
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -20,12 +23,19 @@ public class SecureFileService : ISecureFileService
         ".jpg", ".jpeg", ".png", ".webp", ".gif"
     };
 
-    public SecureFileService(IConfiguration configuration, IWebHostEnvironment environment, IUploadScanService uploadScanService)
+    public SecureFileService(
+        IConfiguration configuration,
+        IWebHostEnvironment environment,
+        IUploadScanService uploadScanService,
+        IUploadAuditService uploadAuditService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _environment = environment;
         _uploadScanService = uploadScanService;
+        _uploadAuditService = uploadAuditService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<StoredSecureFileResult> SaveAsync(IFormFile file, SecureFileSaveRequest request, CancellationToken cancellationToken = default)
@@ -53,12 +63,9 @@ public class SecureFileService : ISecureFileService
         Directory.CreateDirectory(root);
         var absolutePath = Path.Combine(root, storedName);
 
-        await using (var stream = new FileStream(absolutePath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-        {
-            await file.CopyToAsync(stream, cancellationToken);
-        }
+        await AtomicFileWriter.CopyFromFormFileAtomicAsync(file, absolutePath, cancellationToken);
 
-        var hash = await ComputeSha256Async(absolutePath, cancellationToken);
+        var hash = await AtomicFileWriter.ComputeSha256Async(absolutePath, cancellationToken);
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
@@ -106,6 +113,31 @@ public class SecureFileService : ISecureFileService
 
         // p78: Upload scan kancası (opsiyonel) — default no-op.
         await _uploadScanService.ScanOrThrowAsync(absolutePath, stored, cancellationToken);
+
+        try
+        {
+            var http = _httpContextAccessor.HttpContext;
+            await _uploadAuditService.RecordAsync(new UploadAuditEvent(
+                Kind: "secure-file",
+                Category: safeCategory,
+                SizeBytes: file.Length,
+                StoredName: storedName,
+                StoredPathOrUrl: absolutePath,
+                ContentType: stored.ContentType,
+                Extension: safeExtension,
+                Sha256: hash,
+                OwnerUserId: request.OwnerUserId,
+                OwnerFirmaId: request.OwnerFirmaId,
+                ContextTable: request.ContextTable,
+                ContextId: request.ContextId,
+                RemoteIp: http?.Connection.RemoteIpAddress?.ToString(),
+                UserAgent: http?.Request.Headers.UserAgent.ToString()
+            ), cancellationToken);
+        }
+        catch
+        {
+            // audit fail-safe
+        }
         return stored;
     }
 
@@ -206,14 +238,6 @@ public class SecureFileService : ISecureFileService
             OriginalFileName = originalName,
             ContentType = contentType
         };
-    }
-
-    private static async Task<string> ComputeSha256Async(string absolutePath, CancellationToken cancellationToken)
-    {
-        await using var stream = File.OpenRead(absolutePath);
-        using var sha = SHA256.Create();
-        var hash = await sha.ComputeHashAsync(stream, cancellationToken);
-        return Convert.ToHexString(hash);
     }
 
     private static bool IsImageContentType(string? contentType)

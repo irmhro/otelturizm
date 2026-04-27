@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
     <link rel="stylesheet" href="~/assets/css/paneller/panel-tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-standards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/satis/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/satis/shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.css" asp-append-version="true" />
@@ -71,6 +72,7 @@
                     <div class="sales-alert sales-alert-error"><i class="fas fa-triangle-exclamation"></i><span>@shell.ErrorMessage</span></div>
                 }
             }
+            <partial name="~/Views/Paneller/Common/_PanelToasts.cshtml" />
             @RenderBody()
             @if (shell is not null)
             {
@@ -83,6 +85,7 @@
         <partial name="~/Views/Paneller/Satis/_SalesMobileNav.cshtml" model="shell" />
     }
     <script src="~/assets/js/panel-header-bildiri.js" asp-append-version="true"></script>
+    <script src="~/assets/js/panel-toasts.js" asp-append-version="true"></script>
 </body>
 </html>
 

@@ -1,23 +1,14 @@
-@{
-    var bookingReference = Model?["booking_reference"] ?? "-";
-    var hotelName = Model?["hotel_name"] ?? "-";
-    var checkInDate = Model?["check_in_date"] ?? "-";
-    var checkOutDate = Model?["check_out_date"] ?? "-";
-    var totalPrice = Model?["total_price"] ?? "-";
-    var companyName = Model?["company_name"] ?? "Firma";
-}
-
 <div style="font-family:Arial, sans-serif; max-width:640px; margin:0 auto; padding:16px; color:#0f172a;">
     <h2 style="margin:0 0 10px;">Kurumsal Rezervasyon Kaydı</h2>
     <p style="margin:0 0 14px; color:#475569;">
-        @companyName adına bir rezervasyon kaydı oluşturuldu.
+        {{company_name}} adına bir rezervasyon kaydı oluşturuldu.
     </p>
 
     <div style="border:1px solid #e2e8f0; border-radius:12px; padding:14px; background:#f8fafc;">
-        <p style="margin:0 0 6px;"><strong>Referans:</strong> @bookingReference</p>
-        <p style="margin:0 0 6px;"><strong>Otel:</strong> @hotelName</p>
-        <p style="margin:0 0 6px;"><strong>Tarih:</strong> @checkInDate - @checkOutDate</p>
-        <p style="margin:0;"><strong>Toplam:</strong> @totalPrice</p>
+        <p style="margin:0 0 6px;"><strong>Referans:</strong> {{booking_reference}}</p>
+        <p style="margin:0 0 6px;"><strong>Otel:</strong> {{hotel_name}}</p>
+        <p style="margin:0 0 6px;"><strong>Tarih:</strong> {{check_in_date}} - {{check_out_date}}</p>
+        <p style="margin:0;"><strong>Toplam:</strong> {{total_price}}</p>
     </div>
 
     <p style="margin:14px 0 0; color:#64748b; font-size:13px;">

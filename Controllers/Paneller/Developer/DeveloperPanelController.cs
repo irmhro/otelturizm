@@ -146,7 +146,14 @@ public class DeveloperPanelController : Controller
 
         var userId = GetCurrentUserId();
         var targetDir = Path.Combine(_environment.WebRootPath, "uploads", "developer", "requests", userId.ToString());
-        var saved = await _imageStorageService.SaveAsWebpAsync(file, targetDir, "request", cancellationToken);
+        var saved = await _imageStorageService.SaveAsWebpAsync(file, new otelturizmnew.Services.Abstractions.ImageSaveRequest(
+            TargetDirectory: targetDir,
+            FilePrefix: "request",
+            Category: "developer-request-visual",
+            OwnerUserId: userId,
+            QualityProfile: otelturizmnew.Services.Abstractions.ImageQualityProfile.RequestVisual,
+            GenerateThumbnails: true
+        ), cancellationToken);
         return $"/uploads/developer/requests/{userId}/{saved.FileName}";
     }
 }

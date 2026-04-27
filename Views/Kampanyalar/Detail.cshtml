@@ -1,5 +1,43 @@
 @model otelturizmnew.Models.Kampanyalar.CampaignDetailPageViewModel
 
+@{
+    var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
+                  ?? "https://otelturizm.com";
+    ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.ShortDescription)
+        ? $"{Model.CampaignName} kampanyası. Kampanyaya dahil otelleri görüntüleyin ve uygun fırsatları yakalayın."
+        : Model.ShortDescription;
+    ViewData["Canonical"] = $"{baseUrl}/kampanyalar/{Model.Slug}";
+    ViewData["OgImage"] = Model.HeroImageUrl;
+
+    try
+    {
+        var breadcrumbJsonLd = new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "BreadcrumbList",
+            ["itemListElement"] = new object[]
+            {
+                new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Kampanyalar", ["item"] = $"{baseUrl}/kampanyalar" },
+                new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 2, ["name"] = Model.CampaignName, ["item"] = $"{baseUrl}/kampanyalar/{Model.Slug}" }
+            }
+        };
+
+        var offerJsonLd = new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "Offer",
+            ["name"] = Model.CampaignName,
+            ["url"] = $"{baseUrl}/kampanyalar/{Model.Slug}",
+            ["availability"] = "https://schema.org/InStock"
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(new object[] { breadcrumbJsonLd, offerJsonLd },
+            new System.Text.Json.JsonSerializerOptions { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull });
+        ViewData["JsonLd"] = json;
+    }
+    catch { }
+}
+
 <section class="campaign-detail-hero" style="--campaign-accent:@Model.ColorCode;">
     <div class="campaign-detail-hero__copy">
         <a href="/kampanyalar" class="campaign-back-link"><i class="fas fa-arrow-left"></i> Kampanyalara dön</a>

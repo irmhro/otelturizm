@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Paneller.Partner;
 using otelturizmnew.Services.Abstractions;
@@ -13,11 +14,20 @@ public class PartnerPanelController : Controller
 {
     private readonly IPartnerService _partnerService;
     private readonly IAuthService _authService;
+    private readonly IOutputCacheStore _outputCacheStore;
 
-    public PartnerPanelController(IPartnerService partnerService, IAuthService authService)
+    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IOutputCacheStore outputCacheStore)
     {
         _partnerService = partnerService;
         _authService = authService;
+        _outputCacheStore = outputCacheStore;
+    }
+
+    private async Task EvictPublicOutputCacheAsync(CancellationToken cancellationToken)
+    {
+        await _outputCacheStore.EvictByTagAsync("public", cancellationToken);
+        await _outputCacheStore.EvictByTagAsync("public-short", cancellationToken);
+        await _outputCacheStore.EvictByTagAsync("public-medium", cancellationToken);
     }
 
     [HttpGet("")]
@@ -222,6 +232,10 @@ public class PartnerPanelController : Controller
         {
             var result = await _partnerService.ApplyCompanyBulkPricingAsync(GetUserId(), request, cancellationToken);
             TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+            if (result.Success)
+            {
+                await EvictPublicOutputCacheAsync(cancellationToken);
+            }
             return Redirect($"/panel/partner/firma-fiyatlari?otelId={request.HotelId}&companyId={request.CompanyId}&roomId={request.RoomTypeId}&month={request.StartDate:yyyy-MM}");
         }
         catch (Exception ex)
@@ -313,6 +327,10 @@ public class PartnerPanelController : Controller
         {
             var result = await _partnerService.ApplyDailyPricingAsync(GetUserId(), request, cancellationToken);
             TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+            if (result.Success)
+            {
+                await EvictPublicOutputCacheAsync(cancellationToken);
+            }
         }
         catch (Exception ex)
         {

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
@@ -7,15 +8,28 @@ using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
 using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Paneller.Admin;
 using otelturizmnew.Services.Abstractions;
+using System.Text;
 
 namespace otelturizmnew.Services;
 
 public class AdminService : IAdminService
 {
     private readonly string _connectionString;
+    private readonly IConfiguration _configuration;
+    private readonly CommerceMetricsAccumulator _commerceMetrics;
+    private readonly IGrowthGovernanceService _growthGovernance;
+    private readonly HealthCheckService _healthCheckService;
 
-    public AdminService(IConfiguration configuration)
+    public AdminService(
+        IConfiguration configuration,
+        CommerceMetricsAccumulator commerceMetrics,
+        IGrowthGovernanceService growthGovernance,
+        HealthCheckService healthCheckService)
     {
+        _configuration = configuration;
+        _commerceMetrics = commerceMetrics;
+        _growthGovernance = growthGovernance;
+        _healthCheckService = healthCheckService;
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
     }
@@ -237,6 +251,592 @@ public class AdminService : IAdminService
         return model;
     }
 
+    public async Task<AdminActionLogsPageViewModel> GetAdminActionLogsAsync(string fullName, string email, string userRole, AdminActionLogFilter filter, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var shell = await GetShellAsync(connection, "Admin İşlem Logları", "Kritik admin aksiyonlarını filtreleyin ve dışa aktarın.", fullName, email, userRole, cancellationToken);
+        var model = new AdminActionLogsPageViewModel { Shell = shell, Filter = filter ?? new AdminActionLogFilter() };
+
+        var safePage = Math.Max(1, model.Filter.Page);
+        var safePageSize = Math.Clamp(model.Filter.PageSize <= 0 ? 50 : model.Filter.PageSize, 10, 200);
+        model.Filter.Page = safePage;
+        model.Filter.PageSize = safePageSize;
+
+        var where = new List<string>();
+        var prms = new List<SqlParameter>();
+
+        if (model.Filter.AdminUserId.HasValue && model.Filter.AdminUserId.Value > 0)
+        {
+            where.Add("a.admin_kullanici_id = @adminId");
+            prms.Add(new SqlParameter("@adminId", model.Filter.AdminUserId.Value));
+        }
+        if (!string.IsNullOrWhiteSpace(model.Filter.ActionType))
+        {
+            where.Add("LOWER(a.islem_turu) = LOWER(@type)");
+            prms.Add(new SqlParameter("@type", model.Filter.ActionType.Trim()));
+        }
+        if (!string.IsNullOrWhiteSpace(model.Filter.TargetTable))
+        {
+            where.Add("LOWER(a.hedef_tablo) = LOWER(@table)");
+            prms.Add(new SqlParameter("@table", model.Filter.TargetTable.Trim()));
+        }
+        if (!string.IsNullOrWhiteSpace(model.Filter.Query))
+        {
+            where.Add("(a.aciklama LIKE @q OR a.hedef_kayit_id LIKE @q OR a.ip_adresi LIKE @q)");
+            prms.Add(new SqlParameter("@q", "%" + model.Filter.Query.Trim() + "%"));
+        }
+        if (model.Filter.FromUtc.HasValue)
+        {
+            where.Add("a.islem_tarihi >= @fromUtc");
+            prms.Add(new SqlParameter("@fromUtc", model.Filter.FromUtc.Value.UtcDateTime));
+        }
+        if (model.Filter.ToUtc.HasValue)
+        {
+            where.Add("a.islem_tarihi <= @toUtc");
+            prms.Add(new SqlParameter("@toUtc", model.Filter.ToUtc.Value.UtcDateTime));
+        }
+
+        var whereSql = where.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", where);
+        var sort = string.Equals(model.Filter.Sort, "date_asc", StringComparison.OrdinalIgnoreCase) ? "ASC" : "DESC";
+
+        var countSql = $"SELECT COUNT(*) FROM admin_islem_loglari a {whereSql};";
+        await using (var countCmd = new SqlCommand(countSql, connection))
+        {
+            countCmd.Parameters.AddRange(prms.ToArray());
+            model.Total = Convert.ToInt32(await countCmd.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+        }
+
+        var offset = (safePage - 1) * safePageSize;
+        var listSql = $"""
+            SELECT a.id, a.admin_kullanici_id, a.islem_turu, a.hedef_tablo, a.hedef_kayit_id, a.aciklama, a.ip_adresi, a.islem_tarihi
+            FROM admin_islem_loglari a
+            {whereSql}
+            ORDER BY a.islem_tarihi {sort}, a.id {sort}
+            OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
+            """;
+
+        await using (var cmd = new SqlCommand(listSql, connection))
+        {
+            cmd.Parameters.AddRange(prms.ToArray());
+            cmd.Parameters.AddWithValue("@offset", offset);
+            cmd.Parameters.AddWithValue("@take", safePageSize);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                model.Rows.Add(new AdminActionLogRowViewModel
+                {
+                    Id = reader.GetInt64(0),
+                    AdminUserId = reader.GetInt64(1),
+                    ActionType = reader.IsDBNull(2) ? "-" : reader.GetString(2),
+                    TargetTable = reader.IsDBNull(3) ? "-" : reader.GetString(3),
+                    TargetId = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    Note = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    IpAddress = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    CreatedAtUtc = new DateTimeOffset(reader.GetDateTime(7), TimeSpan.Zero)
+                });
+            }
+        }
+
+        return model;
+    }
+
+    public async Task<string> ExportAdminActionLogsCsvAsync(AdminActionLogFilter filter, CancellationToken cancellationToken = default)
+    {
+        // CSV içerik üretir (controller File() döndürür)
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var f = filter ?? new AdminActionLogFilter();
+        f.Page = 1;
+        f.PageSize = 5000; // export upper bound
+
+        var model = await GetAdminActionLogsAsync("-", "-", "admin", f, cancellationToken);
+        var sb = new StringBuilder();
+        sb.AppendLine("id,admin_user_id,action_type,target_table,target_id,ip,created_at_utc,note");
+        foreach (var r in model.Rows)
+        {
+            sb.Append(r.Id).Append(',')
+              .Append(r.AdminUserId).Append(',')
+              .Append(Csv(r.ActionType)).Append(',')
+              .Append(Csv(r.TargetTable)).Append(',')
+              .Append(Csv(r.TargetId)).Append(',')
+              .Append(Csv(r.IpAddress)).Append(',')
+              .Append(r.CreatedAtUtc.UtcDateTime.ToString("O", CultureInfo.InvariantCulture)).Append(',')
+              .Append(Csv(r.Note))
+              .AppendLine();
+        }
+        return sb.ToString();
+    }
+
+    public async Task<AdminEmailQueuePageViewModel> GetEmailQueueAsync(string fullName, string email, string userRole, AdminEmailQueueFilter filter, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var shell = await GetShellAsync(connection, "E-posta Kuyruğu", "Bekleyen e-postaları inceleyin, yeniden deneyin ve kuyruk sağlığını izleyin.", fullName, email, userRole, cancellationToken);
+        var model = new AdminEmailQueuePageViewModel { Shell = shell, Filter = filter ?? new AdminEmailQueueFilter() };
+
+        var safePage = Math.Max(1, model.Filter.Page);
+        var safePageSize = Math.Clamp(model.Filter.PageSize <= 0 ? 50 : model.Filter.PageSize, 10, 200);
+        model.Filter.Page = safePage;
+        model.Filter.PageSize = safePageSize;
+
+        var hasNextAttempt = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "sonraki_deneme_utc", cancellationToken);
+
+        var where = new List<string> { "b.tur = N'E-posta'" };
+        var prms = new List<SqlParameter>();
+        if (!string.IsNullOrWhiteSpace(model.Filter.Status))
+        {
+            where.Add("LOWER(b.durum) = LOWER(@status)");
+            prms.Add(new SqlParameter("@status", model.Filter.Status.Trim()));
+        }
+        if (!string.IsNullOrWhiteSpace(model.Filter.Query))
+        {
+            where.Add("(b.alici_eposta LIKE @q OR b.konu LIKE @q)");
+            prms.Add(new SqlParameter("@q", "%" + model.Filter.Query.Trim() + "%"));
+        }
+
+        var whereSql = "WHERE " + string.Join(" AND ", where);
+
+        var countSql = $"SELECT COUNT(*) FROM bildirim_loglari b {whereSql};";
+        await using (var countCmd = new SqlCommand(countSql, connection))
+        {
+            countCmd.Parameters.AddRange(prms.ToArray());
+            model.Total = Convert.ToInt32(await countCmd.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+        }
+
+        var offset = (safePage - 1) * safePageSize;
+        var listSql = hasNextAttempt
+            ? $"""
+                SELECT b.id, COALESCE(b.kullanici_id, 0), COALESCE(b.alici_eposta,''), COALESCE(b.konu,''),
+                       COALESCE(b.durum,''), COALESCE(b.gonderme_denemesi,0), COALESCE(b.max_denemeler,3),
+                       COALESCE(b.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at,
+                       b.sonraki_deneme_utc,
+                       COALESCE(b.hata_mesaji,'')
+                FROM bildirim_loglari b
+                {whereSql}
+                ORDER BY b.id DESC
+                OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
+                """
+            : $"""
+                SELECT b.id, COALESCE(b.kullanici_id, 0), COALESCE(b.alici_eposta,''), COALESCE(b.konu,''),
+                       COALESCE(b.durum,''), COALESCE(b.gonderme_denemesi,0), COALESCE(b.max_denemeler,3),
+                       COALESCE(b.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at,
+                       COALESCE(b.hata_mesaji,'')
+                FROM bildirim_loglari b
+                {whereSql}
+                ORDER BY b.id DESC
+                OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
+                """;
+
+        await using (var cmd = new SqlCommand(listSql, connection))
+        {
+            cmd.Parameters.AddRange(prms.ToArray());
+            cmd.Parameters.AddWithValue("@offset", offset);
+            cmd.Parameters.AddWithValue("@take", safePageSize);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var row = new AdminEmailQueueRowViewModel
+                {
+                    Id = reader.GetInt64(0),
+                    UserId = reader.GetInt64(1),
+                    RecipientEmail = reader.GetString(2),
+                    Subject = reader.GetString(3),
+                    Status = reader.GetString(4),
+                    AttemptCount = reader.GetInt32(5),
+                    MaxAttempts = reader.GetInt32(6),
+                    CreatedAtUtc = new DateTimeOffset(reader.GetDateTime(7), TimeSpan.Zero),
+                    LastError = hasNextAttempt ? reader.GetString(9) : reader.GetString(8)
+                };
+                if (hasNextAttempt)
+                {
+                    row.NextAttemptUtc = reader.IsDBNull(8) ? null : new DateTimeOffset(reader.GetDateTime(8), TimeSpan.Zero);
+                }
+                model.Rows.Add(row);
+            }
+        }
+
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> ForceRetryEmailAsync(long adminUserId, long queueId, string reason, CancellationToken cancellationToken = default)
+    {
+        if (queueId <= 0) return (false, "Geçersiz kuyruk kaydı.");
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var hasNextAttempt = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "sonraki_deneme_utc", cancellationToken);
+        var sql = hasNextAttempt
+            ? """
+                UPDATE bildirim_loglari
+                SET durum = N'Beklemede',
+                    hata_mesaji = NULL,
+                    hata_kodu = NULL,
+                    sonraki_deneme_utc = NULL
+                WHERE id = @id;
+                """
+            : """
+                UPDATE bildirim_loglari
+                SET durum = N'Beklemede',
+                    hata_mesaji = NULL,
+                    hata_kodu = NULL
+                WHERE id = @id;
+                """;
+
+        await using (var cmd = new SqlCommand(sql, connection))
+        {
+            cmd.Parameters.AddWithValue("@id", queueId);
+            var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+            if (affected <= 0) return (false, "Kayıt bulunamadı.");
+        }
+
+        return (true, "E-posta yeniden denemeye alındı.");
+    }
+
+    public async Task<(bool Success, string Message)> MarkEmailFailedAsync(long adminUserId, long queueId, string reason, CancellationToken cancellationToken = default)
+    {
+        if (queueId <= 0) return (false, "Geçersiz kuyruk kaydı.");
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        await using (var cmd = new SqlCommand("""
+            UPDATE bildirim_loglari
+            SET durum = N'Başarısız'
+            WHERE id = @id;
+            """, connection))
+        {
+            cmd.Parameters.AddWithValue("@id", queueId);
+            var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+            if (affected <= 0) return (false, "Kayıt bulunamadı.");
+        }
+
+        return (true, "E-posta başarısız olarak işaretlendi.");
+    }
+
+    public async Task<AdminUnifiedReservationsPageViewModel> GetUnifiedReservationsAsync(string fullName, string email, string userRole, string? q, string? status, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var shell = await GetShellAsync(connection, "Rezervasyonlar (Tek Liste)", "Tüm rezervasyonları tek ekranda takip edin.", fullName, email, userRole, cancellationToken);
+        var model = new AdminUnifiedReservationsPageViewModel
+        {
+            Shell = shell,
+            Query = q,
+            Status = status,
+            Page = Math.Max(1, page <= 0 ? 1 : page),
+            PageSize = Math.Clamp(pageSize <= 0 ? 50 : pageSize, 10, 200)
+        };
+
+        var where = new List<string>();
+        var prms = new List<SqlParameter>();
+        if (!string.IsNullOrWhiteSpace(model.Status))
+        {
+            where.Add("LOWER(r.durum) = LOWER(@status)");
+            prms.Add(new SqlParameter("@status", model.Status.Trim()));
+        }
+        if (!string.IsNullOrWhiteSpace(model.Query))
+        {
+            where.Add("(o.otel_adi LIKE @q OR u.ad_soyad LIKE @q OR u.eposta LIKE @q OR f.firma_adi LIKE @q)");
+            prms.Add(new SqlParameter("@q", "%" + model.Query.Trim() + "%"));
+        }
+        var whereSql = where.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", where);
+
+        var countSql = $"""
+            SELECT COUNT(*)
+            FROM rezervasyonlar r
+            LEFT JOIN oteller o ON o.id = r.otel_id
+            LEFT JOIN users u ON u.id = r.kullanici_id
+            LEFT JOIN firmalar f ON f.id = r.firma_id
+            {whereSql};
+            """;
+        await using (var countCmd = new SqlCommand(countSql, connection))
+        {
+            countCmd.Parameters.AddRange(prms.ToArray());
+            model.Total = Convert.ToInt32(await countCmd.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+        }
+
+        var offset = (model.Page - 1) * model.PageSize;
+        var listSql = $"""
+            SELECT r.id,
+                   COALESCE(o.otel_adi,'-') AS otel_adi,
+                   COALESCE(u.ad_soyad,'') AS musteri_adi,
+                   COALESCE(u.eposta,'') AS musteri_eposta,
+                   COALESCE(f.firma_adi,'') AS firma_adi,
+                   COALESCE(r.durum,'') AS durum,
+                   COALESCE(r.toplam_tutar,0) AS toplam_tutar,
+                   COALESCE(r.para_birimi,'TRY') AS para_birimi,
+                   COALESCE(r.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at
+            FROM rezervasyonlar r
+            LEFT JOIN oteller o ON o.id = r.otel_id
+            LEFT JOIN users u ON u.id = r.kullanici_id
+            LEFT JOIN firmalar f ON f.id = r.firma_id
+            {whereSql}
+            ORDER BY r.id DESC
+            OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
+            """;
+
+        await using (var cmd = new SqlCommand(listSql, connection))
+        {
+            cmd.Parameters.AddRange(prms.ToArray());
+            cmd.Parameters.AddWithValue("@offset", offset);
+            cmd.Parameters.AddWithValue("@take", model.PageSize);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                model.Rows.Add(new AdminUnifiedReservationRowViewModel
+                {
+                    ReservationId = reader.GetInt64(0),
+                    HotelName = reader.GetString(1),
+                    CustomerName = reader.GetString(2),
+                    CustomerEmail = reader.GetString(3),
+                    CompanyName = reader.GetString(4),
+                    Status = reader.GetString(5),
+                    TotalAmount = reader.GetDecimal(6),
+                    Currency = reader.GetString(7),
+                    CreatedAtUtc = new DateTimeOffset(reader.GetDateTime(8), TimeSpan.Zero)
+                });
+            }
+        }
+
+        return model;
+    }
+
+    public async Task<AdminRateLimitStatsPageViewModel> GetRateLimitStatsAsync(string fullName, string email, string userRole, int windowHours = 24, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var shell = await GetShellAsync(connection, "Rate Limit İstatistikleri", "429 yanıtlarını endpoint bazında izleyin.", fullName, email, userRole, cancellationToken);
+        var model = new AdminRateLimitStatsPageViewModel { Shell = shell, WindowHours = Math.Clamp(windowHours <= 0 ? 24 : windowHours, 1, 168) };
+
+        if (!await TableExistsAsync(connection, "api_loglari", cancellationToken))
+        {
+            return model;
+        }
+
+        var since = DateTime.UtcNow.AddHours(-model.WindowHours);
+        const string sql = """
+            SELECT TOP (200)
+                COALESCE(endpoint,'') AS endpoint,
+                COALESCE(http_method,'') AS method,
+                SUM(CASE WHEN response_status = 429 THEN 1 ELSE 0 END) AS count_429,
+                COUNT(*) AS count_total
+            FROM api_loglari
+            WHERE baslangic_tarihi >= @since
+            GROUP BY endpoint, http_method
+            ORDER BY count_429 DESC, count_total DESC;
+            """;
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@since", since);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            model.Rows.Add(new AdminRateLimitEndpointStatViewModel
+            {
+                Endpoint = reader.IsDBNull(0) ? "-" : reader.GetString(0),
+                Method = reader.IsDBNull(1) ? "-" : reader.GetString(1),
+                Count429 = SafeInt(reader, 2),
+                CountTotal = SafeInt(reader, 3)
+            });
+        }
+        return model;
+    }
+
+    public async Task<AdminSettingsMonitorPageViewModel> GetSettingsMonitorAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var shell = await GetShellAsync(connection, "Kritik Ayarlar (Read-only)", "Prod öncesi kritik config değerlerini tek ekranda izleyin.", fullName, email, userRole, cancellationToken);
+        var model = new AdminSettingsMonitorPageViewModel { Shell = shell };
+
+        string? Get(string key) => _configuration[key];
+        model.Items["App:PublicBaseUrl"] = Get("App:PublicBaseUrl");
+        model.Items["App:DefaultTimeZone"] = Get("App:DefaultTimeZone");
+        model.Items["Uploads:OrphanCleanupEnabled"] = Get("Uploads:OrphanCleanupEnabled");
+        model.Items["Uploads:OrphanCleanupMinAgeHours"] = Get("Uploads:OrphanCleanupMinAgeHours");
+        model.Items["Security:Csp:Enforce"] = Get("Security:Csp:Enforce");
+
+        // Email provider (DB)
+        if (await TableExistsAsync(connection, "email_services", cancellationToken))
+        {
+            await using var cmd = new SqlCommand("""
+                SELECT TOP (1) COALESCE(saglayici,''), COALESCE(aktif_mi, 0)
+                FROM email_services
+                ORDER BY id DESC;
+                """, connection);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                model.Items["EmailProvider:Provider"] = reader.IsDBNull(0) ? "-" : reader.GetString(0);
+                model.Items["EmailProvider:Active"] = reader.IsDBNull(1) ? "0" : (reader.GetInt32(1) == 1 ? "1" : "0");
+            }
+        }
+
+        return model;
+    }
+
+    public async Task<AdminCommerceInsightPageViewModel> GetCommerceInsightPageAsync(
+        string fullName,
+        string email,
+        string userRole,
+        long priceHistoryHotelId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var shell = await GetShellAsync(connection, "Ticari İçgörü & Vitals", "Growth, Web Vitals özetleri ve stok/fiyat örnekleri.", fullName, email, userRole, cancellationToken);
+        var model = new AdminCommerceInsightPageViewModel
+        {
+            Shell = shell,
+            KillSwitchConfig = _configuration.GetValue("Growth:KillSwitchAll", false),
+            KillSwitchEmergency = _growthGovernance.EmergencyKillSwitchActive,
+            PriceHistoryHotelId = priceHistoryHotelId > 0 ? priceHistoryHotelId : 0
+        };
+
+        foreach (var row in _commerceMetrics.SnapshotRum(40))
+        {
+            model.RumRows.Add(new AdminCommerceRumRowViewModel
+            {
+                RouteMetric = row.RouteMetric,
+                Avg = row.Avg,
+                Count = row.Count,
+                Min = row.Min,
+                Max = row.Max
+            });
+        }
+
+        foreach (var kv in _commerceMetrics.SnapshotGrowthKinds())
+        {
+            model.GrowthKinds[kv.Key] = kv.Value;
+        }
+
+        var since = DateTime.UtcNow.AddDays(-7);
+        const string kpiSql = """
+            SELECT COUNT(*), COALESCE(SUM(COALESCE(toplam_tutar,0)),0)
+            FROM rezervasyonlar
+            WHERE COALESCE(olusturulma_tarihi, SYSUTCDATETIME()) >= @since
+              AND COALESCE(durum,'') <> N'İptal Edildi';
+            """;
+        await using (var kpiCmd = new SqlCommand(kpiSql, connection))
+        {
+            kpiCmd.Parameters.AddWithValue("@since", since);
+            await using var r = await kpiCmd.ExecuteReaderAsync(cancellationToken);
+            if (await r.ReadAsync(cancellationToken))
+            {
+                model.ReservationsLast7Days = SafeInt(r, 0);
+                model.RevenueLast7Days = SafeDecimal(r, 1);
+            }
+        }
+
+        if (await TableExistsAsync(connection, "oda_fiyat_musaitlik", cancellationToken))
+        {
+            const string invSql = """
+                SELECT TOP (40)
+                    COALESCE(o.otel_adi,'') AS otel_adi,
+                    COALESCE(ot.oda_adi,'') AS oda_adi,
+                    ofm.tarih,
+                    (COALESCE(ofm.toplam_oda_sayisi,0) - COALESCE(ofm.satilan_oda_sayisi,0) - COALESCE(ofm.bloke_oda_sayisi,0)) AS kalan
+                FROM oda_fiyat_musaitlik ofm
+                JOIN oteller o ON o.id = ofm.otel_id
+                JOIN oda_tipleri ot ON ot.id = ofm.oda_tip_id
+                WHERE ofm.tarih >= CAST(SYSUTCDATETIME() AS date)
+                  AND (COALESCE(ofm.toplam_oda_sayisi,0) - COALESCE(ofm.satilan_oda_sayisi,0) - COALESCE(ofm.bloke_oda_sayisi,0)) BETWEEN 1 AND 3
+                ORDER BY kalan ASC, ofm.tarih ASC;
+                """;
+            await using var invCmd = new SqlCommand(invSql, connection);
+            await using var invReader = await invCmd.ExecuteReaderAsync(cancellationToken);
+            while (await invReader.ReadAsync(cancellationToken))
+            {
+                model.InventoryRows.Add(new AdminCommerceInventoryRowViewModel
+                {
+                    HotelName = invReader.IsDBNull(0) ? "-" : invReader.GetString(0),
+                    RoomName = invReader.IsDBNull(1) ? "-" : invReader.GetString(1),
+                    Date = DateOnly.FromDateTime(invReader.GetDateTime(2)),
+                    Remaining = SafeInt(invReader, 3)
+                });
+            }
+        }
+
+        var hid = model.PriceHistoryHotelId;
+        if (hid <= 0)
+        {
+            const string firstHotelSql = "SELECT TOP (1) id FROM oteller ORDER BY id ASC;";
+            await using var fhCmd = new SqlCommand(firstHotelSql, connection);
+            var scalar = await fhCmd.ExecuteScalarAsync(cancellationToken);
+            if (scalar is not null && scalar != DBNull.Value)
+            {
+                hid = Convert.ToInt64(scalar, CultureInfo.InvariantCulture);
+                model.PriceHistoryHotelId = hid;
+            }
+        }
+
+        if (hid > 0 && await TableExistsAsync(connection, "oda_fiyat_musaitlik", cancellationToken))
+        {
+            const string priceSql = """
+                SELECT TOP (60)
+                    COALESCE(ot.oda_adi,'') AS oda_adi,
+                    ofm.tarih,
+                    COALESCE(ofm.gecelik_fiyat,0) AS gecelik,
+                    ofm.indirimli_fiyat
+                FROM oda_fiyat_musaitlik ofm
+                JOIN oda_tipleri ot ON ot.id = ofm.oda_tip_id
+                WHERE ofm.otel_id = @hotelId
+                ORDER BY ofm.tarih DESC, ofm.id DESC;
+                """;
+            await using var pCmd = new SqlCommand(priceSql, connection);
+            pCmd.Parameters.AddWithValue("@hotelId", hid);
+            await using var pReader = await pCmd.ExecuteReaderAsync(cancellationToken);
+            while (await pReader.ReadAsync(cancellationToken))
+            {
+                model.PriceSampleRows.Add(new AdminCommercePriceRowViewModel
+                {
+                    RoomName = pReader.IsDBNull(0) ? "-" : pReader.GetString(0),
+                    Date = DateOnly.FromDateTime(pReader.GetDateTime(1)),
+                    BasePrice = pReader.IsDBNull(2) ? 0m : pReader.GetDecimal(2),
+                    DiscountPrice = pReader.IsDBNull(3) ? null : pReader.GetDecimal(3)
+                });
+            }
+        }
+
+        if (await TableExistsAsync(connection, "rezervasyonlar_archive", cancellationToken))
+        {
+            await using var aCmd = new SqlCommand("SELECT COUNT(*) FROM rezervasyonlar_archive;", connection);
+            var ac = await aCmd.ExecuteScalarAsync(cancellationToken);
+            model.ArchivedReservationSampleCount = ac is null || ac == DBNull.Value
+                ? 0
+                : Convert.ToInt32(ac, CultureInfo.InvariantCulture);
+            model.ArchiveHint = "Arşiv tablosu mevcut.";
+        }
+        else
+        {
+            model.ArchiveHint = "rezervasyonlar_archive tablosu henüz oluşturulmadı (migration ile).";
+        }
+
+        return model;
+    }
+
+    private static string Csv(string? value)
+    {
+        var v = value ?? string.Empty;
+        v = v.Replace("\"", "\"\"", StringComparison.Ordinal);
+        return $"\"{v}\"";
+    }
+
+    private static async Task<bool> ColumnExistsAsync(SqlConnection connection, string tableName, string columnName, CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand("SELECT COL_LENGTH(@tableName, @columnName);", connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@columnName", columnName);
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
+        return scalar is not null && scalar != DBNull.Value;
+    }
+
     public async Task<AdminSystemHealthPageViewModel> GetSystemHealthAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
@@ -441,6 +1041,30 @@ public class AdminService : IAdminService
                 ToneClass = "danger",
                 Detail = ex.Message
             });
+        }
+
+        try
+        {
+            var report = await _healthCheckService.CheckHealthAsync(cancellationToken);
+            model.PlatformHealthAggregateStatus = report.Status.ToString();
+            model.PlatformHealthTotalDurationMs = report.TotalDuration.TotalMilliseconds;
+            foreach (var entry in report.Entries.OrderBy(static e => e.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                var r = entry.Value;
+                model.PlatformHealthProbes.Add(new AdminPlatformHealthProbeViewModel
+                {
+                    Name = entry.Key,
+                    Status = r.Status.ToString(),
+                    DurationMs = r.Duration.TotalMilliseconds,
+                    Detail = string.IsNullOrWhiteSpace(r.Description)
+                        ? r.Exception?.Message
+                        : r.Description
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            model.PlatformHealthError = ex.Message;
         }
 
         return model;

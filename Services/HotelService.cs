@@ -19,12 +19,14 @@ public class HotelService : IHotelService
     private readonly IConfiguration _configuration;
     private readonly IHotelPricingReadService _hotelPricingReadService;
     private readonly ICacheSingleFlight _cache;
+    private readonly ILogger<HotelService> _logger;
 
-    public HotelService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService, ICacheSingleFlight cache)
+    public HotelService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService, ICacheSingleFlight cache, ILogger<HotelService> logger)
     {
         _configuration = configuration;
         _hotelPricingReadService = hotelPricingReadService;
         _cache = cache;
+        _logger = logger;
     }
 
     // Simple local weather placeholder — replace with real API integration (OpenWeatherMap, etc.)
@@ -457,17 +459,20 @@ public class HotelService : IHotelService
         return model;
     }
 
-    public async Task<HotelListingPageViewModel> GetHotelListingPageAsync(string? searchTerm, string? campaignTag = null, string? campaignSlug = null, int page = 1, CancellationToken cancellationToken = default)
+    public async Task<HotelListingPageViewModel> GetHotelListingPageAsync(string? searchTerm, string? campaignTag = null, string? campaignSlug = null, int page = 1, string? contextualSearchBoostNormalized = null, CancellationToken cancellationToken = default)
     {
         var normalizedSearch = string.IsNullOrWhiteSpace(searchTerm) ? string.Empty : searchTerm.Trim().ToLowerInvariant();
         var normalizedTag = string.IsNullOrWhiteSpace(campaignTag) ? string.Empty : campaignTag.Trim().ToLowerInvariant();
         var normalizedSlug = string.IsNullOrWhiteSpace(campaignSlug) ? string.Empty : campaignSlug.Trim().ToLowerInvariant();
         var safePage = Math.Max(1, page);
+        var ctxNorm = string.IsNullOrWhiteSpace(contextualSearchBoostNormalized)
+            ? "-"
+            : NormalizeSearchKeyword(contextualSearchBoostNormalized.Trim()).ToLowerInvariant();
 
-        var cacheKey = $"hotel-listing:v1:{normalizedSearch}:{normalizedTag}:{normalizedSlug}:p{safePage}";
+        var cacheKey = $"hotel-listing:v4:{normalizedSearch}:{normalizedTag}:{normalizedSlug}:p{safePage}:ctx:{ctxNorm}";
         var cached = await _cache.GetOrCreateAsync(
             cacheKey,
-            async ct => await GetHotelListingPageForSqlServerAsync(searchTerm, campaignTag, campaignSlug, safePage, ct),
+            async ct => await GetHotelListingPageForSqlServerAsync(searchTerm, campaignTag, campaignSlug, safePage, contextualSearchBoostNormalized, ct),
             absoluteExpirationRelativeToNow: TimeSpan.FromSeconds(45),
             slidingExpiration: TimeSpan.FromSeconds(15),
             cancellationToken: cancellationToken);
@@ -971,17 +976,21 @@ public class HotelService : IHotelService
                 Slug = x.Slug,
                 ImageUrl = x.ImageUrl
             }).ToList(),
-            Weather = src.Weather
+            Weather = src.Weather,
+            ActiveViewerBand = src.ActiveViewerBand,
+            LivePresenceCount = src.LivePresenceCount,
+            IntentSegmentLabel = src.IntentSegmentLabel
         };
     }
 
-    private async Task<HotelListingPageViewModel> GetHotelListingPageForSqlServerAsync(string? searchTerm, string? campaignTag, string? campaignSlug, int page, CancellationToken cancellationToken, bool allowFuzzyFallback = true)
+    private async Task<HotelListingPageViewModel> GetHotelListingPageForSqlServerAsync(string? searchTerm, string? campaignTag, string? campaignSlug, int page, string? contextualCityHint, CancellationToken cancellationToken, bool allowFuzzyFallback = true)
     {
         const decimal listingVatPercent = 10m;
         const decimal listingAccommodationPercent = 2m;
 
         var normalizedSearchTerm = string.IsNullOrWhiteSpace(searchTerm) ? string.Empty : searchTerm.Trim();
         var normalizedSearchKeyword = NormalizeSearchKeyword(normalizedSearchTerm);
+        var contextBoost = string.IsNullOrWhiteSpace(contextualCityHint) ? string.Empty : NormalizeSearchKeyword(contextualCityHint.Trim());
         var normalizedCampaignSlug = NormalizeCampaignSlug(campaignSlug);
         var normalizedTag = NormalizeCampaignTag(campaignTag);
         var displayLabel = string.IsNullOrWhiteSpace(normalizedSearchTerm) ? "Tüm bölgeler" : normalizedSearchTerm;
@@ -1268,6 +1277,7 @@ public class HotelService : IHotelService
             ORDER BY
                 CASE WHEN subs.pin_rank IS NULL THEN 1 ELSE 0 END,
                 subs.pin_rank ASC,
+                CASE WHEN @contextBoost <> '' AND {normalizedCitySql} = @contextBoost THEN 0 ELSE 1 END,
                 CASE
                     WHEN @searchTermNormalized = '' THEN 99
                     WHEN {normalizedHotelNameSql} = @searchTermNormalized THEN 0
@@ -1285,12 +1295,24 @@ public class HotelService : IHotelService
                 o.ortalama_puan DESC,
                 o.toplam_yorum_sayisi DESC,
                 o.populerlik_sirasi DESC,
+                (
+                    (CAST(COALESCE(o.ortalama_puan, 0) AS FLOAT) / 10.0) * 0.45
+                    + (LOG(1.0 + CAST(COALESCE(o.toplam_yorum_sayisi, 0) AS FLOAT)) / 12.0) * 0.35
+                    + (
+                        CASE
+                            WHEN pf.baslangic_fiyat IS NOT NULL AND pf.baslangic_fiyat > 0
+                                THEN CAST(9000.0 AS FLOAT) / (9000.0 + CAST(pf.baslangic_fiyat AS FLOAT))
+                            ELSE 0.0
+                        END
+                      ) * 0.20
+                ) DESC,
                 o.id DESC;
             """;
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@searchTerm", normalizedSearchTerm);
         command.Parameters.AddWithValue("@searchTermNormalized", normalizedSearchKeyword);
+        command.Parameters.AddWithValue("@contextBoost", contextBoost);
         command.Parameters.AddWithValue("@ftsQuery", useFts ? ftsQuery : (object)DBNull.Value);
         command.Parameters.AddWithValue("@campaignSlug", normalizedCampaignSlug);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1442,6 +1464,11 @@ public class HotelService : IHotelService
         model.Hotels = ApplyCampaignFilter(model.Hotels, model.ActiveTag).ToList();
         var filteredHotels = model.Hotels.ToList();
 
+        if (filteredHotels.Count == 0 && !string.IsNullOrWhiteSpace(normalizedSearchKeyword))
+        {
+            _logger.LogInformation("NULL_SEARCH term={SearchTerm} campaignSlug={CampaignSlug}", normalizedSearchTerm, normalizedCampaignSlug);
+        }
+
         filteredHotels = ApplySponsorPinning(filteredHotels, normalizedSearchKeyword);
         model.TotalCount = filteredHotels.Count;
         model.MinPrice = filteredHotels.Where(x => x.StartingPrice.HasValue).Select(x => x.StartingPrice!.Value).DefaultIfEmpty(0).Min();
@@ -1508,7 +1535,7 @@ public class HotelService : IHotelService
                 var fallbackKeyword = NormalizeSearchKeyword(fallbackValue);
                 if (!string.Equals(fallbackKeyword, normalizedSearchKeyword, StringComparison.OrdinalIgnoreCase))
                 {
-                    var fallbackModel = await GetHotelListingPageForSqlServerAsync(fallbackValue, campaignTag, campaignSlug, 1, cancellationToken, false);
+                    var fallbackModel = await GetHotelListingPageForSqlServerAsync(fallbackValue, campaignTag, campaignSlug, 1, contextualCityHint, cancellationToken, false);
                     fallbackModel.SearchTerm = normalizedSearchTerm;
                     fallbackModel.SearchLabel = $"{normalizedSearchTerm} için {bestMatch.Label}";
                     fallbackModel.City = fallbackModel.SearchLabel;
@@ -2207,6 +2234,59 @@ public class HotelService : IHotelService
                     Text = reviewsReader.IsDBNull(3) ? string.Empty : reviewsReader.GetString(3),
                     TravelProfile = string.IsNullOrWhiteSpace(travel) ? null : travel,
                     SatisfactionLabel = MemnuniyetEtiketi(memLevel)
+                });
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(model.City))
+        {
+            const string similarHotelsSql = """
+                SELECT TOP (6)
+                    o.id,
+                    o.otel_kodu,
+                    o.otel_adi,
+                    COALESCE(NULLIF(o.kapak_fotografi, ''), '') AS kapak_url,
+                    COALESCE(o.ortalama_puan, 0) AS ortalama_puan
+                FROM oteller o
+                WHERE o.yayin_durumu = N'Yayında'
+                  AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+                  AND o.sehir = @city
+                  AND o.id <> @hotelId
+                ORDER BY COALESCE(o.ortalama_puan, 0) DESC, COALESCE(o.toplam_yorum_sayisi, 0) DESC, o.id DESC;
+                """;
+
+            var similarRows = new List<(long Id, string Code, string Name, string Img, decimal Rating)>();
+            await using (var similarCmd = new SqlCommand(similarHotelsSql, connection))
+            {
+                similarCmd.Parameters.AddWithValue("@hotelId", model.Id);
+                similarCmd.Parameters.AddWithValue("@city", model.City);
+                await using var sr = await similarCmd.ExecuteReaderAsync(cancellationToken);
+                while (await sr.ReadAsync(cancellationToken))
+                {
+                    similarRows.Add((
+                        sr.GetInt64(0),
+                        sr.GetString(1),
+                        sr.GetString(2),
+                        sr.IsDBNull(3) ? string.Empty : sr.GetString(3),
+                        sr.GetDecimal(4)));
+                }
+            }
+
+            foreach (var row in similarRows)
+            {
+                var storedNet = await _hotelPricingReadService.GetHotelEffectivePriceAsync(row.Id, today, today, cancellationToken);
+                var guestPrice = storedNet.HasValue && storedNet.Value > 0m
+                    ? model.GuestInclusiveNightlyFromStoredNet(storedNet.Value)
+                    : 0m;
+                model.SimilarHotels.Add(new HotelSimilarCardViewModel
+                {
+                    Name = row.Name,
+                    Slug = BuildSlug(row.Name, row.Code),
+                    ImageUrl = NormalizeImageUrl(row.Img),
+                    RatingText = BuildRatingText(row.Rating),
+                    PriceText = guestPrice > 0m
+                        ? $"₺{guestPrice.ToString("N0", CultureInfo.GetCultureInfo("tr-TR"))} / gece"
+                        : "Fiyat icin tarih secin"
                 });
             }
         }

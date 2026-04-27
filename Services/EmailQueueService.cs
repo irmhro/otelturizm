@@ -11,12 +11,14 @@ public class EmailQueueService : IEmailQueueService
 {
     private readonly string _connectionString;
     private readonly IEmailTemplateService _emailTemplateService;
+    private readonly ILogger<EmailQueueService> _logger;
 
-    public EmailQueueService(IConfiguration configuration, IEmailTemplateService emailTemplateService)
+    public EmailQueueService(IConfiguration configuration, IEmailTemplateService emailTemplateService, ILogger<EmailQueueService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _emailTemplateService = emailTemplateService;
+        _logger = logger;
     }
 
     public async Task QueueTemplateAsync(QueuedEmailTemplateRequest request, CancellationToken cancellationToken = default)
@@ -28,10 +30,12 @@ public class EmailQueueService : IEmailQueueService
 
     public async Task QueueTemplateAsync(DbConnection connection, DbTransaction? transaction, QueuedEmailTemplateRequest request, CancellationToken cancellationToken = default)
     {
-        var (templateId, subject, viewPath) = await LoadTemplateAsync(connection, transaction, request.TemplateCode, cancellationToken);
+        var lang = ResolveLang(request.Tokens);
+        var tokensWithUtm = ApplyUtmToTokens(request.Tokens, request.TemplateCode);
+        var (templateId, subject, viewPath) = await LoadTemplateAsync(connection, transaction, request.TemplateCode, lang, cancellationToken);
         var provider = await LoadProviderAsync(connection, transaction, cancellationToken);
-        var renderedSubject = ReplaceTokens(string.IsNullOrWhiteSpace(request.SubjectOverride) ? subject : request.SubjectOverride!, request.Tokens);
-        var renderedBody = await _emailTemplateService.RenderTemplateFileAsync(viewPath, request.Tokens, cancellationToken);
+        var renderedSubject = ReplaceTokens(string.IsNullOrWhiteSpace(request.SubjectOverride) ? subject : request.SubjectOverride!, tokensWithUtm);
+        var renderedBody = await _emailTemplateService.RenderTemplateFileAsync(viewPath, tokensWithUtm, cancellationToken);
         var safeUserId = await ResolveSafeUserIdAsync(connection, transaction, request.UserId, request.RecipientEmail, cancellationToken);
         var attachmentsJson = BuildAttachmentsJson(request.Attachments);
 
@@ -163,15 +167,27 @@ public class EmailQueueService : IEmailQueueService
         return rendered;
     }
 
-    private static async Task<(long TemplateId, string Subject, string ViewPath)> LoadTemplateAsync(DbConnection connection, DbTransaction? transaction, string templateCode, CancellationToken cancellationToken)
+    private static async Task<(long TemplateId, string Subject, string ViewPath)> LoadTemplateAsync(
+        DbConnection connection,
+        DbTransaction? transaction,
+        string templateCode,
+        string lang,
+        CancellationToken cancellationToken)
     {
+        var safeLang = NormalizeLang(lang);
         const string sql = @"
             SELECT TOP (1) id, COALESCE(konu, ''), COALESCE(icerik, '')
             FROM bildirim_sablonlari
             WHERE sablon_kodu = @templateCode AND tur = 'E-posta' AND aktif_mi = 1
-            ORDER BY CASE WHEN dil = 'tr' THEN 1 ELSE 0 END DESC, id ASC;";
+            ORDER BY
+                CASE WHEN dil = @lang THEN 2
+                     WHEN dil = 'tr' THEN 1
+                     ELSE 0
+                END DESC,
+                id ASC;";
         await using var command = new SqlCommand(sql, (SqlConnection)connection, (SqlTransaction?)transaction);
         command.Parameters.AddWithValue("@templateCode", templateCode);
+        command.Parameters.AddWithValue("@lang", safeLang);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
         {
@@ -179,6 +195,64 @@ public class EmailQueueService : IEmailQueueService
         }
 
         return (Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture), reader.GetString(1), reader.GetString(2));
+    }
+
+    private static string ResolveLang(IReadOnlyDictionary<string, string> tokens)
+    {
+        if (tokens is not null)
+        {
+            if (tokens.TryGetValue("lang", out var lang) && !string.IsNullOrWhiteSpace(lang)) return NormalizeLang(lang);
+            if (tokens.TryGetValue("culture", out var culture) && !string.IsNullOrWhiteSpace(culture)) return NormalizeLang(culture);
+            if (tokens.TryGetValue("locale", out var locale) && !string.IsNullOrWhiteSpace(locale)) return NormalizeLang(locale);
+        }
+
+        return NormalizeLang(CultureInfo.CurrentUICulture?.Name ?? CultureInfo.CurrentCulture?.Name ?? "tr");
+    }
+
+    private static string NormalizeLang(string value)
+    {
+        var trimmed = (value ?? string.Empty).Trim();
+        if (trimmed.Length == 0)
+        {
+            return "tr";
+        }
+
+        var first = trimmed.Split('-', '_', ' ').FirstOrDefault() ?? trimmed;
+        return first.Equals("en", StringComparison.OrdinalIgnoreCase) ? "en" : "tr";
+    }
+
+    private Dictionary<string, string> ApplyUtmToTokens(IReadOnlyDictionary<string, string> tokens, string templateCode)
+    {
+        // p88: Email linkleri UTM standardı (absolute URL'lere eklenir)
+        var updated = new Dictionary<string, string>(tokens ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+        var campaign = (templateCode ?? "email").Trim();
+        foreach (var key in updated.Keys.ToList())
+        {
+            if (!key.EndsWith("_link", StringComparison.OrdinalIgnoreCase) &&
+                !key.EndsWith("_url", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var current = updated[key];
+            if (string.IsNullOrWhiteSpace(current)) continue;
+            if (!Uri.TryCreate(current, UriKind.Absolute, out var uri)) continue;
+
+            var ub = new UriBuilder(uri);
+            var qs = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(ub.Query ?? string.Empty);
+            var dict = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in qs)
+            {
+                dict[kv.Key] = kv.Value.Count > 0 ? kv.Value[0] : null;
+            }
+            dict.TryAdd("utm_source", "transactional");
+            dict.TryAdd("utm_medium", "email");
+            dict.TryAdd("utm_campaign", campaign);
+            ub.Query = string.Join("&", dict.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value ?? string.Empty)}"));
+            updated[key] = ub.Uri.ToString();
+        }
+
+        return updated;
     }
 
     private static async Task<EmailProviderSettings> LoadProviderAsync(DbConnection connection, DbTransaction? transaction, CancellationToken cancellationToken)

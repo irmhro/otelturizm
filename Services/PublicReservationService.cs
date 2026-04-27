@@ -7,6 +7,7 @@ using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
 using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
 using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Email;
+using otelturizmnew.Models.Oteller;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Payments;
 using otelturizmnew.Models.Reservations;
@@ -22,6 +23,7 @@ public class PublicReservationService : IPublicReservationService
     private readonly IEmailQueueService _emailQueueService;
     private readonly IPhoneVerificationService _phoneVerificationService;
     private readonly ISecureFileService _secureFileService;
+    private readonly IWeatherService _weatherService;
     private readonly ILogger<PublicReservationService> _logger;
 
     public PublicReservationService(
@@ -31,6 +33,7 @@ public class PublicReservationService : IPublicReservationService
         IEmailQueueService emailQueueService,
         IPhoneVerificationService phoneVerificationService,
         ISecureFileService secureFileService,
+        IWeatherService weatherService,
         ILogger<PublicReservationService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
@@ -40,6 +43,7 @@ public class PublicReservationService : IPublicReservationService
         _emailQueueService = emailQueueService;
         _phoneVerificationService = phoneVerificationService;
         _secureFileService = secureFileService;
+        _weatherService = weatherService;
         _logger = logger;
     }
 
@@ -238,6 +242,22 @@ public class PublicReservationService : IPublicReservationService
         readyDraft.GuestNeighborhood = userProfile.Neighborhood;
         readyDraft.GuestAddress = userProfile.Address;
         var draftId = await _reservationDraftService.SaveOrUpdateAsync(readyDraft, cancellationToken);
+
+        HotelWeatherWidgetViewModel? postBookingWeather = null;
+        try
+        {
+            var weatherAnchor = await LoadHotelAsync(connection, form.HotelId, selections[0].RoomTypeId, cancellationToken);
+            postBookingWeather = await _weatherService.GetForecastAsync(
+                weatherAnchor.District,
+                weatherAnchor.City,
+                weatherAnchor.Latitude,
+                weatherAnchor.Longitude,
+                cancellationToken);
+        }
+        catch (Exception weatherEx)
+        {
+            _logger.LogDebug(weatherEx, "Post-booking weather prefetch skipped. hotelId={HotelId}", form.HotelId);
+        }
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
@@ -453,6 +473,25 @@ public class PublicReservationService : IPublicReservationService
                 ? string.Join(", ", createdReservationNos)
                 : "WEB";
 
+            _logger.LogInformation(
+                "RESERVATION_AUDIT create source=public userId={UserId} hotelId={HotelId} roomTypeId={RoomTypeId} reservations={ReservationNos} total={Total} payment={PaymentMethod} rooms={RoomsCount}",
+                authenticatedUserId,
+                form.HotelId,
+                form.RoomTypeId,
+                reservationNosText,
+                totalAmountOverall,
+                (form.PaymentMethod ?? string.Empty).Trim(),
+                selections.Count);
+
+            _logger.LogInformation(
+                "POST_BOOKING_AUTOMATION hotelId={HotelId} destination_forecast_days={Days}",
+                form.HotelId,
+                postBookingWeather?.Days?.Count ?? 0);
+            if (createdReservationIds.Count > 0)
+            {
+                _logger.LogInformation("NPS_LOOP_PLANNED reservationId={ReservationId}", createdReservationIds[0]);
+            }
+
             return new PublicReservationResult
             {
                 Success = true,
@@ -567,7 +606,11 @@ public class PublicReservationService : IPublicReservationService
                 ot.oda_adi,
                 COALESCE(ot.maksimum_kisi_sayisi, 1),
                 COALESCE(ot.maksimum_yetiskin_sayisi, 1),
-                COALESCE(ot.maksimum_cocuk_sayisi, 0)
+                COALESCE(ot.maksimum_cocuk_sayisi, 0),
+                COALESCE(o.sehir, ''),
+                COALESCE(o.ilce, ''),
+                o.enlem,
+                o.boylam
             FROM oteller o
             INNER JOIN oda_tipleri ot ON ot.id = @roomTypeId AND ot.otel_id = o.id
             WHERE o.id = @hotelId;";
@@ -1272,6 +1315,10 @@ public class PublicReservationService : IPublicReservationService
         public int MaxAdultCount { get; set; }
         public int MaxChildCount { get; set; }
         public string Slug { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string District { get; set; } = string.Empty;
+        public decimal? Latitude { get; set; }
+        public decimal? Longitude { get; set; }
     }
 
     private sealed class PriceSummary
