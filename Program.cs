@@ -149,6 +149,7 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ICurrencyFormatter, CurrencyFormatter>();
 builder.Services.AddScoped<ITimeZoneService, TimeZoneService>();
 builder.Services.AddScoped<ICacheSingleFlight, CacheSingleFlight>();
+builder.Services.AddSingleton<ISlowSqlTracker, SlowSqlTracker>();
 builder.Services.AddScoped<IAdminHotelManagementService, AdminHotelManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IContractContentService, ContractContentService>();

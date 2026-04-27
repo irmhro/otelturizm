@@ -285,6 +285,18 @@ public class AdminPanelController : Controller
         return RedirectToAction(nameof(SystemHealth));
     }
 
+    [HttpGet("sistem-sagligi/slow-sql")]
+    public IActionResult SlowSql([FromServices] otelturizmnew.Services.Abstractions.ISlowSqlTracker slowSqlTracker, [FromQuery] int take = 20)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return Unauthorized(new { ok = false });
+        }
+
+        var rows = slowSqlTracker.GetTop(take);
+        return Ok(new { ok = true, rows });
+    }
+
     private static List<string> ExtractInternalRoutesFromViews(string viewsRoot)
     {
         var routes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

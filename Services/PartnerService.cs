@@ -24,6 +24,8 @@ public class PartnerService : IPartnerService
     private readonly IEmailQueueService _emailQueueService;
     private readonly IFavoritePriceAlertService _favoritePriceAlertService;
     private readonly ISecureFileService _secureFileService;
+    private readonly ISlowSqlTracker _slowSql;
+    private readonly ILogger<PartnerService> _logger;
 
     public PartnerService(
         IConfiguration configuration,
@@ -31,7 +33,9 @@ public class PartnerService : IPartnerService
         IImageStorageService imageStorageService,
         IEmailQueueService emailQueueService,
         IFavoritePriceAlertService favoritePriceAlertService,
-        ISecureFileService secureFileService)
+        ISecureFileService secureFileService,
+        ISlowSqlTracker slowSql,
+        ILogger<PartnerService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
@@ -40,6 +44,8 @@ public class PartnerService : IPartnerService
         _emailQueueService = emailQueueService;
         _favoritePriceAlertService = favoritePriceAlertService;
         _secureFileService = secureFileService;
+        _slowSql = slowSql;
+        _logger = logger;
     }
 
     public async Task<PartnerDashboardViewModel> GetDashboardAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
@@ -2952,7 +2958,13 @@ public class PartnerService : IPartnerService
             WHERE aktif_mi = 1
             ORDER BY CASE COALESCE(onay_durumu,'Beklemede') WHEN 'Onaylandı' THEN 0 WHEN 'Beklemede' THEN 1 ELSE 2 END, firma_adi;";
         await using (var companyCmd = new SqlCommand(companySql, connection))
-        await using (var companyReader = await companyCmd.ExecuteReaderAsync(cancellationToken))
+        await using (var companyReader = await otelturizmnew.Utils.SqlTiming.ExecuteReaderAsync(
+                         companyCmd,
+                         _slowSql,
+                         _logger,
+                         scope: "PartnerService.GetCompanyPricing.Companies",
+                         slowMsThreshold: 250,
+                         cancellationToken))
         {
             while (await companyReader.ReadAsync(cancellationToken))
             {
@@ -2980,7 +2992,13 @@ public class PartnerService : IPartnerService
         await using (var roomCmd = new SqlCommand(roomSql, connection))
         {
             roomCmd.Parameters.AddWithValue("@hotelId", selectedHotelId);
-            await using var roomReader = await roomCmd.ExecuteReaderAsync(cancellationToken);
+            await using var roomReader = await otelturizmnew.Utils.SqlTiming.ExecuteReaderAsync(
+                roomCmd,
+                _slowSql,
+                _logger,
+                scope: "PartnerService.GetCompanyPricing.Rooms",
+                slowMsThreshold: 250,
+                cancellationToken);
             while (await roomReader.ReadAsync(cancellationToken))
             {
                 var id = roomReader.GetInt64(0);
@@ -3042,7 +3060,13 @@ public class PartnerService : IPartnerService
             firmCmd.Parameters.AddWithValue("@roomTypeId", safeRoomId);
             firmCmd.Parameters.AddWithValue("@startDate", monthStart.ToDateTime(TimeOnly.MinValue));
             firmCmd.Parameters.AddWithValue("@endDate", monthEnd.ToDateTime(TimeOnly.MinValue));
-            await using var firmReader = await firmCmd.ExecuteReaderAsync(cancellationToken);
+            await using var firmReader = await otelturizmnew.Utils.SqlTiming.ExecuteReaderAsync(
+                firmCmd,
+                _slowSql,
+                _logger,
+                scope: "PartnerService.GetCompanyPricing.FirmPrices",
+                slowMsThreshold: 250,
+                cancellationToken);
             while (await firmReader.ReadAsync(cancellationToken))
             {
                 var date = DateOnly.FromDateTime(firmReader.GetDateTime(0));
@@ -3070,7 +3094,13 @@ public class PartnerService : IPartnerService
             baseCmd.Parameters.AddWithValue("@roomTypeId", safeRoomId);
             baseCmd.Parameters.AddWithValue("@startDate", monthStart.ToDateTime(TimeOnly.MinValue));
             baseCmd.Parameters.AddWithValue("@endDate", monthEnd.ToDateTime(TimeOnly.MinValue));
-            await using var baseReader = await baseCmd.ExecuteReaderAsync(cancellationToken);
+            await using var baseReader = await otelturizmnew.Utils.SqlTiming.ExecuteReaderAsync(
+                baseCmd,
+                _slowSql,
+                _logger,
+                scope: "PartnerService.GetCompanyPricing.BasePrices",
+                slowMsThreshold: 250,
+                cancellationToken);
             while (await baseReader.ReadAsync(cancellationToken))
             {
                 var date = DateOnly.FromDateTime(baseReader.GetDateTime(0));
@@ -3159,7 +3189,13 @@ public class PartnerService : IPartnerService
                 cmd.Parameters.AddWithValue("@closed", request.CloseSales ? 1 : 0);
                 cmd.Parameters.AddWithValue("@note", string.IsNullOrWhiteSpace(request.Note) ? DBNull.Value : request.Note.Trim());
                 cmd.Parameters.AddWithValue("@userId", userId);
-                await cmd.ExecuteNonQueryAsync(cancellationToken);
+                await otelturizmnew.Utils.SqlTiming.ExecuteNonQueryAsync(
+                    cmd,
+                    _slowSql,
+                    _logger,
+                    scope: "PartnerService.ApplyCompanyBulkPricing.Upsert",
+                    slowMsThreshold: 250,
+                    cancellationToken);
             }
 
             await tx.CommitAsync(cancellationToken);
