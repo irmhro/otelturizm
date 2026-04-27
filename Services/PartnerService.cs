@@ -687,7 +687,7 @@ public class PartnerService : IPartnerService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var context = await BuildContextAsync(connection, userId, hotelId, "Takvim ve Fiyatlar", "Gunluk fiyat, kampanya ve musaitlik kurallarini oda bazli takvim uzerinden yonetin.", "pricing", cancellationToken);
+        var context = await BuildContextAsync(connection, userId, hotelId, "Takvim ve Fiyatlar", "Gunluk fiyat, indirim ve musaitlik kurallarini oda bazli takvim uzerinden yonetin.", "pricing", cancellationToken);
         var inclusiveTax = await LoadInclusiveTaxPercentsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
         var rooms = await GetRoomSummariesAsync(connection, context.SelectedHotel.HotelId, inclusiveTax, cancellationToken);
         var monthStart = ParseMonthStart(month);
@@ -777,8 +777,8 @@ public class PartnerService : IPartnerService
             result.Add(new PartnerDiscountOptionViewModel
             {
                 DiscountId = id,
-                DiscountName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
-                ShortDescription = reader.IsDBNull(2) ? null : reader.GetString(2),
+                DiscountName = NormalizeTurkishText(reader.IsDBNull(1) ? string.Empty : reader.GetString(1)),
+                ShortDescription = reader.IsDBNull(2) ? null : NormalizeTurkishText(reader.GetString(2)),
                 ImageUrl = reader.IsDBNull(3) ? null : reader.GetString(3),
                 IconClass = reader.IsDBNull(4) ? null : reader.GetString(4),
                 ColorCode = reader.IsDBNull(5) ? null : reader.GetString(5)
@@ -825,7 +825,7 @@ public class PartnerService : IPartnerService
             return (false, "Baslangic tarihi bitis tarihinden buyuk olamaz.");
         }
 
-        // Kural: indirimli fiyat giriliyorsa indirim seçimi zorunlu (kampanya_id boş kalamaz).
+        // Kural: indirimli fiyat giriliyorsa indirim secimi zorunlu (oda_fiyat_musaitlik.kampanya_id indirim_id gibi kullanilir).
         if (!request.ClearDiscountPrice && request.DiscountPrice.HasValue)
         {
             if (!request.DiscountId.HasValue || request.DiscountId.Value <= 0)
@@ -3017,6 +3017,15 @@ public class PartnerService : IPartnerService
             return model;
         }
 
+        if (!await TableExistsAsync(connection, "firma_oda_fiyat_musaitlik", cancellationToken))
+        {
+            model.Warning =
+                "Firma fiyat tablosu (dbo.firma_oda_fiyat_musaitlik) veritabanında bulunamadı. " +
+                "Bu sayfa firma fiyatlarını kaydedemez/okuyamaz. " +
+                "SQL Server için migration dosyası: Database/MigrationsSql/20260426_sqlserver_create_table_firma_oda_fiyat_musaitlik.sql";
+            return model;
+        }
+
         // Load firm prices map
         var firmPrices = new Dictionary<DateOnly, (decimal Price, bool Closed)>();
         const string firmSql = @"
@@ -3109,6 +3118,14 @@ public class PartnerService : IPartnerService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsurePartnerHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+
+        if (!await TableExistsAsync(connection, "firma_oda_fiyat_musaitlik", cancellationToken))
+        {
+            return (false,
+                "Firma fiyat tablosu (dbo.firma_oda_fiyat_musaitlik) veritabanında bulunamadı. " +
+                "SQL Server migration uygulanmadığı için kaydedilemedi. " +
+                "Dosya: Database/MigrationsSql/20260426_sqlserver_create_table_firma_oda_fiyat_musaitlik.sql");
+        }
 
         await using var tx = await connection.BeginTransactionAsync(cancellationToken);
         try
@@ -3773,8 +3790,8 @@ public class PartnerService : IPartnerService
                 reader.IsDBNull(8) ? null : SafeByte(reader, 8),
                 reader.IsDBNull(9) ? null : SafeShort(reader, 9),
                 SafeBool(reader, 10),
-                reader.IsDBNull(11) ? null : reader.GetString(11),
-                reader.IsDBNull(12) ? null : reader.GetString(12));
+                reader.IsDBNull(11) ? null : NormalizeTurkishText(reader.GetString(11)),
+                reader.IsDBNull(12) ? null : NormalizeTurkishText(reader.GetString(12)));
         }
 
         return entries;
@@ -3827,8 +3844,8 @@ public class PartnerService : IPartnerService
                 reader.IsDBNull(8) ? null : SafeByte(reader, 8),
                 reader.IsDBNull(9) ? null : SafeShort(reader, 9),
                 SafeBool(reader, 10),
-                reader.IsDBNull(11) ? null : reader.GetString(11),
-                reader.IsDBNull(12) ? null : reader.GetString(12));
+                reader.IsDBNull(11) ? null : NormalizeTurkishText(reader.GetString(11)),
+                reader.IsDBNull(12) ? null : NormalizeTurkishText(reader.GetString(12)));
         }
 
         return entries;
@@ -4149,7 +4166,7 @@ public class PartnerService : IPartnerService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
-            return new DiscountSelection(reader.GetInt64(0), reader.IsDBNull(1) ? string.Empty : reader.GetString(1));
+            return new DiscountSelection(reader.GetInt64(0), NormalizeTurkishText(reader.IsDBNull(1) ? string.Empty : reader.GetString(1)));
         }
 
         return null;

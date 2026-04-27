@@ -172,7 +172,10 @@
     </form>
 </dialog>
 
-<script>
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
     (function () {
         const dialog = document.getElementById('favoriteAlertDialog');
         if (!dialog) return;

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace otelturizmnew.Controllers.SeyahatPlanlama;
 
@@ -6,6 +7,7 @@ namespace otelturizmnew.Controllers.SeyahatPlanlama;
 public class SeyahatPlanlamaController : Controller
 {
     [HttpGet("")]
+    [OutputCache(PolicyName = "public-medium")]
     public IActionResult Index()
     {
         ViewData["Title"] = "Seyahat Planlama";

@@ -1,0 +1,19 @@
+/                         # Anasayfa
+/kurumsal                 # Kurumsal
+/firma                    # Firma landing
+/yardim-merkezi           # Yardım merkezi
+/sss                      # SSS
+/kampanyalar              # Kampanyalar listesi
+/seyahat-planlama         # Seyahat planlama
+/oteller                  # Otel listeleme (genel)
+/oteller/istanbul         # Otel listeleme (şehir)
+/sozlesmeler/kullanici-kullanim-kosullari   # Sözleşme (örnek)
+/kullanici-giris          # Kullanıcı giriş
+/partner-giris            # Partner giriş
+/firma-giris              # Firma giriş
+/admin-giris              # Admin giriş (route varsa)
+/panel/user               # User panel shell (auth gerekir)
+/panel/partner            # Partner panel shell (auth gerekir)
+/panel/firma              # Firma panel shell (auth gerekir)
+/panel/satis              # Sales panel shell (auth gerekir)
+/admin/dashboard          # Admin panel (auth gerekir)

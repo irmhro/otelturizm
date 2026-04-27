@@ -1,11 +1,17 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
+using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.OutputCaching;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Paneller.Admin;
 using otelturizmnew.Models.Paneller.Developer;
 using otelturizmnew.Models.TelefonDogrulama;
+using otelturizmnew.Models.Messages;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Models.Email;
 
 namespace otelturizmnew.Controllers.Paneller.Admin;
 
@@ -20,8 +26,14 @@ public class AdminPanelController : Controller
     private readonly IPhoneVerificationService _phoneVerificationService;
     private readonly IAuditLogService _auditLogService;
     private readonly IImageStorageService _imageStorageService;
+    private readonly ISitemapService _sitemapService;
+    private readonly IAdminSupportArticleService _adminSupportArticleService;
+    private readonly IWebHostEnvironment _environment;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IOutputCacheStore _outputCacheStore;
+    private readonly ISecureFileService _secureFileService;
 
-    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService)
+    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService)
     {
         _adminService = adminService;
         _adminHotelManagementService = adminHotelManagementService;
@@ -30,6 +42,21 @@ public class AdminPanelController : Controller
         _phoneVerificationService = phoneVerificationService;
         _auditLogService = auditLogService;
         _imageStorageService = imageStorageService;
+        _sitemapService = sitemapService;
+        _adminSupportArticleService = adminSupportArticleService;
+        _environment = environment;
+        _httpClientFactory = httpClientFactory;
+        _outputCacheStore = outputCacheStore;
+        _secureFileService = secureFileService;
+    }
+
+    private async Task EvictPublicOutputCacheAsync(CancellationToken cancellationToken)
+    {
+        // OutputCache policy'leri Program.cs içinde tag'li (public/public-short/public-medium).
+        // Otel/kampanya gibi içerikler güncellendiğinde public cache'i hızlı şekilde temizliyoruz.
+        await _outputCacheStore.EvictByTagAsync("public", cancellationToken);
+        await _outputCacheStore.EvictByTagAsync("public-short", cancellationToken);
+        await _outputCacheStore.EvictByTagAsync("public-medium", cancellationToken);
     }
 
     [HttpGet("")]
@@ -43,7 +70,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetDashboardAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = "Admin Dashboard";
-        ViewData["PageCss"] = "panel-admin-dashboard";
+        ViewData["PageCssPath"] = "panel-admin-dashboard";
         return View("~/Views/Paneller/Admin/Dashboard.cshtml", model);
     }
 
@@ -56,9 +83,281 @@ public class AdminPanelController : Controller
         }
 
         var model = await _adminService.GetSystemHealthAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        model.LinkCheck.BaseUrl = $"{Request.Scheme}://{Request.Host}";
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "panel-admin-section";
         return View("~/Views/Paneller/Admin/SystemHealth.cshtml", model);
+    }
+
+    [HttpPost("sistem-sagligi/link-kontrol")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RunInternalLinkCheck(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetSystemHealthAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        model.LinkCheck.BaseUrl = baseUrl;
+        model.LinkCheck.CheckedAtUtc = DateTimeOffset.UtcNow;
+
+        var viewsRoot = Path.Combine(_environment.ContentRootPath, "Views");
+        if (!Directory.Exists(viewsRoot))
+        {
+            model.LinkCheck.Warning = $"Views klasörü bulunamadı: {viewsRoot}";
+            ViewData["Title"] = model.Shell.PanelTitle;
+            ViewData["PageCssPath"] = "panel-admin-section";
+            return View("~/Views/Paneller/Admin/SystemHealth.cshtml", model);
+        }
+
+        var routes = ExtractInternalRoutesFromViews(viewsRoot);
+        model.LinkCheck.Total = routes.Count;
+
+        // Bu kontrol aynı oturum/cookie ile koşmalı ki auth'lu paneller de 200 dönebilsin.
+        var cookieHeader = Request.Headers.Cookie.ToString();
+        var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        client.Timeout = TimeSpan.FromSeconds(12);
+        client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
+        if (!string.IsNullOrWhiteSpace(cookieHeader))
+        {
+            client.DefaultRequestHeaders.TryAddWithoutValidation("Cookie", cookieHeader);
+        }
+        client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "Otelturizm-SystemHealth-LinkCheck/1.0");
+
+        var semaphore = new SemaphoreSlim(8);
+        var tasks = routes.Select(async route =>
+        {
+            await semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                try
+                {
+                    using var req = new HttpRequestMessage(HttpMethod.Get, route);
+                    using var resp = await client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                    sw.Stop();
+                    return new AdminInternalLinkCheckRowViewModel
+                    {
+                        Route = route,
+                        Status = (int)resp.StatusCode,
+                        Ms = (int)sw.ElapsedMilliseconds
+                    };
+                }
+                catch
+                {
+                    sw.Stop();
+                    return new AdminInternalLinkCheckRowViewModel { Route = route, Status = -1, Ms = -1 };
+                }
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        }).ToList();
+
+        var rows = await Task.WhenAll(tasks);
+        model.LinkCheck.Rows = rows
+            .OrderBy(r => r.IsOk ? 1 : 0)
+            .ThenBy(r => r.Status)
+            .ThenBy(r => r.Route, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        model.LinkCheck.Ok = model.LinkCheck.Rows.Count(r => r.IsOk);
+        model.LinkCheck.Bad = model.LinkCheck.Rows.Count - model.LinkCheck.Ok;
+
+        if (model.LinkCheck.Bad > 0)
+        {
+            await QueueBrokenLinkReportEmailAsync(model, cancellationToken);
+        }
+
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        return View("~/Views/Paneller/Admin/SystemHealth.cshtml", model);
+    }
+
+    private async Task QueueBrokenLinkReportEmailAsync(AdminSystemHealthPageViewModel model, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                return;
+            }
+
+            await using var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            // admin hedef listesi (doğrulanmış e-posta)
+            var adminEmails = new List<(long Id, string Email)>();
+            await using (var cmd = new Microsoft.Data.SqlClient.SqlCommand("""
+                SELECT TOP (25) id, eposta
+                FROM dbo.users
+                WHERE rol = N'admin'
+                  AND eposta IS NOT NULL
+                  AND LTRIM(RTRIM(eposta)) <> N''
+                  AND email_dogrulama_tarihi IS NOT NULL
+                ORDER BY id ASC;
+                """, connection))
+            await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
+            {
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    adminEmails.Add((reader.GetInt64(0), reader.GetString(1)));
+                }
+            }
+
+            if (adminEmails.Count == 0)
+            {
+                return;
+            }
+
+            var badLines = model.LinkCheck.Rows
+                .Where(r => !r.IsOk)
+                .Take(50)
+                .Select(r => $"{r.StatusText}\t{r.Route}")
+                .ToList();
+
+            var badList = badLines.Count == 0 ? "-" : string.Join("\n", badLines);
+            var tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["base_url"] = model.LinkCheck.BaseUrl ?? string.Empty,
+                ["checked_at"] = (model.LinkCheck.CheckedAtUtc?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss") ?? "-"),
+                ["ok_count"] = model.LinkCheck.Ok.ToString(),
+                ["bad_count"] = model.LinkCheck.Bad.ToString(),
+                ["total_count"] = model.LinkCheck.Total.ToString(),
+                ["bad_list"] = badList
+            };
+
+            var emailQueue = HttpContext.RequestServices.GetRequiredService<IEmailQueueService>();
+            foreach (var target in adminEmails)
+            {
+                await emailQueue.QueueTemplateAsync(connection, null, new QueuedEmailTemplateRequest
+                {
+                    UserId = target.Id,
+                    RecipientEmail = target.Email,
+                    TemplateCode = "system_health_link_report",
+                    RelatedTable = "users",
+                    RelatedRecordId = target.Id,
+                    Tokens = tokens
+                }, cancellationToken);
+            }
+        }
+        catch
+        {
+            // health sayfasini bozmayalim
+        }
+    }
+
+    [HttpPost("sistem-sagligi/email-test-modu")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleEmailTestMode([FromForm] bool enabled, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var connectionString = HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            TempData["AdminMessage"] = "DB bağlantısı bulunamadı.";
+            return RedirectToAction(nameof(SystemHealth));
+        }
+
+        await using var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var cmd = new Microsoft.Data.SqlClient.SqlCommand("""
+            UPDATE email_services
+            SET test_modu = @enabled,
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE aktif_mi = 1;
+            """, connection);
+        cmd.Parameters.AddWithValue("@enabled", enabled ? 1 : 0);
+        var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+
+        TempData["AdminMessage"] = affected > 0
+            ? $"E-posta servisi test modu {(enabled ? "AÇILDI" : "KAPATILDI")}."
+            : "Aktif e-posta servisi bulunamadı (email_services.aktif_mi=1).";
+
+        return RedirectToAction(nameof(SystemHealth));
+    }
+
+    private static List<string> ExtractInternalRoutesFromViews(string viewsRoot)
+    {
+        var routes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        static void AddRoute(HashSet<string> set, string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return;
+            var route = raw.Trim();
+            if (!route.StartsWith("/", StringComparison.Ordinal)) return;
+            if (route.StartsWith("//", StringComparison.Ordinal)) return;
+            if (route.Contains('@') || route.Contains('{') || route.Contains('}')) return;
+
+            // statik dosyalar
+            if (route.StartsWith("/assets/", StringComparison.OrdinalIgnoreCase)
+                || route.StartsWith("/lib/", StringComparison.OrdinalIgnoreCase)
+                || route.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase)
+                || route.StartsWith("/js/", StringComparison.OrdinalIgnoreCase)
+                || route.StartsWith("/css/", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            route = route.Split('#')[0].Split('?')[0].Trim();
+            if (route.Length == 0) return;
+
+            set.Add(route);
+        }
+
+        var files = Directory.EnumerateFiles(viewsRoot, "*.cshtml", SearchOption.AllDirectories);
+        var hrefRegex = new Regex("<a[^>]+href\\s*=\\s*\"(?<u>/[^\"]+)\"", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        foreach (var file in files)
+        {
+            string content;
+            try { content = System.IO.File.ReadAllText(file, Encoding.UTF8); }
+            catch { continue; }
+
+            foreach (Match m in hrefRegex.Matches(content))
+            {
+                AddRoute(routes, m.Groups["u"].Value);
+            }
+        }
+
+        return routes.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    [HttpGet("sitemap")]
+    public async Task<IActionResult> Sitemap(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var section = await _adminService.GetSectionPageAsync("settings", GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        var model = await _sitemapService.GetDiagnosticsAsync(cancellationToken);
+        ViewData["AdminShell"] = section.Shell;
+        ViewData["Title"] = "Sitemap Yönetimi";
+        ViewData["PageCssPath"] = "panel-admin-section";
+        return View("~/Views/Paneller/Admin/Sitemap.cshtml", model);
+    }
+
+    [HttpPost("sitemap/yenile")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RefreshSitemap(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        await _sitemapService.EnsureFreshSitemapAsync(true, cancellationToken);
+        TempData["AdminMessage"] = "Sitemap ve il/ilçe XML dosyaları güncellendi.";
+        return RedirectToAction(nameof(Sitemap));
     }
 
     [HttpGet("kullanicilar")]
@@ -77,7 +376,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminHotelManagementService.GetHotelsPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = "panel-admin-hotels";
+        ViewData["PageCssPath"] = "panel-admin-hotels";
         return View("~/Views/Paneller/Admin/Hotels.cshtml", model);
     }
 
@@ -97,7 +396,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminHotelManagementService.GetHotelManagementPageAsync(id.Value, GetFullName(), GetEmail(), GetUserRole(), roomId, hotelPhotoId, roomPhotoId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = "panel-admin-hotels";
+        ViewData["PageCssPath"] = "panel-admin-hotels";
         return View("~/Views/Paneller/Admin/HotelDetail.cshtml", model);
     }
 
@@ -118,6 +417,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.SaveHotelAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = request.HotelId });
     }
 
@@ -132,6 +435,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.SaveRoomAsync(request, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = request.HotelId, roomId = request.RoomId });
     }
 
@@ -146,6 +453,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.DeactivateRoomAsync(hotelId, roomId, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
     }
 
@@ -166,6 +477,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.DeactivateHotelAsync(hotelId, GetUserId(), cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
     }
 
@@ -186,6 +501,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.ActivateHotelAsync(hotelId, GetUserId(), cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
     }
 
@@ -202,6 +521,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.UploadHotelPhotosAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = request.HotelId });
     }
 
@@ -216,6 +539,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.UpdateHotelPhotoAsync(request, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = request.HotelId, hotelPhotoId = request.PhotoId });
     }
 
@@ -230,6 +557,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.SetHotelCoverAsync(hotelId, photoId, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
     }
 
@@ -244,6 +575,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.DeleteHotelPhotoAsync(hotelId, photoId, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
     }
 
@@ -260,6 +595,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.UploadRoomPhotosAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = request.HotelId, roomId = request.RoomId });
     }
 
@@ -274,6 +613,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.UpdateRoomPhotoAsync(request, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = request.HotelId, roomId = request.RoomId, roomPhotoId = request.PhotoId });
     }
 
@@ -288,6 +631,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.SetRoomCoverAsync(hotelId, roomId, photoId, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = hotelId, roomId });
     }
 
@@ -302,6 +649,10 @@ public class AdminPanelController : Controller
 
         var result = await _adminHotelManagementService.DeleteRoomPhotoAsync(hotelId, roomId, photoId, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+        }
         return RedirectToAction(nameof(HotelDetail), new { id = hotelId, roomId });
     }
 
@@ -324,7 +675,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetCommissionManagementAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = "panel-admin-commissions";
+        ViewData["PageCssPath"] = "panel-admin-commissions";
         return View("~/Views/Paneller/Admin/Commissions.cshtml", model);
     }
 
@@ -338,7 +689,7 @@ public class AdminPanelController : Controller
 
         var model = await _contractContentService.GetAdminContractManagementAsync(GetFullName(), GetEmail(), GetUserRole(), contractId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = "panel-admin-contracts";
+        ViewData["PageCssPath"] = "panel-admin-contracts";
         return View("~/Views/Paneller/Admin/Contracts.cshtml", model);
     }
 
@@ -417,17 +768,19 @@ public class AdminPanelController : Controller
             return RedirectToAction(nameof(Contracts), new { contractId });
         }
 
-        var safeFileName = $"{Guid.NewGuid():N}.pdf";
-        var targetDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "contracts", contractId.ToString());
-        Directory.CreateDirectory(targetDirectory);
-        var physicalPath = Path.Combine(targetDirectory, safeFileName);
-        await using (var stream = System.IO.File.Create(physicalPath))
+        var adminUserId = GetUserId();
+        var stored = await _secureFileService.SaveAsync(pdfFile, new SecureFileSaveRequest
         {
-            await pdfFile.CopyToAsync(stream, cancellationToken);
-        }
+            ContextTable = "sozlesmeler",
+            ContextId = contractId,
+            OwnerUserId = adminUserId,
+            Category = "contract-pdf",
+            VisibilityScope = "private"
+        }, cancellationToken);
 
         // DB kaydı migration ile eklenecek tabloya yazılır. Şema yoksa yükleme yine de dosyayı saklar.
-        var relativeUrl = $"/uploads/contracts/{contractId}/{safeFileName}";
+        // dosya_yolu alanına fiziksel path yazıyoruz; e-posta ekinde worker direkt dosya sisteminden okuyabilir.
+        var filePathOrUrl = stored.StoredPath;
         try
         {
             var connectionString = HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection");
@@ -438,12 +791,14 @@ public class AdminPanelController : Controller
                 await using var command = new Microsoft.Data.SqlClient.SqlCommand(@"
                     IF OBJECT_ID('dbo.sozlesme_dosyalari', 'U') IS NOT NULL
                     BEGIN
-                        INSERT INTO sozlesme_dosyalari (sozlesme_id, dosya_tipi, dosya_adi, dosya_yolu, mime_tipi, olusturulma_tarihi)
-                        VALUES (@contractId, 'pdf', @fileName, @fileUrl, 'application/pdf', SYSUTCDATETIME());
+                        INSERT INTO sozlesme_dosyalari (sozlesme_id, dosya_tipi, dosya_adi, dosya_yolu, mime_tipi, olusturan_kullanici_id, olusturulma_tarihi, guvenli_dosya_id)
+                        VALUES (@contractId, 'pdf', @fileName, @fileUrl, 'application/pdf', @adminUserId, SYSUTCDATETIME(), @secureFileId);
                     END", connection);
                 command.Parameters.AddWithValue("@contractId", contractId);
                 command.Parameters.AddWithValue("@fileName", Path.GetFileName(pdfFile.FileName));
-                command.Parameters.AddWithValue("@fileUrl", relativeUrl);
+                command.Parameters.AddWithValue("@fileUrl", filePathOrUrl);
+                command.Parameters.AddWithValue("@adminUserId", adminUserId);
+                command.Parameters.AddWithValue("@secureFileId", stored.FileId > 0 ? stored.FileId : DBNull.Value);
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
         }
@@ -480,7 +835,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetPartnerApplicationsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = "panel-admin-partner-applications";
+        ViewData["PageCssPath"] = "panel-admin-partner-applications";
         return View("~/Views/Paneller/Admin/PartnerApplications.cshtml", model);
     }
 
@@ -508,7 +863,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetCompanyApplicationsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "panel-admin-section";
         return View("~/Views/Paneller/Admin/CompanyApplications.cshtml", model);
     }
 
@@ -536,7 +891,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetListingSubscriptionsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "panel-admin-section";
         return View("~/Views/Paneller/Admin/ListingSubscriptions.cshtml", model);
     }
 
@@ -582,7 +937,7 @@ public class AdminPanelController : Controller
 
         var model = await _developmentRequestService.GetAdminPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, priority, developerUserId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = "panel-admin-development";
+        ViewData["PageCssPath"] = "panel-admin-development";
         return View("~/Views/Paneller/Admin/DevelopmentRequests.cshtml", model);
     }
 
@@ -601,7 +956,7 @@ public class AdminPanelController : Controller
         if (form.VisualFile is not null && form.VisualFile.Length > 0)
         {
             var adminUserId = GetUserId();
-            var targetDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "developer", "admin", adminUserId.ToString());
+            var targetDir = Path.Combine(_environment.WebRootPath, "uploads", "developer", "admin", adminUserId.ToString());
             var saved = await _imageStorageService.SaveAsWebpAsync(form.VisualFile, targetDir, "admin-request", cancellationToken);
             imageUrl = $"/uploads/developer/admin/{adminUserId}/{saved.FileName}";
         }
@@ -703,6 +1058,53 @@ public class AdminPanelController : Controller
     [HttpGet("sss")]
     public Task<IActionResult> Faq(CancellationToken cancellationToken) => RenderSectionAsync("faq", "Faq", cancellationToken);
 
+    [HttpGet("destek-makaleleri")]
+    public async Task<IActionResult> SupportArticles([FromQuery] string? q, [FromQuery] long? kategoriId, [FromQuery] string? durum, [FromQuery] long? editId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var section = await _adminService.GetSectionPageAsync("faq", GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        section.Shell.PanelTitle = "Destek Makaleleri";
+        section.Shell.PanelSubtitle = "Yardım merkezi içeriklerini tek yerden ekleyin, güncelleyin ve kaldırın.";
+
+        var model = await _adminSupportArticleService.GetPageAsync(section.Shell, q, kategoriId, durum, editId, cancellationToken);
+        ViewData["Title"] = section.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = section.Shell;
+        return View("~/Views/Paneller/Admin/SupportArticles.cshtml", model);
+    }
+
+    [HttpPost("destek-makaleleri/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveSupportArticle(AdminSupportArticleForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminSupportArticleService.SaveAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(SupportArticles), new { editId = result.ArticleId ?? form.ArticleId });
+    }
+
+    [HttpPost("destek-makaleleri/sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteSupportArticle(long articleId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminSupportArticleService.DeleteAsync(GetUserId(), articleId, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(SupportArticles));
+    }
+
     [HttpGet("sikayetler")]
     public Task<IActionResult> Complaints(CancellationToken cancellationToken) => RenderSectionAsync("complaints", "Complaints", cancellationToken);
 
@@ -730,7 +1132,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetSectionPageAsync(sectionKey, GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCss"] = string.Equals(sectionKey, "users", StringComparison.OrdinalIgnoreCase)
+        ViewData["PageCssPath"] = string.Equals(sectionKey, "users", StringComparison.OrdinalIgnoreCase)
             ? "panel-admin-users"
             : "panel-admin-section";
         return View($"~/Views/Paneller/Admin/{viewName}.cshtml", model);

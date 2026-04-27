@@ -4,6 +4,7 @@
     var homeAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
     var homeAuthenticated = User.Identity?.IsAuthenticated == true;
     var headerContext = (ViewData["HeaderContext"] as string ?? "home").ToLowerInvariant();
+    var nonce = Context.Items["CspNonce"] as string;
     var homePanelUrl = homeAccountType.ToLowerInvariant() switch
     {
         "partner" => "/panel/partner",
@@ -22,6 +23,9 @@
         "sales" => "Satış Paneli",
         _ => "Hesabım"
     };
+    var currentCulture = System.Globalization.CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
+    var currentLang = (System.Globalization.CultureInfo.CurrentUICulture?.TwoLetterISOLanguageName ?? "tr").ToLowerInvariant();
+    var currentFlag = currentLang switch { "en" => "gb", "fr" => "fr", "de" => "de", "es" => "es", _ => "tr" };
 }
 
 <header class="site-header" id="mainHeader">
@@ -44,15 +48,15 @@
             <div class="utility-right">
                 <div class="dropdown language-dropdown" id="languageDropdown">
                     <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
-                        <span class="toggle-flag flag-icon flag-icon-tr" aria-hidden="true"></span>
-                        <span class="dropdown-label">TR</span>
+                        <span class="toggle-flag flag-icon flag-icon-@currentFlag" aria-hidden="true"></span>
+                        <span class="dropdown-label">@currentLang.ToUpperInvariant()</span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
-                        <li class="dropdown-item" data-value="tr"><span class="flag-icon flag-icon-tr"></span> Türkçe</li>
-                        <li class="dropdown-item" data-value="en"><span class="flag-icon flag-icon-gb"></span> English</li>
-                        <li class="dropdown-item" data-value="fr"><span class="flag-icon flag-icon-fr"></span> Français</li>
-                        <li class="dropdown-item" data-value="ru"><span class="flag-icon flag-icon-ru"></span> Русский</li>
-                        <li class="dropdown-item" data-value="ar"><span class="flag-icon flag-icon-sa"></span> العربية</li>
+                        <li class="dropdown-item"><a href="/locale/set?lang=tr-TR&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))"><span class="flag-icon flag-icon-tr"></span> Türkçe</a></li>
+                        <li class="dropdown-item"><a href="/locale/set?lang=en-US&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))"><span class="flag-icon flag-icon-gb"></span> English</a></li>
+                        <li class="dropdown-item"><a href="/locale/set?lang=fr-FR&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))"><span class="flag-icon flag-icon-fr"></span> Français</a></li>
+                        <li class="dropdown-item"><a href="/locale/set?lang=de-DE&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))"><span class="flag-icon flag-icon-de"></span> Deutsch</a></li>
+                        <li class="dropdown-item"><a href="/locale/set?lang=es-ES&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))"><span class="flag-icon flag-icon-es"></span> Español</a></li>
                     </ul>
                 </div>
 
@@ -141,7 +145,7 @@
 
 <div id="google_translate_element" class="google-translate-hidden" aria-hidden="true"></div>
 
-<script>
+<script nonce="@nonce">
     (function(){
         const languageStorageKey = 'site:language:v1';
         const legacyLanguageStorageKey = 'site:language';

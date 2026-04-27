@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using otelturizmnew.Constants;
 using otelturizmnew.Services.Abstractions;
 
@@ -18,6 +19,7 @@ public class KampanyalarController : Controller
     }
 
     [HttpGet("")]
+    [OutputCache(PolicyName = "public-medium")]
     public async Task<IActionResult> Index([FromQuery] string? preset, CancellationToken cancellationToken)
     {
         var model = await _campaignService.GetCampaignListingPageAsync(preset, cancellationToken);
@@ -27,6 +29,7 @@ public class KampanyalarController : Controller
     }
 
     [HttpGet("{slug}")]
+    [OutputCache(PolicyName = "public-short")]
     public async Task<IActionResult> Detail(
         string slug,
         [FromQuery] string? q,

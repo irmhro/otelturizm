@@ -364,10 +364,16 @@ public class AdminService : IAdminService
         }
 
         // Corporate pricing table existence & volume
-        const string firmPricingSql = @"
-            SELECT
-                CASE WHEN OBJECT_ID(N'dbo.firma_oda_fiyat_musaitlik', N'U') IS NULL THEN 0 ELSE 1 END AS exists_flag,
-                CASE WHEN OBJECT_ID(N'dbo.firma_oda_fiyat_musaitlik', N'U') IS NULL THEN 0 ELSE (SELECT COUNT(*) FROM firma_oda_fiyat_musaitlik) END AS row_count;";
+        const string firmPricingSql = """
+            IF OBJECT_ID(N'dbo.firma_oda_fiyat_musaitlik', N'U') IS NULL
+            BEGIN
+                SELECT 0 AS exists_flag, 0 AS row_count;
+            END
+            ELSE
+            BEGIN
+                SELECT 1 AS exists_flag, (SELECT COUNT(*) FROM dbo.firma_oda_fiyat_musaitlik) AS row_count;
+            END
+            """;
         await using (var firmPricingCmd = new SqlCommand(firmPricingSql, connection))
         await using (var firmPricingReader = await firmPricingCmd.ExecuteReaderAsync(cancellationToken))
         {
@@ -386,10 +392,16 @@ public class AdminService : IAdminService
         }
 
         // Hotel listing subscriptions table existence & volume
-        const string listingSubSql = @"
-            SELECT
-                CASE WHEN OBJECT_ID(N'dbo.otel_liste_abonelikleri', N'U') IS NULL THEN 0 ELSE 1 END AS exists_flag,
-                CASE WHEN OBJECT_ID(N'dbo.otel_liste_abonelikleri', N'U') IS NULL THEN 0 ELSE (SELECT COUNT(*) FROM otel_liste_abonelikleri) END AS row_count;";
+        const string listingSubSql = """
+            IF OBJECT_ID(N'dbo.otel_liste_abonelikleri', N'U') IS NULL
+            BEGIN
+                SELECT 0 AS exists_flag, 0 AS row_count;
+            END
+            ELSE
+            BEGIN
+                SELECT 1 AS exists_flag, (SELECT COUNT(*) FROM dbo.otel_liste_abonelikleri) AS row_count;
+            END
+            """;
         await using (var listingSubCmd = new SqlCommand(listingSubSql, connection))
         await using (var listingSubReader = await listingSubCmd.ExecuteReaderAsync(cancellationToken))
         {

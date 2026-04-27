@@ -202,7 +202,10 @@
     </article>
 </form>
 
-<script>
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
     (function () {
         const provinceSelect = document.getElementById('userProvinceSelect');
         const districtSelect = document.getElementById('userDistrictSelect');

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Globalization;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -6,6 +7,7 @@ namespace otelturizmnew.Services;
 public class EmailTemplateService : IEmailTemplateService
 {
     private readonly IWebHostEnvironment _environment;
+    private static readonly string[] SupportedLanguages = ["tr", "en"];
 
     public EmailTemplateService(IWebHostEnvironment environment)
     {
@@ -19,11 +21,12 @@ public class EmailTemplateService : IEmailTemplateService
             throw new InvalidOperationException("E-posta şablon yolu boş.");
         }
 
-        var normalized = relativeViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
+        var localizedViewPath = ResolveLocalizedViewPath(relativeViewPath, tokens);
+        var normalized = localizedViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
         var absolutePath = Path.Combine(_environment.ContentRootPath, normalized);
         if (!File.Exists(absolutePath))
         {
-            return RenderFallbackTemplate(relativeViewPath, tokens, absolutePath);
+            return RenderFallbackTemplate(localizedViewPath, tokens, absolutePath);
         }
 
         var content = await File.ReadAllTextAsync(absolutePath, Encoding.UTF8, cancellationToken);
@@ -36,9 +39,81 @@ public class EmailTemplateService : IEmailTemplateService
         return content;
     }
 
+    private static string ResolveLocalizedViewPath(string relativeViewPath, IReadOnlyDictionary<string, string> tokens)
+    {
+        var normalized = (relativeViewPath ?? string.Empty).Replace('\\', '/').Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return relativeViewPath ?? string.Empty;
+        }
+
+        // If path already points to a locale subfolder, respect it.
+        if (normalized.Contains("/Views/Email/en/", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("/Views/Email/tr/", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized;
+        }
+
+        // Only apply localization to Views/Email/*
+        if (!normalized.StartsWith("Views/Email/", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized;
+        }
+
+        var lang = ResolveLanguage(tokens);
+        if (string.IsNullOrWhiteSpace(lang) || !SupportedLanguages.Contains(lang, StringComparer.OrdinalIgnoreCase))
+        {
+            lang = "tr";
+        }
+
+        // candidate: Views/Email/{lang}/File.cshtml
+        var fileName = normalized.Substring("Views/Email/".Length);
+        return $"Views/Email/{lang}/{fileName}";
+    }
+
+    private static string ResolveLanguage(IReadOnlyDictionary<string, string> tokens)
+    {
+        // Highest priority: explicit token
+        if (tokens is not null)
+        {
+            if (tokens.TryGetValue("lang", out var lang) && !string.IsNullOrWhiteSpace(lang))
+            {
+                return NormalizeLang(lang);
+            }
+            if (tokens.TryGetValue("culture", out var culture) && !string.IsNullOrWhiteSpace(culture))
+            {
+                return NormalizeLang(culture);
+            }
+            if (tokens.TryGetValue("locale", out var locale) && !string.IsNullOrWhiteSpace(locale))
+            {
+                return NormalizeLang(locale);
+            }
+        }
+
+        return NormalizeLang(CultureInfo.CurrentUICulture?.Name ?? CultureInfo.CurrentCulture?.Name ?? "tr");
+    }
+
+    private static string NormalizeLang(string value)
+    {
+        var trimmed = (value ?? string.Empty).Trim();
+        if (trimmed.Length == 0)
+        {
+            return "tr";
+        }
+
+        // Accept: en / en-US / EN_us / tr-TR ...
+        var first = trimmed.Split('-', '_', ' ').FirstOrDefault() ?? trimmed;
+        return first.Equals("en", StringComparison.OrdinalIgnoreCase) ? "en" : "tr";
+    }
+
     private static string RenderFallbackTemplate(string relativeViewPath, IReadOnlyDictionary<string, string> tokens, string absolutePath)
     {
-        var normalized = relativeViewPath.Replace('\\', '/');
+        var normalized = (relativeViewPath ?? string.Empty).Replace('\\', '/');
+        normalized = normalized.Replace("/Views/Email/en/", "/Views/Email/", StringComparison.OrdinalIgnoreCase)
+            .Replace("/Views/Email/tr/", "/Views/Email/", StringComparison.OrdinalIgnoreCase)
+            .Replace("Views/Email/en/", "Views/Email/", StringComparison.OrdinalIgnoreCase)
+            .Replace("Views/Email/tr/", "Views/Email/", StringComparison.OrdinalIgnoreCase);
+
         if (normalized.EndsWith("Views/Email/E-posta Adresini Onayla.cshtml", StringComparison.OrdinalIgnoreCase)
             || normalized.EndsWith("Views/Email/E-posta Adresini Onayla.cshtml".Replace("ş", "s"), StringComparison.OrdinalIgnoreCase))
         {

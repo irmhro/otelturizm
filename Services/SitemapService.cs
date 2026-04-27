@@ -10,6 +10,8 @@ namespace otelturizmnew.Services;
 public sealed class SitemapService : ISitemapService
 {
     private static readonly SemaphoreSlim SyncLock = new(1, 1);
+    private static readonly string[] SitemapLocales = ["tr-TR", "en-US"];
+    private static readonly TimeSpan RefreshInterval = TimeSpan.FromDays(3);
 
     private readonly IConfiguration _configuration;
     private readonly IWebHostEnvironment _environment;
@@ -26,7 +28,7 @@ public sealed class SitemapService : ISitemapService
         if (!force && File.Exists(filePath))
         {
             var age = DateTime.UtcNow - File.GetLastWriteTimeUtc(filePath);
-            if (age < TimeSpan.FromDays(3))
+            if (age < RefreshInterval)
             {
                 return;
             }
@@ -38,13 +40,26 @@ public sealed class SitemapService : ISitemapService
             if (!force && File.Exists(filePath))
             {
                 var age = DateTime.UtcNow - File.GetLastWriteTimeUtc(filePath);
-                if (age < TimeSpan.FromDays(3))
+                if (age < RefreshInterval)
                 {
                     return;
                 }
             }
 
-            var xml = await BuildSitemapXmlAsync(cancellationToken);
+            var regionalFiles = new List<RegionalSitemapFile>();
+            var connectionString = _configuration.GetConnectionString("DefaultConnection");
+            if (!string.IsNullOrWhiteSpace(connectionString))
+            {
+                await using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync(cancellationToken);
+                regionalFiles = await BuildRegionalSitemapsAsync(connection, cancellationToken);
+            }
+
+            await SaveRegionalSitemapsAsync(regionalFiles, cancellationToken);
+
+            var xml = await BuildSitemapXmlAsync(
+                regionalFiles.Select(static file => file.PublicUrl).ToList(),
+                cancellationToken);
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             await File.WriteAllTextAsync(filePath, xml, new UTF8Encoding(false), cancellationToken);
         }
@@ -63,10 +78,93 @@ public sealed class SitemapService : ISitemapService
             return await File.ReadAllTextAsync(filePath, cancellationToken);
         }
 
-        return await BuildSitemapXmlAsync(cancellationToken);
+        return await BuildSitemapXmlAsync([], cancellationToken);
     }
 
-    private async Task<string> BuildSitemapXmlAsync(CancellationToken cancellationToken)
+    public async Task<string?> GetRegionalSitemapXmlAsync(string fileName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(fileName) || !IsSafeXmlSlug(fileName))
+        {
+            return null;
+        }
+
+        await EnsureFreshSitemapAsync(false, cancellationToken);
+        var path = Path.Combine(GetRegionalSitemapDirectoryPath(), fileName + ".xml");
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        return await File.ReadAllTextAsync(path, cancellationToken);
+    }
+
+    public async Task<SitemapDiagnosticsViewModel> GetDiagnosticsAsync(CancellationToken cancellationToken = default)
+    {
+        await EnsureFreshSitemapAsync(false, cancellationToken);
+
+        var model = new SitemapDiagnosticsViewModel
+        {
+            MainSitemapPhysicalPath = GetSitemapFilePath()
+        };
+
+        if (File.Exists(model.MainSitemapPhysicalPath))
+        {
+            model.LastRefreshUtc = File.GetLastWriteTimeUtc(model.MainSitemapPhysicalPath);
+            model.MainSitemapUrlCount = CountUrlEntries(model.MainSitemapPhysicalPath);
+            model.Files.Add(new SitemapFileSummaryViewModel
+            {
+                FileName = Path.GetFileName(model.MainSitemapPhysicalPath),
+                PhysicalPath = model.MainSitemapPhysicalPath,
+                PublicUrl = BuildAbsoluteUrl("/sitemap.xml"),
+                ScopeText = "Ana sitemap",
+                LastModifiedUtc = model.LastRefreshUtc,
+                UrlCount = model.MainSitemapUrlCount
+            });
+        }
+
+        var regionalDirectory = GetRegionalSitemapDirectoryPath();
+        if (Directory.Exists(regionalDirectory))
+        {
+            var regionalFiles = Directory
+                .EnumerateFiles(regionalDirectory, "*.xml", SearchOption.TopDirectoryOnly)
+                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            foreach (var regionalPath in regionalFiles)
+            {
+                var fileName = Path.GetFileName(regionalPath);
+                var slug = Path.GetFileNameWithoutExtension(regionalPath);
+                if (!IsSafeXmlSlug(slug))
+                {
+                    continue;
+                }
+
+                var urlCount = CountUrlEntries(regionalPath);
+                model.Files.Add(new SitemapFileSummaryViewModel
+                {
+                    FileName = fileName,
+                    PhysicalPath = regionalPath,
+                    PublicUrl = BuildAbsoluteUrl("/xml/" + slug + ".xml"),
+                    ScopeText = fileName.Contains("-oteller", StringComparison.OrdinalIgnoreCase)
+                        ? "İl/ilçe otelleri"
+                        : "İl otelleri",
+                    LastModifiedUtc = File.GetLastWriteTimeUtc(regionalPath),
+                    UrlCount = urlCount
+                });
+            }
+        }
+
+        model.RegionalFileCount = model.Files.Count(static x => !x.FileName.Equals("sitemap.xml", StringComparison.OrdinalIgnoreCase));
+        model.RegionalUrlCount = model.Files
+            .Where(static x => !x.FileName.Equals("sitemap.xml", StringComparison.OrdinalIgnoreCase))
+            .Sum(static x => x.UrlCount);
+
+        return model;
+    }
+
+    private async Task<string> BuildSitemapXmlAsync(
+        IReadOnlyCollection<string> regionalSitemapUrls,
+        CancellationToken cancellationToken)
     {
         var entries = new List<SitemapUrlEntry>();
         entries.AddRange(BuildStaticEntries());
@@ -81,13 +179,27 @@ public sealed class SitemapService : ISitemapService
             entries.AddRange(await GetCampaignEntriesAsync(connection, cancellationToken));
         }
 
+        var now = DateTime.UtcNow;
+        foreach (var regionalUrl in regionalSitemapUrls.Where(static x => !string.IsNullOrWhiteSpace(x)))
+        {
+            entries.Add(new SitemapUrlEntry
+            {
+                Location = regionalUrl,
+                LastModifiedUtc = now,
+                ChangeFrequency = "weekly",
+                Priority = 0.5m
+            });
+        }
+
         var urlNs = XNamespace.Get("http://www.sitemaps.org/schemas/sitemap/0.9");
         var imageNs = XNamespace.Get("http://www.google.com/schemas/sitemap-image/1.1");
+        var xhtmlNs = XNamespace.Get("http://www.w3.org/1999/xhtml");
 
         var document = new XDocument(
             new XDeclaration("1.0", "utf-8", "yes"),
             new XElement(urlNs + "urlset",
                 new XAttribute(XNamespace.Xmlns + "image", imageNs),
+                new XAttribute(XNamespace.Xmlns + "xhtml", xhtmlNs),
                 entries
                     .Where(x => !string.IsNullOrWhiteSpace(x.Location))
                     .GroupBy(x => x.Location, StringComparer.OrdinalIgnoreCase)
@@ -105,6 +217,19 @@ public sealed class SitemapService : ISitemapService
                         {
                             urlElement.Add(new XElement(urlNs + "lastmod", entry.LastModifiedUtc.Value.ToString("yyyy-MM-ddTHH:mm:ssK", CultureInfo.InvariantCulture)));
                         }
+
+                        foreach (var locale in SitemapLocales)
+                        {
+                            urlElement.Add(new XElement(xhtmlNs + "link",
+                                new XAttribute("rel", "alternate"),
+                                new XAttribute("hreflang", locale),
+                                new XAttribute("href", BuildLocalizedUrl(entry.Location, locale))));
+                        }
+
+                        urlElement.Add(new XElement(xhtmlNs + "link",
+                            new XAttribute("rel", "alternate"),
+                            new XAttribute("hreflang", "x-default"),
+                            new XAttribute("href", BuildLocalizedUrl(entry.Location, SitemapLocales[0]))));
 
                         if (!string.IsNullOrWhiteSpace(entry.ImageUrl))
                         {
@@ -125,11 +250,153 @@ public sealed class SitemapService : ISitemapService
         return document.ToString(SaveOptions.DisableFormatting);
     }
 
+    private async Task<List<RegionalSitemapFile>> BuildRegionalSitemapsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT
+                o.otel_adi,
+                o.otel_kodu,
+                COALESCE(o.sehir, '') AS sehir,
+                COALESCE(o.ilce, '') AS ilce,
+                COALESCE(o.guncellenme_tarihi, o.onay_tarihi, o.olusturulma_tarihi, SYSUTCDATETIME()) AS last_modified
+            FROM oteller o
+            WHERE o.yayin_durumu = N'Yayında'
+              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+              AND COALESCE(NULLIF(o.otel_adi, ''), NULLIF(o.otel_kodu, '')) <> '';
+            """;
+
+        var hotels = new List<RegionalHotelRow>();
+        await using (var command = new SqlCommand(sql, connection))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var hotelName = NormalizeTurkishText(reader.IsDBNull(0) ? string.Empty : reader.GetString(0));
+                var hotelCode = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                var city = NormalizeTurkishText(reader.IsDBNull(2) ? string.Empty : reader.GetString(2));
+                var district = NormalizeTurkishText(reader.IsDBNull(3) ? string.Empty : reader.GetString(3));
+                var slug = BuildHotelSlug(hotelName, hotelCode);
+                if (string.IsNullOrWhiteSpace(slug))
+                {
+                    continue;
+                }
+
+                hotels.Add(new RegionalHotelRow(
+                    city,
+                    district,
+                    BuildAbsoluteUrl("/oteller/" + slug),
+                    DateTime.SpecifyKind(reader.GetDateTime(4), DateTimeKind.Utc)));
+            }
+        }
+
+        var result = new List<RegionalSitemapFile>();
+        var byCity = hotels
+            .Where(static x => !string.IsNullOrWhiteSpace(x.City))
+            .GroupBy(x => x.City, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var cityGroup in byCity)
+        {
+            var citySlug = BuildAreaSlug(cityGroup.Key);
+            if (string.IsNullOrWhiteSpace(citySlug))
+            {
+                continue;
+            }
+
+            var cityFileName = citySlug + "otelleri.xml";
+            result.Add(new RegionalSitemapFile(
+                cityFileName,
+                BuildRegionalUrlSetXml(cityGroup.Select(static x => (x.HotelUrl, x.LastModifiedUtc)).ToList()),
+                BuildAbsoluteUrl("/xml/" + Path.GetFileNameWithoutExtension(cityFileName) + ".xml")));
+
+            var byDistrict = cityGroup
+                .Where(static x => !string.IsNullOrWhiteSpace(x.District))
+                .GroupBy(x => x.District, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var districtGroup in byDistrict)
+            {
+                var districtSlug = BuildAreaSlug(districtGroup.Key);
+                if (string.IsNullOrWhiteSpace(districtSlug))
+                {
+                    continue;
+                }
+
+                var districtFileName = citySlug + "-" + districtSlug + "-oteller.xml";
+                result.Add(new RegionalSitemapFile(
+                    districtFileName,
+                    BuildRegionalUrlSetXml(districtGroup.Select(static x => (x.HotelUrl, x.LastModifiedUtc)).ToList()),
+                    BuildAbsoluteUrl("/xml/" + Path.GetFileNameWithoutExtension(districtFileName) + ".xml")));
+            }
+        }
+
+        return result
+            .GroupBy(x => x.FileName, StringComparer.OrdinalIgnoreCase)
+            .Select(static x => x.First())
+            .OrderBy(x => x.FileName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private async Task SaveRegionalSitemapsAsync(IReadOnlyCollection<RegionalSitemapFile> files, CancellationToken cancellationToken)
+    {
+        var directoryPath = GetRegionalSitemapDirectoryPath();
+        Directory.CreateDirectory(directoryPath);
+
+        foreach (var oldPath in Directory.EnumerateFiles(directoryPath, "*.xml", SearchOption.TopDirectoryOnly))
+        {
+            File.Delete(oldPath);
+        }
+
+        foreach (var file in files)
+        {
+            var targetPath = Path.Combine(directoryPath, file.FileName);
+            await File.WriteAllTextAsync(targetPath, file.XmlContent, new UTF8Encoding(false), cancellationToken);
+        }
+    }
+
+    private static string BuildRegionalUrlSetXml(IReadOnlyCollection<(string Url, DateTime LastModifiedUtc)> items)
+    {
+        var urlNs = XNamespace.Get("http://www.sitemaps.org/schemas/sitemap/0.9");
+        var document = new XDocument(
+            new XDeclaration("1.0", "utf-8", "yes"),
+            new XElement(urlNs + "urlset",
+                items
+                    .Where(static x => !string.IsNullOrWhiteSpace(x.Url))
+                    .GroupBy(x => x.Url, StringComparer.OrdinalIgnoreCase)
+                    .Select(static x => x.OrderByDescending(y => y.LastModifiedUtc).First())
+                    .Select(item => new XElement(urlNs + "url",
+                        new XElement(urlNs + "loc", item.Url),
+                        new XElement(urlNs + "lastmod", item.LastModifiedUtc.ToString("yyyy-MM-ddTHH:mm:ssK", CultureInfo.InvariantCulture)),
+                        new XElement(urlNs + "changefreq", "daily"),
+                        new XElement(urlNs + "priority", "0.7")))));
+
+        return document.ToString(SaveOptions.DisableFormatting);
+    }
+
+    private static string BuildLocalizedUrl(string absoluteUrl, string locale)
+    {
+        if (!Uri.TryCreate(absoluteUrl, UriKind.Absolute, out var uri))
+        {
+            return absoluteUrl;
+        }
+
+        var builder = new UriBuilder(uri);
+        var qs = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(builder.Query ?? string.Empty);
+        var items = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in qs)
+        {
+            items[kv.Key] = kv.Value.Count > 0 ? kv.Value[0] : null;
+        }
+        items["lang"] = locale;
+        builder.Query = string.Join("&", items
+            .Where(x => !string.IsNullOrWhiteSpace(x.Key))
+            .Select(x => $"{Uri.EscapeDataString(x.Key)}={Uri.EscapeDataString(x.Value ?? string.Empty)}"));
+        return builder.Uri.ToString();
+    }
+
     private IEnumerable<SitemapUrlEntry> BuildStaticEntries()
     {
         var now = DateTime.UtcNow;
-        return new[]
-        {
+        return
+        [
             CreateStatic("/", "daily", 1.0m, now),
             CreateStatic("/oteller", "daily", 0.9m, now),
             CreateStatic("/kampanyalar", "daily", 0.8m, now),
@@ -138,7 +405,7 @@ public sealed class SitemapService : ISitemapService
             CreateStatic("/yardim-merkezi", "weekly", 0.6m, now),
             CreateStatic("/sss", "weekly", 0.6m, now),
             CreateStatic("/Home/Privacy", "monthly", 0.3m, now)
-        };
+        ];
     }
 
     private SitemapUrlEntry CreateStatic(string relativePath, string changeFrequency, decimal priority, DateTime lastModifiedUtc)
@@ -186,7 +453,7 @@ public sealed class SitemapService : ISitemapService
         while (await reader.ReadAsync(cancellationToken))
         {
             var hotelCode = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
-            var name = reader.GetString(1);
+            var name = NormalizeTurkishText(reader.IsDBNull(1) ? string.Empty : reader.GetString(1));
             var lastModifiedUtc = reader.GetDateTime(2);
             var imageUrl = reader.IsDBNull(3) ? null : NormalizeImageUrl(reader.GetString(3));
             var slug = BuildHotelSlug(name, hotelCode);
@@ -198,7 +465,7 @@ public sealed class SitemapService : ISitemapService
 
             entries.Add(new SitemapUrlEntry
             {
-                Location = BuildAbsoluteUrl($"/oteller/{slug}"),
+                Location = BuildAbsoluteUrl("/oteller/" + slug),
                 LastModifiedUtc = DateTime.SpecifyKind(lastModifiedUtc, DateTimeKind.Utc),
                 ChangeFrequency = "daily",
                 Priority = 0.8m,
@@ -232,7 +499,7 @@ public sealed class SitemapService : ISitemapService
         while (await reader.ReadAsync(cancellationToken))
         {
             var relativeUrl = reader.GetString(0);
-            var name = reader.GetString(1);
+            var name = NormalizeTurkishText(reader.IsDBNull(1) ? string.Empty : reader.GetString(1));
             var lastModifiedUtc = reader.GetDateTime(2);
             var imageUrl = reader.IsDBNull(3) ? null : NormalizeImageUrl(reader.GetString(3));
 
@@ -259,6 +526,11 @@ public sealed class SitemapService : ISitemapService
         }
 
         return Path.Combine(webRootPath, "sitemap.xml");
+    }
+
+    private string GetRegionalSitemapDirectoryPath()
+    {
+        return Path.Combine(_environment.ContentRootPath, "Views", "xml");
     }
 
     private string BuildAbsoluteUrl(string relativeOrAbsolute)
@@ -290,6 +562,100 @@ public sealed class SitemapService : ISitemapService
         }
 
         return BuildAbsoluteUrl(imageUrl);
+    }
+
+    private static bool IsSafeXmlSlug(string fileName)
+    {
+        return fileName.All(ch => char.IsLower(ch) || char.IsDigit(ch) || ch == '-');
+    }
+
+    private static int CountUrlEntries(string path)
+    {
+        try
+        {
+            var document = XDocument.Load(path);
+            return document
+                .Descendants()
+                .Count(x => x.Name.LocalName.Equals("url", StringComparison.OrdinalIgnoreCase));
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static string NormalizeTurkishText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var text = value.Trim();
+        if (!LooksLikeMojibake(text))
+        {
+            return text;
+        }
+
+        try
+        {
+            var latinBytes = Encoding.GetEncoding(1252).GetBytes(text);
+            var utf8Text = Encoding.UTF8.GetString(latinBytes);
+            return string.IsNullOrWhiteSpace(utf8Text) ? text : utf8Text;
+        }
+        catch
+        {
+            return text;
+        }
+    }
+
+    private static bool LooksLikeMojibake(string value)
+        => value.Contains('Ã')
+           || value.Contains('Å')
+           || value.Contains('Ä')
+           || value.Contains('Ð')
+           || value.Contains('Þ');
+
+    private static string BuildAreaSlug(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var source = NormalizeTurkishText(value).Trim();
+        source = source
+            .Replace("İ", "I", StringComparison.Ordinal)
+            .Replace("I", "i", StringComparison.Ordinal)
+            .Replace("ı", "i", StringComparison.Ordinal)
+            .Replace("Ğ", "G", StringComparison.Ordinal)
+            .Replace("ğ", "g", StringComparison.Ordinal)
+            .Replace("Ü", "U", StringComparison.Ordinal)
+            .Replace("ü", "u", StringComparison.Ordinal)
+            .Replace("Ş", "S", StringComparison.Ordinal)
+            .Replace("ş", "s", StringComparison.Ordinal)
+            .Replace("Ö", "O", StringComparison.Ordinal)
+            .Replace("ö", "o", StringComparison.Ordinal)
+            .Replace("Ç", "C", StringComparison.Ordinal)
+            .Replace("ç", "c", StringComparison.Ordinal);
+
+        var chars = new List<char>(source.Length);
+        foreach (var ch in source.ToLowerInvariant())
+        {
+            chars.Add(ch switch
+            {
+                _ when char.IsLetterOrDigit(ch) => ch,
+                _ => '-'
+            });
+        }
+
+        var slug = new string(chars.ToArray()).Trim('-');
+        while (slug.Contains("--", StringComparison.Ordinal))
+        {
+            slug = slug.Replace("--", "-", StringComparison.Ordinal);
+        }
+
+        return slug;
     }
 
     private static string BuildHotelSlug(string hotelName, string hotelCode)
@@ -342,4 +708,15 @@ public sealed class SitemapService : ISitemapService
             ? (hotelCode ?? string.Empty).Trim().ToLowerInvariant()
             : slug;
     }
+
+    private sealed record RegionalHotelRow(
+        string City,
+        string District,
+        string HotelUrl,
+        DateTime LastModifiedUtc);
+
+    private sealed record RegionalSitemapFile(
+        string FileName,
+        string XmlContent,
+        string PublicUrl);
 }

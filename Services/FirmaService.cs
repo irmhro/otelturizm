@@ -7,6 +7,7 @@ using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Firma;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.Firma;
+using System.Text.Json;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -145,13 +146,152 @@ public class FirmaService : IFirmaService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Firma Fiyatları", "Otellerin firmanız için tanımladığı özel kurumsal fiyatları canlı takip edin.", "deals", cancellationToken);
+        var deals = await LoadDealsAsync(connection, context.FirmaId, 100, city, minRoomCount, search, cancellationToken);
+        var hotelOptions = deals
+            .GroupBy(x => x.HotelId)
+            .Select(x => new FirmaDealHotelOptionViewModel
+            {
+                HotelId = x.Key,
+                Label = $"{x.First().HotelName} · {x.First().CityText}"
+            })
+            .OrderBy(x => x.Label, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
         return new FirmaDealsPageViewModel
         {
             Shell = context.Shell,
-            Deals = await LoadDealsAsync(connection, context.FirmaId, 100, city, minRoomCount, search, cancellationToken),
+            Deals = deals,
             Filter = new FirmaDealsFilterModel { City = city, MinRoomCount = minRoomCount, Search = search },
-            AvailableCities = await LoadDealCitiesAsync(connection, context.FirmaId, cancellationToken)
+            AvailableCities = await LoadDealCitiesAsync(connection, context.FirmaId, cancellationToken),
+            HotelOptions = hotelOptions
         };
+    }
+
+    public async Task<FirmaDealsComparePageViewModel> GetDealsCompareAsync(long userId, IReadOnlyList<long> hotelIds, int roomCount, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var context = await BuildContextAsync(connection, userId, "Fiyat Karşılaştır", "Seçtiğiniz otellerdeki kurumsal fiyatları yan yana karşılaştırın.", "deals", cancellationToken);
+
+        var normalized = (hotelIds ?? Array.Empty<long>())
+            .Where(x => x > 0)
+            .Distinct()
+            .Take(3)
+            .ToList();
+
+        var model = new FirmaDealsComparePageViewModel
+        {
+            Shell = context.Shell,
+            RoomCount = Math.Clamp(roomCount, 1, 50),
+            Hint = "2-3 otel seçerek oda tiplerine göre kurumsal fiyatları kıyaslayabilirsiniz."
+        };
+
+        if (normalized.Count < 2)
+        {
+            model.Hint = "Karşılaştırma için en az 2 otel seçmelisiniz.";
+            return model;
+        }
+
+        // Hotels header info
+        const string hotelsSql = @"
+            SELECT id, otel_adi, CONCAT(COALESCE(ilce, N''), CASE WHEN COALESCE(ilce, N'') <> '' THEN N', ' ELSE N'' END, COALESCE(sehir, N'')) AS city_text
+            FROM dbo.oteller
+            WHERE id IN (SELECT value FROM OPENJSON(@ids));";
+        await using (var cmd = new SqlCommand(hotelsSql, connection))
+        {
+            cmd.Parameters.AddWithValue("@ids", JsonSerializer.Serialize(normalized));
+            await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await r.ReadAsync(cancellationToken))
+            {
+                model.Hotels.Add(new FirmaDealsCompareHotelViewModel
+                {
+                    HotelId = r.GetInt64(0),
+                    HotelName = r.GetString(1),
+                    CityText = r.IsDBNull(2) ? string.Empty : r.GetString(2)
+                });
+            }
+        }
+
+        // Compare rows: corp min nightly vs standard min nightly per hotel+roomType
+        const string compareSql = @"
+            WITH sel AS (
+                SELECT value AS otel_id
+                FROM OPENJSON(@ids)
+            ),
+            corp AS (
+                SELECT f.otel_id, f.oda_tip_id,
+                       MIN(CASE WHEN f.firma_gecelik_fiyat > 0 THEN f.firma_gecelik_fiyat ELSE NULL END) AS corp_price,
+                       MIN(f.tarih) AS min_date,
+                       MAX(f.tarih) AS max_date
+                FROM dbo.firma_oda_fiyat_musaitlik f
+                INNER JOIN sel s ON s.otel_id = f.otel_id
+                WHERE f.firma_id = @firmaId
+                  AND f.aktif_mi = 1
+                  AND f.kapali_satis = 0
+                GROUP BY f.otel_id, f.oda_tip_id
+            ),
+            std AS (
+                SELECT ofm.otel_id, ofm.oda_tip_id,
+                       MIN(
+                            CASE
+                                WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                                ELSE ofm.gecelik_fiyat
+                            END
+                       ) AS std_price
+                FROM dbo.oda_fiyat_musaitlik ofm
+                INNER JOIN sel s ON s.otel_id = ofm.otel_id
+                GROUP BY ofm.otel_id, ofm.oda_tip_id
+            )
+            SELECT c.otel_id, c.oda_tip_id, COALESCE(od.oda_adi, N'Oda') AS room_name,
+                   COALESCE(c.corp_price, 0) AS corp_price,
+                   COALESCE(s.std_price, 0) AS std_price,
+                   c.min_date, c.max_date
+            FROM corp c
+            LEFT JOIN std s ON s.otel_id = c.otel_id AND s.oda_tip_id = c.oda_tip_id
+            LEFT JOIN dbo.oda_tipleri od ON od.id = c.oda_tip_id
+            ORDER BY c.otel_id ASC, corp_price ASC;";
+
+        var culture = CultureInfo.GetCultureInfo("tr-TR");
+        await using (var cmd = new SqlCommand(compareSql, connection))
+        {
+            cmd.Parameters.AddWithValue("@ids", JsonSerializer.Serialize(normalized));
+            cmd.Parameters.AddWithValue("@firmaId", context.FirmaId);
+            await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await r.ReadAsync(cancellationToken))
+            {
+                var corpPrice = SafeDecimal(r, 3);
+                var stdPrice = SafeDecimal(r, 4);
+                string discountText = "-";
+                if (stdPrice > 0m && corpPrice > 0m && corpPrice < stdPrice)
+                {
+                    var pct = Math.Clamp((int)Math.Round(((stdPrice - corpPrice) / stdPrice) * 100m, MidpointRounding.AwayFromZero), 1, 95);
+                    discountText = $"%{pct}";
+                }
+
+                string validityText;
+                if (!r.IsDBNull(5) && !r.IsDBNull(6))
+                {
+                    validityText = $"{r.GetDateTime(5):dd.MM.yyyy} - {r.GetDateTime(6):dd.MM.yyyy}";
+                }
+                else
+                {
+                    validityText = "Tanımlı";
+                }
+
+                model.Rows.Add(new FirmaDealsCompareRowViewModel
+                {
+                    HotelId = r.GetInt64(0),
+                    RoomTypeId = r.GetInt64(1),
+                    RoomName = r.GetString(2),
+                    CorporateNightlyText = corpPrice > 0m ? corpPrice.ToString("N2", culture) : "-",
+                    StandardNightlyText = stdPrice > 0m ? stdPrice.ToString("N2", culture) : "-",
+                    DiscountText = discountText,
+                    ValidityText = validityText
+                });
+            }
+        }
+
+        return model;
     }
 
     public async Task<FirmaReservationsPageViewModel> GetReservationsAsync(long userId, CancellationToken cancellationToken = default)
@@ -1043,10 +1183,10 @@ public class FirmaService : IFirmaService
     {
         const string sql = @"
             SELECT DISTINCT ot.sehir
-            FROM firma_ozel_fiyatlar foz
-            INNER JOIN oteller ot ON ot.id = foz.otel_id
-            WHERE foz.firma_id = @firmaId
-              AND foz.aktif_mi = 1
+            FROM dbo.firma_oda_fiyat_musaitlik f
+            INNER JOIN dbo.oteller ot ON ot.id = f.otel_id
+            WHERE f.firma_id = @firmaId
+              AND f.aktif_mi = 1
               AND ot.sehir IS NOT NULL
               AND ot.sehir <> ''
             ORDER BY ot.sehir;";
@@ -1065,19 +1205,56 @@ public class FirmaService : IFirmaService
 
     private async Task<List<FirmaPanelDealRowViewModel>> LoadDealsAsync(SqlConnection connection, long firmaId, int take, string? city = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default)
     {
+        // Firma paneli "Kurumsal Otel Fiyatları": partnerin firma_oda_fiyat_musaitlik tablosuna girdiği
+        // fiyatları özetleyerek gösterir. Burada amaç; firmaya özel fiyat varsa onu, yoksa standart fiyatı
+        // kıyaslayıp rezervasyon akışına yönlendirmektir.
         const string sql = @"
-            SELECT foz.id, ot.otel_adi, od.oda_adi, CONCAT(ot.ilce, ', ', ot.sehir) AS city_text,
-                   od.standart_gecelik_fiyat, foz.ozel_fiyat, foz.indirim_orani, foz.minimum_oda_sayisi, ot.id,
-                   CONCAT(FORMAT(foz.gecerlilik_baslangic, 'dd.MM.yyyy'), ' - ', FORMAT(foz.gecerlilik_bitis, 'dd.MM.yyyy')) AS validity_text
-            FROM firma_ozel_fiyatlar foz
-            INNER JOIN oteller ot ON ot.id = foz.otel_id
-            LEFT JOIN oda_tipleri od ON od.id = foz.oda_tip_id
-            WHERE foz.firma_id = @firmaId AND foz.aktif_mi = 1
-              AND (@city IS NULL OR ot.sehir = @city)
-              AND (@minRoomCount IS NULL OR foz.minimum_oda_sayisi >= @minRoomCount)
-              AND (@search IS NULL OR ot.otel_adi LIKE '%' + @search + '%' OR ot.sehir LIKE '%' + @search + '%' OR ot.ilce LIKE '%' + @search + '%')
-            ORDER BY foz.indirim_orani DESC, foz.ozel_fiyat ASC
-            OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY;";
+            SELECT TOP (@take)
+                   ROW_NUMBER() OVER (ORDER BY ot.otel_adi ASC, od.oda_adi ASC) AS deal_id,
+                   ot.id AS hotel_id,
+                   ot.otel_adi,
+                   COALESCE(od.oda_adi, N'') AS oda_adi,
+                   CONCAT(COALESCE(ot.ilce, N''), CASE WHEN COALESCE(ot.ilce, N'') <> '' THEN N', ' ELSE N'' END, COALESCE(ot.sehir, N'')) AS city_text,
+                   COALESCE(std.base_price, 0) AS standard_price,
+                   COALESCE(corp.corp_price, 0) AS corporate_price,
+                   COALESCE(corp.min_date, CAST(NULL AS date)) AS min_date,
+                   COALESCE(corp.max_date, CAST(NULL AS date)) AS max_date
+            FROM (
+                SELECT DISTINCT f.otel_id, f.oda_tip_id
+                FROM dbo.firma_oda_fiyat_musaitlik f
+                WHERE f.firma_id = @firmaId
+                  AND f.aktif_mi = 1
+                  AND f.kapali_satis = 0
+            ) x
+            INNER JOIN dbo.oteller ot ON ot.id = x.otel_id
+            LEFT JOIN dbo.oda_tipleri od ON od.id = x.oda_tip_id
+            OUTER APPLY (
+                SELECT
+                    MIN(CASE WHEN f.firma_gecelik_fiyat > 0 THEN f.firma_gecelik_fiyat ELSE NULL END) AS corp_price,
+                    MIN(f.tarih) AS min_date,
+                    MAX(f.tarih) AS max_date
+                FROM dbo.firma_oda_fiyat_musaitlik f
+                WHERE f.firma_id = @firmaId
+                  AND f.aktif_mi = 1
+                  AND f.kapali_satis = 0
+                  AND f.otel_id = x.otel_id
+                  AND f.oda_tip_id = x.oda_tip_id
+            ) corp
+            OUTER APPLY (
+                SELECT
+                    MIN(
+                        CASE
+                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                            ELSE ofm.gecelik_fiyat
+                        END
+                    ) AS base_price
+                FROM dbo.oda_fiyat_musaitlik ofm
+                WHERE ofm.otel_id = x.otel_id
+                  AND ofm.oda_tip_id = x.oda_tip_id
+            ) std
+            WHERE (@city IS NULL OR ot.sehir = @city)
+              AND (@search IS NULL OR ot.otel_adi LIKE '%' + @search + '%' OR ot.sehir LIKE '%' + @search + '%' OR ot.ilce LIKE '%' + @search + '%' OR ot.mahalle LIKE '%' + @search + '%')
+            ORDER BY ot.one_cikan_otel DESC, ot.otel_adi ASC, od.oda_adi ASC;";
 
         var items = new List<FirmaPanelDealRowViewModel>();
         await using var command = new SqlCommand(sql, connection);
@@ -1094,15 +1271,19 @@ public class FirmaService : IFirmaService
             items.Add(new FirmaPanelDealRowViewModel
             {
                 DealId = reader.GetInt64(0),
-                HotelId = reader.GetInt64(8),
-                HotelName = reader.GetString(1),
-                RoomName = reader.IsDBNull(2) ? "Tüm odalar" : reader.GetString(2),
-                CityText = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                HotelId = reader.GetInt64(1),
+                HotelName = reader.GetString(2),
+                RoomName = reader.IsDBNull(3) || string.IsNullOrWhiteSpace(reader.GetString(3)) ? "Oda" : reader.GetString(3),
+                CityText = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
                 StandardPriceText = FormatMoney(standardPrice),
                 CorporatePriceText = FormatMoney(corporatePrice),
-                DiscountText = $"%{SafeDecimal(reader, 6):0}",
-                MinimumRoomText = $"Min. {SafeInt(reader, 7)} oda",
-                ValidityText = reader.IsDBNull(9) ? "Süresiz" : reader.GetString(9),
+                DiscountText = standardPrice > 0m && corporatePrice > 0m && corporatePrice < standardPrice
+                    ? $"%{Math.Clamp((int)Math.Round(((standardPrice - corporatePrice) / standardPrice) * 100m, MidpointRounding.AwayFromZero), 1, 95)}"
+                    : "-",
+                MinimumRoomText = "Kurumsal",
+                ValidityText = reader.IsDBNull(7) || reader.IsDBNull(8)
+                    ? "Tarih aralığı tanımlı"
+                    : $"{reader.GetDateTime(7):dd.MM.yyyy} - {reader.GetDateTime(8):dd.MM.yyyy}",
                 SavingsText = FormatMoney(Math.Max(0m, standardPrice - corporatePrice))
             });
         }

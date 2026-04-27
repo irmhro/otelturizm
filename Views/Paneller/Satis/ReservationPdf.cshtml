@@ -24,7 +24,10 @@
     <div class="sales-pdf-status ot-badge ot-badge--warning" data-pdf-status>Hazırlanıyor...</div>
 </section>
 
-<script>
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
     window.__salesReservationPdfId = @reservationId;
 </script>
 <script src="~/vendor/AdminLTE-3.2.0/plugins/pdfmake/pdfmake.min.js"></script>

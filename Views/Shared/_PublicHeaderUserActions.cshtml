@@ -45,6 +45,8 @@
         "sales" => "Satış Aktif",
         _ => "Üyelik Aktif"
     };
+
+    var nonce = Context.Items["CspNonce"] as string;
 }
 
 @if (isAuthenticated)
@@ -118,14 +120,14 @@
 
                 @if (string.Equals(accountType, "admin", StringComparison.OrdinalIgnoreCase))
                 {
-                    <a href="/admin/hotels" class="public-account-link">
+                    <a href="/admin/oteller" class="public-account-link">
                         <i class="fas fa-hotel"></i>
                         <span>Otel Yönetimi</span>
                     </a>
                 }
                 else if (string.Equals(accountType, "sales", StringComparison.OrdinalIgnoreCase))
                 {
-                    <a href="/panel/satis/availability" class="public-account-link">
+                    <a href="/panel/satis/musaitlik-takvimi" class="public-account-link">
                         <i class="fas fa-calendar-check"></i>
                         <span>Müsaitlik</span>
                     </a>
@@ -173,7 +175,7 @@ else
     }
 }
 
-<script>
+<script nonce="@nonce">
     (function () {
         const menus = document.querySelectorAll('[data-public-account-menu]');
         if (!menus.length) {

@@ -8,13 +8,37 @@
     <div class="partner-card-head">
         <div>
             <h2>Firmalara Özel Günlük Fiyat</h2>
-            <p>Seçili firma için oda bazlı günlük fiyat tanımlayın. Firma fiyatı yoksa standart takvim fiyatı baz alınır.</p>
+            <p>
+                Bu ekran; seçili <strong>firma + oda tipi + tarih</strong> için <strong>kurumsal indirimli gecelik fiyat</strong> tanımlamak içindir.
+                Girilen fiyatlar <code>dbo.firma_oda_fiyat_musaitlik</code> tablosuna kaydedilir ve firma panelinde sadece ilgili firmaya gösterilir.
+            </p>
+            <div class="partner-alert ot-alert ot-alert--info" style="margin-top:12px;">
+                <i class="fas fa-circle-info"></i>
+                <span>
+                    Amaç: Büyük firmalara <strong>%1–%10</strong> bandında (veya uzun konaklamaya özel) daha avantajlı fiyat vererek
+                    <strong>toplu/tekrarlı rezervasyon</strong> almaktır. Gün bazında <strong>Kapalı satış</strong> işaretleyerek o firmaya satış kapatabilirsiniz.
+                </span>
+            </div>
         </div>
         <div class="partner-inline-actions">
             <a class="partner-btn-light ot-btn ot-btn--ghost" href="@Model.PreviousMonthQuery"><i class="fas fa-chevron-left"></i> Önceki Ay</a>
             <a class="partner-btn-light ot-btn ot-btn--ghost" href="@Model.NextMonthQuery">Sonraki Ay <i class="fas fa-chevron-right"></i></a>
         </div>
     </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Warning))
+    {
+        <div class="partner-alert partner-alert-warning ot-alert ot-alert--warning" style="margin-top:12px;">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>
+                @Model.Warning
+                <br />
+                <small>
+                    Not: Migration sonrası bu sayfayı yenilediğinizde firma takvimi ve “Toplu Güncelle” kaydı aktif olacaktır.
+                </small>
+            </span>
+        </div>
+    }
 
     <div class="partner-grid-3">
         <div>

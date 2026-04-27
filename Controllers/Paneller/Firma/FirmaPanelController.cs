@@ -74,6 +74,17 @@ public class FirmaPanelController : Controller
         return View("~/Views/Paneller/Firma/Deals.cshtml", model);
     }
 
+    [HttpGet("firma-fiyatlari/karsilastir")]
+    public async Task<IActionResult> CompareDeals([FromQuery] long[] hotelIds, [FromQuery] int roomCount = 5, CancellationToken cancellationToken = default)
+    {
+        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        var model = await _firmaService.GetDealsCompareAsync(GetUserId(), hotelIds, roomCount, cancellationToken);
+        ApplyFeedback(model.Shell);
+        ViewData["Title"] = "Fiyat Karşılaştır";
+        ViewData["PageCssPath"] = "paneller/firma/deals";
+        return View("~/Views/Paneller/Firma/DealsCompare.cshtml", model);
+    }
+
     [HttpGet("rezervasyonlar")]
     public async Task<IActionResult> Reservations(CancellationToken cancellationToken)
     {
@@ -86,10 +97,14 @@ public class FirmaPanelController : Controller
     }
 
     [HttpGet("yeni-rezervasyon")]
-    public async Task<IActionResult> CreateReservation([FromQuery] long? hotelId = null, [FromQuery] long? roomTypeId = null, [FromQuery] string? search = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateReservation([FromQuery] long? hotelId = null, [FromQuery] long? roomTypeId = null, [FromQuery] int? roomCount = null, [FromQuery] string? search = null, CancellationToken cancellationToken = default)
     {
         if (!IsFirmaUser()) return Redirect("/kullanici-giris");
         var model = await _firmaService.GetCreateReservationAsync(GetUserId(), hotelId, roomTypeId, search, cancellationToken);
+        if (roomCount.HasValue && roomCount.Value > 0)
+        {
+            model.Form.RoomCount = Math.Clamp(roomCount.Value, 1, 50);
+        }
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Yeni Rezervasyon";
         ViewData["PageCssPath"] = "paneller/firma/create-reservation";

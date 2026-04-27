@@ -1,0 +1,60 @@
+.gelisim-shell {
+    padding: 20px 0 48px;
+}
+
+.gelisim-container {
+    padding-left: 14px;
+    padding-right: 14px;
+}
+
+.gelisim-lock-card,
+.gelisim-header-card,
+.gelisim-content-card {
+    border-radius: 22px;
+}
+
+.gelisim-lock-card {
+    margin-top: 18px;
+    padding: 24px 18px;
+}
+
+.gelisim-header-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 22px 18px;
+}
+
+.gelisim-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.gelisim-meta {
+    min-width: 0;
+}
+
+.gelisim-content-card {
+    padding: 22px 18px;
+}
+
+.prose-content h1 {
+    font-size: 28px;
+}
+
+.prose-content h2 {
+    font-size: 22px;
+}
+
+.prose-content h3 {
+    font-size: 18px;
+}
+
+.prose-content p,
+.prose-content li {
+    font-size: 15px;
+    line-height: 1.75;
+}
+
+.gelisim-ghost-button {
+    width: 100%;
+}

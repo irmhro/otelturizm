@@ -1,5 +1,4 @@
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Caching.Memory;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
 using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
@@ -19,9 +18,9 @@ public class HotelService : IHotelService
 {
     private readonly IConfiguration _configuration;
     private readonly IHotelPricingReadService _hotelPricingReadService;
-    private readonly IMemoryCache _cache;
+    private readonly ICacheSingleFlight _cache;
 
-    public HotelService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService, IMemoryCache cache)
+    public HotelService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService, ICacheSingleFlight cache)
     {
         _configuration = configuration;
         _hotelPricingReadService = hotelPricingReadService;
@@ -460,7 +459,103 @@ public class HotelService : IHotelService
 
     public async Task<HotelListingPageViewModel> GetHotelListingPageAsync(string? searchTerm, string? campaignTag = null, string? campaignSlug = null, int page = 1, CancellationToken cancellationToken = default)
     {
-        return await GetHotelListingPageForSqlServerAsync(searchTerm, campaignTag, campaignSlug, page, cancellationToken);
+        var normalizedSearch = string.IsNullOrWhiteSpace(searchTerm) ? string.Empty : searchTerm.Trim().ToLowerInvariant();
+        var normalizedTag = string.IsNullOrWhiteSpace(campaignTag) ? string.Empty : campaignTag.Trim().ToLowerInvariant();
+        var normalizedSlug = string.IsNullOrWhiteSpace(campaignSlug) ? string.Empty : campaignSlug.Trim().ToLowerInvariant();
+        var safePage = Math.Max(1, page);
+
+        var cacheKey = $"hotel-listing:v1:{normalizedSearch}:{normalizedTag}:{normalizedSlug}:p{safePage}";
+        var cached = await _cache.GetOrCreateAsync(
+            cacheKey,
+            async ct => await GetHotelListingPageForSqlServerAsync(searchTerm, campaignTag, campaignSlug, safePage, ct),
+            absoluteExpirationRelativeToNow: TimeSpan.FromSeconds(45),
+            slidingExpiration: TimeSpan.FromSeconds(15),
+            cancellationToken: cancellationToken);
+
+        return CloneHotelListing(cached ?? new HotelListingPageViewModel());
+    }
+
+    private static HotelListingPageViewModel CloneHotelListing(HotelListingPageViewModel src)
+    {
+        return new HotelListingPageViewModel
+        {
+            City = src.City,
+            SearchTerm = src.SearchTerm,
+            SearchLabel = src.SearchLabel,
+            CampaignSlug = src.CampaignSlug,
+            ActiveTag = src.ActiveTag,
+            CurrentPage = src.CurrentPage,
+            PageSize = src.PageSize,
+            TotalPages = src.TotalPages,
+            CampaignTitle = src.CampaignTitle,
+            CampaignDescription = src.CampaignDescription,
+            TotalCount = src.TotalCount,
+            MinPrice = src.MinPrice,
+            MaxPrice = src.MaxPrice,
+            Cities = new List<string>(src.Cities),
+            Districts = new List<string>(src.Districts),
+            Neighborhoods = new List<string>(src.Neighborhoods),
+            StarOptions = new List<int>(src.StarOptions),
+            PropertyTypes = new List<string>(src.PropertyTypes),
+            Campaigns = src.Campaigns.Select(x => new HotelListingCampaignFilterViewModel
+            {
+                Slug = x.Slug,
+                Name = x.Name,
+                HotelCount = x.HotelCount,
+                IsActive = x.IsActive
+            }).ToList(),
+            QuickLinks = src.QuickLinks.Select(x => new HotelListingQuickLinkViewModel
+            {
+                Title = x.Title,
+                Subtitle = x.Subtitle,
+                IconClass = x.IconClass,
+                Url = x.Url,
+                IsActive = x.IsActive
+            }).ToList(),
+            Hotels = src.Hotels.Select(h => new HotelListingCardViewModel
+            {
+                Id = h.Id,
+                HotelCode = h.HotelCode,
+                Name = h.Name,
+                PropertyType = h.PropertyType,
+                StarCount = h.StarCount,
+                City = h.City,
+                District = h.District,
+                Neighborhood = h.Neighborhood,
+                Latitude = h.Latitude,
+                Longitude = h.Longitude,
+                Rating = h.Rating,
+                RatingText = h.RatingText,
+                ReviewCount = h.ReviewCount,
+                IsFeatured = h.IsFeatured,
+                ImageUrl = h.ImageUrl,
+                GalleryImages = new List<string>(h.GalleryImages),
+                StartingPrice = h.StartingPrice,
+                OriginalPrice = h.OriginalPrice,
+                DiscountedPrice = h.DiscountedPrice,
+                DiscountPercent = h.DiscountPercent,
+                HasDiscount = h.HasDiscount,
+                DiscountName = h.DiscountName,
+                DiscountShortDescription = h.DiscountShortDescription,
+                DiscountImageUrl = h.DiscountImageUrl,
+                PriceNote = h.PriceNote,
+                Amenities = new List<string>(h.Amenities),
+                AmenityItems = h.AmenityItems.Select(a => new HotelAmenityViewModel
+                {
+                    Name = a.Name,
+                    IconClass = a.IconClass
+                }).ToList(),
+                Tags = new List<string>(h.Tags),
+                CampaignNames = new List<string>(h.CampaignNames),
+                CampaignSlugs = new List<string>(h.CampaignSlugs),
+                CampaignBadgeText = h.CampaignBadgeText,
+                CampaignInfoText = h.CampaignInfoText,
+                Summary = h.Summary,
+                Slug = h.Slug,
+                // kullanıcıya göre set edilir (controller ApplyFavoriteStatesAsync)
+                IsFavorite = false
+            }).ToList()
+        };
     }
 
     public async Task<List<HotelSearchSuggestionViewModel>> GetSearchSuggestionsAsync(string query, CancellationToken cancellationToken = default)
@@ -534,8 +629,56 @@ public class HotelService : IHotelService
             return string.Empty;
         }
 
-        var normalized = NormalizeRouteSegment(value)
+        // Global normalize:
+        // - URL/slug benzeri karakterleri sadeleştir
+        // - Unicode diakritikleri (é, ü, ñ, å...) kaldır
+        // - Boşlukları tekilleştir
+        var seed = NormalizeRouteSegment(value)
             .Replace('-', ' ')
+            .Trim();
+
+        // Unicode normalize + diakritik temizleme
+        var formD = seed.Normalize(NormalizationForm.FormD);
+        Span<char> buffer = stackalloc char[Math.Min(formD.Length, 256)];
+        var idx = 0;
+        for (var i = 0; i < formD.Length; i++)
+        {
+            var ch = formD[i];
+            var category = CharUnicodeInfo.GetUnicodeCategory(ch);
+            if (category == UnicodeCategory.NonSpacingMark)
+            {
+                continue;
+            }
+
+            // Çok görülen global eşleştirmeler
+            // (DB tarafı collate/FTS ile güçlendirilir; burada arama anahtarını tutarlı yapıyoruz.)
+            if (ch == 'ß') { AppendChars(buffer, ref idx, "ss"); continue; }
+            if (ch == 'Æ' || ch == 'æ') { AppendChars(buffer, ref idx, "ae"); continue; }
+            if (ch == 'Œ' || ch == 'œ') { AppendChars(buffer, ref idx, "oe"); continue; }
+            if (ch == 'Ø' || ch == 'ø') { AppendChars(buffer, ref idx, "o"); continue; }
+            if (ch == 'Ł' || ch == 'ł') { AppendChars(buffer, ref idx, "l"); continue; }
+            if (ch == 'Đ' || ch == 'đ') { AppendChars(buffer, ref idx, "d"); continue; }
+            if (ch == 'Þ' || ch == 'þ') { AppendChars(buffer, ref idx, "th"); continue; }
+
+            // Diğerleri: harf/rakam/boşluk/temel ayrımlar
+            if (char.IsLetterOrDigit(ch))
+            {
+                if (idx < buffer.Length) buffer[idx++] = char.ToLowerInvariant(ch);
+                continue;
+            }
+
+            if (char.IsWhiteSpace(ch))
+            {
+                if (idx < buffer.Length) buffer[idx++] = ' ';
+                continue;
+            }
+
+            // Noktalama vb. -> boşluk
+            if (idx < buffer.Length) buffer[idx++] = ' ';
+        }
+
+        var normalized = (idx == 0 ? string.Empty : new string(buffer[..idx]))
+            .Normalize(NormalizationForm.FormC)
             .Trim();
 
         while (normalized.Contains("  ", StringComparison.Ordinal))
@@ -544,6 +687,15 @@ public class HotelService : IHotelService
         }
 
         return normalized;
+    }
+
+    private static void AppendChars(Span<char> buffer, ref int idx, string value)
+    {
+        for (var i = 0; i < value.Length; i++)
+        {
+            if (idx >= buffer.Length) return;
+            buffer[idx++] = value[i];
+        }
     }
 
     private static string BuildSearchNormalizationSql(string fieldExpression)
@@ -570,6 +722,79 @@ public class HotelService : IHotelService
         }
 
         return expression;
+    }
+
+    private static async Task<bool> ColumnExistsAsync(SqlConnection connection, string tableName, string columnName, CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand("SELECT COL_LENGTH(@tableName, @columnName);", connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@columnName", columnName);
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
+        return scalar is not null && scalar != DBNull.Value;
+    }
+
+    private static async Task<bool> HasFullTextIndexAsync(SqlConnection connection, string tableName, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT CASE WHEN
+                FULLTEXTSERVICEPROPERTY('IsFullTextInstalled') = 1
+                AND EXISTS (
+                    SELECT 1
+                    FROM sys.fulltext_indexes fti
+                    INNER JOIN sys.fulltext_index_columns fic ON fic.object_id = fti.object_id
+                    WHERE fti.object_id = OBJECT_ID(@tableName)
+                )
+            THEN 1 ELSE 0 END;
+            """;
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(scalar ?? 0) == 1;
+    }
+
+    private static async Task<bool> HasFullTextIndexedColumnAsync(SqlConnection connection, string tableName, string columnName, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT CASE WHEN
+                FULLTEXTSERVICEPROPERTY('IsFullTextInstalled') = 1
+                AND EXISTS (
+                    SELECT 1
+                    FROM sys.fulltext_index_columns fic
+                    WHERE fic.object_id = OBJECT_ID(@tableName)
+                      AND fic.column_id = COLUMNPROPERTY(OBJECT_ID(@tableName), @columnName, 'ColumnId')
+                )
+            THEN 1 ELSE 0 END;
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@columnName", columnName);
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(scalar ?? 0) == 1;
+    }
+
+    private static string BuildFullTextPrefixQuery(string normalizedKeyword)
+    {
+        // CONTAINS için basit prefix araması: "foo*" AND "bar*"
+        // Güvenlik: tırnak karakterlerini temizleyip sadece token bazlı çalış.
+        if (string.IsNullOrWhiteSpace(normalizedKeyword))
+        {
+            return string.Empty;
+        }
+
+        var tokens = normalizedKeyword
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(t => t.Replace("\"", string.Empty, StringComparison.Ordinal))
+            .Where(t => t.Length >= 2)
+            .Take(5)
+            .ToList();
+
+        if (tokens.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return string.Join(" AND ", tokens.Select(t => $"\"{t}*\""));
     }
 
     private static int ComputeSuggestionScore(string query, string candidate)
@@ -646,12 +871,12 @@ public class HotelService : IHotelService
         }
 
         var cacheKey = $"hotel-detail:v1:{slug.Trim().ToLowerInvariant()}";
-        var cached = await _cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
-            entry.SlidingExpiration = TimeSpan.FromSeconds(30);
-            return await GetHotelDetailPageForSqlServerAsync(slug, cancellationToken);
-        });
+        var cached = await _cache.GetOrCreateAsync(
+            cacheKey,
+            async ct => await GetHotelDetailPageForSqlServerAsync(slug, ct),
+            absoluteExpirationRelativeToNow: TimeSpan.FromMinutes(2),
+            slidingExpiration: TimeSpan.FromSeconds(30),
+            cancellationToken: cancellationToken);
 
         return cached is null ? null : CloneHotelDetail(cached);
     }
@@ -780,11 +1005,12 @@ public class HotelService : IHotelService
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var normalizedCitySql = BuildSearchNormalizationSql("o.sehir");
-        var normalizedDistrictSql = BuildSearchNormalizationSql("o.ilce");
-        var normalizedNeighborhoodSql = BuildSearchNormalizationSql("COALESCE(o.mahalle, '')");
-        var normalizedHotelNameSql = BuildSearchNormalizationSql("o.otel_adi");
-        var normalizedCompositeSql = BuildSearchNormalizationSql("CONCAT(o.mahalle, ' ', o.ilce, ' ', o.sehir)");
+        var hasNormalizedColumns = await ColumnExistsAsync(connection, "dbo.oteller", "sehir_normalized", cancellationToken);
+        var normalizedCitySql = hasNormalizedColumns ? "o.sehir_normalized" : BuildSearchNormalizationSql("o.sehir");
+        var normalizedDistrictSql = hasNormalizedColumns ? "o.ilce_normalized" : BuildSearchNormalizationSql("o.ilce");
+        var normalizedNeighborhoodSql = hasNormalizedColumns ? "o.mahalle_normalized" : BuildSearchNormalizationSql("COALESCE(o.mahalle, '')");
+        var normalizedHotelNameSql = hasNormalizedColumns ? "o.otel_adi_normalized" : BuildSearchNormalizationSql("o.otel_adi");
+        var normalizedCompositeSql = hasNormalizedColumns ? "o.konum_normalized" : BuildSearchNormalizationSql("CONCAT(o.mahalle, ' ', o.ilce, ' ', o.sehir)");
 
         var hasDiscountTable = await HotelTableExistsAsync(connection, "fiyat_indirimleri", cancellationToken);
         var discountSelect = hasDiscountTable
@@ -824,6 +1050,42 @@ public class HotelService : IHotelService
                 ) subs
                 """
             : "OUTER APPLY (SELECT CAST(NULL AS int) AS pin_rank) subs";
+
+        var ftsQuery = BuildFullTextPrefixQuery(normalizedSearchKeyword);
+        var hasFts = !string.IsNullOrWhiteSpace(ftsQuery) && await HasFullTextIndexAsync(connection, "dbo.oteller", cancellationToken);
+        var hasFtsHotelNameIndexed = hasFts && await HasFullTextIndexedColumnAsync(connection, "dbo.oteller", "otel_adi", cancellationToken);
+        var useFts = hasFtsHotelNameIndexed;
+        var hasFtsSearchText = useFts
+            && await ColumnExistsAsync(connection, "dbo.oteller", "fts_search_text", cancellationToken)
+            && await HasFullTextIndexedColumnAsync(connection, "dbo.oteller", "fts_search_text", cancellationToken);
+
+        // SQL Server compile-time doğrulama yapar: CONTAINS / olmayan kolonlar, parametre ile "devre dışı" bırakılsa bile hata üretir.
+        // Bu yüzden FTS yoksa CONTAINS parçalarını sorgudan tamamen çıkarıyoruz.
+        var ftsWhereSql = useFts
+            ? (hasFtsSearchText
+                ? "CONTAINS(o.fts_search_text, @ftsQuery)"
+                : "CONTAINS(o.otel_adi, @ftsQuery)")
+            : string.Empty;
+        var searchWhereSql = useFts
+            ? $"""
+                (
+                    @searchTerm = ''
+                    OR {normalizedCitySql} = @searchTermNormalized
+                    OR {normalizedDistrictSql} = @searchTermNormalized
+                    OR {normalizedNeighborhoodSql} = @searchTermNormalized
+                    OR ({ftsWhereSql})
+                )
+                """
+            : $"""
+                (
+                    @searchTerm = ''
+                    OR {normalizedCitySql} = @searchTermNormalized
+                    OR {normalizedDistrictSql} = @searchTermNormalized
+                    OR {normalizedNeighborhoodSql} = @searchTermNormalized
+                    OR {normalizedHotelNameSql} LIKE '%' + @searchTermNormalized + '%'
+                    OR {normalizedCompositeSql} LIKE '%' + @searchTermNormalized + '%'
+                )
+                """;
 
         var sql = $"""
             SELECT
@@ -1002,23 +1264,21 @@ public class HotelService : IHotelService
                           AND k.seo_slug = @campaignSlug
                     )
                   )
-              AND (
-                    @searchTerm = ''
-                    OR {normalizedCitySql} = @searchTermNormalized
-                    OR {normalizedDistrictSql} = @searchTermNormalized
-                    OR {normalizedNeighborhoodSql} = @searchTermNormalized
-                    OR {normalizedHotelNameSql} LIKE '%' + @searchTermNormalized + '%'
-                    OR {normalizedCompositeSql} LIKE '%' + @searchTermNormalized + '%'
-                  )
+              AND {searchWhereSql}
             ORDER BY
                 CASE WHEN subs.pin_rank IS NULL THEN 1 ELSE 0 END,
                 subs.pin_rank ASC,
                 CASE
+                    WHEN @searchTermNormalized = '' THEN 99
                     WHEN {normalizedHotelNameSql} = @searchTermNormalized THEN 0
-                    WHEN {normalizedDistrictSql} = @searchTermNormalized THEN 1
-                    WHEN {normalizedNeighborhoodSql} = @searchTermNormalized THEN 2
-                    WHEN {normalizedCitySql} = @searchTermNormalized THEN 3
-                    ELSE 4
+                    WHEN {normalizedHotelNameSql} LIKE @searchTermNormalized + '%' THEN 1
+                    WHEN {normalizedDistrictSql} = @searchTermNormalized THEN 2
+                    WHEN {normalizedNeighborhoodSql} = @searchTermNormalized THEN 3
+                    WHEN {normalizedCitySql} = @searchTermNormalized THEN 4
+                    WHEN {normalizedDistrictSql} LIKE @searchTermNormalized + '%' THEN 5
+                    WHEN {normalizedNeighborhoodSql} LIKE @searchTermNormalized + '%' THEN 6
+                    WHEN {normalizedCitySql} LIKE @searchTermNormalized + '%' THEN 7
+                    ELSE 8
                 END,
                 CASE WHEN o.one_cikan_otel = 1 THEN 0 ELSE 1 END,
                 CASE WHEN o.ortalama_puan > 0 THEN 0 ELSE 1 END,
@@ -1031,6 +1291,7 @@ public class HotelService : IHotelService
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@searchTerm", normalizedSearchTerm);
         command.Parameters.AddWithValue("@searchTermNormalized", normalizedSearchKeyword);
+        command.Parameters.AddWithValue("@ftsQuery", useFts ? ftsQuery : (object)DBNull.Value);
         command.Parameters.AddWithValue("@campaignSlug", normalizedCampaignSlug);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -1336,10 +1597,11 @@ public class HotelService : IHotelService
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var normalizedCitySql = BuildSearchNormalizationSql("o.sehir");
-        var normalizedDistrictSql = BuildSearchNormalizationSql("o.ilce");
-        var normalizedNeighborhoodSql = BuildSearchNormalizationSql("o.mahalle");
-        var normalizedHotelNameSql = BuildSearchNormalizationSql("o.otel_adi");
+        var hasNormalizedColumns = await ColumnExistsAsync(connection, "dbo.oteller", "sehir_normalized", cancellationToken);
+        var normalizedCitySql = hasNormalizedColumns ? "o.sehir_normalized" : BuildSearchNormalizationSql("o.sehir");
+        var normalizedDistrictSql = hasNormalizedColumns ? "o.ilce_normalized" : BuildSearchNormalizationSql("o.ilce");
+        var normalizedNeighborhoodSql = hasNormalizedColumns ? "o.mahalle_normalized" : BuildSearchNormalizationSql("o.mahalle");
+        var normalizedHotelNameSql = hasNormalizedColumns ? "o.otel_adi_normalized" : BuildSearchNormalizationSql("o.otel_adi");
 
         var sql = $"""
             SELECT TOP (8) suggestion_value, suggestion_label, suggestion_type, suggestion_hotel_code

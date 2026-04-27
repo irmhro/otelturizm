@@ -1,10 +1,13 @@
 @model otelturizmnew.Models.Anasayfa.AnasayfaViewModel
+@inject otelturizmnew.Services.Abstractions.IDevelopmentAccessService DevelopmentAccessService
 
 @{
     Layout = null;
     ViewData["Title"] = "Anasayfa";
     ViewData["HeaderContext"] = "home";
     var pageCss = ViewData["PageCss"] as string;
+    var nonce = Context.Items["CspNonce"] as string;
+    var isDevelopmentUnlocked = DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -12,7 +15,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <title>@ViewData["Title"] - Otelturizm</title>
-    <script type="importmap"></script>
+    <script type="importmap" nonce="@nonce"></script>
 
             <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
@@ -20,6 +23,9 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/development-gate.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/development-gate.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     @if (!string.IsNullOrWhiteSpace(pageCss))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
@@ -31,9 +37,18 @@
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCssMobile).css" asp-append-version="true" media="(max-width: 900px)" />
     }
+    else if (!string.IsNullOrWhiteSpace(pageCss))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCss).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    }
 </head>
-<body class="anasayfa-page">
+<body class="@(isDevelopmentUnlocked ? "development-unlocked anasayfa-page" : "development-locked anasayfa-page")">
     <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
+
+    <partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
+
+    <script src="~/assets/js/sw-asset-guard.js" asp-append-version="true"></script>
+    <script src="~/assets/js/layout/sw-cleanup.js" asp-append-version="true"></script>
 
     <main class="site-main">
         <partial name="~/Views/Anasayfa/_AnasayfaContent.cshtml" model="Model" />
@@ -45,35 +60,10 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/assets/vendor/swiper/swiper-bundle.min.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script>
+    <script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
+    <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
+    <script nonce="@nonce">
     (function(){
-        const header = document.getElementById('mainHeader');
-        const overlay = document.getElementById('mobileMenuOverlay');
-        const drawer = document.getElementById('mobileMenuDrawer');
-        const toggle = document.getElementById('mobileMenuToggle');
-        const closeBtn = document.getElementById('drawerClose');
-
-        window.addEventListener('scroll', function(){
-            if(header && window.scrollY > 40){ header.classList.add('scrolled'); }
-            else if(header) { header.classList.remove('scrolled'); }
-        });
-
-        function openMenu(){
-            if(overlay){ overlay.classList.add('active'); }
-            if(drawer){ drawer.classList.add('active'); }
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeMenu(){
-            if(overlay){ overlay.classList.remove('active'); }
-            if(drawer){ drawer.classList.remove('active'); }
-            document.body.style.overflow = '';
-        }
-
-        if(toggle){ toggle.addEventListener('click', openMenu); }
-        if(closeBtn){ closeBtn.addEventListener('click', closeMenu); }
-        if(overlay){ overlay.addEventListener('click', closeMenu); }
-
         if(window.Swiper){
             if(document.querySelector('.hero-swiper')){
                 new Swiper('.hero-swiper', {

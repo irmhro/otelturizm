@@ -54,7 +54,10 @@
 </section>
 
 @section Scripts {
-    <script>
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
+    }
+    <script nonce="@nonce">
         document.querySelectorAll('.faq-question').forEach(function (q) {
             q.addEventListener('click', function () {
                 this.closest('.faq-item').classList.toggle('active');

@@ -3,6 +3,7 @@
 @{
     var categoryShowcaseHotels = Model.PopularHotels.Count > 0 ? Model.PopularHotels : Model.WeekendHotels;
     var todayIso = DateTime.Today.ToString("yyyy-MM-dd");
+    var nonce = Context.Items["CspNonce"] as string;
     var homepageCategorySections = new[]
     {
         new { Key = "haftasonu-firsatlari", Title = "Hafta Sonu Fırsatları" },
@@ -188,7 +189,7 @@
     </div>
 </section>
 
-<script>
+<script nonce="@nonce">
     (function () {
         const input = document.querySelector('.hero-section .fancy-input[name="q"]');
         if (!input) return;
@@ -519,7 +520,7 @@
     }
 </style>
 
-<script>
+<script nonce="@nonce">
     (function () {
         const modal = document.getElementById('discountModal');
         const title = document.getElementById('discountModalTitle');

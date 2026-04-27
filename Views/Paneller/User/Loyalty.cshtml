@@ -404,7 +404,10 @@
 </section>
 
 @section Scripts {
-    <script>
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
+    }
+    <script nonce="@nonce">
         (function () {
             const root = document.querySelector('[data-tab-root]');
             if (!root) {

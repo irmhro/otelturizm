@@ -1,21 +1,32 @@
 @using System.Security.Claims
 @using otelturizmnew.Constants
 @inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
+@inject otelturizmnew.Services.Abstractions.IDevelopmentAccessService DevelopmentAccessService
 <!DOCTYPE html>
-<html lang="tr">
+@{
+    var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    var nonce = Context.Items["CspNonce"] as string;
+    var isDevelopmentPage = Context.Request.Path.StartsWithSegments("/gelisim", StringComparison.OrdinalIgnoreCase);
+    var isDevelopmentUnlocked = DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
+}
+<html lang="@lang">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <meta name="google-site-verification" content="XOjXVbWYoGSwJOaCHdDNb2l8Zs_JO7nr2BnsfeAp9Uw" />
     <title>@ViewData["Title"] - Otelturizm</title>
-    <script type="importmap"></script>
+    <script type="importmap" nonce="@nonce"></script>
 
-            <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
+    <link rel="preload" as="style" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="preload" as="style" href="~/assets/css/site-layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/development-gate.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/development-gate.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     @{
         var pageCss = ViewData["PageCss"] as string;
     }
@@ -35,50 +46,14 @@
         <link rel="stylesheet" href="~/assets/css/@(pageCss).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     }
 </head>
-<body>
+<body class="@(isDevelopmentUnlocked ? "development-unlocked" : "development-locked")">
 @{
     ViewData["HeaderContext"] = ViewData["HeaderContext"] as string ?? "auth";
 }
 <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
 
 <script src="~/assets/js/sw-asset-guard.js" asp-append-version="true"></script>
-
-<script>
-// SW temizliği: sadece problem tespiti veya manuel tetik ile.
-// - Otomatik: sadece sayfa bir önceki yüklemede SW kaynaklı asset hatası işaretlendiyse
-// - Manuel: URL'e ?swfix=1 eklenirse
-(function () {
-    try {
-        if (!('serviceWorker' in navigator)) return;
-        const doneKey = 'otelturizm_sw_cleanup_done_v2';
-        const errKey = 'otelturizm_sw_asset_error_v1';
-
-        const params = new URLSearchParams(window.location.search || '');
-        const manual = params.get('swfix') === '1';
-        const flagged = localStorage.getItem(errKey) === '1';
-        if (!manual && !flagged) return;
-
-        if (sessionStorage.getItem(doneKey) === '1') return;
-        sessionStorage.setItem(doneKey, '1');
-        localStorage.removeItem(errKey);
-
-        navigator.serviceWorker.getRegistrations().then(function (regs) {
-            if (regs && regs.length) {
-                regs.forEach(function (r) { try { r.unregister(); } catch (e) { } });
-            }
-            if (window.caches && caches.keys) {
-                caches.keys().then(function (keys) {
-                    (keys || []).forEach(function (k) { try { caches.delete(k); } catch (e) { } });
-                });
-            }
-            // Sadece ihtiyaç olduğunda 1 kez yenile.
-            setTimeout(function () {
-                try { window.location.replace(window.location.pathname + window.location.hash); } catch (e) { }
-            }, 200);
-        });
-    } catch (e) { }
-})();
-</script>
+<script src="~/assets/js/layout/sw-cleanup.js" asp-append-version="true"></script>
 
 @{
     var publicDraftRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -94,6 +69,11 @@
     <partial name="~/Views/Shared/_ActiveReservationDraftBanner.cshtml" model="publicActiveDraft" />
 }
 
+@if (!isDevelopmentPage)
+{
+    <partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
+}
+
 <main class="site-main">@RenderBody()</main>
 
 <partial name="~/Views/Anasayfa/_AnasayfaFooter.cshtml" />
@@ -101,36 +81,9 @@
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
-<script>
-(function(){
-    const header = document.getElementById('mainHeader');
-    const overlay = document.getElementById('mobileMenuOverlay');
-    const drawer = document.getElementById('mobileMenuDrawer');
-    const toggle = document.getElementById('mobileMenuToggle');
-    const closeBtn = document.getElementById('drawerClose');
-
-    window.addEventListener('scroll', function(){
-        if(window.scrollY > 40){ header.classList.add('scrolled'); }
-        else { header.classList.remove('scrolled'); }
-    });
-
-    function openMenu(){
-        overlay.classList.add('active');
-        drawer.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeMenu(){
-        overlay.classList.remove('active');
-        drawer.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    if(toggle){ toggle.addEventListener('click', openMenu); }
-    if(closeBtn){ closeBtn.addEventListener('click', closeMenu); }
-    if(overlay){ overlay.addEventListener('click', closeMenu); }
-})();
-</script>
+<script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
+<script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
+<script src="~/assets/js/rum-webvitals.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Security.Claims;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Paneller.User;
@@ -35,6 +37,7 @@ public class OtellerController : Controller
 
     [HttpGet("")]
     [HttpGet("istanbul")]
+    [OutputCache(PolicyName = "public-short")]
     public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? kampanya, [FromQuery] int page, CancellationToken cancellationToken)
     {
         ViewData["PageCss"] = "otel-listeleme";
@@ -47,6 +50,7 @@ public class OtellerController : Controller
     }
 
     [HttpGet("{slug}")]
+    [OutputCache(PolicyName = "public-short")]
     public async Task<IActionResult> OtelDetay(string slug, CancellationToken cancellationToken)
     {
         var model = await _hotelService.GetHotelDetailPageAsync(slug, cancellationToken);
@@ -189,6 +193,7 @@ public class OtellerController : Controller
     }
 
     [HttpGet("{slug}/fiyat-teklifi")]
+    [EnableRateLimiting("quote-strict")]
     public async Task<IActionResult> GetPriceQuote(string slug, [FromQuery] long roomTypeId, [FromQuery] DateOnly checkInDate, [FromQuery] DateOnly checkOutDate, [FromQuery] int roomCount = 1, CancellationToken cancellationToken = default)
     {
         var hotel = await _hotelService.GetHotelDetailPageAsync(slug, cancellationToken);
@@ -230,6 +235,8 @@ public class OtellerController : Controller
 
     [HttpPost("konum-kaydet")]
     [IgnoreAntiforgeryToken]
+    [EnableRateLimiting("location-strict")]
+    [RequestSizeLimit(32 * 1024)]
     public async Task<IActionResult> SaveUserLocation([FromBody] UserLocationLogRequest? request, CancellationToken cancellationToken)
     {
         if (request is null)
@@ -240,6 +247,27 @@ public class OtellerController : Controller
         if (request.Latitude < -90m || request.Latitude > 90m || request.Longitude < -180m || request.Longitude > 180m)
         {
             return BadRequest(new { success = false, message = "Geçersiz koordinat bilgisi." });
+        }
+
+        // Abuse guard: log şişmesini önle
+        if (request.RadiusKm < 0m || request.RadiusKm > 250m)
+        {
+            return BadRequest(new { success = false, message = "Geçersiz arama yarıçapı." });
+        }
+
+        if (request.VisibleHotelCount < 0 || request.VisibleHotelCount > 5000)
+        {
+            return BadRequest(new { success = false, message = "Geçersiz liste sayısı." });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm) && request.SearchTerm.Length > 120)
+        {
+            request.SearchTerm = request.SearchTerm[..120];
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ListedHotelIds) && request.ListedHotelIds.Length > 4000)
+        {
+            request.ListedHotelIds = request.ListedHotelIds[..4000];
         }
 
         var userAgent = Request.Headers.UserAgent.ToString();

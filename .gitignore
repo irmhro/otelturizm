@@ -47,6 +47,7 @@ Generated\ Files/
 .codex-temp/
 codex-temp/
 tmp/
+App_Data/email-pickup/
 
 # Local publish / deploy output (do not commit)
 yayinla2355/

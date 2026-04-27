@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Giris;
 using otelturizmnew.Models.Register;
@@ -48,6 +49,7 @@ public class RegisterController : Controller
 
     [HttpPost(UserRegisterPath)]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("auth-strict")]
     public async Task<IActionResult> UserKayit(UserRegistrationModel model, CancellationToken cancellationToken = default)
     {
         try
@@ -73,6 +75,7 @@ public class RegisterController : Controller
 
     [HttpPost(PartnerRegisterPath)]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("auth-strict")]
     public async Task<IActionResult> Partner(PartnerRegistrationModel model, CancellationToken cancellationToken = default)
     {
         try
@@ -99,6 +102,7 @@ public class RegisterController : Controller
 
     [HttpPost(FirmaRegisterPath)]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("auth-strict")]
     public async Task<IActionResult> Firma(FirmaRegistrationModel model, CancellationToken cancellationToken = default)
     {
         try

@@ -3,62 +3,201 @@
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "panel-admin-system-health";
+    var warningCount = Model.Checks.Count(x => string.Equals(x.ToneClass, "warning", StringComparison.OrdinalIgnoreCase));
+    var dangerCount = Model.Checks.Count(x => string.Equals(x.ToneClass, "danger", StringComparison.OrdinalIgnoreCase));
+    var okRows = Model.LinkCheck.Rows.Count(x => x.IsOk);
+    var badRows = Model.LinkCheck.Rows.Count(x => !x.IsOk);
 }
 
-<div class="row">
-    <div class="col-12">
-        <div class="card card-outline card-primary">
-            <div class="card-header">
-                <h3 class="card-title">Canlı Sağlık Kontrolleri</h3>
-            </div>
-            <div class="card-body p-0">
-                <table class="table table-hover text-nowrap mb-0">
-                    <thead>
-                    <tr>
-                        <th>Kontrol</th>
-                        <th>Durum</th>
-                        <th>Detay</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var item in Model.Checks)
-                    {
-                        var badge = item.ToneClass switch
-                        {
-                            "success" => "badge-success",
-                            "warning" => "badge-warning",
-                            "danger" => "badge-danger",
-                            _ => "badge-info"
-                        };
-                        <tr>
-                            <td><strong>@item.Title</strong></td>
-                            <td><span class="badge @badge ot-badge">@item.StatusText</span></td>
-                            <td class="text-muted">@item.Detail</td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
+<section class="system-health-page">
+    <div class="system-health-hero">
+        <div class="system-health-hero__copy">
+            <span class="system-health-kicker">Operasyon Merkezi</span>
+            <h2>Canlı sistem, link akışı ve kuyrukları tek ekrandan izleyin</h2>
+            <p>Bu ekran link bütünlüğünü, sağlık kontrollerini ve e-posta servis davranışını tek bir operasyon panelinde toplar.</p>
+        </div>
+        <div class="system-health-hero__stats">
+            <article class="system-health-stat is-primary">
+                <span>Kontrol</span>
+                <strong>@Model.Checks.Count</strong>
+                <small>Toplam sağlık kontrolü</small>
+            </article>
+            <article class="system-health-stat is-danger">
+                <span>Kritik</span>
+                <strong>@dangerCount</strong>
+                <small>Anında müdahale gereken</small>
+            </article>
+            <article class="system-health-stat is-warning">
+                <span>İzleme</span>
+                <strong>@warningCount</strong>
+                <small>Takip isteyen uyarı</small>
+            </article>
+            <article class="system-health-stat is-success">
+                <span>Linkler</span>
+                <strong>@Model.LinkCheck.Total</strong>
+                <small>Taranan route sayısı</small>
+            </article>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card card-outline card-secondary">
-            <div class="card-header">
-                <h3 class="card-title">Kuyruklar</h3>
+    <div class="system-health-grid">
+        <section class="system-health-panel">
+            <div class="system-health-panel__head">
+                <div>
+                    <span class="system-health-panel__eyebrow">Sağlık Kontrolleri</span>
+                    <h3>Canlı sağlık sinyalleri</h3>
+                </div>
             </div>
-            <div class="card-body p-0">
-                <table class="table table-hover text-nowrap mb-0">
+            <div class="system-health-checklist">
+                @foreach (var item in Model.Checks)
+                {
+                    var toneClass = item.ToneClass switch
+                    {
+                        "success" => "is-success",
+                        "warning" => "is-warning",
+                        "danger" => "is-danger",
+                        _ => "is-info"
+                    };
+                    <article class="system-health-check @toneClass">
+                        <div class="system-health-check__status">
+                            <span class="system-health-pill @toneClass">@item.StatusText</span>
+                        </div>
+                        <div class="system-health-check__body">
+                            <strong>@item.Title</strong>
+                            <p>@item.Detail</p>
+                        </div>
+                    </article>
+                }
+            </div>
+        </section>
+
+        <section class="system-health-panel system-health-panel--link-audit">
+            <div class="system-health-panel__head system-health-panel__head--split">
+                <div>
+                    <span class="system-health-panel__eyebrow">Link Kontrol</span>
+                    <h3>Broken link ve route doğrulama</h3>
+                </div>
+                <form method="post" action="/admin/sistem-sagligi/link-kontrol" class="system-health-inline-form">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="system-health-cta">
+                        <i class="fas fa-satellite-dish"></i>
+                        Linkleri yeniden tara
+                    </button>
+                </form>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.LinkCheck.Warning))
+            {
+                <div class="system-health-alert">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>@Model.LinkCheck.Warning</span>
+                </div>
+            }
+
+            <div class="system-health-metrics">
+                <article class="system-health-metric-card">
+                    <span>Base URL</span>
+                    <strong>@Model.LinkCheck.BaseUrl</strong>
+                    <small>Tarama hedefi</small>
+                </article>
+                <article class="system-health-metric-card">
+                    <span>Son kontrol</span>
+                    <strong>@(Model.LinkCheck.CheckedAtUtc?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss") ?? "-")</strong>
+                    <small>En son tarama zamanı</small>
+                </article>
+                <article class="system-health-metric-card is-success">
+                    <span>Sağlam</span>
+                    <strong>@okRows</strong>
+                    <small>200/başarılı yanıt</small>
+                </article>
+                <article class="system-health-metric-card is-danger">
+                    <span>Sorunlu</span>
+                    <strong>@badRows</strong>
+                    <small>Düzeltme gereken route</small>
+                </article>
+            </div>
+
+            @if (Model.LinkCheck.Rows.Count > 0)
+            {
+                <div class="system-health-table-wrap">
+                    <table class="system-health-table">
+                        <thead>
+                            <tr>
+                                <th>Route</th>
+                                <th>Durum</th>
+                                <th>Süre</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.LinkCheck.Rows.Take(200))
+                            {
+                                var rowToneClass = row.IsOk ? "is-success" : "is-danger";
+                                <tr>
+                                    <td>
+                                        <code>@row.Route</code>
+                                    </td>
+                                    <td>
+                                        <span class="system-health-pill @rowToneClass">@row.StatusText</span>
+                                    </td>
+                                    <td>@row.Ms ms</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    </div>
+
+    <div class="system-health-secondary-grid">
+        <section class="system-health-panel">
+            <div class="system-health-panel__head system-health-panel__head--split">
+                <div>
+                    <span class="system-health-panel__eyebrow">E-posta Servisi</span>
+                    <h3>Gönderim modunu yönetin</h3>
+                </div>
+                <div class="system-health-actions">
+                    <form method="post" action="/admin/sistem-sagligi/email-test-modu" class="system-health-inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="enabled" value="true" />
+                        <button type="submit" class="system-health-chip-btn is-warning">
+                            <i class="fas fa-vial"></i>
+                            Test modu
+                        </button>
+                    </form>
+                    <form method="post" action="/admin/sistem-sagligi/email-test-modu" class="system-health-inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="enabled" value="false" />
+                        <button type="submit" class="system-health-chip-btn is-success">
+                            <i class="fas fa-paper-plane"></i>
+                            Gerçek gönderim
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="system-health-note">
+                Bu kontrol, <code>email_services</code> tablosundaki aktif kaydın <code>test_modu</code> alanını değiştirir. Development ortamında test modunda bile e-postalar pickup klasörüne kaydedilebilir.
+            </div>
+        </section>
+
+        <section class="system-health-panel">
+            <div class="system-health-panel__head">
+                <div>
+                    <span class="system-health-panel__eyebrow">Kuyruklar</span>
+                    <h3>İşlem kuyruklarının durumu</h3>
+                </div>
+            </div>
+            <div class="system-health-table-wrap">
+                <table class="system-health-table">
                     <thead>
-                    <tr>
-                        <th>Kuyruk</th>
-                        <th>Beklemede</th>
-                        <th>Başarısız</th>
-                        <th>En Eski Bekleyen</th>
-                        <th>Not</th>
-                    </tr>
+                        <tr>
+                            <th>Kuyruk</th>
+                            <th>Beklemede</th>
+                            <th>Başarısız</th>
+                            <th>En eski</th>
+                            <th>Not</th>
+                        </tr>
                     </thead>
                     <tbody>
                     @foreach (var q in Model.Queues)
@@ -74,7 +213,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
     </div>
-</div>
+</section>
 

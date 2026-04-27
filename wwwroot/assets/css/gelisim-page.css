@@ -1,0 +1,201 @@
+.gelisim-shell {
+    padding: 40px 0 72px;
+    background:
+        radial-gradient(circle at top left, rgba(7, 78, 232, 0.08), transparent 32%),
+        linear-gradient(180deg, #f5f8ff 0%, #eef3fb 100%);
+    min-height: calc(100vh - 140px);
+}
+
+.gelisim-container {
+    max-width: 980px;
+}
+
+.gelisim-lock-card,
+.gelisim-header-card,
+.gelisim-content-card {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(18, 38, 63, 0.08);
+    border-radius: 28px;
+    box-shadow: 0 22px 55px rgba(18, 38, 63, 0.12);
+}
+
+.gelisim-lock-card {
+    max-width: 640px;
+    margin: 48px auto 0;
+    padding: 40px;
+}
+
+.gelisim-kicker {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(7, 78, 232, 0.1);
+    color: #0f4fe6;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.gelisim-lock-card h1,
+.gelisim-header-card h1 {
+    margin: 18px 0 10px;
+    color: #15233b;
+    font-size: clamp(30px, 4vw, 44px);
+    line-height: 1.08;
+    font-weight: 800;
+}
+
+.gelisim-lock-card p,
+.gelisim-header-card p {
+    margin: 0;
+    color: #5f6d82;
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.gelisim-error {
+    margin-top: 22px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(220, 38, 38, 0.08);
+    color: #b42318;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.gelisim-ghost-button {
+    height: 56px;
+    padding: 0 24px;
+    border: 0;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #1059ff 0%, #0d49c4 100%);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 16px 32px rgba(16, 89, 255, 0.22);
+}
+
+.gelisim-hint-card {
+    display: grid;
+    gap: 8px;
+    margin-top: 24px;
+    padding: 18px 20px;
+    border-radius: 18px;
+    background: rgba(15, 79, 230, 0.06);
+}
+
+.gelisim-hint-card strong {
+    color: #17305d;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.gelisim-hint-card span {
+    color: #57657a;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.gelisim-header-card {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 32px 34px;
+}
+
+.gelisim-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gelisim-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 180px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: rgba(15, 79, 230, 0.06);
+}
+
+.gelisim-meta span {
+    color: #6f7b90;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.gelisim-meta strong {
+    color: #16243c;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.gelisim-ghost-button {
+    background: #fff;
+    color: #17305d;
+    border: 1px solid rgba(18, 38, 63, 0.12);
+    box-shadow: none;
+}
+
+.gelisim-content-card {
+    margin-top: 18px;
+    padding: 34px;
+}
+
+.prose-content h1,
+.prose-content h2,
+.prose-content h3 {
+    color: #14253f;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.prose-content h1 {
+    margin: 0 0 18px;
+    font-size: 34px;
+}
+
+.prose-content h2 {
+    margin: 34px 0 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(18, 38, 63, 0.08);
+    font-size: 24px;
+}
+
+.prose-content h3 {
+    margin: 24px 0 10px;
+    font-size: 20px;
+}
+
+.prose-content p,
+.prose-content li {
+    color: #425065;
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.prose-content ul,
+.prose-content ol {
+    padding-left: 24px;
+}
+
+.prose-content code {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: rgba(15, 79, 230, 0.08);
+    color: #0e4ee5;
+    font-size: 0.95em;
+    font-weight: 700;
+}
+
+.prose-content strong {
+    color: #14253f;
+    font-weight: 800;
+}

@@ -79,7 +79,10 @@
     </div>
 </div>
 
-<script>
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
 document.querySelectorAll('[data-modal-open]').forEach(button => {
     button.addEventListener('click', () => {
         const target = document.getElementById(button.getAttribute('data-modal-open'));

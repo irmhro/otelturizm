@@ -2,6 +2,7 @@
     Layout = null;
     ViewData["Title"] = "Kurumsal";
     ViewData["HeaderContext"] = "corporate";
+    var nonce = Context.Items["CspNonce"] as string;
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -10,7 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <meta name="google-site-verification" content="XOjXVbWYoGSwJOaCHdDNb2l8Zs_JO7nr2BnsfeAp9Uw" />
     <title>@ViewData["Title"] - Otelturizm</title>
-    <script type="importmap"></script>
+    <script type="importmap" nonce="@nonce"></script>
 
             <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
@@ -26,6 +27,9 @@
 <body class="corporate-page-body">
     <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
 
+    <script src="~/assets/js/sw-asset-guard.js" asp-append-version="true"></script>
+    <script src="~/assets/js/layout/sw-cleanup.js" asp-append-version="true"></script>
+
     <main class="corporate-main">
         <partial name="~/Views/Kurumsal/_KurumsalContent.cshtml" />
     </main>
@@ -35,42 +39,6 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script>
-        (function () {
-            const header = document.getElementById('mainHeader');
-            const overlay = document.getElementById('mobileMenuOverlay');
-            const drawer = document.getElementById('mobileMenuDrawer');
-            const toggle = document.getElementById('mobileMenuToggle');
-            const closeBtn = document.getElementById('drawerClose');
-
-            window.addEventListener('scroll', function () {
-                if (!header) {
-                    return;
-                }
-
-                if (window.scrollY > 40) {
-                    header.classList.add('scrolled');
-                } else {
-                    header.classList.remove('scrolled');
-                }
-            });
-
-            function openMenu() {
-                overlay?.classList.add('active');
-                drawer?.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeMenu() {
-                overlay?.classList.remove('active');
-                drawer?.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-
-            toggle?.addEventListener('click', openMenu);
-            closeBtn?.addEventListener('click', closeMenu);
-            overlay?.addEventListener('click', closeMenu);
-        })();
-    </script>
+    <script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
 </body>
 </html>

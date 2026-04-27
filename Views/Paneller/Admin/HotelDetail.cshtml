@@ -348,7 +348,10 @@
 </section>
 
 @section Scripts {
-    <script>
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
+    }
+    <script nonce="@nonce">
         (function () {
             const pager = document.querySelector('.admin-section-pager');
             if (!pager) {

@@ -1,9 +1,10 @@
 @using otelturizmnew.Models.Paneller.Admin
 @{
     Layout = null;
-    var pageCss = ViewData["PageCss"] as string;
+    var pageCssPath = ViewData["PageCssPath"] as string ?? ViewData["PageCss"] as string;
     var shell = ViewData["AdminShell"] as AdminShellViewModel;
     var title = ViewData["Title"] as string ?? shell?.PanelTitle ?? "Admin Panel";
+    var nonce = Context.Items["CspNonce"] as string;
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -17,10 +18,10 @@
     <link rel="stylesheet" href="~/assets/css/paneller/panel-tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/panel-admin-shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/panel-admin-shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    @if (!string.IsNullOrWhiteSpace(pageCss))
+    @if (!string.IsNullOrWhiteSpace(pageCssPath))
     {
-        <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
-        <link rel="stylesheet" href="~/assets/css/@(pageCss).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+        <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/assets/css/@(pageCssPath).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     }
 </head>
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed admin-panel-theme">
@@ -66,7 +67,7 @@
     <script src="~/vendor/AdminLTE-3.2.0/plugins/jquery/jquery.min.js"></script>
     <script src="~/vendor/AdminLTE-3.2.0/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/vendor/AdminLTE-3.2.0/dist/js/adminlte.min.js"></script>
-    <script>
+    <script nonce="@nonce">
         (function () {
             document.querySelectorAll('[data-admin-accordion="group"]').forEach(function (toggle) {
                 toggle.addEventListener('click', function () {

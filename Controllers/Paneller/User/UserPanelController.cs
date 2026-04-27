@@ -16,13 +16,20 @@ public class UserPanelController : Controller
     private readonly IUserPanelService _userPanelService;
     private readonly IPhoneVerificationService _phoneVerificationService;
     private readonly IImageStorageService _imageStorageService;
+    private readonly IWebHostEnvironment _environment;
 
-    public UserPanelController(IUserFavoriteService userFavoriteService, IUserPanelService userPanelService, IPhoneVerificationService phoneVerificationService, IImageStorageService imageStorageService)
+    public UserPanelController(
+        IUserFavoriteService userFavoriteService,
+        IUserPanelService userPanelService,
+        IPhoneVerificationService phoneVerificationService,
+        IImageStorageService imageStorageService,
+        IWebHostEnvironment environment)
     {
         _userFavoriteService = userFavoriteService;
         _userPanelService = userPanelService;
         _phoneVerificationService = phoneVerificationService;
         _imageStorageService = imageStorageService;
+        _environment = environment;
     }
 
     [HttpGet("")]
@@ -48,7 +55,7 @@ public class UserPanelController : Controller
             reservationPage,
             reservationPageSize,
             cancellationToken);
-        ViewData["PageCss"] = "panel-user-dashboard";
+        ViewData["PageCssPath"] = "panel-user-dashboard";
         ViewData["PanelTitle"] = "Kullanici Paneli";
         ViewData["PanelSubtitle"] = "Hesabini yonet, rezervasyonlarini takip et ve ozel firsatlari kesfet.";
         ViewData["FavoriteCount"] = model.FavoriteCount;
@@ -74,7 +81,7 @@ public class UserPanelController : Controller
         var model = await _userPanelService.GetReservationsAsync(userId, status, startDate, endDate, page, pageSize, cancellationToken);
         ViewData["FavoriteCount"] = await _userFavoriteService.GetFavoriteCountAsync(userId, cancellationToken);
         ViewData["ReservationCount"] = model.TotalCount;
-        ViewData["PageCss"] = "panel-user-reservations";
+        ViewData["PageCssPath"] = "panel-user-reservations";
         ViewData["PanelTitle"] = "Rezervasyonlarim";
         ViewData["PanelSubtitle"] = "Tum yaklasan, gecmis ve iptal edilen rezervasyonlarini yonet.";
         return View("~/Views/Paneller/User/Reservations.cshtml", model);
@@ -121,7 +128,7 @@ public class UserPanelController : Controller
         }
 
         ViewData["FavoriteCount"] = await _userFavoriteService.GetFavoriteCountAsync(userId, cancellationToken);
-        ViewData["PageCss"] = "panel-user-reservations";
+        ViewData["PageCssPath"] = "panel-user-reservations";
         ViewData["PanelTitle"] = "Konaklama degerlendirmesi";
         ViewData["PanelSubtitle"] = "Konakladiginiz tesis hakkinda geri bildirim verin.";
         return View("~/Views/Paneller/User/ReservationReview.cshtml", model);
@@ -156,7 +163,7 @@ public class UserPanelController : Controller
         }
 
         var model = await _userFavoriteService.GetFavoritesPageAsync(GetCurrentUserId(), cancellationToken);
-        ViewData["PageCss"] = "panel-user-favorites";
+        ViewData["PageCssPath"] = "panel-user-favorites";
         ViewData["PanelTitle"] = "Favorilerim";
         ViewData["PanelSubtitle"] = "Kaydettigin otelleri karsilastir, duzenle ve rezervasyona donustur.";
         ViewData["FavoriteCount"] = model.FavoriteCount;
@@ -211,7 +218,7 @@ public class UserPanelController : Controller
         }
 
         var model = await _userPanelService.GetLoyaltyAsync(GetCurrentUserId(), cancellationToken);
-        ViewData["PageCss"] = "panel-user-loyalty";
+        ViewData["PageCssPath"] = "panel-user-loyalty";
         ViewData["PanelTitle"] = "Puanlarim";
         ViewData["PanelSubtitle"] = "OtelPuan bakiyeni, uye seviyeni ve kullanabilecegin odulleri tek ekranda yonet.";
         return View("~/Views/Paneller/User/Loyalty.cshtml", model);
@@ -250,7 +257,7 @@ public class UserPanelController : Controller
         }
 
         var model = await _userPanelService.GetMessagesAsync(GetCurrentUserId(), conversationId, cancellationToken);
-        ViewData["PageCss"] = "panel-user-messages";
+        ViewData["PageCssPath"] = "panel-user-messages";
         ViewData["PanelTitle"] = "Mesajlarim";
         ViewData["PanelSubtitle"] = "Oteller ve destek ekipleri ile tum mesajlasma akislarini yonet.";
         return View("~/Views/Paneller/User/Messages.cshtml", model);
@@ -273,7 +280,7 @@ public class UserPanelController : Controller
         {
             model.ReturnUrl = returnUrl;
         }
-        ViewData["PageCss"] = "panel-user-profile";
+        ViewData["PageCssPath"] = "panel-user-profile";
         ViewData["PanelTitle"] = "Profil Bilgilerim";
         ViewData["PanelSubtitle"] = "Kisisel bilgilerini, iletisim verilerini ve seyahat tercihlerini duzenle.";
         return View("~/Views/Paneller/User/Profile.cshtml", model);
@@ -288,7 +295,7 @@ public class UserPanelController : Controller
         }
 
         var model = await _userPanelService.GetPaymentMethodsAsync(GetCurrentUserId(), cancellationToken);
-        ViewData["PageCss"] = "panel-user-payment";
+        ViewData["PageCssPath"] = "panel-user-payment";
         ViewData["PanelTitle"] = "Odeme Yontemleri";
         ViewData["PanelSubtitle"] = "Kayitli kartlarini, fatura bilgilerini ve odeme guvenligini yonet.";
         return View("~/Views/Paneller/User/PaymentMethods.cshtml", model);
@@ -303,7 +310,7 @@ public class UserPanelController : Controller
         }
 
         var model = await _userPanelService.GetNotificationsAsync(GetCurrentUserId(), cancellationToken);
-        ViewData["PageCss"] = "panel-user-notifications";
+        ViewData["PageCssPath"] = "panel-user-notifications";
         ViewData["PanelTitle"] = "Bildirim Tercihleri";
         ViewData["PanelSubtitle"] = "E-posta, SMS ve uygulama ici bildirim tercihlerini ozellestir.";
         return View("~/Views/Paneller/User/Notifications.cshtml", model);
@@ -449,7 +456,7 @@ public class UserPanelController : Controller
         }
 
         var userId = GetCurrentUserId();
-        var targetDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "user", "avatars", userId.ToString());
+        var targetDir = Path.Combine(_environment.WebRootPath, "uploads", "user", "avatars", userId.ToString());
         try
         {
             var saved = await _imageStorageService.SaveAsWebpAsync(profileImage, targetDir, "avatar", cancellationToken);

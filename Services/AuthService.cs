@@ -33,14 +33,23 @@ public class AuthService : IAuthService
     private readonly IEmailQueueService _emailQueueService;
     private readonly IContractContentService _contractContentService;
     private readonly string _publicBaseUrl;
+    private readonly ILogger<AuthService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public AuthService(IConfiguration configuration, IEmailQueueService emailQueueService, IContractContentService contractContentService)
+    public AuthService(
+        IConfiguration configuration,
+        IEmailQueueService emailQueueService,
+        IContractContentService contractContentService,
+        ILogger<AuthService> logger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _emailQueueService = emailQueueService;
         _contractContentService = contractContentService;
         _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://localhost:7223").TrimEnd('/');
+        _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<UserSessionModel?> GetUserSessionByIdAsync(long userId, CancellationToken cancellationToken = default)
@@ -363,6 +372,7 @@ public class AuthService : IAuthService
         var candidate = await FindAuthCandidateAsync(identity, false, cancellationToken);
         if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.Now)
         {
+            LogSecurityEvent("login_blocked_lockout", candidate.UserId, identity, candidate.UserRole, "lockout_active");
             throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value:HH:mm} sonrasinda tekrar deneyin.");
         }
 
@@ -371,9 +381,11 @@ public class AuthService : IAuthService
         {
             if (candidate is not null)
             {
+                LogSecurityEvent("login_failed", candidate.UserId, identity, candidate.UserRole, "invalid_credentials");
                 var lockoutEnd = await RegisterFailedLoginAttemptAsync(candidate.UserId, cancellationToken);
                 if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.Now)
                 {
+                    LogSecurityEvent("lockout_triggered", candidate.UserId, identity, candidate.UserRole, "threshold_reached");
                     throw new AuthFlowException(CreateLockoutTriggeredMessage());
                 }
             }
@@ -449,6 +461,7 @@ public class AuthService : IAuthService
         var candidate = await FindAuthCandidateAsync(identity, true, cancellationToken);
         if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.Now)
         {
+            LogSecurityEvent("login_blocked_lockout", candidate.UserId, identity, "partner", "lockout_active");
             throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value:HH:mm} sonrasinda tekrar deneyin.");
         }
 
@@ -457,9 +470,11 @@ public class AuthService : IAuthService
         {
             if (candidate is not null)
             {
+                LogSecurityEvent("login_failed", candidate.UserId, identity, "partner", "invalid_credentials");
                 var lockoutEnd = await RegisterFailedLoginAttemptAsync(candidate.UserId, cancellationToken);
                 if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.Now)
                 {
+                    LogSecurityEvent("lockout_triggered", candidate.UserId, identity, "partner", "threshold_reached");
                     throw new AuthFlowException(CreateLockoutTriggeredMessage());
                 }
             }
@@ -485,6 +500,7 @@ public class AuthService : IAuthService
         var candidate = await FindAuthCandidateAsync(identity, false, cancellationToken);
         if (candidate is not null && candidate.LockoutEndUtc.HasValue && candidate.LockoutEndUtc.Value > DateTime.Now)
         {
+            LogSecurityEvent("login_blocked_lockout", candidate.UserId, identity, "firma", "lockout_active");
             throw new AuthFlowException($"Bu hesap gecici olarak kilitlendi. Lutfen {candidate.LockoutEndUtc.Value:HH:mm} sonrasinda tekrar deneyin.");
         }
 
@@ -493,9 +509,11 @@ public class AuthService : IAuthService
         {
             if (candidate is not null)
             {
+                LogSecurityEvent("login_failed", candidate.UserId, identity, "firma", "invalid_credentials_or_wrong_account_type");
                 var lockoutEnd = await RegisterFailedLoginAttemptAsync(candidate.UserId, cancellationToken);
                 if (lockoutEnd.HasValue && lockoutEnd.Value > DateTime.Now)
                 {
+                    LogSecurityEvent("lockout_triggered", candidate.UserId, identity, "firma", "threshold_reached");
                     throw new AuthFlowException(CreateLockoutTriggeredMessage());
                 }
             }
@@ -3052,5 +3070,31 @@ public class AuthService : IAuthService
         public string UserRole { get; init; } = "user";
         public bool EmailVerified { get; init; }
         public DateTime? LockoutEndUtc { get; init; }
+    }
+
+    private void LogSecurityEvent(string eventType, long? userId, string? identity, string? accountType, string reason)
+    {
+        try
+        {
+            var ctx = _httpContextAccessor.HttpContext;
+            var ip = ctx?.Connection.RemoteIpAddress?.ToString();
+            var ua = ctx?.Request.Headers.UserAgent.ToString();
+            var correlationId = ctx?.Items.TryGetValue("CorrelationId", out var cidObj) == true ? cidObj as string : null;
+
+            _logger.LogWarning(
+                "SECURITY_EVENT {EventType} userId={UserId} accountType={AccountType} identity={Identity} ip={Ip} ua={UserAgent} reason={Reason} correlationId={CorrelationId}",
+                eventType,
+                userId,
+                accountType ?? string.Empty,
+                (identity ?? string.Empty).Trim(),
+                ip ?? string.Empty,
+                string.IsNullOrWhiteSpace(ua) ? string.Empty : ua!,
+                reason,
+                correlationId ?? string.Empty);
+        }
+        catch
+        {
+            // fail-safe
+        }
     }
 }

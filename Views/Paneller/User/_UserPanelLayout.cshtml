@@ -5,7 +5,7 @@
 @inject otelturizmnew.Services.Abstractions.IHeaderBildiriService HeaderBildiriService
 @{
     Layout = null;
-    var pageCss = ViewData["PageCss"] as string;
+    var pageCssPath = ViewData["PageCssPath"] as string ?? ViewData["PageCss"] as string;
     var title = ViewData["Title"] as string ?? ViewData["PanelTitle"] as string ?? "Kullanıcı Paneli";
     var userDraftRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     long? userDraftUserId = long.TryParse(userDraftRaw, out var parsedUserDraftUserId) ? parsedUserDraftUserId : null;
@@ -29,10 +29,10 @@
     <link rel="stylesheet" href="~/assets/css/panel-user-shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    @if (!string.IsNullOrWhiteSpace(pageCss))
+    @if (!string.IsNullOrWhiteSpace(pageCssPath))
     {
-        <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
-        <link rel="stylesheet" href="~/assets/css/@(pageCss).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+        <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/assets/css/@(pageCssPath).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     }
 </head>
 <body>

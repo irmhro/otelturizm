@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
@@ -18,14 +19,18 @@ public class LoginTwoFactorService : ILoginTwoFactorService
     private readonly IWhatsAppCloudApiService _whatsAppCloudApiService;
     private readonly IEmailQueueService _emailQueueService;
     private readonly IDataProtector _protector;
+    private readonly IWebHostEnvironment _environment;
+    private readonly bool _devShowTwoFactorCode;
 
-    public LoginTwoFactorService(IConfiguration configuration, IWhatsAppCloudApiService whatsAppCloudApiService, IEmailQueueService emailQueueService, IDataProtectionProvider dataProtectionProvider)
+    public LoginTwoFactorService(IConfiguration configuration, IWhatsAppCloudApiService whatsAppCloudApiService, IEmailQueueService emailQueueService, IDataProtectionProvider dataProtectionProvider, IWebHostEnvironment environment)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _whatsAppCloudApiService = whatsAppCloudApiService;
         _emailQueueService = emailQueueService;
         _protector = dataProtectionProvider.CreateProtector("otelturizm.whatsapp-cloud-api.settings.v1");
+        _environment = environment;
+        _devShowTwoFactorCode = configuration.GetValue("Security:DevShowTwoFactorCode", false);
     }
 
     public async Task<(bool Success, string Message, string Channel)> SendCodeAsync(long userId, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default)
@@ -131,6 +136,10 @@ public class LoginTwoFactorService : ILoginTwoFactorService
                 }
             }, cancellationToken);
             _ = tokenId;
+            if (_environment.IsDevelopment() && _devShowTwoFactorCode)
+            {
+                return (true, $"DEV: Güvenlik kodu: {code}", delivery.Channel);
+            }
             return (true, "Güvenlik kodu e-posta adresinize gönderildi.", delivery.Channel);
         }
 

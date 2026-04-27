@@ -574,9 +574,12 @@ public class ContractContentService : IContractContentService
                 continue;
             }
 
-            var url = fileUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            // dosya_yolu; URL (/uploads/... veya http...) veya fiziksel path olabilir.
+            var urlOrPath = Path.IsPathRooted(fileUrl)
                 ? fileUrl
-                : $"{_publicBaseUrl}{fileUrl}";
+                : fileUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                    ? fileUrl
+                    : $"{_publicBaseUrl}{fileUrl}";
 
             var safeFileName = string.IsNullOrWhiteSpace(fileName)
                 ? $"sozlesme-{contractId}.pdf"
@@ -585,7 +588,7 @@ public class ContractContentService : IContractContentService
             attachments.Add(new QueuedEmailAttachment
             {
                 FileName = safeFileName,
-                FilePathOrUrl = url,
+                FilePathOrUrl = urlOrPath,
                 ContentType = "application/pdf"
             });
         }

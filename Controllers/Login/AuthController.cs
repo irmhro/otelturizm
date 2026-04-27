@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Giris;
 using otelturizmnew.Services.Abstractions;
@@ -76,6 +77,7 @@ public class AuthController : Controller
 
     [HttpPost(UserLoginPath)]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("auth-strict")]
     public async Task<IActionResult> UserLogin(string loginEmail, string loginPassword, bool rememberMe = false, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(loginEmail) || string.IsNullOrWhiteSpace(loginPassword))
@@ -133,6 +135,7 @@ public class AuthController : Controller
 
     [HttpPost("/kullanici-giris-2fa")]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("auth-strict")]
     public async Task<IActionResult> UserLoginTwoFactorPost(LoginTwoFactorViewModel model, CancellationToken cancellationToken = default)
     {
         ViewData["PageCss"] = "user-login";
@@ -176,6 +179,7 @@ public class AuthController : Controller
 
     [HttpPost("/kullanici-giris-2fa/tekrar-gonder")]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("auth-strict")]
     public async Task<IActionResult> ResendUserLoginTwoFactor(CancellationToken cancellationToken = default)
     {
         if (!TryReadLogin2FaCookie(out var userId, out _, out _, out var loginPath, out _, out var destinationHint))

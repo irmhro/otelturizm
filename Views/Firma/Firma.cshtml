@@ -2,6 +2,7 @@
 @{
     Layout = null;
     ViewData["HeaderContext"] = "firma";
+    var nonce = Context.Items["CspNonce"] as string;
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -22,48 +23,14 @@
 </head>
 <body class="firma-page">
     <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
+    <script src="~/assets/js/sw-asset-guard.js" asp-append-version="true"></script>
+    <script src="~/assets/js/layout/sw-cleanup.js" asp-append-version="true"></script>
     <partial name="~/Views/Firma/_FirmaContent.cshtml" model="Model" />
     <partial name="~/Views/Anasayfa/_AnasayfaFooter.cshtml" />
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script>
-        (function () {
-            const header = document.getElementById('mainHeader');
-            const overlay = document.getElementById('mobileMenuOverlay');
-            const drawer = document.getElementById('mobileMenuDrawer');
-            const toggle = document.getElementById('mobileMenuToggle');
-            const closeBtn = document.getElementById('drawerClose');
-
-            window.addEventListener('scroll', function () {
-                if (!header) {
-                    return;
-                }
-
-                if (window.scrollY > 40) {
-                    header.classList.add('scrolled');
-                } else {
-                    header.classList.remove('scrolled');
-                }
-            });
-
-            function openMenu() {
-                overlay?.classList.add('active');
-                drawer?.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeMenu() {
-                overlay?.classList.remove('active');
-                drawer?.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-
-            toggle?.addEventListener('click', openMenu);
-            closeBtn?.addEventListener('click', closeMenu);
-            overlay?.addEventListener('click', closeMenu);
-        })();
-    </script>
+    <script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
 </body>
 </html>

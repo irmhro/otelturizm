@@ -11,6 +11,10 @@
         {
             <div class="auth-alert">@loginError</div>
         }
+        @if (TempData["UserLoginSuccess"] is string loginSuccess)
+        {
+            <div class="auth-alert success">@loginSuccess</div>
+        }
         @if (!ViewData.ModelState.IsValid)
         {
             <div class="auth-alert">@Html.ValidationSummary(false)</div>

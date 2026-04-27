@@ -162,6 +162,7 @@ public class PartnerPanelController : Controller
     [HttpGet("firma-fiyatlari")]
     public async Task<IActionResult> CompanyPricing(long? otelId, long? companyId, long? roomId, string? month, CancellationToken cancellationToken)
     {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
         try
         {
             var model = await _partnerService.GetCompanyPricingAsync(GetUserId(), otelId, companyId, roomId, month, cancellationToken);
@@ -216,6 +217,7 @@ public class PartnerPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ApplyCompanyBulkPricing(otelturizmnew.Models.Paneller.Partner.PartnerCompanyBulkPricingUpdateRequest request, CancellationToken cancellationToken)
     {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
         try
         {
             var result = await _partnerService.ApplyCompanyBulkPricingAsync(GetUserId(), request, cancellationToken);

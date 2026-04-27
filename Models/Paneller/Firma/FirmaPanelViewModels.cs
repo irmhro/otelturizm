@@ -135,6 +135,41 @@ public class FirmaDealsPageViewModel
     public List<FirmaPanelDealRowViewModel> Deals { get; set; } = new();
     public FirmaDealsFilterModel Filter { get; set; } = new();
     public List<string> AvailableCities { get; set; } = new();
+    public List<FirmaDealHotelOptionViewModel> HotelOptions { get; set; } = new();
+}
+
+public class FirmaDealHotelOptionViewModel
+{
+    public long HotelId { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public bool IsSelected { get; set; }
+}
+
+public class FirmaDealsComparePageViewModel
+{
+    public FirmaPanelShellViewModel Shell { get; set; } = new();
+    public int RoomCount { get; set; } = 5;
+    public List<FirmaDealsCompareHotelViewModel> Hotels { get; set; } = new();
+    public List<FirmaDealsCompareRowViewModel> Rows { get; set; } = new();
+    public string? Hint { get; set; }
+}
+
+public class FirmaDealsCompareHotelViewModel
+{
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public string CityText { get; set; } = string.Empty;
+}
+
+public class FirmaDealsCompareRowViewModel
+{
+    public long HotelId { get; set; }
+    public long RoomTypeId { get; set; }
+    public string RoomName { get; set; } = string.Empty;
+    public string CorporateNightlyText { get; set; } = "-";
+    public string StandardNightlyText { get; set; } = "-";
+    public string DiscountText { get; set; } = "-";
+    public string ValidityText { get; set; } = "-";
 }
 
 public class FirmaReservationsPageViewModel

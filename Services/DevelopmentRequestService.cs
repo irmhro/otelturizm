@@ -379,16 +379,19 @@ public class DevelopmentRequestService : IDevelopmentRequestService
     {
         var developers = new List<DeveloperUserOptionViewModel>();
         await using var command = new SqlCommand("""
-            SELECT DISTINCT
-                u.id,
-                COALESCE(u.ad_soyad, N'Developer'),
-                COALESCE(u.eposta, N'')
-            FROM dbo.users AS u
-            LEFT JOIN dbo.kullanici_rolleri AS ur ON ur.kullanici_id = u.id AND ur.bitis_tarihi IS NULL
-            LEFT JOIN dbo.roller AS r ON r.id = ur.rol_id
-            WHERE LOWER(COALESCE(u.rol, N'')) = N'developer'
-               OR LOWER(COALESCE(r.rol_kodu, N'')) = N'developer'
-            ORDER BY COALESCE(u.ad_soyad, N''), COALESCE(u.eposta, N'');
+            SELECT d.id, d.ad_soyad, d.eposta
+            FROM (
+                SELECT DISTINCT
+                    u.id,
+                    COALESCE(u.ad_soyad, N'Developer') AS ad_soyad,
+                    COALESCE(u.eposta, N'') AS eposta
+                FROM dbo.users AS u
+                LEFT JOIN dbo.kullanici_rolleri AS ur ON ur.kullanici_id = u.id AND ur.bitis_tarihi IS NULL
+                LEFT JOIN dbo.roller AS r ON r.id = ur.rol_id
+                WHERE LOWER(COALESCE(u.rol, N'')) = N'developer'
+                   OR LOWER(COALESCE(r.rol_kodu, N'')) = N'developer'
+            ) d
+            ORDER BY d.ad_soyad, d.eposta;
             """, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))

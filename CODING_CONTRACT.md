@@ -39,6 +39,29 @@ Test & Ölçüm
 - Görsel değişiklikler için gözlem (A/B veya user feedback) önerilir.
 - UI hatalarında responsive test (320–1440px) yapılmalı.
 
+Alan Mantığı — İndirim ve Kampanya Ayrımı (Zorunlu)
+- `kampanya` ve `indirim` aynı şey değildir; kodda ve UI metinlerinde birbirinin yerine kullanılmaz.
+- `indirim`: Otelin fiyatına uygulanan doğrudan fiyat düşüşüdür (normal fiyat -> indirimli fiyat).
+- `kampanya`: Platform seviyesinde koşullu teklif/ödül kurgusudur (ör. "3 rezervasyondan sonra 4. rezervasyona %40").
+- Partner takvim/fiyat ekranında indirimli fiyat girilirken kullanıcı, `fiyat_indirimleri` tablosundan `indirim_adi` seçer; sistem kaydı `indirim_id` ile yapar.
+- Fiyat kayıtlarında alan adları açık ve ayrık olmalıdır: `normal_fiyat`, `indirimli_fiyat`, `indirim_id`. Eski `kampanya_id` kullanımı yeni geliştirmede `indirim_id` olarak ele alınır.
+- Oda kartları ve fiyatı gösteren tüm alanlarda "neden indirim var" bilgisi kullanıcıya gösterilir (seçilen `indirim_adi` üzerinden).
+- Kampanyaya katılan oteller ayrı görünürlük/öne çıkarma alanında listelenir (ör. "Kahvaltı Hediyeli Oteller"). Bu alan indirim alanından bağımsız yönetilir.
+
+Veri Kalitesi — Türkçe Karakter Standardı
+- `fiyat_indirimleri` ve partner takvim/fiyat tablolarında Türkçe karakterler (`ç, ğ, ı, İ, ö, ş, ü`) bozulmadan saklanmalı ve gösterilmelidir.
+- SQL tarafında metin kolonlarında Unicode (`NVARCHAR` + `N'...'`) standardı korunur.
+- "Test/Deneme" gibi geçici metinler canlı iş akışını bozmayacak şekilde normalize edilir veya anlamlı içerikle güncellenir.
+
+SEO ve XML Üretim Kuralları
+- Geliştirme aşamasında robots dosyası, arama motoru taramasını engelleyecek şekilde yönetilir.
+- `sitemap.xml` ve il/ilçe bazlı otel XML dosyaları sistem tarafından otomatik üretilir.
+- İl/ilçe XML çıktıları `Views/xml` altında tutulur; mahalle seviyesi bu fazda kapsam dışıdır.
+- Sitemap yenileme kontrol periyodu 3 gündür; güncel içerik otomatik yeniden üretilir.
+
+Yayın Güvenliği
+- Kullanıcı açık onay vermeden canlıya yükleme/deploy yapılmaz.
+
 Uygulama Örneği — Otel Kartı (özet)
 - thumbnail | badge (küçük) | favori ikonu
 - başlık (1 satır), konum (metin)

@@ -61,3 +61,56 @@
 
 .ot-muted{ color: var(--ot-muted); }
 
+/* ------------------------------------------------------------
+   p47: Panel UI standardizasyonu için "bridge" stiller
+   Amaç: AdminLTE/Bootstrap class'ları kullanan sayfalarda bile
+   görünümün ot-* token’lara yaklaşması.
+   Bu dosya sadece panel layout’larda yüklenir.
+------------------------------------------------------------ */
+
+/* Admin panel (AdminLTE) */
+.admin-panel-theme .card{
+  background: var(--ot-bg);
+  border: var(--ot-border-1);
+  border-radius: var(--ot-radius-2);
+  box-shadow: var(--ot-shadow-1);
+}
+.admin-panel-theme .card-header{
+  border-bottom: 1px solid rgba(15,23,42,.10);
+  background: linear-gradient(180deg, rgba(248,250,252,.92) 0%, #fff 100%);
+}
+.admin-panel-theme .btn{
+  border-radius: 12px;
+  font-weight: 650;
+}
+.admin-panel-theme .btn.btn-outline-primary{
+  border-color: rgba(37,99,235,.35);
+}
+.admin-panel-theme .btn.btn-outline-secondary{
+  border-color: rgba(15,23,42,.18);
+}
+.admin-panel-theme .btn.btn-primary{
+  background: var(--ot-primary);
+  border-color: rgba(37,99,235,.35);
+}
+.admin-panel-theme .badge{
+  border-radius: 999px;
+}
+
+/* Firma / Partner / Satış panelleri: eski class'ları token'a yaklaştır */
+.firma-panel-shell .firma-section-card,
+.partner-panel-shell .partner-panel-card,
+.partner-panel-shell .partner-section-card{
+  background: var(--ot-bg);
+  border: var(--ot-border-1);
+  border-radius: var(--ot-radius-2);
+  box-shadow: var(--ot-shadow-1);
+}
+
+.firma-panel-shell .firma-btn-primary,
+.partner-panel-shell .partner-btn-primary,
+.partner-panel-shell .partner-secondary-btn{
+  font-weight: 650;
+  border-radius: 12px;
+}
+

@@ -243,7 +243,10 @@
 </dialog>
 
 @section Scripts {
-<script>
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
 (() => {
     const detailDialog = document.getElementById('user-reservation-detail-dialog');
     const cancelDialog = document.getElementById('user-reservation-cancel-dialog');

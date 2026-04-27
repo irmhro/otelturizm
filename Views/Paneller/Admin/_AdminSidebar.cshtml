@@ -104,7 +104,7 @@
             </section>
 
             <p class="admin-sidebar-section-title">İçerik ve Sistem</p>
-            <section class="admin-sidebar-group @(IsOpen("Notifications", "EmailTemplates", "WhatsAppCloudApi", "Blog", "Faq") ? "open" : string.Empty)">
+            <section class="admin-sidebar-group @(IsOpen("Notifications", "EmailTemplates", "WhatsAppCloudApi", "Blog", "Faq", "SupportArticles") ? "open" : string.Empty)">
                 <button type="button" class="admin-sidebar-group-toggle" data-admin-accordion="group">
                     <span class="admin-sidebar-group-meta">
                         <span class="admin-sidebar-link-icon"><i class="fas fa-bullhorn"></i></span>
@@ -121,10 +121,11 @@
                     <a asp-controller="AdminPanel" asp-action="WhatsAppCloudApi" class="admin-sidebar-link @Active("WhatsAppCloudApi")"><span>WhatsApp Cloud API</span></a>
                     <a asp-controller="AdminPanel" asp-action="Blog" class="admin-sidebar-link @Active("Blog")"><span>Blog Yönetimi</span></a>
                     <a asp-controller="AdminPanel" asp-action="Faq" class="admin-sidebar-link @Active("Faq")"><span>SSS Yönetimi</span></a>
+                    <a asp-controller="AdminPanel" asp-action="SupportArticles" class="admin-sidebar-link @Active("SupportArticles")"><span>Destek Makaleleri</span></a>
                 </div>
             </section>
 
-            <section class="admin-sidebar-group @(IsOpen("Settings", "Security", "Complaints", "Backups", "Logs") ? "open" : string.Empty)">
+            <section class="admin-sidebar-group @(IsOpen("Settings", "Sitemap", "Security", "Complaints", "Backups", "Logs") ? "open" : string.Empty)">
                 <button type="button" class="admin-sidebar-group-toggle" data-admin-accordion="group">
                     <span class="admin-sidebar-group-meta">
                         <span class="admin-sidebar-link-icon"><i class="fas fa-shield-halved"></i></span>
@@ -137,6 +138,7 @@
                 </button>
                 <div class="admin-sidebar-group-body">
                     <a asp-controller="AdminPanel" asp-action="Settings" class="admin-sidebar-link @Active("Settings")"><span>Ayarlar</span></a>
+                    <a asp-controller="AdminPanel" asp-action="Sitemap" class="admin-sidebar-link @Active("Sitemap")"><span>Sitemap XML</span></a>
                     <a asp-controller="AdminPanel" asp-action="Security" class="admin-sidebar-link @Active("Security")"><span>Güvenlik</span></a>
                     <a asp-controller="AdminPanel" asp-action="Complaints" class="admin-sidebar-link @Active("Complaints")"><span>Şikayetler</span></a>
                     <a asp-controller="AdminPanel" asp-action="Backups" class="admin-sidebar-link @Active("Backups")"><span>Yedekleme</span></a>

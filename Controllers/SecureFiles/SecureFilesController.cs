@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using otelturizmnew.Constants;
 using otelturizmnew.Services.Abstractions;
@@ -6,6 +7,7 @@ using otelturizmnew.Services.Abstractions;
 namespace otelturizmnew.Controllers.SecureFiles;
 
 [Route("secure-files")]
+[Authorize]
 public class SecureFilesController : Controller
 {
     private readonly ISecureFileService _secureFileService;

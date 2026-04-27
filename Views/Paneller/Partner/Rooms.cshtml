@@ -358,7 +358,10 @@
     </article>
 </section>
 
-<script>
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
     (function () {
         const roomForm = document.getElementById('partnerRoomForm');
         if (!roomForm) {

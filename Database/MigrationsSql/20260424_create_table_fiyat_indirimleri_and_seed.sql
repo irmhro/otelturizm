@@ -59,8 +59,7 @@ BEGIN
     (N'Spa & Wellness', N'Spa odaklı paket.', N'<h3>Spa & Wellness</h3><p>Spa hizmetleriyle birlikte planlanan paket indirimi.</p>', NULL, N'fa-spa', N'#22c55e', 1, 37),
     (N'Yemek Dahil', N'Yemek paketine özel fiyat.', N'<h3>Yemek Dahil</h3><p>Yemek seçenekleri dahil paketlerde geçerlidir.</p>', NULL, N'fa-utensils', N'#f97316', 1, 38),
     (N'Sınırlı Stok', N'Sınırlı oda stoklarında.', N'<h3>Sınırlı Stok</h3><p>Sınırlı stok günlerinde hızlı aksiyon indirimi.</p>', NULL, N'fa-hourglass-half', N'#ef4444', 1, 39),
-    (N'Özel Gün', N'Partnerin belirlediği özel gün indirimi.', N'<h3>Özel Gün</h3><p>Partnerin tanımladığı özel dönem indirimi.</p>', NULL, N'fa-star', N'#2563eb', 1, 40),
-    (N'Test/Deneme', N'İç kullanım / test indirimi.', N'<h3>Test</h3><p>Yalnızca iç test amaçlı kullanın.</p>', NULL, N'fa-flask', N'#64748b', 0, 999);
+    (N'Özel Gün', N'Partnerin belirlediği özel gün indirimi.', N'<h3>Özel Gün</h3><p>Partnerin tanımladığı özel dönem indirimi.</p>', NULL, N'fa-star', N'#2563eb', 1, 40);
 END
 GO
 

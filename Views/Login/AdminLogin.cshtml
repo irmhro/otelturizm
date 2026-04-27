@@ -93,7 +93,10 @@
 </section>
 
 @section Scripts {
-    <script>
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
+    }
+    <script nonce="@nonce">
         (function () {
             document.querySelectorAll('[data-toggle-target]').forEach(button => {
                 button.addEventListener('click', function () {

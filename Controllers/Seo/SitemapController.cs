@@ -22,6 +22,19 @@ public class SitemapController : Controller
         return Content(xml, "application/xml; charset=utf-8");
     }
 
+    [HttpGet("/xml/{fileName}.xml")]
+    [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any, NoStore = false)]
+    public async Task<IActionResult> RegionalXml(string fileName, CancellationToken cancellationToken)
+    {
+        var xml = await _sitemapService.GetRegionalSitemapXmlAsync(fileName, cancellationToken);
+        if (string.IsNullOrWhiteSpace(xml))
+        {
+            return NotFound();
+        }
+
+        return Content(xml, "application/xml; charset=utf-8");
+    }
+
     [HttpGet("/seo/sitemap-refresh")]
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Refresh([FromQuery] bool force = false, CancellationToken cancellationToken = default)

@@ -201,7 +201,7 @@
 .gallery-main-image img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
     display: block;
     transform: none;
@@ -2268,6 +2268,11 @@
     padding: 24px;
 }
 
+/* Mobilde bottom-sheet kapatma butonu; masaüstünde gizli (mobil override açar) */
+.booking-modal-close {
+    display: none;
+}
+
 .booking-price-head {
     display: flex;
     justify-content: space-between;
@@ -2331,6 +2336,32 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+}
+
+.booking-trust-row {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.03);
+    color: rgba(15, 23, 42, 0.78);
+    font-weight: 700;
+    font-size: 0.88rem;
+}
+
+.booking-trust-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.booking-trust-row i {
+    color: #1d4ed8;
 }
 
 .booking-form label {
@@ -5408,5 +5439,129 @@ body.room-gallery-open {
 
     .otel-detail-template-v41 .featured-amenities-card .amenity-item-lux:nth-child(-n + 4) {
         border-bottom: 1px solid var(--border-light);
+    }
+}
+
+/* Discount modal (OtelDetay) — shared with listing */
+.discount-info-btn {
+    margin-left: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: 1px solid rgba(29, 78, 216, 0.22);
+    background: rgba(239, 246, 255, 0.9);
+    color: #1d4ed8;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+
+.discount-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 5200;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+}
+
+.discount-modal[hidden] {
+    display: none !important;
+}
+
+.discount-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.discount-modal-card {
+    position: relative;
+    width: min(720px, calc(100vw - 22px));
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.92) 0%, rgba(255, 255, 255, 1) 55%);
+    border: 1px solid rgba(29, 78, 216, 0.18);
+    box-shadow: 0 30px 90px rgba(2, 6, 23, 0.32);
+    padding: 18px 18px 16px;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.discount-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(255, 255, 255, 0.95);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.discount-modal-head {
+    display: grid;
+    gap: 6px;
+}
+
+.discount-modal-kicker {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(29, 78, 216, 0.10);
+    border: 1px solid rgba(29, 78, 216, 0.14);
+    color: #1d4ed8;
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    width: fit-content;
+}
+
+.discount-modal-head h3 {
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    color: #0f172a;
+}
+
+.discount-modal-head p {
+    margin: 0;
+    color: rgba(15, 23, 42, 0.72);
+    line-height: 1.6;
+    font-weight: 600;
+}
+
+.discount-modal-visual {
+    margin-top: 14px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(226, 232, 240, 1);
+    background: #fff;
+}
+
+.discount-modal-visual img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+}
+
+@media (max-width: 900px) {
+    .discount-modal-card {
+        border-radius: 22px;
+        padding: 16px 14px 14px;
+    }
+    .discount-modal-head h3 {
+        font-size: 20px;
     }
 }

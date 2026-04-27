@@ -927,16 +927,16 @@
                 }
             </div>
 
-            <script>
-                window.__hotelRoomGalleries = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(roomGalleryMap));
-                window.__hotelRoomDetails = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(roomDetailsMap));
-            </script>
         </article>
 
     </div>
 
-    <aside class="booking-sidebar">
+    <div class="booking-modal-backdrop" id="bookingModalBackdrop" hidden></div>
+    <aside class="booking-sidebar" id="bookingSidebar">
         <div class="booking-card">
+            <button type="button" class="booking-modal-close" id="bookingModalClose" aria-label="Rezervasyon panelini kapat">
+                <i class="fas fa-times"></i>
+            </button>
             <div class="booking-price-head">
                 <div class="booking-price-row">
                     <div class="booking-price-main">
@@ -1112,6 +1112,11 @@
                 </div>
 
                 <button type="submit" class="reserve-btn">Rezervasyonu Oluştur</button>
+
+                <div class="booking-trust-row" aria-label="Güven bilgileri">
+                    <span><i class="fas fa-shield-halved" aria-hidden="true"></i> Güvenli • Hızlı onay</span>
+                    <span><i class="fas fa-headset" aria-hidden="true"></i> 7/24 destek</span>
+                </div>
               </form>
 
             <div class="booking-quote-notice" id="bookingQuoteNotice" hidden></div>
@@ -1127,6 +1132,15 @@
             </details>
         </div>
     </aside>
+
+    <div class="mobile-booking-bar" id="mobileBookingBar" aria-label="Mobil rezervasyon çubuğu">
+        <div class="mobile-booking-bar__price">
+            <span class="mobile-booking-bar__from">Gecelik</span>
+            <strong id="mobileBookingPrice">@(initialInclusiveNightly > 0m ? $"₺{initialInclusiveNightly:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
+            <span class="mobile-booking-bar__hint" id="mobileBookingHint">vergiler dahil</span>
+        </div>
+        <button type="button" class="mobile-booking-bar__btn" id="openBookingSheetBtn">Rezervasyon Yap</button>
+    </div>
 </section>
 
 <div class="detail-modal-backdrop" id="detailActionBackdrop" hidden></div>
@@ -1412,7 +1426,20 @@
 </div>
 
 @section Scripts {
-    <script>
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
+    }
+    <script nonce="@nonce">
+        window.__otelDetayConfig = {
+            galleryImages: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(gallery)),
+            roomGalleries: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(roomGalleryMap)),
+            roomDetails: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(roomDetailsMap)),
+            activeDraftResumeUrl: '@(Model.ActiveDraft?.ResumeUrl ?? "")',
+            activeDraftPromptMessage: '@(Model.ActiveDraft?.Message ?? "")',
+            shouldPromptActiveDraft: @((Model.ActiveDraft is not null && Model.IsLoggedInUser && !Model.ShouldResumeDraftOnLoad) ? "true" : "false")
+        };
+
+        /*
         (function () {
             const galleryImages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(gallery));
             const mainImage = document.getElementById('mainGalleryImage');
@@ -1463,6 +1490,11 @@
             const shareButton = document.getElementById('shareHotelBtn');
             const shareMenu = document.getElementById('shareMenu');
             const bookingAdvancedFields = document.getElementById('bookingAdvancedFields');
+            const bookingSidebar = document.getElementById('bookingSidebar') || document.querySelector('.booking-sidebar');
+            const bookingModalBackdrop = document.getElementById('bookingModalBackdrop');
+            const bookingModalClose = document.getElementById('bookingModalClose');
+            const openBookingSheetBtn = document.getElementById('openBookingSheetBtn');
+            const mobileBookingPrice = document.getElementById('mobileBookingPrice');
             const activeDraftResumeLink = document.querySelector('.active-draft-link');
             const activeDraftMessage = document.querySelector('.active-draft-message');
             const openProfileCompletionFromBanner = document.getElementById('openProfileCompletionFromBanner');
@@ -1503,8 +1535,50 @@
             let activeRoomDetailName = 'Oda';
             let activeRoomDetailRoomId = '';
             let reservationSubmitConfirmed = false;
+
+            function scrollToBookingArea() {
+                if (!(bookingSidebar instanceof HTMLElement)) {
+                    return;
+                }
+
+                const top = bookingSidebar.getBoundingClientRect().top + window.scrollY - 76;
+                window.scrollTo({
+                    top: Math.max(0, top),
+                    behavior: 'smooth'
+                });
+            }
             let lightboxScrollY = 0;
             let lightboxPrevBodyStyles = null;
+
+            function isMobileBookingMode() {
+                return window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+            }
+
+            function openBookingSheet() {
+                if (!bookingSidebar || !bookingModalBackdrop) {
+                    return;
+                }
+
+                bookingModalBackdrop.hidden = false;
+                bookingSidebar.classList.add('is-open');
+                bookingModalBackdrop.classList.add('is-open');
+                document.documentElement.classList.add('modal-open');
+                document.body.classList.add('modal-open');
+            }
+
+            function closeBookingSheet() {
+                if (!bookingSidebar || !bookingModalBackdrop) {
+                    return;
+                }
+
+                bookingSidebar.classList.remove('is-open');
+                bookingModalBackdrop.classList.remove('is-open');
+                document.documentElement.classList.remove('modal-open');
+                document.body.classList.remove('modal-open');
+                window.setTimeout(function () {
+                    bookingModalBackdrop.hidden = true;
+                }, 220);
+            }
 
             // İlk yüklemede de seçili görselin blur arkaplanını set et
             if (mainImageWrap instanceof HTMLElement && mainImage instanceof HTMLImageElement && mainImage.src) {
@@ -1970,7 +2044,12 @@
                         syncRoomsJsonAndHiddenFields();
                         ensureGuestCapacity(true);
                         refreshPriceQuote();
-                        document.querySelector('.booking-sidebar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        if (isMobileBookingMode()) {
+                            openBookingSheet();
+                            setTimeout(scrollToBookingArea, 90);
+                        } else {
+                            scrollToBookingArea();
+                        }
                         button.dataset.lastPickedRoomIndex = String(index);
                         updateSelectRoomButtons();
                     }
@@ -2020,6 +2099,29 @@
             });
 
             updateSelectRoomButtons();
+
+            openBookingSheetBtn?.addEventListener('click', function () {
+                if (!isMobileBookingMode()) {
+                    scrollToBookingArea();
+                    return;
+                }
+                openBookingSheet();
+                setTimeout(scrollToBookingArea, 90);
+            });
+
+            bookingModalClose?.addEventListener('click', function () {
+                closeBookingSheet();
+            });
+
+            bookingModalBackdrop?.addEventListener('click', function () {
+                closeBookingSheet();
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && bookingSidebar && bookingSidebar.classList.contains('is-open')) {
+                    closeBookingSheet();
+                }
+            });
 
             document.querySelectorAll('.guest-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
@@ -2940,11 +3042,13 @@
                 if (itemCount > 1) {
                     bookingPrice.textContent = formatMoney(totals.totalAmount);
                     if (unitEl) unitEl.textContent = 'toplam';
+                    if (mobileBookingPrice) mobileBookingPrice.textContent = formatMoney(totals.totalAmount);
                 } else {
                     const nights = Math.max(1, Math.round((new Date(items[0].checkOut).getTime() - new Date(items[0].checkIn).getTime()) / 86400000));
                     const inclusiveNightly = totals.totalAmount / nights;
                     bookingPrice.textContent = formatMoney(inclusiveNightly);
                     if (unitEl) unitEl.textContent = '';
+                    if (mobileBookingPrice) mobileBookingPrice.textContent = formatMoney(inclusiveNightly);
                 }
 
                 breakdown.innerHTML = buildMultiRoomBreakdownHtml(perRoom, totals);
@@ -3488,183 +3592,8 @@
                     });
             });
         })();
+        */
     </script>
-    <script>
-        (function () {
-            const modal = document.getElementById('roomGalleryModal');
-            const mainImage = document.getElementById('roomGalleryMainImage');
-            const title = document.getElementById('roomGalleryTitle');
-            const thumbs = document.getElementById('roomGalleryThumbs');
-            const dialog = modal?.querySelector('.room-gallery-dialog') || null;
-            const prevButton = document.getElementById('roomGalleryPrev');
-            const nextButton = document.getElementById('roomGalleryNext');
-            const triggers = document.querySelectorAll('.room-gallery-trigger');
-            let galleryItems = [];
-            let currentIndex = 0;
-            let currentRoomName = '';
-
-            function setAmbientSources() {
-                if (!(dialog instanceof HTMLElement) || !Array.isArray(galleryItems) || galleryItems.length === 0) {
-                    return;
-                }
-
-                const prevIndex = (currentIndex - 1 + galleryItems.length) % galleryItems.length;
-                const nextIndex = (currentIndex + 1) % galleryItems.length;
-                dialog.style.setProperty('--room-gallery-prev', 'url(\"' + (galleryItems[prevIndex] || '') + '\")');
-                dialog.style.setProperty('--room-gallery-next', 'url(\"' + (galleryItems[nextIndex] || '') + '\")');
-            }
-
-            function renderGallery() {
-                if (!mainImage || !title || !thumbs || galleryItems.length === 0) {
-                    return;
-                }
-
-                mainImage.src = galleryItems[currentIndex];
-                mainImage.alt = currentRoomName + ' gorsel ' + (currentIndex + 1);
-                title.textContent = currentRoomName + ' · ' + (currentIndex + 1) + '/' + galleryItems.length;
-                thumbs.innerHTML = galleryItems.map(function (item, index) {
-                    const isActive = index === currentIndex ? 'active' : '';
-                    return '<button type="button" class="room-gallery-thumb ' + isActive + '" data-room-thumb-index="' + index + '">' +
-                        '<img src="' + item + '" alt="' + currentRoomName + ' kucuk gorsel ' + (index + 1) + '">' +
-                        '</button>';
-                }).join('');
-
-                thumbs.querySelectorAll('[data-room-thumb-index]').forEach(function (button) {
-                    button.addEventListener('click', function () {
-                        currentIndex = Number(button.getAttribute('data-room-thumb-index') || '0');
-                        renderGallery();
-                    });
-                });
-
-                setAmbientSources();
-            }
-
-            function openGallery(items, roomName, startIndex) {
-                if (!modal || !items || items.length === 0) {
-                    return;
-                }
-
-                galleryItems = items;
-                currentRoomName = roomName || 'Oda';
-                currentIndex = Math.max(0, Math.min(startIndex || 0, items.length - 1));
-                renderGallery();
-                modal.hidden = false;
-                document.body.classList.add('room-gallery-open');
-            }
-
-            function closeGallery() {
-                if (!modal) {
-                    return;
-                }
-
-                modal.hidden = true;
-                document.body.classList.remove('room-gallery-open');
-            }
-
-            triggers.forEach(function (trigger) {
-                trigger.addEventListener('click', function () {
-                    const id = Number(trigger.getAttribute('data-room-id') || '0');
-                    const startIndex = Number(trigger.getAttribute('data-room-gallery-start') || '0');
-                    try {
-                        const map = window.__hotelRoomGalleries || {};
-                        const items = (id && map && map[id]) ? map[id] : [];
-                        openGallery(Array.isArray(items) ? items : [], trigger.getAttribute('data-room-name') || 'Oda', startIndex);
-                    } catch (_error) {
-                        openGallery([], trigger.getAttribute('data-room-name') || 'Oda', startIndex);
-                    }
-                });
-            });
-
-            document.querySelectorAll('[data-room-gallery-close]').forEach(function (button) {
-                button.addEventListener('click', closeGallery);
-            });
-
-            prevButton?.addEventListener('click', function () {
-                if (galleryItems.length === 0) {
-                    return;
-                }
-
-                currentIndex = (currentIndex - 1 + galleryItems.length) % galleryItems.length;
-                renderGallery();
-            });
-
-            nextButton?.addEventListener('click', function () {
-                if (galleryItems.length === 0) {
-                    return;
-                }
-
-                currentIndex = (currentIndex + 1) % galleryItems.length;
-                renderGallery();
-            });
-
-            document.addEventListener('keydown', function (event) {
-                if (!modal || modal.hidden) {
-                    return;
-                }
-
-                if (event.key === 'Escape') {
-                    closeGallery();
-                } else if (event.key === 'ArrowLeft') {
-                    prevButton?.click();
-                } else if (event.key === 'ArrowRight') {
-                    nextButton?.click();
-                }
-            });
-        })();
-    </script>
-    <script>
-        (function () {
-            const modal = document.getElementById('discountModal');
-            const title = document.getElementById('discountModalTitle');
-            const desc = document.getElementById('discountModalDesc');
-            const visual = document.getElementById('discountModalVisual');
-            const image = document.getElementById('discountModalImage');
-            if (!modal || !title || !desc || !visual || !image) return;
-
-            function openDiscount(data) {
-                title.textContent = data.title || 'İndirim';
-                desc.textContent = data.desc || '';
-                const img = (data.image || '').trim();
-                if (img) {
-                    image.src = img;
-                    visual.hidden = false;
-                } else {
-                    image.src = '';
-                    visual.hidden = true;
-                }
-                modal.hidden = false;
-                modal.setAttribute('aria-hidden', 'false');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeDiscount() {
-                modal.hidden = true;
-                modal.setAttribute('aria-hidden', 'true');
-                document.body.style.overflow = '';
-            }
-
-            document.addEventListener('click', function (event) {
-                const btn = event.target.closest('[data-discount-open]');
-                if (btn) {
-                    event.preventDefault();
-                    openDiscount({
-                        title: btn.getAttribute('data-discount-title') || '',
-                        desc: btn.getAttribute('data-discount-desc') || '',
-                        image: btn.getAttribute('data-discount-image') || ''
-                    });
-                    return;
-                }
-                if (event.target.closest('[data-discount-close]')) {
-                    closeDiscount();
-                }
-            });
-
-            document.addEventListener('keydown', function (event) {
-                if (event.key === 'Escape' && !modal.hidden) {
-                    closeDiscount();
-                }
-            });
-        })();
-    </script>
+    <script src="~/assets/js/otel-detay.js" asp-append-version="true"></script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />
 }

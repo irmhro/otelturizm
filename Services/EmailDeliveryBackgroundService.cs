@@ -2,6 +2,7 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Hosting;
 using System.Globalization;
 using System.Security.Authentication;
 using System.Text.Json;
@@ -13,13 +14,15 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<EmailDeliveryBackgroundService> _logger;
+    private readonly IWebHostEnvironment _environment;
     private readonly bool _disableCertificateRevocationCheck;
     private readonly bool _smtpAllowInvalidCertificate;
 
-    public EmailDeliveryBackgroundService(IConfiguration configuration, ILogger<EmailDeliveryBackgroundService> logger)
+    public EmailDeliveryBackgroundService(IConfiguration configuration, ILogger<EmailDeliveryBackgroundService> logger, IWebHostEnvironment environment)
     {
         _configuration = configuration;
         _logger = logger;
+        _environment = environment;
         _disableCertificateRevocationCheck = _configuration.GetValue("Email:DisableCertificateRevocationCheck", true);
         _smtpAllowInvalidCertificate = _configuration.GetValue("Email:SmtpAllowInvalidCertificate", false);
     }
@@ -55,16 +58,72 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         var smtp = await LoadActiveSmtpAsync(connection, cancellationToken);
         if (smtp is null)
         {
-            return;
+            // Dev ortamında DB'de email_services kaydı yoksa bile kuyruk akışını test edebilmek için
+            // pickup directory moduna düşebiliriz.
+            smtp = TryBuildDevPickupSmtp();
+            if (smtp is null)
+            {
+                return;
+            }
+        }
+        else if (_environment.IsDevelopment())
+        {
+            // Development'ta SMTP çalışmıyorsa (host/şifre/port vb.), yine de kuyruk akışı
+            // test edilebilsin diye pickup fallback ekliyoruz.
+            var devPickup = ResolveDevPickupDirectory();
+            if (!string.IsNullOrWhiteSpace(devPickup) && OperatingSystem.IsWindows())
+            {
+                smtp = new SmtpConfig
+                {
+                    SenderName = smtp.SenderName,
+                    SenderEmail = smtp.SenderEmail,
+                    ReplyToEmail = smtp.ReplyToEmail,
+                    Host = smtp.Host,
+                    Port = smtp.Port,
+                    Username = smtp.Username,
+                    Password = smtp.Password,
+                    SecurityType = smtp.SecurityType,
+                    TimeoutSeconds = smtp.TimeoutSeconds,
+                    TestMode = smtp.TestMode,
+                    PickupDirectory = devPickup,
+                    UsePickupDirectoryOnly = smtp.UsePickupDirectoryOnly,
+                    CanUsePickupDirectoryFallback = true
+                };
+            }
         }
 
         if (smtp.TestMode)
         {
-            _logger.LogWarning("Aktif SMTP servisi test modunda oldugu icin e-posta kuyrugu islenmedi. Host={Host}, Sender={Sender}", smtp.Host, smtp.SenderEmail);
-            return;
+            var devPickup = ResolveDevPickupDirectory();
+            if (!string.IsNullOrWhiteSpace(devPickup))
+            {
+                smtp = new SmtpConfig
+                {
+                    SenderName = smtp.SenderName,
+                    SenderEmail = smtp.SenderEmail,
+                    ReplyToEmail = smtp.ReplyToEmail,
+                    Host = smtp.Host,
+                    Port = smtp.Port,
+                    Username = smtp.Username,
+                    Password = smtp.Password,
+                    SecurityType = smtp.SecurityType,
+                    TimeoutSeconds = smtp.TimeoutSeconds,
+                    TestMode = true,
+                    PickupDirectory = devPickup,
+                    UsePickupDirectoryOnly = OperatingSystem.IsWindows(),
+                    CanUsePickupDirectoryFallback = false
+                };
+                _logger.LogWarning("Aktif SMTP servisi test modunda. E-postalar pickup directory'e kaydedilecek. Path={Path}", devPickup);
+            }
+            else
+            {
+                _logger.LogWarning("Aktif SMTP servisi test modunda oldugu icin e-posta kuyrugu islenmedi. Host={Host}, Sender={Sender}", smtp.Host, smtp.SenderEmail);
+                return;
+            }
         }
 
-        var pendingEmails = await ClaimPendingEmailsAsync(connection, cancellationToken);
+        var hasUpdatedAtColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "guncellenme_tarihi", cancellationToken);
+        var pendingEmails = await ClaimPendingEmailsAsync(connection, hasUpdatedAtColumn, cancellationToken);
         foreach (var item in pendingEmails)
         {
             try
@@ -82,9 +141,62 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         }
     }
 
-    private static async Task<List<QueuedEmailItem>> ClaimPendingEmailsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    private string? ResolveDevPickupDirectory()
+    {
+        var configured = _configuration.GetValue<string>("Email:DevPickupDirectory");
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return null;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(configured);
+            return configured;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private SmtpConfig? TryBuildDevPickupSmtp()
+    {
+        var pickup = ResolveDevPickupDirectory();
+        if (string.IsNullOrWhiteSpace(pickup) || !OperatingSystem.IsWindows())
+        {
+            return null;
+        }
+
+        var senderName = _configuration.GetValue<string>("Email:DefaultSenderName") ?? "Otelturizm";
+        var senderEmail = _configuration.GetValue<string>("Email:DefaultSenderEmail") ?? "no-reply@localhost";
+        var replyTo = _configuration.GetValue<string>("Email:DefaultReplyToEmail");
+
+        return new SmtpConfig
+        {
+            SenderName = senderName,
+            SenderEmail = senderEmail,
+            ReplyToEmail = replyTo,
+            Host = string.Empty,
+            Port = 0,
+            Username = string.Empty,
+            Password = string.Empty,
+            SecurityType = "PICKUP",
+            TimeoutSeconds = 60,
+            TestMode = true,
+            PickupDirectory = pickup,
+            UsePickupDirectoryOnly = true,
+            CanUsePickupDirectoryFallback = false
+        };
+    }
+
+    private static async Task<List<QueuedEmailItem>> ClaimPendingEmailsAsync(SqlConnection connection, bool hasUpdatedAtColumn, CancellationToken cancellationToken)
     {
         var hasAttachmentsColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "ekler_json", cancellationToken);
+        var updateSet = hasUpdatedAtColumn
+            ? "durum = 'İşleniyor', guncellenme_tarihi = SYSUTCDATETIME()"
+            : "durum = 'İşleniyor'";
+
         var sql = hasAttachmentsColumn
             ? """
                 ;WITH cte AS (
@@ -96,8 +208,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                     ORDER BY olusturulma_tarihi ASC
                 )
                 UPDATE b
-                SET durum = 'İşleniyor',
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                SET __UPDATE_SET__
                 OUTPUT
                     inserted.id,
                     inserted.alici_eposta,
@@ -119,8 +230,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                     ORDER BY olusturulma_tarihi ASC
                 )
                 UPDATE b
-                SET durum = 'İşleniyor',
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                SET __UPDATE_SET__
                 OUTPUT
                     inserted.id,
                     inserted.alici_eposta,
@@ -132,6 +242,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 FROM bildirim_loglari b
                 INNER JOIN cte ON cte.id = b.id;
                 """;
+        sql = sql.Replace("__UPDATE_SET__", updateSet, StringComparison.Ordinal);
 
         var items = new List<QueuedEmailItem>();
         await using var command = new SqlCommand(sql, connection);

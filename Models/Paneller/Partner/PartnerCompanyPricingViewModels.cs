@@ -6,6 +6,7 @@ public class PartnerCompanyPricingPageViewModel
 {
     public PartnerShellViewModel Shell { get; set; } = new();
     public long HotelId { get; set; }
+    public string? Warning { get; set; }
     public long? SelectedCompanyId { get; set; }
     public string SelectedCompanyName { get; set; } = string.Empty;
     public long? SelectedRoomId { get; set; }

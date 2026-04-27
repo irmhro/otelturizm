@@ -61,7 +61,7 @@
                 <div class="footer-copyright">&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</div>
                 <div class="footer-agency-wrap">
                     <div class="footer-agency-note footer-agency-note-inline" aria-label="Seyahat acentası bilgisi">
-                        Seyahat Acentası Adı: 216 SPECIAL KARTAL TURİZM SEYAHAT ACENTASI 18355 · BTK: İSTANBUL ASYA
+                        216 SPECIAL KARTAL TURİZM SEYAHAT ACENTASI 18355
                     </div>
                     <div class="trust-badges">
                         <span class="trust-badge"><i class="fas fa-shield-alt"></i> TURSAB</span>
@@ -79,7 +79,10 @@
     </div>
 </footer>
 
-<script>
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
     (function () {
         try {
             const storageKey = 'otelturizm.sitemap.refresh.lastPing';

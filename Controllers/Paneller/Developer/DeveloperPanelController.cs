@@ -16,13 +16,20 @@ public class DeveloperPanelController : Controller
     private readonly IImageStorageService _imageStorageService;
     private readonly IUserPanelService _userPanelService;
     private readonly IAuthService _authService;
+    private readonly IWebHostEnvironment _environment;
 
-    public DeveloperPanelController(IDevelopmentRequestService developmentRequestService, IImageStorageService imageStorageService, IUserPanelService userPanelService, IAuthService authService)
+    public DeveloperPanelController(
+        IDevelopmentRequestService developmentRequestService,
+        IImageStorageService imageStorageService,
+        IUserPanelService userPanelService,
+        IAuthService authService,
+        IWebHostEnvironment environment)
     {
         _developmentRequestService = developmentRequestService;
         _imageStorageService = imageStorageService;
         _userPanelService = userPanelService;
         _authService = authService;
+        _environment = environment;
     }
 
     [HttpGet("")]
@@ -35,7 +42,7 @@ public class DeveloperPanelController : Controller
         }
 
         var model = await _developmentRequestService.GetDeveloperDashboardAsync(GetCurrentUserId(), GetFullName(), GetEmail(), q, status, cancellationToken);
-        ViewData["PageCss"] = "panel-developer-dashboard";
+        ViewData["PageCssPath"] = "panel-developer-dashboard";
         ViewData["PanelTitle"] = "Developer Paneli";
         ViewData["PanelSubtitle"] = "Proje gelistirme taleplerini topla, cevaplari yonet ve kontrol surecini takip et.";
         return View("~/Views/Paneller/Developer/Index.cshtml", model);
@@ -80,7 +87,7 @@ public class DeveloperPanelController : Controller
         }
 
         var model = await _authService.GetTwoFactorSecurityAsync(GetCurrentUserId(), "developer", cancellationToken);
-        ViewData["PageCss"] = "panel-user-security";
+        ViewData["PageCssPath"] = "panel-user-security";
         ViewData["PanelTitle"] = "Guvenlik ve Giris";
         ViewData["PanelSubtitle"] = "Developer hesabi icin sifre ve iki asamali dogrulama ayarlarini yonet.";
         return View("~/Views/Paneller/Developer/Security.cshtml", model);
@@ -138,7 +145,7 @@ public class DeveloperPanelController : Controller
         }
 
         var userId = GetCurrentUserId();
-        var targetDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "developer", "requests", userId.ToString());
+        var targetDir = Path.Combine(_environment.WebRootPath, "uploads", "developer", "requests", userId.ToString());
         var saved = await _imageStorageService.SaveAsWebpAsync(file, targetDir, "request", cancellationToken);
         return $"/uploads/developer/requests/{userId}/{saved.FileName}";
     }

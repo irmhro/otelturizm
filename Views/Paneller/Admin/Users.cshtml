@@ -151,7 +151,10 @@
 </section>
 
 @section Scripts {
-    <script>
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
+    }
+    <script nonce="@nonce">
         (function () {
             var tabs = document.querySelectorAll('.admin-users-filter-tab');
             var searchInput = document.getElementById('adminUsersSearchInput');

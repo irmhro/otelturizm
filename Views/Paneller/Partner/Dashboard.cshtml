@@ -227,7 +227,10 @@
 </section>
 
 @section Scripts {
-<script>
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
 (() => {
     const rejectDialog = document.getElementById('partner-dashboard-reject-dialog');
     if (!rejectDialog) {
