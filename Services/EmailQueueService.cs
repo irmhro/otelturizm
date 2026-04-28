@@ -33,26 +33,45 @@ public class EmailQueueService : IEmailQueueService
         var lang = ResolveLang(request.Tokens);
         var tokensWithUtm = ApplyUtmToTokens(request.Tokens, request.TemplateCode);
         var (templateId, subject, viewPath) = await LoadTemplateAsync(connection, transaction, request.TemplateCode, lang, cancellationToken);
-        var provider = await LoadProviderAsync(connection, transaction, cancellationToken);
+        var preferredSenderEmail = string.IsNullOrWhiteSpace(request.SenderEmailOverride)
+            ? ResolvePreferredSenderEmail(request.TemplateCode)
+            : request.SenderEmailOverride.Trim();
+        var provider = await LoadProviderAsync(connection, transaction, request.ServiceCodeOverride, preferredSenderEmail, cancellationToken);
         var renderedSubject = ReplaceTokens(string.IsNullOrWhiteSpace(request.SubjectOverride) ? subject : request.SubjectOverride!, tokensWithUtm);
         var renderedBody = await _emailTemplateService.RenderTemplateFileAsync(viewPath, tokensWithUtm, cancellationToken);
         var safeUserId = await ResolveSafeUserIdAsync(connection, transaction, request.UserId, request.RecipientEmail, cancellationToken);
         var attachmentsJson = BuildAttachmentsJson(request.Attachments);
 
         var hasAttachmentsColumn = await ColumnExistsAsync(connection, transaction, "dbo.bildirim_loglari", "ekler_json", cancellationToken);
+        var hasServiceCodeColumn = await ColumnExistsAsync(connection, transaction, "dbo.bildirim_loglari", "email_servis_kodu", cancellationToken);
+        var hasSenderOverrideColumn = await ColumnExistsAsync(connection, transaction, "dbo.bildirim_loglari", "gonderen_eposta_override", cancellationToken);
         var insertSql = hasAttachmentsColumn
-            ? """
+            ? (hasServiceCodeColumn && hasSenderOverrideColumn
+                ? """
+                INSERT INTO bildirim_loglari
+                (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, email_servis_kodu, gonderen_eposta_override, ilgili_tablo, ilgili_kayit_id, ekler_json)
+                VALUES
+                (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @serviceCode, @senderEmail, @relatedTable, @relatedId, @attachmentsJson);
+                """
+                : """
                 INSERT INTO bildirim_loglari
                 (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, ilgili_tablo, ilgili_kayit_id, ekler_json)
                 VALUES
                 (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId, @attachmentsJson);
+                """)
+            : (hasServiceCodeColumn && hasSenderOverrideColumn
+                ? """
+                INSERT INTO bildirim_loglari
+                (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, email_servis_kodu, gonderen_eposta_override, ilgili_tablo, ilgili_kayit_id)
+                VALUES
+                (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @serviceCode, @senderEmail, @relatedTable, @relatedId);
                 """
-            : """
+                : """
                 INSERT INTO bildirim_loglari
                 (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, ilgili_tablo, ilgili_kayit_id)
                 VALUES
                 (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId);
-                """;
+                """);
 
         await using var command = new SqlCommand(insertSql, (SqlConnection)connection, (SqlTransaction?)transaction);
         command.Parameters.AddWithValue("@userId", safeUserId);
@@ -61,6 +80,11 @@ public class EmailQueueService : IEmailQueueService
         command.Parameters.AddWithValue("@subject", renderedSubject);
         command.Parameters.AddWithValue("@body", renderedBody);
         command.Parameters.AddWithValue("@provider", provider.Provider);
+        if (hasServiceCodeColumn && hasSenderOverrideColumn)
+        {
+            command.Parameters.AddWithValue("@serviceCode", string.IsNullOrWhiteSpace(request.ServiceCodeOverride) ? provider.ServiceCode : request.ServiceCodeOverride!.Trim());
+            command.Parameters.AddWithValue("@senderEmail", preferredSenderEmail);
+        }
         command.Parameters.AddWithValue("@relatedTable", string.IsNullOrWhiteSpace(request.RelatedTable) ? DBNull.Value : request.RelatedTable);
         command.Parameters.AddWithValue("@relatedId", request.RelatedRecordId.HasValue ? request.RelatedRecordId.Value : DBNull.Value);
         if (hasAttachmentsColumn)
@@ -255,26 +279,61 @@ public class EmailQueueService : IEmailQueueService
         return updated;
     }
 
-    private static async Task<EmailProviderSettings> LoadProviderAsync(DbConnection connection, DbTransaction? transaction, CancellationToken cancellationToken)
+    private static async Task<EmailProviderSettings> LoadProviderAsync(DbConnection connection, DbTransaction? transaction, string? preferredServiceCode, string preferredSenderEmail, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT TOP (1) saglayici, gonderen_ad, gonderen_eposta, test_modu
+            SELECT TOP (1) servis_kodu, saglayici, gonderen_ad, gonderen_eposta, test_modu
             FROM email_services
             WHERE aktif_mi = 1
-            ORDER BY varsayilan_mi DESC, id ASC;";
+            ORDER BY
+                CASE WHEN @serviceCode IS NOT NULL AND LOWER(servis_kodu) = LOWER(@serviceCode) THEN 3
+                     WHEN LOWER(gonderen_eposta) = LOWER(@senderEmail) THEN 2
+                     WHEN varsayilan_mi = 1 THEN 1
+                     ELSE 0
+                END DESC,
+                id ASC;";
         await using var command = new SqlCommand(sql, (SqlConnection)connection, (SqlTransaction?)transaction);
+        command.Parameters.AddWithValue("@serviceCode", string.IsNullOrWhiteSpace(preferredServiceCode) ? DBNull.Value : preferredServiceCode.Trim());
+        command.Parameters.AddWithValue("@senderEmail", preferredSenderEmail);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
         {
-            return new EmailProviderSettings();
+            return new EmailProviderSettings
+            {
+                SenderEmail = preferredSenderEmail
+            };
         }
 
         return new EmailProviderSettings
         {
-            Provider = reader.GetString(0),
-            SenderName = reader.GetString(1),
-            SenderEmail = reader.GetString(2),
-            TestMode = !reader.IsDBNull(3) && reader.GetBoolean(3)
+            ServiceCode = reader.IsDBNull(0) ? "default_smtp" : reader.GetString(0),
+            Provider = reader.GetString(1),
+            SenderName = reader.GetString(2),
+            SenderEmail = reader.GetString(3),
+            TestMode = !reader.IsDBNull(4) && reader.GetBoolean(4)
+        };
+    }
+
+    private static string ResolvePreferredSenderEmail(string templateCode)
+    {
+        var code = (templateCode ?? string.Empty).Trim().ToLowerInvariant();
+        return code switch
+        {
+            "login_2fa_email" => "guvenlik@otelturizm.com",
+            "email_verify" => "guvenlik@otelturizm.com",
+            "password_reset" => "guvenlik@otelturizm.com",
+            "reservation_received_customer" => "rezervasyon@otelturizm.com",
+            "reservation_confirmed_customer" => "rezervasyon@otelturizm.com",
+            "reservation_new_partner" => "rezervasyon@otelturizm.com",
+            "reservation_rejected_customer" => "rezervasyon@otelturizm.com",
+            "reservation_guest_message" => "rezervasyon@otelturizm.com",
+            "reservation_cancelled_partner" => "rezervasyon@otelturizm.com",
+            "firma_reservation_created_company" => "rezervasyon@otelturizm.com",
+            "firma_reservation_created_partner" => "rezervasyon@otelturizm.com",
+            "favorite_price_alert_match" => "bildiri@otelturizm.com",
+            "contract_delivery" => "bilgi@otelturizm.com",
+            "system_health_link_report" => "bildiri@otelturizm.com",
+            _ => "info@otelturizm.com"
         };
     }
 }

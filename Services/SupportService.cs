@@ -39,10 +39,10 @@ public class SupportService : ISupportService
                 var slug = reader.GetString(1);
                 model.Categories.Add(new DestekKategoriViewModel
                 {
-                    Name = reader.GetString(0),
+                    Name = FixMojibake(reader.GetString(0)),
                     Slug = slug,
-                    Description = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                    IconClass = reader.IsDBNull(3) ? "fa-circle-info" : reader.GetString(3),
+                    Description = reader.IsDBNull(2) ? string.Empty : FixMojibake(reader.GetString(2)),
+                    IconClass = reader.IsDBNull(3) ? "fa-circle-info" : FixMojibake(reader.GetString(3)),
                     ColorHex = reader.IsDBNull(4) ? "#003B95" : reader.GetString(4),
                     LinkUrl = $"/sss?kategori={Uri.EscapeDataString(slug)}"
                 });
@@ -72,13 +72,13 @@ public class SupportService : ISupportService
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
-                var title = reader.GetString(1);
+                var title = FixMojibake(reader.GetString(1));
                 model.PopularTopics.Add(new DestekMakaleViewModel
                 {
                     Id = reader.GetInt64(0),
                     Title = title,
-                    Summary = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                    IconClass = reader.GetString(3),
+                    Summary = reader.IsDBNull(2) ? string.Empty : FixMojibake(reader.GetString(2)),
+                    IconClass = FixMojibake(reader.GetString(3)),
                     LinkUrl = $"/sss?ara={Uri.EscapeDataString(title)}"
                 });
             }
@@ -97,12 +97,12 @@ public class SupportService : ISupportService
             {
                 var channel = new DestekKanalViewModel
                 {
-                    Name = reader.GetString(0),
-                    Description = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
-                    IconClass = reader.IsDBNull(2) ? "fa-headset" : reader.GetString(2),
-                    ButtonText = reader.IsDBNull(3) ? "Detay" : reader.GetString(3),
+                    Name = FixMojibake(reader.GetString(0)),
+                    Description = reader.IsDBNull(1) ? string.Empty : FixMojibake(reader.GetString(1)),
+                    IconClass = reader.IsDBNull(2) ? "fa-headset" : FixMojibake(reader.GetString(2)),
+                    ButtonText = reader.IsDBNull(3) ? "Detay" : FixMojibake(reader.GetString(3)),
                     Url = reader.IsDBNull(4) ? "#" : reader.GetString(4),
-                    Note = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
+                    Note = reader.IsDBNull(5) ? string.Empty : FixMojibake(reader.GetString(5)),
                     Tone = reader.IsDBNull(6) ? "primary" : reader.GetString(6)
                 };
 
@@ -115,6 +115,33 @@ public class SupportService : ISupportService
         }
 
         return model;
+    }
+
+    private static string FixMojibake(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        // Common UTF-8-as-ANSI mojibake fixes for Turkish content.
+        // (E.g. "Ä°Ã§erik" -> "İçerik", "GÃ¶rsel" -> "Görsel")
+        return value
+            .Replace("Ã‡", "Ç", StringComparison.Ordinal)
+            .Replace("Ã§", "ç", StringComparison.Ordinal)
+            .Replace("Ä±", "ı", StringComparison.Ordinal)
+            .Replace("Ä°", "İ", StringComparison.Ordinal)
+            .Replace("Ã–", "Ö", StringComparison.Ordinal)
+            .Replace("Ã¶", "ö", StringComparison.Ordinal)
+            .Replace("Ãœ", "Ü", StringComparison.Ordinal)
+            .Replace("Ã¼", "ü", StringComparison.Ordinal)
+            .Replace("Åž", "Ş", StringComparison.Ordinal)
+            .Replace("ÅŸ", "ş", StringComparison.Ordinal)
+            .Replace("ÄŸ", "ğ", StringComparison.Ordinal)
+            .Replace("Äž", "Ğ", StringComparison.Ordinal)
+            .Replace("Ä", "Ğ", StringComparison.Ordinal)
+            .Replace("Ä", "ğ", StringComparison.Ordinal)
+            .Replace("Â", "", StringComparison.Ordinal);
     }
 
     public async Task<SssViewModel> GetFaqPageAsync(string? categorySlug, string? searchTerm, CancellationToken cancellationToken = default)

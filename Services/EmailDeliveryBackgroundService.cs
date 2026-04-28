@@ -1,6 +1,7 @@
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
+using MimeKit.Utils;
 using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Hosting;
 using System.Globalization;
@@ -66,13 +67,13 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var smtp = await LoadActiveSmtpAsync(connection, cancellationToken);
-        if (smtp is null)
+        var defaultSmtp = await LoadSmtpConfigAsync(connection, null, null, cancellationToken);
+        if (defaultSmtp is null)
         {
             // Dev ortamında DB'de email_services kaydı yoksa bile kuyruk akışını test edebilmek için
             // pickup directory moduna düşebiliriz.
-            smtp = TryBuildDevPickupSmtp();
-            if (smtp is null)
+            defaultSmtp = TryBuildDevPickupSmtp();
+            if (defaultSmtp is null)
             {
                 return;
             }
@@ -84,26 +85,27 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             var devPickup = ResolveDevPickupDirectory();
             if (!string.IsNullOrWhiteSpace(devPickup) && OperatingSystem.IsWindows())
             {
-                smtp = new SmtpConfig
+                defaultSmtp = new SmtpConfig
                 {
-                    SenderName = smtp.SenderName,
-                    SenderEmail = smtp.SenderEmail,
-                    ReplyToEmail = smtp.ReplyToEmail,
-                    Host = smtp.Host,
-                    Port = smtp.Port,
-                    Username = smtp.Username,
-                    Password = smtp.Password,
-                    SecurityType = smtp.SecurityType,
-                    TimeoutSeconds = smtp.TimeoutSeconds,
-                    TestMode = smtp.TestMode,
+                    ServiceCode = defaultSmtp.ServiceCode,
+                    SenderName = defaultSmtp.SenderName,
+                    SenderEmail = defaultSmtp.SenderEmail,
+                    ReplyToEmail = defaultSmtp.ReplyToEmail,
+                    Host = defaultSmtp.Host,
+                    Port = defaultSmtp.Port,
+                    Username = defaultSmtp.Username,
+                    Password = defaultSmtp.Password,
+                    SecurityType = defaultSmtp.SecurityType,
+                    TimeoutSeconds = defaultSmtp.TimeoutSeconds,
+                    TestMode = defaultSmtp.TestMode,
                     PickupDirectory = devPickup,
-                    UsePickupDirectoryOnly = smtp.UsePickupDirectoryOnly,
+                    UsePickupDirectoryOnly = defaultSmtp.UsePickupDirectoryOnly,
                     CanUsePickupDirectoryFallback = true
                 };
             }
         }
 
-        if (smtp.TestMode)
+        if (defaultSmtp.TestMode)
         {
             // Test modu: Development'ta e-posta teslimatını güvenli şekilde pickup directory'e yönlendirir.
             // Production ortamında "test_modu" yanlışlıkla açık bırakılırsa, 2FA gibi kritik e-postalar kuyrukta takılmasın diye
@@ -113,17 +115,18 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 var devPickup = ResolveDevPickupDirectory();
                 if (!string.IsNullOrWhiteSpace(devPickup))
                 {
-                    smtp = new SmtpConfig
+                    defaultSmtp = new SmtpConfig
                     {
-                        SenderName = smtp.SenderName,
-                        SenderEmail = smtp.SenderEmail,
-                        ReplyToEmail = smtp.ReplyToEmail,
-                        Host = smtp.Host,
-                        Port = smtp.Port,
-                        Username = smtp.Username,
-                        Password = smtp.Password,
-                        SecurityType = smtp.SecurityType,
-                        TimeoutSeconds = smtp.TimeoutSeconds,
+                        ServiceCode = defaultSmtp.ServiceCode,
+                        SenderName = defaultSmtp.SenderName,
+                        SenderEmail = defaultSmtp.SenderEmail,
+                        ReplyToEmail = defaultSmtp.ReplyToEmail,
+                        Host = defaultSmtp.Host,
+                        Port = defaultSmtp.Port,
+                        Username = defaultSmtp.Username,
+                        Password = defaultSmtp.Password,
+                        SecurityType = defaultSmtp.SecurityType,
+                        TimeoutSeconds = defaultSmtp.TimeoutSeconds,
                         TestMode = true,
                         PickupDirectory = devPickup,
                         UsePickupDirectoryOnly = OperatingSystem.IsWindows(),
@@ -133,28 +136,29 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 }
                 else
                 {
-                    _logger.LogWarning("Aktif SMTP servisi test modunda ancak pickup directory tanimli degil. Kuyruk islenmedi. Host={Host}, Sender={Sender}", smtp.Host, smtp.SenderEmail);
+                    _logger.LogWarning("Aktif SMTP servisi test modunda ancak pickup directory tanimli degil. Kuyruk islenmedi. Host={Host}, Sender={Sender}", defaultSmtp.Host, defaultSmtp.SenderEmail);
                     return;
                 }
             }
             else
             {
-                _logger.LogWarning("Aktif SMTP servisi test modunda (PROD). Kuyruk durdurulmayacak; SMTP uzerinden gonderim denenecek. Host={Host}, Sender={Sender}", smtp.Host, smtp.SenderEmail);
-                smtp = new SmtpConfig
+                _logger.LogWarning("Aktif SMTP servisi test modunda (PROD). Kuyruk durdurulmayacak; SMTP uzerinden gonderim denenecek. Host={Host}, Sender={Sender}", defaultSmtp.Host, defaultSmtp.SenderEmail);
+                defaultSmtp = new SmtpConfig
                 {
-                    SenderName = smtp.SenderName,
-                    SenderEmail = smtp.SenderEmail,
-                    ReplyToEmail = smtp.ReplyToEmail,
-                    Host = smtp.Host,
-                    Port = smtp.Port,
-                    Username = smtp.Username,
-                    Password = smtp.Password,
-                    SecurityType = smtp.SecurityType,
-                    TimeoutSeconds = smtp.TimeoutSeconds,
+                    ServiceCode = defaultSmtp.ServiceCode,
+                    SenderName = defaultSmtp.SenderName,
+                    SenderEmail = defaultSmtp.SenderEmail,
+                    ReplyToEmail = defaultSmtp.ReplyToEmail,
+                    Host = defaultSmtp.Host,
+                    Port = defaultSmtp.Port,
+                    Username = defaultSmtp.Username,
+                    Password = defaultSmtp.Password,
+                    SecurityType = defaultSmtp.SecurityType,
+                    TimeoutSeconds = defaultSmtp.TimeoutSeconds,
                     TestMode = false,
-                    PickupDirectory = smtp.PickupDirectory,
-                    UsePickupDirectoryOnly = smtp.UsePickupDirectoryOnly,
-                    CanUsePickupDirectoryFallback = smtp.CanUsePickupDirectoryFallback
+                    PickupDirectory = defaultSmtp.PickupDirectory,
+                    UsePickupDirectoryOnly = defaultSmtp.UsePickupDirectoryOnly,
+                    CanUsePickupDirectoryFallback = defaultSmtp.CanUsePickupDirectoryFallback
                 };
             }
         }
@@ -166,14 +170,16 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         {
             try
             {
-                await SendEmailAsync(smtp, item, cancellationToken);
-                await MarkEmailSentAsync(connection, item.Id, cancellationToken);
-                await MarkSmtpSuccessAsync(connection, cancellationToken);
+                var smtp = await LoadSmtpConfigAsync(connection, item.ServiceCode, item.SenderEmailOverride, cancellationToken)
+                    ?? defaultSmtp;
+                var sendResult = await SendEmailAsync(smtp, item, cancellationToken);
+                await MarkEmailAcceptedAsync(connection, item.Id, sendResult, cancellationToken);
+                await MarkSmtpSuccessAsync(connection, smtp.ServiceCode, cancellationToken);
             }
             catch (Exception ex)
             {
                 await MarkEmailFailedAsync(connection, item, ex.Message, hasNextAttemptColumn, cancellationToken);
-                await MarkSmtpFailureAsync(connection, ex.Message, cancellationToken);
+                await MarkSmtpFailureAsync(connection, item.ServiceCode ?? defaultSmtp.ServiceCode, ex.Message, cancellationToken);
                 _logger.LogError(ex, "E-posta gonderimi basarisiz. Alici={Recipient}, Konu={Subject}, KuyrukId={QueueId}", item.RecipientEmail, item.Subject, item.Id);
             }
         }
@@ -212,6 +218,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 
         return new SmtpConfig
         {
+            ServiceCode = "development_pickup",
             SenderName = senderName,
             SenderEmail = senderEmail,
             ReplyToEmail = replyTo,
@@ -231,6 +238,8 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
     private static async Task<List<QueuedEmailItem>> ClaimPendingEmailsAsync(SqlConnection connection, bool hasUpdatedAtColumn, bool hasNextAttemptColumn, CancellationToken cancellationToken)
     {
         var hasAttachmentsColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "ekler_json", cancellationToken);
+        var hasServiceCodeColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "email_servis_kodu", cancellationToken);
+        var hasSenderOverrideColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "gonderen_eposta_override", cancellationToken);
         var updateSet = hasUpdatedAtColumn
             ? "durum = 'İşleniyor', guncellenme_tarihi = SYSUTCDATETIME()"
             : "durum = 'İşleniyor'";
@@ -263,8 +272,10 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 )
               """;
 
-        var sql = hasAttachmentsColumn
-            ? """
+        string sql;
+        if (hasAttachmentsColumn && hasServiceCodeColumn && hasSenderOverrideColumn)
+        {
+            sql = """
                 ;WITH cte AS (
                     SELECT TOP (10) id
                     FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
@@ -283,11 +294,17 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                     inserted.gonderilen_icerik,
                     COALESCE(inserted.gonderme_denemesi, 1),
                     COALESCE(inserted.maksimum_deneme, 3),
-                    inserted.ekler_json
+                    inserted.ekler_json,
+                    inserted.email_servis_kodu,
+                    inserted.gonderen_eposta_override
                 FROM bildirim_loglari b
                 INNER JOIN cte ON cte.id = b.id;
                 """
-            : """
+            ;
+        }
+        else if (hasAttachmentsColumn)
+        {
+            sql = """
                 ;WITH cte AS (
                     SELECT TOP (10) id
                     FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
@@ -306,10 +323,69 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                     inserted.gonderilen_icerik,
                     COALESCE(inserted.gonderme_denemesi, 1),
                     COALESCE(inserted.maksimum_deneme, 3),
-                    NULL AS ekler_json
+                    inserted.ekler_json,
+                    NULL AS email_servis_kodu,
+                    NULL AS gonderen_eposta_override
                 FROM bildirim_loglari b
                 INNER JOIN cte ON cte.id = b.id;
                 """;
+        }
+        else if (hasServiceCodeColumn && hasSenderOverrideColumn)
+        {
+            sql = """
+                ;WITH cte AS (
+                    SELECT TOP (10) id
+                    FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
+                    WHERE tur = 'E-posta'
+                      AND __STALE_PROCESSING_WHERE__
+                      AND alici_eposta IS NOT NULL
+                      __NEXT_ATTEMPT_WHERE__
+                    ORDER BY olusturulma_tarihi ASC
+                )
+                UPDATE b
+                SET __UPDATE_SET__
+                OUTPUT
+                    inserted.id,
+                    inserted.alici_eposta,
+                    inserted.konu,
+                    inserted.gonderilen_icerik,
+                    COALESCE(inserted.gonderme_denemesi, 1),
+                    COALESCE(inserted.maksimum_deneme, 3),
+                    NULL AS ekler_json,
+                    inserted.email_servis_kodu,
+                    inserted.gonderen_eposta_override
+                FROM bildirim_loglari b
+                INNER JOIN cte ON cte.id = b.id;
+                """;
+        }
+        else
+        {
+            sql = """
+                ;WITH cte AS (
+                    SELECT TOP (10) id
+                    FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
+                    WHERE tur = 'E-posta'
+                      AND __STALE_PROCESSING_WHERE__
+                      AND alici_eposta IS NOT NULL
+                      __NEXT_ATTEMPT_WHERE__
+                    ORDER BY olusturulma_tarihi ASC
+                )
+                UPDATE b
+                SET __UPDATE_SET__
+                OUTPUT
+                    inserted.id,
+                    inserted.alici_eposta,
+                    inserted.konu,
+                    inserted.gonderilen_icerik,
+                    COALESCE(inserted.gonderme_denemesi, 1),
+                    COALESCE(inserted.maksimum_deneme, 3),
+                    NULL AS ekler_json,
+                    NULL AS email_servis_kodu,
+                    NULL AS gonderen_eposta_override
+                FROM bildirim_loglari b
+                INNER JOIN cte ON cte.id = b.id;
+                """;
+        }
         sql = sql.Replace("__UPDATE_SET__", updateSet, StringComparison.Ordinal);
         sql = sql.Replace("__NEXT_ATTEMPT_WHERE__", nextAttemptWhere, StringComparison.Ordinal);
         sql = sql.Replace("__STALE_PROCESSING_WHERE__", staleProcessingWhere, StringComparison.Ordinal);
@@ -327,7 +403,9 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 HtmlBody = reader.GetString(3),
                 AttemptCount = reader.IsDBNull(4) ? 1 : Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture),
                 MaxAttempts = reader.IsDBNull(5) ? 3 : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture),
-                AttachmentsJson = reader.IsDBNull(6) ? null : reader.GetString(6)
+                AttachmentsJson = reader.IsDBNull(6) ? null : reader.GetString(6),
+                ServiceCode = reader.IsDBNull(7) ? null : reader.GetString(7),
+                SenderEmailOverride = reader.IsDBNull(8) ? null : reader.GetString(8)
             });
         }
 
@@ -343,24 +421,33 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         return scalar is not null && scalar != DBNull.Value;
     }
 
-    private static async Task<SmtpConfig?> LoadActiveSmtpAsync(SqlConnection connection, CancellationToken cancellationToken)
+    private static async Task<SmtpConfig?> LoadSmtpConfigAsync(SqlConnection connection, string? preferredServiceCode, string? preferredSenderEmail, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT TOP (1) gonderen_ad, gonderen_eposta, yanitla_eposta, smtp_host, smtp_port, smtp_kullanici_adi, smtp_sifre, guvenlik_tipi, baglanti_zaman_asimi_saniye, test_modu, metadata
+            SELECT TOP (1) servis_kodu, gonderen_ad, gonderen_eposta, yanitla_eposta, smtp_host, smtp_port, smtp_kullanici_adi, smtp_sifre, guvenlik_tipi, baglanti_zaman_asimi_saniye, test_modu, metadata
             FROM email_services
             WHERE aktif_mi = 1
-            ORDER BY varsayilan_mi DESC, id ASC;
+            ORDER BY
+                CASE
+                    WHEN @serviceCode IS NOT NULL AND LOWER(servis_kodu) = LOWER(@serviceCode) THEN 3
+                    WHEN @senderEmail IS NOT NULL AND LOWER(gonderen_eposta) = LOWER(@senderEmail) THEN 2
+                    WHEN varsayilan_mi = 1 THEN 1
+                    ELSE 0
+                END DESC,
+                id ASC;
             """;
 
         await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@serviceCode", string.IsNullOrWhiteSpace(preferredServiceCode) ? DBNull.Value : preferredServiceCode.Trim());
+        command.Parameters.AddWithValue("@senderEmail", string.IsNullOrWhiteSpace(preferredSenderEmail) ? DBNull.Value : preferredSenderEmail.Trim());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
         {
             return null;
         }
 
-        var metadataJson = reader.FieldCount > 10 && !reader.IsDBNull(10)
-            ? reader.GetString(10)
+        var metadataJson = reader.FieldCount > 11 && !reader.IsDBNull(11)
+            ? reader.GetString(11)
             : null;
         var pickupDirectory = ReadMetadataValue(metadataJson, "pickup_directory");
         var transportMode = ReadMetadataValue(metadataJson, "transport_mode");
@@ -369,16 +456,17 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 
         return new SmtpConfig
         {
-            SenderName = reader.IsDBNull(0) ? "Otelturizm" : reader.GetString(0),
-            SenderEmail = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
-            ReplyToEmail = reader.IsDBNull(2) ? null : reader.GetString(2),
-            Host = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
-            Port = reader.IsDBNull(4) ? 465 : Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture),
-            Username = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
-            Password = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
-            SecurityType = reader.IsDBNull(7) ? "SSL" : reader.GetString(7),
-            TimeoutSeconds = Math.Max(30, reader.IsDBNull(8) ? 60 : Convert.ToInt32(reader.GetValue(8), CultureInfo.InvariantCulture)),
-            TestMode = !reader.IsDBNull(9) && reader.GetBoolean(9),
+            ServiceCode = reader.IsDBNull(0) ? "default_smtp" : reader.GetString(0),
+            SenderName = reader.IsDBNull(1) ? "Otelturizm" : reader.GetString(1),
+            SenderEmail = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+            ReplyToEmail = reader.IsDBNull(3) ? null : reader.GetString(3),
+            Host = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+            Port = reader.IsDBNull(5) ? 465 : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture),
+            Username = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+            Password = reader.IsDBNull(7) ? string.Empty : reader.GetString(7),
+            SecurityType = reader.IsDBNull(8) ? "SSL" : reader.GetString(8),
+            TimeoutSeconds = Math.Max(30, reader.IsDBNull(9) ? 60 : Convert.ToInt32(reader.GetValue(9), CultureInfo.InvariantCulture)),
+            TestMode = !reader.IsDBNull(10) && reader.GetBoolean(10),
             PickupDirectory = pickupDirectory,
             UsePickupDirectoryOnly = string.Equals(transportMode, "pickup", StringComparison.OrdinalIgnoreCase) && canUsePickupFallback,
             CanUsePickupDirectoryFallback = !string.Equals(transportMode, "pickup", StringComparison.OrdinalIgnoreCase) && canUsePickupFallback
@@ -414,12 +502,13 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         return null;
     }
 
-    private async Task SendEmailAsync(SmtpConfig smtp, QueuedEmailItem item, CancellationToken cancellationToken)
+    private async Task<EmailSendResult> SendEmailAsync(SmtpConfig smtp, QueuedEmailItem item, CancellationToken cancellationToken)
     {
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(smtp.SenderName, smtp.SenderEmail));
         message.To.Add(MailboxAddress.Parse(item.RecipientEmail));
         message.Subject = item.Subject;
+        message.MessageId = MimeUtils.GenerateMessageId("otelturizm.com");
         if (!string.IsNullOrWhiteSpace(smtp.ReplyToEmail))
         {
             message.ReplyTo.Add(MailboxAddress.Parse(smtp.ReplyToEmail));
@@ -435,8 +524,12 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 
         if (smtp.UsePickupDirectoryOnly)
         {
-            await SaveToPickupDirectoryAsync(smtp, message, cancellationToken);
-            return;
+            var pickupPath = await SaveToPickupDirectoryAsync(smtp, message, cancellationToken);
+            return new EmailSendResult
+            {
+                Status = "Dosyaya Yazıldı",
+                ProviderMessageId = pickupPath
+            };
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -474,9 +567,13 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                     await client.AuthenticateAsync(smtp.Username, smtp.Password, cancellationToken);
                 }
 
-                await client.SendAsync(message, cancellationToken);
+                var providerResponse = await client.SendAsync(message, cancellationToken);
                 await client.DisconnectAsync(true, cancellationToken);
-                return;
+                return new EmailSendResult
+                {
+                    Status = "SMTP Kabul",
+                    ProviderMessageId = NormalizeProviderMessageId(providerResponse, message.MessageId)
+                };
             }
             catch (Exception ex)
             {
@@ -490,8 +587,12 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 
         if (smtp.CanUsePickupDirectoryFallback)
         {
-            await SaveToPickupDirectoryAsync(smtp, message, cancellationToken);
-            return;
+            var pickupPath = await SaveToPickupDirectoryAsync(smtp, message, cancellationToken);
+            return new EmailSendResult
+            {
+                Status = "Dosyaya Yazıldı",
+                ProviderMessageId = pickupPath
+            };
         }
 
         throw lastError ?? new InvalidOperationException("SMTP gonderimi basarisiz oldu.");
@@ -560,7 +661,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         }
     }
 
-    private static async Task SaveToPickupDirectoryAsync(SmtpConfig smtp, MimeMessage message, CancellationToken cancellationToken)
+    private static async Task<string> SaveToPickupDirectoryAsync(SmtpConfig smtp, MimeMessage message, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(smtp.PickupDirectory))
         {
@@ -573,28 +674,33 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         await using var stream = File.Create(path);
         await message.WriteToAsync(stream, cancellationToken);
         await stream.FlushAsync(cancellationToken);
+        return path;
     }
 
-    private static async Task MarkSmtpSuccessAsync(SqlConnection connection, CancellationToken cancellationToken)
+    private static async Task MarkSmtpSuccessAsync(SqlConnection connection, string serviceCode, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
             UPDATE email_services
             SET son_basarili_test_tarihi = SYSUTCDATETIME(),
                 son_hata_tarihi = NULL,
                 son_hata_mesaji = NULL
-            WHERE aktif_mi = 1;
+            WHERE aktif_mi = 1
+              AND servis_kodu = @serviceCode;
             """, connection);
+        command.Parameters.AddWithValue("@serviceCode", serviceCode);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task MarkSmtpFailureAsync(SqlConnection connection, string errorMessage, CancellationToken cancellationToken)
+    private static async Task MarkSmtpFailureAsync(SqlConnection connection, string serviceCode, string errorMessage, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
             UPDATE email_services
             SET son_hata_tarihi = SYSUTCDATETIME(),
                 son_hata_mesaji = @error
-            WHERE aktif_mi = 1;
+            WHERE aktif_mi = 1
+              AND servis_kodu = @serviceCode;
             """, connection);
+        command.Parameters.AddWithValue("@serviceCode", serviceCode);
         command.Parameters.AddWithValue("@error", errorMessage.Length > 1000 ? errorMessage[..1000] : errorMessage);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
@@ -632,16 +738,19 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         return options.Distinct().ToList();
     }
 
-    private static async Task MarkEmailSentAsync(SqlConnection connection, long notificationId, CancellationToken cancellationToken)
+    private static async Task MarkEmailAcceptedAsync(SqlConnection connection, long notificationId, EmailSendResult sendResult, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
             UPDATE bildirim_loglari
-            SET durum = 'Gönderildi',
+            SET durum = @status,
                 gonderim_tarihi = SYSUTCDATETIME(),
+                saglayici_mesaj_id = @providerMessageId,
                 hata_kodu = NULL,
                 hata_mesaji = NULL
             WHERE id = @id;
             """, connection);
+        command.Parameters.AddWithValue("@status", sendResult.Status);
+        command.Parameters.AddWithValue("@providerMessageId", (object?)sendResult.ProviderMessageId ?? DBNull.Value);
         command.Parameters.AddWithValue("@id", notificationId);
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
@@ -696,6 +805,18 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         };
     }
 
+    private static string? NormalizeProviderMessageId(string? providerResponse, string? messageId)
+    {
+        var value = string.IsNullOrWhiteSpace(providerResponse) ? messageId : providerResponse;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.Length <= 250 ? trimmed : trimmed[..250];
+    }
+
     private sealed class QueuedEmailItem
     {
         public long Id { get; init; }
@@ -705,10 +826,19 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         public int AttemptCount { get; init; }
         public int MaxAttempts { get; init; }
         public string? AttachmentsJson { get; init; }
+        public string? ServiceCode { get; init; }
+        public string? SenderEmailOverride { get; init; }
+    }
+
+    private sealed class EmailSendResult
+    {
+        public string Status { get; init; } = "SMTP Kabul";
+        public string? ProviderMessageId { get; init; }
     }
 
     private sealed class SmtpConfig
     {
+        public string ServiceCode { get; init; } = "default_smtp";
         public string SenderName { get; init; } = "Otelturizm";
         public string SenderEmail { get; init; } = string.Empty;
         public string? ReplyToEmail { get; init; }

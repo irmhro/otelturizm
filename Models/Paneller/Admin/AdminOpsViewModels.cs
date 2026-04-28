@@ -50,6 +50,7 @@ public sealed class AdminEmailQueueRowViewModel
     public string RecipientEmail { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string? ProviderMessageId { get; set; }
     public int AttemptCount { get; set; }
     public int MaxAttempts { get; set; }
     public DateTimeOffset CreatedAtUtc { get; set; }
@@ -103,10 +104,89 @@ public sealed class AdminEmailSettingsPageViewModel
     public List<AdminEmailAccountRowViewModel> Accounts { get; set; } = new();
     public List<AdminEmailTemplateBindingRowViewModel> Templates { get; set; } = new();
     public int PendingCount { get; set; }
-    public int SentCount { get; set; }
+    public int AcceptedCount { get; set; }
     public int FailedCount { get; set; }
     public string ActiveSenderEmail { get; set; } = string.Empty;
     public string ActiveServiceCode { get; set; } = string.Empty;
+}
+
+public sealed class AdminMailAccountForm
+{
+    public long? Id { get; set; }
+    public string AccountCode { get; set; } = string.Empty;
+    public string AccountName { get; set; } = string.Empty;
+    public string EmailAddress { get; set; } = string.Empty;
+    public string IncomingProtocol { get; set; } = "IMAP";
+    public string IncomingHost { get; set; } = "mail.otelturizm.com";
+    public int IncomingPort { get; set; } = 993;
+    public bool IncomingUseSsl { get; set; } = true;
+    public string OutgoingHost { get; set; } = "mail.otelturizm.com";
+    public int OutgoingPort { get; set; } = 465;
+    public string OutgoingSecurityType { get; set; } = "SSL/TLS";
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+    public bool IsDefaultSender { get; set; }
+}
+
+public sealed class AdminMailAccountRowViewModel
+{
+    public long Id { get; set; }
+    public string AccountCode { get; set; } = string.Empty;
+    public string AccountName { get; set; } = string.Empty;
+    public string EmailAddress { get; set; } = string.Empty;
+    public string IncomingProtocol { get; set; } = "IMAP";
+    public string IncomingHost { get; set; } = string.Empty;
+    public int IncomingPort { get; set; }
+    public bool IncomingUseSsl { get; set; }
+    public string OutgoingHost { get; set; } = string.Empty;
+    public int OutgoingPort { get; set; }
+    public string OutgoingSecurityType { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public bool IsDefaultSender { get; set; }
+    public DateTimeOffset? LastSyncUtc { get; set; }
+    public string? LastError { get; set; }
+}
+
+public sealed class AdminIncomingEmailRowViewModel
+{
+    public long Id { get; set; }
+    public long AccountId { get; set; }
+    public string AccountEmail { get; set; } = string.Empty;
+    public string FolderName { get; set; } = "INBOX";
+    public string From { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty;
+    public string? InternetMessageId { get; set; }
+    public DateTimeOffset? ReceivedAtUtc { get; set; }
+    public bool IsRead { get; set; }
+    public bool IsSpam { get; set; }
+}
+
+public sealed class AdminOutgoingEmailRowViewModel
+{
+    public long Id { get; set; }
+    public long? UserId { get; set; }
+    public string RecipientEmail { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string? ProviderMessageId { get; set; }
+    public string? SenderEmail { get; set; }
+    public DateTimeOffset? SentAtUtc { get; set; }
+    public DateTimeOffset CreatedAtUtc { get; set; }
+}
+
+public sealed class AdminMailCenterPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminMailAccountRowViewModel> Accounts { get; set; } = new();
+    public List<AdminIncomingEmailRowViewModel> Incoming { get; set; } = new();
+    public List<AdminOutgoingEmailRowViewModel> Outgoing { get; set; } = new();
+    public AdminMailAccountForm Form { get; set; } = new();
+    public long? SelectedAccountId { get; set; }
+    public int TotalIncoming { get; set; }
+    public int TotalOutgoing { get; set; }
+    public string ActiveSenderEmail { get; set; } = string.Empty;
 }
 
 public sealed class AdminCriticalActionRequest

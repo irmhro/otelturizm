@@ -32,6 +32,7 @@ public class CampaignService : ICampaignService
                 k.id,
                 k.kampanya_kodu,
                 k.kampanya_adi,
+                COALESCE(NULLIF(k.tur, ''), N'Genel') AS tur,
                 k.seo_slug,
                 k.sayfa_url,
                 COALESCE(NULLIF(k.kisa_aciklama, ''), LEFT(k.kampanya_aciklamasi, 220)) AS kisa_aciklama,
@@ -70,8 +71,9 @@ public class CampaignService : ICampaignService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            var slug = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
-            var url = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);
+            var campaignType = reader.IsDBNull(3) ? "Genel" : reader.GetString(3);
+            var slug = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);
+            var url = reader.IsDBNull(5) ? string.Empty : reader.GetString(5);
             var campaignUrl = NormalizeCampaignPath(
                 !string.IsNullOrWhiteSpace(url)
                     ? url
@@ -82,16 +84,19 @@ public class CampaignService : ICampaignService
                 CampaignId = reader.GetInt64(0),
                 CampaignCode = reader.GetString(1),
                 CampaignName = reader.GetString(2),
+                CampaignType = campaignType,
                 Slug = slug,
                 Url = campaignUrl,
-                ShortDescription = reader.IsDBNull(5) ? "Aktif kampanya detaylarini inceleyin." : reader.GetString(5),
-                DateText = BuildDateText(reader.GetDateTime(6), reader.GetDateTime(7)),
-                BadgeText = reader.IsDBNull(8) ? null : reader.GetString(8),
-                PromoBadge = reader.IsDBNull(9) ? null : reader.GetString(9),
-                ColorCode = reader.GetString(10),
-                HeroImageUrl = NormalizeImageUrl(reader.IsDBNull(11) ? null : reader.GetString(11)),
-                IsFeatured = !reader.IsDBNull(12) && reader.GetBoolean(12),
-                HotelCount = reader.IsDBNull(13) ? 0 : Convert.ToInt32(reader.GetValue(13), CultureInfo.InvariantCulture)
+                ShortDescription = reader.IsDBNull(6) ? "Aktif kampanya detaylarini inceleyin." : reader.GetString(6),
+                DateText = BuildDateText(reader.GetDateTime(7), reader.GetDateTime(8)),
+                StartDateText = reader.GetDateTime(7).ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                EndDateText = reader.GetDateTime(8).ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                BadgeText = reader.IsDBNull(9) ? null : reader.GetString(9),
+                PromoBadge = reader.IsDBNull(10) ? null : reader.GetString(10),
+                ColorCode = reader.GetString(11),
+                HeroImageUrl = NormalizeImageUrl(reader.IsDBNull(12) ? null : reader.GetString(12)),
+                IsFeatured = !reader.IsDBNull(13) && reader.GetBoolean(13),
+                HotelCount = reader.IsDBNull(14) ? 0 : Convert.ToInt32(reader.GetValue(14), CultureInfo.InvariantCulture)
             });
         }
 

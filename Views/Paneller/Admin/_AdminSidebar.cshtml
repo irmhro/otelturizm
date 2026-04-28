@@ -105,7 +105,7 @@
             </section>
 
             <p class="admin-sidebar-section-title">İçerik ve Sistem</p>
-            <section class="admin-sidebar-group @(IsOpen("Notifications", "EmailTemplates", "WhatsAppCloudApi", "Blog", "Faq", "SupportArticles") ? "open" : string.Empty)">
+            <section class="admin-sidebar-group @(IsOpen("Notifications", "MailCenter", "EmailTemplates", "WhatsAppCloudApi", "Blog", "Faq", "SupportArticles") ? "open" : string.Empty)">
                 <button type="button" class="admin-sidebar-group-toggle" data-admin-accordion="group">
                     <span class="admin-sidebar-group-meta">
                         <span class="admin-sidebar-link-icon"><i class="fas fa-bullhorn"></i></span>
@@ -118,6 +118,7 @@
                 </button>
                 <div class="admin-sidebar-group-body">
                     <a asp-controller="AdminPanel" asp-action="Notifications" class="admin-sidebar-link @Active("Notifications")"><span>Bildirimler</span><strong>@Badge(Model.UnreadNotifications)</strong></a>
+                    <a asp-controller="AdminPanel" asp-action="MailCenter" class="admin-sidebar-link @Active("MailCenter")"><span>Mail Merkezi</span></a>
                     <a asp-controller="AdminPanel" asp-action="EmailTemplates" class="admin-sidebar-link @Active("EmailTemplates")"><span>E-posta Hesapları</span></a>
                     <a asp-controller="AdminPanel" asp-action="WhatsAppCloudApi" class="admin-sidebar-link @Active("WhatsAppCloudApi")"><span>WhatsApp Cloud API</span></a>
                     <a asp-controller="AdminPanel" asp-action="Blog" class="admin-sidebar-link @Active("Blog")"><span>Blog Yönetimi</span></a>

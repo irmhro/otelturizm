@@ -26,6 +26,24 @@ public class EmailTemplateService : IEmailTemplateService
         var absolutePath = Path.Combine(_environment.ContentRootPath, normalized);
         if (!File.Exists(absolutePath))
         {
+            var fallbackViewPath = ResolveNeutralViewPath(localizedViewPath);
+            if (!string.Equals(fallbackViewPath, localizedViewPath, StringComparison.OrdinalIgnoreCase))
+            {
+                var fallbackNormalized = fallbackViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
+                var fallbackAbsolutePath = Path.Combine(_environment.ContentRootPath, fallbackNormalized);
+                if (File.Exists(fallbackAbsolutePath))
+                {
+                    var fallbackContent = await File.ReadAllTextAsync(fallbackAbsolutePath, Encoding.UTF8, cancellationToken);
+                    foreach (var token in tokens)
+                    {
+                        var key = token.Key.StartsWith("{{", StringComparison.Ordinal) ? token.Key : $"{{{{{token.Key}}}}}";
+                        fallbackContent = fallbackContent.Replace(key, token.Value ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    return fallbackContent;
+                }
+            }
+
             return RenderFallbackTemplate(localizedViewPath, tokens, absolutePath);
         }
 
@@ -69,6 +87,22 @@ public class EmailTemplateService : IEmailTemplateService
         // candidate: Views/Email/{lang}/File.cshtml
         var fileName = normalized.Substring("Views/Email/".Length);
         return $"Views/Email/{lang}/{fileName}";
+    }
+
+    private static string ResolveNeutralViewPath(string relativeViewPath)
+    {
+        var normalized = (relativeViewPath ?? string.Empty).Replace('\\', '/').Trim();
+        if (normalized.StartsWith("Views/Email/tr/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Views/Email/" + normalized["Views/Email/tr/".Length..];
+        }
+
+        if (normalized.StartsWith("Views/Email/en/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Views/Email/" + normalized["Views/Email/en/".Length..];
+        }
+
+        return normalized;
     }
 
     private static string ResolveLanguage(IReadOnlyDictionary<string, string> tokens)

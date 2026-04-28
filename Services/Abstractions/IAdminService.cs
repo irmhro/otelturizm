@@ -24,6 +24,11 @@ public interface IAdminService
 
     Task<AdminEmailQueuePageViewModel> GetEmailQueueAsync(string fullName, string email, string userRole, AdminEmailQueueFilter filter, CancellationToken cancellationToken = default);
     Task<AdminEmailSettingsPageViewModel> GetEmailSettingsPageAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
+    Task<AdminMailCenterPageViewModel> GetMailCenterAsync(string fullName, string email, string userRole, long? accountId, bool syncInbox, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SaveMailAccountAsync(long adminUserId, AdminMailAccountForm form, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> DeleteMailAccountAsync(long adminUserId, long accountId, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message, int ImportedCount)> SyncMailAccountAsync(long adminUserId, long accountId, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message, int QueuedCount)> QueueTemplateTestBatchAsync(long adminUserId, string recipientEmail, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ForceRetryEmailAsync(long adminUserId, long queueId, string reason, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message, int RetriedCount)> RetryAllFailedEmailsAsync(long adminUserId, string reason, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> MarkEmailFailedAsync(long adminUserId, long queueId, string reason, CancellationToken cancellationToken = default);

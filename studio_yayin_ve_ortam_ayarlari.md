@@ -312,3 +312,8 @@ Not:
   1. SSMS `Generate Scripts`
   2. `sqlcmd`
   3. `sqlpackage` / dacpac
+
+
+  <add name="dbbaglan" connectionString="Data Source=185.111.244.246;Initial Catalog=otelturizm_2026db;User ID=sa;Password=Nusret.34.34.-"
+
+

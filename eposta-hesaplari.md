@@ -3,11 +3,12 @@
 Bu doküman **bilinçli olarak şifre içermez**. Şifreler **repoya yazılmaz**, ticket/markdown/log içine konulmaz.
 
 ### Ortak Bağlantı Ayarları
-- **Gelen Posta Sunucusu**: `mail.otelturizm.com`
-- **Giden Sunucu (SMTP)**: `mail.otelturizm.com`
+- **Aktif Gelen Posta Sunucusu**: `umay.muvhost.com`
+- **Aktif Giden Sunucu (SMTP)**: `umay.muvhost.com`
 - **IMAP Port**: `993` (SSL/TLS)
 - **POP3 Port**: `995` (SSL/TLS)
 - **SMTP Port**: `465` (SSL/TLS)
+- **SMTP Alternatif Port**: `587` (STARTTLS)
 - **Auth**: IMAP/POP3/SMTP **authentication required**
 
 ### Hesaplar

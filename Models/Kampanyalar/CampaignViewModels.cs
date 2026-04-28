@@ -14,10 +14,13 @@ public class CampaignCardViewModel
     public long CampaignId { get; set; }
     public string CampaignCode { get; set; } = string.Empty;
     public string CampaignName { get; set; } = string.Empty;
+    public string CampaignType { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
     public string ShortDescription { get; set; } = string.Empty;
     public string DateText { get; set; } = string.Empty;
+    public string StartDateText { get; set; } = string.Empty;
+    public string EndDateText { get; set; } = string.Empty;
     public string? BadgeText { get; set; }
     public string? PromoBadge { get; set; }
     public string? HeroImageUrl { get; set; }

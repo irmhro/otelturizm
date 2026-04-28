@@ -1473,6 +1473,79 @@ public class AdminPanelController : Controller
         return View("~/Views/Paneller/Admin/EmailTemplates.cshtml", model);
     }
 
+    [HttpPost("eposta-sablonlari/test-gonder")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendTemplateTestBatch([FromForm] string recipientEmail, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.QueueTemplateTestBatchAsync(GetUserId(), recipientEmail, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(EmailTemplates));
+    }
+
+    [HttpGet("mail-merkezi")]
+    public async Task<IActionResult> MailCenter([FromQuery] long? accountId, [FromQuery] bool sync = false, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetMailCenterAsync(GetFullName(), GetEmail(), GetUserRole(), accountId, sync, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-mail-center";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/MailCenter.cshtml", model);
+    }
+
+    [HttpPost("mail-merkezi/hesap-kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveMailAccount(AdminMailAccountForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.SaveMailAccountAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(MailCenter), new { accountId = form.Id });
+    }
+
+    [HttpPost("mail-merkezi/hesap-sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteMailAccount([FromForm] long id, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.DeleteMailAccountAsync(GetUserId(), id, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(MailCenter));
+    }
+
+    [HttpPost("mail-merkezi/senkronize")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SyncMailAccount([FromForm] long accountId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.SyncMailAccountAsync(GetUserId(), accountId, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Success
+            ? $"{result.Message} İçeri alınan yeni mesaj: {result.ImportedCount}"
+            : result.Message;
+        return RedirectToAction(nameof(MailCenter), new { accountId });
+    }
+
     [HttpPost("eposta-kuyrugu/retry-all-failed")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RetryAllFailedEmails([FromForm] string? reason, CancellationToken cancellationToken)

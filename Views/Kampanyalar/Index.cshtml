@@ -47,30 +47,40 @@
     {
         @foreach (var campaign in Model.Campaigns)
         {
+            var listingUrl = $"/oteller?kampanya={Uri.EscapeDataString(campaign.Slug ?? string.Empty)}";
             <article class="campaign-card" style="--campaign-accent:@campaign.ColorCode;">
-                <div class="campaign-card__media @(string.IsNullOrWhiteSpace(campaign.HeroImageUrl) ? string.Empty : "has-image")">
-                    @if (!string.IsNullOrWhiteSpace(campaign.HeroImageUrl))
-                    {
-                        <img src="@campaign.HeroImageUrl" alt="@campaign.CampaignName" />
-                    }
-                    @if (!string.IsNullOrWhiteSpace(campaign.BadgeText))
-                    {
-                        <span class="campaign-card__badge">@campaign.BadgeText</span>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(campaign.PromoBadge))
-                    {
-                        <span class="campaign-card__promo">@campaign.PromoBadge</span>
-                    }
-                </div>
-                <div class="campaign-card__body">
-                    <small>@campaign.CampaignCode</small>
-                    <h2>@campaign.CampaignName</h2>
-                    <p>@campaign.ShortDescription</p>
-                    <div class="campaign-card__meta">
-                        <span><i class="fas fa-calendar"></i> @campaign.DateText</span>
-                        <span><i class="fas fa-hotel"></i> @campaign.HotelCount otel</span>
+                <a class="campaign-card__tap" href="@listingUrl" aria-label="@campaign.CampaignName kampanyasına katılan otelleri listele">
+                    <div class="campaign-card__media @(string.IsNullOrWhiteSpace(campaign.HeroImageUrl) ? string.Empty : "has-image")">
+                        @if (!string.IsNullOrWhiteSpace(campaign.HeroImageUrl))
+                        {
+                            <img src="@campaign.HeroImageUrl" alt="@campaign.CampaignName" loading="lazy" decoding="async" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(campaign.BadgeText))
+                        {
+                            <span class="campaign-card__badge">@campaign.BadgeText</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(campaign.PromoBadge))
+                        {
+                            <span class="campaign-card__promo">@campaign.PromoBadge</span>
+                        }
                     </div>
-                    <a href="@campaign.Url" class="campaign-card__link">Kampanyayı İncele</a>
+                    <div class="campaign-card__body">
+                        <small>@campaign.CampaignCode</small>
+                        <h2>@campaign.CampaignName</h2>
+                        <p>@campaign.ShortDescription</p>
+                        <div class="campaign-card__meta">
+                            <span><i class="fas fa-tag"></i> @campaign.CampaignType</span>
+                            <span><i class="fas fa-calendar-plus"></i> @campaign.StartDateText</span>
+                            <span><i class="fas fa-calendar-check"></i> @campaign.EndDateText</span>
+                            <span><i class="fas fa-hotel"></i> @campaign.HotelCount otel</span>
+                        </div>
+                        <span class="campaign-card__link">Otelleri Listele</span>
+                    </div>
+                </a>
+                <div class="campaign-card__footer">
+                    <a class="campaign-card__secondary" href="@campaign.Url" aria-label="@campaign.CampaignName kampanya detayını aç">
+                        Kampanya detayı <i class="fas fa-arrow-right"></i>
+                    </a>
                 </div>
             </article>
         }

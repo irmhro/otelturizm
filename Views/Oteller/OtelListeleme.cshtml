@@ -1051,6 +1051,40 @@
 
             <div class="listing-reel-viewport" id="listingReelViewport">
             <div class="hotel-list" id="hotelListView">
+                @{
+                    var shortcutItems = new[]
+                    {
+                        new { Key = "ay-sonu-ozel", Label = "Ay Sonu Özel", Icon = "fa-bolt", Tone = "is-hot" },
+                        new { Key = "flash-indirim", Label = "Flash İndirim", Icon = "fa-tag", Tone = "is-sale" },
+                        new { Key = "hafta-sonu-firsatlari", Label = "Hafta Sonu Fırsatları", Icon = "fa-calendar-week", Tone = "is-weekend" },
+                        new { Key = "erken-rezervasyon", Label = "Erken Rezervasyon", Icon = "fa-clock", Tone = "is-early" },
+                        new { Key = "akilli-fiyat", Label = "Akıllı Fiyat", Icon = "fa-wand-magic-sparkles", Tone = "is-smart" },
+                        new { Key = "rezervasyon-destegi", Label = "Rezervasyon Desteği", Icon = "fa-headset", Tone = "is-help" }
+                    };
+                }
+
+                <nav class="listing-shortcuts" aria-label="Kısayol filtreleri">
+                    @foreach (var item in shortcutItems)
+                    {
+                        var isActive = string.Equals(Model.ActiveTag, item.Key, StringComparison.OrdinalIgnoreCase);
+                        <a class="listing-shortcut-btn @(isActive ? "active" : string.Empty) @item.Tone"
+                           href="@Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = item.Key, kampanya = Model.CampaignSlug, page = 1 })"
+                           aria-current="@(isActive ? "true" : null)">
+                            <i class="fas @item.Icon" aria-hidden="true"></i>
+                            <span>@item.Label</span>
+                        </a>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ActiveTag))
+                    {
+                        <a class="listing-shortcut-btn is-clear"
+                           href="@Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = (string?)null, kampanya = Model.CampaignSlug, page = 1 })">
+                            <i class="fas fa-xmark" aria-hidden="true"></i>
+                            <span>Temizle</span>
+                        </a>
+                    }
+                </nav>
+
                 @if (!hotels.Any())
                 {
                     <div class="hotel-card">
@@ -1352,14 +1386,6 @@
                        aria-disabled="@(current >= total ? "true" : "false")">Sonraki</a>
                 </nav>
             }
-
-            <div id="listingInfiniteSentinel"
-                 data-current-page="@Model.CurrentPage"
-                 data-total-pages="@Model.TotalPages"
-                 data-search-term="@Model.SearchTerm"
-                 data-active-tag="@Model.ActiveTag"
-                 data-campaign="@Model.CampaignSlug"
-                 aria-hidden="true"></div>
 
         </div>
     </div>
@@ -2767,10 +2793,12 @@
 
             // Desktop: film-rulosu/makara (ekranda 7 kart sabit, wheel ile kartlar alttan girer üstten çıkar)
             (function setupDesktopReelScroll() {
+                // Klasik sayfalama kullanılır (1-2-3-4...). Reel/sonsuz yükleme devre dışı.
+                return;
                 if (window.innerWidth <= 900) return;
                 const reelViewport = document.getElementById('listingReelViewport');
-                const sentinel = document.getElementById('listingInfiniteSentinel');
-                if (!reelViewport || !sentinel || !listView) return;
+                const sentinel = null; // sonsuz yükleme kapalı
+                if (!reelViewport || !listView) return;
 
                 const pager = document.querySelector('.listing-pagination');
                 if (pager) pager.style.display = 'none';

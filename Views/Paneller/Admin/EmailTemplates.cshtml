@@ -13,6 +13,11 @@
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a href="/admin/email-kuyruk" class="btn btn-sm btn-outline-primary">Kuyruğu Aç</a>
+            <form method="post" action="/admin/eposta-sablonlari/test-gonder" class="d-inline-flex align-items-center gap-2">
+                @Html.AntiForgeryToken()
+                <input class="form-control form-control-sm" name="recipientEmail" type="email" placeholder="Test alıcı e-posta" value="irmhro0@gmail.com" required style="width:240px;" />
+                <button class="btn btn-sm btn-primary" type="submit">Tüm Şablonları Test Gönder</button>
+            </form>
             <form method="post" action="/admin/eposta-kuyrugu/retry-all-failed" class="d-inline-flex align-items-center gap-2">
                 @Html.AntiForgeryToken()
                 <input class="form-control form-control-sm" name="reason" placeholder="Toplu retry gerekçesi" required minlength="5" maxlength="240" style="width:220px;" />
@@ -38,9 +43,9 @@
             </div>
             <div class="col-lg-3 col-md-6">
                 <div class="border rounded p-3 h-100">
-                    <div class="text-muted small">Gönderildi</div>
-                    <div class="fw-bold">@Model.SentCount</div>
-                    <div class="small text-muted">Başarıyla çıkmış kayıt</div>
+                    <div class="text-muted small">SMTP kabul</div>
+                    <div class="fw-bold">@Model.AcceptedCount</div>
+                    <div class="small text-muted">SMTP sunucusu kabul etti, inbox teslimi ayrı izlenir</div>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">

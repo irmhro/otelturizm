@@ -1,7 +1,12 @@
 using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.SqlClient;
+using MailKit;
+using MailKit.Net.Imap;
+using MailKit.Net.Pop3;
+using MailKit.Search;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
 using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
@@ -9,6 +14,8 @@ using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Models.Paneller.Admin;
 using otelturizmnew.Services.Abstractions;
 using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace otelturizmnew.Services;
 
@@ -16,17 +23,23 @@ public class AdminService : IAdminService
 {
     private readonly string _connectionString;
     private readonly IConfiguration _configuration;
+    private readonly IDataProtector _mailAccountProtector;
+    private readonly IEmailQueueService _emailQueueService;
     private readonly CommerceMetricsAccumulator _commerceMetrics;
     private readonly IGrowthGovernanceService _growthGovernance;
     private readonly HealthCheckService _healthCheckService;
 
     public AdminService(
         IConfiguration configuration,
+        IDataProtectionProvider dataProtectionProvider,
+        IEmailQueueService emailQueueService,
         CommerceMetricsAccumulator commerceMetrics,
         IGrowthGovernanceService growthGovernance,
         HealthCheckService healthCheckService)
     {
         _configuration = configuration;
+        _mailAccountProtector = dataProtectionProvider.CreateProtector("Admin.PlatformMailAccounts.v1");
+        _emailQueueService = emailQueueService;
         _commerceMetrics = commerceMetrics;
         _growthGovernance = growthGovernance;
         _healthCheckService = healthCheckService;
@@ -384,6 +397,8 @@ public class AdminService : IAdminService
         model.Filter.PageSize = safePageSize;
 
         var hasNextAttempt = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "sonraki_deneme_utc", cancellationToken);
+        var hasMaxAttemptsColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "maksimum_deneme", cancellationToken);
+        var maxAttemptsSql = hasMaxAttemptsColumn ? "COALESCE(b.maksimum_deneme,3)" : "3";
 
         var where = new List<string> { "b.tur = N'E-posta'" };
         var prms = new List<SqlParameter>();
@@ -411,7 +426,7 @@ public class AdminService : IAdminService
         var listSql = hasNextAttempt
             ? $"""
                 SELECT b.id, COALESCE(b.kullanici_id, 0), COALESCE(b.alici_eposta,''), COALESCE(b.konu,''),
-                       COALESCE(b.durum,''), COALESCE(b.gonderme_denemesi,0), COALESCE(b.max_denemeler,3),
+                       COALESCE(b.durum,''), COALESCE(b.saglayici_mesaj_id,''), COALESCE(b.gonderme_denemesi,0), {maxAttemptsSql},
                        COALESCE(b.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at,
                        b.sonraki_deneme_utc,
                        COALESCE(b.hata_mesaji,'')
@@ -422,7 +437,7 @@ public class AdminService : IAdminService
                 """
             : $"""
                 SELECT b.id, COALESCE(b.kullanici_id, 0), COALESCE(b.alici_eposta,''), COALESCE(b.konu,''),
-                       COALESCE(b.durum,''), COALESCE(b.gonderme_denemesi,0), COALESCE(b.max_denemeler,3),
+                       COALESCE(b.durum,''), COALESCE(b.saglayici_mesaj_id,''), COALESCE(b.gonderme_denemesi,0), {maxAttemptsSql},
                        COALESCE(b.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at,
                        COALESCE(b.hata_mesaji,'')
                 FROM bildirim_loglari b
@@ -446,14 +461,15 @@ public class AdminService : IAdminService
                     RecipientEmail = reader.GetString(2),
                     Subject = reader.GetString(3),
                     Status = reader.GetString(4),
-                    AttemptCount = reader.GetInt32(5),
-                    MaxAttempts = reader.GetInt32(6),
-                    CreatedAtUtc = new DateTimeOffset(reader.GetDateTime(7), TimeSpan.Zero),
-                    LastError = hasNextAttempt ? reader.GetString(9) : reader.GetString(8)
+                    ProviderMessageId = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    AttemptCount = reader.GetInt32(6),
+                    MaxAttempts = reader.GetInt32(7),
+                    CreatedAtUtc = new DateTimeOffset(reader.GetDateTime(8), TimeSpan.Zero),
+                    LastError = hasNextAttempt ? reader.GetString(10) : reader.GetString(9)
                 };
                 if (hasNextAttempt)
                 {
-                    row.NextAttemptUtc = reader.IsDBNull(8) ? null : new DateTimeOffset(reader.GetDateTime(8), TimeSpan.Zero);
+                    row.NextAttemptUtc = reader.IsDBNull(9) ? null : new DateTimeOffset(reader.GetDateTime(9), TimeSpan.Zero);
                 }
                 model.Rows.Add(row);
             }
@@ -563,7 +579,7 @@ public class AdminService : IAdminService
         const string queueSql = """
             SELECT
                 SUM(CASE WHEN durum = N'Beklemede' THEN 1 ELSE 0 END) AS beklemede,
-                SUM(CASE WHEN durum = N'Gönderildi' THEN 1 ELSE 0 END) AS gonderildi,
+                SUM(CASE WHEN durum IN (N'Gönderildi', N'SMTP Kabul', N'Dosyaya Yazıldı') THEN 1 ELSE 0 END) AS smtp_kabul,
                 SUM(CASE WHEN durum = N'Başarısız' THEN 1 ELSE 0 END) AS basarisiz
             FROM bildirim_loglari
             WHERE tur = N'E-posta';
@@ -574,12 +590,898 @@ public class AdminService : IAdminService
             if (await queueReader.ReadAsync(cancellationToken))
             {
                 model.PendingCount = SafeInt(queueReader, 0);
-                model.SentCount = SafeInt(queueReader, 1);
+                model.AcceptedCount = SafeInt(queueReader, 1);
                 model.FailedCount = SafeInt(queueReader, 2);
             }
         }
 
         return model;
+    }
+
+    public async Task<AdminMailCenterPageViewModel> GetMailCenterAsync(string fullName, string email, string userRole, long? accountId, bool syncInbox, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var shell = await GetShellAsync(connection, "Mail Merkezi", "Platform e-posta hesaplarını, gelen kutusunu ve giden posta akışını tek ekranda yönetin.", fullName, email, userRole, cancellationToken);
+        var model = new AdminMailCenterPageViewModel { Shell = shell };
+
+        model.Accounts = await LoadMailAccountsAsync(connection, cancellationToken);
+        model.ActiveSenderEmail = await LoadActiveSenderEmailAsync(connection, cancellationToken);
+        model.SelectedAccountId = accountId ?? model.Accounts.FirstOrDefault()?.Id;
+
+        if (syncInbox && model.SelectedAccountId.HasValue)
+        {
+            await SyncMailAccountInternalAsync(connection, model.SelectedAccountId.Value, cancellationToken);
+            model.Accounts = await LoadMailAccountsAsync(connection, cancellationToken);
+        }
+
+        if (model.SelectedAccountId.HasValue)
+        {
+            var selected = model.Accounts.FirstOrDefault(x => x.Id == model.SelectedAccountId.Value);
+            if (selected is not null)
+            {
+                model.Form = new AdminMailAccountForm
+                {
+                    Id = selected.Id,
+                    AccountCode = selected.AccountCode,
+                    AccountName = selected.AccountName,
+                    EmailAddress = selected.EmailAddress,
+                    IncomingProtocol = selected.IncomingProtocol,
+                    IncomingHost = selected.IncomingHost,
+                    IncomingPort = selected.IncomingPort,
+                    IncomingUseSsl = selected.IncomingUseSsl,
+                    OutgoingHost = selected.OutgoingHost,
+                    OutgoingPort = selected.OutgoingPort,
+                    OutgoingSecurityType = selected.OutgoingSecurityType,
+                    Username = selected.EmailAddress,
+                    IsActive = selected.IsActive,
+                    IsDefaultSender = selected.IsDefaultSender
+                };
+            }
+        }
+
+        model.Incoming = await LoadIncomingEmailsAsync(connection, model.SelectedAccountId, cancellationToken);
+        model.Outgoing = await LoadOutgoingEmailsAsync(connection, cancellationToken);
+        model.TotalIncoming = model.Incoming.Count;
+        model.TotalOutgoing = model.Outgoing.Count;
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> SaveMailAccountAsync(long adminUserId, AdminMailAccountForm form, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(form.EmailAddress) || string.IsNullOrWhiteSpace(form.Username) || string.IsNullOrWhiteSpace(form.AccountCode))
+        {
+            return (false, "Hesap kodu, e-posta ve kullanıcı adı zorunludur.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var existingEncryptedPassword = form.Id.HasValue
+            ? await GetStoredMailPasswordAsync(connection, form.Id.Value, cancellationToken)
+            : null;
+        var storedPassword = !string.IsNullOrWhiteSpace(form.Password)
+            ? ProtectMailSecret(form.Password.Trim())
+            : existingEncryptedPassword;
+
+        if (string.IsNullOrWhiteSpace(storedPassword))
+        {
+            return (false, "Şifre zorunludur.");
+        }
+
+        if (form.Id.HasValue)
+        {
+            const string updateSql = """
+                UPDATE dbo.platform_email_hesaplari
+                SET hesap_kodu = @code,
+                    hesap_adi = @name,
+                    email_adresi = @email,
+                    gelen_protokol = @protocol,
+                    gelen_sunucu = @incomingHost,
+                    gelen_port = @incomingPort,
+                    gelen_ssl = @incomingSsl,
+                    giden_sunucu = @outgoingHost,
+                    giden_port = @outgoingPort,
+                    giden_guvenlik_tipi = @outgoingSecurity,
+                    kullanici_adi = @username,
+                    sifre_sifreli = @password,
+                    aktif_mi = @active,
+                    varsayilan_gonderen_mi = @defaultSender,
+                    guncellenme_tarihi = SYSUTCDATETIME()
+                WHERE id = @id;
+                """;
+            await using var updateCmd = new SqlCommand(updateSql, connection);
+            BindMailAccountParameters(updateCmd, form, storedPassword);
+            updateCmd.Parameters.AddWithValue("@id", form.Id.Value);
+            await updateCmd.ExecuteNonQueryAsync(cancellationToken);
+        }
+        else
+        {
+            const string insertSql = """
+                INSERT INTO dbo.platform_email_hesaplari
+                (
+                    hesap_kodu, hesap_adi, email_adresi, gelen_protokol, gelen_sunucu, gelen_port, gelen_ssl,
+                    giden_sunucu, giden_port, giden_guvenlik_tipi, kullanici_adi, sifre_sifreli, aktif_mi, varsayilan_gonderen_mi
+                )
+                VALUES
+                (
+                    @code, @name, @email, @protocol, @incomingHost, @incomingPort, @incomingSsl,
+                    @outgoingHost, @outgoingPort, @outgoingSecurity, @username, @password, @active, @defaultSender
+                );
+                """;
+            await using var insertCmd = new SqlCommand(insertSql, connection);
+            BindMailAccountParameters(insertCmd, form, storedPassword);
+            await insertCmd.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        if (form.IsDefaultSender)
+        {
+            await ClearOtherDefaultMailAccountsAsync(connection, form.Id, form.EmailAddress, cancellationToken);
+        }
+
+        await UpsertEmailServiceFromMailAccountAsync(connection, form, storedPassword, cancellationToken);
+
+        await TryLogAdminActionAsync(connection, adminUserId, "mail_account_save", "platform_email_hesaplari", form.Id?.ToString(CultureInfo.InvariantCulture) ?? form.EmailAddress, $"{form.EmailAddress} kaydedildi.", cancellationToken);
+        return (true, "Mail hesabı kaydedildi.");
+    }
+
+    public async Task<(bool Success, string Message)> DeleteMailAccountAsync(long adminUserId, long accountId, CancellationToken cancellationToken = default)
+    {
+        if (accountId <= 0)
+        {
+            return (false, "Geçersiz hesap.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        const string deleteMessagesSql = "DELETE FROM dbo.platform_email_mesajlari WHERE hesap_id = @id;";
+        await using (var deleteMessagesCmd = new SqlCommand(deleteMessagesSql, connection))
+        {
+            deleteMessagesCmd.Parameters.AddWithValue("@id", accountId);
+            await deleteMessagesCmd.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await DeleteEmailServiceByAccountIdAsync(connection, accountId, cancellationToken);
+
+        const string deleteAccountSql = "DELETE FROM dbo.platform_email_hesaplari WHERE id = @id;";
+        await using var deleteAccountCmd = new SqlCommand(deleteAccountSql, connection);
+        deleteAccountCmd.Parameters.AddWithValue("@id", accountId);
+        var affected = await deleteAccountCmd.ExecuteNonQueryAsync(cancellationToken);
+
+        if (affected <= 0)
+        {
+            return (false, "Hesap bulunamadı.");
+        }
+
+        await TryLogAdminActionAsync(connection, adminUserId, "mail_account_delete", "platform_email_hesaplari", accountId.ToString(CultureInfo.InvariantCulture), "Mail hesabı silindi.", cancellationToken);
+        return (true, "Mail hesabı silindi.");
+    }
+
+    public async Task<(bool Success, string Message, int ImportedCount)> SyncMailAccountAsync(long adminUserId, long accountId, CancellationToken cancellationToken = default)
+    {
+        if (accountId <= 0)
+        {
+            return (false, "Geçersiz hesap.", 0);
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        try
+        {
+            var imported = await SyncMailAccountInternalAsync(connection, accountId, cancellationToken);
+            await TryLogAdminActionAsync(connection, adminUserId, "mail_account_sync", "platform_email_hesaplari", accountId.ToString(CultureInfo.InvariantCulture), $"İçe alınan mesaj: {imported}", cancellationToken);
+            return (true, "Mail hesabı senkronize edildi.", imported);
+        }
+        catch (Exception ex)
+        {
+            await UpdateMailAccountSyncErrorAsync(connection, accountId, ex.Message, cancellationToken);
+            return (false, $"Senkron başarısız: {ex.Message}", 0);
+        }
+    }
+
+    public async Task<(bool Success, string Message, int QueuedCount)> QueueTemplateTestBatchAsync(long adminUserId, string recipientEmail, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(recipientEmail))
+        {
+            return (false, "Test alıcı e-posta zorunludur.", 0);
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = """
+            SELECT sablon_kodu, sablon_adi
+            FROM bildirim_sablonlari
+            WHERE tur = N'E-posta'
+              AND aktif_mi = 1
+            ORDER BY sablon_kodu ASC;
+            """;
+
+        var templateRows = new List<(string Code, string Name)>();
+        await using (var command = new SqlCommand(sql, connection))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                templateRows.Add((reader.GetString(0), reader.IsDBNull(1) ? reader.GetString(0) : reader.GetString(1)));
+            }
+        }
+
+        if (templateRows.Count == 0)
+        {
+            return (false, "Aktif e-posta şablonu bulunamadı.", 0);
+        }
+
+        var queuedCount = 0;
+        foreach (var template in templateRows)
+        {
+            await _emailQueueService.QueueTemplateAsync(connection, null, new Models.Email.QueuedEmailTemplateRequest
+            {
+                UserId = adminUserId,
+                RecipientEmail = recipientEmail.Trim(),
+                TemplateCode = template.Code,
+                SubjectOverride = $"[TEST] {template.Name} ({template.Code})",
+                ServiceCodeOverride = ResolvePreferredServiceCode(template.Code),
+                SenderEmailOverride = ResolvePreferredSenderEmail(template.Code),
+                RelatedTable = "users",
+                RelatedRecordId = adminUserId,
+                Tokens = BuildTemplateTestTokens(template.Code, recipientEmail)
+            }, cancellationToken);
+            queuedCount++;
+        }
+
+        await TryLogAdminActionAsync(connection, adminUserId, "mail_template_test_batch", "bildirim_sablonlari", recipientEmail.Trim(), $"{queuedCount} şablon test kuyruğuna bırakıldı.", cancellationToken);
+        return (true, $"{queuedCount} şablon test kuyruğuna bırakıldı.", queuedCount);
+    }
+
+    private async Task<List<AdminMailAccountRowViewModel>> LoadMailAccountsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT
+                id, hesap_kodu, hesap_adi, email_adresi, gelen_protokol, gelen_sunucu, gelen_port, gelen_ssl,
+                giden_sunucu, giden_port, giden_guvenlik_tipi, aktif_mi, varsayilan_gonderen_mi, son_senkron_tarihi, son_hata_mesaji
+            FROM dbo.platform_email_hesaplari
+            ORDER BY varsayilan_gonderen_mi DESC, email_adresi ASC;
+            """;
+        var rows = new List<AdminMailAccountRowViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            rows.Add(new AdminMailAccountRowViewModel
+            {
+                Id = reader.GetInt64(0),
+                AccountCode = reader.GetString(1),
+                AccountName = reader.GetString(2),
+                EmailAddress = reader.GetString(3),
+                IncomingProtocol = reader.GetString(4),
+                IncomingHost = reader.GetString(5),
+                IncomingPort = reader.GetInt32(6),
+                IncomingUseSsl = reader.GetBoolean(7),
+                OutgoingHost = reader.GetString(8),
+                OutgoingPort = reader.GetInt32(9),
+                OutgoingSecurityType = reader.GetString(10),
+                IsActive = reader.GetBoolean(11),
+                IsDefaultSender = reader.GetBoolean(12),
+                LastSyncUtc = reader.IsDBNull(13) ? null : new DateTimeOffset(reader.GetDateTime(13), TimeSpan.Zero),
+                LastError = reader.IsDBNull(14) ? null : reader.GetString(14)
+            });
+        }
+
+        return rows;
+    }
+
+    private async Task<string> LoadActiveSenderEmailAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT TOP (1) COALESCE(gonderen_eposta, N'')
+            FROM dbo.email_services
+            WHERE aktif_mi = 1
+            ORDER BY varsayilan_mi DESC, id ASC;
+            """;
+        await using var command = new SqlCommand(sql, connection);
+        return Convert.ToString(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) ?? string.Empty;
+    }
+
+    private async Task<List<AdminIncomingEmailRowViewModel>> LoadIncomingEmailsAsync(SqlConnection connection, long? accountId, CancellationToken cancellationToken)
+    {
+        var sql = """
+            SELECT TOP (80)
+                m.id, m.hesap_id, h.email_adresi, COALESCE(m.klasor, N'INBOX'), COALESCE(m.gonderen, N''),
+                COALESCE(m.konu, N''), COALESCE(m.ozet, N''), m.internet_message_id, m.tarih_utc,
+                COALESCE(m.okunmus_mu, 0), COALESCE(m.spam_mi, 0)
+            FROM dbo.platform_email_mesajlari m
+            INNER JOIN dbo.platform_email_hesaplari h ON h.id = m.hesap_id
+            WHERE m.yon = N'Gelen'
+              AND (@accountId IS NULL OR m.hesap_id = @accountId)
+            ORDER BY COALESCE(m.tarih_utc, m.olusturulma_tarihi) DESC, m.id DESC;
+            """;
+
+        var rows = new List<AdminIncomingEmailRowViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@accountId", (object?)accountId ?? DBNull.Value);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            rows.Add(new AdminIncomingEmailRowViewModel
+            {
+                Id = reader.GetInt64(0),
+                AccountId = reader.GetInt64(1),
+                AccountEmail = reader.GetString(2),
+                FolderName = reader.GetString(3),
+                From = reader.GetString(4),
+                Subject = reader.GetString(5),
+                Summary = reader.GetString(6),
+                InternetMessageId = reader.IsDBNull(7) ? null : reader.GetString(7),
+                ReceivedAtUtc = reader.IsDBNull(8) ? null : new DateTimeOffset(reader.GetDateTime(8), TimeSpan.Zero),
+                IsRead = reader.GetBoolean(9),
+                IsSpam = reader.GetBoolean(10)
+            });
+        }
+
+        return rows;
+    }
+
+    private async Task<List<AdminOutgoingEmailRowViewModel>> LoadOutgoingEmailsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        var hasSenderOverrideColumn = await TableColumnExistsAsync(connection, "dbo", "bildirim_loglari", "gonderen_eposta_override", cancellationToken);
+        var sql = hasSenderOverrideColumn
+            ? """
+                SELECT TOP (80)
+                    b.id,
+                    b.kullanici_id,
+                    COALESCE(b.alici_eposta, N''),
+                    COALESCE(b.konu, N''),
+                    COALESCE(b.durum, N''),
+                    b.saglayici_mesaj_id,
+                    b.gonderim_tarihi,
+                    COALESCE(b.olusturulma_tarihi, SYSUTCDATETIME()),
+                    COALESCE(b.gonderen_eposta_override, N'')
+                FROM dbo.bildirim_loglari b
+                WHERE b.tur = N'E-posta'
+                ORDER BY COALESCE(b.gonderim_tarihi, b.olusturulma_tarihi) DESC, b.id DESC;
+                """
+            : """
+                SELECT TOP (80)
+                    b.id,
+                    b.kullanici_id,
+                    COALESCE(b.alici_eposta, N''),
+                    COALESCE(b.konu, N''),
+                    COALESCE(b.durum, N''),
+                    b.saglayici_mesaj_id,
+                    b.gonderim_tarihi,
+                    COALESCE(b.olusturulma_tarihi, SYSUTCDATETIME()),
+                    N''
+                FROM dbo.bildirim_loglari b
+                WHERE b.tur = N'E-posta'
+                ORDER BY COALESCE(b.gonderim_tarihi, b.olusturulma_tarihi) DESC, b.id DESC;
+                """;
+        var senderEmail = await LoadActiveSenderEmailAsync(connection, cancellationToken);
+        var rows = new List<AdminOutgoingEmailRowViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            rows.Add(new AdminOutgoingEmailRowViewModel
+            {
+                Id = reader.GetInt64(0),
+                UserId = reader.IsDBNull(1) ? null : reader.GetInt64(1),
+                RecipientEmail = reader.GetString(2),
+                Subject = reader.GetString(3),
+                Status = reader.GetString(4),
+                ProviderMessageId = reader.IsDBNull(5) ? null : reader.GetString(5),
+                SentAtUtc = reader.IsDBNull(6) ? null : new DateTimeOffset(reader.GetDateTime(6), TimeSpan.Zero),
+                CreatedAtUtc = new DateTimeOffset(reader.GetDateTime(7), TimeSpan.Zero),
+                SenderEmail = reader.IsDBNull(8) || string.IsNullOrWhiteSpace(reader.GetString(8)) ? senderEmail : reader.GetString(8)
+            });
+        }
+
+        return rows;
+    }
+
+    private async Task<string?> GetStoredMailPasswordAsync(SqlConnection connection, long accountId, CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT sifre_sifreli FROM dbo.platform_email_hesaplari WHERE id = @id;";
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@id", accountId);
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
+        return scalar as string;
+    }
+
+    private static void BindMailAccountParameters(SqlCommand command, AdminMailAccountForm form, string storedPassword)
+    {
+        command.Parameters.AddWithValue("@code", form.AccountCode.Trim());
+        command.Parameters.AddWithValue("@name", form.AccountName.Trim());
+        command.Parameters.AddWithValue("@email", form.EmailAddress.Trim());
+        command.Parameters.AddWithValue("@protocol", form.IncomingProtocol.Trim().ToUpperInvariant());
+        command.Parameters.AddWithValue("@incomingHost", NormalizeTransportHost(form.IncomingHost));
+        command.Parameters.AddWithValue("@incomingPort", form.IncomingPort);
+        command.Parameters.AddWithValue("@incomingSsl", form.IncomingUseSsl);
+        command.Parameters.AddWithValue("@outgoingHost", NormalizeTransportHost(form.OutgoingHost));
+        command.Parameters.AddWithValue("@outgoingPort", form.OutgoingPort);
+        command.Parameters.AddWithValue("@outgoingSecurity", form.OutgoingSecurityType.Trim());
+        command.Parameters.AddWithValue("@username", form.Username.Trim());
+        command.Parameters.AddWithValue("@password", storedPassword);
+        command.Parameters.AddWithValue("@active", form.IsActive);
+        command.Parameters.AddWithValue("@defaultSender", form.IsDefaultSender);
+    }
+
+    private async Task ClearOtherDefaultMailAccountsAsync(SqlConnection connection, long? currentId, string currentEmail, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            UPDATE dbo.platform_email_hesaplari
+            SET varsayilan_gonderen_mi = 0,
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE email_adresi <> @email
+              AND (@id IS NULL OR id <> @id);
+            """;
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@email", currentEmail);
+        command.Parameters.AddWithValue("@id", (object?)currentId ?? DBNull.Value);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private async Task UpsertEmailServiceFromMailAccountAsync(SqlConnection connection, AdminMailAccountForm form, string storedPassword, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            MERGE dbo.email_services AS target
+            USING (
+                SELECT
+                    @serviceCode AS servis_kodu,
+                    @serviceName AS servis_adi,
+                    N'SMTP' AS saglayici,
+                    @isDefault AS varsayilan_mi,
+                    @isActive AS aktif_mi,
+                    @senderName AS gonderen_ad,
+                    @senderEmail AS gonderen_eposta,
+                    @replyTo AS yanitla_eposta,
+                    @smtpHost AS smtp_host,
+                    @smtpPort AS smtp_port,
+                    @smtpUsername AS smtp_kullanici_adi,
+                    @smtpPassword AS smtp_sifre,
+                    CAST(0 AS bit) AS sifre_sifrelenmis_mi,
+                    @securityType AS guvenlik_tipi,
+                    CAST(45 AS smallint) AS baglanti_zaman_asimi_saniye,
+                    CAST(0 AS bit) AS test_modu,
+                    @metadata AS metadata
+            ) AS src
+            ON target.servis_kodu = src.servis_kodu
+            WHEN MATCHED THEN
+                UPDATE SET
+                    servis_adi = src.servis_adi,
+                    saglayici = src.saglayici,
+                    varsayilan_mi = src.varsayilan_mi,
+                    aktif_mi = src.aktif_mi,
+                    gonderen_ad = src.gonderen_ad,
+                    gonderen_eposta = src.gonderen_eposta,
+                    yanitla_eposta = src.yanitla_eposta,
+                    smtp_host = src.smtp_host,
+                    smtp_port = src.smtp_port,
+                    smtp_kullanici_adi = src.smtp_kullanici_adi,
+                    smtp_sifre = src.smtp_sifre,
+                    sifre_sifrelenmis_mi = src.sifre_sifrelenmis_mi,
+                    guvenlik_tipi = src.guvenlik_tipi,
+                    baglanti_zaman_asimi_saniye = src.baglanti_zaman_asimi_saniye,
+                    test_modu = src.test_modu,
+                    metadata = src.metadata,
+                    guncellenme_tarihi = SYSUTCDATETIME()
+            WHEN NOT MATCHED THEN
+                INSERT
+                (
+                    servis_kodu, servis_adi, saglayici, varsayilan_mi, aktif_mi, gonderen_ad, gonderen_eposta,
+                    yanitla_eposta, smtp_host, smtp_port, smtp_kullanici_adi, smtp_sifre, sifre_sifrelenmis_mi,
+                    guvenlik_tipi, baglanti_zaman_asimi_saniye, test_modu, metadata
+                )
+                VALUES
+                (
+                    src.servis_kodu, src.servis_adi, src.saglayici, src.varsayilan_mi, src.aktif_mi, src.gonderen_ad, src.gonderen_eposta,
+                    src.yanitla_eposta, src.smtp_host, src.smtp_port, src.smtp_kullanici_adi, src.smtp_sifre, src.sifre_sifrelenmis_mi,
+                    src.guvenlik_tipi, src.baglanti_zaman_asimi_saniye, src.test_modu, src.metadata
+                );
+            """;
+
+        var metadata = JsonSerializer.Serialize(new
+        {
+            transport_mode = "smtp",
+            incoming_protocol = form.IncomingProtocol.Trim().ToUpperInvariant(),
+            incoming_host = NormalizeTransportHost(form.IncomingHost),
+            incoming_port = form.IncomingPort,
+            incoming_ssl = form.IncomingUseSsl
+        });
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@serviceCode", ResolvePreferredServiceCodeByAccount(form.AccountCode));
+        command.Parameters.AddWithValue("@serviceName", form.AccountName.Trim());
+        command.Parameters.AddWithValue("@isDefault", form.IsDefaultSender);
+        command.Parameters.AddWithValue("@isActive", form.IsActive);
+        command.Parameters.AddWithValue("@senderName", form.AccountName.Trim());
+        command.Parameters.AddWithValue("@senderEmail", form.EmailAddress.Trim());
+        command.Parameters.AddWithValue("@replyTo", form.EmailAddress.Trim());
+        command.Parameters.AddWithValue("@smtpHost", NormalizeTransportHost(form.OutgoingHost));
+        command.Parameters.AddWithValue("@smtpPort", form.OutgoingPort);
+        command.Parameters.AddWithValue("@smtpUsername", form.Username.Trim());
+        command.Parameters.AddWithValue("@smtpPassword", UnprotectMailSecret(storedPassword));
+        command.Parameters.AddWithValue("@securityType", form.OutgoingSecurityType.Trim());
+        command.Parameters.AddWithValue("@metadata", metadata);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task DeleteEmailServiceByAccountIdAsync(SqlConnection connection, long accountId, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            DELETE s
+            FROM dbo.email_services s
+            INNER JOIN dbo.platform_email_hesaplari h ON LOWER(h.hesap_kodu) = LOWER(REPLACE(s.servis_kodu, N'platform_', N''))
+            WHERE h.id = @id;
+            """;
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@id", accountId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task<bool> TableColumnExistsAsync(SqlConnection connection, string schemaName, string tableName, string columnName, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = @schemaName
+              AND TABLE_NAME = @tableName
+              AND COLUMN_NAME = @columnName;
+            """;
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@schemaName", schemaName);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@columnName", columnName);
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) > 0;
+    }
+
+    private static string NormalizeTransportHost(string host)
+    {
+        var value = (host ?? string.Empty).Trim();
+        if (value.Equals("mail.otelturizm.com", StringComparison.OrdinalIgnoreCase))
+        {
+            return "umay.muvhost.com";
+        }
+
+        return value;
+    }
+
+    private static string ResolvePreferredServiceCode(string templateCode)
+    {
+        var sender = ResolvePreferredSenderEmail(templateCode);
+        return ResolvePreferredServiceCodeByAccount(sender.Split('@')[0]);
+    }
+
+    private static string ResolvePreferredServiceCodeByAccount(string accountCodeOrEmailPrefix)
+    {
+        var normalized = (accountCodeOrEmailPrefix ?? string.Empty).Trim().ToLowerInvariant();
+        normalized = normalized.Replace("@otelturizm.com", string.Empty, StringComparison.OrdinalIgnoreCase);
+        return $"platform_{normalized}";
+    }
+
+    private static Dictionary<string, string> BuildTemplateTestTokens(string templateCode, string recipientEmail)
+    {
+        var now = DateTimeOffset.Now;
+        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["lang"] = "tr",
+            ["user_first_name"] = "İrem",
+            ["user_email"] = recipientEmail.Trim(),
+            ["registration_date"] = now.ToString("dd.MM.yyyy HH:mm"),
+            ["verification_link"] = "https://otelturizm.com/eposta-dogrula",
+            ["verification_code"] = "654321",
+            ["reset_link"] = "https://otelturizm.com/sifremi-unuttum",
+            ["request_ip"] = "127.0.0.1",
+            ["login_time"] = now.ToString("dd.MM.yyyy HH:mm"),
+            ["hotel_name"] = "216 EAGLE PALACE",
+            ["hotel_manager_name"] = "Kurumsal Yetkili",
+            ["company_name"] = "Otelturizm Kurumsal",
+            ["booking_reference"] = "OTL-TEST-20260428",
+            ["booking_status"] = "Onay Bekliyor",
+            ["reservation_status"] = "Onaylandı",
+            ["check_in_date"] = now.AddDays(7).ToString("dd.MM.yyyy"),
+            ["check_out_date"] = now.AddDays(9).ToString("dd.MM.yyyy"),
+            ["guest_name"] = "İrem Test",
+            ["guest_email"] = recipientEmail.Trim(),
+            ["hotel_city"] = "İstanbul",
+            ["total_price"] = "4.250 TL",
+            ["tutar"] = "4.250",
+            ["ad_soyad"] = "İrem Test",
+            ["otel_adi"] = "216 EAGLE PALACE",
+            ["rezervasyon_no"] = "OTL-TEST-20260428",
+            ["message_subject"] = "Test bilgilendirme mesajı",
+            ["message_body"] = "Bu içerik e-posta şablon testinde otomatik oluşturuldu.",
+            ["rejection_reason"] = "Bu, canlı template doğrulama test mesajıdır.",
+            ["contract_bundle_title"] = "Test sözleşme paketi",
+            ["recipient_name"] = "İrem Test",
+            ["module_label"] = "Admin platform",
+            ["contract_sections_html"] = "<ul><li>Mesafeli satış sözleşmesi</li><li>KVKK aydınlatma metni</li><li>İptal ve iade koşulları</li></ul>",
+            ["primary_contract_url"] = "https://otelturizm.com/gelisim",
+            ["base_url"] = "https://otelturizm.com",
+            ["checked_at"] = now.ToString("dd.MM.yyyy HH:mm:ss"),
+            ["ok_count"] = "42",
+            ["bad_count"] = "0",
+            ["total_count"] = "42",
+            ["bad_list"] = "-",
+            ["price_drop_amount"] = "750 TL",
+            ["discount_rate"] = "%12",
+            ["hotel_link"] = "https://otelturizm.com/oteller/216-eagle-palace",
+            ["favorite_link"] = "https://otelturizm.com/kullanici/favoriler",
+            ["reservation_link"] = "https://otelturizm.com/kullanici/rezervasyonlarim",
+            ["message_link"] = "https://otelturizm.com/kullanici/mesajlar"
+        };
+    }
+
+    private async Task<PlatformMailAccountEntity?> LoadMailAccountEntityAsync(SqlConnection connection, long accountId, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT TOP (1)
+                id, hesap_kodu, hesap_adi, email_adresi, gelen_protokol, gelen_sunucu, gelen_port, gelen_ssl,
+                giden_sunucu, giden_port, giden_guvenlik_tipi, kullanici_adi, sifre_sifreli, aktif_mi
+            FROM dbo.platform_email_hesaplari
+            WHERE id = @id;
+            """;
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@id", accountId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new PlatformMailAccountEntity
+        {
+            Id = reader.GetInt64(0),
+            AccountCode = reader.GetString(1),
+            AccountName = reader.GetString(2),
+            EmailAddress = reader.GetString(3),
+            IncomingProtocol = reader.GetString(4),
+            IncomingHost = reader.GetString(5),
+            IncomingPort = reader.GetInt32(6),
+            IncomingUseSsl = reader.GetBoolean(7),
+            OutgoingHost = reader.GetString(8),
+            OutgoingPort = reader.GetInt32(9),
+            OutgoingSecurityType = reader.GetString(10),
+            Username = reader.GetString(11),
+            StoredPassword = reader.GetString(12),
+            IsActive = reader.GetBoolean(13)
+        };
+    }
+
+    private async Task<int> SyncMailAccountInternalAsync(SqlConnection connection, long accountId, CancellationToken cancellationToken)
+    {
+        var account = await LoadMailAccountEntityAsync(connection, accountId, cancellationToken);
+        if (account is null)
+        {
+            throw new InvalidOperationException("Mail hesabı bulunamadı.");
+        }
+
+        var password = UnprotectMailSecret(account.StoredPassword);
+        var imported = account.IncomingProtocol.Equals("POP3", StringComparison.OrdinalIgnoreCase)
+            ? await SyncPop3Async(connection, account, password, cancellationToken)
+            : await SyncImapAsync(connection, account, password, cancellationToken);
+
+        await UpdateMailAccountSyncSuccessAsync(connection, accountId, cancellationToken);
+        return imported;
+    }
+
+    private async Task<int> SyncImapAsync(SqlConnection connection, PlatformMailAccountEntity account, string password, CancellationToken cancellationToken)
+    {
+        using var client = new ImapClient();
+        await client.ConnectAsync(account.IncomingHost, account.IncomingPort, account.IncomingUseSsl, cancellationToken);
+        await client.AuthenticateAsync(account.Username, password, cancellationToken);
+        var inbox = client.Inbox ?? throw new InvalidOperationException("IMAP inbox bulunamadı.");
+        await inbox.OpenAsync(FolderAccess.ReadOnly, cancellationToken);
+
+        var uids = await inbox.SearchAsync(SearchQuery.All, cancellationToken) ?? Array.Empty<UniqueId>();
+        var imported = 0;
+        foreach (var uid in uids.TakeLast(40))
+        {
+            var message = await inbox.GetMessageAsync(uid, cancellationToken);
+            if (await UpsertIncomingMessageAsync(connection, account, "INBOX", uid.ToString(), message, cancellationToken))
+            {
+                imported++;
+            }
+        }
+
+        await client.DisconnectAsync(true, cancellationToken);
+        return imported;
+    }
+
+    private async Task<int> SyncPop3Async(SqlConnection connection, PlatformMailAccountEntity account, string password, CancellationToken cancellationToken)
+    {
+        using var client = new Pop3Client();
+        await client.ConnectAsync(account.IncomingHost, account.IncomingPort, account.IncomingUseSsl, cancellationToken);
+        await client.AuthenticateAsync(account.Username, password, cancellationToken);
+
+        var count = client.Count;
+        var start = Math.Max(0, count - 40);
+        var imported = 0;
+        for (var i = start; i < count; i++)
+        {
+            var message = await client.GetMessageAsync(i, cancellationToken);
+            if (await UpsertIncomingMessageAsync(connection, account, "INBOX", $"POP3-{i}", message, cancellationToken))
+            {
+                imported++;
+            }
+        }
+
+        await client.DisconnectAsync(true, cancellationToken);
+        return imported;
+    }
+
+    private async Task<bool> UpsertIncomingMessageAsync(SqlConnection connection, PlatformMailAccountEntity account, string folderName, string uidValue, MimeKit.MimeMessage message, CancellationToken cancellationToken)
+    {
+        const string existsSql = """
+            SELECT TOP (1) id
+            FROM dbo.platform_email_mesajlari
+            WHERE hesap_id = @accountId
+              AND yon = N'Gelen'
+              AND klasor = @folder
+              AND uid_degeri = @uid;
+            """;
+        await using var existsCommand = new SqlCommand(existsSql, connection);
+        existsCommand.Parameters.AddWithValue("@accountId", account.Id);
+        existsCommand.Parameters.AddWithValue("@folder", folderName);
+        existsCommand.Parameters.AddWithValue("@uid", uidValue);
+        var existingId = await existsCommand.ExecuteScalarAsync(cancellationToken);
+
+        var from = string.Join("; ", message.From.Mailboxes.Select(x => $"{x.Name} <{x.Address}>".Trim()));
+        var to = string.Join("; ", message.To.Mailboxes.Select(x => $"{x.Name} <{x.Address}>".Trim()));
+        var cc = string.Join("; ", message.Cc.Mailboxes.Select(x => $"{x.Name} <{x.Address}>".Trim()));
+        var summary = BuildMailSummary(message.TextBody, message.HtmlBody);
+        var headers = string.Join(Environment.NewLine, message.Headers.Select(x => $"{x.Field}: {x.Value}"));
+
+        if (existingId is not null && existingId != DBNull.Value)
+        {
+            const string updateSql = """
+                UPDATE dbo.platform_email_mesajlari
+                SET konu = @subject,
+                    gonderen = @from,
+                    alicilar = @to,
+                    cc = @cc,
+                    tarih_utc = @dateUtc,
+                    ozet = @summary,
+                    html_icerik = @htmlBody,
+                    text_icerik = @textBody,
+                    okunmus_mu = 1,
+                    ham_basliklar = @headers,
+                    guncellenme_tarihi = SYSUTCDATETIME(),
+                    senkron_tarihi = SYSUTCDATETIME()
+                WHERE id = @id;
+                """;
+            await using var updateCommand = new SqlCommand(updateSql, connection);
+            updateCommand.Parameters.AddWithValue("@subject", (object?)message.Subject ?? DBNull.Value);
+            updateCommand.Parameters.AddWithValue("@from", (object?)from ?? DBNull.Value);
+            updateCommand.Parameters.AddWithValue("@to", (object?)to ?? DBNull.Value);
+            updateCommand.Parameters.AddWithValue("@cc", (object?)cc ?? DBNull.Value);
+            updateCommand.Parameters.AddWithValue("@dateUtc", message.Date != DateTimeOffset.MinValue ? message.Date.UtcDateTime : DBNull.Value);
+            updateCommand.Parameters.AddWithValue("@summary", (object?)summary ?? DBNull.Value);
+            updateCommand.Parameters.AddWithValue("@htmlBody", (object?)message.HtmlBody ?? DBNull.Value);
+            updateCommand.Parameters.AddWithValue("@textBody", (object?)message.TextBody ?? DBNull.Value);
+            updateCommand.Parameters.AddWithValue("@headers", headers);
+            updateCommand.Parameters.AddWithValue("@id", Convert.ToInt64(existingId, CultureInfo.InvariantCulture));
+            await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+            return false;
+        }
+
+        const string insertSql = """
+            INSERT INTO dbo.platform_email_mesajlari
+            (
+                hesap_id, yon, klasor, uid_degeri, internet_message_id, konu, gonderen, alicilar, cc,
+                tarih_utc, ozet, html_icerik, text_icerik, okunmus_mu, spam_mi, ham_basliklar
+            )
+            VALUES
+            (
+                @accountId, N'Gelen', @folder, @uid, @internetMessageId, @subject, @from, @to, @cc,
+                @dateUtc, @summary, @htmlBody, @textBody, 1, 0, @headers
+            );
+            """;
+        await using var insertCommand = new SqlCommand(insertSql, connection);
+        insertCommand.Parameters.AddWithValue("@accountId", account.Id);
+        insertCommand.Parameters.AddWithValue("@folder", folderName);
+        insertCommand.Parameters.AddWithValue("@uid", uidValue);
+        insertCommand.Parameters.AddWithValue("@internetMessageId", (object?)message.MessageId ?? DBNull.Value);
+        insertCommand.Parameters.AddWithValue("@subject", (object?)message.Subject ?? DBNull.Value);
+        insertCommand.Parameters.AddWithValue("@from", (object?)from ?? DBNull.Value);
+        insertCommand.Parameters.AddWithValue("@to", (object?)to ?? DBNull.Value);
+        insertCommand.Parameters.AddWithValue("@cc", (object?)cc ?? DBNull.Value);
+        insertCommand.Parameters.AddWithValue("@dateUtc", message.Date != DateTimeOffset.MinValue ? message.Date.UtcDateTime : DBNull.Value);
+        insertCommand.Parameters.AddWithValue("@summary", (object?)summary ?? DBNull.Value);
+        insertCommand.Parameters.AddWithValue("@htmlBody", (object?)message.HtmlBody ?? DBNull.Value);
+        insertCommand.Parameters.AddWithValue("@textBody", (object?)message.TextBody ?? DBNull.Value);
+        insertCommand.Parameters.AddWithValue("@headers", headers);
+        await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+        return true;
+    }
+
+    private string ProtectMailSecret(string rawSecret)
+        => _mailAccountProtector.Protect(rawSecret);
+
+    private string UnprotectMailSecret(string storedSecret)
+    {
+        try
+        {
+            return _mailAccountProtector.Unprotect(storedSecret);
+        }
+        catch
+        {
+            return storedSecret;
+        }
+    }
+
+    private static string BuildMailSummary(string? textBody, string? htmlBody)
+    {
+        var text = !string.IsNullOrWhiteSpace(textBody) ? textBody : htmlBody ?? string.Empty;
+        text = Regex.Replace(text, "<.*?>", " ");
+        text = Regex.Replace(text, @"\s+", " ").Trim();
+        return text.Length <= 600 ? text : text[..600];
+    }
+
+    private static async Task UpdateMailAccountSyncSuccessAsync(SqlConnection connection, long accountId, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            UPDATE dbo.platform_email_hesaplari
+            SET son_senkron_tarihi = SYSUTCDATETIME(),
+                son_hata_mesaji = NULL,
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE id = @id;
+            """;
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@id", accountId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task UpdateMailAccountSyncErrorAsync(SqlConnection connection, long accountId, string errorMessage, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            UPDATE dbo.platform_email_hesaplari
+            SET son_hata_mesaji = @error,
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE id = @id;
+            """;
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@id", accountId);
+        command.Parameters.AddWithValue("@error", errorMessage.Length <= 1000 ? errorMessage : errorMessage[..1000]);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task TryLogAdminActionAsync(SqlConnection connection, long adminUserId, string actionType, string targetTable, string? targetId, string? note, CancellationToken cancellationToken)
+    {
+        if (adminUserId <= 0)
+        {
+            return;
+        }
+
+        const string sql = """
+            INSERT INTO dbo.admin_islem_loglari (admin_kullanici_id, islem_turu, hedef_tablo, hedef_kayit_id, aciklama, ip_adresi, islem_tarihi)
+            VALUES (@adminUserId, @actionType, @targetTable, @targetId, @note, NULL, SYSUTCDATETIME());
+            """;
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@adminUserId", adminUserId);
+        command.Parameters.AddWithValue("@actionType", actionType);
+        command.Parameters.AddWithValue("@targetTable", targetTable);
+        command.Parameters.AddWithValue("@targetId", (object?)targetId ?? DBNull.Value);
+        command.Parameters.AddWithValue("@note", (object?)note ?? DBNull.Value);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private sealed class PlatformMailAccountEntity
+    {
+        public long Id { get; init; }
+        public string AccountCode { get; init; } = string.Empty;
+        public string AccountName { get; init; } = string.Empty;
+        public string EmailAddress { get; init; } = string.Empty;
+        public string IncomingProtocol { get; init; } = "IMAP";
+        public string IncomingHost { get; init; } = string.Empty;
+        public int IncomingPort { get; init; }
+        public bool IncomingUseSsl { get; init; }
+        public string OutgoingHost { get; init; } = string.Empty;
+        public int OutgoingPort { get; init; }
+        public string OutgoingSecurityType { get; init; } = string.Empty;
+        public string Username { get; init; } = string.Empty;
+        public string StoredPassword { get; init; } = string.Empty;
+        public bool IsActive { get; init; }
     }
 
     public async Task<(bool Success, string Message)> ForceRetryEmailAsync(long adminUserId, long queueId, string reason, CancellationToken cancellationToken = default)

@@ -416,7 +416,7 @@ public class HotelService : IHotelService
         }
 
         const string campaignSql = """
-            SELECT TOP (6)
+            SELECT TOP (12)
                 k.kampanya_adi,
                 k.seo_slug,
                 COALESCE(NULLIF(k.listeleme_aciklamasi, ''), NULLIF(k.kisa_aciklama, ''), LEFT(k.kampanya_aciklamasi, 180)) AS slogan,
@@ -425,7 +425,6 @@ public class HotelService : IHotelService
             FROM kampanyalar k
             WHERE k.aktif_mi = 1
               AND k.gorunurluk_durumu = N'Yayında'
-              AND SYSUTCDATETIME() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
               AND COALESCE(NULLIF(k.hero_gorseli, ''), NULLIF(k.kart_gorseli, ''), NULLIF(k.banner_gorseli, ''), NULLIF(k.mobil_gorsel, '')) IS NOT NULL
             ORDER BY k.one_cikan_kampanya DESC, k.aktif_sayfa_vitrini DESC, k.siralama ASC, k.id ASC;
             """;
@@ -1002,7 +1001,7 @@ public class HotelService : IHotelService
             CampaignSlug = normalizedCampaignSlug,
             ActiveTag = normalizedTag,
             CurrentPage = Math.Max(page, 1),
-            PageSize = 7
+            PageSize = 15
         };
 
         var connectionString = GetConnectionString();

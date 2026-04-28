@@ -1,4 +1,7 @@
 @model otelturizmnew.Models.Oteller.HotelDetailPageViewModel
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
 
 @{
     ViewData["Title"] = Model.Name;
@@ -231,6 +234,23 @@
         <button type="button" class="gallery-main-trigger" data-gallery-index="0" aria-label="Galeriyi ac">
             <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" fetchpriority="high" decoding="async" />
         </button>
+
+        @if (Model.ActiveViewerBand > 0)
+        {
+            <div class="gallery-proof-badge" role="status" aria-live="polite">
+                <i class="fas fa-eye" aria-hidden="true"></i>
+                <span>Son dakikalarda bu otele yaklaşık <strong>@Model.ActiveViewerBand</strong> ilgi gösterdi.</span>
+            </div>
+        }
+
+        <div class="gallery-proof-badge gallery-proof-badge--presence text-muted small"
+             id="livePresenceLine"
+             role="status"
+             aria-live="polite"
+             hidden>
+            <i class="fas fa-users" aria-hidden="true"></i>
+            <span>Şu anda bu otelin sayfasında yaklaşık <strong id="livePresenceCount">@Model.LivePresenceCount</strong> aktif oturum var.</span>
+        </div>
     </div>
     <div class="gallery-side-grid">
         @for (var imageIndex = 1; imageIndex < gallery.Count && imageIndex <= 4; imageIndex++)
@@ -313,18 +333,35 @@
         <h1>
             @Model.Name
         </h1>
-        <p class="detail-location"><i class="fas fa-location-dot"></i> @Model.Address</p>
-        @if (Model.ActiveViewerBand > 0)
-        {
-            <p class="detail-social-proof text-muted small mb-1" role="status">
-                <i class="fas fa-eye" aria-hidden="true"></i>
-                Son dakikalarda bu otele yaklaşık <strong>@Model.ActiveViewerBand</strong> ilgi gösterdi.
-            </p>
+        @{
+            string? ExtractNeighborhood(string? address)
+            {
+                var a = (address ?? string.Empty).Trim();
+                if (a.Length == 0) return null;
+
+                var idx = a.IndexOf("Mahallesi", StringComparison.OrdinalIgnoreCase);
+                if (idx > 0)
+                {
+                    return a.Substring(0, idx + "Mahallesi".Length).Trim();
+                }
+
+                idx = a.IndexOf("Mah.", StringComparison.OrdinalIgnoreCase);
+                if (idx > 0)
+                {
+                    return a.Substring(0, idx + "Mah.".Length).Trim();
+                }
+
+                return null;
+            }
+
+            var neighborhood = ExtractNeighborhood(Model.Address);
+            var locationPieces = new List<string>();
+            if (!string.IsNullOrWhiteSpace(neighborhood)) locationPieces.Add(neighborhood);
+            if (!string.IsNullOrWhiteSpace(Model.District)) locationPieces.Add(Model.District);
+            if (!string.IsNullOrWhiteSpace(Model.City)) locationPieces.Add(Model.City);
+            var locationOnly = string.Join(", ", locationPieces);
         }
-        <p class="detail-live-presence text-muted small mb-1" id="livePresenceLine" role="status" hidden>
-            <i class="fas fa-users" aria-hidden="true"></i>
-            Şu anda bu otelin sayfasında yaklaşık <strong id="livePresenceCount">@Model.LivePresenceCount</strong> aktif oturum var.
-        </p>
+        <p class="detail-location"><i class="fas fa-location-dot"></i> @locationOnly</p>
         @if (!string.IsNullOrWhiteSpace(Model.IntentSegmentLabel))
         {
             <p class="detail-intent text-muted small mb-0">Seyahat profili: @Model.IntentSegmentLabel</p>
@@ -439,7 +476,11 @@
 
 @if (TempData["PublicReservationInfo"] is string infoMessage)
 {
-    <div class="detail-inline-feedback info">@infoMessage</div>
+    @* Bu bilgi mesajını artık sağ alttaki "tamamlanmayan rezervasyon" bildirimi karşılıyor. *@
+    if (!infoMessage.Contains("Rezervasyonunuz kaydedildi", StringComparison.OrdinalIgnoreCase))
+    {
+        <div class="detail-inline-feedback info">@infoMessage</div>
+    }
 }
 
 @{
@@ -506,28 +547,6 @@
     if (totalReviewPages <= 0) totalReviewPages = 1;
     if (reviewPage > totalReviewPages) reviewPage = totalReviewPages;
     var pagedReviews = sortedReviews.Skip((reviewPage - 1) * reviewPageSize).Take(reviewPageSize).ToList();
-}
-
-@if (Model.SimilarHotels.Count > 0)
-{
-    <section class="similar-hotels-strip container-fluid px-0 mb-4" aria-label="Benzer oteller">
-        <h2 class="h5 mb-3">Aynı bölgede öne çıkanlar</h2>
-        <div class="row g-3">
-            @foreach (var sim in Model.SimilarHotels)
-            {
-                <div class="col-6 col-md-4 col-lg-2">
-                    <a href="/oteller/@sim.Slug" class="card h-100 text-decoration-none shadow-sm border-0">
-                        <img src="@sim.ImageUrl" class="card-img-top" alt="@sim.Name" style="object-fit:cover;height:96px;" loading="lazy" />
-                        <div class="card-body p-2">
-                            <div class="small fw-bold text-dark">@sim.Name</div>
-                            <div class="small text-muted">@sim.RatingText</div>
-                            <div class="small text-primary">@sim.PriceText</div>
-                        </div>
-                    </a>
-                </div>
-            }
-        </div>
-    </section>
 }
 
 <section class="detail-grid">
@@ -1052,13 +1071,6 @@
                 <input type="hidden" id="profileCompletionRequired" value="@(Model.ProfilePrompt.IsProfileIncomplete && Model.IsLoggedInUser ? "true" : "false")" />
                 <input type="hidden" name="RoomsJson" id="roomsJsonInput" value="" />
 
-                <nav class="booking-stepper" aria-label="Rezervasyon adımları">
-                    <span class="booking-step"><span class="booking-step__num">1</span> Tarih &amp; Oda</span>
-                    <span class="booking-step"><span class="booking-step__num">2</span> Misafir</span>
-                    <span class="booking-step"><span class="booking-step__num">3</span> Ödeme</span>
-                    <span class="booking-step"><span class="booking-step__num">4</span> Onay</span>
-                </nav>
-
                 @if (Model.IsLoggedInUser && Model.ProfilePrompt.IsProfileIncomplete)
                 {
                     <div class="detail-inline-feedback info" style="margin: 0 0 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
@@ -1239,15 +1251,38 @@
         </div>
     </aside>
 
-    <div class="mobile-booking-bar" id="mobileBookingBar" aria-label="Mobil rezervasyon çubuğu">
-        <div class="mobile-booking-bar__price">
-            <span class="mobile-booking-bar__from">Gecelik</span>
-            <strong id="mobileBookingPrice">@(initialInclusiveNightly > 0m ? $"₺{initialInclusiveNightly:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
-            <span class="mobile-booking-bar__hint" id="mobileBookingHint">vergiler dahil</span>
-        </div>
-        <button type="button" class="mobile-booking-bar__btn" id="openBookingSheetBtn">Rezervasyon Yap</button>
-    </div>
 </section>
+
+@{
+    var publicDraftRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    long? publicDraftUserId = long.TryParse(publicDraftRaw, out var parsedPublicDraftUserId) ? parsedPublicDraftUserId : null;
+    var publicDraftSessionKey = Context.Request.Cookies.TryGetValue(otelturizmnew.Services.ReservationDraftService.DraftCookieName, out var publicDraftCookieValue)
+        ? publicDraftCookieValue
+        : null;
+    var localActiveDraft = await ReservationDraftService.GetActiveDraftAsync(publicDraftUserId, publicDraftSessionKey, Context.RequestAborted);
+}
+
+@if (localActiveDraft is not null)
+{
+    <aside class="detail-draft-toast" aria-label="Tamamlanmayan rezervasyon bildirimi">
+        <div class="detail-draft-toast__icon" aria-hidden="true">
+            <i class="fas fa-hourglass-half"></i>
+        </div>
+        <div class="detail-draft-toast__copy">
+            <strong>Tamamlanmayan rezervasyon</strong>
+            <span>@localActiveDraft.HotelName · @localActiveDraft.CheckInText - @localActiveDraft.CheckOutText</span>
+        </div>
+        <div class="detail-draft-toast__actions">
+            <a class="detail-draft-toast__btn is-primary" href="@localActiveDraft.ResumeUrl">Devam Et</a>
+            <form method="post" action="/rezervasyon-taslagi/iptal" class="detail-draft-toast__form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="draftId" value="@localActiveDraft.DraftId" />
+                <input type="hidden" name="returnUrl" value="/oteller/@Model.Slug" />
+                <button type="submit" class="detail-draft-toast__btn is-ghost">İptal Et</button>
+            </form>
+        </div>
+    </aside>
+}
 
 <div class="detail-modal-backdrop" id="detailActionBackdrop" hidden></div>
 
@@ -3717,8 +3752,9 @@
                     body: JSON.stringify({ hotelId: hid, tabId: tabId })
                 }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
                     if (!j || !j.ok) return;
-                    if (elCount) elCount.textContent = j.active;
-                    if (line) line.hidden = false;
+                    var active = Number(j.active || 0);
+                    if (elCount) elCount.textContent = String(active);
+                    if (line) line.hidden = !(active > 0);
                 }).catch(function () { });
             }
             beat();

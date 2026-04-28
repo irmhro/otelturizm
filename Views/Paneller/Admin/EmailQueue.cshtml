@@ -13,7 +13,7 @@
         <form method="get" action="/admin/email-kuyruk" class="row g-2">
             <div class="col-md-3">
                 <label class="form-label">Durum</label>
-                <input class="form-control form-control-sm" name="status" value="@Model.Filter.Status" placeholder="Beklemede / Gönderildi / Başarısız" />
+                <input class="form-control form-control-sm" name="status" value="@Model.Filter.Status" placeholder="Beklemede / SMTP Kabul / Dosyaya Yazıldı / Başarısız" />
             </div>
             <div class="col-md-6">
                 <label class="form-label">Ara</label>
@@ -32,6 +32,7 @@
                     <th>Alıcı</th>
                     <th>Konu</th>
                     <th>Durum</th>
+                    <th>Sağlayıcı Mesaj ID</th>
                     <th>Deneme</th>
                     <th>Sonraki</th>
                     <th>Hata</th>
@@ -46,6 +47,7 @@
                         <td>@row.RecipientEmail</td>
                         <td style="max-width:360px;white-space:normal;">@row.Subject</td>
                         <td>@row.Status</td>
+                        <td style="max-width:260px;white-space:normal;">@(string.IsNullOrWhiteSpace(row.ProviderMessageId) ? "-" : row.ProviderMessageId)</td>
                         <td>@row.AttemptCount / @row.MaxAttempts</td>
                         <td>@(row.NextAttemptUtc.HasValue ? row.NextAttemptUtc.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss") : "-")</td>
                         <td style="max-width:320px;white-space:normal;">@row.LastError</td>
