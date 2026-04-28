@@ -52,7 +52,12 @@
 .feature-sub { font-size:0.78rem; }
 
 @media (max-width: 420px) {
-    .feature-hub { grid-template-columns: 1fr; }
+    /* Mobilde de 2 sütun kalsın (Bütçe/İndirim/HaftaSonu/Havuz/Kampanya/Planlama). */
+    .feature-hub { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .feature-card { padding: 9px; }
+    .feature-icon { width: 40px; height: 40px; border-radius: 10px; font-size: 15px; }
+    .feature-title { font-size: 0.9rem; }
+    .feature-sub { font-size: 0.76rem; }
 }
 
 /* Fancy search mobile tuning */

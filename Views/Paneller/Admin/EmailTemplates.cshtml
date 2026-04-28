@@ -1,9 +1,157 @@
 @using otelturizmnew.Models.Paneller.Admin
-@model AdminSectionPageViewModel
+@model AdminEmailSettingsPageViewModel
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
 }
-<partial name="~/Views/Paneller/Admin/_AdminSectionPage.cshtml" model="Model" />
 
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h3 class="card-title mb-1">E-posta Hesapları ve Form Eşleşmeleri</h3>
+            <div class="text-muted small">Canlı gönderen hesap, kuyruk özeti ve hangi akışın hangi adresten çıkması gerektiği burada görünür.</div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/admin/email-kuyruk" class="btn btn-sm btn-outline-primary">Kuyruğu Aç</a>
+            <form method="post" action="/admin/eposta-kuyrugu/retry-all-failed" class="d-inline-flex align-items-center gap-2">
+                @Html.AntiForgeryToken()
+                <input class="form-control form-control-sm" name="reason" placeholder="Toplu retry gerekçesi" required minlength="5" maxlength="240" style="width:220px;" />
+                <button class="btn btn-sm btn-outline-success" type="submit">Başarısızları Retry Et</button>
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">Aktif canlı hesap</div>
+                    <div class="fw-bold">@Model.ActiveSenderEmail</div>
+                    <div class="small text-muted">@Model.ActiveServiceCode</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">Bekleyen</div>
+                    <div class="fw-bold">@Model.PendingCount</div>
+                    <div class="small text-muted">Kuyrukta işlenecek e-posta</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">Gönderildi</div>
+                    <div class="fw-bold">@Model.SentCount</div>
+                    <div class="small text-muted">Başarıyla çıkmış kayıt</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="border rounded p-3 h-100">
+                    <div class="text-muted small">Başarısız</div>
+                    <div class="fw-bold text-danger">@Model.FailedCount</div>
+                    <div class="small text-muted">Retry bekleyen eski kayıt</div>
+                </div>
+            </div>
+        </div>
 
+        <h4 class="h6 mb-3">SMTP / gönderici hesapları</h4>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm table-striped align-middle">
+                <thead>
+                <tr>
+                    <th>Servis</th>
+                    <th>Gönderen</th>
+                    <th>SMTP</th>
+                    <th>Durum</th>
+                    <th>Son başarı</th>
+                    <th>Son hata</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Model.Accounts)
+                {
+                    <tr>
+                        <td>
+                            <strong>@row.ServiceName</strong>
+                            <div class="text-muted small">@row.ServiceCode · @row.Provider</div>
+                        </td>
+                        <td>
+                            <div>@row.SenderName</div>
+                            <div class="text-muted small">@row.SenderEmail</div>
+                            @if (!string.IsNullOrWhiteSpace(row.ReplyToEmail))
+                            {
+                                <div class="text-muted small">Reply-To: @row.ReplyToEmail</div>
+                            }
+                        </td>
+                        <td>
+                            <div>@row.Host:@row.Port</div>
+                            <div class="text-muted small">@row.SecurityType</div>
+                        </td>
+                        <td>
+                            <span class="badge @(row.IsActive ? "bg-success" : "bg-secondary")">@(row.IsActive ? "Aktif" : "Pasif")</span>
+                            @if (row.IsDefault)
+                            {
+                                <span class="badge bg-primary">Varsayılan</span>
+                            }
+                            @if (row.TestMode)
+                            {
+                                <span class="badge bg-warning text-dark">Test modu</span>
+                            }
+                        </td>
+                        <td>@(row.LastSuccessUtc?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss") ?? "-")</td>
+                        <td style="max-width:340px;white-space:normal;">
+                            @(row.LastErrorUtc?.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss") ?? "-")
+                            @if (!string.IsNullOrWhiteSpace(row.LastErrorMessage))
+                            {
+                                <div class="text-danger small mt-1">@row.LastErrorMessage</div>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <h4 class="h6 mb-3">Form / şablon / gönderici eşleşmesi</h4>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Akış</th>
+                    <th>Şablon</th>
+                    <th>Konu</th>
+                    <th>Hedef hesap</th>
+                    <th>Canlı gönderen hesap</th>
+                    <th>Durum</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Model.Templates)
+                {
+                    <tr>
+                        <td>
+                            <strong>@row.TriggerArea</strong>
+                            <div class="text-muted small">@row.TemplateCode · @row.Language</div>
+                        </td>
+                        <td>
+                            <div>@row.TemplateName</div>
+                            <div class="text-muted small">@row.ViewPath</div>
+                        </td>
+                        <td style="max-width:320px;white-space:normal;">@row.Subject</td>
+                        <td>@row.IntendedSenderEmail</td>
+                        <td>@row.ActualSenderEmail</td>
+                        <td>
+                            @if (row.UsesFallbackSender)
+                            {
+                                <span class="badge bg-warning text-dark">Fallback kullanılıyor</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Doğrudan eşleşti</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

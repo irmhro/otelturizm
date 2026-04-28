@@ -462,6 +462,126 @@ public class AdminService : IAdminService
         return model;
     }
 
+    public async Task<AdminEmailSettingsPageViewModel> GetEmailSettingsPageAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var shell = await GetShellAsync(connection, "E-posta Hesapları", "Gönderici hesapları, kuyruk durumu ve form-şablon eşleşmelerini tek ekranda yönetin.", fullName, email, userRole, cancellationToken);
+        var model = new AdminEmailSettingsPageViewModel { Shell = shell };
+
+        const string accountSql = """
+            SELECT
+                servis_kodu,
+                servis_adi,
+                COALESCE(gonderen_ad, N''),
+                COALESCE(gonderen_eposta, N''),
+                yanitla_eposta,
+                COALESCE(saglayici, N''),
+                COALESCE(smtp_host, N''),
+                COALESCE(smtp_port, 0),
+                COALESCE(guvenlik_tipi, N''),
+                COALESCE(aktif_mi, 0),
+                COALESCE(varsayilan_mi, 0),
+                COALESCE(test_modu, 0),
+                son_basarili_test_tarihi,
+                son_hata_tarihi,
+                son_hata_mesaji
+            FROM email_services
+            ORDER BY varsayilan_mi DESC, aktif_mi DESC, id ASC;
+            """;
+
+        await using (var command = new SqlCommand(accountSql, connection))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var row = new AdminEmailAccountRowViewModel
+                {
+                    ServiceCode = reader.GetString(0),
+                    ServiceName = reader.GetString(1),
+                    SenderName = reader.GetString(2),
+                    SenderEmail = reader.GetString(3),
+                    ReplyToEmail = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    Provider = reader.GetString(5),
+                    Host = reader.GetString(6),
+                    Port = Convert.ToInt32(reader.GetValue(7), CultureInfo.InvariantCulture),
+                    SecurityType = reader.GetString(8),
+                    IsActive = SafeBool(reader, 9),
+                    IsDefault = SafeBool(reader, 10),
+                    TestMode = SafeBool(reader, 11),
+                    LastSuccessUtc = reader.IsDBNull(12) ? null : new DateTimeOffset(reader.GetDateTime(12), TimeSpan.Zero),
+                    LastErrorUtc = reader.IsDBNull(13) ? null : new DateTimeOffset(reader.GetDateTime(13), TimeSpan.Zero),
+                    LastErrorMessage = reader.IsDBNull(14) ? null : reader.GetString(14)
+                };
+                model.Accounts.Add(row);
+            }
+        }
+
+        var activeAccount = model.Accounts.FirstOrDefault(x => x.IsActive && x.IsDefault)
+            ?? model.Accounts.FirstOrDefault(x => x.IsActive)
+            ?? model.Accounts.FirstOrDefault();
+        model.ActiveSenderEmail = activeAccount?.SenderEmail ?? string.Empty;
+        model.ActiveServiceCode = activeAccount?.ServiceCode ?? string.Empty;
+
+        const string templateSql = """
+            SELECT
+                COALESCE(sablon_kodu, N''),
+                COALESCE(sablon_adi, N''),
+                COALESCE(dil, N'tr'),
+                COALESCE(konu, N''),
+                COALESCE(icerik, N'')
+            FROM bildirim_sablonlari
+            WHERE tur = N'E-posta'
+              AND COALESCE(aktif_mi, 1) = 1
+            ORDER BY id ASC;
+            """;
+
+        await using (var templateCommand = new SqlCommand(templateSql, connection))
+        await using (var templateReader = await templateCommand.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await templateReader.ReadAsync(cancellationToken))
+            {
+                var templateCode = templateReader.GetString(0);
+                var preferredSender = ResolvePreferredSenderEmail(templateCode);
+                var matchingAccount = model.Accounts.FirstOrDefault(x => string.Equals(x.SenderEmail, preferredSender, StringComparison.OrdinalIgnoreCase));
+                model.Templates.Add(new AdminEmailTemplateBindingRowViewModel
+                {
+                    TemplateCode = templateCode,
+                    TemplateName = templateReader.GetString(1),
+                    Language = templateReader.GetString(2),
+                    Subject = NormalizeBrokenTurkish(templateReader.GetString(3)),
+                    ViewPath = templateReader.GetString(4),
+                    TriggerArea = ResolveTriggerArea(templateCode),
+                    IntendedSenderEmail = preferredSender,
+                    ActualSenderEmail = matchingAccount?.IsActive == true ? matchingAccount.SenderEmail : model.ActiveSenderEmail,
+                    UsesFallbackSender = matchingAccount is null || !matchingAccount.IsActive
+                });
+            }
+        }
+
+        const string queueSql = """
+            SELECT
+                SUM(CASE WHEN durum = N'Beklemede' THEN 1 ELSE 0 END) AS beklemede,
+                SUM(CASE WHEN durum = N'Gönderildi' THEN 1 ELSE 0 END) AS gonderildi,
+                SUM(CASE WHEN durum = N'Başarısız' THEN 1 ELSE 0 END) AS basarisiz
+            FROM bildirim_loglari
+            WHERE tur = N'E-posta';
+            """;
+        await using (var queueCommand = new SqlCommand(queueSql, connection))
+        await using (var queueReader = await queueCommand.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await queueReader.ReadAsync(cancellationToken))
+            {
+                model.PendingCount = SafeInt(queueReader, 0);
+                model.SentCount = SafeInt(queueReader, 1);
+                model.FailedCount = SafeInt(queueReader, 2);
+            }
+        }
+
+        return model;
+    }
+
     public async Task<(bool Success, string Message)> ForceRetryEmailAsync(long adminUserId, long queueId, string reason, CancellationToken cancellationToken = default)
     {
         if (queueId <= 0) return (false, "Geçersiz kuyruk kaydı.");
@@ -494,6 +614,36 @@ public class AdminService : IAdminService
         }
 
         return (true, "E-posta yeniden denemeye alındı.");
+    }
+
+    public async Task<(bool Success, string Message, int RetriedCount)> RetryAllFailedEmailsAsync(long adminUserId, string reason, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var hasNextAttempt = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "sonraki_deneme_utc", cancellationToken);
+        var sql = hasNextAttempt
+            ? """
+                UPDATE bildirim_loglari
+                SET durum = N'Beklemede',
+                    hata_mesaji = NULL,
+                    hata_kodu = NULL,
+                    sonraki_deneme_utc = NULL
+                WHERE tur = N'E-posta'
+                  AND durum = N'Başarısız';
+                """
+            : """
+                UPDATE bildirim_loglari
+                SET durum = N'Beklemede',
+                    hata_mesaji = NULL,
+                    hata_kodu = NULL
+                WHERE tur = N'E-posta'
+                  AND durum = N'Başarısız';
+                """;
+
+        await using var command = new SqlCommand(sql, connection);
+        var affected = await command.ExecuteNonQueryAsync(cancellationToken);
+        return (true, affected > 0 ? $"{affected} başarısız e-posta yeniden kuyruğa alındı." : "Yeniden denenecek başarısız e-posta bulunamadı.", affected);
     }
 
     public async Task<(bool Success, string Message)> MarkEmailFailedAsync(long adminUserId, long queueId, string reason, CancellationToken cancellationToken = default)
@@ -1100,6 +1250,10 @@ public class AdminService : IAdminService
             SELECT p.id, p.kullanici_id, o.id AS hotel_id, p.firma_unvani, COALESCE(o.otel_adi, p.firma_unvani),
                    p.yetkili_ad_soyad, p.yetkili_eposta, p.vergi_numarasi, p.onay_durumu, p.olusturulma_tarihi,
                    p.onay_tarihi, u.email_dogrulama_tarihi,
+                   CASE
+                        WHEN COL_LENGTH('partner_detaylari', 'eposta_giris_onayi_verildi_mi') IS NULL THEN 0
+                        ELSE COALESCE(p.eposta_giris_onayi_verildi_mi, 0)
+                   END AS email_login_approved,
                    (SELECT COUNT(*) FROM partner_basvuru_evraklari ped WHERE ped.partner_id = p.id) AS document_count,
                    COALESCE(p.red_nedeni, '')
             FROM partner_detaylari p
@@ -1140,8 +1294,9 @@ public class AdminService : IAdminService
                 RegistrationDateText = reader.GetDateTime(9).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
                 ApprovalDateText = reader.IsDBNull(10) ? null : reader.GetDateTime(10).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
                 EmailVerified = !reader.IsDBNull(11),
-                DocumentCount = SafeInt(reader, 12),
-                ReviewNote = reader.IsDBNull(13) ? null : reader.GetString(13)
+                EmailLoginApproved = SafeInt(reader, 12) == 1,
+                DocumentCount = SafeInt(reader, 13),
+                ReviewNote = reader.IsDBNull(14) ? null : reader.GetString(14)
             });
         }
 
@@ -1435,6 +1590,68 @@ public class AdminService : IAdminService
         {
             await transaction.RollbackAsync(cancellationToken);
             throw;
+        }
+    }
+
+    public async Task<(bool Success, string Message)> SetPartnerEmailLoginApprovalAsync(long adminUserId, AdminPartnerEmailLoginApprovalRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.PartnerId <= 0)
+        {
+            return (false, "Partner basvurusu bulunamadi.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var tx = await connection.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            const string sql = """
+                UPDATE partner_detaylari
+                SET eposta_giris_onayi_verildi_mi = @approved,
+                    eposta_giris_onay_tarihi = CASE WHEN @approved = 1 THEN SYSUTCDATETIME() ELSE NULL END,
+                    eposta_giris_onaylayan_admin_id = CASE WHEN @approved = 1 THEN @adminUserId ELSE NULL END,
+                    guncellenme_tarihi = SYSUTCDATETIME()
+                WHERE id = @partnerId;
+                """;
+
+            await using (var cmd = new SqlCommand(sql, connection, (SqlTransaction)tx))
+            {
+                cmd.Parameters.AddWithValue("@approved", request.Approved ? 1 : 0);
+                cmd.Parameters.AddWithValue("@adminUserId", adminUserId);
+                cmd.Parameters.AddWithValue("@partnerId", request.PartnerId);
+                var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+                if (affected <= 0)
+                {
+                    await tx.RollbackAsync(cancellationToken);
+                    return (false, "Partner basvurusu bulunamadi.");
+                }
+            }
+
+            if (await TableExistsAsync(connection, "partner_basvuru_hareketleri", cancellationToken, (SqlTransaction?)tx))
+            {
+                const string historySql = """
+                    INSERT INTO partner_basvuru_hareketleri
+                    (partner_id, onceki_durum, yeni_durum, islem_tipi, aciklama, islem_yapan_kullanici_id, olusturulma_tarihi)
+                    VALUES
+                    (@partnerId, NULL, NULL, 'AdminPartnerEpostaGirisOnayi', @note, @adminUserId, SYSUTCDATETIME());
+                    """;
+                await using var history = new SqlCommand(historySql, connection, (SqlTransaction)tx);
+                history.Parameters.AddWithValue("@partnerId", request.PartnerId);
+                history.Parameters.AddWithValue("@adminUserId", adminUserId);
+                history.Parameters.AddWithValue("@note", string.IsNullOrWhiteSpace(request.Note)
+                    ? (request.Approved ? "Admin partner e-posta giris onayi verdi." : "Admin partner e-posta giris onayini geri cekti.")
+                    : request.Note.Trim());
+                await history.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await tx.CommitAsync(cancellationToken);
+            return (true, request.Approved ? "Partner e-posta giris onayi verildi." : "Partner e-posta giris onayi kaldirildi.");
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return (false, $"E-posta giris onayi guncellenemedi: {ex.Message}");
         }
     }
 
@@ -2318,6 +2535,74 @@ public class AdminService : IAdminService
         await using var command = new SqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("@tableName", tableName);
         return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) > 0;
+    }
+
+    private static string ResolvePreferredSenderEmail(string templateCode)
+    {
+        var code = (templateCode ?? string.Empty).Trim().ToLowerInvariant();
+        return code switch
+        {
+            "login_2fa_email" => "guvenlik@otelturizm.com",
+            "email_verify" => "guvenlik@otelturizm.com",
+            "password_reset" => "guvenlik@otelturizm.com",
+            "reservation_received_customer" => "rezervasyon@otelturizm.com",
+            "reservation_confirmed_customer" => "rezervasyon@otelturizm.com",
+            "reservation_new_partner" => "rezervasyon@otelturizm.com",
+            "reservation_rejected_customer" => "rezervasyon@otelturizm.com",
+            "reservation_guest_message" => "rezervasyon@otelturizm.com",
+            "reservation_cancelled_partner" => "rezervasyon@otelturizm.com",
+            "firma_reservation_created_company" => "rezervasyon@otelturizm.com",
+            "firma_reservation_created_partner" => "rezervasyon@otelturizm.com",
+            "favorite_price_alert_match" => "bildiri@otelturizm.com",
+            "contract_delivery" => "bilgi@otelturizm.com",
+            "system_health_link_report" => "bildiri@otelturizm.com",
+            _ => "info@otelturizm.com"
+        };
+    }
+
+    private static string ResolveTriggerArea(string templateCode)
+    {
+        var code = (templateCode ?? string.Empty).Trim().ToLowerInvariant();
+        return code switch
+        {
+            "login_2fa_email" => "Giriş / 2FA",
+            "email_verify" => "Kayıt / e-posta doğrulama",
+            "password_reset" => "Şifre sıfırlama",
+            "reservation_received_customer" => "Rezervasyon oluşturma",
+            "reservation_confirmed_customer" => "Rezervasyon onayı",
+            "reservation_new_partner" => "Partner yeni rezervasyon",
+            "reservation_rejected_customer" => "Rezervasyon reddi",
+            "reservation_guest_message" => "Rezervasyon mesajlaşma",
+            "reservation_cancelled_partner" => "Misafir iptali",
+            "favorite_price_alert_match" => "Favori fiyat alarmı",
+            "contract_delivery" => "Sözleşme ve KVKK",
+            "firma_reservation_created_company" => "Kurumsal rezervasyon / firma",
+            "firma_reservation_created_partner" => "Kurumsal rezervasyon / partner",
+            "system_health_link_report" => "Admin / sistem sağlığı",
+            _ => "Genel sistem akışı"
+        };
+    }
+
+    private static string NormalizeBrokenTurkish(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        return text
+            .Replace("Ä±", "ı", StringComparison.Ordinal)
+            .Replace("Ä°", "İ", StringComparison.Ordinal)
+            .Replace("ÅŸ", "ş", StringComparison.Ordinal)
+            .Replace("Åž", "Ş", StringComparison.Ordinal)
+            .Replace("Ã¼", "ü", StringComparison.Ordinal)
+            .Replace("Ãœ", "Ü", StringComparison.Ordinal)
+            .Replace("Ã¶", "ö", StringComparison.Ordinal)
+            .Replace("Ã–", "Ö", StringComparison.Ordinal)
+            .Replace("Ã§", "ç", StringComparison.Ordinal)
+            .Replace("Ã‡", "Ç", StringComparison.Ordinal)
+            .Replace("ÄŸ", "ğ", StringComparison.Ordinal)
+            .Replace("Äž", "Ğ", StringComparison.Ordinal);
     }
 }
 

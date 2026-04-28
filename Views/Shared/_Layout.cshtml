@@ -119,7 +119,9 @@
     var publicActiveDraft = await ReservationDraftService.GetActiveDraftAsync(publicDraftUserId, publicDraftSessionKey, Context.RequestAborted);
 }
 
-@if (publicActiveDraft is not null && ViewData["SuppressGlobalDraftBanner"] as bool? != true)
+@if (publicActiveDraft is not null
+     && ViewData["SuppressGlobalDraftBanner"] as bool? != true
+     && ViewData["ShowGlobalDraftBanner"] as bool? == true)
 {
     <partial name="~/Views/Shared/_ActiveReservationDraftBanner.cshtml" model="publicActiveDraft" />
 }

@@ -65,7 +65,7 @@
                 </div>
             </header>
 
-            @if (userActiveDraft is not null)
+            @if (userActiveDraft is not null && ViewData["ShowGlobalDraftBanner"] as bool? == true)
             {
                 <partial name="~/Views/Shared/_ActiveReservationDraftBanner.cshtml" model="userActiveDraft" />
             }

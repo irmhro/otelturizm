@@ -16,7 +16,7 @@ Bu doküman **bilinçli olarak şifre içermez**. Şifreler **repoya yazılmaz**
 - `guvenlik@otelturizm.com` (1 GB)
 - `info@otelturizm.com` (1 GB)
 - `odeme@otelturizm.com` (1 GB)
-- `rezervasyon@otelturizm.com` (1 GB)
+- `rezervasyon@otelturizm.com` (1 GB)  şifre
 
 ### Şifre Yönetimi Standardı
 - **Üretim sunucu**: şifreler sadece sunucuda **Environment Variable** veya **Secret Manager** ile tutulur.

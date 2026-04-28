@@ -1469,6 +1469,7 @@
             let locationPickedLatLng = null;
             let locationPickedMarker = null;
             let hasPromptedManualLocation = false;
+            let lastFocusBeforeLocationModal = null;
             const defaultMaxPrice = Number(maxPriceRange?.max || maxPriceInput?.value || '0');
             let clientFilterPoolLoading = false;
             let clientFilterPoolReady = false;
@@ -1674,12 +1675,23 @@
                 if (!locationMapModal) return;
                 locationMapModal.hidden = true;
                 locationMapModal.setAttribute('aria-hidden', 'true');
+                // Konum modalı sayfayı kilitlememeli (özellikle \"Yaklaşık konum hazır\" akışında).
                 document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                locationMapModal.classList.remove('is-open');
                 locationMapPickMode = false;
                 locationPickedLatLng = null;
                 if (locationMapConfirmBtn) {
                     locationMapConfirmBtn.disabled = true;
                 }
+
+                // Focus restore: kullanıcı konum butonuna geri dönebilsin.
+                try {
+                    if (lastFocusBeforeLocationModal && typeof lastFocusBeforeLocationModal.focus === 'function') {
+                        lastFocusBeforeLocationModal.focus();
+                    }
+                } catch (_) { /* ignore */ }
+                lastFocusBeforeLocationModal = null;
             }
 
             function applyManualMapSelection() {
@@ -1739,7 +1751,28 @@
                 const visibleHotels = collectVisibleHotelsForMap();
                 locationMapModal.hidden = false;
                 locationMapModal.setAttribute('aria-hidden', 'false');
-                document.body.style.overflow = 'hidden';
+                locationMapModal.classList.add('is-open');
+
+                // Focus trap başlangıcı: modal açılınca odak modal içinde kalsın.
+                lastFocusBeforeLocationModal = document.activeElement;
+                window.setTimeout(function () {
+                    const closeBtn = locationMapModal.querySelector('[data-location-map-close]') || locationMapModal.querySelector('button');
+                    if (closeBtn && typeof closeBtn.focus === 'function') {
+                        closeBtn.focus();
+                    } else if (locationMapCanvas && typeof locationMapCanvas.focus === 'function') {
+                        locationMapCanvas.setAttribute('tabindex', '-1');
+                        locationMapCanvas.focus();
+                    }
+                }, 0);
+
+                // Sadece mobilde (tam ekran) scroll kilitle; masaüstünde sayfa kilitlenmesi hissi yaratıyor.
+                if (isMobileViewport()) {
+                    document.body.style.overflow = 'hidden';
+                    document.documentElement.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = '';
+                    document.documentElement.style.overflow = '';
+                }
 
                 if (!locationLeafletMap) {
                     locationLeafletMap = window.L.map(locationMapCanvas, {
@@ -2990,6 +3023,29 @@
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape' && locationMapModal && !locationMapModal.hidden) {
                     closeLocationMapModal();
+                }
+            });
+
+            // Focus trap: Tab ile modal dışına kaçmasın.
+            document.addEventListener('keydown', function (event) {
+                if (event.key !== 'Tab') return;
+                if (!locationMapModal || locationMapModal.hidden) return;
+                const focusables = Array.from(locationMapModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])'))
+                    .filter(function (el) { return el && !el.hasAttribute('disabled') && (el.offsetParent !== null || el.getAttribute('aria-hidden') !== 'true'); });
+                if (!focusables.length) return;
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+                const active = document.activeElement;
+                if (event.shiftKey) {
+                    if (active === first || !locationMapModal.contains(active)) {
+                        event.preventDefault();
+                        last.focus();
+                    }
+                } else {
+                    if (active === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
                 }
             });
         })();

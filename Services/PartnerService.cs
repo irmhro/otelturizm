@@ -77,6 +77,32 @@ public class PartnerService : IPartnerService
             }
         }
 
+        // Favoriye eklenme sayisi (secili otel)
+        if (await TableExistsAsync(connection, "user_favori_oteller", cancellationToken))
+        {
+            const string favoritesSql = """
+                SELECT COUNT(DISTINCT uf.user_id)
+                FROM user_favori_oteller uf
+                WHERE uf.otel_id = @hotelId
+                  AND COALESCE(uf.aktif_mi, 1) = 1
+                  AND uf.kaldirilma_tarihi IS NULL;
+                """;
+
+            await using var favCommand = new SqlCommand(favoritesSql, connection);
+            favCommand.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
+            var raw = await favCommand.ExecuteScalarAsync(cancellationToken);
+            var favCount = raw is null || raw == DBNull.Value ? 0 : Convert.ToInt32(raw, CultureInfo.InvariantCulture);
+
+            model.SummaryCards.Add(new PartnerStatCardViewModel
+            {
+                Label = "Favoriye Ekleme",
+                Value = favCount.ToString(CultureInfo.InvariantCulture),
+                Description = $"Otelinizi {favCount} kisi favorilerine ekledi. Favorilere eklenen kullanicilari gorebilmek icin abone olunuz. Abone olduktan sonra otellerinizi begenenlere indirim kampanyalarindan haberdar eder, indirimlerinizi favori kullanicilara da gonderebilirsiniz.",
+                IconClass = "fa-heart",
+                ToneClass = "info"
+            });
+        }
+
         const string trendSql = @"
             SELECT YEAR(r.olusturulma_tarihi) AS yil,
                    MONTH(r.olusturulma_tarihi) AS ay,

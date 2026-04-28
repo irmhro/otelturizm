@@ -1245,6 +1245,20 @@ public class AdminPanelController : Controller
         return RedirectToAction(nameof(PartnerApplications));
     }
 
+    [HttpPost("partner-basvurulari/eposta-giris-onayi")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetPartnerEmailLoginApproval(AdminPartnerEmailLoginApprovalRequest request, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.SetPartnerEmailLoginApprovalAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(PartnerApplications));
+    }
+
     [HttpGet("firma-basvurulari")]
     public async Task<IActionResult> CompanyApplications(CancellationToken cancellationToken)
     {
@@ -1445,7 +1459,40 @@ public class AdminPanelController : Controller
     public Task<IActionResult> Blog(CancellationToken cancellationToken) => RenderSectionAsync("blog", "Blog", cancellationToken);
 
     [HttpGet("eposta-sablonlari")]
-    public Task<IActionResult> EmailTemplates(CancellationToken cancellationToken) => RenderSectionAsync("email-templates", "EmailTemplates", cancellationToken);
+    public async Task<IActionResult> EmailTemplates(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetEmailSettingsPageAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/EmailTemplates.cshtml", model);
+    }
+
+    [HttpPost("eposta-kuyrugu/retry-all-failed")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RetryAllFailedEmails([FromForm] string? reason, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!TryValidateCriticalReason(reason, out var err))
+        {
+            TempData["AdminError"] = err;
+            return RedirectToAction(nameof(EmailTemplates));
+        }
+
+        var result = await _adminService.RetryAllFailedEmailsAsync(GetUserId(), reason!, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        await _auditLogService.TryLogAdminActionAsync(GetUserId(), "email_retry_all_failed", "bildirim_loglari", result.RetriedCount.ToString(), $"Gerekçe: {reason}", HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        return RedirectToAction(nameof(EmailTemplates));
+    }
 
     [HttpGet("sss")]
     public Task<IActionResult> Faq(CancellationToken cancellationToken) => RenderSectionAsync("faq", "Faq", cancellationToken);

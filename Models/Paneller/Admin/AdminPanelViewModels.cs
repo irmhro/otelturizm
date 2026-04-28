@@ -121,8 +121,16 @@ public class AdminPartnerApplicationRowViewModel
     public string RegistrationDateText { get; set; } = string.Empty;
     public string? ApprovalDateText { get; set; }
     public bool EmailVerified { get; set; }
+    public bool EmailLoginApproved { get; set; }
     public int DocumentCount { get; set; }
     public string? ReviewNote { get; set; }
+}
+
+public class AdminPartnerEmailLoginApprovalRequest
+{
+    public long PartnerId { get; set; }
+    public bool Approved { get; set; } = true;
+    public string? Note { get; set; }
 }
 
 public class AdminPartnerApplicationDecisionRequest

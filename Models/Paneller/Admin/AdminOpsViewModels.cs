@@ -65,6 +65,50 @@ public sealed class AdminEmailQueuePageViewModel
     public int Total { get; set; }
 }
 
+public sealed class AdminEmailAccountRowViewModel
+{
+    public string ServiceCode { get; set; } = string.Empty;
+    public string ServiceName { get; set; } = string.Empty;
+    public string SenderName { get; set; } = string.Empty;
+    public string SenderEmail { get; set; } = string.Empty;
+    public string? ReplyToEmail { get; set; }
+    public string Provider { get; set; } = string.Empty;
+    public string Host { get; set; } = string.Empty;
+    public int Port { get; set; }
+    public string SecurityType { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public bool IsDefault { get; set; }
+    public bool TestMode { get; set; }
+    public DateTimeOffset? LastSuccessUtc { get; set; }
+    public DateTimeOffset? LastErrorUtc { get; set; }
+    public string? LastErrorMessage { get; set; }
+}
+
+public sealed class AdminEmailTemplateBindingRowViewModel
+{
+    public string TemplateCode { get; set; } = string.Empty;
+    public string TemplateName { get; set; } = string.Empty;
+    public string Language { get; set; } = "tr";
+    public string Subject { get; set; } = string.Empty;
+    public string ViewPath { get; set; } = string.Empty;
+    public string TriggerArea { get; set; } = string.Empty;
+    public string IntendedSenderEmail { get; set; } = string.Empty;
+    public string ActualSenderEmail { get; set; } = string.Empty;
+    public bool UsesFallbackSender { get; set; }
+}
+
+public sealed class AdminEmailSettingsPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminEmailAccountRowViewModel> Accounts { get; set; } = new();
+    public List<AdminEmailTemplateBindingRowViewModel> Templates { get; set; } = new();
+    public int PendingCount { get; set; }
+    public int SentCount { get; set; }
+    public int FailedCount { get; set; }
+    public string ActiveSenderEmail { get; set; } = string.Empty;
+    public string ActiveServiceCode { get; set; } = string.Empty;
+}
+
 public sealed class AdminCriticalActionRequest
 {
     [Required(ErrorMessage = "Gerekçe zorunludur.")]

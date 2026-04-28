@@ -105,9 +105,41 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 
         if (smtp.TestMode)
         {
-            var devPickup = ResolveDevPickupDirectory();
-            if (!string.IsNullOrWhiteSpace(devPickup))
+            // Test modu: Development'ta e-posta teslimatını güvenli şekilde pickup directory'e yönlendirir.
+            // Production ortamında "test_modu" yanlışlıkla açık bırakılırsa, 2FA gibi kritik e-postalar kuyrukta takılmasın diye
+            // gönderimi tamamen durdurmuyoruz; sadece uyarı log'u basıp normal SMTP gönderimine devam ediyoruz.
+            if (_environment.IsDevelopment())
             {
+                var devPickup = ResolveDevPickupDirectory();
+                if (!string.IsNullOrWhiteSpace(devPickup))
+                {
+                    smtp = new SmtpConfig
+                    {
+                        SenderName = smtp.SenderName,
+                        SenderEmail = smtp.SenderEmail,
+                        ReplyToEmail = smtp.ReplyToEmail,
+                        Host = smtp.Host,
+                        Port = smtp.Port,
+                        Username = smtp.Username,
+                        Password = smtp.Password,
+                        SecurityType = smtp.SecurityType,
+                        TimeoutSeconds = smtp.TimeoutSeconds,
+                        TestMode = true,
+                        PickupDirectory = devPickup,
+                        UsePickupDirectoryOnly = OperatingSystem.IsWindows(),
+                        CanUsePickupDirectoryFallback = false
+                    };
+                    _logger.LogWarning("Aktif SMTP servisi test modunda. E-postalar pickup directory'e kaydedilecek. Path={Path}", devPickup);
+                }
+                else
+                {
+                    _logger.LogWarning("Aktif SMTP servisi test modunda ancak pickup directory tanimli degil. Kuyruk islenmedi. Host={Host}, Sender={Sender}", smtp.Host, smtp.SenderEmail);
+                    return;
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Aktif SMTP servisi test modunda (PROD). Kuyruk durdurulmayacak; SMTP uzerinden gonderim denenecek. Host={Host}, Sender={Sender}", smtp.Host, smtp.SenderEmail);
                 smtp = new SmtpConfig
                 {
                     SenderName = smtp.SenderName,
@@ -119,17 +151,11 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                     Password = smtp.Password,
                     SecurityType = smtp.SecurityType,
                     TimeoutSeconds = smtp.TimeoutSeconds,
-                    TestMode = true,
-                    PickupDirectory = devPickup,
-                    UsePickupDirectoryOnly = OperatingSystem.IsWindows(),
-                    CanUsePickupDirectoryFallback = false
+                    TestMode = false,
+                    PickupDirectory = smtp.PickupDirectory,
+                    UsePickupDirectoryOnly = smtp.UsePickupDirectoryOnly,
+                    CanUsePickupDirectoryFallback = smtp.CanUsePickupDirectoryFallback
                 };
-                _logger.LogWarning("Aktif SMTP servisi test modunda. E-postalar pickup directory'e kaydedilecek. Path={Path}", devPickup);
-            }
-            else
-            {
-                _logger.LogWarning("Aktif SMTP servisi test modunda oldugu icin e-posta kuyrugu islenmedi. Host={Host}, Sender={Sender}", smtp.Host, smtp.SenderEmail);
-                return;
             }
         }
 
@@ -217,13 +243,33 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             ? "AND (sonraki_deneme_utc IS NULL OR sonraki_deneme_utc <= SYSUTCDATETIME())"
             : string.Empty;
 
+        var staleProcessingWhere = hasUpdatedAtColumn
+            ? """
+                (
+                    durum = 'Beklemede'
+                    OR (
+                        durum = 'İşleniyor'
+                        AND COALESCE(guncellenme_tarihi, olusturulma_tarihi) <= DATEADD(MINUTE, -3, SYSUTCDATETIME())
+                    )
+                )
+              """
+            : """
+                (
+                    durum = 'Beklemede'
+                    OR (
+                        durum = 'İşleniyor'
+                        AND olusturulma_tarihi <= DATEADD(MINUTE, -3, SYSUTCDATETIME())
+                    )
+                )
+              """;
+
         var sql = hasAttachmentsColumn
             ? """
                 ;WITH cte AS (
                     SELECT TOP (10) id
                     FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
                     WHERE tur = 'E-posta'
-                      AND durum = 'Beklemede'
+                      AND __STALE_PROCESSING_WHERE__
                       AND alici_eposta IS NOT NULL
                       __NEXT_ATTEMPT_WHERE__
                     ORDER BY olusturulma_tarihi ASC
@@ -246,7 +292,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                     SELECT TOP (10) id
                     FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
                     WHERE tur = 'E-posta'
-                      AND durum = 'Beklemede'
+                      AND __STALE_PROCESSING_WHERE__
                       AND alici_eposta IS NOT NULL
                       __NEXT_ATTEMPT_WHERE__
                     ORDER BY olusturulma_tarihi ASC
@@ -266,6 +312,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 """;
         sql = sql.Replace("__UPDATE_SET__", updateSet, StringComparison.Ordinal);
         sql = sql.Replace("__NEXT_ATTEMPT_WHERE__", nextAttemptWhere, StringComparison.Ordinal);
+        sql = sql.Replace("__STALE_PROCESSING_WHERE__", staleProcessingWhere, StringComparison.Ordinal);
 
         var items = new List<QueuedEmailItem>();
         await using var command = new SqlCommand(sql, connection);

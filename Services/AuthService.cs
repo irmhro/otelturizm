@@ -491,6 +491,12 @@ public class AuthService : IAuthService
                 user.Email);
         }
 
+        if (!await CanPartnerUserAccessAsync(user.UserId, cancellationToken))
+        {
+            LogSecurityEvent("login_blocked_admin_email_approval", user.UserId, identity, "partner", "admin_email_login_approval_required");
+            throw new AuthFlowException("E-posta doğrulandı. Admin e-posta giriş onayı verene kadar partner panele giriş bekletilir.");
+        }
+
         user.AccountType = "partner";
         return user;
     }
@@ -766,9 +772,9 @@ public class AuthService : IAuthService
         var taxOffice = model.TaxOffice.Trim();
         var taxNumber = model.TaxNumber.Trim();
         var contactTcNo = model.ContactTcNo.Trim();
-        var bankName = model.BankName.Trim();
+        var bankName = string.IsNullOrWhiteSpace(model.BankName) ? string.Empty : model.BankName.Trim();
         var bankBranch = string.IsNullOrWhiteSpace(model.BankBranch) ? null : model.BankBranch.Trim();
-        var iban = model.Iban.Trim().Replace(" ", string.Empty, StringComparison.Ordinal);
+        var iban = string.IsNullOrWhiteSpace(model.Iban) ? string.Empty : model.Iban.Trim().Replace(" ", string.Empty, StringComparison.Ordinal);
         var website = string.IsNullOrWhiteSpace(model.Website) ? null : model.Website.Trim();
         var companyType = NormalizeCompanyType(model.CompanyType);
 
@@ -797,9 +803,9 @@ public class AuthService : IAuthService
             return (false, "Firma tipi, vergi dairesi ve vergi numarasi zorunludur.", null);
         }
 
-        if (string.IsNullOrWhiteSpace(contactTcNo) || string.IsNullOrWhiteSpace(bankName) || string.IsNullOrWhiteSpace(iban))
+        if (string.IsNullOrWhiteSpace(contactTcNo))
         {
-            return (false, "Yetkili TC, banka adi ve IBAN zorunludur.", null);
+            return (false, "Yetkili TC zorunludur.", null);
         }
 
         if (!model.AcceptAgreement || !model.AcceptKvkk || !model.DeclareAccurate)
@@ -828,7 +834,7 @@ public class AuthService : IAuthService
                 (SELECT COUNT(*) FROM users WHERE eposta = @email) AS email_count,
                 (SELECT COUNT(*) FROM users WHERE telefon = @phone) AS phone_count,
                 (SELECT COUNT(*) FROM partner_detaylari WHERE vergi_numarasi = @taxNumber) AS tax_count,
-                (SELECT COUNT(*) FROM partner_detaylari WHERE iban = @iban) AS iban_count;
+                (SELECT COUNT(*) FROM partner_detaylari WHERE @iban <> '' AND iban = @iban) AS iban_count;
             """;
 
         await using (var existsCommand = new SqlCommand(existsSql, connection))
@@ -856,7 +862,7 @@ public class AuthService : IAuthService
                     return (false, "Bu vergi numarasi ile daha once partner kaydi yapilmis.", null);
                 }
 
-                if (!reader.IsDBNull(3) && Convert.ToInt32(reader.GetValue(3), CultureInfo.InvariantCulture) > 0)
+                if (!string.IsNullOrWhiteSpace(iban) && !reader.IsDBNull(3) && Convert.ToInt32(reader.GetValue(3), CultureInfo.InvariantCulture) > 0)
                 {
                     return (false, "Bu IBAN ile daha once partner kaydi yapilmis.", null);
                 }
@@ -1650,6 +1656,44 @@ public class AuthService : IAuthService
         }
 
         await transaction.CommitAsync(cancellationToken);
+        var partnerLoginApprovalPending = false;
+        try
+        {
+            await using var probe = new SqlCommand("""
+                SELECT
+                    CASE
+                        WHEN EXISTS (SELECT 1 FROM partner_detaylari p WHERE p.kullanici_id = @userId)
+                        THEN 1 ELSE 0
+                    END AS is_partner,
+                    CASE
+                        WHEN COL_LENGTH('partner_detaylari', 'eposta_giris_onayi_verildi_mi') IS NULL THEN 0
+                        WHEN EXISTS (
+                            SELECT 1
+                            FROM partner_detaylari p
+                            WHERE p.kullanici_id = @userId
+                              AND COALESCE(p.eposta_giris_onayi_verildi_mi, 0) = 1
+                        ) THEN 1 ELSE 0
+                    END AS partner_email_login_approved;
+                """, connection);
+            probe.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await probe.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                var isPartner = reader.GetInt32(0) == 1;
+                var approved = reader.GetInt32(1) == 1;
+                partnerLoginApprovalPending = isPartner && !approved;
+            }
+        }
+        catch
+        {
+            // doğrulama başarılıysa mesaj üretimini bozmayalım
+        }
+
+        if (partnerLoginApprovalPending)
+        {
+            return (true, $"E-posta adresiniz başarıyla onaylandı. Partner hesabınız için admin e-posta giriş onayı bekleniyor.{finalizeWarning}");
+        }
+
         return (true, $"E-posta adresiniz başarıyla onaylandı. Artık giriş yapabilirsiniz.{finalizeWarning}");
     }
 
@@ -2613,6 +2657,38 @@ public class AuthService : IAuthService
         command.Parameters.AddWithValue("@userId", userId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result) > 0;
+    }
+
+    private async Task<bool> CanPartnerUserAccessAsync(long userId, CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = """
+            SELECT COUNT(*)
+            FROM users u
+            INNER JOIN partner_detaylari p
+                ON p.kullanici_id = u.id
+            WHERE u.id = @userId
+              AND u.hesap_durumu = 1
+              AND (
+                    CASE
+                        WHEN COL_LENGTH('partner_detaylari', 'aktif_mi') IS NULL THEN 1
+                        ELSE COALESCE(p.aktif_mi, 1)
+                    END
+                  ) = 1
+              AND (
+                    CASE
+                        WHEN COL_LENGTH('partner_detaylari', 'eposta_giris_onayi_verildi_mi') IS NULL THEN 0
+                        ELSE COALESCE(p.eposta_giris_onayi_verildi_mi, 0)
+                    END
+                  ) = 1;
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;
     }
 
     private async Task<AuthCandidateInfo?> FindAuthCandidateAsync(string identity, bool requirePartner, CancellationToken cancellationToken)

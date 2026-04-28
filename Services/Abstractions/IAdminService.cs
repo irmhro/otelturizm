@@ -9,6 +9,7 @@ public interface IAdminService
     Task<AdminSystemHealthPageViewModel> GetSystemHealthAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<AdminPartnerApplicationsPageViewModel> GetPartnerApplicationsAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ReviewPartnerApplicationAsync(long adminUserId, AdminPartnerApplicationDecisionRequest request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SetPartnerEmailLoginApprovalAsync(long adminUserId, AdminPartnerEmailLoginApprovalRequest request, CancellationToken cancellationToken = default);
     Task<AdminCompanyApplicationsPageViewModel> GetCompanyApplicationsAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ReviewCompanyApplicationAsync(long adminUserId, AdminCompanyApplicationDecisionRequest request, CancellationToken cancellationToken = default);
     Task<AdminCommissionManagementPageViewModel> GetCommissionManagementAsync(string fullName, string email, string userRole, long? hotelId = null, CancellationToken cancellationToken = default);
@@ -22,7 +23,9 @@ public interface IAdminService
     Task<string> ExportAdminActionLogsCsvAsync(AdminActionLogFilter filter, CancellationToken cancellationToken = default);
 
     Task<AdminEmailQueuePageViewModel> GetEmailQueueAsync(string fullName, string email, string userRole, AdminEmailQueueFilter filter, CancellationToken cancellationToken = default);
+    Task<AdminEmailSettingsPageViewModel> GetEmailSettingsPageAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ForceRetryEmailAsync(long adminUserId, long queueId, string reason, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message, int RetriedCount)> RetryAllFailedEmailsAsync(long adminUserId, string reason, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> MarkEmailFailedAsync(long adminUserId, long queueId, string reason, CancellationToken cancellationToken = default);
 
     Task<AdminUnifiedReservationsPageViewModel> GetUnifiedReservationsAsync(string fullName, string email, string userRole, string? q, string? status, int page, int pageSize, CancellationToken cancellationToken = default);

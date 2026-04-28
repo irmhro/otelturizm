@@ -420,6 +420,205 @@
             setHotelLightboxAmbientSources();
             syncLightboxThumbs();
         }
+
+        function closeLightbox() {
+            if (!lightbox) {
+                return;
+            }
+
+            lightbox.hidden = true;
+
+            // scroll lock restore
+            const docEl = document.documentElement;
+            if (lightboxPrevBodyStyles) {
+                document.body.style.overflow = lightboxPrevBodyStyles.overflow;
+                document.body.style.position = lightboxPrevBodyStyles.position;
+                document.body.style.top = lightboxPrevBodyStyles.top;
+                document.body.style.left = lightboxPrevBodyStyles.left;
+                document.body.style.right = lightboxPrevBodyStyles.right;
+                document.body.style.width = lightboxPrevBodyStyles.width;
+                document.body.style.paddingRight = lightboxPrevBodyStyles.paddingRight;
+                if (docEl) docEl.style.overflow = lightboxPrevBodyStyles.docOverflow;
+                lightboxPrevBodyStyles = null;
+            } else {
+                document.body.style.overflow = '';
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.left = '';
+                document.body.style.right = '';
+                document.body.style.width = '';
+                document.body.style.paddingRight = '';
+                if (docEl) docEl.style.overflow = '';
+            }
+
+            // restore scroll position
+            window.scrollTo(0, lightboxScrollY || 0);
+        }
+
+        // --- Hotel gallery bindings (desktop thumbs + lightbox + mobile track) ---
+        document.querySelectorAll('.gallery-thumb, .gallery-filmstrip-thumb').forEach(function (thumb) {
+            thumb.addEventListener('click', function () {
+                const idx = parseInt(thumb.getAttribute('data-gallery-index') || '0', 10);
+                if (Number.isFinite(idx)) {
+                    syncMainImage(idx);
+                    scrollMobileTrackTo(idx);
+                }
+            });
+        });
+
+        const mainTrigger = document.querySelector('.gallery-main-trigger');
+        mainTrigger?.addEventListener('click', function () {
+            const idx = parseInt(mainTrigger.getAttribute('data-gallery-index') || '0', 10);
+            openLightbox(Number.isFinite(idx) ? idx : 0);
+        });
+
+        lightboxClose?.addEventListener('click', closeLightbox);
+        lightboxPrev?.addEventListener('click', function () {
+            if (!Array.isArray(galleryImages) || galleryImages.length === 0) return;
+            activeGalleryIndex = (activeGalleryIndex - 1 + galleryImages.length) % galleryImages.length;
+            if (lightboxImage) lightboxImage.src = galleryImages[activeGalleryIndex];
+            if (lightboxCaption) lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
+            syncMainImage(activeGalleryIndex);
+            scrollMobileTrackTo(activeGalleryIndex);
+            setHotelLightboxAmbientSources();
+            syncLightboxThumbs();
+        });
+        lightboxNext?.addEventListener('click', function () {
+            if (!Array.isArray(galleryImages) || galleryImages.length === 0) return;
+            activeGalleryIndex = (activeGalleryIndex + 1) % galleryImages.length;
+            if (lightboxImage) lightboxImage.src = galleryImages[activeGalleryIndex];
+            if (lightboxCaption) lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
+            syncMainImage(activeGalleryIndex);
+            scrollMobileTrackTo(activeGalleryIndex);
+            setHotelLightboxAmbientSources();
+            syncLightboxThumbs();
+        });
+
+        lightbox?.addEventListener('click', function (e) {
+            if (e.target === lightbox) {
+                closeLightbox();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (!lightbox || lightbox.hidden) {
+                return;
+            }
+            if (event.key === 'Escape') {
+                closeLightbox();
+            } else if (event.key === 'ArrowLeft') {
+                lightboxPrev?.click();
+            } else if (event.key === 'ArrowRight') {
+                lightboxNext?.click();
+            }
+        });
+
+        galleryMobileDots.forEach(function (dot) {
+            dot.addEventListener('click', function () {
+                const idx = parseInt(dot.getAttribute('data-gallery-dot-index') || '0', 10);
+                if (!Number.isFinite(idx)) return;
+                syncMainImage(idx);
+                scrollMobileTrackTo(idx);
+            });
+        });
+
+        if (galleryMobileTrack) {
+            galleryMobileTrack.addEventListener('scroll', function () {
+                if (galleryScrollTicking) return;
+                galleryScrollTicking = true;
+                window.requestAnimationFrame(function () {
+                    galleryScrollTicking = false;
+                    const slides = Array.from(galleryMobileTrack.querySelectorAll('[data-gallery-index]'));
+                    if (slides.length === 0) return;
+                    const trackRect = galleryMobileTrack.getBoundingClientRect();
+                    const centerX = trackRect.left + trackRect.width / 2;
+                    let bestIdx = activeGalleryIndex;
+                    let bestDist = Number.POSITIVE_INFINITY;
+                    slides.forEach(function (node) {
+                        const rect = node.getBoundingClientRect();
+                        const nodeCenter = rect.left + rect.width / 2;
+                        const dist = Math.abs(nodeCenter - centerX);
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            bestIdx = parseInt(node.getAttribute('data-gallery-index') || '0', 10) || 0;
+                        }
+                    });
+                    if (bestIdx !== activeGalleryIndex) {
+                        syncMainImage(bestIdx);
+                    }
+                });
+            }, { passive: true });
+        }
+
+        // --- Multi-room init + \"Odanı Seç\" bindings (minimal) ---
+        function ensureFirstRoomItem() {
+            if (!roomItemsRoot || !roomItemTemplate) return null;
+            const existing = roomItemsRoot.querySelector('[data-room-item]');
+            if (existing) return existing;
+
+            const fragment = roomItemTemplate.content.cloneNode(true);
+            roomItemsRoot.appendChild(fragment);
+            const node = roomItemsRoot.querySelector('[data-room-item]');
+            if (!node) return null;
+
+            // defaults
+            const checkIn = node.querySelector('[data-field=\"checkIn\"]');
+            const checkOut = node.querySelector('[data-field=\"checkOut\"]');
+            const roomType = node.querySelector('[data-field=\"roomType\"]');
+            if (checkInInput && checkIn instanceof HTMLInputElement) checkIn.value = checkInInput.value || checkIn.value || '';
+            if (checkOutInput && checkOut instanceof HTMLInputElement) checkOut.value = checkOutInput.value || checkOut.value || '';
+            if (roomTypeIdInput && roomType instanceof HTMLSelectElement) roomType.value = roomTypeIdInput.value || roomType.value || '';
+
+            // title
+            const title = node.querySelector('[data-room-title]');
+            if (title && roomType instanceof HTMLSelectElement) {
+                title.textContent = roomType.selectedOptions?.[0]?.dataset.roomName || roomType.selectedOptions?.[0]?.textContent?.trim() || 'Oda';
+            }
+
+            return node;
+        }
+
+        function applyRoomSelection(roomId) {
+            const item = ensureFirstRoomItem();
+            if (!item) return;
+            const roomType = item.querySelector('[data-field=\"roomType\"]');
+            if (roomType instanceof HTMLSelectElement) {
+                roomType.value = String(roomId);
+                const title = item.querySelector('[data-room-title]');
+                if (title) {
+                    title.textContent = roomType.selectedOptions?.[0]?.dataset.roomName || roomType.selectedOptions?.[0]?.textContent?.trim() || 'Oda';
+                }
+            }
+            if (roomTypeIdInput) roomTypeIdInput.value = String(roomId);
+            if (roomCountInput) roomCountInput.value = '1';
+        }
+
+        // ensure at least one item on load
+        ensureFirstRoomItem();
+
+        // \"Oda ekle\" basic
+        addRoomBtn?.addEventListener('click', function () {
+            if (!roomItemsRoot || !roomItemTemplate) return;
+            const fragment = roomItemTemplate.content.cloneNode(true);
+            roomItemsRoot.appendChild(fragment);
+            const nodes = Array.from(roomItemsRoot.querySelectorAll('[data-room-item]'));
+            if (roomCountInput) roomCountInput.value = String(Math.max(1, nodes.length));
+        });
+
+        // room select buttons from room cards
+        document.querySelectorAll('.select-room-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const roomId = parseInt(btn.getAttribute('data-room-id') || '0', 10);
+                if (!roomId) return;
+                applyRoomSelection(roomId);
+
+                if (isMobileBookingMode()) {
+                    openBookingSheet();
+                } else {
+                    bookingForm?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
     })();
 
     (function () {

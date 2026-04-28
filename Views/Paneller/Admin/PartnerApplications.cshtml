@@ -48,7 +48,20 @@
                             <div class="col-md-6"><strong>Vergi No:</strong> @application.TaxNumber</div>
                             <div class="col-md-6"><strong>Kayıt:</strong> @application.RegistrationDateText</div>
                             <div class="col-md-6"><strong>E-posta Onayı:</strong> @(application.EmailVerified ? "Tamamlandı" : "Bekleniyor")</div>
+                            <div class="col-md-6"><strong>E-posta Giriş Onayı (Admin):</strong> @(application.EmailLoginApproved ? "Verildi" : "Bekliyor")</div>
                         </div>
+
+                        @if (application.EmailVerified && !application.EmailLoginApproved)
+                        {
+                            <form method="post" action="/admin/partner-basvurulari/eposta-giris-onayi" class="mb-3">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="PartnerId" value="@application.PartnerId" />
+                                <input type="hidden" name="Approved" value="true" />
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="fas fa-circle-check"></i> E-posta giriş onayı ver (login aç)
+                                </button>
+                            </form>
+                        }
 
                         @if (!string.IsNullOrWhiteSpace(application.ReviewNote))
                         {
