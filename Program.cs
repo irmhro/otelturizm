@@ -43,11 +43,12 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Dev ortamında bazı makinelerde HTTPS/HTTP2 bağlantıları (net::ERR_*) yüzünden css/js düşebiliyor.
-// Bu yüzden Development'ta HTTPS için HTTP/1.1'e sabitleyip stabil asset yüklemesi sağlıyoruz.
+// launchSettings.json'daki portları kullan
 builder.WebHost.ConfigureKestrel(options =>
 {
     if (builder.Environment.IsDevelopment())
     {
+        // HTTP/1.1 protokolünü kullan - HTTP/2 sorunlarını önle
         options.ConfigureEndpointDefaults(listenOptions =>
         {
             listenOptions.Protocols = HttpProtocols.Http1;
@@ -162,6 +163,7 @@ builder.Services.AddScoped<IAdminHotelManagementService, AdminHotelManagementSer
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IContractContentService, ContractContentService>();
 builder.Services.AddScoped<IDevelopmentRequestService, DevelopmentRequestService>();
+builder.Services.AddScoped<IDeveloperFeedbackService, DeveloperFeedbackService>();
 builder.Services.AddScoped<IFirmaService, FirmaService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
 builder.Services.AddScoped<IHotelPricingReadService, HotelPricingReadService>();
@@ -172,6 +174,7 @@ builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
 builder.Services.AddHostedService<EmailDeliveryBackgroundService>();
 builder.Services.AddHostedService<FavoritePriceAlertBackgroundService>();
+builder.Services.AddHostedService<PricingRetentionBackgroundService>();
 builder.Services.AddHostedService<ReservationsArchiveBackgroundService>();
 builder.Services.AddScoped<IUploadAuditService, UploadAuditService>();
 builder.Services.AddScoped<IImageStorageService, ImageStorageService>();
@@ -319,6 +322,15 @@ static string BuildQuoteAndGrowthPartitionKey(HttpContext httpContext)
     return ip;
 }
 
+static bool IsLoopbackRequest(HttpContext context)
+{
+    var host = context.Request.Host.Host ?? string.Empty;
+    return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase)
+        || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
+}
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -464,7 +476,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         };
     });
 builder.Services.AddAuthorization();
-
 var app = builder.Build();
 
 var runMigrations = builder.Configuration.GetValue<bool>("Database:RunMigrationsOnStartup", false);
@@ -485,6 +496,23 @@ app.UseForwardedHeaders();
 app.UseResponseCompression();
 app.UseRequestLocalization(app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<RequestLocalizationOptions>>().Value);
 app.UseCookiePolicy();
+
+app.Use(async (context, next) =>
+{
+    var isLoopback = IsLoopbackRequest(context);
+    if (isLoopback)
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0";
+            context.Response.Headers["Pragma"] = "no-cache";
+            context.Response.Headers["Expires"] = "0";
+            return Task.CompletedTask;
+        });
+    }
+
+    await next();
+});
 
 // p112: 404/4xx için kullanıcı dostu sayfa (SEO + UX)
 app.UseStatusCodePagesWithReExecute("/Home/HttpStatus", "?code={0}");
@@ -551,7 +579,8 @@ app.Use(async (context, next) =>
         context.Response.Headers["X-Content-Type-Options"] = "nosniff";
         context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
         context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-        context.Response.Headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()";
+        context.Response.Headers["Permissions-Policy"] = "geolocation=(self), camera=(), microphone=()";
+        context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate";
         var cspReportDirectives = cspReportEnabled ? " report-uri /csp/report; report-to csp-endpoint;" : string.Empty;
         if (cspReportEnabled)
         {
@@ -649,6 +678,17 @@ app.Use(async (context, next) =>
 });
 app.UseAuthorization();
 
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/uploads/file", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    await next();
+});
+
 // Static assets cache-control (query hashed via asp-append-version)
 app.Use(async (context, next) =>
 {
@@ -671,7 +711,9 @@ app.Use(async (context, next) =>
             || path.StartsWith("/js/", StringComparison.OrdinalIgnoreCase)
             || path.StartsWith("/css/", StringComparison.OrdinalIgnoreCase))
         {
-            context.Response.Headers["Cache-Control"] = "public,max-age=31536000,immutable";
+            context.Response.Headers["Cache-Control"] = IsLoopbackRequest(context)
+                ? "no-store, no-cache, must-revalidate, max-age=0"
+                : "public,max-age=31536000,immutable";
         }
 
         return Task.CompletedTask;
@@ -715,13 +757,6 @@ app.MapGet("/health/ready", async (IConfiguration cfg, CancellationToken ct) =>
 })
    .AllowAnonymous()
    .ExcludeFromDescription();
-
-app.MapControllerRoute(
-    name: "gelisim",
-    pattern: "gelisim/{action=Index}",
-    defaults: new { controller = "Development" })
-    .WithStaticAssets()
-    .RequireRateLimiting("public-burst");
 
 app.MapControllerRoute(
     name: "areas",
