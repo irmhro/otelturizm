@@ -8,7 +8,9 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateMvcApplicationPartsAssemblyAttributes>false</GenerateMvcApplicationPartsAssemblyAttributes>
-    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;artifacts/**;.codex_obj\**;.codex_obj/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;bin/**;obj\**;obj/**;artifacts\**;artifacts/**;.codex_obj\**;.codex_obj/**</DefaultItemExcludes>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);NU1902</NoWarn>
   </PropertyGroup>
 
   <!-- Release build: avoid locking/copy issues with apphost.exe -->
@@ -16,9 +18,14 @@
     <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
+  <!-- Debug build: avoid apphost lock during dotnet run -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="MailKit" Version="4.16.0" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
@@ -27,16 +34,27 @@
 
   <ItemGroup>
     <Compile Remove="tools\\**\\*.cs" />
+    <Compile Remove="tmp\\**\\*.cs" />
+    <Compile Remove="bin\\**\\*.cs" />
     <Compile Remove="obj\\**\\*.cs" />
     <Compile Remove="artifacts\\**\\*.cs" />
     <Compile Remove=".codex_obj\\**\\*.cs" />
     <Content Remove="tools\\**\\*" />
+    <Content Remove="tmp\\**\\*" />
+    <Content Remove="bin\\**\\*" />
+    <Content Remove="obj\\**\\*" />
     <Content Remove="artifacts\\**\\*" />
     <Content Remove=".codex_obj\\**\\*" />
     <EmbeddedResource Remove="tools\\**\\*" />
+    <EmbeddedResource Remove="tmp\\**\\*" />
+    <EmbeddedResource Remove="bin\\**\\*" />
+    <EmbeddedResource Remove="obj\\**\\*" />
     <EmbeddedResource Remove="artifacts\\**\\*" />
     <EmbeddedResource Remove=".codex_obj\\**\\*" />
     <None Include="tools\\**\\*" />
+    <None Remove="bin\\**\\*" />
+    <None Remove="tmp\\**\\*" />
+    <None Remove="obj\\**\\*" />
     <None Remove="artifacts\\**\\*" />
     <None Remove=".codex_obj\\**\\*" />
   </ItemGroup>
@@ -46,10 +64,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
-    <Content Include="improvements-first-200.md">
+    <Content Include="Dokumanlar\Genel\ilk-200-gelistirme-plani.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="logs\" />
   </ItemGroup>
 
 </Project>

@@ -1,145 +1,267 @@
+@using System.Globalization
 @model otelturizmnew.Models.Paneller.Partner.PartnerCompanyPricingPageViewModel
 @{
     Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
     ViewData["PartnerShell"] = Model.Shell;
+    ViewData["Title"] = "Kurumsal (Firma) Fiyatları";
+    ViewData["PageCssPath"] = "paneller/partner/company-pricing";
+    var culture = CultureInfo.GetCultureInfo("tr-TR");
+    var weekdays = new[] { "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz" };
+    var firstDayOffset = ((int)Model.MonthAnchor.DayOfWeek + 6) % 7;
+    var maxPricingDate = DateTime.Today.AddDays(365).ToString("yyyy-MM-dd");
+    var maxPricingMonth = DateTime.Today.AddDays(365).ToString("yyyy-MM");
 }
 
-<section class="partner-panel-card ot-card">
-    <div class="partner-card-head">
-        <div>
-            <h2>Firmalara Özel Günlük Fiyat</h2>
-            <p>
-                Bu ekran; seçili <strong>firma + oda tipi + tarih</strong> için <strong>kurumsal indirimli gecelik fiyat</strong> tanımlamak içindir.
-                Girilen fiyatlar <code>dbo.firma_oda_fiyat_musaitlik</code> tablosuna kaydedilir ve firma panelinde sadece ilgili firmaya gösterilir.
-            </p>
-            <div class="partner-alert ot-alert ot-alert--info" style="margin-top:12px;">
-                <i class="fas fa-circle-info"></i>
-                <span>
-                    Amaç: Büyük firmalara <strong>%1–%10</strong> bandında (veya uzun konaklamaya özel) daha avantajlı fiyat vererek
-                    <strong>toplu/tekrarlı rezervasyon</strong> almaktır. Gün bazında <strong>Kapalı satış</strong> işaretleyerek o firmaya satış kapatabilirsiniz.
-                </span>
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Partner</div>
+            <h2 class="page-title">Kurumsal (Firma) Fiyatları</h2>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+                <a class="btn btn-outline-primary" href="@Model.PreviousMonthQuery"><i class="fas fa-chevron-left me-2"></i>Önceki Ay</a>
+                <a class="btn btn-outline-primary" href="@Model.NextMonthQuery">Sonraki Ay<i class="fas fa-chevron-right ms-2"></i></a>
             </div>
         </div>
-        <div class="partner-inline-actions">
-            <a class="partner-btn-light ot-btn ot-btn--ghost" href="@Model.PreviousMonthQuery"><i class="fas fa-chevron-left"></i> Önceki Ay</a>
-            <a class="partner-btn-light ot-btn ot-btn--ghost" href="@Model.NextMonthQuery">Sonraki Ay <i class="fas fa-chevron-right"></i></a>
+    </div>
+</div>
+
+<div class="company-pricing-intro">
+    <div>
+        <span class="company-pricing-kicker">Firma fiyatlandırması</span>
+        <h3>Toplu konaklama yapan firmalara özel oda fiyatı tanımlayın</h3>
+        <p>
+            Standart oda fiyatı normal kullanıcılar için korunur. Bu alana gireceğiniz firma fiyatı,
+            yalnızca kurumsal kanaldaki firma kullanıcılarına gösterilir ve firma rezervasyonlarında esas alınır.
+        </p>
+    </div>
+    <ul>
+        <li>Firmalar için uygun fiyat sunarak toplu konaklamalarda tercih edilmenizi sağlar.</li>
+        <li>Minimum ve maksimum geceleme koşulu girilirse firma rezervasyonu bu aralığa göre değerlendirilir.</li>
+        <li class="company-pricing-danger">Kapalı satış seçilirse ilgili gün firma kanalında rezervasyona kapatılır.</li>
+    </ul>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Warning))
+{
+    <div class="alert alert-warning" role="alert">
+        <div class="d-flex">
+            <div class="me-3"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
+            <div>
+                <div class="fw-bold">Uyarı</div>
+                <div class="text-muted">@Model.Warning</div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="row row-cards">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-5 col-lg-4">
+                        <label class="form-label">Oda Tipi</label>
+                        <select class="form-select" onchange="if(this.value){ window.location=this.value; }">
+                            @foreach (var room in Model.Rooms)
+                            {
+                                <option value="/panel/partner/firma-fiyatlari?otelId=@Model.HotelId&roomId=@room.RoomTypeId&month=@Model.MonthAnchor.ToString("yyyy-MM")"
+                                        selected="@(room.RoomTypeId == Model.SelectedRoomId ? "selected" : null)">
+                                    @room.RoomName
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <label class="form-label">Ay</label>
+                        <input class="form-control" type="month" value="@Model.MonthAnchor.ToString("yyyy-MM")"
+                               max="@maxPricingMonth"
+                               onchange="window.location='/panel/partner/firma-fiyatlari?otelId=@Model.HotelId&roomId=@(Model.SelectedRoomId ?? 0)&month='+this.value" />
+                    </div>
+                    <div class="col-12 col-md-3 col-lg-5">
+                        <div class="alert alert-success mb-0 company-pricing-goal" role="alert">
+                            <div class="d-flex">
+                                <div class="me-3"><i class="fas fa-circle-check" aria-hidden="true"></i></div>
+                                <div>
+                                    <div class="fw-bold">Amaç</div>
+                                    <div class="text-muted">
+                                        Örnek: Standart kullanıcı fiyatı 4.200 TL iken firma fiyatını 3.650 TL girerek toplu konaklama yapan firmalara özel fiyat sunabilirsiniz.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    @if (!string.IsNullOrWhiteSpace(Model.Warning))
-    {
-        <div class="partner-alert partner-alert-warning ot-alert ot-alert--warning" style="margin-top:12px;">
-            <i class="fas fa-triangle-exclamation"></i>
-            <span>
-                @Model.Warning
-                <br />
-                <small>
-                    Not: Migration sonrası bu sayfayı yenilediğinizde firma takvimi ve “Toplu Güncelle” kaydı aktif olacaktır.
-                </small>
-            </span>
+    <div class="col-12">
+        <div class="card company-pricing-bulk-card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Toplu Güncelle</h3>
+                    <div class="text-muted">Seçili oda tipi için tarih aralığına firmalar için günlük fiyat ve satış durumu uygulayın.</div>
+                    <div class="form-hint mt-1">Kurumsal fiyat takvimi en fazla @maxPricingDate tarihine kadar güncellenebilir.</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/panel/partner/firma-fiyatlari/toplu-guncelle">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="HotelId" value="@Model.HotelId" />
+                    <input type="hidden" name="CompanyId" value="0" />
+                    <input type="hidden" name="RoomTypeId" value="@(Model.SelectedRoomId ?? 0)" />
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-6 col-xl-2">
+                            <label class="form-label">Başlangıç</label>
+                            <input class="form-control" type="date" name="StartDate" value="@Model.BulkForm.StartDate.ToString("yyyy-MM-dd")" max="@maxPricingDate" required />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-2">
+                            <label class="form-label">Bitiş</label>
+                            <input class="form-control" type="date" name="EndDate" value="@Model.BulkForm.EndDate.ToString("yyyy-MM-dd")" max="@maxPricingDate" required />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-2">
+                            <label class="form-label">Firmalar için günlük fiyat</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₺</span>
+                                <input class="form-control" type="number" step="0.01" name="CompanyNightlyPrice" value="@Model.BulkForm.CompanyNightlyPrice" required />
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-2">
+                            <label class="form-label">Minimum Geceleme</label>
+                            <input class="form-control" type="number" min="1" name="MinimumNights" value="@Model.BulkForm.MinimumNights" placeholder="Örn. 1" />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-2">
+                            <label class="form-label">Maksimum Geceleme</label>
+                            <input class="form-control" type="number" min="1" name="MaximumNights" value="@Model.BulkForm.MaximumNights" placeholder="Örn. 14" />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-2">
+                            <div class="company-sales-toggle">
+                                <label class="form-label d-block mb-2">Kurumsal kanal</label>
+                                <label class="company-sales-toggle-btn @(Model.BulkForm.CloseSales ? "is-off" : "is-on")">
+                                    <input class="company-sales-toggle-input" type="checkbox" name="CloseSales" value="true" @(Model.BulkForm.CloseSales ? "checked" : null) />
+                                    <span class="company-sales-toggle-knob" aria-hidden="true"></span>
+                                    <span class="company-sales-toggle-text">
+                                        <span class="on">Açık</span>
+                                        <span class="off">Kapalı</span>
+                                    </span>
+                                </label>
+                                <div class="company-sales-toggle-hint">Kapalı satış seçilirse ilgili gün firma kanalında rezervasyona kapatılır.</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4 col-xl-1">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-wand-magic-sparkles me-2" aria-hidden="true"></i>Güncelle
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">@Model.MonthAnchor.ToString("MMMM yyyy", culture) takvimi</h3>
+                    <div class="text-muted">@Model.Rooms.FirstOrDefault(x => x.RoomTypeId == Model.SelectedRoomId)?.RoomName</div>
+                </div>
+                <div class="card-actions">
+                    <span class="badge bg-success-lt text-success me-2">Açık</span>
+                    <span class="badge bg-danger-lt text-danger">Kapalı</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="company-price-weekdays" aria-hidden="true">
+                    @foreach (var dayName in weekdays)
+                    {
+                        <div>@dayName</div>
+                    }
+                </div>
+                <div class="company-price-grid">
+                    @for (var i = 0; i < firstDayOffset; i++)
+                    {
+                        <div class="company-price-day is-empty"></div>
+                    }
+                    @foreach (var day in Model.Days)
+                    {
+                        <article class="company-price-day @(day.IsClosed ? "is-closed" : string.Empty)">
+                            <div class="top">
+                                <strong>@day.Date.Day</strong>
+                                <span class="pill @(day.IsClosed ? "danger" : string.Empty)">@(day.IsClosed ? "Kapalı" : "Açık")</span>
+                            </div>
+                            <div class="prices">
+                                <span>
+                                    <small>Firma</small>
+                                    <b>@day.CompanyPriceText</b>
+                                </span>
+                                <span>
+                                    <small>Standart</small>
+                                    <b>@day.BasePriceText</b>
+                                </span>
+                            </div>
+                            <small>@day.Date.ToString("dddd", culture)</small>
+                            <small>@day.NightRuleText</small>
+                        </article>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var partnerSuccess = TempData["PartnerSuccess"] as string;
+    var partnerError = TempData["PartnerError"] as string;
+}
+
+@if (!string.IsNullOrWhiteSpace(partnerSuccess) || !string.IsNullOrWhiteSpace(partnerError))
+{
+    var isSuccess = !string.IsNullOrWhiteSpace(partnerSuccess);
+    <div class="modal modal-blur fade" id="companyPricingResultModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-status @(isSuccess ? "bg-success" : "bg-danger")"></div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="@(isSuccess ? "fas fa-circle-check text-success" : "fas fa-triangle-exclamation text-danger")" style="font-size: 2rem;" aria-hidden="true"></i>
+                    </div>
+                    <h3>@(isSuccess ? "Başarıyla güncellendi" : "İşlem tamamlanamadı")</h3>
+                    <div class="text-muted">@(isSuccess ? partnerSuccess : partnerError)</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">Tamam</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
     }
+    <script nonce="@nonce">
+        (function () {
+            const toggle = document.querySelector('.company-sales-toggle-btn');
+            const input = toggle?.querySelector('input[type="checkbox"]');
+            if (toggle && input) {
+                const sync = () => {
+                    const isOff = input.checked;
+                    toggle.classList.toggle('is-off', isOff);
+                    toggle.classList.toggle('is-on', !isOff);
+                };
+                input.addEventListener('change', sync);
+                sync();
+            }
 
-    <div class="partner-grid-3">
-        <div>
-            <label>Firma</label>
-            <select onchange="if(this.value){ window.location=this.value; }">
-                @foreach (var company in Model.Companies)
-                {
-                    <option value="/panel/partner/firma-fiyatlari?otelId=@Model.HotelId&companyId=@company.CompanyId&roomId=@(Model.SelectedRoomId ?? 0)&month=@Model.MonthAnchor.ToString("yyyy-MM")"
-                            selected="@(company.IsSelected ? "selected" : null)">
-                        @company.CompanyName (@company.StatusText)
-                    </option>
-                }
-            </select>
-        </div>
-        <div>
-            <label>Oda Tipi</label>
-            <select onchange="if(this.value){ window.location=this.value; }">
-                @foreach (var room in Model.Rooms)
-                {
-                    <option value="/panel/partner/firma-fiyatlari?otelId=@Model.HotelId&companyId=@(Model.SelectedCompanyId ?? 0)&roomId=@room.RoomTypeId&month=@Model.MonthAnchor.ToString("yyyy-MM")"
-                            selected="@(room.RoomTypeId == Model.SelectedRoomId ? "selected" : null)">
-                        @room.RoomName
-                    </option>
-                }
-            </select>
-        </div>
-        <div>
-            <label>Ay</label>
-            <input type="month" value="@Model.MonthAnchor.ToString("yyyy-MM")"
-                   onchange="window.location='/panel/partner/firma-fiyatlari?otelId=@Model.HotelId&companyId=@(Model.SelectedCompanyId ?? 0)&roomId=@(Model.SelectedRoomId ?? 0)&month='+this.value" />
-        </div>
-    </div>
-</section>
-
-<section class="partner-panel-card ot-card">
-    <div class="partner-card-head">
-        <div>
-            <h2>Toplu Güncelle</h2>
-            <p>Tarih aralığı seçip firma gecelik fiyatını uygulayın.</p>
-        </div>
-    </div>
-
-    <form method="post" action="/panel/partner/firma-fiyatlari/toplu-guncelle" class="partner-form-grid">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="HotelId" value="@Model.HotelId" />
-        <input type="hidden" name="CompanyId" value="@(Model.SelectedCompanyId ?? 0)" />
-        <input type="hidden" name="RoomTypeId" value="@(Model.SelectedRoomId ?? 0)" />
-        <div>
-            <label>Başlangıç</label>
-            <input type="date" name="StartDate" value="@Model.BulkForm.StartDate.ToString("yyyy-MM-dd")" required />
-        </div>
-        <div>
-            <label>Bitiş</label>
-            <input type="date" name="EndDate" value="@Model.BulkForm.EndDate.ToString("yyyy-MM-dd")" required />
-        </div>
-        <div>
-            <label>Firma Gecelik Fiyat</label>
-            <input type="number" step="0.01" name="CompanyNightlyPrice" value="@Model.BulkForm.CompanyNightlyPrice" required />
-        </div>
-        <div class="partner-check">
-            <label><input type="checkbox" name="CloseSales" value="true" @(Model.BulkForm.CloseSales ? "checked" : null) /> Kapalı satış</label>
-        </div>
-        <div class="span-2">
-            <label>Not</label>
-            <input type="text" name="Note" value="@Model.BulkForm.Note" placeholder="Opsiyonel" />
-        </div>
-        <div class="span-2 partner-form-actions">
-            <button type="submit" class="partner-btn-primary ot-btn ot-btn--primary">Kaydet</button>
-        </div>
-    </form>
-</section>
-
-<section class="partner-panel-card ot-card">
-    <div class="partner-card-head">
-        <div>
-            <h2>Ay Takvimi</h2>
-            <p>Firma fiyatı varsa gösterilir; yoksa standart fiyat referans olur.</p>
-        </div>
-    </div>
-
-    <div class="company-price-grid">
-        @foreach (var day in Model.Days)
-        {
-            <article class="company-price-day @(day.IsClosed ? "is-closed" : "")">
-                <div class="top">
-                    <strong>@day.DateText</strong>
-                    @if (day.IsClosed)
-                    {
-                        <span class="pill danger ot-badge ot-badge--danger">Kapalı</span>
-                    }
-                    else
-                    {
-                        <span class="pill ot-badge ot-badge--success">Açık</span>
-                    }
-                </div>
-                <div class="prices">
-                    <div><small>Firma</small><b>@day.CompanyPriceText</b></div>
-                    <div><small>Standart</small><span>@day.BasePriceText</span></div>
-                </div>
-            </article>
-        }
-    </div>
-</section>
-
+            const modalEl = document.getElementById('companyPricingResultModal');
+            if (modalEl && window.bootstrap?.Modal) {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        })();
+    </script>
+}

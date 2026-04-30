@@ -8,95 +8,231 @@
     var hotelQuery = $"otelId={Model.SelectedHotelId}";
     var roomQuery = Model.SelectedRoomId.HasValue ? $"&roomId={Model.SelectedRoomId.Value}" : string.Empty;
     var nonce = Context.Items["CspNonce"] as string;
+    var maxPricingDate = DateTime.Today.AddDays(365).ToString("yyyy-MM-dd");
 }
 
-<section class="partner-pricing-toolbar">
-    <div>
-        <p class="partner-room-kicker">Gelişmiş fiyat yönetimi</p>
-        <h2>Takvim üzerinden fiyat, indirim ve satış durumu yönetin</h2>
-        <p>Oda seçin, ayı değiştirin ve seçili tarih aralığında birden fazla oda tipi için tek seferde güncelleme yapın.</p>
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Fiyat Yönetimi</div>
+            <h2 class="page-title">Takvim üzerinden fiyat, indirim ve satış durumu yönetin</h2>
+            <div class="text-muted mt-1">Oda seçin, ayı değiştirin ve seçili tarih aralığında birden fazla oda tipi için tek seferde güncelleme yapın.</div>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list align-items-center">
+                <a class="btn btn-outline-primary" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.PreviousMonthKey">
+                    <i class="fas fa-chevron-left me-2"></i>Önceki ay
+                </a>
+                <span class="badge bg-primary-lt text-primary">@Model.MonthLabel</span>
+                <a class="btn btn-outline-primary" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.NextMonthKey">
+                    Sonraki ay<i class="fas fa-chevron-right ms-2"></i>
+                </a>
+                <form method="get" action="/panel/partner/takvim-fiyatlar" class="d-flex align-items-center gap-2">
+                    <input type="hidden" name="otelId" value="@Model.SelectedHotelId" />
+                    @if (Model.SelectedRoomId.HasValue)
+                    {
+                        <input type="hidden" name="roomId" value="@Model.SelectedRoomId" />
+                    }
+                    <label class="form-label m-0 small text-muted" for="partnerMonthPicker">Ay</label>
+                    <select class="form-select" id="partnerMonthPicker" name="month" onchange="this.form.submit()">
+                        @foreach (var monthOption in Model.MonthOptions)
+                        {
+                            <option value="@monthOption.MonthKey" selected="@(monthOption.IsCurrent ? "selected" : null)">@monthOption.Label</option>
+                        }
+                    </select>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="partner-pricing-month-nav">
-        <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.PreviousMonthKey">
-            <i class="fas fa-chevron-left"></i>
-            Önceki ay
-        </a>
-        <div class="partner-pricing-month-pill ot-badge ot-badge--info">@Model.MonthLabel</div>
-        <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.NextMonthKey">
-            Sonraki ay
-            <i class="fas fa-chevron-right"></i>
-        </a>
-        <form method="get" action="/panel/partner/takvim-fiyatlar" class="partner-month-picker-form">
-            <input type="hidden" name="otelId" value="@Model.SelectedHotelId" />
-            @if (Model.SelectedRoomId.HasValue)
-            {
-                <input type="hidden" name="roomId" value="@Model.SelectedRoomId" />
-            }
-            <label for="partnerMonthPicker">Ayı seç</label>
-            <select id="partnerMonthPicker" name="month" onchange="this.form.submit()">
-                @foreach (var monthOption in Model.MonthOptions)
-                {
-                    <option value="@monthOption.MonthKey" selected="@(monthOption.IsCurrent ? "selected" : null)">@monthOption.Label</option>
-                }
-            </select>
-        </form>
-    </div>
-</section>
+</div>
 
-<section class="partner-grid partner-pricing-summary-grid">
+<div class="row row-cards">
     @foreach (var item in Model.SummaryCards)
     {
-        <article class="partner-stat-card partner-pricing-stat @item.ToneClass">
-            <i class="fas @item.IconClass"></i>
-            <strong>@item.Value</strong>
-            <span>@item.Label</span>
-            <p>@item.Description</p>
-        </article>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="text-muted text-uppercase fw-bold" style="letter-spacing:.06em; font-size:12px;">@item.Label</div>
+                            <div class="h1 m-0 mt-2">@item.Value</div>
+                            <div class="text-muted mt-1">@item.Description</div>
+                        </div>
+                        <span class="avatar bg-primary-lt text-primary">
+                            <i class="fas @item.IconClass" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
-</section>
+</div>
 
-<section class="partner-section-card partner-pricing-room-filter ot-card">
-    <div class="partner-section-head">
-        <div>
-            <h2>Görüntülenen oda tipi</h2>
-            <p>Takvim gridi tek odanın detayını gösterir; toplu güncelleme alttaki seçim listesiyle birden fazla odaya uygulanabilir.</p>
-        </div>
-    </div>
-    <div class="partner-room-chip-list">
-        @foreach (var room in Model.Rooms)
-        {
-            <a href="/panel/partner/takvim-fiyatlar?otelId=@Model.SelectedHotelId&roomId=@room.RoomId&month=@Model.MonthKey"
-               class="partner-room-chip @(room.RoomId == Model.SelectedRoomId ? "active" : string.Empty) ot-card">
-                <span class="partner-room-chip-title">@room.RoomName</span>
-                <span class="partner-room-chip-meta">@room.BasePriceText · @room.StockText</span>
-            </a>
-        }
-    </div>
-</section>
-
-<section class="partner-pricing-layout">
-    <article class="partner-section-card partner-calendar-panel ot-card">
-        <div class="partner-section-head partner-calendar-head">
-            <div>
-                <h2>Aylık fiyat takvimi</h2>
-                <p>@(Model.SelectedRoomId.HasValue ? Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId.Value)?.RoomName : "Oda seçiniz")</p>
+<div class="row row-cards mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Görüntülenen oda tipi</h3>
+                <div class="text-muted">Takvim gridi tek odanın detayını gösterir; toplu güncelleme alttaki seçim listesiyle birden fazla odaya uygulanabilir.</div>
             </div>
-            <div class="partner-calendar-legend">
-                <span class="ot-badge"><i class="fas fa-circle legend-discount"></i> İndirimli</span>
-                <span class="ot-badge"><i class="fas fa-circle legend-warning"></i> Son odalar</span>
-                <span class="ot-badge ot-badge--danger"><i class="fas fa-circle legend-closed"></i> Satışa kapalı</span>
+            <div class="card-body">
+                <div class="row g-2">
+                    @foreach (var room in Model.Rooms)
+                    {
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <a href="/panel/partner/takvim-fiyatlar?otelId=@Model.SelectedHotelId&roomId=@room.RoomId&month=@Model.MonthKey"
+                               class="card card-link card-link-pop @(room.RoomId == Model.SelectedRoomId ? "border-primary" : string.Empty)">
+                                <div class="card-body">
+                                    <div class="fw-bold">@room.RoomName</div>
+                                    <div class="text-muted mt-1">@room.BasePriceText · @room.StockText</div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
-        <div class="partner-calendar-insight">
-            <i class="fas fa-circle-info"></i>
-            <p>Anasayfa, favoriler ve detay fiyatları bu takvimdeki açık satış günlerinin en düşük efektif fiyatına göre hesaplanır (indirimli fiyat varsa önce o kullanılır).</p>
+    </div>
+</div>
+
+<div class="row row-cards mt-2">
+    <div class="col-12">
+        <div class="card partner-pricing-bulk-wide">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Çoklu fiyat güncelleme</h3>
+                    <div class="text-muted">Seçili tarih aralığında bir veya birden fazla oda tipine aynı anda fiyat, indirim ve stok kuralı uygulayın.</div>
+                    <div class="form-hint mt-1">Geçmiş 60 gün sistem tarafından otomatik temizlenir. Yeni fiyat ve müsaitlik girişi en fazla @maxPricingDate tarihine kadar yapılabilir.</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/panel/partner/takvim-fiyatlar/toplu-guncelle" id="partnerBulkPricingForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+                    <input type="hidden" name="ViewRoomId" value="@Model.SelectedRoomId" />
+                    <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
+
+                    <div class="mb-3">
+                        <div class="form-label">Güncelleme uygulanacak odalar</div>
+                        <div class="row g-2">
+                            @foreach (var room in Model.Rooms.Where(x => x.IsActive))
+                            {
+                                var isChecked = Model.BulkForm.SelectedRoomIds.Contains(room.RoomId);
+                                <div class="col-12 col-md-6 col-xl-3">
+                                    <label class="form-check partner-pricing-room-check">
+                                        <input class="form-check-input" type="checkbox" name="SelectedRoomIds" value="@room.RoomId" checked="@(isChecked ? "checked" : null)" />
+                                        <span class="form-check-label">
+                                            <span class="fw-bold">@room.RoomName</span>
+                                            <span class="text-muted d-block small">@room.BasePriceText · @room.StockText</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">Tarih başlangıcı</label>
+                            <input class="form-control" type="date" name="DateFrom" value="@Model.BulkForm.DateFrom.ToString("yyyy-MM-dd")" max="@maxPricingDate" />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">Tarih bitişi</label>
+                            <input class="form-control" type="date" name="DateTo" value="@Model.BulkForm.DateTo.ToString("yyyy-MM-dd")" max="@maxPricingDate" />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">Normal fiyat (vergi dahil)</label>
+                            <input class="form-control" type="number" step="0.01" name="BasePrice" value="@(Model.BulkForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Mevcut fiyat kalsın" title="KDV ve konaklama vergisi dahil gece tutarı" inputmode="decimal" />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">İndirimli fiyat (vergi dahil)</label>
+                            <input class="form-control" type="number" step="0.01" name="DiscountPrice" id="partnerBulkDiscountPrice" value="@(Model.BulkForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Opsiyonel" title="KDV ve konaklama vergisi dahil" inputmode="decimal" />
+                        </div>
+                        <div class="col-12 col-md-4 col-xl-2">
+                            <label class="form-label">Satışa açık oda</label>
+                            <input class="form-control" type="number" name="TotalRooms" min="0" value="@(Model.BulkForm.TotalRooms?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Stok korunacak" />
+                        </div>
+                        <div class="col-12 col-md-4 col-xl-2">
+                            <label class="form-label">Minimum geceleme</label>
+                            <input class="form-control" type="number" name="MinStay" min="1" value="@(Model.BulkForm.MinStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Değiştirme" />
+                        </div>
+                        <div class="col-12 col-md-4 col-xl-2">
+                            <label class="form-label">Maksimum geceleme</label>
+                            <input class="form-control" type="number" name="MaxStay" min="1" value="@(Model.BulkForm.MaxStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Değiştirme" />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">Satış durumu</label>
+                            <select class="form-select" name="SaleStatusAction">
+                                <option value="keep" selected>Mevcut durum korunsun</option>
+                                <option value="open">Satışa aç</option>
+                                <option value="close">Satışa kapat</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">İndirim seçimi</label>
+                            <select class="form-select" name="DiscountId" id="partnerBulkDiscountId">
+                                <option value="">İndirim uygulanmayacak</option>
+                                @foreach (var discount in Model.AvailableDiscounts)
+                                {
+                                    <option value="@discount.DiscountId">@discount.DiscountName</option>
+                                }
+                            </select>
+                            <div class="form-hint" id="partnerBulkDiscountHint" style="display:none;">
+                                İndirimli fiyat girdiyseniz indirim seçimi zorunludur.
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">İndirim etiketi (opsiyonel)</label>
+                            <input class="form-control" type="text" name="CampaignLabel" maxlength="120" placeholder="Örn. Yaz Fırsatı" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Takvim notu</label>
+                            <textarea class="form-control" name="PriceNote" rows="2" placeholder="Örn. Bu tarihte kahvaltı dahil fiyat uygulanıyor."></textarea>
+                        </div>
+                        <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <label class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" name="ClearDiscountPrice" value="true" id="partnerBulkClearDiscount" />
+                                <span class="form-check-label">İndirimli fiyatı temizle</span>
+                            </label>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-floppy-disk me-2"></i>Takvim ve fiyat kurallarını uygula
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
+    </div>
+</div>
+
+<div class="row row-cards mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Aylık fiyat takvimi</h3>
+                    <div class="text-muted">@(Model.SelectedRoomId.HasValue ? Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId.Value)?.RoomName : "Oda seçiniz")</div>
+                </div>
+                <div class="card-actions">
+                    <span class="badge bg-success-lt text-success me-1"><i class="fas fa-circle me-1 legend-discount"></i>İndirimli</span>
+                    <span class="badge bg-warning-lt text-warning me-1"><i class="fas fa-circle me-1 legend-warning"></i>Son odalar</span>
+                    <span class="badge bg-danger-lt text-danger"><i class="fas fa-circle me-1 legend-closed"></i>Satışa kapalı</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                    <div class="d-flex">
+                        <div class="me-2"><i class="fas fa-circle-info"></i></div>
+                        <div>Anasayfa, favoriler ve detay fiyatları bu takvimdeki açık satış günlerinin en düşük efektif fiyatına göre hesaplanır (indirimli fiyat varsa önce o kullanılır).</div>
+                    </div>
+                </div>
 
         @if (Model.CalendarDays.Count == 0)
         {
-            <div class="partner-empty-state">
-                <strong>Takvim verisi hazır değil</strong>
-                <p>Bu otel için önce oda tipi seçin veya aktif oda tipleri tanımlayın.</p>
+            <div class="empty">
+                <div class="empty-icon"><i class="fas fa-calendar"></i></div>
+                <p class="empty-title">Takvim verisi hazır değil</p>
+                <p class="empty-subtitle text-muted">Bu otel için önce oda tipi seçin veya aktif oda tipleri tanımlayın.</p>
             </div>
         }
         else
@@ -118,7 +254,7 @@
                              data-min-stay="@day.MinStay"
                              data-max-stay="@day.MaxStay"
                              data-is-closed="@(day.IsClosed ? "true" : "false")"
-                             data-discount-id="@(day.CampaignId?.ToString() ?? string.Empty)"
+                            data-discount-id="@(day.DiscountId?.ToString() ?? string.Empty)"
                              data-price-note="@day.PriceNote">
                         <div class="partner-calendar-cell-head">
                             <div>
@@ -152,7 +288,7 @@
                         }
                         @if (Model.SelectedRoomId.HasValue && day.IsCurrentMonth)
                         {
-                            <div class="partner-calendar-actions">
+                        <div class="partner-calendar-actions mt-2 d-flex flex-wrap gap-2">
                                 <form method="post" action="/panel/partner/takvim-fiyatlar/gun-guncelle" class="partner-calendar-inline-form">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
@@ -160,8 +296,8 @@
                                     <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
                                     <input type="hidden" name="Date" value="@day.Date.ToString("yyyy-MM-dd")" />
                                     <input type="hidden" name="SaleStatusAction" value="open" />
-                                    <button type="submit" class="partner-calendar-inline-btn is-open ot-btn ot-btn--success">
-                                        <i class="fas fa-lock-open"></i> Satisa Ac
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="fas fa-lock-open me-1"></i>Satışa aç
                                     </button>
                                 </form>
                                 <form method="post" action="/panel/partner/takvim-fiyatlar/gun-guncelle" class="partner-calendar-inline-form">
@@ -171,15 +307,14 @@
                                     <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
                                     <input type="hidden" name="Date" value="@day.Date.ToString("yyyy-MM-dd")" />
                                     <input type="hidden" name="SaleStatusAction" value="close" />
-                                    <button type="submit" class="partner-calendar-inline-btn is-close ot-btn ot-btn--danger">
-                                        <i class="fas fa-lock"></i> Satisa Kapat
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-lock me-1"></i>Satışa kapat
                                     </button>
                                 </form>
-                                <button type="button" class="partner-calendar-edit-btn ot-btn ot-btn--ghost"
+                            <button type="button" class="btn btn-outline-primary btn-sm"
                                         data-open-daily-editor="true"
                                         data-date="@day.Date.ToString("yyyy-MM-dd")">
-                                    <i class="fas fa-pen"></i>
-                                    Gunu Duzenle
+                                <i class="fas fa-pen me-1"></i>Günü düzenle
                                 </button>
                             </div>
                         }
@@ -187,185 +322,98 @@
                 }
             </div>
         }
-    </article>
-
-    <aside class="partner-section-card partner-bulk-panel ot-card">
-        <div class="partner-section-head">
-            <div>
-                <h2>Çoklu fiyat güncelleme</h2>
-                <p>Secili tarih araliginda bir veya birden fazla oda tipine ayni anda fiyat, indirim ve stok kurali uygulayin.</p>
             </div>
         </div>
-
-        <form method="post" action="/panel/partner/takvim-fiyatlar/toplu-guncelle" class="partner-pricing-form-grid" id="partnerBulkPricingForm">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
-            <input type="hidden" name="ViewRoomId" value="@Model.SelectedRoomId" />
-            <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
-
-            <div class="partner-multi-room-box">
-                <span class="partner-field-label">Guncelleme uygulanacak odalar</span>
-                <div class="partner-room-checkbox-list">
-                    @foreach (var room in Model.Rooms.Where(x => x.IsActive))
-                    {
-                        var isChecked = Model.BulkForm.SelectedRoomIds.Contains(room.RoomId);
-                        <label class="partner-room-checkbox @(room.RoomId == Model.SelectedRoomId ? "is-focused" : string.Empty)">
-                            <input type="checkbox" name="SelectedRoomIds" value="@room.RoomId" checked="@(isChecked ? "checked" : null)" />
-                            <span>
-                                <strong>@room.RoomName</strong>
-                                <small>@room.BasePriceText · @room.StockText</small>
-                            </span>
-                        </label>
-                    }
-                </div>
-            </div>
-
-            <label>
-                <span>Tarih baslangici</span>
-                <input type="date" name="DateFrom" value="@Model.BulkForm.DateFrom.ToString("yyyy-MM-dd")" />
-            </label>
-            <label>
-                <span>Tarih bitisi</span>
-                <input type="date" name="DateTo" value="@Model.BulkForm.DateTo.ToString("yyyy-MM-dd")" />
-            </label>
-            <label>
-                <span>Normal fiyat (vergi dahil)</span>
-                <input type="number" step="0.01" name="BasePrice" value="@(Model.BulkForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Bos birak: mevcut fiyat kalsin" title="KDV ve konaklama vergisi dahil gece tutari" inputmode="decimal" />
-            </label>
-            <label>
-                <span>İndirimli fiyat (vergi dahil)</span>
-                <input type="number" step="0.01" name="DiscountPrice" id="partnerBulkDiscountPrice" value="@(Model.BulkForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Opsiyonel" title="KDV ve konaklama vergisi dahil" inputmode="decimal" />
-            </label>
-            <label class="partner-inline-toggle">
-                <input type="checkbox" name="ClearDiscountPrice" value="true" id="partnerBulkClearDiscount" />
-                <span>İndirimli fiyati temizle</span>
-            </label>
-            <label>
-                <span>Satisa acik oda</span>
-                <input type="number" name="TotalRooms" min="0" value="@(Model.BulkForm.TotalRooms?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Stok korunacak" />
-            </label>
-            <label>
-                <span>Minimum geceleme</span>
-                <input type="number" name="MinStay" min="1" value="@(Model.BulkForm.MinStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Degistirme" />
-            </label>
-            <label>
-                <span>Maksimum geceleme</span>
-                <input type="number" name="MaxStay" min="1" value="@(Model.BulkForm.MaxStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" placeholder="Degistirme" />
-            </label>
-            <label>
-                <span>Satis durumu</span>
-                <select name="SaleStatusAction">
-                    <option value="keep" selected>Mevcut durum korunsun</option>
-                    <option value="open">Satisa ac</option>
-                    <option value="close">Satisa kapat</option>
-                </select>
-            </label>
-            <label>
-                <span>İndirim ID</span>
-                <select name="DiscountId" id="partnerBulkDiscountId">
-                    <option value="">İndirim uygulanmayacak</option>
-                    @foreach (var discount in Model.AvailableDiscounts)
-                    {
-                        <option value="@discount.DiscountId">@discount.DiscountName</option>
-                    }
-                </select>
-                <small class="partner-field-hint" id="partnerBulkDiscountHint" style="display:none;">
-                    İndirimli fiyat girdiyseniz İndirim ID seçimi zorunludur.
-                </small>
-            </label>
-            <label>
-                <span>İndirim etiketi (opsiyonel)</span>
-                <input type="text" name="CampaignLabel" maxlength="120" placeholder="Orn. Yaz Firsati" />
-            </label>
-            <label class="partner-form-span">
-                <span>Takvim notu</span>
-                <textarea name="PriceNote" placeholder="Orn. Bu tarihte kahvalti dahil fiyat uygulaniyor."></textarea>
-            </label>
-            <button type="submit" class="partner-primary-btn partner-form-span ot-btn ot-btn--primary">
-                <i class="fas fa-floppy-disk"></i>
-                Takvim ve fiyat kurallarini uygula
-            </button>
-        </form>
-    </aside>
-</section>
+    </div>
+</div>
 
 @if (Model.SelectedRoomId.HasValue)
 {
     <div class="partner-daily-editor-backdrop" id="partnerDailyEditorBackdrop" hidden></div>
     <section class="partner-daily-editor-modal" id="partnerDailyEditorModal" hidden aria-hidden="true">
-        <div class="partner-daily-editor-head">
-            <div>
-                <span class="partner-daily-editor-kicker">Gunluk fiyat duzenleme</span>
-                <h3 id="partnerDailyEditorTitle">Secili gunu duzenle</h3>
-                <p>@Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId)?.RoomName</p>
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="text-muted small">Günlük fiyat düzenleme</div>
+                    <h3 class="card-title" id="partnerDailyEditorTitle">Seçili günü düzenle</h3>
+                    <div class="text-muted">@Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId)?.RoomName</div>
+                </div>
+                <div class="card-actions">
+                    <button type="button" class="btn btn-icon btn-outline-primary" id="partnerDailyEditorClose" aria-label="Kapat">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
-            <button type="button" class="partner-daily-editor-close" id="partnerDailyEditorClose" aria-label="Kapat">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
 
-        <form method="post" action="/panel/partner/takvim-fiyatlar/gun-guncelle" class="partner-daily-editor-form">
+        <form method="post" action="/panel/partner/takvim-fiyatlar/gun-guncelle" class="card-body">
             @Html.AntiForgeryToken()
             <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
             <input type="hidden" name="RoomId" value="@Model.SelectedRoomId" />
             <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
             <input type="hidden" name="Date" id="dailyEditorDateInput" value="@Model.DailyForm.Date.ToString("yyyy-MM-dd")" />
 
-            <label>
-                <span>Tarih</span>
-                <input type="text" id="dailyEditorDateDisplay" value="@Model.DailyForm.Date.ToString("dd.MM.yyyy")" readonly />
-            </label>
-            <label>
-                <span>Normal fiyat (vergi dahil)</span>
-                <input type="number" step="0.01" name="BasePrice" id="dailyEditorBasePrice" value="@(Model.DailyForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" title="KDV ve konaklama vergisi dahil gece tutari" />
-            </label>
-            <label>
-                <span>İndirimli fiyat (vergi dahil)</span>
-                <input type="number" step="0.01" name="DiscountPrice" id="dailyEditorDiscountPrice" value="@(Model.DailyForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" title="KDV ve konaklama vergisi dahil" />
-            </label>
-            <label class="partner-inline-toggle">
-                <input type="checkbox" name="ClearDiscountPrice" value="true" id="dailyEditorClearDiscount" />
-                <span>İndirimli fiyati temizle</span>
-            </label>
-            <label>
-                <span>Satisa acik oda</span>
-                <input type="number" name="TotalRooms" min="0" id="dailyEditorTotalRooms" value="@(Model.DailyForm.TotalRooms?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
-            </label>
-            <label>
-                <span>Minimum geceleme</span>
-                <input type="number" name="MinStay" min="1" id="dailyEditorMinStay" value="@(Model.DailyForm.MinStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
-            </label>
-            <label>
-                <span>Maksimum geceleme</span>
-                <input type="number" name="MaxStay" min="1" id="dailyEditorMaxStay" value="@(Model.DailyForm.MaxStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
-            </label>
-            <label>
-                <span>Satis durumu</span>
-                <select name="SaleStatusAction" id="dailyEditorSaleStatus">
-                    <option value="keep">Mevcut durum korunsun</option>
-                    <option value="open">Satisa ac</option>
-                    <option value="close">Satisa kapat</option>
-                </select>
-            </label>
-            <label>
-                <span>İndirim ID</span>
-                <select name="DiscountId" id="dailyEditorDiscountId">
-                    <option value="">İndirim uygulanmayacak</option>
-                    @foreach (var discount in Model.AvailableDiscounts)
-                    {
-                        <option value="@discount.DiscountId">@discount.DiscountName</option>
-                    }
-                </select>
-            </label>
-            <label class="partner-form-span">
-                <span>Takvim notu</span>
-                <textarea name="PriceNote" id="dailyEditorPriceNote" placeholder="Bu gun icin not ekleyin.">@Model.DailyForm.PriceNote</textarea>
-            </label>
-            <button type="submit" class="partner-primary-btn partner-form-span">
-                <i class="fas fa-floppy-disk"></i>
-                Gunu Kaydet
-            </button>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">Tarih</label>
+                    <input class="form-control" type="text" id="dailyEditorDateDisplay" value="@Model.DailyForm.Date.ToString("dd.MM.yyyy")" readonly />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Normal fiyat (vergi dahil)</label>
+                    <input class="form-control" type="number" step="0.01" name="BasePrice" id="dailyEditorBasePrice" value="@(Model.DailyForm.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" title="KDV ve konaklama vergisi dahil gece tutarı" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">İndirimli fiyat (vergi dahil)</label>
+                    <input class="form-control" type="number" step="0.01" name="DiscountPrice" id="dailyEditorDiscountPrice" value="@(Model.DailyForm.DiscountPrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" title="KDV ve konaklama vergisi dahil" />
+                </div>
+                <div class="col-12">
+                    <label class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ClearDiscountPrice" value="true" id="dailyEditorClearDiscount" />
+                        <span class="form-check-label">İndirimli fiyatı temizle</span>
+                    </label>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Satışa açık oda</label>
+                    <input class="form-control" type="number" name="TotalRooms" min="0" id="dailyEditorTotalRooms" value="@(Model.DailyForm.TotalRooms?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Minimum geceleme</label>
+                    <input class="form-control" type="number" name="MinStay" min="1" id="dailyEditorMinStay" value="@(Model.DailyForm.MinStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Maksimum geceleme</label>
+                    <input class="form-control" type="number" name="MaxStay" min="1" id="dailyEditorMaxStay" value="@(Model.DailyForm.MaxStay?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Satış durumu</label>
+                    <select class="form-select" name="SaleStatusAction" id="dailyEditorSaleStatus">
+                        <option value="keep">Mevcut durum korunsun</option>
+                        <option value="open">Satışa aç</option>
+                        <option value="close">Satışa kapat</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">İndirim seçimi</label>
+                    <select class="form-select" name="DiscountId" id="dailyEditorDiscountId">
+                        <option value="">İndirim uygulanmayacak</option>
+                        @foreach (var discount in Model.AvailableDiscounts)
+                        {
+                            <option value="@discount.DiscountId">@discount.DiscountName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Takvim notu</label>
+                    <textarea class="form-control" name="PriceNote" id="dailyEditorPriceNote" rows="4" placeholder="Bu gün için not ekleyin.">@Model.DailyForm.PriceNote</textarea>
+                </div>
+            </div>
+            <div class="mt-3 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-primary" id="partnerDailyEditorCloseAlt">Vazgeç</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-floppy-disk me-2"></i>Günü Kaydet
+                </button>
+            </div>
         </form>
+        </div>
     </section>
 
     <script nonce="@nonce">
@@ -373,6 +421,7 @@
             const modal = document.getElementById('partnerDailyEditorModal');
             const backdrop = document.getElementById('partnerDailyEditorBackdrop');
             const closeButton = document.getElementById('partnerDailyEditorClose');
+            const closeButtonAlt = document.getElementById('partnerDailyEditorCloseAlt');
             const title = document.getElementById('partnerDailyEditorTitle');
             const dateInput = document.getElementById('dailyEditorDateInput');
             const dateDisplay = document.getElementById('dailyEditorDateDisplay');
@@ -405,7 +454,13 @@
                 minStayInput.value = cell.dataset.minStay || '';
                 maxStayInput.value = cell.dataset.maxStay || '';
                 saleStatusSelect.value = cell.dataset.isClosed === 'true' ? 'close' : 'open';
-                campaignSelect.value = cell.dataset.discountId || '';
+                const selectedId = cell.dataset.discountId || '';
+                if (campaignSelect) {
+                    campaignSelect.value = '';
+                }
+                if (selectedId && campaignSelect && campaignSelect.querySelector('option[value="' + selectedId + '"]')) {
+                    campaignSelect.value = selectedId;
+                }
                 priceNoteInput.value = cell.dataset.priceNote || '';
                 modal.hidden = false;
                 backdrop.hidden = false;
@@ -440,6 +495,7 @@
             });
 
             closeButton?.addEventListener('click', closeEditor);
+            closeButtonAlt?.addEventListener('click', closeEditor);
             backdrop.addEventListener('click', closeEditor);
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape' && modal.classList.contains('is-open')) {
@@ -457,22 +513,40 @@
                 if (!bulkDiscountPrice || !bulkDiscountId || !bulkClear) return;
                 const hasDiscountPrice = String(bulkDiscountPrice.value || '').trim().length > 0 && Number(bulkDiscountPrice.value) > 0;
                 const clearing = !!bulkClear.checked;
-                const required = hasDiscountPrice && !clearing;
+                const hasDiscount = String(bulkDiscountId.value || '').trim().length > 0;
+                const required = hasDiscountPrice && !clearing && !hasDiscount;
                 bulkDiscountId.required = required;
                 if (bulkHint) bulkHint.style.display = required ? 'block' : 'none';
             }
             bulkDiscountPrice?.addEventListener('input', bulkSyncDiscountRequired);
             bulkClear?.addEventListener('change', bulkSyncDiscountRequired);
+            bulkDiscountId?.addEventListener('change', bulkSyncDiscountRequired);
             bulkSyncDiscountRequired();
+
+            document.getElementById('partnerBulkPricingForm')?.addEventListener('submit', function (event) {
+                const hasDiscountPrice = String(bulkDiscountPrice?.value || '').trim().length > 0 && Number(bulkDiscountPrice.value) > 0;
+                const clearing = !!bulkClear?.checked;
+                const hasDiscount = String(bulkDiscountId?.value || '').trim().length > 0;
+                if (hasDiscountPrice && !clearing && !hasDiscount) {
+                    event.preventDefault();
+                    if (bulkHint) {
+                        bulkHint.style.display = 'block';
+                    }
+                    bulkDiscountId?.focus();
+                }
+            });
 
             // Daily editor: indirimli fiyat -> indirim seçimi zorunlu.
             function dailySyncDiscountRequired() {
                 const hasDiscount = String(discountPriceInput?.value || '').trim().length > 0 && Number(discountPriceInput.value) > 0;
                 const clearing = !!clearDiscountInput?.checked;
-                if (campaignSelect) campaignSelect.required = hasDiscount && !clearing;
+                const selectedDiscount = String(campaignSelect?.value || '').trim().length > 0;
+                const required = hasDiscount && !clearing && !selectedDiscount;
+                if (campaignSelect) campaignSelect.required = required;
             }
             discountPriceInput?.addEventListener('input', dailySyncDiscountRequired);
             clearDiscountInput?.addEventListener('change', dailySyncDiscountRequired);
+            campaignSelect?.addEventListener('change', dailySyncDiscountRequired);
             dailySyncDiscountRequired();
         })();
     </script>

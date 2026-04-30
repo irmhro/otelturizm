@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -19,6 +20,7 @@ namespace otelturizmnew.Services;
 public class PartnerService : IPartnerService
 {
     private readonly string _connectionString;
+    private readonly string _publicBaseUrl;
     private readonly IWebHostEnvironment _environment;
     private readonly IImageStorageService _imageStorageService;
     private readonly IEmailQueueService _emailQueueService;
@@ -39,6 +41,7 @@ public class PartnerService : IPartnerService
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
+        _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://otelturizm.com").TrimEnd('/');
         _environment = environment;
         _imageStorageService = imageStorageService;
         _emailQueueService = emailQueueService;
@@ -77,30 +80,47 @@ public class PartnerService : IPartnerService
             }
         }
 
-        // Favoriye eklenme sayisi (secili otel)
-        if (await TableExistsAsync(connection, "user_favori_oteller", cancellationToken))
+        const string widgetSql = @"
+            SELECT
+                COUNT(*) AS total_reservations,
+                SUM(CASE WHEN r.durum = N'İptal Edildi' THEN 1 ELSE 0 END) AS cancelled_reservations,
+                SUM(CASE WHEN r.firma_id IS NOT NULL THEN 1 ELSE 0 END) AS corporate_reservations,
+                (SELECT COUNT(DISTINCT ofm.tarih)
+                 FROM oda_fiyat_musaitlik ofm
+                 WHERE ofm.otel_id = @hotelId
+                   AND ofm.tarih >= CONVERT(date, GETDATE())
+                   AND ofm.tarih < DATEADD(day, 30, CONVERT(date, GETDATE()))
+                   AND ofm.indirimli_fiyat IS NOT NULL
+                   AND ofm.indirimli_fiyat > 0
+                   AND ofm.indirimli_fiyat < ofm.gecelik_fiyat) AS discounted_days_30,
+                (SELECT COUNT(*)
+                 FROM kampanya_oteller ko
+                 WHERE ko.otel_id = @hotelId
+                   AND ko.katilim_durumu = N'Aktif'
+                   AND SYSUTCDATETIME() >= ko.baslangic_tarihi
+                   AND SYSUTCDATETIME() <= ko.bitis_tarihi) AS active_campaigns
+            FROM rezervasyonlar r
+            WHERE r.otel_id = @hotelId;";
+
+        await using (var widgetCommand = new SqlCommand(widgetSql, connection))
         {
-            const string favoritesSql = """
-                SELECT COUNT(DISTINCT uf.user_id)
-                FROM user_favori_oteller uf
-                WHERE uf.otel_id = @hotelId
-                  AND COALESCE(uf.aktif_mi, 1) = 1
-                  AND uf.kaldirilma_tarihi IS NULL;
-                """;
-
-            await using var favCommand = new SqlCommand(favoritesSql, connection);
-            favCommand.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
-            var raw = await favCommand.ExecuteScalarAsync(cancellationToken);
-            var favCount = raw is null || raw == DBNull.Value ? 0 : Convert.ToInt32(raw, CultureInfo.InvariantCulture);
-
-            model.SummaryCards.Add(new PartnerStatCardViewModel
+            widgetCommand.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
+            await using var widgetReader = await widgetCommand.ExecuteReaderAsync(cancellationToken);
+            if (await widgetReader.ReadAsync(cancellationToken))
             {
-                Label = "Favoriye Ekleme",
-                Value = favCount.ToString(CultureInfo.InvariantCulture),
-                Description = $"Otelinizi {favCount} kisi favorilerine ekledi. Favorilere eklenen kullanicilari gorebilmek icin abone olunuz. Abone olduktan sonra otellerinizi begenenlere indirim kampanyalarindan haberdar eder, indirimlerinizi favori kullanicilara da gonderebilirsiniz.",
-                IconClass = "fa-heart",
-                ToneClass = "info"
-            });
+                var total = SafeInt(widgetReader, 0);
+                var cancelled = SafeInt(widgetReader, 1);
+                var corporate = SafeInt(widgetReader, 2);
+                var discountedDays = SafeInt(widgetReader, 3);
+                var activeCampaigns = SafeInt(widgetReader, 4);
+
+                model.WidgetCards.Add(new PartnerStatCardViewModel { Label = "Toplam Rezervasyon", Value = total.ToString(), Description = "Tüm zamanlar", IconClass = "fa-calendar-check", ToneClass = "primary" });
+                model.WidgetCards.Add(new PartnerStatCardViewModel { Label = "İptal Rezervasyon", Value = cancelled.ToString(), Description = "Otel iptalleri", IconClass = "fa-ban", ToneClass = "danger" });
+                model.WidgetCards.Add(new PartnerStatCardViewModel { Label = "Firma Rezervasyonu", Value = corporate.ToString(), Description = "Kurumsal kaynak", IconClass = "fa-building", ToneClass = "info" });
+                model.WidgetCards.Add(new PartnerStatCardViewModel { Label = "İndirimli Gün", Value = discountedDays.ToString(), Description = "Önümüzdeki 30 gün", IconClass = "fa-tags", ToneClass = "success" });
+                model.WidgetCards.Add(new PartnerStatCardViewModel { Label = "Kampanya Katılımı", Value = activeCampaigns.ToString(), Description = "Aktif kampanya", IconClass = "fa-bullhorn", ToneClass = "warning" });
+                model.WidgetCards.Add(new PartnerStatCardViewModel { Label = "Aboneliklerim", Value = "—", Description = "Geliştirilecek", IconClass = "fa-bell", ToneClass = "secondary" });
+            }
         }
 
         const string trendSql = @"
@@ -179,6 +199,19 @@ public class PartnerService : IPartnerService
             8,
             cancellationToken);
         model.UpcomingReservations = upcomingReservations.Items;
+
+        var recentReservations = await LoadReservationsAsync(
+            connection,
+            context.SelectedHotel.HotelId,
+            context.SelectedHotel.HotelName,
+            null,
+            null,
+            "all",
+            "all",
+            1,
+            12,
+            cancellationToken);
+        model.RecentReservations = recentReservations.Items;
         const string dashboardPolicySql = @"
             SELECT
                 (
@@ -750,8 +783,8 @@ public class PartnerService : IPartnerService
             SelectedRoomId = selectedRoomId,
             MonthKey = monthStart.ToString("yyyy-MM", CultureInfo.InvariantCulture),
             MonthLabel = monthStart.ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
-            PreviousMonthKey = monthStart.AddMonths(-1).ToString("yyyy-MM", CultureInfo.InvariantCulture),
-            NextMonthKey = monthStart.AddMonths(1).ToString("yyyy-MM", CultureInfo.InvariantCulture),
+            PreviousMonthKey = ClampPricingMonth(monthStart.AddMonths(-1)).ToString("yyyy-MM", CultureInfo.InvariantCulture),
+            NextMonthKey = ClampPricingMonth(monthStart.AddMonths(1)).ToString("yyyy-MM", CultureInfo.InvariantCulture),
             MonthOptions = BuildMonthOptions(monthStart),
             Rooms = rooms,
             SummaryCards = BuildPricingSummaryCards(rooms, pricingEntries, selectedRoomId, inclusiveTax.VatPercent, inclusiveTax.AccommodationPercent),
@@ -857,7 +890,13 @@ public class PartnerService : IPartnerService
             return (false, "Baslangic tarihi bitis tarihinden buyuk olamaz.");
         }
 
-        // Kural: indirimli fiyat giriliyorsa indirim secimi zorunlu (oda_fiyat_musaitlik.kampanya_id indirim_id gibi kullanilir).
+        var pricingWindowError = ValidatePricingWindow(request.DateFrom.Date, request.DateTo.Date);
+        if (pricingWindowError is not null)
+        {
+            return (false, pricingWindowError);
+        }
+
+        // Kural: indirimli fiyat giriliyorsa indirim secimi zorunlu.
         if (!request.ClearDiscountPrice && request.DiscountPrice.HasValue)
         {
             if (!request.DiscountId.HasValue || request.DiscountId.Value <= 0)
@@ -954,6 +993,8 @@ public class PartnerService : IPartnerService
             DateOnly.FromDateTime(request.DateTo.Date),
             cancellationToken);
 
+        var hasDiscountIdColumn = await ColumnExistsAsync(connection, "oda_fiyat_musaitlik", "indirim_id", cancellationToken);
+
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
@@ -996,7 +1037,8 @@ public class PartnerService : IPartnerService
                         "close" => true,
                         _ => existing?.IsClosed ?? false
                     };
-                    var discountId = discount?.DiscountId ?? existing?.CampaignId;
+                    var discountId = discount?.DiscountId ?? existing?.DiscountId;
+                    var campaignId = hasDiscountIdColumn ? existing?.CampaignId : null;
                     var campaignLabel = !string.IsNullOrWhiteSpace(request.CampaignLabel)
                         ? request.CampaignLabel.Trim()
                         : existing?.CampaignLabel;
@@ -1008,13 +1050,41 @@ public class PartnerService : IPartnerService
                         ? request.PriceNote.Trim()
                         : existing?.PriceNote;
 
-                    const string upsertSql = @"
+                    var upsertSql = hasDiscountIdColumn
+                        ? @"
                         IF EXISTS (SELECT 1 FROM oda_fiyat_musaitlik WHERE otel_id = @hotelId AND oda_tip_id = @roomId AND tarih = @date)
                         BEGIN
                             UPDATE oda_fiyat_musaitlik
                             SET gecelik_fiyat = @basePrice,
                                 indirimli_fiyat = @discountPrice,
+                                indirim_id = @discountId,
                                 kampanya_id = @campaignId,
+                                toplam_oda_sayisi = @stock,
+                                minimum_geceleme = @minStay,
+                                maksimum_geceleme = @maxStay,
+                                kapali_satis = @closeSale,
+                                kampanya_etiketi = @campaignLabel,
+                                fiyat_notu = @priceNote,
+                                guncelleyen_kullanici_id = @updatedBy,
+                                guncellenme_tarihi = CURRENT_TIMESTAMP
+                            WHERE otel_id = @hotelId
+                              AND oda_tip_id = @roomId
+                              AND tarih = @date;
+                        END
+                        ELSE
+                        BEGIN
+                            INSERT INTO oda_fiyat_musaitlik
+                            (otel_id, oda_tip_id, tarih, gecelik_fiyat, indirimli_fiyat, indirim_id, kampanya_id, toplam_oda_sayisi, satilan_oda_sayisi, bloke_oda_sayisi, minimum_geceleme, maksimum_geceleme, kapali_satis, sadece_gunubirlik, kampanya_etiketi, fiyat_notu, guncelleyen_kullanici_id)
+                            VALUES
+                            (@hotelId, @roomId, @date, @basePrice, @discountPrice, @discountId, @campaignId, @stock, 0, 0, @minStay, @maxStay, @closeSale, 0, @campaignLabel, @priceNote, @updatedBy);
+                        END;"
+                        : @"
+                        IF EXISTS (SELECT 1 FROM oda_fiyat_musaitlik WHERE otel_id = @hotelId AND oda_tip_id = @roomId AND tarih = @date)
+                        BEGIN
+                            UPDATE oda_fiyat_musaitlik
+                            SET gecelik_fiyat = @basePrice,
+                                indirimli_fiyat = @discountPrice,
+                                kampanya_id = @discountId,
                                 toplam_oda_sayisi = @stock,
                                 minimum_geceleme = @minStay,
                                 maksimum_geceleme = @maxStay,
@@ -1032,7 +1102,7 @@ public class PartnerService : IPartnerService
                             INSERT INTO oda_fiyat_musaitlik
                             (otel_id, oda_tip_id, tarih, gecelik_fiyat, indirimli_fiyat, kampanya_id, toplam_oda_sayisi, satilan_oda_sayisi, bloke_oda_sayisi, minimum_geceleme, maksimum_geceleme, kapali_satis, sadece_gunubirlik, kampanya_etiketi, fiyat_notu, guncelleyen_kullanici_id)
                             VALUES
-                            (@hotelId, @roomId, @date, @basePrice, @discountPrice, @campaignId, @stock, 0, 0, @minStay, @maxStay, @closeSale, 0, @campaignLabel, @priceNote, @updatedBy);
+                            (@hotelId, @roomId, @date, @basePrice, @discountPrice, @discountId, @stock, 0, 0, @minStay, @maxStay, @closeSale, 0, @campaignLabel, @priceNote, @updatedBy);
                         END;";
 
                     await using var upsertCommand = new SqlCommand(upsertSql, connection, (SqlTransaction)transaction);
@@ -1041,7 +1111,8 @@ public class PartnerService : IPartnerService
                     upsertCommand.Parameters.AddWithValue("@date", date);
                     upsertCommand.Parameters.AddWithValue("@basePrice", basePrice);
                     upsertCommand.Parameters.AddWithValue("@discountPrice", discountPrice.HasValue ? discountPrice.Value : DBNull.Value);
-                    upsertCommand.Parameters.AddWithValue("@campaignId", discountId.HasValue ? discountId.Value : DBNull.Value);
+                    upsertCommand.Parameters.AddWithValue("@discountId", discountId.HasValue ? discountId.Value : DBNull.Value);
+                    upsertCommand.Parameters.AddWithValue("@campaignId", campaignId.HasValue ? campaignId.Value : DBNull.Value);
                     upsertCommand.Parameters.AddWithValue("@stock", totalRooms);
                     upsertCommand.Parameters.AddWithValue("@minStay", minStay);
                     upsertCommand.Parameters.AddWithValue("@maxStay", maxStay);
@@ -1510,14 +1581,7 @@ public class PartnerService : IPartnerService
         await connection.OpenAsync(cancellationToken);
         var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
         var room = await EnsureRoomBelongsToHotelAsync(connection, hotel.HotelId, request.RoomId, cancellationToken);
-        var targetDirectory = Path.Combine(
-            _environment.WebRootPath,
-            "uploads",
-            "hotels",
-            "partner",
-            request.HotelId.ToString(CultureInfo.InvariantCulture),
-            "rooms",
-            request.RoomId.ToString(CultureInfo.InvariantCulture));
+        var targetDirectory = MediaStoragePaths.RoomImagesDirectory(_environment.WebRootPath, request.HotelId, request.RoomId);
         Directory.CreateDirectory(targetDirectory);
 
         var savedPhysicalPaths = new List<string>();
@@ -1529,7 +1593,7 @@ public class PartnerService : IPartnerService
             foreach (var file in request.Files.Where(static item => item.Length > 0))
             {
                 var storedImage = await _imageStorageService.SaveAsWebpAsync(file, targetDirectory, $"partner-oda-{room.RoomId}", cancellationToken);
-                var relativePath = $"/uploads/hotels/partner/{request.HotelId}/rooms/{request.RoomId}/{storedImage.FileName}";
+                var relativePath = MediaStoragePaths.RoomImagesUrl(request.HotelId, request.RoomId, storedImage.FileName);
                 savedPhysicalPaths.Add(Path.Combine(targetDirectory, storedImage.FileName));
 
                 const string insertSql = @"
@@ -1661,6 +1725,7 @@ public class PartnerService : IPartnerService
             Form = await LoadHotelInfoFormAsync(connection, context.SelectedHotel.HotelId, cancellationToken)
         };
 
+        model.HotelTypes = await LoadHotelTypeOptionsAsync(connection, cancellationToken);
         model.AvailableAmenities = await LoadAmenityOptionsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
         model.Form.SelectedAmenityIds = model.AvailableAmenities.Where(static item => item.IsSelected).Select(static item => item.AmenityId).ToList();
         return model;
@@ -1671,6 +1736,12 @@ public class PartnerService : IPartnerService
         if (string.IsNullOrWhiteSpace(request.HotelName))
         {
             return (false, "Otel adi bos birakilamaz.");
+        }
+
+        var numericValidation = ValidateHotelInfoNumbers(request);
+        if (!string.IsNullOrWhiteSpace(numericValidation))
+        {
+            return (false, numericValidation);
         }
 
         await using var connection = new SqlConnection(_connectionString);
@@ -1684,8 +1755,10 @@ public class PartnerService : IPartnerService
                 UPDATE oteller
                 SET otel_adi = @hotelName,
                     otel_turu = @hotelType,
+                    otel_tipi_id = @hotelTypeId,
                     turizm_belge_no = @tourismDocumentNo,
                     turizm_belge_turu = @tourismDocumentType,
+                    ulke = @country,
                     kisa_aciklama = @shortDescription,
                     uzun_aciklama = @description,
                     tam_adres = @address,
@@ -1700,7 +1773,12 @@ public class PartnerService : IPartnerService
                     eposta = @contactEmail,
                     telefon_1 = @hotelPhone,
                     telefon_2 = @hotelPhone2,
+                    rezervasyon_telefonu = @reservationPhone,
                     faks = @fax,
+                    satis_kontak_adi = @salesContactName,
+                    satis_kontak_telefonu = @salesContactPhone,
+                    satis_kontak_eposta = @salesContactEmail,
+                    satis_notlari = @salesNotes,
                     check_in_saati = @checkIn,
                     check_out_saati = @checkOut,
                     gec_check_out_mumkun_mu = @lateCheckoutAvailable,
@@ -1715,9 +1793,6 @@ public class PartnerService : IPartnerService
                     kat_sayisi = @floorCount,
                     asansor_var_mi = @elevatorAvailable,
                     asansor_sayisi = @elevatorCount,
-                    varsayilan_komisyon_orani = @defaultCommissionRate,
-                    depozito_tutari = @depositAmount,
-                    depozito_iade_suresi = @depositReturnDays,
                     konusulan_diller = @spokenLanguages,
                     video_url = @videoUrl,
                     sanal_tur_url = @virtualTourUrl,
@@ -1728,9 +1803,12 @@ public class PartnerService : IPartnerService
             {
                 updateCommand.Parameters.AddWithValue("@hotelId", hotel.HotelId);
                 updateCommand.Parameters.AddWithValue("@hotelName", request.HotelName.Trim());
-                updateCommand.Parameters.AddWithValue("@hotelType", request.HotelType);
+                var hotelType = await ResolvePartnerHotelTypeAsync(connection, request.HotelTypeId, (SqlTransaction)transaction, cancellationToken);
+                updateCommand.Parameters.AddWithValue("@hotelType", hotelType.Name);
+                updateCommand.Parameters.AddWithValue("@hotelTypeId", hotelType.Id);
                 updateCommand.Parameters.AddWithValue("@tourismDocumentNo", (object?)request.TourismDocumentNo ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@tourismDocumentType", string.IsNullOrWhiteSpace(request.TourismDocumentType) ? DBNull.Value : request.TourismDocumentType);
+                updateCommand.Parameters.AddWithValue("@country", string.IsNullOrWhiteSpace(request.Country) ? "Türkiye" : request.Country.Trim());
                 updateCommand.Parameters.AddWithValue("@shortDescription", (object?)request.ShortDescription ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@description", (object?)request.Description ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@address", (object?)request.Address ?? DBNull.Value);
@@ -1739,19 +1817,24 @@ public class PartnerService : IPartnerService
                 updateCommand.Parameters.AddWithValue("@neighborhood", (object?)request.Neighborhood ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@postalCode", (object?)request.PostalCode ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@locationDescription", (object?)request.LocationDescription ?? DBNull.Value);
-                updateCommand.Parameters.AddWithValue("@latitude", request.Latitude.HasValue ? request.Latitude.Value : DBNull.Value);
-                updateCommand.Parameters.AddWithValue("@longitude", request.Longitude.HasValue ? request.Longitude.Value : DBNull.Value);
+                updateCommand.Parameters.AddWithValue("@latitude", request.Latitude.HasValue ? decimal.Round(request.Latitude.Value, 8) : DBNull.Value);
+                updateCommand.Parameters.AddWithValue("@longitude", request.Longitude.HasValue ? decimal.Round(request.Longitude.Value, 8) : DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@website", (object?)request.Website ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@contactEmail", (object?)request.ContactEmail ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@hotelPhone", (object?)request.HotelPhone ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@hotelPhone2", (object?)request.HotelPhone2 ?? DBNull.Value);
+                updateCommand.Parameters.AddWithValue("@reservationPhone", (object?)request.ReservationPhone ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@fax", (object?)request.Fax ?? DBNull.Value);
+                updateCommand.Parameters.AddWithValue("@salesContactName", (object?)request.SalesContactName ?? DBNull.Value);
+                updateCommand.Parameters.AddWithValue("@salesContactPhone", (object?)request.SalesContactPhone ?? DBNull.Value);
+                updateCommand.Parameters.AddWithValue("@salesContactEmail", (object?)request.SalesContactEmail ?? DBNull.Value);
+                updateCommand.Parameters.AddWithValue("@salesNotes", (object?)request.SalesNotes ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@checkIn", string.IsNullOrWhiteSpace(request.CheckInTime) ? DBNull.Value : TimeSpan.Parse(request.CheckInTime));
                 updateCommand.Parameters.AddWithValue("@checkOut", string.IsNullOrWhiteSpace(request.CheckOutTime) ? DBNull.Value : TimeSpan.Parse(request.CheckOutTime));
                 updateCommand.Parameters.AddWithValue("@lateCheckoutAvailable", request.LateCheckoutAvailable ? 1 : 0);
-                updateCommand.Parameters.AddWithValue("@lateCheckoutFee", request.LateCheckoutFee.HasValue ? request.LateCheckoutFee.Value : DBNull.Value);
+                updateCommand.Parameters.AddWithValue("@lateCheckoutFee", request.LateCheckoutFee.HasValue ? decimal.Round(request.LateCheckoutFee.Value, 2) : DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@earlyCheckinAvailable", request.EarlyCheckinAvailable ? 1 : 0);
-                updateCommand.Parameters.AddWithValue("@earlyCheckinFee", request.EarlyCheckinFee.HasValue ? request.EarlyCheckinFee.Value : DBNull.Value);
+                updateCommand.Parameters.AddWithValue("@earlyCheckinFee", request.EarlyCheckinFee.HasValue ? decimal.Round(request.EarlyCheckinFee.Value, 2) : DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@minStay", request.MinStay);
                 updateCommand.Parameters.AddWithValue("@maxStay", request.MaxStay);
                 updateCommand.Parameters.AddWithValue("@starCount", request.StarCount.HasValue ? request.StarCount.Value : DBNull.Value);
@@ -1760,9 +1843,6 @@ public class PartnerService : IPartnerService
                 updateCommand.Parameters.AddWithValue("@floorCount", request.FloorCount.HasValue ? request.FloorCount.Value : DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@elevatorAvailable", request.ElevatorAvailable ? 1 : 0);
                 updateCommand.Parameters.AddWithValue("@elevatorCount", request.ElevatorCount);
-                updateCommand.Parameters.AddWithValue("@defaultCommissionRate", request.DefaultCommissionRate);
-                updateCommand.Parameters.AddWithValue("@depositAmount", request.DepositAmount.HasValue ? request.DepositAmount.Value : DBNull.Value);
-                updateCommand.Parameters.AddWithValue("@depositReturnDays", request.DepositReturnDays.HasValue ? request.DepositReturnDays.Value : DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@spokenLanguages", string.IsNullOrWhiteSpace(request.SpokenLanguages) ? DBNull.Value : request.SpokenLanguages);
                 updateCommand.Parameters.AddWithValue("@videoUrl", (object?)request.VideoUrl ?? DBNull.Value);
                 updateCommand.Parameters.AddWithValue("@virtualTourUrl", (object?)request.VirtualTourUrl ?? DBNull.Value);
@@ -1873,7 +1953,7 @@ public class PartnerService : IPartnerService
         await connection.OpenAsync(cancellationToken);
         var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
 
-        var targetDirectory = Path.Combine(_environment.WebRootPath, "uploads", "hotels", "partner", hotel.HotelId.ToString(CultureInfo.InvariantCulture));
+        var targetDirectory = MediaStoragePaths.HotelImagesDirectory(_environment.WebRootPath, hotel.HotelId);
         Directory.CreateDirectory(targetDirectory);
         var savedPhysicalPaths = new List<string>();
         var displayOrder = request.DisplayOrder;
@@ -1887,7 +1967,7 @@ public class PartnerService : IPartnerService
                 var storedImage = await _imageStorageService.SaveAsWebpAsync(file, targetDirectory, $"otel-{hotel.HotelId}", cancellationToken);
                 var fileName = storedImage.FileName;
                 savedPhysicalPaths.Add(Path.Combine(targetDirectory, fileName));
-                var relativePath = $"/uploads/hotels/partner/{hotel.HotelId}/{fileName}";
+                var relativePath = MediaStoragePaths.HotelImagesUrl(hotel.HotelId, fileName);
                 const string insertSql = @"
                     INSERT INTO otel_gorselleri
                     (otel_id, gorsel_url, gorsel_turu, baslik, aciklama, kapak_fotografi_mi, one_cikan, siralama, boyut_kb, onay_durumu, yukleyen_kullanici_id)
@@ -2625,70 +2705,171 @@ public class PartnerService : IPartnerService
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, hotelId, "Basvuru ve Evraklar", "Partner onay surecini, evraklarini ve yayin durumunu bu alandan yonetin.", "preferences", cancellationToken);
 
-        const string sql = @"
-            SELECT TOP (1) p.id, p.firma_unvani, p.firma_turu, p.yetkili_ad_soyad, COALESCE(p.yetkili_gorev, ''),
-                   p.yetkili_eposta, p.yetkili_telefon, p.vergi_dairesi, p.vergi_numarasi, p.yetkili_tc_no,
-                   p.fatura_adresi, p.fatura_il, p.fatura_ilce, COALESCE(o.mahalle, ''),
-                   p.banka_adi, COALESCE(p.banka_subesi, ''), p.iban, COALESCE(p.web_sitesi, ''), COALESCE(p.aciklama, ''),
-                   p.onay_durumu, p.olusturulma_tarihi, p.onay_tarihi, COALESCE(p.red_nedeni, ''),
-                   o.otel_adi, u.email_dogrulama_tarihi
+        // Not: Tek sorguda oteller'e LEFT JOIN + ORDER BY, büyük veride tarama/sıralama yapıp timeout'a neden olabiliyor.
+        // Partner/user verisini küçük bir sorguda, seçili otel bilgisini ayrı hedefli sorguda alıyoruz.
+        const string partnerSql = @"
+            SELECT TOP (1)
+                p.id,
+                p.firma_unvani,
+                p.firma_turu,
+                p.yetkili_ad_soyad,
+                COALESCE(p.yetkili_gorev, '') AS yetkili_gorev,
+                p.yetkili_eposta,
+                p.yetkili_telefon,
+                p.vergi_dairesi,
+                p.vergi_numarasi,
+                p.yetkili_tc_no,
+                p.fatura_adresi,
+                p.fatura_il,
+                p.fatura_ilce,
+                p.banka_adi,
+                COALESCE(p.banka_subesi, '') AS banka_subesi,
+                p.iban,
+                COALESCE(p.web_sitesi, '') AS web_sitesi,
+                COALESCE(p.aciklama, '') AS aciklama,
+                p.onay_durumu,
+                p.olusturulma_tarihi,
+                p.onay_tarihi,
+                COALESCE(p.red_nedeni, '') AS red_nedeni,
+                p.otel_tipi_id,
+                u.email_dogrulama_tarihi
             FROM partner_detaylari p
             INNER JOIN users u ON u.id = p.kullanici_id
-            LEFT JOIN oteller o ON o.partner_id = p.id
-            WHERE p.kullanici_id = @userId
-            ORDER BY o.id ASC;";
+            WHERE p.kullanici_id = @userId;";
+
+        const string hotelSql = @"
+            SELECT TOP (1)
+                o.otel_adi,
+                COALESCE(o.mahalle, '') AS mahalle,
+                o.otel_tipi_id,
+                COALESCE(ht.tip_adi, o.otel_turu, N'Otel') AS otel_tipi
+            FROM oteller o
+            LEFT JOIN otel_tipleri ht ON ht.id = o.otel_tipi_id
+            WHERE o.id = @hotelId;";
 
         var model = new PartnerApplicationPageViewModel { Shell = context.Shell };
-        await using (var command = new SqlCommand(sql, connection))
+        model.HotelTypes = await LoadHotelTypeOptionsAsync(connection, cancellationToken);
+        long partnerId;
+        string companyName;
+        string companyType;
+        string contactName;
+        string contactTitle;
+        string email;
+        string phone;
+        string taxOffice;
+        string taxNumber;
+        string contactTcNo;
+        string address;
+        string city;
+        string district;
+        string bankName;
+        string bankBranch;
+        string iban;
+        string website;
+        string description;
+        string statusText;
+        DateTime registrationDate;
+        DateTime? approvalDate;
+        string rejectionReason;
+        int? partnerHotelTypeId;
+        bool emailVerified;
+
+        await using (var command = new SqlCommand(partnerSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
+            command.CommandTimeout = 60;
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             if (!await reader.ReadAsync(cancellationToken))
             {
                 throw new InvalidOperationException("Partner basvuru kaydi bulunamadi.");
             }
 
-            var statusText = reader.GetString(19);
+            partnerId = reader.GetInt64(reader.GetOrdinal("id"));
+            companyName = reader.GetString(reader.GetOrdinal("firma_unvani"));
+            companyType = reader.GetString(reader.GetOrdinal("firma_turu"));
+            contactName = reader.GetString(reader.GetOrdinal("yetkili_ad_soyad"));
+            contactTitle = reader.GetString(reader.GetOrdinal("yetkili_gorev"));
+            email = reader.GetString(reader.GetOrdinal("yetkili_eposta"));
+            phone = reader.GetString(reader.GetOrdinal("yetkili_telefon"));
+            taxOffice = reader.GetString(reader.GetOrdinal("vergi_dairesi"));
+            taxNumber = reader.GetString(reader.GetOrdinal("vergi_numarasi"));
+            contactTcNo = reader.GetString(reader.GetOrdinal("yetkili_tc_no"));
+            address = reader.GetString(reader.GetOrdinal("fatura_adresi"));
+            city = reader.GetString(reader.GetOrdinal("fatura_il"));
+            district = reader.GetString(reader.GetOrdinal("fatura_ilce"));
+            bankName = reader.GetString(reader.GetOrdinal("banka_adi"));
+            bankBranch = reader.GetString(reader.GetOrdinal("banka_subesi"));
+            iban = reader.GetString(reader.GetOrdinal("iban"));
+            website = reader.GetString(reader.GetOrdinal("web_sitesi"));
+            description = reader.GetString(reader.GetOrdinal("aciklama"));
+            statusText = reader.GetString(reader.GetOrdinal("onay_durumu"));
+            registrationDate = reader.GetDateTime(reader.GetOrdinal("olusturulma_tarihi"));
+            approvalDate = reader.IsDBNull(reader.GetOrdinal("onay_tarihi")) ? null : reader.GetDateTime(reader.GetOrdinal("onay_tarihi"));
+            rejectionReason = reader.GetString(reader.GetOrdinal("red_nedeni"));
+            partnerHotelTypeId = reader.IsDBNull(reader.GetOrdinal("otel_tipi_id")) ? null : reader.GetInt32(reader.GetOrdinal("otel_tipi_id"));
+            emailVerified = !reader.IsDBNull(reader.GetOrdinal("email_dogrulama_tarihi"));
+
             model.Status = new PartnerApplicationStatusViewModel
             {
-                PartnerId = reader.GetInt64(0),
-                CompanyName = reader.GetString(1),
-                HotelName = reader.IsDBNull(23) ? context.SelectedHotel.HotelName : reader.GetString(23),
+                PartnerId = partnerId,
+                CompanyName = companyName,
+                HotelName = context.SelectedHotel.HotelName,
                 StatusText = statusText,
                 StatusToneClass = MapPartnerApprovalTone(statusText),
-                RegistrationDateText = FormatDate(reader.GetDateTime(20)),
-                ApprovalDateText = reader.IsDBNull(21) ? null : FormatDate(reader.GetDateTime(21)),
-                RejectionReason = reader.IsDBNull(22) ? null : EmptyToNull(reader.GetString(22)),
-                EmailVerified = !reader.IsDBNull(24),
+                RegistrationDateText = FormatDate(registrationDate),
+                ApprovalDateText = approvalDate.HasValue ? FormatDate(approvalDate.Value) : null,
+                RejectionReason = string.IsNullOrWhiteSpace(rejectionReason) ? null : EmptyToNull(rejectionReason),
+                EmailVerified = emailVerified,
                 CanPublish = string.Equals(statusText, "Onaylandi", StringComparison.OrdinalIgnoreCase),
                 PublicationHint = string.Equals(statusText, "Onaylandi", StringComparison.OrdinalIgnoreCase)
                     ? "Admin onayi tamamlandi. Tesisinizi yayina almak icin icerik ve fiyat alanlarini tamamlayin."
                     : "Admin onayi tamamlanana kadar tesisiniz kamuya acik listelerde ve aramalarda gorunmez."
             };
 
+            string hotelName = context.SelectedHotel.HotelName;
+            string? neighborhood = null;
+            int? hotelTypeId = null;
+            string hotelType = "Otel";
+            if (context.SelectedHotel.HotelId > 0)
+            {
+                await using var hotelCommand = new SqlCommand(hotelSql, connection);
+                hotelCommand.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
+                hotelCommand.CommandTimeout = 60;
+                await using var hotelReader = await hotelCommand.ExecuteReaderAsync(cancellationToken);
+                if (await hotelReader.ReadAsync(cancellationToken))
+                {
+                    hotelName = hotelReader.IsDBNull(hotelReader.GetOrdinal("otel_adi")) ? hotelName : hotelReader.GetString(hotelReader.GetOrdinal("otel_adi"));
+                    neighborhood = hotelReader.GetString(hotelReader.GetOrdinal("mahalle"));
+                    hotelTypeId = hotelReader.IsDBNull(hotelReader.GetOrdinal("otel_tipi_id")) ? null : hotelReader.GetInt32(hotelReader.GetOrdinal("otel_tipi_id"));
+                    hotelType = hotelReader.GetString(hotelReader.GetOrdinal("otel_tipi"));
+                }
+            }
+
             model.Form = new PartnerApplicationProfileForm
             {
                 HotelId = context.SelectedHotel.HotelId,
-                PartnerId = reader.GetInt64(0),
-                CompanyName = reader.GetString(1),
-                CompanyType = reader.GetString(2),
-                ContactName = reader.GetString(3),
-                ContactTitle = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
-                Email = reader.GetString(5),
-                Phone = reader.GetString(6),
-                TaxOffice = reader.GetString(7),
-                TaxNumber = reader.GetString(8),
-                ContactTcNo = reader.GetString(9),
-                Address = reader.GetString(10),
-                City = reader.GetString(11),
-                District = reader.GetString(12),
-                Neighborhood = reader.IsDBNull(13) ? null : EmptyToNull(reader.GetString(13)),
-                BankName = reader.GetString(14),
-                BankBranch = reader.IsDBNull(15) ? null : EmptyToNull(reader.GetString(15)),
-                Iban = reader.GetString(16),
-                Website = reader.IsDBNull(17) ? null : EmptyToNull(reader.GetString(17)),
-                Description = reader.IsDBNull(18) ? null : EmptyToNull(reader.GetString(18)),
-                HotelName = reader.IsDBNull(23) ? context.SelectedHotel.HotelName : reader.GetString(23)
+                PartnerId = partnerId,
+                CompanyName = companyName,
+                CompanyType = companyType,
+                ContactName = contactName,
+                ContactTitle = contactTitle,
+                Email = email,
+                Phone = phone,
+                TaxOffice = taxOffice,
+                TaxNumber = taxNumber,
+                ContactTcNo = contactTcNo,
+                Address = address,
+                City = city,
+                District = district,
+                Neighborhood = string.IsNullOrWhiteSpace(neighborhood) ? null : EmptyToNull(neighborhood),
+                BankName = bankName,
+                BankBranch = string.IsNullOrWhiteSpace(bankBranch) ? null : EmptyToNull(bankBranch),
+                Iban = iban,
+                Website = string.IsNullOrWhiteSpace(website) ? null : EmptyToNull(website),
+                Description = string.IsNullOrWhiteSpace(description) ? null : EmptyToNull(description),
+                HotelName = string.IsNullOrWhiteSpace(hotelName) ? context.SelectedHotel.HotelName : hotelName,
+                HotelTypeId = hotelTypeId ?? partnerHotelTypeId,
+                HotelType = string.IsNullOrWhiteSpace(hotelType) ? "Otel" : hotelType
             };
         }
 
@@ -2710,6 +2891,7 @@ public class PartnerService : IPartnerService
 
         try
         {
+            var hotelType = await ResolvePartnerHotelTypeAsync(connection, request.HotelTypeId, (SqlTransaction)transaction, cancellationToken);
             const string partnerSql = @"
                 UPDATE partner_detaylari
                 SET firma_unvani = @companyName,
@@ -2730,6 +2912,7 @@ public class PartnerService : IPartnerService
                     hesap_sahibi_adi = @contactName,
                     web_sitesi = @website,
                     aciklama = @description,
+                    otel_tipi_id = @hotelTypeId,
                     guncellenme_tarihi = GETDATE()
                 WHERE id = @partnerId
                   AND kullanici_id = @userId;";
@@ -2737,12 +2920,15 @@ public class PartnerService : IPartnerService
             await using (var command = new SqlCommand(partnerSql, connection, (SqlTransaction)transaction))
             {
                 BindPartnerApplicationParameters(command, request, userId);
+                command.Parameters.AddWithValue("@hotelTypeId", hotelType.Id);
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
 
             const string hotelSql = @"
                 UPDATE oteller
                 SET otel_adi = @hotelName,
+                    otel_tipi_id = @hotelTypeId,
+                    otel_turu = @hotelType,
                     sehir = @city,
                     ilce = @district,
                     mahalle = @neighborhood,
@@ -2762,6 +2948,8 @@ public class PartnerService : IPartnerService
             await using (var command = new SqlCommand(hotelSql, connection, (SqlTransaction)transaction))
             {
                 BindPartnerApplicationParameters(command, request, userId);
+                command.Parameters.AddWithValue("@hotelTypeId", hotelType.Id);
+                command.Parameters.AddWithValue("@hotelType", hotelType.Name);
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
 
@@ -2812,7 +3000,8 @@ public class PartnerService : IPartnerService
             ContextId = request.PartnerId,
             OwnerUserId = userId,
             Category = "partner-application",
-            VisibilityScope = "private"
+            VisibilityScope = "private",
+            HotelId = request.HotelId
         }, cancellationToken);
 
         const string sql = @"
@@ -2862,7 +3051,7 @@ public class PartnerService : IPartnerService
             : (false, "Silinecek evrak bulunamadi.");
     }
 
-    public async Task<PartnerSupportPageViewModel> GetSupportAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
+    public async Task<PartnerSupportPageViewModel> GetSupportAsync(long userId, long? hotelId = null, long? ticketId = null, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -2870,7 +3059,8 @@ public class PartnerService : IPartnerService
         var model = new PartnerSupportPageViewModel
         {
             Shell = context.Shell,
-            CreateTicketForm = new PartnerSupportCreateTicketRequest { HotelId = context.SelectedHotel.HotelId }
+            CreateTicketForm = new PartnerSupportCreateTicketRequest { HotelId = context.SelectedHotel.HotelId },
+            SendMessageForm = new PartnerSupportSendMessageRequest { HotelId = context.SelectedHotel.HotelId }
         };
 
         const string summarySql = @"
@@ -2896,7 +3086,7 @@ public class PartnerService : IPartnerService
         }
 
         const string ticketSql = @"
-            SELECT TOP (10) talep_no, konu, kategori, oncelik, durum, son_mesaj_tarihi, id
+            SELECT TOP (50) talep_no, konu, kategori, oncelik, durum, son_mesaj_tarihi, id, olusturulma_tarihi
             FROM partner_destek_talepleri
             WHERE partner_id = @partnerId
             ORDER BY son_mesaj_tarihi DESC, id DESC;";
@@ -2917,6 +3107,79 @@ public class PartnerService : IPartnerService
                     UpdatedText = FormatDateTime(reader.IsDBNull(5) ? null : reader.GetDateTime(5)),
                     TicketId = reader.GetInt64(6)
                 });
+            }
+        }
+
+        // seçili talep: query parametre varsa onu kullan; yoksa ilk talep
+        model.SelectedTicketId = (ticketId.HasValue && ticketId.Value > 0) ? ticketId.Value : model.Tickets.FirstOrDefault()?.TicketId;
+        if (model.SelectedTicketId.HasValue && model.SelectedTicketId.Value > 0)
+        {
+            var selectedId = model.SelectedTicketId.Value;
+            foreach (var t in model.Tickets)
+            {
+                t.IsSelected = t.TicketId == selectedId;
+            }
+
+            const string detailSql = @"
+                SELECT TOP (1) id, talep_no, konu, kategori, COALESCE(oncelik,'Normal'), COALESCE(durum,'Acik'),
+                               olusturulma_tarihi, son_mesaj_tarihi
+                FROM partner_destek_talepleri
+                WHERE partner_id = @partnerId AND id = @ticketId;";
+            await using (var cmd = new SqlCommand(detailSql, connection))
+            {
+                cmd.Parameters.AddWithValue("@partnerId", context.SelectedHotel.PartnerId);
+                cmd.Parameters.AddWithValue("@ticketId", selectedId);
+                await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
+                if (await r.ReadAsync(cancellationToken))
+                {
+                    model.SelectedTicket = new PartnerSupportTicketDetailViewModel
+                    {
+                        TicketId = r.GetInt64(0),
+                        TicketNo = r.GetString(1),
+                        Subject = r.GetString(2),
+                        Category = r.GetString(3),
+                        Priority = r.GetString(4),
+                        Status = r.GetString(5),
+                        CreatedText = FormatDateTime(r.IsDBNull(6) ? null : r.GetDateTime(6)),
+                        UpdatedText = FormatDateTime(r.IsDBNull(7) ? null : r.GetDateTime(7))
+                    };
+                }
+            }
+
+            model.SendMessageForm.TicketId = selectedId;
+
+            const string messagesSql = @"
+                SELECT TOP (200)
+                    id,
+                    COALESCE(gonderen_tipi,'Partner') AS sender_type,
+                    COALESCE(mesaj,'') AS body,
+                    ek_dosya_yolu,
+                    olusturulma_tarihi
+                FROM partner_destek_mesajlari
+                WHERE talep_id = @ticketId
+                ORDER BY id ASC;";
+            await using (var msgCmd = new SqlCommand(messagesSql, connection))
+            {
+                msgCmd.Parameters.AddWithValue("@ticketId", selectedId);
+                await using var mr = await msgCmd.ExecuteReaderAsync(cancellationToken);
+                var tr = CultureInfo.GetCultureInfo("tr-TR");
+                while (await mr.ReadAsync(cancellationToken))
+                {
+                    var senderType = mr.IsDBNull(1) ? "Partner" : mr.GetString(1);
+                    var isPartner = string.Equals(senderType, "Partner", StringComparison.OrdinalIgnoreCase);
+                    var created = mr.IsDBNull(4) ? (DateTime?)null : mr.GetDateTime(4);
+                    var createdText = created.HasValue ? created.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm", tr) : "—";
+                    var attach = mr.IsDBNull(3) ? null : mr.GetString(3);
+                    model.Messages.Add(new PartnerSupportMessageViewModel
+                    {
+                        MessageId = mr.GetInt64(0),
+                        SenderLabel = isPartner ? "Siz" : "Destek",
+                        Body = mr.IsDBNull(2) ? string.Empty : mr.GetString(2),
+                        TimeText = createdText,
+                        IsFromPartner = isPartner,
+                        AttachmentUrl = string.IsNullOrWhiteSpace(attach) ? null : attach
+                    });
+                }
             }
         }
 
@@ -2965,6 +3228,107 @@ public class PartnerService : IPartnerService
         return model;
     }
 
+    public async Task<(bool Success, string Message)> SendSupportMessageAsync(long userId, PartnerSupportSendMessageRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.HotelId <= 0 || request.TicketId <= 0)
+        {
+            return (false, "Geçersiz istek.");
+        }
+        if (string.IsNullOrWhiteSpace(request.Message) && (request.File is null || request.File.Length <= 0))
+        {
+            return (false, "Mesaj veya dosya eklemelisiniz.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+
+        // ticket belongs to partner?
+        const string ensureSql = "SELECT COUNT(*) FROM partner_destek_talepleri WHERE id=@id AND partner_id=@partnerId;";
+        await using (var ensureCmd = new SqlCommand(ensureSql, connection))
+        {
+            ensureCmd.Parameters.AddWithValue("@id", request.TicketId);
+            ensureCmd.Parameters.AddWithValue("@partnerId", hotel.PartnerId);
+            var ok = Convert.ToInt32(await ensureCmd.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture) > 0;
+            if (!ok) return (false, "Bu talep için yetkiniz yok.");
+        }
+
+        string? attachmentUrl = null;
+        if (request.File is not null && request.File.Length > 0)
+        {
+            var ext = Path.GetExtension(request.File.FileName ?? string.Empty);
+            var safeExt = string.IsNullOrWhiteSpace(ext) ? ".bin" : ext[..Math.Min(ext.Length, 10)];
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+            var fileName = $"destek-{request.TicketId}-{stamp}{safeExt}";
+            var relative = $"/uploads/support/{hotel.HotelId}/{request.TicketId}/{fileName}";
+            var physical = Path.Combine(_environment.WebRootPath, "uploads", "support", hotel.HotelId.ToString(CultureInfo.InvariantCulture), request.TicketId.ToString(CultureInfo.InvariantCulture));
+            Directory.CreateDirectory(physical);
+            var fullPath = Path.Combine(physical, fileName);
+            await using (var stream = File.Create(fullPath))
+            {
+                await request.File.CopyToAsync(stream, cancellationToken);
+            }
+            attachmentUrl = relative.Replace("\\", "/", StringComparison.Ordinal);
+        }
+
+        await using var tx = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            const string insertSql = @"
+                INSERT INTO partner_destek_mesajlari
+                (talep_id, gonderen_kullanici_id, gonderen_tipi, mesaj, ek_dosya_yolu, okundu_mu)
+                VALUES
+                (@ticketId, @userId, 'Partner', @message, @filePath, 1);";
+            await using (var cmd = new SqlCommand(insertSql, connection, (SqlTransaction)tx))
+            {
+                cmd.Parameters.AddWithValue("@ticketId", request.TicketId);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@message", string.IsNullOrWhiteSpace(request.Message) ? string.Empty : request.Message.Trim());
+                cmd.Parameters.AddWithValue("@filePath", (object?)attachmentUrl ?? DBNull.Value);
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            const string updateSql = @"
+                UPDATE partner_destek_talepleri
+                SET son_mesaj_tarihi = GETDATE(),
+                    durum = CASE WHEN durum IN ('Cozuldu','Kapatildi') THEN 'Acik' ELSE durum END
+                WHERE id = @ticketId AND partner_id = @partnerId;";
+            await using (var up = new SqlCommand(updateSql, connection, (SqlTransaction)tx))
+            {
+                up.Parameters.AddWithValue("@ticketId", request.TicketId);
+                up.Parameters.AddWithValue("@partnerId", hotel.PartnerId);
+                await up.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await tx.CommitAsync(cancellationToken);
+            return (true, "Mesaj gönderildi.");
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return (false, "Mesaj gönderilemedi: " + ex.Message);
+        }
+    }
+
+    public async Task<(bool Success, string Message)> CloseSupportTicketAsync(long userId, long hotelId, long ticketId, CancellationToken cancellationToken = default)
+    {
+        if (hotelId <= 0 || ticketId <= 0) return (false, "Geçersiz istek.");
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var hotel = await EnsureHotelAccessAsync(connection, userId, hotelId, cancellationToken);
+
+        const string sql = @"
+            UPDATE partner_destek_talepleri
+            SET durum = 'Cozuldu',
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE id = @ticketId AND partner_id = @partnerId;";
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@ticketId", ticketId);
+        cmd.Parameters.AddWithValue("@partnerId", hotel.PartnerId);
+        var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        return affected > 0 ? (true, "Talep çözüldü olarak işaretlendi.") : (false, "Talep bulunamadı.");
+    }
+
     public async Task<PartnerCompanyPricingPageViewModel> GetCompanyPricingAsync(long userId, long? hotelId = null, long? companyId = null, long? roomId = null, string? month = null, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
@@ -2984,37 +3348,9 @@ public class PartnerService : IPartnerService
             MonthAnchor = monthStart
         };
 
-        // Companies (only approved & active)
-        const string companySql = @"
-            SELECT TOP (500) id, firma_adi, COALESCE(onay_durumu,'Beklemede')
-            FROM firmalar
-            WHERE aktif_mi = 1
-            ORDER BY CASE COALESCE(onay_durumu,'Beklemede') WHEN 'Onaylandı' THEN 0 WHEN 'Beklemede' THEN 1 ELSE 2 END, firma_adi;";
-        await using (var companyCmd = new SqlCommand(companySql, connection))
-        await using (var companyReader = await otelturizmnew.Utils.SqlTiming.ExecuteReaderAsync(
-                         companyCmd,
-                         _slowSql,
-                         _logger,
-                         scope: "PartnerService.GetCompanyPricing.Companies",
-                         slowMsThreshold: 250,
-                         cancellationToken))
-        {
-            while (await companyReader.ReadAsync(cancellationToken))
-            {
-                var id = companyReader.GetInt64(0);
-                model.Companies.Add(new PartnerCompanyOptionViewModel
-                {
-                    CompanyId = id,
-                    CompanyName = companyReader.GetString(1),
-                    StatusText = companyReader.GetString(2),
-                    IsSelected = companyId.HasValue && companyId.Value == id
-                });
-            }
-        }
-
-        var selectedCompanyId = companyId ?? model.Companies.FirstOrDefault(x => x.StatusText == "Onaylandı")?.CompanyId ?? model.Companies.FirstOrDefault()?.CompanyId;
-        model.SelectedCompanyId = selectedCompanyId;
-        model.SelectedCompanyName = model.Companies.FirstOrDefault(x => x.CompanyId == selectedCompanyId)?.CompanyName ?? string.Empty;
+        // Yeni model: partner firma bazlı fiyat vermez; kurumsal fiyat listesi otel+oda+tarih bazındadır.
+        model.SelectedCompanyId = 0;
+        model.SelectedCompanyName = "Kurumsal";
 
         // Rooms
         const string roomSql = @"
@@ -3050,7 +3386,7 @@ public class PartnerService : IPartnerService
         model.BulkForm = new PartnerCompanyBulkPricingUpdateRequest
         {
             HotelId = selectedHotelId,
-            CompanyId = selectedCompanyId ?? 0,
+            CompanyId = 0,
             RoomTypeId = selectedRoomId ?? 0,
             StartDate = monthStart,
             EndDate = monthEnd,
@@ -3058,12 +3394,11 @@ public class PartnerService : IPartnerService
             CloseSales = false
         };
 
-        model.PreviousMonthQuery = $"/panel/partner/firma-fiyatlari?otelId={selectedHotelId}&companyId={selectedCompanyId}&roomId={selectedRoomId}&month={monthStart.AddMonths(-1):yyyy-MM}";
-        model.NextMonthQuery = $"/panel/partner/firma-fiyatlari?otelId={selectedHotelId}&companyId={selectedCompanyId}&roomId={selectedRoomId}&month={monthStart.AddMonths(1):yyyy-MM}";
+        model.PreviousMonthQuery = $"/panel/partner/firma-fiyatlari?otelId={selectedHotelId}&roomId={selectedRoomId}&month={ClampPricingMonth(monthStart.AddMonths(-1)):yyyy-MM}";
+        model.NextMonthQuery = $"/panel/partner/firma-fiyatlari?otelId={selectedHotelId}&roomId={selectedRoomId}&month={ClampPricingMonth(monthStart.AddMonths(1)):yyyy-MM}";
 
-        var safeCompanyId = selectedCompanyId.GetValueOrDefault();
         var safeRoomId = selectedRoomId.GetValueOrDefault();
-        if (safeCompanyId <= 0 || safeRoomId <= 0)
+        if (safeRoomId <= 0)
         {
             return model;
         }
@@ -3078,17 +3413,15 @@ public class PartnerService : IPartnerService
         }
 
         // Load firm prices map
-        var firmPrices = new Dictionary<DateOnly, (decimal Price, bool Closed)>();
+        var firmPrices = new Dictionary<DateOnly, (decimal Price, bool Closed, int? MinNight, int? MaxNight)>();
         const string firmSql = @"
-            SELECT tarih, firma_gecelik_fiyat, kapali_satis
+            SELECT tarih, firma_gecelik_fiyat, kapali_satis, minimum_geceleme, maksimum_geceleme
             FROM firma_oda_fiyat_musaitlik
-            WHERE firma_id = @companyId
-              AND otel_id = @hotelId
+            WHERE otel_id = @hotelId
               AND oda_tip_id = @roomTypeId
               AND tarih BETWEEN @startDate AND @endDate;";
         await using (var firmCmd = new SqlCommand(firmSql, connection))
         {
-            firmCmd.Parameters.AddWithValue("@companyId", safeCompanyId);
             firmCmd.Parameters.AddWithValue("@hotelId", selectedHotelId);
             firmCmd.Parameters.AddWithValue("@roomTypeId", safeRoomId);
             firmCmd.Parameters.AddWithValue("@startDate", monthStart.ToDateTime(TimeOnly.MinValue));
@@ -3105,7 +3438,9 @@ public class PartnerService : IPartnerService
                 var date = DateOnly.FromDateTime(firmReader.GetDateTime(0));
                 var price = firmReader.GetDecimal(1);
                 var closed = !firmReader.IsDBNull(2) && firmReader.GetBoolean(2);
-                firmPrices[date] = (price, closed);
+                var minNight = firmReader.IsDBNull(3) ? (int?)null : Convert.ToInt32(firmReader.GetValue(3), CultureInfo.InvariantCulture);
+                var maxNight = firmReader.IsDBNull(4) ? (int?)null : Convert.ToInt32(firmReader.GetValue(4), CultureInfo.InvariantCulture);
+                firmPrices[date] = (price, closed, minNight, maxNight);
             }
         }
 
@@ -3148,15 +3483,21 @@ public class PartnerService : IPartnerService
             var firmHas = firmPrices.TryGetValue(day, out var fp);
             var baseHas = basePrices.TryGetValue(day, out var bp);
             var isClosed = firmHas && fp.Closed;
+            var nightRuleText = firmHas && (fp.MinNight.HasValue || fp.MaxNight.HasValue)
+                ? $"{(fp.MinNight.HasValue ? $"Min {fp.MinNight}" : "Min yok")} / {(fp.MaxNight.HasValue ? $"Maks {fp.MaxNight}" : "Maks yok")} gece"
+                : "Koşul yok";
             model.Days.Add(new PartnerCompanyPricingDayViewModel
             {
                 Date = day,
                 DateText = day.ToString("dd MMM", culture),
                 CompanyPrice = firmHas ? fp.Price : null,
                 BasePrice = baseHas ? bp : null,
+                MinimumNights = firmHas ? fp.MinNight : null,
+                MaximumNights = firmHas ? fp.MaxNight : null,
                 IsClosed = isClosed,
                 CompanyPriceText = firmHas ? fp.Price.ToString("N0", culture) + " ₺" : "-",
-                BasePriceText = baseHas ? bp.ToString("N0", culture) + " ₺" : "-"
+                BasePriceText = baseHas ? bp.ToString("N0", culture) + " ₺" : "-",
+                NightRuleText = nightRuleText
             });
         }
 
@@ -3165,17 +3506,36 @@ public class PartnerService : IPartnerService
 
     public async Task<(bool Success, string Message)> ApplyCompanyBulkPricingAsync(long userId, PartnerCompanyBulkPricingUpdateRequest request, CancellationToken cancellationToken = default)
     {
-        if (request.HotelId <= 0 || request.CompanyId <= 0 || request.RoomTypeId <= 0)
+        if (request.HotelId <= 0 || request.RoomTypeId <= 0)
         {
-            return (false, "Otel, firma ve oda seçilmelidir.");
+            return (false, "Otel ve oda seçilmelidir.");
         }
         if (request.EndDate < request.StartDate)
         {
             return (false, "Bitiş tarihi başlangıçtan önce olamaz.");
         }
+        var pricingWindowError = ValidatePricingWindow(
+            request.StartDate.ToDateTime(TimeOnly.MinValue),
+            request.EndDate.ToDateTime(TimeOnly.MinValue));
+        if (pricingWindowError is not null)
+        {
+            return (false, pricingWindowError);
+        }
         if (request.CompanyNightlyPrice <= 0)
         {
             return (false, "Firma gecelik fiyatı 0'dan büyük olmalıdır.");
+        }
+        if (request.MinimumNights.HasValue && request.MinimumNights.Value < 1)
+        {
+            return (false, "Minimum geceleme en az 1 olmalıdır.");
+        }
+        if (request.MaximumNights.HasValue && request.MaximumNights.Value < 1)
+        {
+            return (false, "Maksimum geceleme en az 1 olmalıdır.");
+        }
+        if (request.MinimumNights.HasValue && request.MaximumNights.HasValue && request.MaximumNights.Value < request.MinimumNights.Value)
+        {
+            return (false, "Maksimum geceleme minimum gecelemeden küçük olamaz.");
         }
 
         await using var connection = new SqlConnection(_connectionString);
@@ -3196,29 +3556,32 @@ public class PartnerService : IPartnerService
             for (var date = request.StartDate; date <= request.EndDate; date = date.AddDays(1))
             {
                 const string upsertSql = @"
-                    IF EXISTS (SELECT 1 FROM firma_oda_fiyat_musaitlik WHERE firma_id=@companyId AND otel_id=@hotelId AND oda_tip_id=@roomTypeId AND tarih=@date)
+                    IF EXISTS (SELECT 1 FROM firma_oda_fiyat_musaitlik WHERE otel_id=@hotelId AND oda_tip_id=@roomTypeId AND tarih=@date)
                     BEGIN
                         UPDATE firma_oda_fiyat_musaitlik
                         SET firma_gecelik_fiyat=@price,
+                            minimum_geceleme=@minNight,
+                            maksimum_geceleme=@maxNight,
                             kapali_satis=@closed,
                             fiyat_notu=@note,
                             guncelleyen_kullanici_id=@userId,
                             guncellenme_tarihi=SYSUTCDATETIME()
-                        WHERE firma_id=@companyId AND otel_id=@hotelId AND oda_tip_id=@roomTypeId AND tarih=@date;
+                        WHERE otel_id=@hotelId AND oda_tip_id=@roomTypeId AND tarih=@date;
                     END
                     ELSE
                     BEGIN
                         INSERT INTO firma_oda_fiyat_musaitlik
-                        (firma_id, otel_id, oda_tip_id, tarih, firma_gecelik_fiyat, kapali_satis, fiyat_notu, guncelleyen_kullanici_id)
+                        (otel_id, oda_tip_id, tarih, firma_gecelik_fiyat, minimum_geceleme, maksimum_geceleme, kapali_satis, fiyat_notu, guncelleyen_kullanici_id)
                         VALUES
-                        (@companyId, @hotelId, @roomTypeId, @date, @price, @closed, @note, @userId);
+                        (@hotelId, @roomTypeId, @date, @price, @minNight, @maxNight, @closed, @note, @userId);
                     END";
                 await using var cmd = new SqlCommand(upsertSql, connection, (SqlTransaction)tx);
-                cmd.Parameters.AddWithValue("@companyId", request.CompanyId);
                 cmd.Parameters.AddWithValue("@hotelId", request.HotelId);
                 cmd.Parameters.AddWithValue("@roomTypeId", request.RoomTypeId);
                 cmd.Parameters.AddWithValue("@date", date.ToDateTime(TimeOnly.MinValue));
                 cmd.Parameters.AddWithValue("@price", request.CompanyNightlyPrice);
+                cmd.Parameters.AddWithValue("@minNight", request.MinimumNights.HasValue ? request.MinimumNights.Value : (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@maxNight", request.MaximumNights.HasValue ? request.MaximumNights.Value : (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@closed", request.CloseSales ? 1 : 0);
                 cmd.Parameters.AddWithValue("@note", string.IsNullOrWhiteSpace(request.Note) ? DBNull.Value : request.Note.Trim());
                 cmd.Parameters.AddWithValue("@userId", userId);
@@ -3378,9 +3741,9 @@ public class PartnerService : IPartnerService
     {
         if (!string.IsNullOrWhiteSpace(month) && DateTime.TryParse(month + "-01", out var dt))
         {
-            return new DateOnly(dt.Year, dt.Month, 1);
+            return ClampPricingMonth(new DateOnly(dt.Year, dt.Month, 1));
         }
-        return new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
+        return ClampPricingMonth(new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1));
     }
 
     private static async Task EnsurePartnerHotelAccessAsync(SqlConnection connection, long userId, long hotelId, CancellationToken cancellationToken)
@@ -3452,6 +3815,332 @@ public class PartnerService : IPartnerService
         }
     }
 
+    public async Task<(bool Success, string Message)> SaveThemeAsync(long userId, long? hotelId, string scope, PanelThemeViewModel theme, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        // hotelId seçili değilse bile user bazlı kayıt yapılabilir.
+        long partnerId = 0;
+        if (hotelId.HasValue && hotelId.Value > 0)
+        {
+            var context = await BuildContextAsync(connection, userId, hotelId, "Tema", "Tema ayarları", "theme", cancellationToken);
+            partnerId = context.SelectedHotel.PartnerId;
+        }
+
+        var normalizedScope = (scope ?? string.Empty).Trim().ToLowerInvariant();
+        if (normalizedScope is not ("partner" or "user")) normalizedScope = "user";
+
+        try
+        {
+            if (!await TableExistsAsync(connection, "tema_panel", cancellationToken))
+            {
+                return (false, "Tema tablosu veritabanında bulunamadı. Migration uygulanmamış olabilir.");
+            }
+            var normalizedTheme = new PanelThemeViewModel
+            {
+                BsTheme = string.IsNullOrWhiteSpace(theme.BsTheme) ? "light" : theme.BsTheme.Trim().ToLowerInvariant(),
+                PrimaryHex = string.IsNullOrWhiteSpace(theme.PrimaryHex) ? null : theme.PrimaryHex.Trim(),
+                AccentHex = string.IsNullOrWhiteSpace(theme.AccentHex) ? null : theme.AccentHex.Trim(),
+                SidebarBgHex = string.IsNullOrWhiteSpace(theme.SidebarBgHex) ? BuildDefaultSidebarHex(theme.PrimaryHex, theme.BsTheme) : theme.SidebarBgHex.Trim(),
+                RadiusScale = theme.RadiusScale,
+                FontFamily = string.IsNullOrWhiteSpace(theme.FontFamily) ? null : theme.FontFamily.Trim(),
+                Rtl = theme.Rtl
+            };
+
+            await UpsertThemeRecordAsync(connection, "user", userId, normalizedTheme, cancellationToken);
+            if (normalizedScope == "partner" && partnerId > 0) await UpsertThemeRecordAsync(connection, "partner", partnerId, normalizedTheme, cancellationToken);
+
+            return (true, "Tema ayarları kaydedildi.");
+        }
+        catch (SqlException ex) when (ex.Number == 208)
+        {
+            return (false, "Tema tablosu bulunamadı. Migration uygulanmamış olabilir.");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Tema kaydedilemedi: {ex.Message}");
+        }
+    }
+
+    public async Task<PartnerFacilityUsersPageViewModel> GetFacilityUsersAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var context = await BuildContextAsync(connection, userId, hotelId, "Tesis Kullanıcıları", "Bu tesisi yönetecek kullanıcıları ekleyin ve sürelerini yönetin.", "facility-users", cancellationToken);
+        var model = new PartnerFacilityUsersPageViewModel
+        {
+            Shell = context.Shell,
+            HotelId = context.SelectedHotel.HotelId,
+            HotelName = context.SelectedHotel.HotelName
+        };
+        model.InviteForm.HotelId = context.SelectedHotel.HotelId;
+
+        if (!await TableExistsAsync(connection, "partner_tesis_kullanicilari", cancellationToken))
+        {
+            model.Warning = "Tesis kullanıcıları tablosu veritabanında bulunamadı. Migration uygulanmamış olabilir.";
+            return model;
+        }
+
+        const string sql = @"
+            SELECT TOP (200)
+                ptk.id,
+                ptk.kullanici_id,
+                COALESCE(u.ad_soyad,'') AS ad_soyad,
+                COALESCE(u.eposta,'') AS eposta,
+                CASE WHEN u.email_dogrulama_tarihi IS NULL THEN 0 ELSE 1 END AS email_ok,
+                COALESCE(ptk.durum,'Beklemede') AS durum,
+                ptk.baslangic_tarihi,
+                ptk.bitis_tarihi,
+                ptk.onay_tarihi,
+                ptk.davet_gonderim_tarihi
+            FROM dbo.partner_tesis_kullanicilari ptk
+            INNER JOIN dbo.users u ON u.id = ptk.kullanici_id
+            WHERE ptk.otel_id = @hotelId
+              AND ptk.aktif_mi = 1
+            ORDER BY ptk.olusturulma_tarihi DESC, ptk.id DESC;";
+
+        var tr = CultureInfo.GetCultureInfo("tr-TR");
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@hotelId", context.SelectedHotel.HotelId);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            model.Users.Add(new PartnerFacilityUserRowViewModel
+            {
+                Id = reader.GetInt64(0),
+                UserId = reader.GetInt64(1),
+                FullName = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                Email = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                EmailVerified = SafeBool(reader, 4),
+                Status = reader.IsDBNull(5) ? "Beklemede" : reader.GetString(5),
+                StartDateText = reader.IsDBNull(6) ? null : DateOnly.FromDateTime(reader.GetDateTime(6)).ToString("dd.MM.yyyy", tr),
+                EndDateText = reader.IsDBNull(7) ? null : DateOnly.FromDateTime(reader.GetDateTime(7)).ToString("dd.MM.yyyy", tr),
+                ApprovedAtText = reader.IsDBNull(8) ? null : reader.GetDateTime(8).ToString("dd.MM.yyyy HH:mm", tr),
+                InviteSentAtText = reader.IsDBNull(9) ? null : reader.GetDateTime(9).ToString("dd.MM.yyyy HH:mm", tr)
+            });
+        }
+
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> InviteFacilityUserAsync(long userId, PartnerFacilityUserInviteRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.HotelId <= 0) return (false, "Otel seçilmelidir.");
+        if (string.IsNullOrWhiteSpace(request.Email)) return (false, "E-posta zorunludur.");
+        if (request.EndDate.HasValue && request.StartDate.HasValue && request.EndDate.Value < request.StartDate.Value)
+        {
+            return (false, "Bitiş tarihi başlangıçtan önce olamaz.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+
+        if (!await TableExistsAsync(connection, "partner_tesis_kullanicilari", cancellationToken))
+        {
+            return (false, "Tesis kullanıcıları tablosu veritabanında bulunamadı. Migration uygulanmamış olabilir.");
+        }
+
+        var email = request.Email.Trim();
+        long invitedUserId = 0;
+        string invitedName = "Kullanıcı";
+        bool invitedEmailVerified = false;
+
+        await using (var findCmd = new SqlCommand(@"
+            SELECT TOP (1) id, COALESCE(ad_soyad,''), email_dogrulama_tarihi
+            FROM dbo.users
+            WHERE LOWER(eposta) = LOWER(@email);", connection))
+        {
+            findCmd.Parameters.AddWithValue("@email", email);
+            await using var r = await findCmd.ExecuteReaderAsync(cancellationToken);
+            if (await r.ReadAsync(cancellationToken))
+            {
+                invitedUserId = r.GetInt64(0);
+                invitedName = r.IsDBNull(1) ? invitedName : r.GetString(1);
+                invitedEmailVerified = !r.IsDBNull(2);
+            }
+        }
+
+        if (invitedUserId <= 0)
+        {
+            return (false, "Bu e-posta ile kayıtlı bir kullanıcı bulunamadı. Önce üyelik oluşturulmalıdır.");
+        }
+        if (!invitedEmailVerified)
+        {
+            return (false, "Bu kullanıcı e-posta doğrulamasını tamamlamadığı için eklenemez. Önce e-posta doğrulaması tamamlanmalıdır.");
+        }
+
+        // create assignment + invite token
+        var token = CreateSecureToken(32);
+        var expires = DateTime.UtcNow.AddHours(48);
+        var approvalLink = $"{_publicBaseUrl}/panel/partner/tesis-kullanici-onay?token={Uri.EscapeDataString(token)}";
+
+        // inviter name
+        var inviterName = await GetUserFullNameAsync(connection, userId, cancellationToken) ?? "Partner";
+
+        await using var tx = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // if exists active for same hotel/user -> refresh token
+            const string upsertSql = @"
+                IF EXISTS (SELECT 1 FROM dbo.partner_tesis_kullanicilari WHERE otel_id=@hotelId AND kullanici_id=@userId AND aktif_mi=1)
+                BEGIN
+                    UPDATE dbo.partner_tesis_kullanicilari
+                    SET durum = N'Beklemede',
+                        baslangic_tarihi = @startDate,
+                        bitis_tarihi = @endDate,
+                        davet_token = @token,
+                        davet_gonderim_tarihi = SYSUTCDATETIME(),
+                        davet_son_gecerlilik = @expires,
+                        onay_tarihi = NULL,
+                        guncellenme_tarihi = SYSUTCDATETIME()
+                    WHERE otel_id=@hotelId AND kullanici_id=@userId AND aktif_mi=1;
+                END
+                ELSE
+                BEGIN
+                    INSERT INTO dbo.partner_tesis_kullanicilari
+                    (otel_id, kullanici_id, durum, baslangic_tarihi, bitis_tarihi, davet_token, davet_gonderim_tarihi, davet_son_gecerlilik, ekleyen_kullanici_id, aktif_mi, olusturulma_tarihi)
+                    VALUES
+                    (@hotelId, @userId, N'Beklemede', @startDate, @endDate, @token, SYSUTCDATETIME(), @expires, @addedBy, 1, SYSUTCDATETIME());
+                END";
+            await using (var cmd = new SqlCommand(upsertSql, connection, (SqlTransaction)tx))
+            {
+                cmd.Parameters.AddWithValue("@hotelId", hotel.HotelId);
+                cmd.Parameters.AddWithValue("@userId", invitedUserId);
+                cmd.Parameters.AddWithValue("@token", token);
+                cmd.Parameters.AddWithValue("@expires", expires);
+                cmd.Parameters.AddWithValue("@addedBy", userId);
+                cmd.Parameters.AddWithValue("@startDate", request.StartDate.HasValue ? request.StartDate.Value.ToDateTime(TimeOnly.MinValue) : (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@endDate", request.EndDate.HasValue ? request.EndDate.Value.ToDateTime(TimeOnly.MinValue) : (object)DBNull.Value);
+                await cmd.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            var tr = CultureInfo.GetCultureInfo("tr-TR");
+            await _emailQueueService.QueueTemplateAsync(
+                connection,
+                (SqlTransaction)tx,
+                new QueuedEmailTemplateRequest
+                {
+                    UserId = invitedUserId,
+                    RecipientEmail = email,
+                    TemplateCode = "partner_facility_user_invite",
+                    RelatedTable = "partner_tesis_kullanicilari",
+                    RelatedRecordId = null,
+                    Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["invited_full_name"] = invitedName,
+                        ["invited_email"] = email,
+                        ["hotel_name"] = hotel.HotelName,
+                        ["inviter_name"] = inviterName,
+                        ["approval_link"] = approvalLink,
+                        ["start_date"] = request.StartDate.HasValue ? request.StartDate.Value.ToString("dd.MM.yyyy", tr) : "",
+                        ["end_date"] = request.EndDate.HasValue ? request.EndDate.Value.ToString("dd.MM.yyyy", tr) : ""
+                    }
+                },
+                cancellationToken);
+
+            await tx.CommitAsync(cancellationToken);
+            return (true, "Davet e-postası gönderildi. Kullanıcı onayladıktan sonra erişim aktif olur.");
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return (false, "Davet gönderilemedi: " + ex.Message);
+        }
+    }
+
+    public async Task<(bool Success, string Message)> RevokeFacilityUserAsync(long userId, PartnerFacilityUserRevokeRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.HotelId <= 0 || request.AssignmentId <= 0) return (false, "Geçersiz istek.");
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await EnsurePartnerHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+
+        if (!await TableExistsAsync(connection, "partner_tesis_kullanicilari", cancellationToken))
+        {
+            return (false, "Tesis kullanıcıları tablosu veritabanında bulunamadı.");
+        }
+
+        const string sql = @"
+            UPDATE dbo.partner_tesis_kullanicilari
+            SET aktif_mi = 0,
+                durum = N'Iptal',
+                iptal_eden_kullanici_id = @revoker,
+                iptal_tarihi = SYSUTCDATETIME(),
+                iptal_nedeni = @reason,
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE id = @id AND otel_id = @hotelId;";
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@id", request.AssignmentId);
+        cmd.Parameters.AddWithValue("@hotelId", request.HotelId);
+        cmd.Parameters.AddWithValue("@revoker", userId);
+        cmd.Parameters.AddWithValue("@reason", string.IsNullOrWhiteSpace(request.Reason) ? DBNull.Value : request.Reason.Trim());
+        var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        return affected > 0 ? (true, "Tesis kullanıcı erişimi iptal edildi.") : (false, "Kayıt bulunamadı.");
+    }
+
+    public async Task<(bool Success, string Message)> ApproveFacilityInviteAsync(long userId, string token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return (false, "Geçersiz token.");
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        if (!await TableExistsAsync(connection, "partner_tesis_kullanicilari", cancellationToken))
+        {
+            return (false, "Tesis kullanıcıları tablosu veritabanında bulunamadı.");
+        }
+
+        // email must be verified
+        var emailVerified = false;
+        await using (var cmd = new SqlCommand("SELECT TOP (1) email_dogrulama_tarihi FROM dbo.users WHERE id=@id;", connection))
+        {
+            cmd.Parameters.AddWithValue("@id", userId);
+            var obj = await cmd.ExecuteScalarAsync(cancellationToken);
+            emailVerified = obj is not null && obj is not DBNull;
+        }
+        if (!emailVerified)
+        {
+            return (false, "E-posta doğrulamanız tamamlanmadan davet onaylanamaz.");
+        }
+
+        const string sql = @"
+            UPDATE dbo.partner_tesis_kullanicilari
+            SET durum = N'Aktif',
+                onay_tarihi = SYSUTCDATETIME(),
+                davet_token = NULL,
+                davet_son_gecerlilik = NULL,
+                guncellenme_tarihi = SYSUTCDATETIME()
+            WHERE kullanici_id = @userId
+              AND davet_token = @token
+              AND aktif_mi = 1
+              AND (davet_son_gecerlilik IS NULL OR davet_son_gecerlilik > SYSUTCDATETIME());";
+
+        await using var update = new SqlCommand(sql, connection);
+        update.Parameters.AddWithValue("@userId", userId);
+        update.Parameters.AddWithValue("@token", token.Trim());
+        var affected = await update.ExecuteNonQueryAsync(cancellationToken);
+        return affected > 0 ? (true, "Davet onaylandı. Artık tesis panelini yönetebilirsiniz.") : (false, "Davet bulunamadı veya süresi dolmuş.");
+    }
+
+    private static string CreateSecureToken(int byteLength)
+    {
+        var buffer = RandomNumberGenerator.GetBytes(byteLength);
+        return Convert.ToHexString(buffer).ToLowerInvariant();
+    }
+
+    private static async Task<string?> GetUserFullNameAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
+    {
+        await using var cmd = new SqlCommand("SELECT TOP (1) COALESCE(ad_soyad,'') FROM dbo.users WHERE id=@id;", connection);
+        cmd.Parameters.AddWithValue("@id", userId);
+        var obj = await cmd.ExecuteScalarAsync(cancellationToken);
+        var s = obj?.ToString();
+        return string.IsNullOrWhiteSpace(s) ? null : s;
+    }
+
     private async Task<PartnerContext> BuildContextAsync(SqlConnection connection, long userId, long? hotelId, string title, string subtitle, string activeSectionKey, CancellationToken cancellationToken)
     {
         await ReopenExpiredPenaltyHotelsAsync(connection, cancellationToken);
@@ -3489,6 +4178,7 @@ public class PartnerService : IPartnerService
         string email = string.Empty;
         await using (var emailCommand = new SqlCommand(emailSql, connection))
         {
+            emailCommand.CommandTimeout = 30;
             emailCommand.Parameters.AddWithValue("@userId", userId);
             var emailObj = await emailCommand.ExecuteScalarAsync(cancellationToken);
             email = emailObj?.ToString() ?? string.Empty;
@@ -3527,6 +4217,7 @@ public class PartnerService : IPartnerService
         long partnerId = 0;
         await using (var pickCommand = new SqlCommand(pickHotelSql, connection))
         {
+            pickCommand.CommandTimeout = 30;
             pickCommand.Parameters.AddWithValue("@hotelCode", "216-eagle-palace");
             pickCommand.Parameters.AddWithValue("@hotelCodeSlug", "216-eagle-palace");
             pickCommand.Parameters.AddWithValue("@hotelName", "216 eagle palace");
@@ -3551,6 +4242,7 @@ public class PartnerService : IPartnerService
             WHERE otel_id = @hotelId AND user_id = @userId AND aktif_mi = 1;";
         await using (var existsCommand = new SqlCommand(existsSql, connection))
         {
+            existsCommand.CommandTimeout = 30;
             existsCommand.Parameters.AddWithValue("@hotelId", hotelId);
             existsCommand.Parameters.AddWithValue("@userId", userId);
             var exists = Convert.ToInt32(await existsCommand.ExecuteScalarAsync(cancellationToken) ?? 0) > 0;
@@ -3564,6 +4256,7 @@ public class PartnerService : IPartnerService
             (@hotelId, @userId, @partnerId, 'owner', 1, 1, SYSUTCDATETIME());";
 
         await using var insertCommand = new SqlCommand(insertSql, connection);
+        insertCommand.CommandTimeout = 30;
         insertCommand.Parameters.AddWithValue("@hotelId", hotelId);
         insertCommand.Parameters.AddWithValue("@userId", userId);
         insertCommand.Parameters.AddWithValue("@partnerId", partnerId);
@@ -3579,6 +4272,7 @@ public class PartnerService : IPartnerService
 
         await using (var userCommand = new SqlCommand(userSql, connection))
         {
+            userCommand.CommandTimeout = 30;
             userCommand.Parameters.AddWithValue("@userId", userId);
             await using var reader = await userCommand.ExecuteReaderAsync(cancellationToken);
             if (await reader.ReadAsync(cancellationToken))
@@ -3593,6 +4287,7 @@ public class PartnerService : IPartnerService
         var openSupportTickets = 0;
         var lowStockAlerts = 0;
         var unansweredReviews = 0;
+        var favoriteCount = 0;
 
         const string shellMetricsSql = @"
             SELECT
@@ -3609,6 +4304,7 @@ public class PartnerService : IPartnerService
 
         await using (var shellCommand = new SqlCommand(shellMetricsSql, connection))
         {
+            shellCommand.CommandTimeout = 60;
             shellCommand.Parameters.AddWithValue("@hotelId", selectedHotel.HotelId);
             shellCommand.Parameters.AddWithValue("@partnerId", selectedHotel.PartnerId);
             await using var reader = await shellCommand.ExecuteReaderAsync(cancellationToken);
@@ -3619,6 +4315,14 @@ public class PartnerService : IPartnerService
                 lowStockAlerts = SafeInt(reader, 2);
                 unansweredReviews = SafeInt(reader, 3);
             }
+        }
+
+        if (await ColumnExistsAsync(connection, "oteller", "favori_sayisi", cancellationToken))
+        {
+            await using var favoriteCommand = new SqlCommand("SELECT COALESCE(favori_sayisi, 0) FROM oteller WHERE id = @hotelId;", connection);
+            favoriteCommand.Parameters.AddWithValue("@hotelId", selectedHotel.HotelId);
+            var rawFavorite = await favoriteCommand.ExecuteScalarAsync(cancellationToken);
+            favoriteCount = rawFavorite is null || rawFavorite == DBNull.Value ? 0 : Convert.ToInt32(rawFavorite, CultureInfo.InvariantCulture);
         }
 
         var shell = new PartnerShellViewModel
@@ -3637,6 +4341,8 @@ public class PartnerService : IPartnerService
             OpenSupportTickets = openSupportTickets,
             LowStockAlerts = lowStockAlerts,
             UnansweredReviews = unansweredReviews,
+            FavoriteCount = favoriteCount,
+            FavoriteSummaryText = $"{favoriteCount.ToString(CultureInfo.InvariantCulture)} kişi sizi favorisine ekledi.",
             ManagedHotels = hotels.Select(item => new PartnerHotelSwitchItemViewModel
             {
                 HotelId = item.HotelId,
@@ -3645,10 +4351,116 @@ public class PartnerService : IPartnerService
                 CityLabel = item.CityLabel,
                 IsPrimary = item.IsPrimary,
                 IsSelected = item.HotelId == selectedHotel.HotelId
-            }).ToList()
+            }).ToList(),
+            Theme = await LoadPanelThemeAsync(connection, userId, selectedHotel.PartnerId, cancellationToken)
         };
 
         return shell;
+    }
+
+    private static async Task<PanelThemeViewModel> LoadPanelThemeAsync(SqlConnection connection, long userId, long partnerId, CancellationToken cancellationToken)
+    {
+        // Fallback sırası:
+        // 1) kullanıcı teması (hedef_tur='user', hedef_id=userId)
+        // 2) partner teması (hedef_tur='partner', hedef_id=partnerId)
+        const string sql = @"
+            SELECT TOP (1)
+                bs_theme,
+                primary_hex,
+                accent_hex,
+                sidebar_bg_hex,
+                radius_scale,
+                density,
+                font_family,
+                layout_mode,
+                rtl
+            FROM dbo.tema_panel
+            WHERE aktif_mi = 1
+              AND (
+                    (hedef_tur = N'user' AND hedef_id = @userId)
+                    OR (hedef_tur = N'partner' AND hedef_id = @partnerId)
+                  )
+            ORDER BY CASE WHEN hedef_tur = N'user' THEN 0 ELSE 1 END, guncellenme_tarihi DESC, id DESC;";
+
+        try
+        {
+            await using var command = new SqlCommand(sql, connection);
+            command.CommandTimeout = 30;
+            command.Parameters.AddWithValue("@partnerId", partnerId);
+            command.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                return new PanelThemeViewModel
+                {
+                    BsTheme = reader.IsDBNull(0) ? "light" : reader.GetString(0),
+                    PrimaryHex = reader.IsDBNull(1) ? null : reader.GetString(1),
+                    AccentHex = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    SidebarBgHex = reader.IsDBNull(3) ? null : reader.GetString(3),
+                    RadiusScale = reader.IsDBNull(4) ? null : reader.GetDecimal(4),
+                    Density = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    FontFamily = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    LayoutMode = reader.IsDBNull(7) ? null : reader.GetString(7),
+                    Rtl = !reader.IsDBNull(8) && reader.GetBoolean(8)
+                };
+            }
+        }
+        catch (SqlException ex) when (ex.Number == 208) // Invalid object name (tema_panel yok)
+        {
+            // Migration henüz uygulanmadıysa sessiz fallback.
+        }
+
+        return new PanelThemeViewModel { BsTheme = "light" };
+    }
+
+    private static async Task UpsertThemeRecordAsync(SqlConnection connection, string targetType, long targetId, PanelThemeViewModel theme, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SET QUOTED_IDENTIFIER ON;
+            SET ANSI_NULLS ON;
+            IF EXISTS (SELECT 1 FROM dbo.tema_panel WHERE hedef_tur = @targetType AND hedef_id = @targetId)
+            BEGIN
+                UPDATE dbo.tema_panel
+                SET bs_theme = @bsTheme,
+                    primary_hex = NULLIF(@primaryHex, ''),
+                    accent_hex = NULLIF(@accentHex, ''),
+                    sidebar_bg_hex = NULLIF(@sidebarBgHex, ''),
+                    radius_scale = @radiusScale,
+                    font_family = NULLIF(@fontFamily, ''),
+                    rtl = @rtl,
+                    aktif_mi = 1,
+                    guncellenme_tarihi = SYSUTCDATETIME()
+                WHERE hedef_tur = @targetType AND hedef_id = @targetId;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO dbo.tema_panel
+                (hedef_tur, hedef_id, bs_theme, primary_hex, accent_hex, sidebar_bg_hex, radius_scale, font_family, rtl, aktif_mi, olusturulma_tarihi, guncellenme_tarihi)
+                VALUES
+                (@targetType, @targetId, @bsTheme, NULLIF(@primaryHex, ''), NULLIF(@accentHex, ''), NULLIF(@sidebarBgHex, ''), @radiusScale, NULLIF(@fontFamily, ''), @rtl, 1, SYSUTCDATETIME(), SYSUTCDATETIME());
+            END;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@targetType", targetType);
+        command.Parameters.AddWithValue("@targetId", targetId);
+        command.Parameters.AddWithValue("@bsTheme", theme.BsTheme);
+        command.Parameters.AddWithValue("@primaryHex", (object?)theme.PrimaryHex ?? string.Empty);
+        command.Parameters.AddWithValue("@accentHex", (object?)theme.AccentHex ?? string.Empty);
+        command.Parameters.AddWithValue("@sidebarBgHex", (object?)theme.SidebarBgHex ?? string.Empty);
+        command.Parameters.AddWithValue("@radiusScale", theme.RadiusScale.HasValue ? theme.RadiusScale.Value : (object)DBNull.Value);
+        command.Parameters.AddWithValue("@fontFamily", (object?)theme.FontFamily ?? string.Empty);
+        command.Parameters.AddWithValue("@rtl", theme.Rtl ? 1 : 0);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static string BuildDefaultSidebarHex(string? primaryHex, string? bsTheme)
+    {
+        if (string.Equals(bsTheme?.Trim(), "dark", StringComparison.OrdinalIgnoreCase))
+        {
+            return "#0f1d36";
+        }
+
+        return string.IsNullOrWhiteSpace(primaryHex) ? "#16325c" : primaryHex.Trim();
     }
 
     private static async Task ReopenExpiredPenaltyHotelsAsync(SqlConnection connection, CancellationToken cancellationToken)
@@ -3663,12 +4475,14 @@ public class PartnerService : IPartnerService
         try
         {
             await using var command = new SqlCommand(sql, connection);
+            command.CommandTimeout = 30;
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
         catch (SqlException ex) when (IsUnknownColumnError(ex, "partner_ceza_bitis_tarihi"))
         {
             await EnsurePartnerPenaltyColumnAsync(connection, cancellationToken);
             await using var retryCommand = new SqlCommand(sql, connection);
+            retryCommand.CommandTimeout = 30;
             await retryCommand.ExecuteNonQueryAsync(cancellationToken);
         }
     }
@@ -3704,6 +4518,7 @@ public class PartnerService : IPartnerService
 
         var hotels = new List<PartnerHotelContext>();
         await using var command = new SqlCommand(sql, connection);
+        command.CommandTimeout = 30;
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -3818,12 +4633,17 @@ public class PartnerService : IPartnerService
 
     private async Task<Dictionary<(long RoomId, DateOnly Date), PricingCalendarEntry>> LoadPricingMonthEntriesAsync(SqlConnection connection, long hotelId, DateOnly monthStart, DateOnly monthEnd, CancellationToken cancellationToken)
     {
-        const string sql = @"
+        var hasDiscountIdColumn = await ColumnExistsAsync(connection, "oda_fiyat_musaitlik", "indirim_id", cancellationToken);
+        var discountIdSelect = hasDiscountIdColumn ? "ofm.indirim_id" : "ofm.kampanya_id";
+        var campaignIdSelect = hasDiscountIdColumn ? "ofm.kampanya_id" : "CAST(NULL AS bigint)";
+
+        var sql = $@"
             SELECT ofm.oda_tip_id,
                    ofm.tarih,
                    ofm.gecelik_fiyat,
                    ofm.indirimli_fiyat,
-                   ofm.kampanya_id,
+                   {discountIdSelect} AS indirim_id,
+                   {campaignIdSelect} AS kampanya_id,
                    ofm.toplam_oda_sayisi,
                    ofm.satilan_oda_sayisi,
                    ofm.bloke_oda_sayisi,
@@ -3853,14 +4673,15 @@ public class PartnerService : IPartnerService
                 SafeDecimal(reader, 2),
                 reader.IsDBNull(3) ? null : reader.GetDecimal(3),
                 reader.IsDBNull(4) ? null : reader.GetInt64(4),
-                reader.IsDBNull(5) ? null : SafeShort(reader, 5),
-                reader.IsDBNull(6) ? (short)0 : SafeShort(reader, 6),
+                reader.IsDBNull(5) ? null : reader.GetInt64(5),
+                reader.IsDBNull(6) ? null : SafeShort(reader, 6),
                 reader.IsDBNull(7) ? (short)0 : SafeShort(reader, 7),
-                reader.IsDBNull(8) ? null : SafeByte(reader, 8),
-                reader.IsDBNull(9) ? null : SafeShort(reader, 9),
-                SafeBool(reader, 10),
-                reader.IsDBNull(11) ? null : NormalizeTurkishText(reader.GetString(11)),
-                reader.IsDBNull(12) ? null : NormalizeTurkishText(reader.GetString(12)));
+                reader.IsDBNull(8) ? (short)0 : SafeShort(reader, 8),
+                reader.IsDBNull(9) ? null : SafeByte(reader, 9),
+                reader.IsDBNull(10) ? null : SafeShort(reader, 10),
+                SafeBool(reader, 11),
+                reader.IsDBNull(12) ? null : NormalizeTurkishText(reader.GetString(12)),
+                reader.IsDBNull(13) ? null : NormalizeTurkishText(reader.GetString(13)));
         }
 
         return entries;
@@ -3873,12 +4694,17 @@ public class PartnerService : IPartnerService
             return new Dictionary<(long RoomId, DateOnly Date), PricingCalendarEntry>();
         }
 
+        var hasDiscountIdColumn = await ColumnExistsAsync(connection, "oda_fiyat_musaitlik", "indirim_id", cancellationToken);
+        var discountIdSelect = hasDiscountIdColumn ? "indirim_id" : "kampanya_id";
+        var campaignIdSelect = hasDiscountIdColumn ? "kampanya_id" : "CAST(NULL AS bigint)";
+
         var sql = $@"
             SELECT oda_tip_id,
                    tarih,
                    gecelik_fiyat,
                    indirimli_fiyat,
-                   kampanya_id,
+                   {discountIdSelect} AS indirim_id,
+                   {campaignIdSelect} AS kampanya_id,
                    toplam_oda_sayisi,
                    satilan_oda_sayisi,
                    bloke_oda_sayisi,
@@ -3907,14 +4733,15 @@ public class PartnerService : IPartnerService
                 SafeDecimal(reader, 2),
                 reader.IsDBNull(3) ? null : reader.GetDecimal(3),
                 reader.IsDBNull(4) ? null : reader.GetInt64(4),
-                reader.IsDBNull(5) ? null : SafeShort(reader, 5),
-                reader.IsDBNull(6) ? (short)0 : SafeShort(reader, 6),
+                reader.IsDBNull(5) ? null : reader.GetInt64(5),
+                reader.IsDBNull(6) ? null : SafeShort(reader, 6),
                 reader.IsDBNull(7) ? (short)0 : SafeShort(reader, 7),
-                reader.IsDBNull(8) ? null : SafeByte(reader, 8),
-                reader.IsDBNull(9) ? null : SafeShort(reader, 9),
-                SafeBool(reader, 10),
-                reader.IsDBNull(11) ? null : NormalizeTurkishText(reader.GetString(11)),
-                reader.IsDBNull(12) ? null : NormalizeTurkishText(reader.GetString(12)));
+                reader.IsDBNull(8) ? (short)0 : SafeShort(reader, 8),
+                reader.IsDBNull(9) ? null : SafeByte(reader, 9),
+                reader.IsDBNull(10) ? null : SafeShort(reader, 10),
+                SafeBool(reader, 11),
+                reader.IsDBNull(12) ? null : NormalizeTurkishText(reader.GetString(12)),
+                reader.IsDBNull(13) ? null : NormalizeTurkishText(reader.GetString(13)));
         }
 
         return entries;
@@ -4017,7 +4844,7 @@ public class PartnerService : IPartnerService
                 BlockedRooms = blockedRooms,
                 MinStay = entry?.MinStay ?? (byte)1,
                 MaxStay = entry?.MaxStay ?? (short)30,
-                CampaignId = entry?.CampaignId,
+                DiscountId = entry?.DiscountId,
                 AvailabilityText = isClosed ? "Satisa kapali" : $"{availableRooms} oda musait",
                 SoldText = soldRooms > 0 ? $"{soldRooms} satildi" : "Henuz satis yok",
                 StatusText = isClosed ? "Kapali" : availableRooms == 0 ? "Dolu" : availableRooms <= 2 ? "Son odalar" : "Satista",
@@ -4320,13 +5147,29 @@ public class PartnerService : IPartnerService
         const string sql = @"
             SELECT COUNT(*)
             FROM information_schema.TABLES
-            WHERE TABLE_SCHEMA = DB_NAME()
+            WHERE TABLE_CATALOG = DB_NAME()
               AND TABLE_NAME = @tableName;";
 
         await using var command = transaction is null
             ? new SqlCommand(sql, connection)
             : new SqlCommand(sql, connection, transaction!);
         command.Parameters.AddWithValue("@tableName", tableName);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;
+    }
+
+    private static async Task<bool> ColumnExistsAsync(SqlConnection connection, string tableName, string columnName, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_CATALOG = DB_NAME()
+              AND TABLE_NAME = @tableName
+              AND COLUMN_NAME = @columnName;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@columnName", columnName);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;
     }
@@ -4348,7 +5191,7 @@ public class PartnerService : IPartnerService
         var culture = CultureInfo.GetCultureInfo("tr-TR");
         var currentMonth = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
         var start = currentMonth.AddMonths(-12);
-        var end = currentMonth.AddMonths(18);
+        var end = ClampPricingMonth(DateOnly.FromDateTime(DateTime.Today.AddDays(365)));
         var items = new List<PartnerMonthOptionViewModel>();
         for (var month = start; month <= end; month = month.AddMonths(1))
         {
@@ -4363,17 +5206,101 @@ public class PartnerService : IPartnerService
         return items;
     }
 
+    private static string? ValidatePricingWindow(DateTime startDate, DateTime endDate)
+    {
+        var maxDate = DateTime.Today.AddDays(365).Date;
+        if (startDate.Date > maxDate || endDate.Date > maxDate)
+        {
+            return $"365 günden sonrası için fiyat ve müsaitlik girişi yapılamaz. En son izin verilen tarih {maxDate:dd.MM.yyyy}.";
+        }
+
+        return null;
+    }
+
+    private static DateOnly ClampPricingMonth(DateOnly month)
+    {
+        var minMonth = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-12);
+        var maxDate = DateOnly.FromDateTime(DateTime.Today.AddDays(365));
+        var maxMonth = new DateOnly(maxDate.Year, maxDate.Month, 1);
+        if (month < minMonth) return minMonth;
+        if (month > maxMonth) return maxMonth;
+        return month;
+    }
+
     private static int GetMondayBasedIndex(DayOfWeek dayOfWeek)
         => ((int)dayOfWeek + 6) % 7;
+
+    private static string? ValidateHotelInfoNumbers(PartnerHotelInfoForm request)
+    {
+        if (request.Latitude.HasValue && (request.Latitude.Value < -90m || request.Latitude.Value > 90m))
+        {
+            return "Enlem değeri -90 ile 90 arasında olmalıdır.";
+        }
+
+        if (request.Longitude.HasValue && (request.Longitude.Value < -180m || request.Longitude.Value > 180m))
+        {
+            return "Boylam değeri -180 ile 180 arasında olmalıdır.";
+        }
+
+        if (request.StarCount.HasValue && request.StarCount.Value > 5)
+        {
+            return "Yıldız sayısı 0 ile 5 arasında olmalıdır.";
+        }
+
+        if (request.LateCheckoutFee.HasValue && request.LateCheckoutFee.Value > 99999999.99m)
+        {
+            return "Geç çıkış ücreti çok yüksek. Lütfen geçerli bir tutar girin.";
+        }
+
+        if (request.EarlyCheckinFee.HasValue && request.EarlyCheckinFee.Value > 99999999.99m)
+        {
+            return "Erken giriş ücreti çok yüksek. Lütfen geçerli bir tutar girin.";
+        }
+
+        if (request.TotalRoomCount < 0 || request.TotalRoomCount > short.MaxValue)
+        {
+            return "Toplam oda sayısı geçerli aralıkta olmalıdır.";
+        }
+
+        if (request.TotalBedCapacity.HasValue && (request.TotalBedCapacity.Value < 0 || request.TotalBedCapacity.Value > short.MaxValue))
+        {
+            return "Yatak kapasitesi geçerli aralıkta olmalıdır.";
+        }
+
+        if (request.FloorCount.HasValue && request.FloorCount.Value > byte.MaxValue)
+        {
+            return "Kat sayısı geçerli aralıkta olmalıdır.";
+        }
+
+        if (request.ElevatorCount > byte.MaxValue)
+        {
+            return "Asansör sayısı geçerli aralıkta olmalıdır.";
+        }
+
+        if (request.MinStay < 1)
+        {
+            return "Minimum gece en az 1 olmalıdır.";
+        }
+
+        if (request.MaxStay < request.MinStay)
+        {
+            return "Maksimum gece minimum geceden küçük olamaz.";
+        }
+
+        return null;
+    }
 
     private async Task<PartnerHotelInfoForm> LoadHotelInfoFormAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT otel_adi, otel_turu, turizm_belge_no, turizm_belge_turu, kisa_aciklama, uzun_aciklama, tam_adres, sehir, ilce, mahalle, posta_kodu,
+            SELECT otel_adi, otel_turu, otel_tipi_id, turizm_belge_no, turizm_belge_turu, kisa_aciklama, uzun_aciklama, tam_adres, sehir, ilce, mahalle, posta_kodu,
                    konum_aciklamasi, enlem, boylam, web_sitesi, eposta, telefon_1, telefon_2, faks,
                    check_in_saati, check_out_saati, gec_check_out_mumkun_mu, gec_check_out_ucreti, erken_check_in_mumkun_mu, erken_check_in_ucreti,
                    minimum_konaklama_gecesi, maksimum_konaklama_gecesi, yildiz_sayisi, toplam_oda_sayisi, toplam_yatak_kapasitesi, kat_sayisi,
-                   asansor_var_mi, asansor_sayisi, varsayilan_komisyon_orani, depozito_tutari, depozito_iade_suresi, konusulan_diller, video_url, sanal_tur_url
+                   asansor_var_mi, asansor_sayisi, varsayilan_komisyon_orani, depozito_tutari, depozito_iade_suresi, konusulan_diller, video_url, sanal_tur_url,
+                   ulke, rezervasyon_telefonu, satis_kontak_adi, satis_kontak_telefonu, satis_kontak_eposta, satis_notlari,
+                   komisyon_turu, komisyon_hesaplama_tipi, odeme_vadesi, odeme_yontemi, fatura_kesim_turu,
+                   yayin_durumu, onay_durumu, ortalama_puan, toplam_yorum_sayisi, olusturulma_tarihi, guncellenme_tarihi
             FROM oteller
             WHERE id = @hotelId;";
 
@@ -4385,57 +5312,123 @@ public class PartnerService : IPartnerService
         {
             model.HotelName = reader.GetString(0);
             model.HotelType = reader.GetString(1);
-            model.TourismDocumentNo = reader.IsDBNull(2) ? null : reader.GetString(2);
-            model.TourismDocumentType = reader.IsDBNull(3) ? null : reader.GetString(3);
-            model.ShortDescription = reader.IsDBNull(4) ? null : reader.GetString(4);
-            model.Description = reader.IsDBNull(5) ? null : reader.GetString(5);
-            model.Address = reader.IsDBNull(6) ? null : reader.GetString(6);
-            model.City = reader.IsDBNull(7) ? null : reader.GetString(7);
-            model.District = reader.IsDBNull(8) ? null : reader.GetString(8);
-            model.Neighborhood = reader.IsDBNull(9) ? null : reader.GetString(9);
-            model.PostalCode = reader.IsDBNull(10) ? null : reader.GetString(10);
-            model.LocationDescription = reader.IsDBNull(11) ? null : reader.GetString(11);
-            model.Latitude = reader.IsDBNull(12) ? null : reader.GetDecimal(12);
-            model.Longitude = reader.IsDBNull(13) ? null : reader.GetDecimal(13);
-            model.Website = reader.IsDBNull(14) ? null : reader.GetString(14);
-            model.ContactEmail = reader.IsDBNull(15) ? null : reader.GetString(15);
-            model.HotelPhone = reader.IsDBNull(16) ? null : reader.GetString(16);
-            model.HotelPhone2 = reader.IsDBNull(17) ? null : reader.GetString(17);
-            model.Fax = reader.IsDBNull(18) ? null : reader.GetString(18);
-            model.CheckInTime = reader.IsDBNull(19) ? null : reader.GetTimeSpan(19).ToString(@"hh\:mm");
-            model.CheckOutTime = reader.IsDBNull(20) ? null : reader.GetTimeSpan(20).ToString(@"hh\:mm");
-            model.LateCheckoutAvailable = SafeBool(reader, 21);
-            model.LateCheckoutFee = reader.IsDBNull(22) ? null : reader.GetDecimal(22);
-            model.EarlyCheckinAvailable = SafeBool(reader, 23);
-            model.EarlyCheckinFee = reader.IsDBNull(24) ? null : reader.GetDecimal(24);
-            model.MinStay = reader.IsDBNull(25) ? (byte)1 : SafeByte(reader, 25);
-            model.MaxStay = reader.IsDBNull(26) ? (short)30 : SafeShort(reader, 26);
-            model.StarCount = reader.IsDBNull(27) ? null : SafeByte(reader, 27);
-            model.TotalRoomCount = reader.IsDBNull(28) ? (short)0 : SafeShort(reader, 28);
-            model.TotalBedCapacity = reader.IsDBNull(29) ? null : SafeShort(reader, 29);
-            model.FloorCount = reader.IsDBNull(30) ? null : SafeByte(reader, 30);
-            model.ElevatorAvailable = SafeBool(reader, 31);
-            model.ElevatorCount = reader.IsDBNull(32) ? (byte)0 : SafeByte(reader, 32);
-            model.DefaultCommissionRate = reader.IsDBNull(33) ? 0m : reader.GetDecimal(33);
-            model.DepositAmount = reader.IsDBNull(34) ? null : reader.GetDecimal(34);
-            model.DepositReturnDays = reader.IsDBNull(35) ? null : SafeByte(reader, 35);
-            model.SpokenLanguages = reader.IsDBNull(36) ? null : reader.GetString(36);
-            model.VideoUrl = reader.IsDBNull(37) ? null : reader.GetString(37);
-            model.VirtualTourUrl = reader.IsDBNull(38) ? null : reader.GetString(38);
+            model.HotelTypeId = reader.IsDBNull(2) ? null : reader.GetInt32(2);
+            model.TourismDocumentNo = reader.IsDBNull(3) ? null : reader.GetString(3);
+            model.TourismDocumentType = reader.IsDBNull(4) ? null : reader.GetString(4);
+            model.ShortDescription = reader.IsDBNull(5) ? null : reader.GetString(5);
+            model.Description = reader.IsDBNull(6) ? null : reader.GetString(6);
+            model.Address = reader.IsDBNull(7) ? null : reader.GetString(7);
+            model.City = reader.IsDBNull(8) ? null : reader.GetString(8);
+            model.District = reader.IsDBNull(9) ? null : reader.GetString(9);
+            model.Neighborhood = reader.IsDBNull(10) ? null : reader.GetString(10);
+            model.PostalCode = reader.IsDBNull(11) ? null : reader.GetString(11);
+            model.LocationDescription = reader.IsDBNull(12) ? null : reader.GetString(12);
+            model.Latitude = reader.IsDBNull(13) ? null : reader.GetDecimal(13);
+            model.Longitude = reader.IsDBNull(14) ? null : reader.GetDecimal(14);
+            model.Website = reader.IsDBNull(15) ? null : reader.GetString(15);
+            model.ContactEmail = reader.IsDBNull(16) ? null : reader.GetString(16);
+            model.HotelPhone = reader.IsDBNull(17) ? null : reader.GetString(17);
+            model.HotelPhone2 = reader.IsDBNull(18) ? null : reader.GetString(18);
+            model.Fax = reader.IsDBNull(19) ? null : reader.GetString(19);
+            model.CheckInTime = reader.IsDBNull(20) ? null : reader.GetTimeSpan(20).ToString(@"hh\:mm");
+            model.CheckOutTime = reader.IsDBNull(21) ? null : reader.GetTimeSpan(21).ToString(@"hh\:mm");
+            model.LateCheckoutAvailable = SafeBool(reader, 22);
+            model.LateCheckoutFee = reader.IsDBNull(23) ? null : reader.GetDecimal(23);
+            model.EarlyCheckinAvailable = SafeBool(reader, 24);
+            model.EarlyCheckinFee = reader.IsDBNull(25) ? null : reader.GetDecimal(25);
+            model.MinStay = reader.IsDBNull(26) ? (byte)1 : SafeByte(reader, 26);
+            model.MaxStay = reader.IsDBNull(27) ? (short)30 : SafeShort(reader, 27);
+            model.StarCount = reader.IsDBNull(28) ? null : SafeByte(reader, 28);
+            model.TotalRoomCount = reader.IsDBNull(29) ? (short)0 : SafeShort(reader, 29);
+            model.TotalBedCapacity = reader.IsDBNull(30) ? null : SafeShort(reader, 30);
+            model.FloorCount = reader.IsDBNull(31) ? null : SafeByte(reader, 31);
+            model.ElevatorAvailable = SafeBool(reader, 32);
+            model.ElevatorCount = reader.IsDBNull(33) ? (byte)0 : SafeByte(reader, 33);
+            model.DefaultCommissionRate = reader.IsDBNull(34) ? 0m : reader.GetDecimal(34);
+            model.DepositAmount = reader.IsDBNull(35) ? null : reader.GetDecimal(35);
+            model.DepositReturnDays = reader.IsDBNull(36) ? null : SafeByte(reader, 36);
+            model.SpokenLanguages = reader.IsDBNull(37) ? null : reader.GetString(37);
+            model.VideoUrl = reader.IsDBNull(38) ? null : reader.GetString(38);
+            model.VirtualTourUrl = reader.IsDBNull(39) ? null : reader.GetString(39);
+            model.Country = reader.IsDBNull(40) ? null : reader.GetString(40);
+            model.ReservationPhone = reader.IsDBNull(41) ? null : reader.GetString(41);
+            model.SalesContactName = reader.IsDBNull(42) ? null : reader.GetString(42);
+            model.SalesContactPhone = reader.IsDBNull(43) ? null : reader.GetString(43);
+            model.SalesContactEmail = reader.IsDBNull(44) ? null : reader.GetString(44);
+            model.SalesNotes = reader.IsDBNull(45) ? null : reader.GetString(45);
+            model.CommissionType = reader.IsDBNull(46) ? null : reader.GetString(46);
+            model.CommissionCalculationType = reader.IsDBNull(47) ? null : reader.GetString(47);
+            model.PaymentTerm = reader.IsDBNull(48) ? null : reader.GetString(48);
+            model.PaymentMethod = reader.IsDBNull(49) ? null : reader.GetString(49);
+            model.InvoiceIssueType = reader.IsDBNull(50) ? null : reader.GetString(50);
+            model.PublishStatus = reader.IsDBNull(51) ? null : reader.GetString(51);
+            model.ApprovalStatus = reader.IsDBNull(52) ? null : reader.GetString(52);
+            model.AverageScore = reader.IsDBNull(53) ? null : reader.GetDecimal(53);
+            model.TotalReviewCount = reader.IsDBNull(54) ? 0 : SafeInt(reader, 54);
+            model.CreatedAt = reader.IsDBNull(55) ? null : reader.GetDateTime(55);
+            model.UpdatedAt = reader.IsDBNull(56) ? null : reader.GetDateTime(56);
         }
 
         return model;
+    }
+
+    private static async Task<List<PartnerHotelTypeOptionViewModel>> LoadHotelTypeOptionsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT id, kod, tip_adi, COALESCE(ikon_class, N'fa-hotel')
+            FROM dbo.otel_tipleri
+            WHERE aktif_mi = 1
+            ORDER BY siralama, tip_adi;";
+
+        var items = new List<PartnerHotelTypeOptionViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        command.CommandTimeout = 30;
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(new PartnerHotelTypeOptionViewModel
+            {
+                HotelTypeId = reader.GetInt32(0),
+                Code = reader.GetString(1),
+                Name = reader.GetString(2),
+                IconClass = reader.GetString(3)
+            });
+        }
+
+        return items;
+    }
+
+    private static async Task<(int Id, string Name)> ResolvePartnerHotelTypeAsync(SqlConnection connection, int? hotelTypeId, SqlTransaction transaction, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP (1) id, tip_adi
+            FROM dbo.otel_tipleri
+            WHERE aktif_mi = 1
+              AND id = COALESCE(@hotelTypeId, (SELECT TOP (1) id FROM dbo.otel_tipleri WHERE kod = N'otel'))
+            ORDER BY siralama;";
+
+        await using var command = new SqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("@hotelTypeId", hotelTypeId.HasValue ? hotelTypeId.Value : DBNull.Value);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            return (reader.GetInt32(0), reader.GetString(1));
+        }
+
+        throw new InvalidOperationException("Gecerli otel tipi bulunamadi.");
     }
 
     private async Task<List<PartnerAmenityOptionViewModel>> LoadAmenityOptionsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT o.id, o.ozellik_adi, COALESCE(o.ozellik_ikon, 'fa-circle-check') AS ikon,
+                   COALESCE(k.kategori_adi, N'Genel') AS kategori_adi,
                    CASE WHEN oi.otel_id IS NULL THEN 0 ELSE 1 END AS secili
             FROM otel_ozellikleri o
+            LEFT JOIN otel_ozellik_kategorileri k ON k.id = o.kategori_id
             LEFT JOIN otel_ozellik_iliskileri oi ON oi.ozellik_id = o.id AND oi.otel_id = @hotelId
             WHERE o.aktif_mi = 1
-            ORDER BY o.one_cikan_ozellik DESC, o.siralama ASC, o.id ASC;";
+            ORDER BY COALESCE(k.siralama, 999), o.one_cikan_ozellik DESC, o.siralama ASC, o.id ASC;";
 
         var items = new List<PartnerAmenityOptionViewModel>();
         await using var command = new SqlCommand(sql, connection);
@@ -4448,7 +5441,8 @@ public class PartnerService : IPartnerService
                 AmenityId = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture),
                 Name = reader.GetString(1),
                 IconClass = reader.GetString(2),
-                IsSelected = SafeInt(reader, 3) == 1
+                CategoryName = reader.GetString(3),
+                IsSelected = SafeInt(reader, 4) == 1
             });
         }
 
@@ -5535,6 +6529,7 @@ public class PartnerService : IPartnerService
         DateOnly Date,
         decimal BasePrice,
         decimal? DiscountPrice,
+        long? DiscountId,
         long? CampaignId,
         short? TotalRooms,
         short SoldRooms,
