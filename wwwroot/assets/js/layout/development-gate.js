@@ -1,6 +1,7 @@
 (function () {
     var accessUrl = '/gelisim/kilit-ac';
     var lockCodeLength = 6;
+    var maskedCodePattern = /^[•●·*]+$/;
     var inputBuffer = '';
     var isSending = false;
     var unlockPaths = ['/gelisim'];
@@ -20,6 +21,19 @@
         }
     }
 
+    function normalizeCode(value) {
+        return String(value || '').replace(/\s+/g, '').trim();
+    }
+
+    function resolveCode() {
+        var fromInput = normalizeCode(gateInput ? gateInput.value : '');
+        var fromBuffer = normalizeCode(inputBuffer);
+        if (fromInput && !maskedCodePattern.test(fromInput)) {
+            return fromInput;
+        }
+        return fromBuffer;
+    }
+
     function setStatus(message, isError) {
         if (!gateStatus) {
             return;
@@ -30,7 +44,17 @@
     }
 
     async function tryUnlock(code) {
+        var normalizedCode = normalizeCode(code);
         if (isSending) {
+            return;
+        }
+        if (!accessUrl) {
+            setStatus('Bu ortamda geliştirme kilidi kapalı.', true);
+            return;
+        }
+        if (!normalizedCode) {
+            setStatus('Lütfen erişim kodunu girin.', true);
+            gateInput?.classList.add('is-error');
             return;
         }
 
@@ -43,7 +67,7 @@
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({ code: code })
+                body: JSON.stringify({ code: normalizedCode })
             });
 
             if (response.ok) {
@@ -84,13 +108,10 @@
             gateInput.classList.remove('is-error');
             gateInput.value = '•'.repeat(inputBuffer.length);
         }
-        if (inputBuffer.length === lockCodeLength) {
-            tryUnlock(inputBuffer);
-        }
     }, true);
 
     gateButton?.addEventListener('click', function () {
-        var typedCode = gateInput ? gateInput.value.trim() : inputBuffer.trim();
+        var typedCode = resolveCode();
         if (!typedCode) {
             setStatus('Lütfen erişim kodunu girin.', true);
             gateInput?.classList.add('is-error');
@@ -102,7 +123,19 @@
     });
 
     gateInput?.addEventListener('input', function () {
-        inputBuffer = gateInput.value.trim().slice(0, 32);
+        inputBuffer = normalizeCode(gateInput.value).slice(0, 32);
+        gateInput.classList.remove('is-error');
+        setStatus('Yetkiliyseniz ekranda erişim kodunu yazın.', false);
+    });
+
+    gateInput?.addEventListener('paste', function (event) {
+        var clipboardText = normalizeCode(event.clipboardData?.getData('text') || '');
+        if (!clipboardText) {
+            return;
+        }
+        event.preventDefault();
+        inputBuffer = clipboardText.slice(0, 32);
+        gateInput.value = inputBuffer;
         gateInput.classList.remove('is-error');
         setStatus('Yetkiliyseniz ekranda erişim kodunu yazın.', false);
     });
