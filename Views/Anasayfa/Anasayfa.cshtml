@@ -1,5 +1,6 @@
 @model otelturizmnew.Models.Anasayfa.AnasayfaViewModel
 @inject otelturizmnew.Services.Abstractions.IDevelopmentAccessService DevelopmentAccessService
+@using Microsoft.AspNetCore.Hosting
 
 @{
     Layout = null;
@@ -7,7 +8,15 @@
     ViewData["HeaderContext"] = "home";
     var pageCss = ViewData["PageCss"] as string;
     var nonce = Context.Items["CspNonce"] as string;
-    var isDevelopmentUnlocked = DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
+    var hostEnv = Context.RequestServices.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
+    var requestHost = Context.Request.Host.Host ?? string.Empty;
+    var isLoopbackHost =
+        string.Equals(requestHost, "localhost", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(requestHost, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(requestHost, "::1", StringComparison.OrdinalIgnoreCase)
+        || requestHost.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
+    var isLocalDevelopment = hostEnv?.IsDevelopment() == true || isLoopbackHost;
+    var isDevelopmentUnlocked = isLocalDevelopment || DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -20,6 +29,7 @@
             <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/vendor/swiper/swiper-bundle.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/vendor/flag-icons/css/flag-icon.min.css" asp-append-version="true" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />

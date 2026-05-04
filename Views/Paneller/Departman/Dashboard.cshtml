@@ -1,0 +1,80 @@
+@model otelturizmnew.Models.Paneller.Departman.DepartmentDashboardPageViewModel
+@{
+    Layout = "~/Views/Paneller/Departman/_DepartmentPanelLayout.cshtml";
+    ViewData["DepartmentShell"] = Model.Shell;
+}
+<section class="department-hero">
+    <div>
+        <p>İş akışı merkezi</p>
+        <h2>@Model.Shell.PanelTitle operasyon akışı</h2>
+        <span>Onay, evrak, rezervasyon, komisyon, fatura ve destek kuyrukları departman bazlı ayrıştırıldı.</span>
+    </div>
+    <a class="department-primary-link" href="/admin/onay-merkezi"><i class="fas fa-clipboard-check"></i> Admin Onay Merkezi</a>
+</section>
+
+<section class="department-metrics">
+    @foreach (var metric in Model.Metrics)
+    {
+        <article class="department-metric @metric.ToneClass">
+            <span><i class="fas @metric.IconClass"></i></span>
+            <div>
+                <strong>@metric.Value</strong>
+                <p>@metric.Label</p>
+                <small>@metric.Description</small>
+            </div>
+        </article>
+    }
+</section>
+
+<section class="department-card">
+    <div class="department-card-header">
+        <div>
+            <h2>Departman İş Kuyruğu</h2>
+            <p>Listeleme olan her alan tablo mantığında yönetilir.</p>
+        </div>
+    </div>
+    <div class="department-table-wrap">
+        <table class="department-table">
+            <thead>
+                <tr>
+                    <th>Tür</th>
+                    <th>Başlık</th>
+                    <th>Detay</th>
+                    <th>Durum</th>
+                    <th>Aksiyon</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var item in Model.WorkItems)
+            {
+                <tr class="@item.ToneClass">
+                    <td>@item.Type</td>
+                    <td><strong>@item.Title</strong></td>
+                    <td>@item.Detail</td>
+                    <td><span class="department-status @item.ToneClass">@item.StatusText</span></td>
+                    <td><a class="department-action" href="@item.ActionUrl">İncele</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="department-card">
+    <div class="department-card-header">
+        <div>
+            <h2>Platform Gelişim Protokolü</h2>
+            <p>Admin, firma, partner ve satış panelleri aynı standartta ilerler.</p>
+        </div>
+    </div>
+    <div class="department-protocol-grid">
+        @foreach (var protocol in Model.Protocols)
+        {
+            <article>
+                <span>@protocol.StatusText</span>
+                <strong>@protocol.Title</strong>
+                <p>@protocol.Detail</p>
+            </article>
+        }
+    </div>
+</section>

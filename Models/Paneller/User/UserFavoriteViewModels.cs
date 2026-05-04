@@ -3,6 +3,14 @@ namespace otelturizmnew.Models.Paneller.User;
 public class UserFavoritesPageViewModel
 {
     public int FavoriteCount { get; set; }
+    public int TotalCount { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 7;
+    public int TotalPages { get; set; } = 1;
+    public string SearchTerm { get; set; } = string.Empty;
+    public string Sort { get; set; } = "latest-reservation";
+    public bool HasPreviousPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
     public List<UserFavoriteHotelCardViewModel> Hotels { get; set; } = new();
 }
 
@@ -20,9 +28,22 @@ public class UserFavoriteHotelCardViewModel
     public decimal? StartingPrice { get; set; }
     public string PriceText { get; set; } = string.Empty;
     public string RatingText { get; set; } = string.Empty;
+    public DateTime FavoriteAddedAt { get; set; }
     public string AddedDateText { get; set; } = string.Empty;
+    public DateTime? LastReservationDate { get; set; }
+    public string LastReservationDateText { get; set; } = string.Empty;
     public string? AvailabilityNote { get; set; }
     public int PastStayCount { get; set; }
+    public int ReservationCount { get; set; }
+    public int ReviewGivenCount { get; set; }
+    public int ReviewPendingCount { get; set; }
+    /// <summary>Yorum yazılabilir ilk konaklama rezervasyonu (panel yorum formu).</summary>
+    public long? FirstEligibleReviewReservationId { get; set; }
+    public decimal UserAverageRating { get; set; }
+    public string ReservationCountText { get; set; } = string.Empty;
+    public string ReviewGivenText { get; set; } = string.Empty;
+    public string ReviewPendingText { get; set; } = string.Empty;
+    public string UserAverageRatingText { get; set; } = string.Empty;
     public bool PriceAlertEnabled { get; set; }
     public string? PriceAlertTargetText { get; set; }
     public string? PriceAlertDateRangeText { get; set; }

@@ -52,6 +52,8 @@ public class FirmaPanelDealRowViewModel
     public string HotelName { get; set; } = string.Empty;
     public string RoomName { get; set; } = string.Empty;
     public string CityText { get; set; } = string.Empty;
+    public string CapacityText { get; set; } = "-";
+    public string StockText { get; set; } = "-";
     public string StandardPriceText { get; set; } = string.Empty;
     public string CorporatePriceText { get; set; } = string.Empty;
     public string DiscountText { get; set; } = string.Empty;
@@ -135,6 +137,8 @@ public class FirmaDealsPageViewModel
     public List<FirmaPanelDealRowViewModel> Deals { get; set; } = new();
     public FirmaDealsFilterModel Filter { get; set; } = new();
     public List<string> AvailableCities { get; set; } = new();
+    public List<string> AvailableDistricts { get; set; } = new();
+    public List<string> AvailableNeighborhoods { get; set; } = new();
     public List<FirmaDealHotelOptionViewModel> HotelOptions { get; set; } = new();
 }
 
@@ -166,6 +170,7 @@ public class FirmaDealsCompareRowViewModel
     public long HotelId { get; set; }
     public long RoomTypeId { get; set; }
     public string RoomName { get; set; } = string.Empty;
+    public string CapacityText { get; set; } = "-";
     public string CorporateNightlyText { get; set; } = "-";
     public string StandardNightlyText { get; set; } = "-";
     public string DiscountText { get; set; } = "-";
@@ -257,5 +262,7 @@ public class FirmaDealsFilterModel
 {
     public string? Search { get; set; }
     public string? City { get; set; }
+    public string? District { get; set; }
+    public string? Neighborhood { get; set; }
     public int? MinRoomCount { get; set; }
 }

@@ -527,7 +527,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var hotel = await EnsureHotelExistsAsync(connection, request.HotelId, cancellationToken);
-        var targetDirectory = Path.Combine(_environment.WebRootPath, "uploads", "hotels", "admin", hotel.HotelId.ToString(CultureInfo.InvariantCulture));
+        var targetDirectory = MediaStoragePaths.HotelImagesDirectory(_environment.WebRootPath, hotel.HotelId);
         Directory.CreateDirectory(targetDirectory);
         var savedPhysicalPaths = new List<string>();
         var displayOrder = request.DisplayOrder;
@@ -548,7 +548,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                     QualityProfile: otelturizmnew.Services.Abstractions.ImageQualityProfile.HotelPhoto,
                     GenerateThumbnails: true
                 ), cancellationToken);
-                var relativePath = $"/uploads/hotels/admin/{hotel.HotelId}/{storedImage.FileName}";
+                var relativePath = MediaStoragePaths.HotelImagesUrl(hotel.HotelId, storedImage.FileName);
                 savedPhysicalPaths.Add(Path.Combine(targetDirectory, storedImage.FileName));
 
                 const string insertSql = @"
@@ -720,7 +720,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         await connection.OpenAsync(cancellationToken);
         await EnsureHotelExistsAsync(connection, request.HotelId, cancellationToken);
         var room = await EnsureRoomExistsAsync(connection, request.HotelId, request.RoomId, cancellationToken);
-        var targetDirectory = Path.Combine(_environment.WebRootPath, "uploads", "hotels", "admin", request.HotelId.ToString(CultureInfo.InvariantCulture), "rooms", request.RoomId.ToString(CultureInfo.InvariantCulture));
+        var targetDirectory = MediaStoragePaths.RoomImagesDirectory(_environment.WebRootPath, request.HotelId, request.RoomId);
         Directory.CreateDirectory(targetDirectory);
         var savedPhysicalPaths = new List<string>();
         var displayOrder = request.DisplayOrder;
@@ -741,7 +741,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                     QualityProfile: otelturizmnew.Services.Abstractions.ImageQualityProfile.RoomPhoto,
                     GenerateThumbnails: true
                 ), cancellationToken);
-                var relativePath = $"/uploads/hotels/admin/{request.HotelId}/rooms/{request.RoomId}/{storedImage.FileName}";
+                var relativePath = MediaStoragePaths.RoomImagesUrl(request.HotelId, request.RoomId, storedImage.FileName);
                 savedPhysicalPaths.Add(Path.Combine(targetDirectory, storedImage.FileName));
 
                 const string insertSql = @"

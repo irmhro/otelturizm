@@ -300,6 +300,7 @@ public class PublicReservationService : IPublicReservationService
 
             var createdReservationIds = new List<long>(perRoomPricing.Count);
             var createdReservationNos = new List<string>(perRoomPricing.Count);
+            var emailJobs = new List<ReservationEmailJob>(perRoomPricing.Count * 2);
             var remainingKapida = paymentPlan.KapidaTutari;
             var remainingOnline = paymentPlan.OnlineTutari;
             var remainingHavale = paymentPlan.HavaleBekleyen;
@@ -318,7 +319,7 @@ public class PublicReservationService : IPublicReservationService
                 remainingHavale -= havale;
 
                 var reservationNo = await GenerateReservationNoAsync(connection, (SqlTransaction)transaction, cancellationToken);
-                var roomHotel = await LoadHotelAsync(connection, form.HotelId, selection.RoomTypeId, cancellationToken);
+                var roomHotel = await LoadHotelAsync(connection, form.HotelId, selection.RoomTypeId, cancellationToken, (SqlTransaction)transaction);
 
                 long reservationId;
                 await using (var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction))
@@ -330,7 +331,7 @@ public class PublicReservationService : IPublicReservationService
                     insertCommand.Parameters.AddWithValue("@fullName", userProfile.FullName);
                     insertCommand.Parameters.AddWithValue("@email", userProfile.Email);
                     insertCommand.Parameters.AddWithValue("@phone", userProfile.Phone);
-                    insertCommand.Parameters.AddWithValue("@note", selections.Count > 1 ? "Public rezervasyon talebi (çoklu oda)" : "Public rezervasyon talebi");
+                    insertCommand.Parameters.AddWithValue("@note", selections.Count > 1 ? "Web rezervasyon talebi (çoklu oda)" : "Web rezervasyon talebi");
                     insertCommand.Parameters.AddWithValue("@city", userProfile.City);
                     insertCommand.Parameters.AddWithValue("@district", userProfile.District);
                     insertCommand.Parameters.AddWithValue("@neighborhood", userProfile.Neighborhood);
@@ -398,14 +399,12 @@ public class PublicReservationService : IPublicReservationService
                 createdReservationIds.Add(reservationId);
                 createdReservationNos.Add(reservationNo);
 
-                await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
-                {
-                    UserId = authenticatedUserId,
-                    RecipientEmail = userProfile.Email,
-                    TemplateCode = "reservation_received_customer",
-                    RelatedTable = "rezervasyonlar",
-                    RelatedRecordId = reservationId,
-                    Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                emailJobs.Add(new ReservationEmailJob(
+                    authenticatedUserId,
+                    userProfile.Email,
+                    "reservation_received_customer",
+                    reservationId,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["user_first_name"] = userProfile.FirstName,
                         ["booking_reference"] = reservationNo,
@@ -416,18 +415,15 @@ public class PublicReservationService : IPublicReservationService
                         ["room_type_name"] = roomHotel.RoomName,
                         ["booking_details_link"] = "/panel/user/rezervasyonlarim",
                         ["hotel_address"] = roomHotel.Address
-                    }
-                }, cancellationToken);
+                    }));
 
                 var partnerRecipient = await ResolvePartnerRecipientAsync(connection, (SqlTransaction)transaction, form.HotelId, cancellationToken);
-                await _emailQueueService.QueueTemplateAsync(connection, (SqlTransaction)transaction, new QueuedEmailTemplateRequest
-                {
-                    UserId = partnerRecipient.UserId,
-                    RecipientEmail = partnerRecipient.Email,
-                    TemplateCode = "reservation_new_partner",
-                    RelatedTable = "rezervasyonlar",
-                    RelatedRecordId = reservationId,
-                    Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                emailJobs.Add(new ReservationEmailJob(
+                    partnerRecipient.UserId,
+                    partnerRecipient.Email,
+                    "reservation_new_partner",
+                    reservationId,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["hotel_manager_name"] = partnerRecipient.ManagerName,
                         ["hotel_name"] = roomHotel.Name,
@@ -440,11 +436,19 @@ public class PublicReservationService : IPublicReservationService
                         ["check_out_date"] = selection.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
                         ["room_type_name"] = roomHotel.RoomName,
                         ["room_count"] = Math.Max(1, selection.RoomCount).ToString(CultureInfo.InvariantCulture)
-                    }
-                }, cancellationToken);
+                    }));
             }
 
+            await EnsureReservationHotelFavoriteAsync(connection, (SqlTransaction)transaction, authenticatedUserId, form.HotelId, hotel.Slug, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            try
+            {
+                await QueueReservationEmailsAsync(emailJobs, cancellationToken);
+            }
+            catch (Exception emailQueueException)
+            {
+                _logger.LogWarning(emailQueueException, "Rezervasyon e-posta kuyruğu oluşturulamadı. DraftId: {DraftId}", draftId);
+            }
             try
             {
                 if (createdReservationIds.Count > 0)
@@ -499,7 +503,7 @@ public class PublicReservationService : IPublicReservationService
                     ? $"Rezervasyonlariniz alindi: {reservationNosText}"
                     : $"Rezervasyonunuz alindi: {reservationNosText}",
                 ReservationId = createdReservationIds.Count > 0 ? createdReservationIds[0] : null,
-                RedirectUrl = "/panel/user/rezervasyonlarim"
+                RedirectUrl = $"/oteller/{hotel.Slug}?reservationCreated=1"
             };
         }
         catch (Exception ex)
@@ -595,7 +599,7 @@ public class PublicReservationService : IPublicReservationService
         };
     }
 
-    private async Task<HotelSnapshot> LoadHotelAsync(SqlConnection connection, long hotelId, long roomTypeId, CancellationToken cancellationToken)
+    private async Task<HotelSnapshot> LoadHotelAsync(SqlConnection connection, long hotelId, long roomTypeId, CancellationToken cancellationToken, SqlTransaction? transaction = null)
     {
         const string sql = @"
             SELECT TOP (1)
@@ -614,7 +618,9 @@ public class PublicReservationService : IPublicReservationService
             FROM oteller o
             INNER JOIN oda_tipleri ot ON ot.id = @roomTypeId AND ot.otel_id = o.id
             WHERE o.id = @hotelId;";
-        await using var command = new SqlCommand(sql, connection);
+        await using var command = transaction is null
+            ? new SqlCommand(sql, connection)
+            : new SqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -727,7 +733,7 @@ public class PublicReservationService : IPublicReservationService
     {
         const string sql = @"
             SELECT COALESCE(o.user_id, oks.user_id, 1),
-                   COALESCE(u.eposta, o.satis_kontak_eposta, o.eposta, 'partner@otelturizm.com'),
+                   COALESCE(NULLIF(o.satis_kontak_eposta, ''), NULLIF(o.eposta, ''), u.eposta, 'partner@otelturizm.com'),
                    COALESCE(u.ad_soyad, o.satis_kontak_adi, 'Partner Yetkilisi')
             FROM oteller o
             LEFT JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = o.id AND oks.aktif_mi = 1
@@ -744,6 +750,22 @@ public class PublicReservationService : IPublicReservationService
         }
 
         return (1L, "partner@otelturizm.com", "Partner Yetkilisi");
+    }
+
+    private async Task QueueReservationEmailsAsync(List<ReservationEmailJob> jobs, CancellationToken cancellationToken)
+    {
+        foreach (var job in jobs.Where(static x => !string.IsNullOrWhiteSpace(x.RecipientEmail)))
+        {
+            await _emailQueueService.QueueTemplateAsync(new QueuedEmailTemplateRequest
+            {
+                UserId = job.UserId,
+                RecipientEmail = job.RecipientEmail,
+                TemplateCode = job.TemplateCode,
+                RelatedTable = "rezervasyonlar",
+                RelatedRecordId = job.ReservationId,
+                Tokens = job.Tokens
+            }, cancellationToken);
+        }
     }
 
     private async Task<CommissionTaxRuleSnapshot> LoadActiveCommissionRuleAsync(SqlConnection connection, long roomTypeId, DateOnly effectiveDate, CancellationToken cancellationToken)
@@ -864,9 +886,12 @@ public class PublicReservationService : IPublicReservationService
         var averageNightly = nightlyBreakdown.Average(static item => item.EffectivePrice);
         var roomTotal = nightlyBreakdown.Sum(static item => item.EffectivePrice) * effectiveRoomCount;
         var commissionRule = await LoadActiveCommissionRuleAsync(connection, roomTypeId, checkIn, cancellationToken);
-        var netRoomAmount = roomTotal;
+        var taxDivisor = 1m + commissionRule.VatRate / 100m + commissionRule.AccommodationTaxRate / 100m;
+        var netRoomAmount = taxDivisor > 0m
+            ? Math.Round(roomTotal / taxDivisor, 2, MidpointRounding.AwayFromZero)
+            : roomTotal;
         var vatAmount = Math.Round(netRoomAmount * commissionRule.VatRate / 100m, 2, MidpointRounding.AwayFromZero);
-        var accommodationTaxAmount = Math.Round(netRoomAmount * commissionRule.AccommodationTaxRate / 100m, 2, MidpointRounding.AwayFromZero);
+        var accommodationTaxAmount = Math.Max(0m, roomTotal - netRoomAmount - vatAmount);
         var tax = vatAmount + accommodationTaxAmount;
         var commissionAmount = Math.Round(netRoomAmount * commissionRule.CommissionRate / 100m, 2, MidpointRounding.AwayFromZero);
         var commissionIncomeTaxAmount = Math.Round(commissionAmount * commissionRule.CommissionIncomeTaxRate / 100m, 2, MidpointRounding.AwayFromZero);
@@ -880,7 +905,7 @@ public class PublicReservationService : IPublicReservationService
             AccommodationTaxRate = commissionRule.AccommodationTaxRate,
             AccommodationTaxAmount = accommodationTaxAmount,
             TaxAmount = tax,
-            TotalAmount = roomTotal + tax,
+            TotalAmount = roomTotal,
             CommissionRuleId = commissionRule.RuleId,
             CommissionRate = commissionRule.CommissionRate,
             CommissionAmount = commissionAmount,
@@ -900,9 +925,17 @@ public class PublicReservationService : IPublicReservationService
 
     private async Task<string> GenerateReservationNoAsync(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand("SELECT COUNT(*) + 1 FROM rezervasyonlar WHERE CAST(olusturulma_tarihi AS date) = CAST(SYSUTCDATETIME() AS date);", connection, (SqlTransaction)transaction);
+        await using var command = new SqlCommand(@"
+            SELECT COUNT_BIG(*) + 1
+            FROM dbo.rezervasyonlar WITH (TABLOCKX, HOLDLOCK)
+            WHERE CAST(olusturulma_tarihi AS date) = CAST(SYSUTCDATETIME() AS date);", connection, (SqlTransaction)transaction);
         var seq = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
-        return $"WEB-{DateTime.Now:yyyyMMdd}-{seq:0000}";
+        if (seq > 900000) throw new InvalidOperationException("Günlük rezervasyon numarası kapasitesi aşıldı.");
+
+        var businessDate = DateTime.UtcNow;
+        var daySeed = int.Parse(businessDate.ToString("MMddyy", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture) % 900000;
+        var mixedCode = ((seq * 7919) + daySeed) % 900000 + 100000;
+        return $"WEB-{businessDate:yyMMdd}-{mixedCode:000000}";
     }
 
     private static string SplitFirstName(string fullName)
@@ -1163,6 +1196,44 @@ public class PublicReservationService : IPublicReservationService
         }
     }
 
+    private static async Task EnsureReservationHotelFavoriteAsync(
+        SqlConnection connection,
+        SqlTransaction transaction,
+        long userId,
+        long hotelId,
+        string hotelSlug,
+        CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            IF EXISTS (
+                SELECT 1
+                FROM dbo.user_favori_oteller WITH (UPDLOCK, HOLDLOCK)
+                WHERE user_id = @userId AND otel_id = @hotelId
+            )
+            BEGIN
+                UPDATE dbo.user_favori_oteller
+                SET kaynak_sayfa = N'rezervasyon',
+                    kaynak_url = @sourceUrl,
+                    aktif_mi = 1,
+                    kaldirilma_tarihi = NULL,
+                    son_islem_tarihi = SYSUTCDATETIME()
+                WHERE user_id = @userId AND otel_id = @hotelId;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO dbo.user_favori_oteller
+                (user_id, otel_id, kaynak_sayfa, kaynak_url, aktif_mi, olusturulma_tarihi, son_islem_tarihi)
+                VALUES
+                (@userId, @hotelId, N'rezervasyon', @sourceUrl, 1, SYSUTCDATETIME(), SYSUTCDATETIME());
+            END;";
+
+        await using var command = new SqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        command.Parameters.AddWithValue("@sourceUrl", string.IsNullOrWhiteSpace(hotelSlug) ? $"/oteller/{hotelId}" : $"/oteller/{hotelSlug}");
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private async Task AttachBankTransferReceiptIfNeededAsync(
         long reservationId,
         long userId,
@@ -1303,6 +1374,13 @@ public class PublicReservationService : IPublicReservationService
             IsAgeEligible &&
             !string.IsNullOrWhiteSpace(Gender);
     }
+
+    private sealed record ReservationEmailJob(
+        long UserId,
+        string RecipientEmail,
+        string TemplateCode,
+        long ReservationId,
+        Dictionary<string, string> Tokens);
 
     private sealed class HotelSnapshot
     {

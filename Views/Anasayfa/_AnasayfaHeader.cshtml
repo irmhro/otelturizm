@@ -32,8 +32,6 @@
 
 <header class="site-header" id="mainHeader">
     <div class="top-utility-bar">
-        <!-- flag icons local vendor dosyasindan yuklenir -->
-        <link rel="stylesheet" href="~/assets/vendor/flag-icons/css/flag-icon.min.css" asp-append-version="true" />
         <div class="utility-container">
             <div class="utility-left">
                 <span><i class="fas fa-shield-alt"></i> @T.Get("safe_payment")</span>
@@ -54,25 +52,14 @@
                         <span class="dropdown-label">@currentLang.ToUpperInvariant()</span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
-                        <li class="dropdown-item"><a href="/locale/set?lang=tr-TR&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))"><span class="flag-icon flag-icon-tr"></span> Türkçe</a></li>
-                        <li class="dropdown-item"><a href="/locale/set?lang=en-US&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))"><span class="flag-icon flag-icon-gb"></span> English</a></li>
-                        <li class="dropdown-item"><a href="/locale/set?lang=fr-FR&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))"><span class="flag-icon flag-icon-fr"></span> Français</a></li>
-                        <li class="dropdown-item"><a href="/locale/set?lang=de-DE&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))"><span class="flag-icon flag-icon-de"></span> Deutsch</a></li>
-                        <li class="dropdown-item"><a href="/locale/set?lang=es-ES&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))"><span class="flag-icon flag-icon-es"></span> Español</a></li>
+                        <li class="dropdown-item" data-value="tr"><button type="button"><span class="flag-icon flag-icon-tr"></span> Türkçe</button></li>
+                        <li class="dropdown-item" data-value="en"><button type="button"><span class="flag-icon flag-icon-gb"></span> English</button></li>
+                        <li class="dropdown-item" data-value="fr"><button type="button"><span class="flag-icon flag-icon-fr"></span> Français</button></li>
+                        <li class="dropdown-item" data-value="de"><button type="button"><span class="flag-icon flag-icon-de"></span> Deutsch</button></li>
+                        <li class="dropdown-item" data-value="es"><button type="button"><span class="flag-icon flag-icon-es"></span> Español</button></li>
                     </ul>
                 </div>
 
-                <div class="dropdown language-dropdown" id="currencyDropdown">
-                    <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
-                        <span class="dropdown-label">@currentCurrency</span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu">
-                        <li class="dropdown-item"><a href="/currency/set?code=TRY&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))">₺ TRY</a></li>
-                        <li class="dropdown-item"><a href="/currency/set?code=USD&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))">$ USD</a></li>
-                        <li class="dropdown-item"><a href="/currency/set?code=EUR&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))">€ EUR</a></li>
-                        <li class="dropdown-item"><a href="/currency/set?code=GBP&returnUrl=@(Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString))">£ GBP</a></li>
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
@@ -81,6 +68,7 @@
         <div class="logo-area">
             <a asp-controller="Home" asp-action="Index" class="logo logo-image-only" aria-label="Otelturizm Anasayfa">
                 <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="brand-logo-image" />
+                <span class="brand-beta" aria-label="Beta">beta</span>
             </a>
 
             <nav class="desktop-nav"><!-- desktop nav removed; primary link moved to header actions -->
@@ -159,6 +147,22 @@
 
 <script nonce="@nonce">
     (function(){
+        function ensureFlagIconStylesheet() {
+            const hasFlagCss = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(function (link) {
+                const href = String(link.getAttribute('href') || '').toLowerCase();
+                return href.indexOf('flag-icon.min.css') > -1 || href.indexOf('flag-icons') > -1;
+            });
+            if (hasFlagCss) {
+                return;
+            }
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = '/assets/vendor/flag-icons/css/flag-icon.min.css';
+            document.head.appendChild(link);
+        }
+
+        ensureFlagIconStylesheet();
+
         const languageStorageKey = 'site:language:v1';
         const legacyLanguageStorageKey = 'site:language';
         const languageSessionKey = 'site:language:session:v1';
@@ -166,8 +170,8 @@
         const languageExplicitKey = 'site:language:explicit:v1';
         const languageExplicitCookieKey = 'site_language_explicit_v1';
         const defaultLanguage = 'tr';
-        const supportedLanguages = ['tr', 'en', 'fr', 'ru', 'ar'];
-        const languageToFlagCode = { tr: 'tr', en: 'gb', fr: 'fr', ru: 'ru', ar: 'sa' };
+        const supportedLanguages = ['tr', 'en', 'fr', 'de', 'es', 'ru', 'ar'];
+        const languageToFlagCode = { tr: 'tr', en: 'gb', fr: 'fr', de: 'de', es: 'es', ru: 'ru', ar: 'sa' };
         let pendingTranslateLanguage = null;
 
         function normalizeLanguage(value) {
@@ -708,6 +712,12 @@
                 </button>
                 <button type="button" class="drawer-language-btn" data-mobile-language-value="fr" aria-pressed="false">
                     <span class="flag-icon flag-icon-fr"></span><span>Français</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="de" aria-pressed="false">
+                    <span class="flag-icon flag-icon-de"></span><span>Deutsch</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="es" aria-pressed="false">
+                    <span class="flag-icon flag-icon-es"></span><span>Español</span>
                 </button>
                 <button type="button" class="drawer-language-btn" data-mobile-language-value="ru" aria-pressed="false">
                     <span class="flag-icon flag-icon-ru"></span><span>Русский</span>

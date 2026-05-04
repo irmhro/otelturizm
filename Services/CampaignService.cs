@@ -49,14 +49,22 @@ public class CampaignService : ICampaignService
                     JOIN oteller o ON o.id = ko.otel_id
                     WHERE ko.kampanya_id = k.id
                       AND ko.katilim_durumu = 'Aktif'
-                      AND SYSUTCDATETIME() BETWEEN ko.baslangic_tarihi AND ko.bitis_tarihi
-                      AND o.yayin_durumu = 'Yayında'
-                      AND o.onay_durumu = 'Onaylandı'
+                      AND (
+                            o.yayin_durumu IS NULL
+                            OR LOWER(REPLACE(LTRIM(RTRIM(o.yayin_durumu)), N'ı', N'i')) IN (N'yayinda', N'yayında')
+                          )
+                      AND (
+                            o.onay_durumu IS NULL
+                            OR LOWER(REPLACE(LTRIM(RTRIM(o.onay_durumu)), N'ı', N'i')) IN (N'onaylandi', N'onaylandı')
+                          )
                 ) AS hotel_count
             FROM kampanyalar k
             WHERE k.aktif_mi = 1
-              AND k.gorunurluk_durumu = 'Yayında'
-              AND SYSUTCDATETIME() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
+              AND (
+                    k.gorunurluk_durumu IS NULL
+                    OR LTRIM(RTRIM(k.gorunurluk_durumu)) = ''
+                    OR LOWER(REPLACE(LTRIM(RTRIM(k.gorunurluk_durumu)), N'ı', N'i')) IN (N'yayinda', N'yayında')
+                  )
               AND (
                     @preset = ''
                     OR k.kampanya_etiketi LIKE '%' + @preset + '%'
@@ -95,7 +103,7 @@ public class CampaignService : ICampaignService
                 PromoBadge = reader.IsDBNull(10) ? null : reader.GetString(10),
                 ColorCode = reader.GetString(11),
                 HeroImageUrl = NormalizeImageUrl(reader.IsDBNull(12) ? null : reader.GetString(12)),
-                IsFeatured = !reader.IsDBNull(13) && reader.GetBoolean(13),
+                IsFeatured = !reader.IsDBNull(13) && Convert.ToInt32(reader.GetValue(13), CultureInfo.InvariantCulture) == 1,
                 HotelCount = reader.IsDBNull(14) ? 0 : Convert.ToInt32(reader.GetValue(14), CultureInfo.InvariantCulture)
             });
         }
@@ -141,8 +149,11 @@ public class CampaignService : ICampaignService
                 COALESCE(k.one_cikan_kampanya, 0) AS one_cikan_kampanya
             FROM kampanyalar k
             WHERE k.aktif_mi = 1
-              AND k.gorunurluk_durumu = 'Yayında'
-              AND SYSUTCDATETIME() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
+              AND (
+                    k.gorunurluk_durumu IS NULL
+                    OR LTRIM(RTRIM(k.gorunurluk_durumu)) = ''
+                    OR LOWER(REPLACE(LTRIM(RTRIM(k.gorunurluk_durumu)), N'ı', N'i')) IN (N'yayinda', N'yayında')
+                  )
               AND (
                     k.seo_slug = @slug
                     OR k.sayfa_url = @slug
@@ -178,7 +189,7 @@ public class CampaignService : ICampaignService
                     HeroImageUrl = NormalizeImageUrl(reader.IsDBNull(14) ? null : reader.GetString(14)),
                     CardImageUrl = NormalizeImageUrl(reader.IsDBNull(15) ? null : reader.GetString(15)),
                     ColorCode = reader.GetString(16),
-                    IsFeatured = !reader.IsDBNull(17) && reader.GetBoolean(17)
+                    IsFeatured = !reader.IsDBNull(17) && Convert.ToInt32(reader.GetValue(17), CultureInfo.InvariantCulture) == 1
                 };
             }
         }
@@ -300,7 +311,7 @@ public class CampaignService : ICampaignService
                     PriceNote = price.HasValue ? "Kampanyalı · günlük (vergi öncesi)" : "Teklif al",
                     Summary = reader.GetString(8),
                     ImageUrl = NormalizeImageUrl(reader.IsDBNull(9) ? null : reader.GetString(9)),
-                    IsFeatured = !reader.IsDBNull(10) && reader.GetBoolean(10),
+                    IsFeatured = !reader.IsDBNull(10) && Convert.ToInt32(reader.GetValue(10), CultureInfo.InvariantCulture) == 1,
                     Amenities = amenities,
                     Tags = hotelTags
                 });

@@ -1,0 +1,56 @@
+@{
+    var title = ViewData["Title"] as string ?? "Otelturizm";
+    var pageCss = ViewData["PageCss"] as string;
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<!DOCTYPE html>
+<html lang="tr" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@title - Otelturizm</title>
+    <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/paneltematabler/dist/css/tabler.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/paneltematabler/dist/css/tabler-vendors.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/partner/tabler-bridge.css" asp-append-version="true" />
+    @if (!string.IsNullOrWhiteSpace(pageCss))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/assets/css/@(pageCss).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    }
+</head>
+<body class="d-flex flex-column min-vh-100 auth-tabler-body" style="--tblr-primary: #003B95;">
+    <a class="visually-hidden-focusable position-absolute top-0 start-0 p-2" href="#auth-main">İçeriğe atla</a>
+    <header class="navbar navbar-expand-sm navbar-light border-bottom bg-body d-print-none">
+        <div class="container-xl">
+            <a class="navbar-brand py-2" href="/">
+                <img src="~/uploads/logo/logo.png" height="32" alt="Otelturizm" class="navbar-brand-image" />
+            </a>
+            <div class="navbar-nav flex-row ms-auto gap-2">
+                <a href="/" class="btn btn-outline-secondary btn-sm">Ana sayfa</a>
+                <a href="/yardim-merkezi" class="btn btn-ghost-secondary btn-sm d-none d-sm-inline-flex">Yardım</a>
+            </div>
+        </div>
+    </header>
+
+    <main id="auth-main" class="flex-fill d-flex flex-column">
+        @RenderBody()
+    </main>
+
+    <footer class="footer footer-transparent border-top py-3 mt-auto d-print-none">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col text-muted small">&copy; @DateTime.UtcNow.Year Otelturizm</div>
+                <div class="col-auto text-muted small">
+                    <a asp-controller="Home" asp-action="Privacy" class="link-secondary me-3">Gizlilik</a>
+                    <a href="/yardim-merkezi" class="link-secondary">Yardım</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/paneltematabler/dist/js/tabler.min.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

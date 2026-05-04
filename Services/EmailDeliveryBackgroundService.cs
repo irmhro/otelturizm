@@ -8,11 +8,17 @@ using System.Globalization;
 using System.Security.Authentication;
 using System.Text.Json;
 using System.Net.Http;
+using System.Net;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace otelturizmnew.Services;
 
 public sealed class EmailDeliveryBackgroundService : BackgroundService
 {
+    private static int _missingActiveSmtpLogged;
+
+    private const string PublicSenderName = "otelturizm.com";
     private readonly IConfiguration _configuration;
     private readonly ILogger<EmailDeliveryBackgroundService> _logger;
     private readonly IWebHostEnvironment _environment;
@@ -75,6 +81,13 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             defaultSmtp = TryBuildDevPickupSmtp();
             if (defaultSmtp is null)
             {
+                // Canlı (özellikle Linux): aktif SMTP satırı yoksa kuyruk işlenmez; pickup fallback yoktur.
+                if (Interlocked.CompareExchange(ref _missingActiveSmtpLogged, 1, 0) == 0)
+                {
+                    _logger.LogWarning(
+                        "E-posta kuyrugu calismiyor: veritabaninda aktif SMTP yok (email_services.aktif_mi=1 ve gecerli smtp_host/sifre). " +
+                        "bildirim_loglari kayitlari Birikir ancak gonderilmez. Admin: Database/MigrationsSql/20260502_enable_live_email_delivery.sql ve smtp_sifre.");
+                }
                 return;
             }
         }
@@ -504,19 +517,27 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 
     private async Task<EmailSendResult> SendEmailAsync(SmtpConfig smtp, QueuedEmailItem item, CancellationToken cancellationToken)
     {
+        var senderName = PublicSenderName;
+        var subject = EnsureInboxFriendlyDeliverySubject(NormalizeEmailText(item.Subject), item.Id);
+        var htmlBody = NormalizeEmailText(item.HtmlBody);
+
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(smtp.SenderName, smtp.SenderEmail));
+        message.From.Add(new MailboxAddress(senderName, smtp.SenderEmail));
         message.To.Add(MailboxAddress.Parse(item.RecipientEmail));
-        message.Subject = item.Subject;
+        message.Subject = subject;
         message.MessageId = MimeUtils.GenerateMessageId("otelturizm.com");
         if (!string.IsNullOrWhiteSpace(smtp.ReplyToEmail))
         {
             message.ReplyTo.Add(MailboxAddress.Parse(smtp.ReplyToEmail));
         }
+        message.Headers.Replace(HeaderId.AutoSubmitted, "auto-generated");
+        message.Headers.Replace("X-Auto-Response-Suppress", "All");
+        message.Headers.Replace("X-Mailer", "Otelturizm Mailer");
 
         var builder = new BodyBuilder
         {
-            HtmlBody = item.HtmlBody
+            HtmlBody = htmlBody,
+            TextBody = BuildPlainTextBody(htmlBody, subject)
         };
 
         await AttachFilesAsync(builder, item.AttachmentsJson, cancellationToken);
@@ -659,6 +680,20 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         {
             // Ekler parse edilemezse mail yine de gitsin.
         }
+    }
+
+    private static string EnsureInboxFriendlyDeliverySubject(string subject, long queueId)
+    {
+        var cleanSubject = string.IsNullOrWhiteSpace(subject)
+            ? "otelturizm.com Bildirimi"
+            : subject.Trim();
+        if (Regex.IsMatch(cleanSubject, @"\b\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}\b", RegexOptions.CultureInvariant))
+        {
+            return cleanSubject;
+        }
+
+        var stamp = DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"));
+        return $"{cleanSubject} | {stamp} | KUYRUK-{queueId.ToString(CultureInfo.InvariantCulture)}";
     }
 
     private static async Task<string> SaveToPickupDirectoryAsync(SmtpConfig smtp, MimeMessage message, CancellationToken cancellationToken)
@@ -815,6 +850,91 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 
         var trimmed = value.Trim();
         return trimmed.Length <= 250 ? trimmed : trimmed[..250];
+    }
+
+    private static string NormalizeEmailText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = value.Trim();
+        if (!LooksLikeMojibake(trimmed))
+        {
+            return trimmed;
+        }
+
+        try
+        {
+            var latin1 = Encoding.GetEncoding("ISO-8859-1");
+            var repaired = Encoding.UTF8.GetString(latin1.GetBytes(trimmed)).Trim();
+            if (!string.IsNullOrWhiteSpace(repaired) && LooksBetterThanOriginal(trimmed, repaired))
+            {
+                return repaired;
+            }
+        }
+        catch
+        {
+            // En iyi çabayla devam ediyoruz.
+        }
+
+        return trimmed;
+    }
+
+    private static bool LooksLikeMojibake(string value)
+    {
+        return value.Contains('Ã')
+            || value.Contains('Ä')
+            || value.Contains('Å')
+            || value.Contains('�');
+    }
+
+    private static bool LooksBetterThanOriginal(string original, string repaired)
+    {
+        static int Score(string input)
+        {
+            var score = 0;
+            foreach (var ch in input)
+            {
+                if (ch is 'Ã' or 'Ä' or 'Å' or '�')
+                {
+                    score -= 3;
+                }
+
+                if ("çğıİöşüÇĞÖŞÜ".Contains(ch))
+                {
+                    score += 2;
+                }
+            }
+
+            return score;
+        }
+
+        return Score(repaired) > Score(original);
+    }
+
+    private static string BuildPlainTextBody(string htmlBody, string subject)
+    {
+        if (string.IsNullOrWhiteSpace(htmlBody))
+        {
+            return subject;
+        }
+
+        var normalized = htmlBody.Replace("\r", " ", StringComparison.Ordinal)
+            .Replace("\n", " ", StringComparison.Ordinal);
+        normalized = Regex.Replace(normalized, @"<(script|style)\b[^>]*>.*?</\1>", " ", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        normalized = Regex.Replace(normalized, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+        normalized = Regex.Replace(normalized, @"</(p|div|h1|h2|h3|h4|h5|li|tr|section|article)>", "\n", RegexOptions.IgnoreCase);
+        normalized = Regex.Replace(normalized, "<[^>]+>", " ");
+        normalized = WebUtility.HtmlDecode(normalized);
+        normalized = Regex.Replace(normalized, @"[ \t]+", " ");
+        normalized = Regex.Replace(normalized, @"\n{3,}", "\n\n");
+        normalized = normalized.Trim();
+
+        return string.IsNullOrWhiteSpace(normalized)
+            ? subject
+            : normalized;
     }
 
     private sealed class QueuedEmailItem

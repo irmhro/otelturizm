@@ -1,6 +1,6 @@
 # Growth paketi (201–220) — teknik özeti
 
-Bu dosya `improvements-first-200.md` içindeki **201–220** maddelerinin depoda hangi bileşenlere karşılık geldiğini özetler.
+Bu dosya `ilk-200-gelistirme-plani.md` içindeki **201–220** maddelerinin depoda hangi bileşenlere karşılık geldiğini özetler.
 
 | # | Başlık | Kod / konfig |
 |---|--------|----------------|

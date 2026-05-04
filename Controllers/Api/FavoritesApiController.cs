@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Oteller;
 using otelturizmnew.Services.Abstractions;
@@ -10,10 +12,12 @@ namespace otelturizmnew.Controllers.Api;
 [Route("api/favoriler")]
 public class FavoritesApiController : Controller
 {
+    private readonly IConfiguration _configuration;
     private readonly IUserFavoriteService _userFavoriteService;
 
-    public FavoritesApiController(IUserFavoriteService userFavoriteService)
+    public FavoritesApiController(IConfiguration configuration, IUserFavoriteService userFavoriteService)
     {
+        _configuration = configuration;
         _userFavoriteService = userFavoriteService;
     }
 
@@ -30,7 +34,7 @@ public class FavoritesApiController : Controller
             });
         }
 
-        var userId = GetUserId();
+        var userId = await GetUserIdAsync(cancellationToken);
         if (userId <= 0)
         {
             return StatusCode(StatusCodes.Status401Unauthorized, new HotelFavoriteToggleResponse
@@ -42,26 +46,70 @@ public class FavoritesApiController : Controller
             });
         }
 
-        var response = await _userFavoriteService.ToggleFavoriteAsync(
-            userId,
-            request.HotelId,
-            request.SourcePage,
-            request.SourceUrl,
-            Request.Headers.UserAgent.ToString(),
-            HttpContext.Connection.RemoteIpAddress?.ToString(),
-            cancellationToken);
-
-        if (!response.Success)
+        try
         {
-            return BadRequest(response);
-        }
+            var response = await _userFavoriteService.ToggleFavoriteAsync(
+                userId,
+                request.HotelId,
+                request.SourcePage,
+                request.SourceUrl,
+                Request.Headers.UserAgent.ToString(),
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                cancellationToken);
 
-        return Ok(response);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new HotelFavoriteToggleResponse
+            {
+                Success = false,
+                Message = $"Favori kaydı oluşturulamadı: {ex.Message}"
+            });
+        }
     }
 
-    private long GetUserId()
+    private async Task<long> GetUserIdAsync(CancellationToken cancellationToken)
     {
         var raw = User.FindFirstValue(AuthClaimTypes.UserId) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return long.TryParse(raw, out var userId) ? userId : 0;
+        if (long.TryParse(raw, out var userId) && userId > 0)
+        {
+            return userId;
+        }
+
+        var email = User.FindFirstValue(AuthClaimTypes.Email)
+                    ?? User.FindFirstValue(ClaimTypes.Email)
+                    ?? User.Identity?.Name;
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return 0;
+        }
+
+        var connectionString = _configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return 0;
+        }
+
+        const string sql = """
+            SELECT TOP (1) id
+            FROM users
+            WHERE LTRIM(RTRIM(LOWER(eposta))) = LTRIM(RTRIM(LOWER(@email)))
+            ORDER BY id ASC;
+            """;
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@email", email.Trim());
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return result is null || result == DBNull.Value
+            ? 0
+            : Convert.ToInt64(result, CultureInfo.InvariantCulture);
     }
 }

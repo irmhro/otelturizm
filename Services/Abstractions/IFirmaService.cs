@@ -8,7 +8,7 @@ public interface IFirmaService
 {
     Task<FirmaLandingPageViewModel> GetLandingPageAsync(CancellationToken cancellationToken = default);
     Task<FirmaDashboardPageViewModel> GetDashboardAsync(long userId, CancellationToken cancellationToken = default);
-    Task<FirmaDealsPageViewModel> GetDealsAsync(long userId, string? city = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default);
+    Task<FirmaDealsPageViewModel> GetDealsAsync(long userId, string? city = null, string? district = null, string? neighborhood = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default);
     Task<FirmaDealsComparePageViewModel> GetDealsCompareAsync(long userId, IReadOnlyList<long> hotelIds, int roomCount, CancellationToken cancellationToken = default);
     Task<FirmaReservationsPageViewModel> GetReservationsAsync(long userId, CancellationToken cancellationToken = default);
     Task<FirmaMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default);

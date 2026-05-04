@@ -1,5 +1,10 @@
 <Project>
-  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+  <!--
+    Varsayilan davranis: build ciktisini repo disina tasir (kilitlenme/copy sorunlarini azaltir).
+    Visual Studio / CI gibi ortamlarda repo-ici bin/obj istenirse:
+      - MSBuild property: DisableOtelturizmBuildCache=true
+  -->
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT' AND '$(DisableOtelturizmBuildCache)' != 'true'">
     <OtelturizmBuildCacheRoot>$(LOCALAPPDATA)\OtelturizmBuildCache\</OtelturizmBuildCacheRoot>
     <BaseOutputPath>$(OtelturizmBuildCacheRoot)bin\</BaseOutputPath>
     <BaseIntermediateOutputPath>$(OtelturizmBuildCacheRoot)obj\</BaseIntermediateOutputPath>

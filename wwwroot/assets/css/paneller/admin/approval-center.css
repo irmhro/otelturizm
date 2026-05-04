@@ -1,0 +1,66 @@
+.admin-approval-page {
+    display: grid;
+    gap: 18px;
+}
+
+.admin-approval-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-action-pills,
+.approval-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.approval-table td strong,
+.approval-table td small {
+    display: block;
+}
+
+.approval-table td small {
+    margin-top: 3px;
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 750;
+}
+
+.approval-type {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 0.78rem;
+    font-weight: 900;
+}
+
+.approval-row-warning {
+    background: linear-gradient(90deg, rgba(254, 243, 199, 0.7), transparent 42%);
+}
+
+.approval-row-danger {
+    background: linear-gradient(90deg, rgba(254, 226, 226, 0.78), transparent 42%);
+}
+
+.approval-row-success {
+    background: linear-gradient(90deg, rgba(220, 252, 231, 0.72), transparent 42%);
+}
+
+.table-status.primary,
+.admin-kpi-card.primary .kpi-icon {
+    background: linear-gradient(135deg, #4f46e5, #2563eb);
+}
+
+.admin-approval-page .admin-table th:last-child,
+.admin-approval-page .admin-table td:last-child {
+    text-align: right;
+}
+
+.admin-approval-page .admin-section-card {
+    overflow: hidden;
+}

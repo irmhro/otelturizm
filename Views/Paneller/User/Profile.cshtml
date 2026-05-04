@@ -4,219 +4,293 @@
     ViewData["Title"] = "Profil Bilgilerim";
 }
 
-<article class="panel-card phone-verification-card @(Model.OpenPhoneVerification ? "phone-verification-open" : string.Empty)">
-    <div class="section-head">
-        <div>
-            <h2>WhatsApp Telefon Doğrulaması</h2>
-            <p>Rezervasyon oluşturabilmek için telefon numaranızın WhatsApp kodu ile doğrulanmış olması gerekir.</p>
-        </div>
-        <span class="phone-verification-badge tone-@Model.PhoneVerification.StatusToneClass">@Model.PhoneVerification.StatusText</span>
-    </div>
-    <div class="phone-verification-grid">
-        <div class="phone-verification-summary">
-            <strong>@(string.IsNullOrWhiteSpace(Model.PhoneVerification.PhoneNumberE164) ? "Telefon eklenmedi" : Model.PhoneVerification.PhoneNumberE164)</strong>
-            <span>Son doğrulama: @Model.PhoneVerification.VerifiedAtText</span>
-            <span>Son kod gönderimi: @Model.PhoneVerification.LastSentAtText</span>
-            <p>@Model.PhoneVerification.HelpText</p>
-        </div>
-        <form method="post" asp-action="SendPhoneVerificationCode" class="phone-verification-form">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-            <label>
-                <span>Telefon</span>
-                <input type="text" name="phoneNumber" value="@(string.IsNullOrWhiteSpace(Model.PhoneVerification.PhoneNumber) ? Model.Form.Phone : Model.PhoneVerification.PhoneNumber)" placeholder="05xx xxx xx xx" />
-            </label>
-            <button type="submit" class="primary-btn">WhatsApp Kodu Gönder</button>
-        </form>
-        <form method="post" asp-action="VerifyPhoneVerificationCode" class="phone-verification-form verify-form">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
-            <label>
-                <span>Doğrulama Kodu</span>
-                <input type="text" name="verificationCode" inputmode="numeric" maxlength="8" placeholder="WhatsApp kodu" />
-            </label>
-            <button type="submit" class="primary-btn secondary-tone">Kodu Doğrula</button>
-        </form>
-    </div>
-</article>
-
-<form method="post" asp-action="SaveProfile" class="form-stack">
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
-    <article class="panel-card">
-        <div class="section-head"><h2>Kişisel Bilgiler</h2><button type="submit" class="primary-btn">Kaydet</button></div>
-        <div class="profile-avatar-row">
-            <div class="profile-avatar">
-                <img src="@Model.ProfileImageUrl" alt="Profil görseli" />
+<div class="user-profile-page">
+    <section class="profile-hero">
+        <div class="profile-identity">
+            <div class="profile-avatar-xl">
+                <img src="@Model.ProfileImageUrl" alt="Profil görseli" data-profile-preview-image />
             </div>
-            <div class="profile-avatar-actions">
-                <form method="post" asp-action="UploadProfileImage" enctype="multipart/form-data" class="profile-avatar-upload">
-                    @Html.AntiForgeryToken()
-                    <label class="ghost-btn">
-                        <input type="file" name="profileImage" accept="image/*" />
-                        <i class="fas fa-upload"></i> Görsel yükle
-                    </label>
-                    <button type="submit" class="primary-btn secondary-tone">Kaydet</button>
-                </form>
-                <details class="profile-avatar-presets">
-                    <summary class="ghost-btn"><i class="fas fa-images"></i> Varsayılan görseller</summary>
-                    <div class="preset-grid">
-                        @foreach (var url in Model.PresetAvatarUrls)
-                        {
-                            <form method="post" asp-action="SelectPresetProfileImage" class="preset-item">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="avatarUrl" value="@url" />
-                                <button type="submit" title="Bu görseli seç">
-                                    <img src="@url" alt="Avatar" />
-                                </button>
-                            </form>
-                        }
-                    </div>
-                </details>
-            </div>
-        </div>
-        <div class="form-grid">
-            <label><span>Ad</span><input asp-for="Form.FirstName" type="text" /></label>
-            <label><span>Soyad</span><input asp-for="Form.LastName" type="text" /></label>
-            <label><span>Doğum Tarihi</span><input asp-for="Form.BirthDateText" type="date" required /></label>
-            <label><span>Telefon</span><input asp-for="Form.Phone" type="text" /></label>
-            <label><span>TC Kimlik No</span><input asp-for="Form.IdentityNumber" type="text" maxlength="11" /></label>
-            <label>
-                <span>Cinsiyet</span>
-                <select asp-for="Form.Gender" required>
-                    <option value="">Seçiniz</option>
-                    <option value="Erkek">Erkek</option>
-                    <option value="Kadın">Kadın</option>
-                    <option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
-                </select>
-            </label>
-            <label>
-                <span>Uyruk</span>
-                <select asp-for="Form.Nationality" id="userCountrySelect">
-                    <option value="">Seçiniz</option>
-                    @foreach (var country in Model.Countries)
-                    {
-                        <option value="@country.Name" data-country-id="@country.Id" selected="@(string.Equals(Model.Form.Nationality, country.Name, StringComparison.OrdinalIgnoreCase))">@country.Name</option>
-                    }
-                </select>
-            </label>
-            <label><span>Posta Kodu</span><input asp-for="Form.PostalCode" type="text" /></label>
-            <label class="full email-field">
-                <span>E-posta</span>
-                <div class="email-input-wrap">
-                    <input asp-for="Form.Email" type="email" required readonly="@(Model.EmailVerified ? "readonly" : null)" />
-                    @if (Model.EmailVerified)
-                    {
-                        <span class="email-verified-chip" title="E-posta onaylandı">
-                            <i class="fas fa-circle-check"></i>
-                            <span>Onaylandı</span>
-                        </span>
-                    }
+            <div>
+                <p class="page-pretitle">PROFİL MERKEZİ</p>
+                <h1>@Model.Form.FirstName @Model.Form.LastName</h1>
+                <p>@Model.Form.Email · @Model.Form.Phone</p>
+                <div class="profile-status-row">
+                    <span class="profile-status @(Model.EmailVerified ? "is-ok" : "is-warn")"><i class="fas @(Model.EmailVerified ? "fa-circle-check" : "fa-clock")"></i>@(Model.EmailVerified ? "E-posta doğrulandı" : "E-posta doğrulama bekliyor")</span>
+                    <span class="profile-status tone-@Model.PhoneVerification.StatusToneClass"><i class="fas fa-mobile-screen-button"></i>@Model.PhoneVerification.StatusText</span>
                 </div>
-                @if (Model.EmailVerified)
+            </div>
+        </div>
+        <form method="post" asp-action="UploadProfileImage" enctype="multipart/form-data" class="profile-upload-card">
+            @Html.AntiForgeryToken()
+            <strong>Profil görseli</strong>
+            <span>Görseller güvenli dosya alanında tutulur ve panelde tokenlı URL ile gösterilir.</span>
+            <label class="profile-file-picker">
+                <input type="file" name="profileImage" accept="image/jpeg,image/png,image/webp,image/gif" required data-profile-image-input />
+                <i class="fas fa-cloud-arrow-up"></i>
+                <span data-profile-file-label>Görsel seç</span>
+            </label>
+            <button type="submit" class="btn btn-primary">Görseli Yükle</button>
+        </form>
+    </section>
+
+    <section class="profile-preset-card">
+        <div>
+            <h2>Hazır avatarlar</h2>
+            <p>Son yüklediğin 3 güvenli profil görseli ve varsayılan ikonlar burada listelenir.</p>
+        </div>
+        @if (Model.UploadedProfileAvatars.Count > 0)
+        {
+            <div class="profile-uploaded-avatar-list">
+                @foreach (var avatar in Model.UploadedProfileAvatars)
                 {
-                    <small class="email-verified-meta">Onay tarihi: @Model.EmailVerifiedAtText</small>
+                    <article class="profile-uploaded-avatar @(avatar.IsCurrent ? "is-current" : string.Empty)">
+                        <img src="@avatar.AccessUrl" alt="@avatar.OriginalFileName" />
+                        <div>
+                            <strong>@(avatar.IsCurrent ? "Aktif profil görseli" : "Yüklenen profil görseli")</strong>
+                            <span>@avatar.UploadedAtText</span>
+                        </div>
+                        <div class="profile-uploaded-avatar-actions">
+                            <form method="post" asp-action="SelectUploadedProfileImage">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="fileId" value="@avatar.FileId" />
+                                <button type="submit" class="btn btn-outline-primary" disabled="@avatar.IsCurrent">Seç</button>
+                            </form>
+                            <form method="post" asp-action="DeleteProfileImage">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="fileId" value="@avatar.FileId" />
+                                <button type="submit" class="btn btn-outline-danger">Sil</button>
+                            </form>
+                        </div>
+                    </article>
                 }
-                else
-                {
-                    <small class="email-verified-meta email-pending">Bu e-posta henüz doğrulanmadı. Girişte sorun yaşamamak için doğrulamanız önerilir.</small>
-                }
-            </label>
-            <input type="hidden" id="userSelectedProvinceId" value="@(Model.SelectedProvinceId?.ToString() ?? string.Empty)" />
-            <input type="hidden" id="userSelectedDistrictId" value="@(Model.SelectedDistrictId?.ToString() ?? string.Empty)" />
-            <input type="hidden" id="userSelectedNeighborhoodId" value="@(Model.SelectedNeighborhoodId?.ToString() ?? string.Empty)" />
-            <label>
-                <span>İl</span>
-                <select asp-for="Form.City" id="userProvinceSelect" required>
-                    <option value="">Seçiniz</option>
-                    @foreach (var province in Model.Provinces)
-                    {
-                        <option value="@province.Name" data-province-id="@province.Id" selected="@(string.Equals(Model.Form.City, province.Name, StringComparison.OrdinalIgnoreCase))">@province.Name</option>
-                    }
-                </select>
-            </label>
-            <label>
-                <span>İlçe</span>
-                <select asp-for="Form.District" id="userDistrictSelect" data-selected-text="@Model.Form.District" required>
-                    <option value="">Önce il seçiniz</option>
-                </select>
-            </label>
-            <label>
-                <span>Mahalle</span>
-                <select asp-for="Form.Neighborhood" id="userNeighborhoodSelect" data-selected-text="@Model.Form.Neighborhood" required>
-                    <option value="">Önce ilçe seçiniz</option>
-                </select>
-            </label>
-            <label class="full"><span>Adres</span><textarea asp-for="Form.Address" rows="3"></textarea></label>
+            </div>
+        }
+        <div class="profile-preset-list">
+            @foreach (var url in Model.PresetAvatarUrls)
+            {
+                <form method="post" asp-action="SelectPresetProfileImage">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="avatarUrl" value="@url" />
+                    <button type="submit" title="Bu avatarı seç">
+                        <img src="@url" alt="Avatar" />
+                    </button>
+                </form>
+            }
+        </div>
+    </section>
+
+    <article class="profile-panel phone-verification-card @(Model.OpenPhoneVerification ? "phone-verification-open" : string.Empty)">
+        <div class="profile-panel-head">
+            <div>
+                <h2>WhatsApp Telefon Doğrulaması</h2>
+                <p>Rezervasyon oluşturma ve güvenlik doğrulamaları için telefon numaranı doğrula.</p>
+            </div>
+            <span class="profile-status tone-@Model.PhoneVerification.StatusToneClass">@Model.PhoneVerification.StatusText</span>
+        </div>
+        <div class="profile-verification-grid">
+            <div class="profile-verification-summary">
+                <strong>@(string.IsNullOrWhiteSpace(Model.PhoneVerification.PhoneNumberE164) ? "Telefon eklenmedi" : Model.PhoneVerification.PhoneNumberE164)</strong>
+                <span>Son doğrulama: @Model.PhoneVerification.VerifiedAtText</span>
+                <span>Son kod gönderimi: @Model.PhoneVerification.LastSentAtText</span>
+                <p>@Model.PhoneVerification.HelpText</p>
+            </div>
+            <form method="post" asp-action="SendPhoneVerificationCode" class="profile-inline-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                <label class="form-label" for="phoneNumber">Telefon</label>
+                <input class="form-control" id="phoneNumber" type="text" name="phoneNumber" value="@(string.IsNullOrWhiteSpace(Model.PhoneVerification.PhoneNumber) ? Model.Form.Phone : Model.PhoneVerification.PhoneNumber)" placeholder="05xx xxx xx xx" />
+                <button type="submit" class="btn btn-primary">WhatsApp Kodu Gönder</button>
+            </form>
+            <form method="post" asp-action="VerifyPhoneVerificationCode" class="profile-inline-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                <label class="form-label" for="verificationCode">Doğrulama Kodu</label>
+                <input class="form-control" id="verificationCode" type="text" name="verificationCode" inputmode="numeric" maxlength="8" placeholder="WhatsApp kodu" />
+                <button type="submit" class="btn btn-outline-primary">Kodu Doğrula</button>
+            </form>
         </div>
     </article>
 
+    <form method="post" asp-action="SaveProfile" class="profile-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+
+        <article class="profile-panel">
+            <div class="profile-panel-head">
+                <div>
+                    <h2>Kişisel Bilgiler</h2>
+                    <p>Kimlik, iletişim ve adres bilgilerini tek yerde yönet.</p>
+                </div>
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+            </div>
+            <div class="profile-form-grid">
+                <label><span>Ad</span><input class="form-control" asp-for="Form.FirstName" type="text" /></label>
+                <label><span>Soyad</span><input class="form-control" asp-for="Form.LastName" type="text" /></label>
+                <label><span>Doğum Tarihi</span><input class="form-control" asp-for="Form.BirthDateText" type="date" required /></label>
+                <label><span>Telefon</span><input class="form-control" asp-for="Form.Phone" type="text" /></label>
+                <label><span>TC Kimlik No</span><input class="form-control" asp-for="Form.IdentityNumber" type="text" maxlength="11" /></label>
+                <label>
+                    <span>Cinsiyet</span>
+                    <select class="form-select" asp-for="Form.Gender" required>
+                        <option value="">Seçiniz</option>
+                        <option value="Erkek">Erkek</option>
+                        <option value="Kadın">Kadın</option>
+                        <option value="Belirtmek İstemiyorum">Belirtmek İstemiyorum</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Uyruk</span>
+                    <select class="form-select" asp-for="Form.Nationality" id="userCountrySelect">
+                        <option value="">Seçiniz</option>
+                        @foreach (var country in Model.Countries)
+                        {
+                            <option value="@country.Name" data-country-id="@country.Id" selected="@(string.Equals(Model.Form.Nationality, country.Name, StringComparison.OrdinalIgnoreCase))">@country.Name</option>
+                        }
+                    </select>
+                </label>
+                <label><span>Posta Kodu</span><input class="form-control" asp-for="Form.PostalCode" type="text" /></label>
+                <label class="profile-field-full">
+                    <span>E-posta</span>
+                    <div class="profile-email-field">
+                        <input class="form-control" asp-for="Form.Email" type="email" required readonly="@(Model.EmailVerified ? "readonly" : null)" />
+                        <span class="profile-status @(Model.EmailVerified ? "is-ok" : "is-warn")">@(Model.EmailVerified ? "Onaylandı" : "Bekliyor")</span>
+                    </div>
+                    <small>@(Model.EmailVerified ? $"Onay tarihi: {Model.EmailVerifiedAtText}" : "Bu e-posta henüz doğrulanmadı.")</small>
+                </label>
+                <input type="hidden" id="userSelectedProvinceId" value="@(Model.SelectedProvinceId?.ToString() ?? string.Empty)" />
+                <input type="hidden" id="userSelectedDistrictId" value="@(Model.SelectedDistrictId?.ToString() ?? string.Empty)" />
+                <input type="hidden" id="userSelectedNeighborhoodId" value="@(Model.SelectedNeighborhoodId?.ToString() ?? string.Empty)" />
+                <label>
+                    <span>İl</span>
+                    <select class="form-select" asp-for="Form.City" id="userProvinceSelect" required>
+                        <option value="">Seçiniz</option>
+                        @foreach (var province in Model.Provinces)
+                        {
+                            <option value="@province.Name" data-province-id="@province.Id" selected="@(string.Equals(Model.Form.City, province.Name, StringComparison.OrdinalIgnoreCase))">@province.Name</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    <span>İlçe</span>
+                    <select class="form-select" asp-for="Form.District" id="userDistrictSelect" data-selected-text="@Model.Form.District" required>
+                        <option value="">Önce il seçiniz</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Mahalle</span>
+                    <select class="form-select" asp-for="Form.Neighborhood" id="userNeighborhoodSelect" data-selected-text="@Model.Form.Neighborhood" required>
+                        <option value="">Önce ilçe seçiniz</option>
+                    </select>
+                </label>
+                <label class="profile-field-full"><span>Adres</span><textarea class="form-control" asp-for="Form.Address" rows="3"></textarea></label>
+            </div>
+        </article>
+    </form>
+
     @if (Model.EmailVerified)
     {
-        <article class="panel-card email-update-card @(Model.OpenEmailUpdate ? "email-update-open" : string.Empty)">
-            <div class="section-head">
+        <article class="profile-panel email-update-card @(Model.OpenEmailUpdate ? "email-update-open" : string.Empty)">
+            <div class="profile-panel-head">
                 <div>
                     <h2>E-posta adresimi güncelle</h2>
-                    <p>Yeni e-posta adresinizi doğrulama kodu ile güvenli şekilde değiştirebilirsiniz.</p>
+                    <p>Yeni adres doğrulama kodu ile güvenli şekilde aktif edilir.</p>
                 </div>
-                <span class="email-update-badge">Güvenli doğrulama</span>
+                <span class="profile-status is-ok">Güvenli doğrulama</span>
             </div>
-
-            <div class="email-update-grid">
-                <form method="post" asp-action="SendEmailUpdateCode" class="email-update-form">
+            <div class="profile-verification-grid">
+                <form method="post" asp-action="SendEmailUpdateCode" class="profile-inline-form">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="EmailUpdate.ReturnUrl" value="@Model.ReturnUrl" />
-                    <label>
-                        <span>Yeni E-posta</span>
-                        <input type="email" name="EmailUpdate.NewEmail" placeholder="yeni@email.com" required />
-                    </label>
-                    <button type="submit" class="primary-btn">Kod Gönder</button>
+                    <label class="form-label" for="newEmail">Yeni E-posta</label>
+                    <input class="form-control" id="newEmail" type="email" name="EmailUpdate.NewEmail" placeholder="yeni@email.com" required />
+                    <button type="submit" class="btn btn-primary">Kod Gönder</button>
                 </form>
-
-                <form method="post" asp-action="VerifyEmailUpdateCode" class="email-update-form verify-form">
+                <form method="post" asp-action="VerifyEmailUpdateCode" class="profile-inline-form profile-inline-form-wide">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="EmailUpdateVerify.ReturnUrl" value="@Model.ReturnUrl" />
-                    <label>
-                        <span>Yeni E-posta</span>
-                        <input type="email" name="EmailUpdateVerify.NewEmail" placeholder="yeni@email.com" required />
-                    </label>
-                    <label>
-                        <span>Doğrulama Kodu</span>
-                        <input type="text" name="EmailUpdateVerify.Code" inputmode="numeric" maxlength="8" placeholder="6 haneli kod" required />
-                    </label>
-                    <button type="submit" class="primary-btn secondary-tone">Doğrula ve Güncelle</button>
+                    <label class="form-label" for="verifyNewEmail">Yeni E-posta</label>
+                    <input class="form-control" id="verifyNewEmail" type="email" name="EmailUpdateVerify.NewEmail" placeholder="yeni@email.com" required />
+                    <label class="form-label" for="emailCode">Doğrulama Kodu</label>
+                    <input class="form-control" id="emailCode" type="text" name="EmailUpdateVerify.Code" inputmode="numeric" maxlength="8" placeholder="6 haneli kod" required />
+                    <button type="submit" class="btn btn-outline-primary">Doğrula ve Güncelle</button>
                 </form>
             </div>
         </article>
     }
 
-    <article class="panel-card">
-        <div class="section-head"><h2>Seyahat Tercihleri</h2><button type="submit" class="primary-btn">Tercihleri Kaydet</button></div>
-        <div class="form-grid">
-            <label><span>Oda Tercihi</span><input asp-for="Form.RoomPreference" type="text" /></label>
-            <label><span>Yatak Tercihi</span><input asp-for="Form.BedPreference" type="text" /></label>
-            <label><span>Seyahat Amacı</span><input asp-for="Form.TravelPurpose" type="text" placeholder="İş, Tatil, Her İkisi" /></label>
-            <label><span>Konuşulan Diller</span><input asp-for="Form.SpokenLanguages" type="text" /></label>
-            <label class="full"><span>Özel İstekler</span><textarea asp-for="Form.SpecialRequests" rows="3"></textarea></label>
-        </div>
-    </article>
-</form>
+    <form method="post" asp-action="SaveTravelPreferences" class="profile-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+        <article class="profile-panel">
+            <div class="profile-panel-head">
+                <div>
+                    <h2>Seyahat Tercihleri</h2>
+                    <p>Konaklama önerilerini ve otel iletişimini kişiselleştir.</p>
+                </div>
+                <button type="submit" class="btn btn-primary">Tercihleri Kaydet</button>
+            </div>
+            <div class="profile-form-grid">
+                <label><span>Oda Tercihi</span><input class="form-control" name="RoomPreference" value="@Model.Form.RoomPreference" type="text" /></label>
+                <label><span>Yatak Tercihi</span><input class="form-control" name="BedPreference" value="@Model.Form.BedPreference" type="text" /></label>
+                <label><span>Seyahat Amacı</span><input class="form-control" name="TravelPurpose" value="@Model.Form.TravelPurpose" type="text" placeholder="İş, Tatil, Her İkisi" /></label>
+                <label><span>Konuşulan Diller</span><input class="form-control" name="SpokenLanguages" value="@Model.Form.SpokenLanguages" type="text" /></label>
+                <label class="profile-field-full"><span>Özel İstekler</span><textarea class="form-control" name="SpecialRequests" rows="3">@Model.Form.SpecialRequests</textarea></label>
+            </div>
+        </article>
+    </form>
+</div>
 
 @{
     var nonce = Context.Items["CspNonce"] as string;
 }
 <script nonce="@nonce">
     (function () {
+        const input = document.querySelector('[data-profile-image-input]');
+        const image = document.querySelector('[data-profile-preview-image]');
+        const label = document.querySelector('[data-profile-file-label]');
+        const form = input ? input.closest('form') : null;
+        const submitBtn = form ? form.querySelector('button[type=\"submit\"]') : null;
+        if (!input || !image) return;
+
+        input.addEventListener('change', function () {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            if (label) label.textContent = file.name;
+            const previewUrl = URL.createObjectURL(file);
+            image.onload = function () { URL.revokeObjectURL(previewUrl); };
+            image.src = previewUrl;
+
+            // Koşullara uygunsa (tip + max 4MB) otomatik yükle ve profil görseli yap.
+            const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+            const maxBytes = 4 * 1024 * 1024;
+            const ok = allowed.includes((file.type || '').toLowerCase()) && file.size <= maxBytes;
+            if (!ok) {
+                alert('Lütfen JPG/PNG/WebP/GIF formatında ve en fazla 4 MB bir görsel seçin.');
+                input.value = '';
+                if (label) label.textContent = 'Görsel seç';
+                return;
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Yükleniyor...';
+            }
+            if (form && typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else if (form) {
+                form.submit();
+            }
+        });
+    })();
+
+    (function () {
         const provinceSelect = document.getElementById('userProvinceSelect');
         const districtSelect = document.getElementById('userDistrictSelect');
         const neighborhoodSelect = document.getElementById('userNeighborhoodSelect');
         const selectedProvinceId = document.getElementById('userSelectedProvinceId')?.value || '';
         const selectedDistrictId = document.getElementById('userSelectedDistrictId')?.value || '';
-        const selectedNeighborhoodId = document.getElementById('userSelectedNeighborhoodId')?.value || '';
 
-        if (!provinceSelect || !districtSelect || !neighborhoodSelect) {
-            return;
-        }
+        if (!provinceSelect || !districtSelect || !neighborhoodSelect) return;
 
         const buildOptions = function (items, placeholder, selectedValue, idField, nameField) {
             const options = ['<option value="">' + placeholder + '</option>'];
@@ -228,6 +302,17 @@
             return options.join('');
         };
 
+        const loadNeighborhoods = async function (districtId, selectedText) {
+            neighborhoodSelect.innerHTML = '<option value="">Yükleniyor...</option>';
+            if (!districtId) {
+                neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+                return;
+            }
+            const response = await fetch('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), { credentials: 'same-origin' });
+            const items = response.ok ? await response.json() : [];
+            neighborhoodSelect.innerHTML = buildOptions(items, 'Mahalle seçiniz', selectedText || neighborhoodSelect.dataset.selectedText || '', 'id', 'name');
+        };
+
         const loadDistricts = async function (provinceId, selectedText) {
             districtSelect.innerHTML = '<option value="">Yükleniyor...</option>';
             neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
@@ -235,26 +320,11 @@
                 districtSelect.innerHTML = '<option value="">Önce il seçiniz</option>';
                 return;
             }
-
             const response = await fetch('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), { credentials: 'same-origin' });
             const items = response.ok ? await response.json() : [];
             districtSelect.innerHTML = buildOptions(items, 'İlçe seçiniz', selectedText || districtSelect.dataset.selectedText || '', 'id', 'name');
             const currentDistrictId = selectedDistrictId || districtSelect.selectedOptions[0]?.dataset.id || '';
-            if (currentDistrictId) {
-                await loadNeighborhoods(currentDistrictId, neighborhoodSelect.dataset.selectedText || '');
-            }
-        };
-
-        const loadNeighborhoods = async function (districtId, selectedText) {
-            neighborhoodSelect.innerHTML = '<option value="">Yükleniyor...</option>';
-            if (!districtId) {
-                neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
-                return;
-            }
-
-            const response = await fetch('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), { credentials: 'same-origin' });
-            const items = response.ok ? await response.json() : [];
-            neighborhoodSelect.innerHTML = buildOptions(items, 'Mahalle seçiniz', selectedText || neighborhoodSelect.dataset.selectedText || '', 'id', 'name');
+            if (currentDistrictId) await loadNeighborhoods(currentDistrictId, neighborhoodSelect.dataset.selectedText || '');
         };
 
         provinceSelect.addEventListener('change', async function () {
@@ -271,8 +341,6 @@
         });
 
         const initialProvinceId = selectedProvinceId || provinceSelect.selectedOptions[0]?.dataset.provinceId || '';
-        if (initialProvinceId) {
-            loadDistricts(initialProvinceId, districtSelect.dataset.selectedText || '');
-        }
+        if (initialProvinceId) loadDistricts(initialProvinceId, districtSelect.dataset.selectedText || '');
     })();
 </script>

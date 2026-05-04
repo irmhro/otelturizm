@@ -3,61 +3,97 @@
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+    var totalPages = Model.PageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(Model.Total / (double)Model.PageSize));
+    string Tone(string status)
+    {
+        var normalized = (status ?? string.Empty).ToLowerInvariant();
+        if (normalized.Contains("iptal") || normalized.Contains("red")) return "danger";
+        if (normalized.Contains("bek") || normalized.Contains("işlen")) return "warning";
+        if (normalized.Contains("onay") || normalized.Contains("giriş") || normalized.Contains("tamam")) return "success";
+        return "info";
+    }
 }
 
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Rezervasyonlar (Tek Liste)</h3>
-    </div>
-    <div class="card-body">
-        <form method="get" action="/admin/rezervasyonlar-tek-liste" class="row g-2">
-            <div class="col-md-6">
-                <label class="form-label">Ara</label>
-                <input class="form-control form-control-sm" name="q" value="@Model.Query" placeholder="Otel / müşteri / email / firma" />
+<section class="admin-unified-reservations-page">
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">TEK LİSTE</p>
+                <h2>Rezervasyonlar</h2>
+                <span>Bireysel, firma ve satış kaynaklı rezervasyonları ciro/komisyon kırılımıyla takip edin.</span>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Durum</label>
-                <input class="form-control form-control-sm" name="status" value="@Model.Status" placeholder="örn: Onaylandı" />
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-sm btn-primary w-100" type="submit">Filtrele</button>
-            </div>
+            <span class="table-status info">Toplam @Model.Total kayıt</span>
+        </div>
+
+        <form method="get" action="/admin/rezervasyonlar-tek-liste" class="admin-reservation-filter">
+            <label>
+                <span>Arama</span>
+                <input name="q" value="@Model.Query" placeholder="Otel / müşteri / email / firma" />
+            </label>
+            <label>
+                <span>Durum</span>
+                <input name="status" value="@Model.Status" placeholder="örn: Onaylandı" />
+            </label>
+            <label>
+                <span>Sayfa başı</span>
+                <select name="pageSize">
+                    @foreach (var size in new[] { 10, 25, 50, 100, 200 })
+                    {
+                        <option value="@size" selected="@(Model.PageSize == size)">@size</option>
+                    }
+                </select>
+            </label>
+            <button class="btn btn-primary" type="submit"><i class="fas fa-filter me-2"></i>Filtrele</button>
         </form>
 
-        <div class="table-responsive mt-3">
-            <table class="table table-striped table-sm">
+        <div class="admin-table-wrap">
+            <table class="admin-table">
                 <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>No</th>
+                    <th>Kaynak</th>
                     <th>Otel</th>
                     <th>Müşteri</th>
                     <th>Firma</th>
                     <th>Durum</th>
-                    <th>Tutar</th>
-                    <th>Tarih (UTC)</th>
+                    <th>Ciro</th>
+                    <th>Komisyon</th>
+                    <th>Kayıt</th>
                 </tr>
                 </thead>
                 <tbody>
-                @foreach (var row in Model.Rows)
+                @if (Model.Rows.Count == 0)
                 {
-                    <tr>
-                        <td>@row.ReservationId</td>
-                        <td>@row.HotelName</td>
-                        <td>
-                            <div>@row.CustomerName</div>
-                            <div class="text-muted small">@row.CustomerEmail</div>
-                        </td>
-                        <td>@row.CompanyName</td>
-                        <td>@row.Status</td>
-                        <td>@row.TotalAmount.ToString("N2") @row.Currency</td>
-                        <td>@row.CreatedAtUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                    </tr>
+                    <tr><td colspan="9">Filtreye uygun rezervasyon bulunamadı.</td></tr>
+                }
+                else
+                {
+                    foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td><strong>#@row.ReservationId</strong></td>
+                            <td><span class="table-status info">@row.SourceText</span></td>
+                            <td>@row.HotelName</td>
+                            <td><strong>@row.CustomerName</strong><div>@row.CustomerEmail</div></td>
+                            <td>@(string.IsNullOrWhiteSpace(row.CompanyName) ? "-" : row.CompanyName)</td>
+                            <td><span class="table-status @Tone(row.Status)">@row.Status</span></td>
+                            <td><strong>@row.TotalAmount.ToString("N2", tr) @row.Currency</strong></td>
+                            <td>@row.CommissionAmount.ToString("N2", tr) @row.Currency</td>
+                            <td>@row.CreatedAtUtc.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                        </tr>
+                    }
                 }
                 </tbody>
             </table>
         </div>
 
-        <div class="text-muted small">Toplam: @Model.Total</div>
-    </div>
-</div>
-
+        <div class="admin-pagination-row">
+            <span>@Model.Page / @totalPages sayfa</span>
+            <div>
+                <a class="btn btn-outline-primary btn-sm @(Model.Page <= 1 ? "disabled" : "")" href="/admin/rezervasyonlar-tek-liste?page=@(Model.Page - 1)&pageSize=@Model.PageSize&q=@Model.Query&status=@Model.Status">Önceki</a>
+                <a class="btn btn-outline-primary btn-sm @(Model.Page >= totalPages ? "disabled" : "")" href="/admin/rezervasyonlar-tek-liste?page=@(Model.Page + 1)&pageSize=@Model.PageSize&q=@Model.Query&status=@Model.Status">Sonraki</a>
+            </div>
+        </div>
+    </article>
+</section>

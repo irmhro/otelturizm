@@ -1,0 +1,32 @@
+@media (max-width: 900px) {
+    .hero-content,
+    .loyalty-header,
+    .progress-info,
+    .next-tier,
+    .alert-item,
+    .shared-item,
+    .passport-recent-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .stats-mini-grid,
+    .features-grid,
+    .badges-grid,
+    .city-list,
+    .inline-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-badge,
+    .points-display {
+        width: 100%;
+    }
+
+    .content-header,
+    .hero-personalized,
+    .loyalty-hero,
+    .feature-card {
+        padding: 16px;
+    }
+}

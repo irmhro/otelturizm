@@ -1,0 +1,100 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerMarketingEventsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    var q = Model.Shell.SelectedHotelId is long hid ? $"?otelId={hid}" : string.Empty;
+}
+
+<section class="partner-growth-hero">
+    <div>
+        <p class="partner-room-kicker">Kampanya takvimi</p>
+        <h2>Kampanya eşleşmeleri ve operasyon notları</h2>
+        <p>@Model.IntroNote</p>
+    </div>
+    <a class="partner-primary-btn partner-toolbar-link" href="/panel/partner/kampanyalar@q">
+        <i class="fas fa-bullhorn"></i>
+        Kampanyalara git
+    </a>
+</section>
+
+@if (TempData["PartnerError"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="partner-alert is-danger">@err</div>
+}
+@if (TempData["PartnerSuccess"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="partner-alert is-success">@ok</div>
+}
+
+<section class="partner-grid">
+    @foreach (var card in Model.SummaryCards)
+    {
+        <article class="partner-stat-card @card.ToneClass">
+            <i class="fas @card.IconClass"></i>
+            <strong>@card.Value</strong>
+            <span>@card.Label</span>
+            <p>@card.Description</p>
+        </article>
+    }
+</section>
+
+<section class="partner-section-card">
+    <div class="partner-section-head">
+        <div>
+            <h2>Katılım kayıtları</h2>
+            <p>Her satır bir <code>kampanya_oteller</code> eşleşmesidir. Not alanı operasyon ekibiniz içindir.</p>
+        </div>
+    </div>
+    @if (Model.Participations.Count == 0)
+    {
+        <div class="partner-empty-state">
+            <strong>Kampanya eşleşmesi yok</strong>
+            <p><a href="/panel/partner/kampanyalar@q" class="partner-text-link">Kampanyalar</a> sayfasından katılım oluşturun.</p>
+        </div>
+    }
+    else
+    {
+        <div class="partner-marketing-event-list">
+            @foreach (var p in Model.Participations)
+            {
+                <article class="partner-marketing-event-card">
+                    <div class="partner-marketing-event-card__head">
+                        <div>
+                            <small class="text-muted">@p.CampaignCode</small>
+                            <h3 class="h4 mb-1">@p.CampaignName</h3>
+                            <div class="partner-marketing-event-meta">
+                                <span class="badge bg-blue-lt">@p.ParticipationStatus</span>
+                                @if (p.IsFeatured)
+                                {
+                                    <span class="badge bg-amber-lt text-amber"><i class="fas fa-star me-1"></i>Öne çıkan</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="partner-marketing-event-dates text-end small">
+                            <div><i class="fas fa-play me-1 text-muted"></i>@p.WindowStartText</div>
+                            <div><i class="fas fa-stop me-1 text-muted"></i>@p.WindowEndText</div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(p.LandingUrl))
+                    {
+                        <p class="mb-2 small">
+                            <a href="@p.LandingUrl" target="_blank" rel="noreferrer" class="partner-text-link">Açılış bağlantısı</a>
+                        </p>
+                    }
+                    <form method="post" action="/panel/partner/pazarlama/etkinlikler/not" class="partner-marketing-note-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+                        <input type="hidden" name="CampaignHotelLinkId" value="@p.CampaignHotelLinkId" />
+                        <label class="partner-form-span">
+                            <span>Operasyon notu</span>
+                            <textarea name="PartnerNote" rows="2" maxlength="4000" placeholder="Kampanya vitrini, stok veya fiyat notu...">@p.PartnerNote</textarea>
+                        </label>
+                        <button type="submit" class="partner-primary-btn">
+                            <i class="fas fa-floppy-disk"></i> Notu kaydet
+                        </button>
+                    </form>
+                </article>
+            }
+        </div>
+    }
+</section>

@@ -1,3 +1,53 @@
+@media (max-width: 900px) {
+    .review-summary {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .review-score {
+        padding: 18px;
+    }
+
+    .review-bars > div {
+        grid-template-columns: 104px minmax(0, 1fr) 36px;
+        gap: 8px;
+    }
+
+    .review-signature-score {
+        gap: 10px;
+    }
+
+    .review-signature-score .laurel {
+        font-size: 1.9rem;
+    }
+
+    .review-topic-strip {
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+    }
+
+    .review-insight-dialog {
+        width: calc(100% - 16px);
+        margin-top: 3vh;
+    }
+
+    .review-insight-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .review-insight-sort {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .review-insight-card header {
+        grid-template-columns: 1fr auto;
+        gap: 6px;
+    }
+}
 @import url("./otel-detay.css");
 
 /* ===========================================================
@@ -42,9 +92,14 @@ html, body {
     padding-bottom: calc(1rem+86px+env(safe-area-inset-bottom))
 }
 
-    .otel-detail-template-v41 .detail-breadcrumb, .otel-detail-template-v41 .gallery-filmstrip-wrap, .otel-detail-template-v41 .detail-header, .otel-detail-template-v41 .detail-grid, .otel-detail-template-v41 .gallery-mobile-strip {
-        width: min(var(--page-max-width),calc(100% - 24px));
-        max-width: calc(100% - 24px)
+    .otel-detail-template-v41 .detail-breadcrumb,
+    .otel-detail-template-v41 .gallery-filmstrip-wrap,
+    .otel-detail-template-v41 .detail-header,
+    .otel-detail-template-v41 .detail-grid,
+    .otel-detail-template-v41 .detail-map-card,
+    .otel-detail-template-v41 .gallery-mobile-strip {
+        width: min(var(--page-max-width),calc(100% - 48px));
+        max-width: calc(100% - 48px)
     }
 
 /* === 2. Galeri / gösterim kartı === */
@@ -53,8 +108,8 @@ html, body {
 }
 
 .otel-detail-template-v41 .gallery-grid {
-    width: min(var(--page-max-width),calc(100% - 24px));
-    max-width: calc(100% - 24px);
+    width: min(var(--page-max-width),calc(100% - 48px));
+    max-width: calc(100% - 48px);
     margin: 0 auto;
     padding: 0.8rem;
     border-radius: 28px;
@@ -108,8 +163,8 @@ html, body {
 
 .gallery-filmstrip-wrap {
     display: block !important;
-    width: min(var(--page-max-width),calc(100% - 24px));
-    max-width: calc(100% - 24px);
+    width: min(var(--page-max-width),calc(100% - 48px));
+    max-width: calc(100% - 48px);
     margin: 0.7rem auto 0;
     padding: 0.7rem 0.8rem 0.85rem;
     border-radius: 24px;
@@ -329,112 +384,11 @@ html, body {
     border-radius: 999px
 }
 
-/* === 7.1 Mobil görsel / başlık / oda kartı ileri override === */
+/* === 7.1 Galeri yıldız rozeti === */
 .otel-detail-template-v41 .gallery-star-badge {
     top: auto;
     left: 14px;
-    bottom: 14px
-}
-
-.otel-detail-template-v41 .detail-header.hotel-title-section {
-    position: relative;
-    margin: -6.6rem auto 0;
-    padding: 6.95rem 0 0.25rem;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    z-index: 8
-}
-
-.otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name {
-    position: absolute;
-    left: 0.95rem;
-    right: 4.15rem;
-    top: 2.9rem;
-    z-index: 3
-}
-
-.otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name h1 {
-    display: inline-flex;
-    max-width: 100%;
-    padding: 0.42rem 0.72rem;
-    border-radius: 14px;
-    background: rgba(15,23,42,.42);
-    backdrop-filter: blur(10px);
-    font-size: 1.08rem;
-    line-height: 1.08;
-    color: #fff;
-    text-shadow: 0 6px 18px rgba(15,23,42,.42)
-}
-
-.otel-detail-template-v41 .detail-header.hotel-title-section .detail-location {
-    margin-top: 0.36rem;
-    color: rgba(255,255,255,.94);
-    font-size: 0.76rem;
-    line-height: 1.32;
-    text-shadow: 0 4px 12px rgba(15,23,42,.34)
-}
-
-.otel-detail-template-v41 .header-right-stack {
-    display: grid;
-    gap: 0.65rem
-}
-
-.otel-detail-template-v41 .detail-actions {
-    position: absolute;
-    top: 0.88rem;
-    right: 0.95rem;
-    z-index: 4;
-    width: auto
-}
-
-.otel-detail-template-v41 #saveHotelBtn.favorite-btn {
-    width: 2.85rem;
-    min-width: 2.85rem;
-    height: 2.85rem;
-    min-height: 2.85rem;
-    padding: 0;
-    border-radius: 999px;
-    border-color: rgba(255,255,255,.34);
-    background: rgba(255,255,255,.95);
-    box-shadow: 0 12px 24px rgba(15,23,42,.18)
-}
-
-.otel-detail-template-v41 #saveHotelBtn.favorite-btn span {
-    display: none
-}
-
-.otel-detail-template-v41 #saveHotelBtn.favorite-btn i {
-    font-size: 1rem
-}
-
-.otel-detail-template-v41 .header-top-metrics,
-.otel-detail-template-v41 .detail-utility-row {
-    display: grid;
-    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-    gap: 0.5rem;
-    align-items: stretch
-}
-
-.otel-detail-template-v41 .weather-inline-trigger,
-.otel-detail-template-v41 .rating-summary {
-    min-height: 64px;
-    border-radius: 18px
-}
-
-.otel-detail-template-v41 .weather-inline-trigger {
-    padding: 0.72rem 0.78rem
-}
-
-.otel-detail-template-v41 .weather-inline-copy strong,
-.otel-detail-template-v41 .rating-text strong {
-    font-size: 0.83rem
-}
-
-.otel-detail-template-v41 .weather-inline-copy small,
-.otel-detail-template-v41 .rating-text span {
-    font-size: 0.7rem;
-    line-height: 1.28
+    bottom: 14px;
 }
 
 .otel-detail-template-v41 .amenities-grid-lux {
@@ -595,7 +549,9 @@ html, body {
     grid-template-columns: minmax(0,1fr) 7rem;
     align-items: end;
     gap: 0.7rem;
-    margin-top: 0.15rem
+    margin-top: 0.15rem;
+    border-top: 1px solid rgba(148,163,184,.24);
+    padding-top: .72rem
 }
 
 .otel-detail-template-v41 .room-price-value {
@@ -681,28 +637,6 @@ html, body {
 }
 
 @media(max-width:560px) {
-    .otel-detail-template-v41 .detail-header.hotel-title-section {
-        margin-top: -6rem;
-        padding-top: 6.2rem
-    }
-
-    .otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name {
-        right: 4rem
-    }
-
-    .otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name h1 {
-        font-size: 1rem
-    }
-
-    .otel-detail-template-v41 .room-card {
-        flex-basis: calc(100vw - 32px)
-    }
-
-    .otel-detail-template-v41 .room-price-actions {
-        flex-basis: 6.6rem;
-        width: 6.6rem
-    }
-
     .otel-detail-template-v41 .room-feature-chip {
         font-size: 0.62rem
     }
@@ -722,63 +656,302 @@ html, body {
     padding-bottom: 4rem
 }
 
-/* === 10. Genel breakpoint (≤900px) === */
+@media(max-width:560px) {
+    .otel-detail-template-v41 .detail-breadcrumb,
+    .otel-detail-template-v41 .gallery-filmstrip-wrap,
+    .otel-detail-template-v41 .detail-header,
+    .otel-detail-template-v41 .detail-grid,
+    .otel-detail-template-v41 .detail-map-card,
+    .otel-detail-template-v41 .gallery-mobile-strip,
+    .otel-detail-template-v41 .gallery-grid {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: var(--page-max-width);
+        padding-left: var(--space-5);
+        padding-right: var(--space-5)
+    }
+}
+
 @media(max-width:900px) {
+    .otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-right {
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-start;
+    }
+
+    .site-main > .otel-detail-template-v41 {
+        margin-top: -32px;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb {
+        gap: 0.4rem;
+        padding-top: 0.15rem;
+        padding-bottom: 0.3rem;
+        margin-bottom: 0;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb .detail-back-link,
+    .otel-detail-template-v41 .detail-breadcrumb .detail-breadcrumb-context {
+        padding-top: 0.38rem;
+        padding-bottom: 0.38rem;
+    }
+
+    .otel-detail-template-v41 .gallery-grid {
+        display: block;
+        margin-top: 0.5rem;
+    }
+
+    .otel-detail-template-v41 .gallery-side-grid {
+        display: none;
+    }
+
+    /* Otel adı + konum | hava | puan — tek satırda üç sütun */
+    .otel-detail-template-v41 .detail-header.hotel-title-section {
+        position: static;
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
+        gap: 0.5rem;
+        align-items: stretch;
+        margin: 0.65rem auto 0;
+        padding: 0.75rem 0.65rem;
+        border: 1px solid rgba(226,232,240,.95);
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 14px 30px rgba(15,23,42,.08);
+        z-index: auto;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name {
+        position: static;
+        grid-column: 1;
+        grid-row: 1;
+        display: grid;
+        gap: 0.35rem;
+        min-width: 0;
+        align-self: stretch;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name h1 {
+        display: block;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: #0f172a;
+        font-size: clamp(1.05rem, 4.2vw, 1.45rem);
+        line-height: 1.18;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        text-shadow: none;
+        box-shadow: none;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .detail-location {
+        color: #64748b;
+        text-shadow: none;
+        font-size: 0.72rem;
+        line-height: 1.35;
+        margin: 0;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .detail-title-subnav {
+        margin-top: 0.25rem;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .header-right-stack {
+        display: contents;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .header-top-metrics {
+        display: contents;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .detail-utility-row {
+        grid-column: 2;
+        grid-row: 1;
+        display: block;
+        width: 100%;
+        margin: 0;
+        min-width: 0;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .rating-summary {
+        grid-column: 3;
+        grid-row: 1;
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        border-radius: 16px;
+        padding: 0.55rem 0.5rem;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .weather-inline-trigger {
+        width: 100%;
+        min-height: 0;
+        min-width: 0;
+        border-radius: 16px;
+        padding: 0.55rem 0.5rem;
+        gap: 0.45rem;
+    }
+
+    .otel-detail-template-v41 .detail-header .weather-inline-badge {
+        display: none;
+    }
+
+    .otel-detail-template-v41 .detail-header .weather-inline-icon {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+    }
+
+    .otel-detail-template-v41 .detail-header .weather-inline-copy strong,
+    .otel-detail-template-v41 .detail-header .rating-text strong {
+        font-size: 0.72rem;
+    }
+
+    .otel-detail-template-v41 .detail-header .weather-inline-copy small,
+    .otel-detail-template-v41 .detail-header .rating-text span {
+        font-size: 0.62rem;
+        line-height: 1.25;
+    }
+
+    .otel-detail-template-v41 .detail-header .rating-big {
+        gap: 0.1rem;
+    }
+
+    .otel-detail-template-v41 .detail-header .rating-number {
+        font-size: 1.15rem;
+    }
+
+    .otel-detail-template-v41 .detail-header .rating-max {
+        font-size: 0.72rem;
+    }
+
+    #saveHotelBtnTop {
+        display: none !important;
+    }
+
+    /* Tesis hakkında: 3 satır + genişlet (JS is-clamped) */
+    .hotel-about-text.is-clamped:not(.is-expanded) {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
+    }
+
+    .otel-detail-template-v41 .tabler-section-headrow .tabler-section-action-btn[data-about-toggle]:not([hidden]) {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 0.35rem;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8125rem;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        background: #fff;
+        color: #0f172a;
+    }
+
+    .otel-detail-template-v41 .amenities-list-clean {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem 0.55rem;
+    }
+
+    .otel-detail-template-v41 .amenities-list-item {
+        min-width: 0;
+    }
+
+    .otel-detail-template-v41 .room-list {
+        display: flex;
+        flex-direction: column;
+        overflow-x: visible;
+        gap: 0.85rem;
+        padding-bottom: 0.25rem;
+        scroll-snap-type: none;
+    }
+
+    .otel-detail-template-v41 .room-card {
+        flex: 1 1 auto;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .otel-detail-template-v41 .detail-map-card {
+        margin-top: 0.25rem;
+    }
+
     .multi-room-item-grid {
-        grid-template-columns: 1fr
+        grid-template-columns: 1fr;
     }
 
     .otel-detail-template-v41 {
-        padding-top: 0.5rem
-    }
-
-    .detail-breadcrumb .detail-back-link {
-        padding: 0.5rem 0.9rem;
-        font-size: 0.86rem
-    }
-
-    .detail-breadcrumb-context {
-        padding: 0.4rem 0.75rem;
-        font-size: 0.82rem
+        padding-top: 0.5rem;
     }
 
     .room-detail-modal {
-        width: calc(100% - 20px)
+        width: calc(100% - 20px);
     }
 
     .room-detail-modal-summary {
-        padding: 1.1rem
+        padding: 1.1rem;
     }
 
-    .room-detail-modal-meta, .room-price-actions {
-        justify-content: flex-start
+    .room-detail-modal-meta,
+    .room-price-actions {
+        justify-content: flex-start;
     }
 
     .room-detail-modal-visual {
-        min-height: 220px
+        min-height: 220px;
     }
 
     .room-detail-modal-thumb-rail {
-        grid-template-columns: 1fr
+        grid-template-columns: 1fr;
     }
 
     .room-detail-modal-thumb-nav {
-        display: none
+        display: none;
     }
 
     .room-detail-modal-stats {
-        grid-template-columns: repeat(2,minmax(0,1fr))
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .room-detail-modal-grid {
-        grid-template-columns: 1fr
+        grid-template-columns: 1fr;
     }
 
     .room-detail-modal-actions {
-        flex-direction: column-reverse
+        flex-direction: column-reverse;
     }
 
-    .room-detail-modal-primary, .room-detail-modal-secondary {
-        width: 100%
+    .room-detail-modal-primary,
+    .room-detail-modal-secondary {
+        width: 100%;
+    }
+}
+
+@media(max-width:380px) {
+    .otel-detail-template-v41 .detail-header.hotel-title-section {
+        grid-template-columns: 1fr;
+        gap: 0.55rem;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .detail-utility-row {
+        grid-column: 1;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .rating-summary {
+        grid-column: 1;
     }
 }

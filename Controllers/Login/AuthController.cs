@@ -332,6 +332,9 @@ public class AuthController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AdminLogin(string adminEmail, string adminPassword, bool rememberMe = true, CancellationToken cancellationToken = default)
     {
+        adminEmail = (adminEmail ?? string.Empty).Trim();
+        adminPassword = (adminPassword ?? string.Empty).Trim();
+
         if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
         {
             TempData["AdminLoginError"] = "Admin girisi icin e-posta ve sifre zorunludur.";
@@ -662,6 +665,7 @@ public class AuthController : Controller
             "partner" => Url.Action("Index", "PartnerPanel") ?? "/panel/partner",
             "firma" => Url.Action("Index", "FirmaPanel") ?? "/panel/firma",
             "developer" => Url.Action("Index", "DeveloperPanel") ?? "/panel/developer",
+            "department" or "departman" => Url.Action("Dashboard", "DepartmentPanel") ?? "/panel/departman/dashboard",
             "sales" => Url.Action("Index", "SalesPanel") ?? "/panel/satis",
             _ => Url.Action("Index", "UserPanel") ?? "/panel/user"
         };
@@ -676,6 +680,7 @@ public class AuthController : Controller
             "partner" => Url.Action("Index", "PartnerPanel") ?? "/panel/partner",
             "firma" => Url.Action("Index", "FirmaPanel") ?? "/panel/firma",
             "developer" => Url.Action("Index", "DeveloperPanel") ?? "/panel/developer",
+            "department" or "departman" => Url.Action("Dashboard", "DepartmentPanel") ?? "/panel/departman/dashboard",
             "sales" => Url.Action("Index", "SalesPanel") ?? "/panel/satis",
             _ => Url.Action("Index", "UserPanel") ?? "/panel/user"
         };

@@ -1,37 +1,26 @@
-Son aktif test hesaplari
+Lokal demo hesaplari (reset-demo-db.sql)
 
-Tum asagidaki hesaplarin sifresi: 1585
+Tum asagidaki hesaplarin sifresi: 908155
 
 Admin
 
-- admin@otelturizm.com
-- genelmudur@otelturizm.com
-- finans.yonetici@otelturizm.com
-- operasyon.yonetici@otelturizm.com
-- destek.yonetici@otelturizm.com
-- destek.uzmani@otelturizm.com
-- pazarlama.yonetici@otelturizm.com
-- teknik.lider@otelturizm.com
-- yazilim.uzmani@otelturizm.com
-- dba@otelturizm.com
-- hukuk.musaviri@otelturizm.com
-- ik.yonetici@otelturizm.com
+- irmhro0@gmail.com
 
 Satis
 
-- satis@otelturizm.com
+- irmhro0+satis@gmail.com
 
 Kullanici
 
-- kullanici@otelturizm.com
+- irmhro0+user@gmail.com
 
 Firma
 
-- firma@otelturizm.com
+- irmhro0+firma@gmail.com
 
 Kurumsal / Partner
 
-- kurumsal@otelturizm.com
+- irmhro0+kurumsal@gmail.com
 
 Giris URL'leri
 
@@ -39,7 +28,13 @@ Giris URL'leri
 - Partner / Kurumsal: https://localhost:7223/partner-giris
 - Admin: https://localhost:7223/admin-giris
 
+DB Reset (lokal)
+
+- Script: D:\otelturizm\tools\Db\reset-demo-db.sql
+- Calistirma:
+  sqlcmd -S "(localdb)\MSSQLLocalDB" -d "otelturizm_2026db" -i "D:\otelturizm\tools\Db\reset-demo-db.sql"
+
 Notlar
 
-- Bu liste 2026-04-22 tarihinde canli veritabanindaki aktif hesaplar kontrol edilerek guncellendi.
-- `users` tablosunda aktif durumda dogrulanan son hesaplar kullanildi.
+- Bu liste lokal demo reset sonrasina goredir.
+- Sifreler `users.sifre` alanina SHA2_256 hash olarak yazilir.

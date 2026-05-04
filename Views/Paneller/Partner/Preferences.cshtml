@@ -130,6 +130,15 @@
         <input type="hidden" name="PartnerId" value="@Model.Form.PartnerId" />
 
         <label><span>Tesis / Otel Adı</span><input type="text" name="HotelName" value="@Model.Form.HotelName" /></label>
+        <label>
+            <span>Otel Tipi</span>
+            <select name="HotelTypeId">
+                @foreach (var hotelType in Model.HotelTypes)
+                {
+                    <option value="@hotelType.HotelTypeId" selected="@(Model.Form.HotelTypeId == hotelType.HotelTypeId ? "selected" : null)">@hotelType.Name</option>
+                }
+            </select>
+        </label>
         <label><span>Firma Unvanı</span><input type="text" name="CompanyName" value="@Model.Form.CompanyName" /></label>
         <label>
             <span>Firma Turu</span>

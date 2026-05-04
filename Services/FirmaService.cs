@@ -41,8 +41,29 @@ public class FirmaService : IFirmaService
         const string summarySql = @"
             SELECT
                 (SELECT COUNT(*) FROM firmalar WHERE aktif_mi = 1 AND onay_durumu = 'Onaylandı') AS active_companies,
-                (SELECT COUNT(DISTINCT otel_id) FROM firma_ozel_fiyatlar WHERE aktif_mi = 1) AS contracted_hotels,
-                (SELECT COALESCE(MAX(indirim_orani), 0) FROM firma_ozel_fiyatlar WHERE aktif_mi = 1) AS max_discount;";
+                (SELECT COUNT(DISTINCT otel_id) FROM firma_oda_fiyat_musaitlik WHERE aktif_mi = 1 AND kapali_satis = 0) AS contracted_hotels,
+                (
+                    SELECT COALESCE(MAX(
+                        CASE
+                            WHEN std.base_price > 0 AND f.firma_gecelik_fiyat > 0 AND f.firma_gecelik_fiyat < std.base_price
+                            THEN ((std.base_price - f.firma_gecelik_fiyat) / std.base_price) * 100
+                            ELSE 0
+                        END
+                    ), 0)
+                    FROM firma_oda_fiyat_musaitlik f
+                    OUTER APPLY (
+                        SELECT TOP (1)
+                            CASE
+                                WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                                ELSE ofm.gecelik_fiyat
+                            END AS base_price
+                        FROM oda_fiyat_musaitlik ofm
+                        WHERE ofm.otel_id = f.otel_id
+                          AND ofm.oda_tip_id = f.oda_tip_id
+                          AND ofm.tarih = f.tarih
+                    ) std
+                    WHERE f.aktif_mi = 1 AND f.kapali_satis = 0
+                ) AS max_discount;";
 
         await using (var summaryCommand = new SqlCommand(summarySql, connection))
         await using (var reader = await summaryCommand.ExecuteReaderAsync(cancellationToken))
@@ -63,12 +84,37 @@ public class FirmaService : IFirmaService
         };
 
         const string dealsSql = @"
-            SELECT TOP (6) ot.id, ot.otel_adi, ot.sehir, od.standart_gecelik_fiyat, foz.ozel_fiyat, foz.indirim_orani, foz.minimum_oda_sayisi
-            FROM firma_ozel_fiyatlar foz
-            INNER JOIN oteller ot ON ot.id = foz.otel_id
-            LEFT JOIN oda_tipleri od ON od.id = foz.oda_tip_id
-            WHERE foz.aktif_mi = 1
-            ORDER BY foz.indirim_orani DESC, foz.ozel_fiyat ASC;";
+            WITH deals AS (
+                SELECT
+                    f.otel_id,
+                    f.oda_tip_id,
+                    MIN(CASE WHEN f.firma_gecelik_fiyat > 0 THEN f.firma_gecelik_fiyat ELSE NULL END) AS corporate_price,
+                    MIN(COALESCE(std.base_price, 0)) AS standard_price
+                FROM firma_oda_fiyat_musaitlik f
+                OUTER APPLY (
+                    SELECT TOP (1)
+                        CASE
+                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
+                            ELSE ofm.gecelik_fiyat
+                        END AS base_price
+                    FROM oda_fiyat_musaitlik ofm
+                    WHERE ofm.otel_id = f.otel_id
+                      AND ofm.oda_tip_id = f.oda_tip_id
+                      AND ofm.tarih = f.tarih
+                ) std
+                WHERE f.aktif_mi = 1 AND f.kapali_satis = 0
+                GROUP BY f.otel_id, f.oda_tip_id
+            )
+            SELECT TOP (6) ot.id, ot.otel_adi, ot.sehir, d.standard_price, d.corporate_price,
+                   CASE
+                       WHEN d.standard_price > 0 AND d.corporate_price > 0 AND d.corporate_price < d.standard_price
+                       THEN ((d.standard_price - d.corporate_price) / d.standard_price) * 100
+                       ELSE 0
+                   END AS discount_rate,
+                   1 AS minimum_room_count
+            FROM deals d
+            INNER JOIN oteller ot ON ot.id = d.otel_id
+            ORDER BY discount_rate DESC, d.corporate_price ASC;";
 
         await using (var dealsCommand = new SqlCommand(dealsSql, connection))
         await using (var reader = await dealsCommand.ExecuteReaderAsync(cancellationToken))
@@ -120,7 +166,7 @@ public class FirmaService : IFirmaService
         const string statsSql = @"
             SELECT
                 (SELECT COUNT(*) FROM users u WHERE u.firma_id = @firmaId AND u.rol LIKE 'firma_%' AND u.hesap_durumu = 1) AS employee_count,
-                (SELECT COUNT(*) FROM firma_ozel_fiyatlar f WHERE f.firma_id = @firmaId AND f.aktif_mi = 1) AS deal_count,
+                (SELECT COUNT(DISTINCT CONCAT(f.otel_id, ':', f.oda_tip_id)) FROM firma_oda_fiyat_musaitlik f WHERE f.aktif_mi = 1 AND f.kapali_satis = 0) AS deal_count,
                 (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.firma_id = @firmaId) AS reservation_count,
                 (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.firma_id = @firmaId AND r.firma_onay_durumu = 'Beklemede') AS pending_approval_count;";
 
@@ -137,18 +183,18 @@ public class FirmaService : IFirmaService
             }
         }
 
-        model.HighlightDeals = await LoadDealsAsync(connection, context.FirmaId, 4, null, null, null, cancellationToken);
+        model.HighlightDeals = await LoadDealsAsync(connection, context.FirmaId, 4, null, null, null, null, null, cancellationToken);
         model.FeaturedEmployees = await LoadEmployeesAsync(connection, context.FirmaId, 4, cancellationToken);
         model.RecentReservations = await LoadReservationsAsync(connection, context.FirmaId, 6, cancellationToken);
         return model;
     }
 
-    public async Task<FirmaDealsPageViewModel> GetDealsAsync(long userId, string? city = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default)
+    public async Task<FirmaDealsPageViewModel> GetDealsAsync(long userId, string? city = null, string? district = null, string? neighborhood = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Firma Fiyatları", "Otellerin firmanız için tanımladığı özel kurumsal fiyatları canlı takip edin.", "deals", cancellationToken);
-        var deals = await LoadDealsAsync(connection, context.FirmaId, 100, city, minRoomCount, search, cancellationToken);
+        var deals = await LoadDealsAsync(connection, context.FirmaId, 100, city, district, neighborhood, minRoomCount, search, cancellationToken);
         var hotelOptions = deals
             .GroupBy(x => x.HotelId)
             .Select(x => new FirmaDealHotelOptionViewModel
@@ -163,8 +209,10 @@ public class FirmaService : IFirmaService
         {
             Shell = context.Shell,
             Deals = deals,
-            Filter = new FirmaDealsFilterModel { City = city, MinRoomCount = minRoomCount, Search = search },
+            Filter = new FirmaDealsFilterModel { City = city, District = district, Neighborhood = neighborhood, MinRoomCount = minRoomCount, Search = search },
             AvailableCities = await LoadDealCitiesAsync(connection, context.FirmaId, cancellationToken),
+            AvailableDistricts = await LoadDealDistrictsAsync(connection, context.FirmaId, city, cancellationToken),
+            AvailableNeighborhoods = await LoadDealNeighborhoodsAsync(connection, context.FirmaId, city, district, cancellationToken),
             HotelOptions = hotelOptions
         };
     }
@@ -227,8 +275,7 @@ public class FirmaService : IFirmaService
                        MAX(f.tarih) AS max_date
                 FROM dbo.firma_oda_fiyat_musaitlik f
                 INNER JOIN sel s ON s.otel_id = f.otel_id
-                WHERE f.firma_id = @firmaId
-                  AND f.aktif_mi = 1
+                WHERE f.aktif_mi = 1
                   AND f.kapali_satis = 0
                 GROUP BY f.otel_id, f.oda_tip_id
             ),
@@ -245,6 +292,9 @@ public class FirmaService : IFirmaService
                 GROUP BY ofm.otel_id, ofm.oda_tip_id
             )
             SELECT c.otel_id, c.oda_tip_id, COALESCE(od.oda_adi, N'Oda') AS room_name,
+                   COALESCE(od.maksimum_kisi_sayisi, 0) AS max_guest,
+                   COALESCE(od.maksimum_yetiskin_sayisi, 0) AS max_adult,
+                   COALESCE(od.maksimum_cocuk_sayisi, 0) AS max_child,
                    COALESCE(c.corp_price, 0) AS corp_price,
                    COALESCE(s.std_price, 0) AS std_price,
                    c.min_date, c.max_date
@@ -257,12 +307,14 @@ public class FirmaService : IFirmaService
         await using (var cmd = new SqlCommand(compareSql, connection))
         {
             cmd.Parameters.AddWithValue("@ids", JsonSerializer.Serialize(normalized));
-            cmd.Parameters.AddWithValue("@firmaId", context.FirmaId);
             await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
             while (await r.ReadAsync(cancellationToken))
             {
-                var corpPrice = SafeDecimal(r, 3);
-                var stdPrice = SafeDecimal(r, 4);
+                var maxGuest = SafeInt(r, 3);
+                var maxAdult = SafeInt(r, 4);
+                var maxChild = SafeInt(r, 5);
+                var corpPrice = SafeDecimal(r, 6);
+                var stdPrice = SafeDecimal(r, 7);
                 string discountText = "-";
                 if (stdPrice > 0m && corpPrice > 0m && corpPrice < stdPrice)
                 {
@@ -271,9 +323,9 @@ public class FirmaService : IFirmaService
                 }
 
                 string validityText;
-                if (!r.IsDBNull(5) && !r.IsDBNull(6))
+                if (!r.IsDBNull(8) && !r.IsDBNull(9))
                 {
-                    validityText = $"{r.GetDateTime(5):dd.MM.yyyy} - {r.GetDateTime(6):dd.MM.yyyy}";
+                    validityText = $"{r.GetDateTime(8):dd.MM.yyyy} - {r.GetDateTime(9):dd.MM.yyyy}";
                 }
                 else
                 {
@@ -285,6 +337,7 @@ public class FirmaService : IFirmaService
                     HotelId = r.GetInt64(0),
                     RoomTypeId = r.GetInt64(1),
                     RoomName = r.GetString(2),
+                    CapacityText = maxGuest > 0 ? $"{maxGuest} kişi (Y{Math.Max(0, maxAdult)} / Ç{Math.Max(0, maxChild)})" : "-",
                     CorporateNightlyText = corpPrice > 0m ? corpPrice.ToString("N2", culture) : "-",
                     StandardNightlyText = stdPrice > 0m ? stdPrice.ToString("N2", culture) : "-",
                     DiscountText = discountText,
@@ -554,7 +607,7 @@ public class FirmaService : IFirmaService
                 WHERE v.type = 'P' AND v.number BETWEEN 0 AND DATEDIFF(DAY, @startDate, @endDate)
             ) d
             LEFT JOIN firma_oda_fiyat_musaitlik f
-                ON f.firma_id = @firmaId AND f.otel_id=@hotelId AND f.oda_tip_id=@roomTypeId AND f.tarih = d.tarih
+                ON f.otel_id=@hotelId AND f.oda_tip_id=@roomTypeId AND f.tarih = d.tarih
             LEFT JOIN oda_fiyat_musaitlik ofm
                 ON ofm.otel_id=@hotelId AND ofm.oda_tip_id=@roomTypeId AND ofm.tarih = d.tarih
             ORDER BY d.tarih;";
@@ -562,7 +615,6 @@ public class FirmaService : IFirmaService
         await using var cmd = new SqlCommand(sql, connection);
         cmd.Parameters.AddWithValue("@startDate", start.ToDateTime(TimeOnly.MinValue));
         cmd.Parameters.AddWithValue("@endDate", end.ToDateTime(TimeOnly.MinValue));
-        cmd.Parameters.AddWithValue("@firmaId", firmaId);
         cmd.Parameters.AddWithValue("@hotelId", model.HotelId);
         cmd.Parameters.AddWithValue("@roomTypeId", model.RoomTypeId);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
@@ -721,37 +773,47 @@ public class FirmaService : IFirmaService
         var context = await BuildContextAsync(connection, userId, "Limitler & Onaylar", "Departman ve çalışan bazlı harcama limitleri ile onay akışlarını yönetin.", "limits", cancellationToken);
         var model = new FirmaLimitsPageViewModel { Shell = context.Shell };
 
-        const string sql = @"
-            SELECT id,
-                   CASE WHEN kullanici_id IS NOT NULL THEN CONCAT('Kullanıcı · ', COALESCE((SELECT TOP (1) ad_soyad FROM users u WHERE u.id = fhl.kullanici_id), 'Kayıt'))
-                        WHEN departman IS NOT NULL THEN CONCAT('Departman · ', departman)
-                        ELSE 'Firma Geneli' END AS scope_text,
-                   gecelik_limit, rezervasyon_basi_limit, aylik_limit, onay_gereksinimi
-            FROM firma_harcama_limitleri fhl
-            WHERE firma_id = @firmaId AND aktif_mi = 1
-            ORDER BY kullanici_id IS NULL DESC, departman ASC, id ASC;";
-
-        await using (var command = new SqlCommand(sql, connection))
+        try
         {
-            command.Parameters.AddWithValue("@firmaId", context.FirmaId);
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                model.Limits.Add(new FirmaPanelLimitRowViewModel
-                {
-                    LimitId = reader.GetInt64(0),
-                    ScopeText = reader.GetString(1),
-                    NightlyLimitText = reader.IsDBNull(2) ? "-" : FormatMoney(reader.GetDecimal(2)),
-                    ReservationLimitText = reader.IsDBNull(3) ? "-" : FormatMoney(reader.GetDecimal(3)),
-                    MonthlyLimitText = reader.IsDBNull(4) ? "-" : FormatMoney(reader.GetDecimal(4)),
-                    ApprovalText = SafeBool(reader, 5) ? "Onay gerekli" : "Otomatik onay"
-                });
-            }
-        }
+            const string sql = @"
+                SELECT id,
+                       CASE WHEN kullanici_id IS NOT NULL THEN CONCAT('Kullanıcı · ', COALESCE((SELECT TOP (1) ad_soyad FROM users u WHERE u.id = fhl.kullanici_id), 'Kayıt'))
+                            WHEN departman IS NOT NULL THEN CONCAT('Departman · ', departman)
+                            ELSE 'Firma Geneli' END AS scope_text,
+                       gecelik_limit, rezervasyon_basi_limit, aylik_limit, onay_gereksinimi
+                FROM firma_harcama_limitleri fhl
+                WHERE firma_id = @firmaId AND aktif_mi = 1
+                ORDER BY kullanici_id IS NULL DESC, departman ASC, id ASC;";
 
-        model.PendingApprovals = await LoadPendingApprovalsAsync(connection, context.FirmaId, cancellationToken);
-        model.Employees = await LoadEmployeesAsync(connection, context.FirmaId, 200, cancellationToken);
-        return model;
+            await using (var command = new SqlCommand(sql, connection))
+            {
+                command.Parameters.AddWithValue("@firmaId", context.FirmaId);
+                await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    model.Limits.Add(new FirmaPanelLimitRowViewModel
+                    {
+                        LimitId = reader.GetInt64(0),
+                        ScopeText = reader.GetString(1),
+                        NightlyLimitText = reader.IsDBNull(2) ? "-" : FormatMoney(reader.GetDecimal(2)),
+                        ReservationLimitText = reader.IsDBNull(3) ? "-" : FormatMoney(reader.GetDecimal(3)),
+                        MonthlyLimitText = reader.IsDBNull(4) ? "-" : FormatMoney(reader.GetDecimal(4)),
+                        ApprovalText = SafeBool(reader, 5) ? "Onay gerekli" : "Otomatik onay"
+                    });
+                }
+            }
+
+            model.PendingApprovals = await LoadPendingApprovalsAsync(connection, context.FirmaId, cancellationToken);
+            model.Employees = await LoadEmployeesAsync(connection, context.FirmaId, 200, cancellationToken);
+            return model;
+        }
+        catch (SqlException ex) when (IsMissingTableOrColumn(ex))
+        {
+            model.Shell.ErrorMessage = "Limitler & Onaylar modülü için veritabanı şeması eksik görünüyor. Local DB'de firma panel migration'larını çalıştırdıktan sonra bu sayfa tam olarak açılacaktır.";
+            model.PendingApprovals = new List<FirmaPanelReservationRowViewModel>();
+            model.Employees = await LoadEmployeesAsync(connection, context.FirmaId, 200, cancellationToken);
+            return model;
+        }
     }
 
     public async Task<FirmaInvoicesPageViewModel> GetInvoicesAsync(long userId, CancellationToken cancellationToken = default)
@@ -1135,7 +1197,7 @@ public class FirmaService : IFirmaService
             SELECT f.id, f.firma_adi, COALESCE(f.onay_durumu, 'Beklemede') AS onay_durumu,
                    u.ad_soyad, u.eposta, u.rol,
                    (SELECT COUNT(*) FROM users fu WHERE fu.firma_id = f.id AND fu.rol LIKE 'firma_%' AND fu.hesap_durumu = 1) AS employee_count,
-                   (SELECT COUNT(*) FROM firma_ozel_fiyatlar ff WHERE ff.firma_id = f.id AND ff.aktif_mi = 1) AS deal_count,
+                   (SELECT COUNT(DISTINCT CONCAT(ff.otel_id, ':', ff.oda_tip_id)) FROM firma_oda_fiyat_musaitlik ff WHERE ff.aktif_mi = 1 AND ff.kapali_satis = 0) AS deal_count,
                    (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.firma_id = f.id AND r.firma_onay_durumu = 'Beklemede') AS pending_count
             FROM users u
             INNER JOIN firmalar f ON f.id = u.firma_id
@@ -1197,15 +1259,13 @@ public class FirmaService : IFirmaService
             SELECT DISTINCT ot.sehir
             FROM dbo.firma_oda_fiyat_musaitlik f
             INNER JOIN dbo.oteller ot ON ot.id = f.otel_id
-            WHERE f.firma_id = @firmaId
-              AND f.aktif_mi = 1
+            WHERE f.aktif_mi = 1
               AND ot.sehir IS NOT NULL
               AND ot.sehir <> ''
             ORDER BY ot.sehir;";
 
         var cities = new List<string>();
         await using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@firmaId", firmaId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -1215,7 +1275,57 @@ public class FirmaService : IFirmaService
         return cities;
     }
 
-    private async Task<List<FirmaPanelDealRowViewModel>> LoadDealsAsync(SqlConnection connection, long firmaId, int take, string? city = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default)
+    private static async Task<List<string>> LoadDealDistrictsAsync(SqlConnection connection, long firmaId, string? city, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT DISTINCT ot.ilce
+            FROM dbo.firma_oda_fiyat_musaitlik f
+            INNER JOIN dbo.oteller ot ON ot.id = f.otel_id
+            WHERE f.aktif_mi = 1
+              AND (@city IS NULL OR ot.sehir = @city)
+              AND ot.ilce IS NOT NULL
+              AND ot.ilce <> ''
+            ORDER BY ot.ilce;";
+
+        var items = new List<string>();
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? DBNull.Value : (object)city);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(reader.GetString(0));
+        }
+
+        return items;
+    }
+
+    private static async Task<List<string>> LoadDealNeighborhoodsAsync(SqlConnection connection, long firmaId, string? city, string? district, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT DISTINCT ot.mahalle
+            FROM dbo.firma_oda_fiyat_musaitlik f
+            INNER JOIN dbo.oteller ot ON ot.id = f.otel_id
+            WHERE f.aktif_mi = 1
+              AND (@city IS NULL OR ot.sehir = @city)
+              AND (@district IS NULL OR ot.ilce = @district)
+              AND ot.mahalle IS NOT NULL
+              AND ot.mahalle <> ''
+            ORDER BY ot.mahalle;";
+
+        var items = new List<string>();
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? DBNull.Value : (object)city);
+        command.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(district) ? DBNull.Value : (object)district);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(reader.GetString(0));
+        }
+
+        return items;
+    }
+
+    private async Task<List<FirmaPanelDealRowViewModel>> LoadDealsAsync(SqlConnection connection, long firmaId, int take, string? city = null, string? district = null, string? neighborhood = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default)
     {
         // Firma paneli "Kurumsal Otel Fiyatları": partnerin firma_oda_fiyat_musaitlik tablosuna girdiği
         // fiyatları özetleyerek gösterir. Burada amaç; firmaya özel fiyat varsa onu, yoksa standart fiyatı
@@ -1227,6 +1337,10 @@ public class FirmaService : IFirmaService
                    ot.otel_adi,
                    COALESCE(od.oda_adi, N'') AS oda_adi,
                    CONCAT(COALESCE(ot.ilce, N''), CASE WHEN COALESCE(ot.ilce, N'') <> '' THEN N', ' ELSE N'' END, COALESCE(ot.sehir, N'')) AS city_text,
+                   COALESCE(od.maksimum_kisi_sayisi, 0) AS max_guest,
+                   COALESCE(od.maksimum_yetiskin_sayisi, 0) AS max_adult,
+                   COALESCE(od.maksimum_cocuk_sayisi, 0) AS max_child,
+                   COALESCE(od.toplam_oda_sayisi, 0) AS total_room_count,
                    COALESCE(std.base_price, 0) AS standard_price,
                    COALESCE(corp.corp_price, 0) AS corporate_price,
                    COALESCE(corp.min_date, CAST(NULL AS date)) AS min_date,
@@ -1234,8 +1348,7 @@ public class FirmaService : IFirmaService
             FROM (
                 SELECT DISTINCT f.otel_id, f.oda_tip_id
                 FROM dbo.firma_oda_fiyat_musaitlik f
-                WHERE f.firma_id = @firmaId
-                  AND f.aktif_mi = 1
+                WHERE f.aktif_mi = 1
                   AND f.kapali_satis = 0
             ) x
             INNER JOIN dbo.oteller ot ON ot.id = x.otel_id
@@ -1246,8 +1359,7 @@ public class FirmaService : IFirmaService
                     MIN(f.tarih) AS min_date,
                     MAX(f.tarih) AS max_date
                 FROM dbo.firma_oda_fiyat_musaitlik f
-                WHERE f.firma_id = @firmaId
-                  AND f.aktif_mi = 1
+                WHERE f.aktif_mi = 1
                   AND f.kapali_satis = 0
                   AND f.otel_id = x.otel_id
                   AND f.oda_tip_id = x.oda_tip_id
@@ -1265,21 +1377,34 @@ public class FirmaService : IFirmaService
                   AND ofm.oda_tip_id = x.oda_tip_id
             ) std
             WHERE (@city IS NULL OR ot.sehir = @city)
+              AND (@district IS NULL OR ot.ilce = @district)
+              AND (@neighborhood IS NULL OR ot.mahalle = @neighborhood)
+              AND (@minRoomCount IS NULL OR COALESCE(od.toplam_oda_sayisi, 0) >= @minRoomCount)
               AND (@search IS NULL OR ot.otel_adi LIKE '%' + @search + '%' OR ot.sehir LIKE '%' + @search + '%' OR ot.ilce LIKE '%' + @search + '%' OR ot.mahalle LIKE '%' + @search + '%')
             ORDER BY ot.one_cikan_otel DESC, ot.otel_adi ASC, od.oda_adi ASC;";
 
         var items = new List<FirmaPanelDealRowViewModel>();
         await using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@firmaId", firmaId);
         command.Parameters.AddWithValue("@take", take);
         command.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? DBNull.Value : (object)city);
+        command.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(district) ? DBNull.Value : (object)district);
+        command.Parameters.AddWithValue("@neighborhood", string.IsNullOrWhiteSpace(neighborhood) ? DBNull.Value : (object)neighborhood);
         command.Parameters.AddWithValue("@minRoomCount", minRoomCount.HasValue ? (object)minRoomCount.Value : DBNull.Value);
         command.Parameters.AddWithValue("@search", string.IsNullOrWhiteSpace(search) ? DBNull.Value : (object)search.Trim());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            var standardPrice = SafeDecimal(reader, 4);
-            var corporatePrice = SafeDecimal(reader, 5);
+            var maxGuest = SafeInt(reader, 5);
+            var maxAdult = SafeInt(reader, 6);
+            var maxChild = SafeInt(reader, 7);
+            var totalRoomCount = SafeInt(reader, 8);
+            var standardPrice = SafeDecimal(reader, 9);
+            var corporatePrice = SafeDecimal(reader, 10);
+            var capacityText = maxGuest > 0
+                ? $"{maxGuest} kişi (Y{Math.Max(0, maxAdult)} / Ç{Math.Max(0, maxChild)})"
+                : "-";
+            var stockText = totalRoomCount > 0 ? $"{totalRoomCount} oda" : "-";
+
             items.Add(new FirmaPanelDealRowViewModel
             {
                 DealId = reader.GetInt64(0),
@@ -1287,15 +1412,17 @@ public class FirmaService : IFirmaService
                 HotelName = reader.GetString(2),
                 RoomName = reader.IsDBNull(3) || string.IsNullOrWhiteSpace(reader.GetString(3)) ? "Oda" : reader.GetString(3),
                 CityText = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                CapacityText = capacityText,
+                StockText = stockText,
                 StandardPriceText = FormatMoney(standardPrice),
                 CorporatePriceText = FormatMoney(corporatePrice),
                 DiscountText = standardPrice > 0m && corporatePrice > 0m && corporatePrice < standardPrice
                     ? $"%{Math.Clamp((int)Math.Round(((standardPrice - corporatePrice) / standardPrice) * 100m, MidpointRounding.AwayFromZero), 1, 95)}"
                     : "-",
                 MinimumRoomText = "Kurumsal",
-                ValidityText = reader.IsDBNull(7) || reader.IsDBNull(8)
+                ValidityText = reader.IsDBNull(11) || reader.IsDBNull(12)
                     ? "Tarih aralığı tanımlı"
-                    : $"{reader.GetDateTime(7):dd.MM.yyyy} - {reader.GetDateTime(8):dd.MM.yyyy}",
+                    : $"{reader.GetDateTime(11):dd.MM.yyyy} - {reader.GetDateTime(12):dd.MM.yyyy}",
                 SavingsText = FormatMoney(Math.Max(0m, standardPrice - corporatePrice))
             });
         }
@@ -1455,6 +1582,13 @@ public class FirmaService : IFirmaService
 
     private static decimal SafeDecimal(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0m : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+
+    private static bool IsMissingTableOrColumn(SqlException ex)
+    {
+        var msg = ex.Message ?? string.Empty;
+        return msg.Contains("Invalid object name", StringComparison.OrdinalIgnoreCase)
+               || msg.Contains("Invalid column name", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static string FormatMoney(decimal value)
         => string.Format(CultureInfo.GetCultureInfo("tr-TR"), "{0:C0}", value);

@@ -277,6 +277,56 @@ public class AuthService : IAuthService
         return affected > 0 ? (true, "Güvenlik tercihi güncellendi.") : (false, "Güvenlik tercihi kaydedilemedi.");
     }
 
+    public async Task<IReadOnlyList<(string TimeText, string IpAddress, string DurationText, string DeviceLabel)>> GetRecentLoginHistoryAsync(
+        long userId,
+        int take = 5,
+        CancellationToken cancellationToken = default)
+    {
+        var results = new List<(string TimeText, string IpAddress, string DurationText, string DeviceLabel)>();
+        if (userId <= 0) return results;
+        take = Math.Clamp(take, 1, 20);
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var tr = CultureInfo.GetCultureInfo("tr-TR");
+        await using var command = new SqlCommand(@"
+            SELECT TOP (@take)
+                COALESCE(s.cihaz_etiketi, COALESCE(l.cihaz_etiketi, 'Bilinmeyen cihaz')) AS cihaz,
+                COALESCE(s.toplam_oturum_suresi_saniye, 0) AS sure_saniye,
+                COALESCE(l.ip_adresi, '—') AS ip,
+                COALESCE(l.giris_tarihi, s.son_aktivite_tarihi, SYSUTCDATETIME()) AS zaman
+            FROM dbo.kullanici_oturum_istatistikleri s
+            OUTER APPLY
+            (
+                SELECT TOP (1) ip_adresi, giris_tarihi, cihaz_etiketi
+                FROM dbo.kullanici_giris_loglari
+                WHERE kullanici_id = s.kullanici_id
+                ORDER BY giris_tarihi DESC, id DESC
+            ) l
+            WHERE s.kullanici_id = @userId
+            ORDER BY COALESCE(l.giris_tarihi, s.son_aktivite_tarihi) DESC;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        command.Parameters.AddWithValue("@take", take);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var device = reader.IsDBNull(0) ? "Bilinmeyen cihaz" : reader.GetString(0);
+            var seconds = reader.IsDBNull(1) ? 0L : reader.GetInt64(1);
+            var ip = reader.IsDBNull(2) ? "—" : reader.GetString(2);
+            var time = reader.IsDBNull(3) ? DateTime.UtcNow : reader.GetDateTime(3);
+            var local = DateTime.SpecifyKind(time, DateTimeKind.Utc).ToLocalTime();
+
+            var minutes = (int)Math.Max(0, Math.Round(seconds / 60.0));
+            var duration = minutes <= 0 ? "—" : $"{minutes} dk";
+
+            results.Add(($"{local:dd.MM.yyyy HH:mm}", ip, duration, device));
+        }
+
+        return results;
+    }
+
     public async Task RecordLoginAsync(long userId, string accountType, string? ipAddress, string? userAgent, string? deviceLabel, CancellationToken cancellationToken = default)
     {
         if (userId <= 0)
@@ -442,6 +492,19 @@ public class AuthService : IAuthService
             return user;
         }
 
+        if (user.AccountType == "department")
+        {
+            if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
+            {
+                throw new AuthFlowException(
+                    "E-posta adresinizi onaylamadan giris yapamazsiniz. Lütfen gelen kutunuzu kontrol edin veya doğrulama kodunu yeniden isteyin.",
+                    AuthFlowErrorCodes.EmailNotVerified,
+                    user.Email);
+            }
+
+            return user;
+        }
+
         if (!await IsEmailVerifiedAsync(user.UserId, cancellationToken))
         {
             throw new AuthFlowException(
@@ -491,7 +554,9 @@ public class AuthService : IAuthService
                 user.Email);
         }
 
-        if (!await CanPartnerUserAccessAsync(user.UserId, cancellationToken))
+        // Local geliştirme: admin e-posta giriş onayı bekletmesi geliştirmeyi durdurmasın.
+        // Sadece loopback host (localhost/127.0.0.1/::1) için bypass edilir.
+        if (!IsLoopbackRequest() && !await CanPartnerUserAccessAsync(user.UserId, cancellationToken))
         {
             LogSecurityEvent("login_blocked_admin_email_approval", user.UserId, identity, "partner", "admin_email_login_approval_required");
             throw new AuthFlowException("E-posta doğrulandı. Admin e-posta giriş onayı verene kadar partner panele giriş bekletilir.");
@@ -499,6 +564,23 @@ public class AuthService : IAuthService
 
         user.AccountType = "partner";
         return user;
+    }
+
+    private bool IsLoopbackRequest()
+    {
+        try
+        {
+            var ctx = _httpContextAccessor.HttpContext;
+            var host = ctx?.Request?.Host.Host ?? string.Empty;
+            return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase)
+                   || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public async Task<UserSessionModel?> AuthenticateFirmaAsync(string identity, string password, CancellationToken cancellationToken = default)
@@ -825,6 +907,11 @@ public class AuthService : IAuthService
 
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
+        var hotelType = await ResolveHotelTypeAsync(connection, model.HotelTypeId, model.HotelTypeCode, cancellationToken);
+        if (hotelType is null)
+        {
+            return (false, "Lutfen gecerli bir otel tipi seciniz.", null);
+        }
 
         var userColumns = await GetUsersTableColumnsAsync(connection, cancellationToken);
         var usersPartnerColumns = await GetColumnsAsync(connection, "users_partner", cancellationToken);
@@ -992,6 +1079,7 @@ public class AuthService : IAuthService
                     onay_tarihi,
                     web_sitesi,
                     aciklama,
+                    otel_tipi_id,
                     olusturulma_tarihi
                 )
                 VALUES
@@ -1018,6 +1106,7 @@ public class AuthService : IAuthService
                     NULL,
                     @website,
                     @description,
+                    @hotelTypeId,
                     SYSUTCDATETIME()
                 );
 
@@ -1046,6 +1135,7 @@ public class AuthService : IAuthService
                 insertPartnerCommand.Parameters.AddWithValue("@accountOwner", contactName);
                 insertPartnerCommand.Parameters.AddWithValue("@website", (object?)website ?? DBNull.Value);
                 insertPartnerCommand.Parameters.AddWithValue("@description", $"{hotelName} tesisi icin web partner kaydi olusturuldu.");
+                insertPartnerCommand.Parameters.AddWithValue("@hotelTypeId", hotelType.Value.Id);
 
                 var result = await insertPartnerCommand.ExecuteScalarAsync(cancellationToken);
                 partnerId = Convert.ToInt64(result);
@@ -1055,7 +1145,7 @@ public class AuthService : IAuthService
             const string insertHotelSql = """
                 INSERT INTO oteller
                 (
-                    otel_kodu, partner_id, user_id, otel_adi, otel_turu, ulke, sehir, ilce, mahalle, tam_adres,
+                    otel_kodu, partner_id, user_id, otel_adi, otel_turu, otel_tipi_id, ulke, sehir, ilce, mahalle, tam_adres,
                     telefon_1, eposta, web_sitesi, rezervasyon_telefonu, satis_kontak_adi, satis_kontak_telefonu, satis_kontak_eposta,
                     check_in_saati, check_out_saati, toplam_oda_sayisi, kisa_aciklama, uzun_aciklama,
                     varsayilan_komisyon_orani, odeme_vadesi, odeme_yontemi, fatura_kesim_turu,
@@ -1063,7 +1153,7 @@ public class AuthService : IAuthService
                 )
                 VALUES
                 (
-                    @hotelCode, @partnerId, @userId, @hotelName, 'Otel', 'Türkiye', @city, @district, @neighborhood, @address,
+                    @hotelCode, @partnerId, @userId, @hotelName, @hotelTypeName, @hotelTypeId, 'Türkiye', @city, @district, @neighborhood, @address,
                     @phone, @email, @website, @phone, @contactName, @phone, @email,
                     '14:00:00', '12:00:00', @roomCount, @shortDescription, @description,
                     15.00, 'Çıkış Günü', 'Havale/EFT', 'Otel Keser',
@@ -1080,6 +1170,8 @@ public class AuthService : IAuthService
                 insertHotelCommand.Parameters.AddWithValue("@partnerId", partnerId);
                 insertHotelCommand.Parameters.AddWithValue("@userId", userId);
                 insertHotelCommand.Parameters.AddWithValue("@hotelName", hotelName);
+                insertHotelCommand.Parameters.AddWithValue("@hotelTypeId", hotelType.Value.Id);
+                insertHotelCommand.Parameters.AddWithValue("@hotelTypeName", hotelType.Value.Name);
                 insertHotelCommand.Parameters.AddWithValue("@city", city);
                 insertHotelCommand.Parameters.AddWithValue("@district", district);
                 insertHotelCommand.Parameters.AddWithValue("@neighborhood", (object?)neighborhood ?? DBNull.Value);
@@ -2240,6 +2332,10 @@ public class AuthService : IAuthService
         {
             session.AccountType = "developer";
         }
+        else if (IsDepartmentAccount(session.UserRole, roles))
+        {
+            session.AccountType = "department";
+        }
         else if (!reader.IsDBNull(firmaIdOrdinal) || session.UserRole.StartsWith("firma_", StringComparison.OrdinalIgnoreCase))
         {
             session.AccountType = "firma";
@@ -2439,6 +2535,8 @@ public class AuthService : IAuthService
                 ? "admin"
                 : IsDeveloperAccount(userRole, roles)
                     ? "developer"
+                    : IsDepartmentAccount(userRole, roles)
+                        ? "department"
                     : (!reader.IsDBNull(firmaIdOrdinal) || userRole.StartsWith("firma_", StringComparison.OrdinalIgnoreCase)
                         ? "firma"
                         : (!reader.IsDBNull(salesTeamOrdinal) || userRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase)
@@ -2566,6 +2664,7 @@ public class AuthService : IAuthService
             "admin" => AdminLoginPath,
             "partner" => PartnerLoginPath,
             "firma" => FirmaLoginPath,
+            "department" or "departman" => UserLoginPath,
             _ => UserLoginPath
         };
     }
@@ -2579,6 +2678,19 @@ public class AuthService : IAuthService
 
         return roles.Any(role => string.Equals(role, "developer", StringComparison.OrdinalIgnoreCase)
             || role.StartsWith("developer_", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsDepartmentAccount(string? userRole, IEnumerable<string> roles)
+    {
+        if (!string.IsNullOrWhiteSpace(userRole)
+            && (userRole.StartsWith("departman_", StringComparison.OrdinalIgnoreCase)
+                || userRole.StartsWith("department_", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return roles.Any(role => role.StartsWith("departman_", StringComparison.OrdinalIgnoreCase)
+            || role.StartsWith("department_", StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool IsPasswordPolicyValid(string? password)
@@ -2606,6 +2718,27 @@ public class AuthService : IAuthService
             .Where(static value => value > 0)
             .Distinct()
             .ToList();
+    }
+
+    private static async Task<(int Id, string Name)?> ResolveHotelTypeAsync(SqlConnection connection, int? hotelTypeId, string? hotelTypeCode, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP (1) id, tip_adi
+            FROM dbo.otel_tipleri
+            WHERE aktif_mi = 1
+              AND (
+                  (@hotelTypeCode IS NOT NULL AND kod = @hotelTypeCode)
+                  OR (@hotelTypeCode IS NULL AND id = COALESCE(@hotelTypeId, (SELECT TOP (1) id FROM dbo.otel_tipleri WHERE kod = N'otel')))
+              )
+            ORDER BY siralama;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelTypeId", hotelTypeId.HasValue ? hotelTypeId.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@hotelTypeCode", string.IsNullOrWhiteSpace(hotelTypeCode) ? DBNull.Value : hotelTypeCode.Trim());
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken)
+            ? (reader.GetInt32(0), reader.GetString(1))
+            : null;
     }
 
     private static string NormalizeCompanyType(string? value)
@@ -2664,25 +2797,27 @@ public class AuthService : IAuthService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        const string sql = """
+        var partnerColumns = await GetColumnsAsync(connection, "partner_detaylari", cancellationToken);
+        var hasActiveColumn = partnerColumns.Contains("aktif_mi");
+        var hasEmailApprovalColumn = partnerColumns.Contains("eposta_giris_onayi_verildi_mi");
+
+        var activeClause = hasActiveColumn
+            ? "COALESCE(p.aktif_mi, 1) = 1"
+            : "1 = 1";
+
+        var emailApprovalClause = hasEmailApprovalColumn
+            ? "COALESCE(p.eposta_giris_onayi_verildi_mi, 0) = 1"
+            : "0 = 1";
+
+        var sql = $"""
             SELECT COUNT(*)
             FROM users u
             INNER JOIN partner_detaylari p
                 ON p.kullanici_id = u.id
             WHERE u.id = @userId
               AND u.hesap_durumu = 1
-              AND (
-                    CASE
-                        WHEN COL_LENGTH('partner_detaylari', 'aktif_mi') IS NULL THEN 1
-                        ELSE COALESCE(p.aktif_mi, 1)
-                    END
-                  ) = 1
-              AND (
-                    CASE
-                        WHEN COL_LENGTH('partner_detaylari', 'eposta_giris_onayi_verildi_mi') IS NULL THEN 0
-                        ELSE COALESCE(p.eposta_giris_onayi_verildi_mi, 0)
-                    END
-                  ) = 1;
+              AND {activeClause}
+              AND {emailApprovalClause};
             """;
 
         await using var command = new SqlCommand(sql, connection);

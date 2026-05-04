@@ -1,78 +1,184 @@
 @model otelturizmnew.Models.Paneller.Partner.PartnerShellViewModel
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
-    var selectedHotelId = Model.SelectedHotelId;
-    var hotelQuery = selectedHotelId.HasValue ? $"?otelId={selectedHotelId.Value}" : string.Empty;
-    var selectedHotel = Model.ManagedHotels.FirstOrDefault(x => x.IsSelected)
-        ?? (selectedHotelId.HasValue ? Model.ManagedHotels.FirstOrDefault(x => x.HotelId == selectedHotelId.Value) : null);
-    var selectedHotelName = !string.IsNullOrWhiteSpace(Model.SelectedHotelName)
-        ? Model.SelectedHotelName
-        : selectedHotel?.HotelName;
-    var selectedHotelCode = selectedHotel?.HotelCode;
-    var items = new[]
-    {
-        new { Action = "Index", Label = "Panel", Icon = "fa-grid-2", Route = "/panel/partner/dashboard" },
-        new { Action = "Reservations", Label = "Rezervasyonlar", Icon = "fa-calendar-check", Route = "/panel/partner/rezervasyonlar" },
-        new { Action = "Pricing", Label = "Takvim & Fiyatlar", Icon = "fa-calendar-days", Route = "/panel/partner/takvim-fiyatlar" },
-        new { Action = "CompanyPricing", Label = "Firma Fiyatları", Icon = "fa-tags", Route = "/panel/partner/firma-fiyatlari" },
-        new { Action = "ListingSubscriptions", Label = "Aboneliklerim", Icon = "fa-crown", Route = "/panel/partner/aboneliklerim" },
-        new { Action = "Campaigns", Label = "Kampanyalar", Icon = "fa-bullhorn", Route = "/panel/partner/kampanyalar" },
-        new { Action = "Rooms", Label = "Oda Yönetimi", Icon = "fa-bed", Route = "/panel/partner/oda-yonetimi" },
-        new { Action = "HotelInfo", Label = "Otel Bilgileri", Icon = "fa-hotel", Route = "/panel/partner/otel-bilgileri" },
-        new { Action = "Photos", Label = "Fotoğraflar", Icon = "fa-images", Route = "/panel/partner/fotograflar" },
-        new { Action = "Performance", Label = "Performans", Icon = "fa-chart-line", Route = "/panel/partner/performans" },
-        new { Action = "Reviews", Label = "Değerlendirmeler", Icon = "fa-star", Route = "/panel/partner/degerlendirmeler" },
-        new { Action = "Finance", Label = "Finans", Icon = "fa-credit-card", Route = "/panel/partner/finans" },
-        new { Action = "Preferences", Label = "Başvuru & Evraklar", Icon = "fa-file-shield", Route = "/panel/partner/basvuru-ve-evraklar" },
-        new { Action = "Support", Label = "7/24 Destek", Icon = "fa-headset", Route = "/panel/partner/724-destek" },
-        new { Action = "Security", Label = "Güvenlik", Icon = "fa-shield-halved", Route = "/panel/partner/guvenlik" }
-    };
+    var currentPath = Context.Request.Path.Value ?? string.Empty;
+    var hotelQuery = Model.SelectedHotelId.HasValue ? $"?otelId={Model.SelectedHotelId.Value}" : string.Empty;
+    bool IsCurrent(params string[] actions) => actions.Any(a => string.Equals(currentAction, a, StringComparison.OrdinalIgnoreCase));
+    bool IsPath(params string[] paths) => paths.Any(p => currentPath.Equals(p, StringComparison.OrdinalIgnoreCase) || currentPath.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase));
+    string PartnerUrl(string path) => $"{path}{hotelQuery}";
+    var reservationOpen = IsPath("/panel/partner/rezervasyonlar") || IsCurrent("Reservations", "Reviews");
+    var priceOpen = IsPath("/panel/partner/takvim-fiyatlar", "/panel/partner/fiyat", "/panel/partner/kampanyalar", "/panel/partner/aboneliklerim", "/panel/partner/performans");
+    var facilityOpen = IsPath("/panel/partner/otel", "/panel/partner/tesis", "/panel/partner/oda", "/panel/partner/fotograflar", "/panel/partner/basvuru-ve-evraklar");
+    var companyOpen = IsPath("/panel/partner/firma-fiyatlari", "/panel/partner/firmalar");
+    var financeOpen = IsPath("/panel/partner/finans", "/panel/partner/odeme", "/panel/partner/komisyon");
+    var growthOpen = IsPath("/panel/partner/pazarlama", "/panel/partner/performans", "/panel/partner/aboneliklerim", "/panel/partner/kampanyalar");
+    var accountOpen = IsPath("/panel/partner/guvenlik", "/panel/partner/tercihler", "/panel/partner/724-destek", "/panel/partner/hesap-bilgileri", "/panel/partner/bildirim-tercihleri");
 }
-<aside class="partner-sidebar">
-    <div>
-        <a href="/panel/partner/dashboard@(hotelQuery)" class="partner-brand" aria-label="Otelturizm Partner">
-            <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
-        </a>
-        <div class="partner-profile-info">
-            <h3>@(!string.IsNullOrWhiteSpace(selectedHotelName) ? selectedHotelName : "Partner Oteli")</h3>
-            <p>@Model.Email</p>
-            @if (!string.IsNullOrWhiteSpace(selectedHotelCode))
-            {
-                <small>Otel Kodu: @selectedHotelCode</small>
-            }
+<aside class="navbar navbar-vertical navbar-expand-lg partner-sidebar" data-bs-theme="@(string.Equals(Model.Theme.BsTheme, "dark", StringComparison.OrdinalIgnoreCase) ? "dark" : "light")" aria-label="Partner menüsü">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#partnerSidebarMenu" aria-controls="partnerSidebarMenu" aria-expanded="false" aria-label="Menüyü aç">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <h1 class="navbar-brand navbar-brand-autodark">
+            <a href="@PartnerUrl("/panel/partner/dashboard")" class="partner-brand-link">
+                <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="partner-brand-logo" />
+            </a>
+        </h1>
+
+        <div class="collapse navbar-collapse" id="partnerSidebarMenu">
+            <div class="partner-sidebar-scroll">
+                <ul class="navbar-nav partner-sidebar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link @(IsCurrent("Index") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/dashboard")">
+                            <span class="nav-link-icon"><i class="fas fa-house"></i></span>
+                            <span class="nav-link-title">Anasayfa</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item partner-nav-group">
+                        <button class="nav-link partner-nav-toggle @(reservationOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#partnerNavReservations" aria-expanded="@(reservationOpen ? "true" : "false")">
+                            <span class="nav-link-icon"><i class="fas fa-calendar-check"></i></span>
+                            <span class="nav-link-title">Rezervasyon Yönetimi</span>
+                            @if (Model.PendingReservations > 0) { <span class="badge bg-danger-lt text-danger ms-auto">@Model.PendingReservations</span> }
+                            <i class="fas fa-chevron-right partner-nav-chevron"></i>
+                        </button>
+                        <div class="collapse @(reservationOpen ? "show" : string.Empty)" id="partnerNavReservations">
+                            <div class="partner-subnav">
+                                <a class="@(IsPath("/panel/partner/rezervasyonlar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/rezervasyonlar")">Rezervasyonları Yönetin</a>
+                                <a class="@(IsPath("/panel/partner/rezervasyonlar/takvim") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/rezervasyonlar/takvim")">Rezervasyon Takvimi</a>
+                                <a class="@(IsPath("/panel/partner/rezervasyonlar/misafir-mesajlari") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/rezervasyonlar/misafir-mesajlari")">Misafir Mesajları</a>
+                                <a class="@(IsPath("/panel/partner/rezervasyonlar/iptal-politikalari") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/rezervasyonlar/iptal-politikalari")">İptal & No-show</a>
+                                <a class="@(IsPath("/panel/partner/rezervasyonlar/odeme-durumlari") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/rezervasyonlar/odeme-durumlari")">Ödeme Durumları</a>
+                                <a class="@(IsPath("/panel/partner/degerlendirmeler") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/degerlendirmeler")">Konuk Değerlendirmeleri</a>
+                            </div>
+                        </div>
+                    </li>
+
+                    <li class="nav-item partner-nav-group">
+                        <button class="nav-link partner-nav-toggle @(priceOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#partnerNavPricing" aria-expanded="@(priceOpen ? "true" : "false")">
+                            <span class="nav-link-icon"><i class="fas fa-tags"></i></span>
+                            <span class="nav-link-title">Fiyat & Kontenjan</span>
+                            @if (Model.LowStockAlerts > 0) { <span class="badge bg-warning-lt text-warning ms-auto">@Model.LowStockAlerts</span> }
+                            <i class="fas fa-chevron-right partner-nav-chevron"></i>
+                        </button>
+                        <div class="collapse @(priceOpen ? "show" : string.Empty)" id="partnerNavPricing">
+                            <div class="partner-subnav">
+                                <a class="@(IsPath("/panel/partner/takvim-fiyatlar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/takvim-fiyatlar")">Oda Fiyatları</a>
+                                <a class="@(IsPath("/panel/partner/fiyat/stok-kontenjan") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/fiyat/stok-kontenjan")">Oda Kontenjanları</a>
+                                <a class="@(IsPath("/panel/partner/fiyat/super-fiyat") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/fiyat/super-fiyat")">Süper Fiyat</a>
+                                <a class="@(IsPath("/panel/partner/fiyat/indirimler") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/fiyat/indirimler")">İndirimler</a>
+                                <a class="@(IsPath("/panel/partner/fiyat/kisitlamalar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/fiyat/kisitlamalar")">Kurallar & Kısıtlamalar</a>
+                                <a class="@(IsPath("/panel/partner/fiyat/gunluk-notlar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/fiyat/gunluk-notlar")">Fiyat Notları</a>
+                            </div>
+                        </div>
+                    </li>
+
+                    <li class="nav-item partner-nav-group">
+                        <button class="nav-link partner-nav-toggle @(companyOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#partnerNavCompanies" aria-expanded="@(companyOpen ? "true" : "false")">
+                            <span class="nav-link-icon"><i class="fas fa-building-user"></i></span>
+                            <span class="nav-link-title">Firmalar</span>
+                            <i class="fas fa-chevron-right partner-nav-chevron ms-auto"></i>
+                        </button>
+                        <div class="collapse @(companyOpen ? "show" : string.Empty)" id="partnerNavCompanies">
+                            <div class="partner-subnav">
+                                <a class="@(IsPath("/panel/partner/firma-fiyatlari") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/firma-fiyatlari")">Firma Oda Fiyatları</a>
+                                <a class="@(IsPath("/panel/partner/firmalar/rezervasyonlar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/firmalar/rezervasyonlar")">Firma Rezervasyonları</a>
+                                <a class="@(IsPath("/panel/partner/firmalar/analiz") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/firmalar/analiz")">Firma Analizleri</a>
+                                <a class="@(IsPath("/panel/partner/firmalar/talepler") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/firmalar/talepler")">Firma Talepleri</a>
+                            </div>
+                        </div>
+                    </li>
+
+                    <li class="nav-item partner-nav-group">
+                        <button class="nav-link partner-nav-toggle @(facilityOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#partnerNavFacility" aria-expanded="@(facilityOpen ? "true" : "false")">
+                            <span class="nav-link-icon"><i class="fas fa-hotel"></i></span>
+                            <span class="nav-link-title">Tesis Yönetimi</span>
+                            <i class="fas fa-chevron-right partner-nav-chevron ms-auto"></i>
+                        </button>
+                        <div class="collapse @(facilityOpen ? "show" : string.Empty)" id="partnerNavFacility">
+                            <div class="partner-subnav">
+                                <a class="@(IsPath("/panel/partner/otel-bilgileri") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/otel-bilgileri")">Tesis Bilgileri</a>
+                                <a class="@(IsPath("/panel/partner/tesis/ozellikler") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/tesis/ozellikler")">Tesis Özellikleri</a>
+                                <a class="@(IsPath("/panel/partner/tesis/konum") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/tesis/konum")">Konum & Harita</a>
+                                <a class="@(IsPath("/panel/partner/tesis/kosullar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/tesis/kosullar")">Otel Koşulları</a>
+                                <a class="@(IsPath("/panel/partner/oda-yonetimi") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/oda-yonetimi")">Oda Tipleri</a>
+                                <a class="@(IsPath("/panel/partner/oda/ozellikler") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/oda/ozellikler")">Oda Özellikleri</a>
+                                <a class="@(IsPath("/panel/partner/fotograflar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/fotograflar")">Fotoğraflar</a>
+                                <a class="@(IsPath("/panel/partner/basvuru-ve-evraklar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/basvuru-ve-evraklar")">Evraklar <span class="partner-mini-badge">Yeni</span></a>
+                                <a class="@(IsPath("/panel/partner/tesis/genel-tanimlar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/tesis/genel-tanimlar")">Genel Tanımlar</a>
+                            </div>
+                        </div>
+                    </li>
+
+                    <li class="nav-item partner-nav-group">
+                        <button class="nav-link partner-nav-toggle @(growthOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#partnerNavGrowth" aria-expanded="@(growthOpen ? "true" : "false")">
+                            <span class="nav-link-icon"><i class="fas fa-bullhorn"></i></span>
+                            <span class="nav-link-title">Pazarlama & Büyüme</span>
+                            <i class="fas fa-chevron-right partner-nav-chevron ms-auto"></i>
+                        </button>
+                        <div class="collapse @(growthOpen ? "show" : string.Empty)" id="partnerNavGrowth">
+                            <div class="partner-subnav">
+                                <a class="@(IsPath("/panel/partner/kampanyalar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/kampanyalar")">Kampanyalar</a>
+                                <a class="@(IsPath("/panel/partner/aboneliklerim") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/aboneliklerim")">Liste Abonelikleri</a>
+                                <a class="@(IsPath("/panel/partner/performans") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/performans")">Performans & Rakipler</a>
+                                <a class="@(IsPath("/panel/partner/pazarlama/konum-icgoruleri") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/pazarlama/konum-icgoruleri")">Konum İçgörüleri</a>
+                                <a class="@(IsPath("/panel/partner/pazarlama/favori-misafirler") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/pazarlama/favori-misafirler")">Favori Misafirler</a>
+                                <a class="@(IsPath("/panel/partner/pazarlama/etkinlikler") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/pazarlama/etkinlikler")">Etkinlik Yönetin</a>
+                            </div>
+                        </div>
+                    </li>
+
+                    <li class="nav-item partner-nav-group">
+                        <button class="nav-link partner-nav-toggle @(financeOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#partnerNavFinance" aria-expanded="@(financeOpen ? "true" : "false")">
+                            <span class="nav-link-icon"><i class="fas fa-wallet"></i></span>
+                            <span class="nav-link-title">Finans & Ödeme</span>
+                            <i class="fas fa-chevron-right partner-nav-chevron ms-auto"></i>
+                        </button>
+                        <div class="collapse @(financeOpen ? "show" : string.Empty)" id="partnerNavFinance">
+                            <div class="partner-subnav">
+                                <a class="@(IsPath("/panel/partner/finans") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/finans")">Finansal Bilgiler</a>
+                                <a class="@(IsPath("/panel/partner/odeme/ayarlari") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/odeme/ayarlari")">Ödeme Ayarları</a>
+                                <a class="@(IsPath("/panel/partner/finans/faturalar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/finans/faturalar")">Faturalar</a>
+                                <a class="@(IsPath("/panel/partner/finans/komisyonlar") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/finans/komisyonlar")">Komisyonlar</a>
+                                <a class="@(IsPath("/panel/partner/finans/mutabakat") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/finans/mutabakat")">Mutabakat</a>
+                            </div>
+                        </div>
+                    </li>
+
+                    <li class="nav-item partner-nav-group">
+                        <button class="nav-link partner-nav-toggle @(accountOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#partnerNavAccount" aria-expanded="@(accountOpen ? "true" : "false")">
+                            <span class="nav-link-icon"><i class="fas fa-user-gear"></i></span>
+                            <span class="nav-link-title">Hesap & Destek</span>
+                            @if (Model.OpenSupportTickets > 0) { <span class="badge bg-orange-lt text-orange ms-auto">@Model.OpenSupportTickets</span> }
+                            <i class="fas fa-chevron-right partner-nav-chevron"></i>
+                        </button>
+                        <div class="collapse @(accountOpen ? "show" : string.Empty)" id="partnerNavAccount">
+                            <div class="partner-subnav">
+                                <a class="@(IsPath("/panel/partner/tercihler") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/tercihler")">Ayarlar</a>
+                                <a class="@(IsPath("/panel/partner/guvenlik/tesis-kullanicilari") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/guvenlik/tesis-kullanicilari")">Tesis Kullanıcıları</a>
+                                <a class="@(IsPath("/panel/partner/guvenlik") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/guvenlik")">Güvenlik</a>
+                                <a class="@(IsPath("/panel/partner/bildirim-tercihleri") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/bildirim-tercihleri")">Bildirim Tercihleri</a>
+                                <a class="@(IsPath("/panel/partner/724-destek") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/724-destek")">7/24 Destek</a>
+                                <a class="@(IsPath("/panel/partner/hesap-bilgileri") ? "active" : string.Empty)" href="@PartnerUrl("/panel/partner/hesap-bilgileri")">Hesap Bilgileri</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="partner-sidebar-footer">
+                <a class="btn btn-primary w-100 partner-fast-price-btn" href="@PartnerUrl("/panel/partner/takvim-fiyatlar")">
+                    <i class="fas fa-bolt me-2"></i>Hızlı Fiyat Güncelle
+                </a>
+                <div class="partner-footer-actions">
+                    <a class="btn btn-outline-light" href="@PartnerUrl("/panel/partner/guvenlik")"><i class="fas fa-shield-halved me-2"></i>Güvenlik</a>
+                    <form method="post" action="/cikis-yap" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-light"><i class="fas fa-right-from-bracket me-2"></i>Çıkış</button>
+                    </form>
+                </div>
+            </div>
         </div>
-
-        <div class="partner-hotel-switcher">
-            <label>Yetkili Oteller</label>
-            <select onchange="if(this.value){ window.location=this.value; }">
-                @foreach (var hotel in Model.ManagedHotels)
-                {
-                    <option value="/panel/partner/dashboard?otelId=@hotel.HotelId" selected="@(hotel.IsSelected ? "selected" : null)">@hotel.HotelName</option>
-                }
-            </select>
-        </div>
-
-        <nav class="partner-sidebar-nav">
-            @foreach (var item in items)
-            {
-                var badge = item.Action switch
-                {
-                    "Reservations" when Model.PendingReservations > 0 => Model.PendingReservations.ToString(),
-                    "Reviews" when Model.UnansweredReviews > 0 => Model.UnansweredReviews.ToString(),
-                    "Support" when Model.OpenSupportTickets > 0 => Model.OpenSupportTickets.ToString(),
-                    "Pricing" when Model.LowStockAlerts > 0 => Model.LowStockAlerts.ToString(),
-                    _ => null
-                };
-                <a href="@item.Route@(hotelQuery)" class="@(currentAction == item.Action ? "active" : string.Empty)"><i class="fas @item.Icon"></i><span>@item.Label</span>@if (!string.IsNullOrWhiteSpace(badge)) { <b class="partner-nav-badge">@badge</b> }</a>
-            }
-        </nav>
-    </div>
-
-    <div class="partner-sidebar-footer">
-        <a href="/" class="secondary-link"><i class="fas fa-arrow-left"></i> Ana Sayfaya Dön</a>
-        <form method="post" action="/cikis-yap" class="panel-logout-form">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="logout-link"><i class="fas fa-right-from-bracket"></i> Çıkış Yap</button>
-        </form>
     </div>
 </aside>

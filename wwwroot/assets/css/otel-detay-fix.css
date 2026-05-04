@@ -1,0 +1,88 @@
+/* 
+ * Otel Detay Sayfası - Oda Seçimi Kartı Düzeltmeleri
+ * Issue: Fiyat kartı çok dar, özellikler sıkışmış
+ */
+
+/* Oda seçili kartını genişlet */
+.room-selection-card,
+.selected-room-card,
+[class*="room"][class*="selected"],
+[class*="selected"][class*="room"] {
+    min-width: 100% !important;
+    width: 100% !important;
+    overflow: visible !important;
+}
+
+/* Fiyat kartı - kenar taşma sorununu çöz */
+.room-price-card,
+.pricing-card,
+.price-summary-card,
+[class*="price"][class*="card"] {
+    overflow: visible !important;
+    min-width: auto !important;
+    width: 100% !important;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Fiyat bilgileri - satırlara bölme */
+.price-item,
+.price-row,
+.pricing-row,
+[class*="price"][class*="item"],
+[class*="price"][class*="row"] {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    overflow: visible;
+    min-height: 24px;
+}
+
+/* Fiyat etiketi */
+.price-label,
+[class*="price"][class*="label"] {
+    flex: 0 1 auto;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Fiyat değeri */
+.price-value,
+[class*="price"][class*="value"] {
+    flex: 0 1 auto;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+/* İç padding sorununu çöz */
+.room-price-card,
+.pricing-card {
+    padding: 16px !important;
+    gap: 12px !important;
+}
+
+/* Mobil uyumluluk */
+@media (max-width: 768px) {
+    .room-selection-card,
+    .selected-room-card,
+    .room-price-card,
+    .pricing-card {
+        width: 100%;
+        overflow: visible;
+        padding: 12px !important;
+    }
+
+    .price-item,
+    .price-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .price-value {
+        width: 100%;
+        text-align: right;
+    }
+}

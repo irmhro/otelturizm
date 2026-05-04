@@ -7,15 +7,54 @@
     display: grid;
     grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
     gap: 28px;
-    padding: 36px;
+    padding: 28px;
     border-radius: 32px;
-    background: linear-gradient(135deg, #f8fbff 0%, #eef5ff 45%, #ffffff 100%);
-    box-shadow: 0 24px 50px rgba(15, 74, 163, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background:
+        radial-gradient(circle at 10% 18%, rgba(37, 99, 235, 0.08), transparent 26rem),
+        linear-gradient(135deg, rgba(248, 250, 252, 0.92) 0%, rgba(255, 255, 255, 0.86) 100%);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
 }
-.legal-contract-kicker { color: #0f4aa3; font-weight: 800; letter-spacing: .08em; font-size: .78rem; }
-.legal-contract-hero h1 { margin: 10px 0 14px; font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.06; }
-.legal-contract-subtitle { color: #475569; font-size: 1.06rem; line-height: 1.7; }
-.legal-contract-meta { display: flex; gap: 14px; flex-wrap: wrap; color: #0f172a; font-weight: 700; margin-top: 18px; }
+.legal-contract-kicker {
+    color: rgba(15, 74, 163, 0.92);
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+}
+.legal-contract-hero h1 {
+    margin: 0 0 12px;
+    font-size: clamp(1.85rem, 3.6vw, 3.1rem);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+}
+.legal-contract-subtitle {
+    color: #475569;
+    font-size: 1.02rem;
+    line-height: 1.7;
+    max-width: 62ch;
+    margin: 0;
+}
+.legal-contract-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+.legal-contract-meta > span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(37, 99, 235, 0.16);
+    background: rgba(37, 99, 235, 0.08);
+    color: rgba(15, 23, 42, 0.88);
+    font-weight: 900;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
 .legal-contract-visual img { width: 100%; height: 100%; min-height: 220px; object-fit: cover; border-radius: 24px; }
 .legal-contract-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; margin-top: 28px; }
 .legal-contract-body, .legal-contract-sidebar-card { background: #fff; border-radius: 28px; box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08); }
@@ -29,4 +68,6 @@
 @media (max-width: 960px) {
     .legal-contract-hero, .legal-contract-layout { grid-template-columns: 1fr; }
     .legal-contract-sidebar-card { position: static; }
+    .legal-contract-hero { padding: 22px; }
+    .legal-contract-meta > span { white-space: normal; }
 }

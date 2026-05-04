@@ -47,6 +47,7 @@
                         <thead>
                             <tr>
                                 <th>Oda Tipi</th>
+                                <th>Kapasite</th>
                                 <th>Firma (gecelik)</th>
                                 <th>Standart (gecelik)</th>
                                 <th>İndirim</th>
@@ -59,6 +60,7 @@
                             {
                                 <tr>
                                     <td><b>@row.RoomName</b></td>
+                                    <td class="text-muted">@row.CapacityText</td>
                                     <td>@row.CorporateNightlyText</td>
                                     <td class="text-muted">@row.StandardNightlyText</td>
                                     <td><span class="ot-badge ot-badge--success">@row.DiscountText</span></td>

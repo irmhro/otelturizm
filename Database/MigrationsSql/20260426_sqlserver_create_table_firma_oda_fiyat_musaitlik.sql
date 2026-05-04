@@ -24,6 +24,12 @@ END
 -- Kolonlar sonradan eklendiyse geriye donuk tamamla (idempotent)
 IF OBJECT_ID(N'dbo.firma_oda_fiyat_musaitlik', N'U') IS NOT NULL
 BEGIN
+    IF COL_LENGTH(N'dbo.firma_oda_fiyat_musaitlik', N'firma_id') IS NULL
+    BEGIN
+        ALTER TABLE dbo.firma_oda_fiyat_musaitlik
+        ADD firma_id BIGINT NOT NULL CONSTRAINT DF_firma_ofm_firma_id DEFAULT 0 WITH VALUES;
+    END
+
     IF COL_LENGTH(N'dbo.firma_oda_fiyat_musaitlik', N'aktif_mi') IS NULL
     BEGIN
         ALTER TABLE dbo.firma_oda_fiyat_musaitlik

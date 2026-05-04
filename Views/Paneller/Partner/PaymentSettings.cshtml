@@ -1,0 +1,81 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerFinancePageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/finance";
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Finans & ödeme</div>
+            <h2 class="page-title">Ödeme Ayarları</h2>
+            <div class="text-muted mt-1">Banka aktarım bilgileri ve ödeme politikaları bağlantıları.</div>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <a class="btn btn-outline-primary" href="/panel/partner/tesis/kosullar?otelId=@Model.Shell.SelectedHotelId">
+                <i class="fas fa-file-contract me-2"></i>Ön ödeme / iptal politikaları
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards">
+    <div class="col-12 col-xl-7">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Banka hesap bilgileri</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/panel/partner/finans/banka-kaydet" class="row g-3">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="HotelId" value="@Model.BankInfoForm.HotelId" />
+                    <div class="col-md-6">
+                        <label class="form-label">Banka</label>
+                        <input class="form-control" type="text" name="BankName" value="@Model.BankInfoForm.BankName" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Şube</label>
+                        <input class="form-control" type="text" name="BranchName" value="@Model.BankInfoForm.BranchName" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">IBAN</label>
+                        <input class="form-control" type="text" name="Iban" value="@Model.BankInfoForm.Iban" placeholder="TR..." />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Hesap sahibi</label>
+                        <input class="form-control" type="text" name="AccountHolderName" value="@Model.BankInfoForm.AccountHolderName" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Para birimi</label>
+                        <select class="form-select" name="Currency">
+                            <option value="TRY" selected="@(Model.BankInfoForm.Currency == "TRY")">TRY</option>
+                            <option value="USD" selected="@(Model.BankInfoForm.Currency == "USD")">USD</option>
+                            <option value="EUR" selected="@(Model.BankInfoForm.Currency == "EUR")">EUR</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-building-columns me-2"></i>Banka bilgilerini kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-5">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Aktif komisyon kuralı</h3>
+            </div>
+            <div class="card-body">
+                <div class="text-muted small mb-2">Bu bilgiler admin tarafından belirlenir.</div>
+                <div class="fw-bold">@Model.ActiveRuleCommissionText</div>
+                <div class="text-muted mt-2">@Model.ActiveRuleTaxText</div>
+                <div class="text-muted mt-2 small">@Model.ActiveRuleDateText</div>
+            </div>
+        </div>
+    </div>
+</div>
+

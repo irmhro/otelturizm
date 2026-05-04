@@ -3,87 +3,257 @@
 @using otelturizmnew.Models.Paneller.Common
 @inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
 @inject otelturizmnew.Services.Abstractions.IHeaderBildiriService HeaderBildiriService
+@inject otelturizmnew.Services.Abstractions.IUserPanelService UserPanelService
+@inject otelturizmnew.Services.Abstractions.IPanelThemeService PanelThemeService
 @{
     Layout = null;
     var pageCssPath = ViewData["PageCssPath"] as string ?? ViewData["PageCss"] as string;
     var title = ViewData["Title"] as string ?? ViewData["PanelTitle"] as string ?? "Kullanıcı Paneli";
-    var userDraftRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-    long? userDraftUserId = long.TryParse(userDraftRaw, out var parsedUserDraftUserId) ? parsedUserDraftUserId : null;
+    var userRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var userId = long.TryParse(userRaw, out var parsedUserId) ? parsedUserId : 0;
+    var userDraftUserId = userId > 0 ? userId : (long?)null;
     var userDraftSessionKey = Context.Request.Cookies.TryGetValue(otelturizmnew.Services.ReservationDraftService.DraftCookieName, out var userDraftCookieValue)
         ? userDraftCookieValue
         : null;
     var userActiveDraft = await ReservationDraftService.GetActiveDraftAsync(userDraftUserId, userDraftSessionKey, Context.RequestAborted);
-    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.User, userDraftUserId ?? 0, Context.RequestAborted);
+    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.User, userId, Context.RequestAborted);
+    var fullName = Context.User.FindFirst("otelturizm:full_name")?.Value ?? Context.User.Identity?.Name ?? "Kullanıcı";
+    var email = Context.User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+    var initial = string.IsNullOrWhiteSpace(fullName) ? "K" : fullName.Trim()[0].ToString().ToUpperInvariant();
+    var profileImageUrl = userId > 0 ? await UserPanelService.GetProfileImageUrlAsync(userId, Context.RequestAborted) : string.Empty;
+    ViewData["UserProfileImageUrl"] = profileImageUrl;
+
+    var theme = userId > 0 ? await PanelThemeService.LoadAsync("user", userId, Context.RequestAborted) : new otelturizmnew.Models.Paneller.Partner.PanelThemeViewModel();
+    var bsTheme = (theme?.BsTheme ?? "light").Trim().ToLowerInvariant();
+    if (bsTheme is not ("light" or "dark" or "auto")) { bsTheme = "light"; }
+    var dir = theme?.Rtl == true ? "rtl" : "ltr";
+
+    string BuildThemeStyle()
+    {
+        var parts = new List<string>();
+        var primaryHex = !string.IsNullOrWhiteSpace(theme?.PrimaryHex) ? theme!.PrimaryHex : theme?.AccentHex;
+        var accentHex = !string.IsNullOrWhiteSpace(theme?.AccentHex) ? theme!.AccentHex : primaryHex;
+        // Ana renk sadece aksiyon/buton tonunu etkilemeli.
+        if (!string.IsNullOrWhiteSpace(accentHex)) parts.Add($"--user-accent: {accentHex};");
+        // Sidebar rengi kullanıcı panelinde sabit tasarım; otomatik tema rengiyle bağlanmaz.
+        if (!string.IsNullOrWhiteSpace(theme?.FontFamily)) parts.Add($"--tblr-font-sans-serif: {theme!.FontFamily};");
+        return string.Join(" ", parts);
+    }
 }
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-bs-theme="@(bsTheme == "auto" ? null : bsTheme)">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>@title - Otelturizm</title>
-    
-    
     <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/paneltematabler/dist/css/tabler.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/paneltematabler/dist/css/tabler-vendors.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/partner/tabler-bridge.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/panel-tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/panel-standards.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/panel-user-shell.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/panel-user-shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/paneller/user/shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/user/shell.mobile.css" asp-append-version="true" media="(max-width: 991px)" />
     <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/developer-feedback.css" asp-append-version="true" />
     @if (!string.IsNullOrWhiteSpace(pageCssPath))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
         <link rel="stylesheet" href="~/assets/css/@(pageCssPath).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     }
 </head>
-<body>
-    <div class="dashboard-shell">
+<body class="layout-fluid user-panel-v2" data-bs-theme="@(bsTheme == "auto" ? null : bsTheme)" dir="@dir" style="@BuildThemeStyle()">
+    <div class="page">
         <partial name="~/Views/Paneller/User/_UserSidebar.cshtml" />
 
-        <main class="dashboard-main">
-            <header class="dashboard-page-header">
-                <div>
-                    <p class="dashboard-kicker">USER PANEL</p>
-                    <h1>@ViewData["PanelTitle"]</h1>
-                    <p class="dashboard-sub">@ViewData["PanelSubtitle"]</p>
-                </div>
-
-                <div class="dashboard-header-tools">
-                    <div class="dashboard-search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Panel icinde ara..." />
+        <div class="page-wrapper">
+            <header class="navbar navbar-expand-md d-print-none user-topbar" role="banner">
+                <div class="container-fluid">
+                    <button class="navbar-toggler d-lg-none me-2" type="button" data-user-sidebar-toggle aria-controls="userSidebarMenu" aria-expanded="false" aria-label="Menüyü aç">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="navbar-brand d-lg-none">
+                        <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="user-topbar-logo" />
                     </div>
-                    <partial name="~/Views/Shared/_HeaderBildiri.cshtml" model="headerBildiri" />
-                    <form method="post" action="/cikis-yap" class="panel-header-logout-form">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="panel-header-logout-btn">
-                            <i class="fas fa-right-from-bracket"></i>
-                            <span>Cikis Yap</span>
+                    <div class="d-none d-lg-flex align-items-center gap-3">
+                        @if (!string.IsNullOrWhiteSpace(profileImageUrl))
+                        {
+                            <span class="avatar bg-primary-lt text-primary" style="background-image:url('@profileImageUrl')"></span>
+                        }
+                        else
+                        {
+                            <span class="avatar bg-primary-lt text-primary"><i class="fas fa-user"></i></span>
+                        }
+                        <div>
+                            <div class="text-muted small">Kullanıcı paneli</div>
+                            <div class="fw-bold">@ViewData["PanelTitle"]</div>
+                        </div>
+                    </div>
+                    <div class="navbar-nav flex-row ms-auto align-items-center gap-2">
+                        <a class="btn btn-primary btn-pill d-none d-md-inline-flex" href="/oteller">
+                            <i class="fas fa-magnifying-glass me-2"></i>Otel Ara
+                        </a>
+                        <a class="btn btn-outline-primary btn-pill d-none d-md-inline-flex" href="/panel/user/rezervasyonlarim">
+                            <i class="fas fa-calendar-check me-2"></i>Rezervasyonlarım
+                        </a>
+                        <button class="btn btn-icon btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#userThemeSettings" aria-label="Tema ayarları">
+                            <i class="fas fa-palette"></i>
                         </button>
-                    </form>
+                        <partial name="~/Views/Paneller/Common/_DeveloperFeedbackWidget.cshtml" />
+                        <partial name="~/Views/Shared/_HeaderBildiri.cshtml" model="headerBildiri" />
+                        <div class="nav-item dropdown">
+                            <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown" aria-label="Kullanıcı menüsü">
+                                @if (!string.IsNullOrWhiteSpace(profileImageUrl))
+                                {
+                                    <span class="avatar avatar-sm bg-blue-lt text-blue" style="background-image:url('@profileImageUrl')"></span>
+                                }
+                                else
+                                {
+                                    <span class="avatar avatar-sm bg-blue-lt text-blue">@initial</span>
+                                }
+                                <div class="d-none d-xl-block ps-2">
+                                    <div class="fw-bold">@fullName</div>
+                                    <div class="small text-muted">@email</div>
+                                </div>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                                <a class="dropdown-item" href="/panel/user/profil-bilgilerim"><i class="fas fa-user me-2"></i>Profil Bilgilerim</a>
+                                <a class="dropdown-item" href="/panel/user/guvenlik-ve-giris"><i class="fas fa-shield-halved me-2"></i>Güvenlik</a>
+                                <div class="dropdown-divider"></div>
+                                <form method="post" action="/cikis-yap" class="px-2">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger w-100"><i class="fas fa-right-from-bracket me-2"></i>Çıkış</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </header>
 
-            @if (userActiveDraft is not null && ViewData["ShowGlobalDraftBanner"] as bool? == true)
-            {
-                <partial name="~/Views/Shared/_ActiveReservationDraftBanner.cshtml" model="userActiveDraft" />
-            }
+            <div class="page-body">
+                <div class="container-fluid">
+                    @if (userActiveDraft is not null && ViewData["ShowGlobalDraftBanner"] as bool? == true)
+                    {
+                        <partial name="~/Views/Shared/_ActiveReservationDraftBanner.cshtml" model="userActiveDraft" />
+                    }
+                    <partial name="~/Views/Paneller/Common/_PanelToasts.cshtml" />
+                    @RenderBody()
+                </div>
+            </div>
 
-            <partial name="~/Views/Paneller/User/_UserRouteHub.cshtml" />
-
-            <partial name="~/Views/Paneller/Common/_PanelToasts.cshtml" />
-            @RenderBody()
-        </main>
+            <partial name="~/Views/Paneller/User/_UserPanelFooter.cshtml" />
+            <div class="offcanvas offcanvas-end" tabindex="-1" id="userThemeSettings" aria-labelledby="userThemeSettingsLabel">
+                <div class="offcanvas-header">
+                    <h2 class="offcanvas-title" id="userThemeSettingsLabel">Tema Ayarları</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <form method="post" action="/panel/user/tema/kaydet">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="PrimaryHex" id="userThemePrimaryHex" value="@(theme?.PrimaryHex ?? string.Empty)" />
+                        <input type="hidden" name="AccentHex" id="userThemeAccentHex" value="@(theme?.AccentHex ?? theme?.PrimaryHex ?? string.Empty)" />
+                        <input type="hidden" name="SidebarBgHex" id="userThemeSidebarBgHex" value="@(theme?.SidebarBgHex ?? string.Empty)" />
+                        <label class="form-label">Renk modu</label>
+                        <div class="form-selectgroup-boxes row g-2 mb-3">
+                            <label class="form-selectgroup-item col-6">
+                                <input type="radio" name="BsTheme" value="light" class="form-selectgroup-input" @(string.Equals(bsTheme, "light", StringComparison.OrdinalIgnoreCase) ? "checked" : null) />
+                                <span class="form-selectgroup-label d-flex align-items-center p-3"><i class="fas fa-sun me-2"></i>Açık</span>
+                            </label>
+                            <label class="form-selectgroup-item col-6">
+                                <input type="radio" name="BsTheme" value="dark" class="form-selectgroup-input" @(string.Equals(bsTheme, "dark", StringComparison.OrdinalIgnoreCase) ? "checked" : null) />
+                                <span class="form-selectgroup-label d-flex align-items-center p-3"><i class="fas fa-moon me-2"></i>Koyu</span>
+                            </label>
+                        </div>
+                        <label class="form-label">Ana renk</label>
+                        <div class="d-flex flex-wrap gap-2 mb-3" data-color-palette="user-primary">
+                            @foreach (var color in new[] { "#2563eb", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#334155" })
+                            {
+                                <button type="button" class="btn btn-color-swatch" style="background:@color" data-color="@color" aria-label="@color"></button>
+                            }
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Temayı Kaydet</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <partial name="~/Views/Paneller/User/_UserMobileNav.cshtml" />
+    <script src="~/paneltematabler/dist/js/tabler.min.js" asp-append-version="true"></script>
     <script src="~/assets/js/panel-header-bildiri.js" asp-append-version="true"></script>
+    <script src="~/assets/js/developer-feedback.js" asp-append-version="true"></script>
     <script src="~/assets/js/panel-toasts.js" asp-append-version="true"></script>
+    <script nonce="@(Context.Items["CspNonce"] as string)">
+    (() => {
+        const primaryInput = document.getElementById('userThemePrimaryHex');
+        const accentInput = document.getElementById('userThemeAccentHex');
+        const sidebarInput = document.getElementById('userThemeSidebarBgHex');
+        const body = document.body;
+        const root = document.documentElement;
+        const applyThemePreview = ({ mode, accent }) => {
+            if (mode) { root.setAttribute('data-bs-theme', mode); body.setAttribute('data-bs-theme', mode); }
+            if (accent) root.style.setProperty('--user-accent', accent);
+        };
+        document.querySelectorAll('[data-color-palette=\"user-primary\"] [data-color]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const hex = btn.getAttribute('data-color') || '';
+                if (primaryInput) primaryInput.value = hex;
+                if (accentInput) accentInput.value = hex;
+                applyThemePreview({ mode: document.querySelector('#userThemeSettings input[name=\"BsTheme\"]:checked')?.value || 'light', accent: hex });
+            });
+        });
+        document.querySelectorAll('#userThemeSettings input[name=\"BsTheme\"]').forEach((input) => {
+            input.addEventListener('change', () => {
+                const value = input.value || 'light';
+                const accent = accentInput?.value || primaryInput?.value || '';
+                applyThemePreview({ mode: value, accent });
+            });
+        });
+    })();
+    </script>
+    <script nonce="@(Context.Items["CspNonce"] as string)">
+        (function () {
+            const sidebar = document.getElementById('userSidebar');
+            const menu = document.getElementById('userSidebarMenu');
+            if (!sidebar || !menu) return;
+
+            let backdrop = document.querySelector('[data-user-sidebar-backdrop]');
+            if (!backdrop) {
+                backdrop = document.createElement('button');
+                backdrop.type = 'button';
+                backdrop.className = 'user-sidebar-backdrop';
+                backdrop.setAttribute('data-user-sidebar-backdrop', '');
+                backdrop.setAttribute('aria-label', 'Menüyü kapat');
+                document.body.appendChild(backdrop);
+            }
+
+            const setMenu = function (open) {
+                document.body.classList.toggle('user-sidebar-open', open);
+                menu.classList.toggle('show', open);
+                sidebar.querySelectorAll('[data-user-sidebar-toggle]').forEach(function (button) {
+                    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+                document.querySelectorAll('[data-user-sidebar-toggle]').forEach(function (button) {
+                    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+            };
+
+            document.querySelectorAll('[data-user-sidebar-toggle]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    setMenu(!document.body.classList.contains('user-sidebar-open'));
+                });
+            });
+            backdrop.addEventListener('click', function () { setMenu(false); });
+            menu.querySelectorAll('a.nav-link').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    if (window.matchMedia('(max-width: 991px)').matches) setMenu(false);
+                });
+            });
+            window.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') setMenu(false);
+            });
+        })();
+    </script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>
-
-
-
-

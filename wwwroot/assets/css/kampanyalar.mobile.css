@@ -1,1 +1,16 @@
 @import url("./kampanyalar.css");
+
+/* Bu dosya yalnızca (max-width: 900px) ile yüklenir; tek sütunu garanti et */
+.campaign-index-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.campaign-card {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}

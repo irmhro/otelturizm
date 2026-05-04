@@ -1,0 +1,223 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerHotelPoliciesPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/hotel-info";
+    var form = Model.Form;
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Tesis yönetimi</div>
+            <h2 class="page-title">Otel Koşulları</h2>
+            <div class="text-muted mt-1">Misafire gösterilen kurallar, ödeme ve iptal politikaları.</div>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+                <button type="submit" form="policyForm" class="btn btn-primary">
+                    <i class="fas fa-floppy-disk me-2"></i>Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="policyForm" method="post" action="/panel/partner/tesis/kosullar/kaydet">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="HotelId" value="@form.HotelId" />
+
+    <div class="row row-cards">
+        <div class="col-12 col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Genel kurallar</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Sigara politikası</label>
+                            <input class="form-control" name="SmokingPolicy" value="@form.SmokingPolicy" placeholder="Örn: Odalarda yasak, belirli alanlarda serbest" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Evcil hayvan politikası</label>
+                            <input class="form-control" name="PetPolicy" value="@form.PetPolicy" placeholder="Örn: Kabul edilir / edilmez" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Evcil hayvan ücreti</label>
+                            <input class="form-control" type="number" step="0.01" name="PetFee" value="@form.PetFee" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Evcil hayvan depozitosu</label>
+                            <input class="form-control" type="number" step="0.01" name="PetDeposit" value="@form.PetDeposit" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="PartyAllowed" value="true" checked="@form.PartyAllowed" />
+                                <span class="form-check-label">Parti / etkinliğe izin verilir</span>
+                            </label>
+                            <input type="hidden" name="PartyAllowed" value="false" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sessizlik başlangıç</label>
+                            <input class="form-control" type="time" name="QuietHoursStart" value="@form.QuietHoursStart" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sessizlik bitiş</label>
+                            <input class="form-control" type="time" name="QuietHoursEnd" value="@form.QuietHoursEnd" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Minimum yaş sınırı</label>
+                            <input class="form-control" type="number" min="0" max="99" name="MinimumAgeLimit" value="@form.MinimumAgeLimit" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-check form-switch mt-4">
+                                <input class="form-check-input" type="checkbox" name="AdultsOnly" value="true" checked="@form.AdultsOnly" />
+                                <span class="form-check-label">Sadece yetişkinlere</span>
+                            </label>
+                            <input type="hidden" name="AdultsOnly" value="false" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Çocuk kabul yaş aralığı</label>
+                            <input class="form-control" name="ChildAgeRange" value="@form.ChildAgeRange" placeholder="Örn: 0-12" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Maksimum çocuk</label>
+                            <input class="form-control" type="number" min="0" max="10" name="MaxChildren" value="@form.MaxChildren" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="BabyCribAvailable" value="true" checked="@form.BabyCribAvailable" />
+                                <span class="form-check-label">Bebek karyolası var</span>
+                            </label>
+                            <input type="hidden" name="BabyCribAvailable" value="false" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Bebek karyolası ücreti</label>
+                            <input class="form-control" type="number" step="0.01" name="BabyCribFee" value="@form.BabyCribFee" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="ExtraBedAvailable" value="true" checked="@form.ExtraBedAvailable" />
+                                <span class="form-check-label">Ekstra yatak var</span>
+                            </label>
+                            <input type="hidden" name="ExtraBedAvailable" value="false" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ekstra yatak ücreti</label>
+                            <input class="form-control" type="number" step="0.01" name="ExtraBedFee" value="@form.ExtraBedFee" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="OutsideFoodAllowed" value="true" checked="@form.OutsideFoodAllowed" />
+                                <span class="form-check-label">Dışarıdan yiyecek/içecek serbest</span>
+                            </label>
+                            <input type="hidden" name="OutsideFoodAllowed" value="false" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="VisitorAllowed" value="true" checked="@form.VisitorAllowed" />
+                                <span class="form-check-label">Ziyaretçi kabul edilir</span>
+                            </label>
+                            <input type="hidden" name="VisitorAllowed" value="false" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ziyaretçi saati başlangıç</label>
+                            <input class="form-control" type="time" name="VisitorHoursStart" value="@form.VisitorHoursStart" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ziyaretçi saati bitiş</label>
+                            <input class="form-control" type="time" name="VisitorHoursEnd" value="@form.VisitorHoursEnd" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Ödeme & iptal</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="PrepaymentRequired" value="true" checked="@form.PrepaymentRequired" />
+                                <span class="form-check-label">Ön ödeme gerekli</span>
+                            </label>
+                            <input type="hidden" name="PrepaymentRequired" value="false" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ön ödeme oranı (%)</label>
+                            <input class="form-control" type="number" step="0.01" min="0" max="100" name="PrepaymentPercent" value="@form.PrepaymentPercent" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Kalan ödeme zamanı</label>
+                            <input class="form-control" name="RemainingPaymentTimeText" value="@form.RemainingPaymentTimeText" placeholder="Örn: Check-in sırasında" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="CreditCardPaymentAccepted" value="true" checked="@form.CreditCardPaymentAccepted" />
+                                <span class="form-check-label">Kredi kartı kabul</span>
+                            </label>
+                            <input type="hidden" name="CreditCardPaymentAccepted" value="false" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="CashPaymentAccepted" value="true" checked="@form.CashPaymentAccepted" />
+                                <span class="form-check-label">Nakit ödeme kabul</span>
+                            </label>
+                            <input type="hidden" name="CashPaymentAccepted" value="false" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Kabul edilen kartlar</label>
+                            <input class="form-control" name="AcceptedCardsText" value="@form.AcceptedCardsText" placeholder="Visa, MasterCard, Amex..." />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">İptal politikası (özet)</label>
+                            <input class="form-control" name="CancellationSummary" value="@form.CancellationSummary" maxlength="500" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Detaylı iptal koşulları</label>
+                            <textarea class="form-control" name="CancellationDetails" rows="5">@form.CancellationDetails</textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Ücretsiz iptal (gün)</label>
+                            <input class="form-control" type="number" min="0" max="60" name="FreeCancellationDays" value="@form.FreeCancellationDays" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Geç iptal cezası (%)</label>
+                            <input class="form-control" type="number" step="0.01" min="0" max="100" name="LateCancellationPenaltyPercent" value="@form.LateCancellationPenaltyPercent" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">No-show cezası (%)</label>
+                            <input class="form-control" type="number" step="0.01" min="0" max="100" name="NoShowPenaltyPercent" value="@form.NoShowPenaltyPercent" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Hasar depozitosu</label>
+                            <input class="form-control" type="number" step="0.01" name="DamageDepositAmount" value="@form.DamageDepositAmount" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Hasar depozitosu açıklama</label>
+                            <input class="form-control" name="DamageDepositDescription" value="@form.DamageDepositDescription" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Özel koşullar</label>
+                            <textarea class="form-control" name="SpecialConditions" rows="5">@form.SpecialConditions</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-floppy-disk me-2"></i>Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+

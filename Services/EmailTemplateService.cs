@@ -24,6 +24,18 @@ public class EmailTemplateService : IEmailTemplateService
         var localizedViewPath = ResolveLocalizedViewPath(relativeViewPath, tokens);
         var normalized = localizedViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
         var absolutePath = Path.Combine(_environment.ContentRootPath, normalized);
+
+        // Fallback 1: dosya adında Türkçe karakter farkı (ör. "Onaylandı" -> "Onaylandi")
+        var asciiViewPath = ToAsciiTurkish(localizedViewPath);
+        var asciiAbsolutePath = !string.Equals(asciiViewPath, localizedViewPath, StringComparison.Ordinal)
+            ? Path.Combine(_environment.ContentRootPath, asciiViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar))
+            : absolutePath;
+
+        if (!File.Exists(absolutePath) && File.Exists(asciiAbsolutePath))
+        {
+            absolutePath = asciiAbsolutePath;
+        }
+
         if (!File.Exists(absolutePath))
         {
             var fallbackViewPath = ResolveNeutralViewPath(localizedViewPath);
@@ -31,6 +43,15 @@ public class EmailTemplateService : IEmailTemplateService
             {
                 var fallbackNormalized = fallbackViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
                 var fallbackAbsolutePath = Path.Combine(_environment.ContentRootPath, fallbackNormalized);
+                var fallbackAscii = ToAsciiTurkish(fallbackViewPath);
+                var fallbackAsciiAbsolutePath = !string.Equals(fallbackAscii, fallbackViewPath, StringComparison.Ordinal)
+                    ? Path.Combine(_environment.ContentRootPath, fallbackAscii.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar))
+                    : fallbackAbsolutePath;
+
+                if (!File.Exists(fallbackAbsolutePath) && File.Exists(fallbackAsciiAbsolutePath))
+                {
+                    fallbackAbsolutePath = fallbackAsciiAbsolutePath;
+                }
                 if (File.Exists(fallbackAbsolutePath))
                 {
                     var fallbackContent = await File.ReadAllTextAsync(fallbackAbsolutePath, Encoding.UTF8, cancellationToken);
@@ -55,6 +76,22 @@ public class EmailTemplateService : IEmailTemplateService
         }
 
         return content;
+    }
+
+    private static string ToAsciiTurkish(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        return value
+            .Replace('ı', 'i').Replace('İ', 'I')
+            .Replace('ş', 's').Replace('Ş', 'S')
+            .Replace('ğ', 'g').Replace('Ğ', 'G')
+            .Replace('ü', 'u').Replace('Ü', 'U')
+            .Replace('ö', 'o').Replace('Ö', 'O')
+            .Replace('ç', 'c').Replace('Ç', 'C');
     }
 
     private static string ResolveLocalizedViewPath(string relativeViewPath, IReadOnlyDictionary<string, string> tokens)

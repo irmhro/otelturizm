@@ -2,12 +2,46 @@
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Bildirim Tercihleri";
+    var activeCount = 0;
+    if (Model.Form.ReservationEmail) activeCount++;
+    if (Model.Form.ReservationPush) activeCount++;
+    if (Model.Form.CheckInReminder) activeCount++;
+    if (Model.Form.CancellationChanges) activeCount++;
+    if (Model.Form.CampaignEmail) activeCount++;
+    if (Model.Form.CampaignSms) activeCount++;
+    if (Model.Form.SystemNotifications) activeCount++;
 }
 
-<section class="form-stack">
-    <form method="post" asp-action="SaveNotifications" class="panel-card">
+<section class="notifications-hero">
+    <div>
+        <span class="panel-eyebrow">Bildirim merkezi</span>
+        <h1>Bildirim Tercihleri</h1>
+        <p>Rezervasyon, kampanya ve güvenlik bildirimlerini kanal bazında yönet.</p>
+    </div>
+    <div class="notification-hero-metric">
+        <strong>@activeCount</strong>
+        <span>Aktif tercih</span>
+    </div>
+</section>
+
+@if (TempData["UserNotificationSuccess"] is string success)
+{
+    <div class="notification-alert success">@success</div>
+}
+
+<section class="notifications-grid">
+    <form method="post" asp-action="SaveNotifications" class="notification-panel">
         @Html.AntiForgeryToken()
-        <div class="section-head"><h2>Bildirim Tercihleri</h2><button type="submit" class="primary-btn">Kaydet</button></div>
+        <div class="notification-panel-head">
+            <div>
+                <h2>Tercihler</h2>
+                <p>Kritik rezervasyon ve güvenlik bildirimlerini kapatmamanız önerilir.</p>
+            </div>
+            <button type="submit" class="btn-primary-solid">
+                <i class="fas fa-save"></i>
+                Kaydet
+            </button>
+        </div>
         <div class="toggle-list">
             <label class="toggle-row"><div><h3>Rezervasyon e-postaları</h3><p>Onay ve önemli rezervasyon güncellemeleri e-posta ile gelsin.</p></div><input asp-for="Form.ReservationEmail" type="checkbox" /></label>
             <label class="toggle-row"><div><h3>Rezervasyon push bildirimleri</h3><p>Uygulama içi hızlı uyarıları açık tut.</p></div><input asp-for="Form.ReservationPush" type="checkbox" /></label>
@@ -19,25 +53,36 @@
         </div>
     </form>
 
-    <article class="panel-card">
-        <div class="section-head"><h2>Son bildirimler</h2></div>
-        <div class="toggle-list">
+    <article class="notification-panel">
+        <div class="notification-panel-head">
+            <div>
+                <h2>Son Bildirimler</h2>
+                <p>Hesabınıza ait son sistem ve rezervasyon bildirimleri.</p>
+            </div>
+            <span class="notification-count-pill">@Model.RecentNotifications.Count kayıt</span>
+        </div>
+        <div class="notification-list">
             @if (Model.RecentNotifications.Count == 0)
             {
-                <div class="toggle-row no-border"><div><h3>Henüz bildirim yok</h3><p>Aktif bildirim oluştuğunda burada listelenecek.</p></div></div>
+                <div class="notification-empty">
+                    <i class="fas fa-bell-slash"></i>
+                    <strong>Henüz bildirim yok</strong>
+                    <span>Aktif bildirim oluştuğunda burada listelenecek.</span>
+                </div>
             }
             else
             {
                 foreach (var notification in Model.RecentNotifications)
                 {
-                    <div class="toggle-row">
+                    <div class="notification-row">
+                        <div class="notification-icon"><i class="fas fa-bell"></i></div>
                         <div>
                             <h3>@notification.Title</h3>
                             <p>@notification.Message</p>
                         </div>
-                        <div>
+                        <div class="notification-meta">
                             <strong>@notification.TypeText</strong>
-                            <p>@notification.TimeText</p>
+                            <span>@notification.TimeText</span>
                         </div>
                     </div>
                 }

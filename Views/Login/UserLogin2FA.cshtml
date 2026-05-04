@@ -13,7 +13,7 @@
         }
         @if (TempData["UserLoginSuccess"] is string loginSuccess)
         {
-            <div class="auth-alert success">@loginSuccess</div>
+            <div class="auth-alert auth-alert-success">@loginSuccess</div>
         }
         @if (!ViewData.ModelState.IsValid)
         {
@@ -42,4 +42,3 @@
         </form>
     </div>
 </section>
-

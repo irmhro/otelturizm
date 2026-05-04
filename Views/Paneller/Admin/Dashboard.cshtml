@@ -4,175 +4,157 @@
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
 }
-<div class="row">
+<section class="admin-dashboard-page">
+<div class="admin-kpi-grid">
     @foreach (var metric in Model.Metrics)
     {
-        <div class="col-lg-3 col-md-6 col-12">
-            @{
-                var tone = string.IsNullOrWhiteSpace(metric.ToneClass) ? "info" : metric.ToneClass;
-                var toneClass = tone switch
-                {
-                    "success" => "bg-success",
-                    "warning" => "bg-warning",
-                    "danger" => "bg-danger",
-                    _ => "bg-info"
-                };
-            }
-            <div class="small-box @toneClass">
-                <div class="inner">
-                    <h3>@metric.Value</h3>
-                    <p>@metric.Label</p>
-                    <small>@metric.TrendText</small>
-                </div>
-                <div class="icon">
-                    <i class="fas @metric.IconClass"></i>
-                </div>
+        var tone = string.IsNullOrWhiteSpace(metric.ToneClass) ? "info" : metric.ToneClass;
+        <article class="admin-kpi-card @tone">
+            <span class="kpi-icon"><i class="fas @metric.IconClass"></i></span>
+            <div>
+                <p>@metric.Label</p>
+                <h2>@metric.Value</h2>
+                <span>@metric.TrendText</span>
             </div>
-        </div>
+        </article>
     }
 </div>
 
-<div class="row">
-    <div class="col-lg-7">
-        <div class="card card-primary card-outline">
-            <div class="card-header">
-                <h3 class="card-title">Rezervasyon Hareketi (Son 6 Ay)</h3>
+<div class="admin-dashboard-grid">
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">REZERVASYON TRENDİ</p>
+                <h2>Rezervasyon Hareketi</h2>
+                <span>Son 6 ay canlı rezervasyon sayıları</span>
             </div>
-            <div class="card-body">
-                <div class="d-flex align-items-end justify-content-between" style="gap: 10px; min-height: 220px;">
-                    @foreach (var bar in Model.ReservationChart)
-                    {
-                        <div class="text-center flex-fill">
-                            <div class="bg-primary rounded" style="height:@bar.HeightPercent%; min-height: 8px;"></div>
-                            <div class="mt-2 font-weight-bold">@bar.Value</div>
-                            <small class="text-muted">@bar.Label</small>
-                        </div>
-                    }
+            <a class="btn btn-outline-primary btn-sm" href="/admin/rezervasyonlar-tek-liste">Tümünü Gör</a>
+        </div>
+        <div class="admin-chart-bars">
+            @foreach (var bar in Model.ReservationChart)
+            {
+                <div class="chart-bar-item">
+                    <span class="chart-bar" style="height:@bar.HeightPercent%;"></span>
+                    <strong>@bar.Value</strong>
+                    <small>@bar.Label</small>
                 </div>
-            </div>
+            }
         </div>
-    </div>
+    </article>
 
-    <div class="col-lg-5">
-        <div class="card card-secondary card-outline">
-            <div class="card-header">
-                <h3 class="card-title">Son Hareketler</h3>
-            </div>
-            <div class="card-body p-0">
-                <ul class="products-list product-list-in-card pl-2 pr-2">
-                    @foreach (var activity in Model.Activities)
-                    {
-                        <li class="item">
-                            <div class="product-img text-primary">
-                                <i class="fas @activity.IconClass fa-lg"></i>
-                            </div>
-                            <div class="product-info">
-                                <span class="product-title">@activity.Title</span>
-                                <span class="product-description">@activity.Subtitle</span>
-                            </div>
-                            <span class="text-muted float-right">@activity.TimeText</span>
-                        </li>
-                    }
-                </ul>
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">OPERASYON</p>
+                <h2>Son Hareketler</h2>
+                <span>Başvuru, sistem ve işlem kayıtları</span>
             </div>
         </div>
-    </div>
+        <div class="admin-activity-list">
+            @foreach (var activity in Model.Activities)
+            {
+                var tone = string.IsNullOrWhiteSpace(activity.ToneClass) ? "info" : activity.ToneClass;
+                <div class="admin-activity-item @tone">
+                    <span class="activity-icon"><i class="fas @activity.IconClass"></i></span>
+                    <div>
+                        <strong>@activity.Title</strong>
+                        <p>@activity.Subtitle</p>
+                    </div>
+                    <small>@activity.TimeText</small>
+                </div>
+            }
+        </div>
+    </article>
 </div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Öne Çıkan Tesisler</h3>
-                <div class="card-tools">
-                    <span class="badge badge-info">Rezervasyon yoğunluğu yüksek</span>
-                </div>
-            </div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-hover text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>Otel</th>
-                            <th>Konum</th>
-                            <th>Durum</th>
-                            <th>Puan</th>
-                            <th>Rezervasyon</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in Model.HighlightHotels)
-                        {
-                            <tr>
-                                <td>@row.HotelName</td>
-                                <td>@row.CityLabel</td>
-                                <td>
-                                    <span class="badge @(row.StatusToneClass?.Contains("danger") == true ? "badge-danger" : "badge-success")">@row.StatusLabel</span>
-                                </td>
-                                <td>@row.ScoreText</td>
-                                <td>@row.ReservationText</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+<article class="admin-section-card">
+    <div class="admin-section-head">
+        <div>
+            <p class="mini-caption">TESİS PERFORMANSI</p>
+            <h2>Öne Çıkan Tesisler</h2>
+            <span>Rezervasyon yoğunluğu yüksek tesisler</span>
         </div>
+        <a class="btn btn-outline-primary btn-sm" href="/admin/oteller">Oteller</a>
     </div>
-</div>
-
-<div class="row">
-    <div class="col-12">
-        <div class="card card-outline card-primary">
-            <div class="card-header">
-                <h3 class="card-title">Otel KPI (Ciro / Komisyon / İptal / Yorum)</h3>
-                <div class="card-tools">
-                    <span class="badge badge-light">En yüksek ciroya göre</span>
-                </div>
-            </div>
-            <div class="card-body table-responsive p-0">
-                @if (Model.HotelKpis.Count == 0)
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Otel</th>
+                    <th>Konum</th>
+                    <th>Durum</th>
+                    <th>Puan</th>
+                    <th>Rezervasyon</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.HighlightHotels)
                 {
-                    <div class="p-3 text-muted">Henüz KPI kaydı yok.</div>
+                    var tone = row.StatusToneClass?.Contains("danger", StringComparison.OrdinalIgnoreCase) == true ? "danger" : "success";
+                    <tr>
+                        <td><strong>@row.HotelName</strong></td>
+                        <td>@row.CityLabel</td>
+                        <td><span class="table-status @tone">@row.StatusLabel</span></td>
+                        <td>@row.ScoreText</td>
+                        <td>@row.ReservationText</td>
+                    </tr>
                 }
-                else
-                {
-                    <table class="table table-hover text-nowrap">
-                        <thead>
-                        <tr>
-                            <th>Otel</th>
-                            <th>Konum</th>
-                            <th>Durum</th>
-                            <th>Rez.</th>
-                            <th>İptal</th>
-                            <th>İptal %</th>
-                            <th>Ciro</th>
-                            <th>Komisyon</th>
-                            <th>Yorum</th>
-                            <th>Puan</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var row in Model.HotelKpis)
-                        {
-                            var cancelTone = row.CancelRatePercent >= 20 ? "badge-danger" : row.CancelRatePercent >= 10 ? "badge-warning" : "badge-success";
-                            <tr>
-                                <td><strong>@row.HotelName</strong><div><a href="/admin/otel-detay/@row.HotelId">Detay</a></div></td>
-                                <td>@row.CityLabel</td>
-                                <td><span class="badge badge-info">@row.PublishStatus</span></td>
-                                <td>@row.ReservationCount</td>
-                                <td>@row.CancelledCount</td>
-                                <td><span class="badge @cancelTone">@row.CancelRatePercent.ToString("0.0")%</span></td>
-                                <td><strong>@row.GrossRevenue.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR")) TL</strong></td>
-                                <td>@row.CommissionAmount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR")) TL</td>
-                                <td>@row.ReviewCount</td>
-                                <td>@row.AverageScore.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)</td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
-                }
-            </div>
-        </div>
+            </tbody>
+        </table>
     </div>
-</div>
+</article>
 
-
+<article class="admin-section-card">
+    <div class="admin-section-head">
+        <div>
+            <p class="mini-caption">CİRO VE KOMİSYON</p>
+            <h2>Otel KPI</h2>
+            <span>En yüksek ciroya göre rezervasyon, komisyon, iptal ve yorum kırılımı</span>
+        </div>
+        <a class="btn btn-outline-primary btn-sm" href="/admin/komisyonlar">Komisyonlar</a>
+    </div>
+    <div class="admin-table-wrap">
+        @if (Model.HotelKpis.Count == 0)
+        {
+            <div class="admin-empty-panel">Henüz KPI kaydı yok.</div>
+        }
+        else
+        {
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Otel</th>
+                    <th>Konum</th>
+                    <th>Durum</th>
+                    <th>Rez.</th>
+                    <th>İptal</th>
+                    <th>İptal %</th>
+                    <th>Ciro</th>
+                    <th>Komisyon</th>
+                    <th>Yorum</th>
+                    <th>Puan</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in Model.HotelKpis)
+                {
+                    var cancelTone = row.CancelRatePercent >= 20 ? "danger" : row.CancelRatePercent >= 10 ? "warning" : "success";
+                    <tr>
+                        <td><strong>@row.HotelName</strong><div><a href="/admin/otel-detay/@row.HotelId">Detay</a></div></td>
+                        <td>@row.CityLabel</td>
+                        <td><span class="table-status info">@row.PublishStatus</span></td>
+                        <td>@row.ReservationCount</td>
+                        <td>@row.CancelledCount</td>
+                        <td><span class="table-status @cancelTone">@row.CancelRatePercent.ToString("0.0")%</span></td>
+                        <td><strong>@row.GrossRevenue.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR")) TL</strong></td>
+                        <td>@row.CommissionAmount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR")) TL</td>
+                        <td>@row.ReviewCount</td>
+                        <td>@row.AverageScore.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+</article>
+</section>

@@ -1,7 +1,168 @@
 @{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "Gizlilik Politikası";
+    ViewData["HeaderContext"] = "home";
+    ViewData["MetaDescription"] = "Otelturizm gizlilik politikası: kişisel verilerin işlenmesi, çerezler, üçüncü taraf hizmetler ve KVKK kapsamındaki haklar.";
+    ViewData["PageCss"] = "home-privacy";
+    var today = DateTime.Today.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"));
 }
-<h1>@ViewData["Title"]</h1>
+<section class="privacy-shell">
+    <header class="privacy-hero">
+        <div class="privacy-hero__kicker">Yasal Bilgilendirme</div>
+        <h1>Gizlilik Politikası</h1>
+        <p class="privacy-hero__lead">
+            Otelturizm’i kullanırken paylaştığınız verilerin nasıl işlendiğini, hangi amaçlarla saklandığını ve
+            haklarınızı bu sayfada bulabilirsiniz.
+        </p>
+        <div class="privacy-hero__meta">
+            <span><i class="fas fa-calendar-day" aria-hidden="true"></i> Son güncelleme: <strong>@today</strong></span>
+            <span><i class="fas fa-shield-halved" aria-hidden="true"></i> KVKK uyumu</span>
+            <span><i class="fas fa-cookie-bite" aria-hidden="true"></i> Çerezler</span>
+        </div>
+    </header>
 
-<p>Use this page to detail your site's privacy policy.</p>
+    <div class="privacy-grid">
+        <aside class="privacy-toc" aria-label="Sayfa içi menü">
+            <div class="privacy-toc__card">
+                <strong class="privacy-toc__title">İçindekiler</strong>
+                <a href="#kapsam">1) Kapsam</a>
+                <a href="#toplanan-veriler">2) Toplanan veriler</a>
+                <a href="#amaclar">3) İşleme amaçları</a>
+                <a href="#hukuki-sebepler">4) Hukuki sebepler</a>
+                <a href="#paylasim">5) Üçüncü taraflar ve paylaşım</a>
+                <a href="#saklama">6) Saklama süreleri</a>
+                <a href="#guvenlik">7) Güvenlik</a>
+                <a href="#cerezler">8) Çerezler</a>
+                <a href="#haklar">9) KVKK kapsamındaki haklar</a>
+                <a href="#iletisim">10) İletişim</a>
+            </div>
+        </aside>
+
+        <article class="privacy-content">
+            <section class="privacy-card" id="kapsam">
+                <h2>1) Kapsam</h2>
+                <p>
+                    Bu Gizlilik Politikası, Otelturizm web sitesi ve ilgili hizmetler üzerinden sunulan deneyimlerde
+                    kişisel verilerin işlenmesine ilişkin esasları açıklar. Bu sayfa yalnızca bilgilendirme amaçlıdır;
+                    gerektiğinde, ilgili aydınlatma metinleri ve açık rıza ekranları ile birlikte değerlendirilir.
+                </p>
+            </section>
+
+            <section class="privacy-card" id="toplanan-veriler">
+                <h2>2) Toplanan veriler</h2>
+                <ul class="privacy-list">
+                    <li><strong>Hesap verileri</strong>: ad, soyad, e-posta, telefon, oturum bilgileri.</li>
+                    <li><strong>Rezervasyon verileri</strong>: giriş/çıkış tarihleri, oda tercihleri, misafir sayıları, ödeme planı seçimi.</li>
+                    <li><strong>Kullanım verileri</strong>: sayfa etkileşimleri, favori işlemleri, cihaz ve tarayıcı bilgileri.</li>
+                    <li><strong>Teknik kayıtlar</strong>: IP adresi, log kayıtları, hata/performans kayıtları (güvenlik ve stabilite için).</li>
+                    <li><strong>İletişim içerikleri</strong>: destek talepleri veya platform içi mesajlaşma içerikleri.</li>
+                </ul>
+                <div class="privacy-note">
+                    <i class="fas fa-circle-info" aria-hidden="true"></i>
+                    <span>
+                        Kredi kartı gibi ödeme bilgileri, seçilen ödeme yöntemine göre bankalar/ödeme kuruluşları tarafından işlenebilir.
+                        Otelturizm, bu verileri doğrudan saklamayabilir.
+                    </span>
+                </div>
+            </section>
+
+            <section class="privacy-card" id="amaclar">
+                <h2>3) İşleme amaçları</h2>
+                <ul class="privacy-list">
+                    <li>Hizmetin sunulması, rezervasyon akışının yürütülmesi ve kullanıcı deneyiminin iyileştirilmesi</li>
+                    <li>Güvenlik kontrolleri (ör. iki aşamalı doğrulama), suistimalin önlenmesi</li>
+                    <li>Müşteri desteği süreçlerinin yürütülmesi</li>
+                    <li>Yasal yükümlülüklerin yerine getirilmesi ve kayıtların tutulması</li>
+                    <li>Ürün geliştirme ve istatistiksel analiz (mümkün olduğunda anonimleştirilmiş/aggregate)</li>
+                </ul>
+            </section>
+
+            <section class="privacy-card" id="hukuki-sebepler">
+                <h2>4) Hukuki sebepler</h2>
+                <p>
+                    Kişisel veriler; KVKK madde 5/2 kapsamında <strong>sözleşmenin kurulması/ifası</strong>,
+                    <strong>hukuki yükümlülük</strong>, <strong>meşru menfaat</strong> ve gerekli hallerde
+                    <strong>açık rıza</strong> hukuki sebeplerine dayanılarak işlenebilir.
+                </p>
+            </section>
+
+            <section class="privacy-card" id="paylasim">
+                <h2>5) Üçüncü taraflar ve paylaşım</h2>
+                <p>
+                    Hizmetin sunulması için bazı veriler, aşağıdaki türde hizmet sağlayıcılarla paylaşılabilir:
+                </p>
+                <ul class="privacy-list">
+                    <li><strong>Konaklama tesisleri / partnerler</strong>: rezervasyonun yürütülmesi için gerekli bilgiler.</li>
+                    <li><strong>Ödeme ve finansal hizmet sağlayıcılar</strong>: seçilen ödeme yöntemine göre.</li>
+                    <li><strong>E-posta/SMS gönderim hizmetleri</strong>: doğrulama kodları ve bildirimler.</li>
+                    <li><strong>Analitik ve güvenlik</strong>: güvenlik, performans ve kalite amaçlı ölçümler.</li>
+                </ul>
+                <div class="privacy-note is-warning">
+                    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                    <span>
+                        Üçüncü taraf hizmetlerin kendi gizlilik politikaları olabilir. En güncel bilgiyi ilgili sağlayıcının sayfalarından inceleyebilirsiniz.
+                    </span>
+                </div>
+            </section>
+
+            <section class="privacy-card" id="saklama">
+                <h2>6) Saklama süreleri</h2>
+                <p>
+                    Veriler, işleme amacının gerektirdiği süre boyunca ve ilgili mevzuatta öngörülen zaman aşımı/saklama süreleri dikkate alınarak tutulur.
+                    Süre sonunda veriler silinir, yok edilir veya anonim hale getirilir.
+                </p>
+            </section>
+
+            <section class="privacy-card" id="guvenlik">
+                <h2>7) Güvenlik</h2>
+                <ul class="privacy-list">
+                    <li>Yetkisiz erişimi önlemek için erişim kontrolleri ve oturum güvenliği uygulanır.</li>
+                    <li>Veri aktarımı sırasında güvenli iletişim yöntemleri (HTTPS/TLS) kullanılır.</li>
+                    <li>İş sürekliliği, hata izleme ve loglama mekanizmaları işletilir.</li>
+                </ul>
+            </section>
+
+            <section class="privacy-card" id="cerezler">
+                <h2>8) Çerezler</h2>
+                <p>
+                    Çerezler; oturum yönetimi, güvenlik, tercihlerin hatırlanması ve performans ölçümü için kullanılabilir.
+                    Tarayıcı ayarlarınızdan çerezleri yönetebilir veya silebilirsiniz. Çerezleri devre dışı bırakmanız,
+                    bazı özelliklerin beklenen şekilde çalışmamasına yol açabilir.
+                </p>
+            </section>
+
+            <section class="privacy-card" id="haklar">
+                <h2>9) KVKK kapsamındaki haklarınız</h2>
+                <p>KVKK’nın 11. maddesi kapsamında;</p>
+                <ul class="privacy-list">
+                    <li>Kişisel verilerinizin işlenip işlenmediğini öğrenme</li>
+                    <li>İşlenmişse bilgi talep etme</li>
+                    <li>İşleme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme</li>
+                    <li>Yurt içinde/yurt dışında aktarıldığı üçüncü kişileri bilme</li>
+                    <li>Eksik/yanlış işlenmişse düzeltilmesini isteme</li>
+                    <li>Mevzuata uygun olarak silinmesini veya yok edilmesini isteme</li>
+                    <li>Aktarılan üçüncü kişilere bildirilmesini isteme</li>
+                    <li>Otomatik sistemler ile analiz sonucuna itiraz etme</li>
+                    <li>Kanuna aykırı işleme sebebiyle zarara uğramanız hâlinde zararın giderilmesini talep etme</li>
+                </ul>
+            </section>
+
+            <section class="privacy-card" id="iletisim">
+                <h2>10) İletişim</h2>
+                <p>
+                    Bu politika hakkında sorularınız için bizimle iletişime geçebilirsiniz:
+                </p>
+                <div class="privacy-contact">
+                    <a class="privacy-contact__item" href="mailto:destek@otelturizm.com">
+                        <i class="fas fa-envelope" aria-hidden="true"></i>
+                        <span>destek@otelturizm.com</span>
+                    </a>
+                    <a class="privacy-contact__item" href="/yardim-merkezi">
+                        <i class="fas fa-headset" aria-hidden="true"></i>
+                        <span>Yardım Merkezi</span>
+                    </a>
+                </div>
+            </section>
+        </article>
+    </div>
+</section>
 

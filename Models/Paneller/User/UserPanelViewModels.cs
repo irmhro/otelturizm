@@ -20,6 +20,7 @@ public class UserDashboardPageViewModel
     public int ReservationPage { get; set; } = 1;
     public int ReservationPageSize { get; set; } = 5;
     public int ReservationTotalCount { get; set; }
+    public string FavoriteSortFilter { get; set; } = "newest";
     public int ReservationTotalPages => ReservationPageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(ReservationTotalCount / (double)ReservationPageSize));
 }
 
@@ -34,6 +35,8 @@ public class UserReservationsPageViewModel
     public string? EndDateText { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 5;
+    public string SearchTerm { get; set; } = string.Empty;
+    public string SortFilter { get; set; } = "newest";
     public int FilteredCount { get; set; }
     public int TotalPages => PageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(FilteredCount / (double)PageSize));
     public List<UserReservationCardViewModel> Reservations { get; set; } = new();
@@ -58,6 +61,7 @@ public class UserReservationCardViewModel
     public string StatusTone { get; set; } = "ok";
     public string SubNote { get; set; } = string.Empty;
     public string SubNoteTone { get; set; } = "info";
+    public decimal TotalAmount { get; set; }
     public string TotalText { get; set; } = string.Empty;
     public bool CanCancel { get; set; }
     public bool IsUpcoming { get; set; }
@@ -67,11 +71,29 @@ public class UserReservationCardViewModel
     public long HotelId { get; set; }
     public string OtelOnayDurumu { get; set; } = string.Empty;
     public bool CanSubmitReview { get; set; }
+
+    // Detay ekranı / notlar
+    public string GuestName { get; set; } = string.Empty;
+    public string GuestEmail { get; set; } = string.Empty;
+    public string GuestPhone { get; set; } = string.Empty;
+    public string PaymentStatus { get; set; } = string.Empty;
+    public string PaymentMethod { get; set; } = string.Empty;
+    public string Source { get; set; } = string.Empty;
+    public string CreatedAtText { get; set; } = string.Empty;
+    public string GuestNote { get; set; } = string.Empty;
+    public string RequestNote { get; set; } = string.Empty;
+}
+
+public class UserReservationNoteForm
+{
+    public long ReservationId { get; set; }
+    public string Note { get; set; } = string.Empty;
 }
 
 public class UserReservationReviewPageViewModel
 {
     public long ReservationId { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
     public long HotelId { get; set; }
     public string HotelName { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
@@ -88,17 +110,98 @@ public class UserReservationReviewForm
     [Range(1, 5)]
     public int SatisfactionLevel { get; set; } = 3;
     [Range(1, 10)]
-    public int PuanOda { get; set; } = 8;
-    [Range(1, 10)]
     public int PuanKonum { get; set; } = 8;
+    [Range(1, 10)]
+    public int PuanTemizlik { get; set; } = 8;
     [Range(1, 10)]
     public int PuanFiyat { get; set; } = 8;
     [Range(1, 10)]
     public int PuanPersonel { get; set; } = 8;
+    [Range(1, 10)]
+    public int PuanSessizlik { get; set; } = 8;
+    [Range(1, 10)]
+    public int PuanUlasim { get; set; } = 8;
     [Required]
     [MinLength(20)]
     public string Comment { get; set; } = string.Empty;
     public bool Anonymous { get; set; }
+}
+
+public class UserReviewsPageViewModel
+{
+    public int TotalCount { get; set; }
+    public int WaitingReviewCount { get; set; }
+    public int ReviewedCount { get; set; }
+    public string StatusFilter { get; set; } = "all";
+    public string SearchTerm { get; set; } = string.Empty;
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 5;
+    public int TotalPages => PageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
+    public List<UserReviewReservationRowViewModel> Items { get; set; } = new();
+}
+
+public class UserReviewReservationRowViewModel
+{
+    public long ReservationId { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
+    public string ReservationNoTail => string.IsNullOrWhiteSpace(ReservationNo)
+        ? "-"
+        : ReservationNo.Length <= 3 ? ReservationNo : ReservationNo[^3..];
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public string HotelSlug { get; set; } = string.Empty;
+    public string? HotelImageUrl { get; set; }
+    public string District { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
+    public string StayDateText { get; set; } = string.Empty;
+    public string ReservationStatusText { get; set; } = string.Empty;
+    public string ReviewStatusText { get; set; } = "Yorum bekliyor";
+    public string ReviewTone { get; set; } = "waiting";
+    public bool HasReview { get; set; }
+    public bool CanWriteReview { get; set; }
+    public bool CanEditReview { get; set; }
+    public long? ReviewId { get; set; }
+    public string ReviewText { get; set; } = string.Empty;
+    public string ReviewDateText { get; set; } = string.Empty;
+    public string EditLimitText { get; set; } = string.Empty;
+    public decimal ReviewScore { get; set; }
+
+    /// <summary>Listede gösterilecek kısaltılmış yorum (tam metin düzenleme alanında kalır).</summary>
+    public string ReviewSnippet
+    {
+        get
+        {
+            var t = (ReviewText ?? string.Empty).Trim();
+            if (t.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            const int max = 160;
+            if (t.Length <= max)
+            {
+                return t;
+            }
+
+            return t[..max].TrimEnd() + "…";
+        }
+    }
+
+    public bool ReviewSnippetTruncated => HasReview && (ReviewText ?? string.Empty).Trim().Length > 160;
+}
+
+public class UserReviewUpdateForm
+{
+    public long ReviewId { get; set; }
+    [Required]
+    [MinLength(20)]
+    public string Comment { get; set; } = string.Empty;
+}
+
+public class UserReviewDeleteForm
+{
+    public long ReviewId { get; set; }
 }
 
 public class UserReservationCancelForm
@@ -110,9 +213,12 @@ public class UserReservationCancelForm
 public class UserFavoriteSummaryViewModel
 {
     public string HotelName { get; set; } = string.Empty;
+    public string HotelSlug { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public string RatingText { get; set; } = string.Empty;
+    public string ReservationCountText { get; set; } = string.Empty;
+    public string AddedDateText { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
 }
 
@@ -295,6 +401,7 @@ public class UserProfilePageViewModel
     public string EmailVerifiedAtText { get; set; } = "—";
     public string ProfileImageUrl { get; set; } = "/uploads/demo/avatars/avatar-01.svg";
     public List<string> PresetAvatarUrls { get; set; } = new();
+    public List<UserUploadedProfileAvatarViewModel> UploadedProfileAvatars { get; set; } = new();
     public UserPhoneVerificationStatusViewModel PhoneVerification { get; set; } = new();
     public List<AddressCountryOption> Countries { get; set; } = new();
     public List<AddressProvinceOption> Provinces { get; set; } = new();
@@ -306,6 +413,15 @@ public class UserProfilePageViewModel
     public bool OpenPhoneVerification { get; set; }
     public bool OpenEmailUpdate { get; set; }
     public string ReturnUrl { get; set; } = string.Empty;
+}
+
+public class UserUploadedProfileAvatarViewModel
+{
+    public long FileId { get; set; }
+    public string AccessUrl { get; set; } = string.Empty;
+    public string OriginalFileName { get; set; } = string.Empty;
+    public string UploadedAtText { get; set; } = string.Empty;
+    public bool IsCurrent { get; set; }
 }
 
 public class UserProfileForm
@@ -324,6 +440,16 @@ public class UserProfileForm
     public string? District { get; set; }
     public string? Neighborhood { get; set; }
     public string? PostalCode { get; set; }
+    public string? RoomPreference { get; set; }
+    public string? BedPreference { get; set; }
+    public string? SpokenLanguages { get; set; }
+    public string? TravelPurpose { get; set; }
+    public string? SpecialRequests { get; set; }
+}
+
+public class UserTravelPreferencesForm
+{
+    public string? ReturnUrl { get; set; }
     public string? RoomPreference { get; set; }
     public string? BedPreference { get; set; }
     public string? SpokenLanguages { get; set; }
@@ -353,13 +479,14 @@ public class UserNotificationsPageViewModel
 
 public class UserNotificationPreferencesForm
 {
-    public bool ReservationEmail { get; set; }
-    public bool ReservationPush { get; set; }
-    public bool CheckInReminder { get; set; }
-    public bool CancellationChanges { get; set; }
+    public bool ReservationEmail { get; set; } = true;
+    public bool ReservationPush { get; set; } = true;
+    public bool CheckInReminder { get; set; } = true;
+    public bool CancellationChanges { get; set; } = true;
     public bool CampaignEmail { get; set; }
     public bool CampaignSms { get; set; }
-    public bool SystemNotifications { get; set; }
+    public bool SystemNotifications { get; set; } = true;
+    public bool LoginEmail { get; set; }
 }
 
 public class UserNotificationItemViewModel

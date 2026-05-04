@@ -49,6 +49,13 @@
         .ThenBy(g => g.Key)
         .Take(12)
         .ToList();
+    var campaignFilters = (Model.Campaigns ?? new List<otelturizmnew.Models.Oteller.HotelListingCampaignFilterViewModel>())
+        .Where(x => !string.IsNullOrWhiteSpace(x.Slug) && !string.IsNullOrWhiteSpace(x.Name))
+        .OrderByDescending(x => x.IsActive)
+        .ThenByDescending(x => x.HotelCount)
+        .ThenBy(x => x.Name)
+        .ToList();
+    var mapListingUrl = $"/oteller/harita?q={Uri.EscapeDataString(Model.SearchTerm ?? string.Empty)}";
 
     string NormalizeToken(string value)
     {
@@ -116,7 +123,20 @@
   }
 
   .hotel-listing-shell { font-family: var(--font-main); background: var(--bg-light); color: var(--text-dark); padding-bottom: 80px; }
-  .listing-container { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--space-4); }
+  .listing-container {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+  @@media (max-width: 1024px) {
+    .listing-container { padding-left: var(--space-6); padding-right: var(--space-6); }
+  }
+  @@media (max-width: 560px) {
+    .listing-container { padding-left: var(--space-5); padding-right: var(--space-5); }
+  }
   .sticky-header { position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.5); box-shadow: var(--shadow-sm); }
   .search-summary-bar { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) 0; height: var(--header-height); }
   .back-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; font-size: 22px; color: var(--text-dark); cursor: pointer; text-decoration:none; }
@@ -139,6 +159,7 @@
   .view-btn { flex: 1; padding: var(--space-3); background: var(--card-bg); border: 1px solid var(--border-light); border-radius: var(--radius-full); font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; }
   .view-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
   .results-container { display: flex; gap: var(--space-6); margin-top: var(--space-4); align-items: flex-start; }
+  .results-container, .filter-sidebar, .listing-main, .hotel-list, .listing-cards { min-width: 0; max-width: 100%; }
   .filter-sidebar { width: 280px; flex-shrink: 0; display: block; }
   .filter-card { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light); padding: var(--space-5); margin-bottom: var(--space-4); }
   .filter-section { margin-bottom: var(--space-6); }
@@ -148,6 +169,55 @@
   .filter-options { display: flex; flex-direction: column; gap: var(--space-3); }
   .filter-options > input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); }
   .filter-check { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; font-size: 14px; }
+  .campaign-filter-scroll {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 208px; /* ~5 kampanya görünür */
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 2px 2px 4px;
+      scrollbar-width: thin;
+  }
+  .campaign-filter-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      background: #fff;
+      cursor: pointer;
+      width: 100%;
+  }
+  .campaign-filter-chip span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 8px;
+  }
+  .campaign-filter-chip input { margin: 0; }
+  /* Kampanyalar filtresi: satırlar üst üste binmesin */
+  .campaign-filter-scroll .filter-check {
+      align-items: flex-start;
+      padding: 6px 2px;
+      line-height: 1.25;
+      gap: 10px;
+  }
+  .campaign-filter-scroll .filter-check input {
+      flex: 0 0 auto;
+      margin-top: 2px;
+  }
+  .campaign-filter-scroll .filter-check .filter-check-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: block;
+      white-space: normal;
+      word-break: break-word;
+  }
   .star-filter-option {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
@@ -214,6 +284,15 @@
   .card-image { position: relative; flex-shrink: 0; }
   .card-image-link { display: block; width: 100%; height: 100%; }
   .card-image-link img { width: 100%; height: 100%; object-fit: cover; display:block; }
+
+  /* Listeleme kartı: görsel %100 genişlik, daha kısa yükseklik */
+  .listing-hotel-card { flex-direction: column !important; }
+  .listing-hotel-card .card-image { width: 100% !important; min-width: 0 !important; max-width: none !important; height: 74px !important; }
+  .listing-hotel-card .card-image-link { height: 74px !important; min-height: 74px !important; }
+  .listing-hotel-card .card-main-image { width: 100%; height: 100%; object-fit: cover; display:block; }
+  .card-campaign-badges { position: absolute; left: var(--space-3); bottom: var(--space-3); z-index: 3; display: flex; flex-wrap: wrap; gap: 8px; max-width: calc(100% - (var(--space-3) * 2)); pointer-events: none; }
+  .card-campaign-badge { display: inline-flex; align-items: center; max-width: 100%; padding: 7px 12px; border-radius: 999px; background: rgba(15, 23, 42, 0.78); color: #fff; font-weight: 900; font-size: 12px; line-height: 1; box-shadow: 0 14px 28px rgba(2, 6, 23, 0.22); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-campaign-badge--more { background: rgba(255, 255, 255, 0.92); color: rgba(15, 23, 42, 0.92); border: 1px solid rgba(226, 232, 240, 0.9); }
   .card-badge-top-left { position: absolute; top: var(--space-3); left: var(--space-3); z-index: 2; pointer-events: none; display: flex; flex-direction: column; gap: 8px; }
   .card-badge-top-right { position: absolute; top: var(--space-3); right: var(--space-3); z-index: 2; pointer-events: none; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
   .card-badge-bottom-right { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 2; pointer-events: none; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
@@ -423,8 +502,8 @@
   .listing-hotel-card[hidden] { display: none !important; }
 
   @@media (min-width: 640px) {
-    .hotel-card { flex-direction: row; height: 240px; }
-    .card-image { width: 260px; height: 100%; }
+    .hotel-card:not(.listing-hotel-card) { flex-direction: row; height: 240px; }
+    .hotel-card:not(.listing-hotel-card) .card-image { width: 260px; height: 100%; }
   }
   @@media (max-width: 900px) {
     .results-container { flex-direction: column; }
@@ -432,7 +511,11 @@
     .mobile-filter-bar { display: block; }
     .hotel-listing-shell { padding-bottom: 112px; }
   }
-  @@media (max-width: 639px) { .card-image { height: 200px; } }
+  @@media (max-width: 639px) {
+    .hotel-card:not(.listing-hotel-card) .card-image { height: 200px; }
+    .listing-hotel-card .card-image { height: 66px !important; }
+    .listing-hotel-card .card-image-link { height: 66px !important; min-height: 66px !important; }
+  }
 
   .filter-accordion { border: 0; }
   .filter-accordion + .filter-accordion { margin-top: var(--space-4); }
@@ -454,7 +537,7 @@
   .filter-help { margin-top: 10px; color: var(--text-light); font-size: 12.5px; font-weight: 600; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .filter-help-compact { margin-top: 8px; }
 
-  /* Desktop-only: lighter headings + tighter spacing (desing.md rhythm) */
+            /* Desktop-only: lighter headings + tighter spacing (tasarim-sistemi.md rhythm) */
   @@media (min-width: 901px) {
       .filter-card { padding: var(--space-4); }
       .filter-accordion + .filter-accordion { margin-top: 10px; }
@@ -655,80 +738,40 @@
       background: linear-gradient(135deg, rgba(0,59,149,0.08), rgba(255,255,255,1));
   }
 
-  .price-slider-wrap {
-      --slider-pos: 100%;
-      margin-top: 4px;
-      position: relative;
-      padding-top: 14px;
+  /* Fiyat slider kaldırıldı: sadece manuel Alt/Üst fiyat alanları kullanılır. */
+  .price-manual-range {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
   }
-  .price-slider-track {
-      height: 10px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(0,59,149,0.25), rgba(0,59,149,0.12));
-      position: relative;
-      margin: 0 0 8px;
-      overflow: hidden;
-      top: 14px;
+  .price-manual-field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
   }
-  .price-slider-track::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      width: var(--slider-pos);
-      background: linear-gradient(90deg, rgba(0,59,149,0.95), rgba(0,59,149,0.55));
+  .price-manual-field span {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: .04em;
   }
-  .price-slider-dot {
-      position: absolute;
-      top: 50%;
-      width: 10px;
-      height: 10px;
-      transform: translate(-50%, -50%);
-      border-radius: 999px;
-      background: rgba(255,255,255,0.9);
-      border: 2px solid rgba(0,59,149,0.55);
-      box-shadow: 0 10px 20px rgba(0,59,149,0.18);
-      z-index: 2;
-  }
-  .price-slider-dot[data-price-dot="0"] { left: 0%; }
-  .price-slider-dot[data-price-dot="1"] { left: 16.666%; }
-  .price-slider-dot[data-price-dot="2"] { left: 33.333%; }
-  .price-slider-dot[data-price-dot="3"] { left: 50%; }
-  .price-slider-dot[data-price-dot="4"] { left: 66.666%; }
-  .price-slider-dot[data-price-dot="5"] { left: 83.333%; }
-  .price-slider-dot[data-price-dot="6"] { left: 100%; }
-
-  #listingPriceMaxRange {
+  .price-manual-field input {
       width: 100%;
-      -webkit-appearance: none;
-      appearance: none;
-      height: 38px;
-      background: transparent;
-      margin: 0;
-      padding: 0;
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid rgba(226,232,240,1);
+      background: #fff;
+      padding: 0 14px;
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--text-dark);
   }
-  #listingPriceMaxRange::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 22px;
-      height: 22px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #dbeafe 35%, #60a5fa 100%);
-      border: 2px solid rgba(0,59,149,0.55);
-      box-shadow: 0 12px 26px rgba(0,59,149,0.28), 0 0 0 6px rgba(0,59,149,0.12);
-      cursor: pointer;
-  }
-  #listingPriceMaxRange::-moz-range-thumb {
-      width: 22px;
-      height: 22px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #dbeafe 35%, #60a5fa 100%);
-      border: 2px solid rgba(0,59,149,0.55);
-      box-shadow: 0 12px 26px rgba(0,59,149,0.28), 0 0 0 6px rgba(0,59,149,0.12);
-      cursor: pointer;
+  .price-manual-field input:focus {
+      outline: 0;
+      border-color: rgba(0,59,149,0.35);
+      box-shadow: 0 0 0 4px rgba(0,59,149,0.08);
   }
   /* Konuma göre filtre */
   .location-filter-card {
@@ -741,6 +784,101 @@
       background: transparent;
       box-sizing: border-box;
       min-width: 0;
+  }
+
+  .listing-map-cta {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 16px 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(0, 59, 149, 0.14);
+      background:
+          radial-gradient(circle at top right, rgba(59,130,246,0.18), transparent 42%),
+          linear-gradient(135deg, rgba(255,255,255,0.98), rgba(239,246,255,0.96));
+      box-shadow: 0 20px 36px rgba(0, 59, 149, 0.08);
+  }
+
+  /* Harita görünümü: sadece buton */
+  .listing-map-cta--button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 59, 149, 0.18);
+      background: rgba(0, 59, 149, 0.06);
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 900;
+      box-shadow: 0 14px 28px rgba(2, 6, 23, 0.06);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+
+  .listing-map-cta--button span {
+      display: none;
+  }
+
+  .listing-map-cta--button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0, 59, 149, 0.28);
+      box-shadow: 0 18px 34px rgba(2, 6, 23, 0.10);
+  }
+
+  .listing-map-cta--button i { font-size: 16px; }
+
+  .listing-map-cta__eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(0, 59, 149, 0.08);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+  }
+
+  .listing-map-cta__title {
+      color: var(--text-dark);
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.2;
+  }
+
+  .listing-map-cta__text {
+      color: var(--text-light);
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.55;
+      margin: 0;
+  }
+
+  .listing-map-cta__action {
+      display: inline-flex;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #003b95, #1d4ed8);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 16px 28px rgba(0, 59, 149, 0.20);
+  }
+
+  .listing-map-cta__action:hover {
+      color: #fff;
+      transform: translateY(-1px);
   }
   .location-btn-eyebrow { display: none; }
   #locationStatusText { display: block; }
@@ -828,38 +966,24 @@
 </style>
 
 <section class="hotel-listing-shell listing-template-v41">
+    <button type="button"
+            class="listing-yanbar-filter"
+            id="listingYanbarFilterBtn"
+            aria-haspopup="dialog"
+            aria-controls="listingFilterModal"
+            aria-label="Filtreleri aç">
+        <i class="fas fa-sliders" aria-hidden="true"></i>
+        <span class="listing-yanbar-filter__pulse" aria-hidden="true"></span>
+    </button>
     <div class="mobile-filter-bar" id="mobileFilterBar">
         <div class="mobile-filter-bar-inner">
             <nav class="mobile-filter-dock" aria-label="Hızlı filtreler">
-                <button type="button" class="dock-btn" data-mobile-filter-target="location" aria-haspopup="dialog" aria-controls="listingFilterModal">
-                    <span class="dock-ico dock-ico-location" aria-hidden="true">
-                        <span class="dock-radar" aria-hidden="true">
-                            <span class="dock-radar-ring"></span>
-                            <span class="dock-radar-ring"></span>
-                            <span class="dock-radar-ring"></span>
-                            <span class="dock-radar-dot"></span>
-                        </span>
-                        <i class="fas fa-location-dot"></i>
-                    </span>
-                    <span class="dock-txt">Konum</span>
-                </button>
                 <button type="button" class="dock-btn" data-mobile-filter-target="search" aria-haspopup="dialog" aria-controls="listingFilterModal">
                     <span class="dock-ico dock-ico-search" aria-hidden="true">
                         <span class="dock-scan" aria-hidden="true"></span>
                         <i class="fas fa-magnifying-glass"></i>
                     </span>
                     <span class="dock-txt">Ara</span>
-                </button>
-                <button type="button" class="dock-btn" data-mobile-filter-target="price" aria-haspopup="dialog" aria-controls="listingFilterModal">
-                    <span class="dock-ico dock-ico-price" aria-hidden="true">
-                        <span class="dock-price-bars" aria-hidden="true">
-                            <span class="dock-price-bar"></span>
-                            <span class="dock-price-bar"></span>
-                            <span class="dock-price-bar"></span>
-                        </span>
-                    </span>
-                    <span class="dock-txt">Fiyat</span>
-                    <span class="dock-badge" id="mobileFilterCount" hidden>0</span>
                 </button>
                 <button type="button" class="dock-btn" data-mobile-filter-target="all" aria-haspopup="dialog" aria-controls="listingFilterModal">
                     <span class="dock-ico dock-ico-all" aria-hidden="true"><i class="fas fa-sliders"></i></span>
@@ -872,6 +996,11 @@
         <div class="results-container">
             <aside class="filter-sidebar">
                 <div class="filter-card" id="listingFilterCard">
+                    <a class="listing-map-cta listing-map-cta--button" href="@mapListingUrl" aria-label="Harita sayfasını aç">
+                        <i class="fas fa-map-location-dot" aria-hidden="true"></i>
+                        <span>Harita</span>
+                    </a>
+
                     <details class="filter-accordion" id="filterSearch" open>
                         <summary class="filter-accordion-summary">
                             <span>Gelişmiş Arama</span>
@@ -890,76 +1019,7 @@
                         </div>
                     </details>
 
-                    @if (hasValidPriceRange)
-                    {
-                        <details class="filter-accordion" id="filterPrice" open>
-                            <summary class="filter-accordion-summary">
-                                <span>Fiyat Aralığı</span>
-                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                            </summary>
-                            <div class="filter-accordion-body">
-                                <div class="price-slider-wrap">
-                                    <div class="price-slider-track" aria-hidden="true">
-                                        <span class="price-slider-dot" data-price-dot="0"></span>
-                                        <span class="price-slider-dot" data-price-dot="1"></span>
-                                        <span class="price-slider-dot" data-price-dot="2"></span>
-                                        <span class="price-slider-dot" data-price-dot="3"></span>
-                                        <span class="price-slider-dot" data-price-dot="4"></span>
-                                        <span class="price-slider-dot" data-price-dot="5"></span>
-                                        <span class="price-slider-dot" data-price-dot="6"></span>
-                                    </div>
-                                    <input type="range"
-                                           min="@Math.Floor(priceBoundMin).ToString(CultureInfo.InvariantCulture)"
-                                           max="@Math.Ceiling(priceBoundMax).ToString(CultureInfo.InvariantCulture)"
-                                           value="@maxPrice.ToString(CultureInfo.InvariantCulture)"
-                                           step="1"
-                                           id="listingPriceMaxRange"
-                                           aria-label="Maksimum fiyat" />
-                                    <div class="price-slider-live" aria-live="polite">
-                                        <span id="priceSliderLiveValue"></span>
-                                    </div>
-                                </div>
-                                <p class="filter-help filter-help-compact" id="priceAutoRelaxNote" hidden></p>
-                            </div>
-                        </details>
-                    }
-
-                    <details class="filter-accordion" id="filterLocation" open>
-                        <summary class="filter-accordion-summary">
-                            <span>Konuma Göre Ara</span>
-                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                        </summary>
-                        <div class="filter-accordion-body">
-                            <div class="location-filter-card">
-                                <button type="button" class="location-btn" id="useMyLocationBtn">
-                                    <span class="location-btn-copy">
-                                        <strong>Konuma Göre Ara</strong>
-                                        <small id="locationStatusText"></small>
-                                    </span>
-                                </button>
-                                <div class="location-coords" id="locationCoordsText"></div>
-                                <div class="location-insight" id="locationInsightText"></div>
-
-                                  <div class="km-row">
-                                      <div class="km-row-head">
-                                          <strong>Mesafe</strong>
-                                          <span class="km-value"><span><span id="distanceKmValue">15</span> km</span><span class="km-count" id="distanceHotelCount">-</span></span>
-                                      </div>
-                                      <div class="km-slider-row">
-                                          <input type="range" min="1" max="50" value="15" step="1" id="distanceKmRange" disabled />
-                                      </div>
-                                      <label class="km-manual-input" for="distanceKmInput">
-                                          <span>Yarıçap belirle</span>
-                                          <div class="km-manual-input-row">
-                                              <input type="number" min="1" max="50" value="15" step="1" id="distanceKmInput" disabled />
-                                              <small>km</small>
-                                          </div>
-                                      </label>
-                                      <p class="filter-help filter-help-compact">Konum alındığında seçtiğin yarıçap içindeki oteller hemen listelenir.</p>
-                                    </div>
-                              </div>
-                          </div>
-                    </details>
+                    @* Fiyat aralığı + konuma göre ara kaldırıldı (kilitlenme sorunları nedeniyle) *@
 
                     <details class="filter-accordion" open>
                         <summary class="filter-accordion-summary">
@@ -972,6 +1032,75 @@
                                 <option value="price-asc">En Düşük Fiyat</option>
                                 <option value="rating-desc">En Yüksek Puan</option>
                             </select>
+                        </div>
+                    </details>
+
+                    <details class="filter-accordion" id="filterRating" open>
+                        <summary class="filter-accordion-summary">
+                            <span>Misafir Puanı</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="rating-stars">
+                                <span class="rating-chip" data-min-score="9">9+ Muhteşem</span>
+                                <span class="rating-chip" data-min-score="8">8+ Çok İyi</span>
+                                <span class="rating-chip" data-min-score="7">7+ İyi</span>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="filter-accordion" open>
+                        <summary class="filter-accordion-summary">
+                            <span>Popüler Filtreler</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="filter-options">
+                                @foreach (var amenity in amenityCounts.Take(5))
+                                {
+                                    <label class="filter-check"><input type="checkbox" class="listing-amenity-filter" value="@NormalizeToken(amenity.Key)"> @amenity.Key</label>
+                                }
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="filter-accordion" open>
+                        <summary class="filter-accordion-summary">
+                            <span>Özel Konseptler</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="filter-options">
+                                <label class="filter-check"><input type="checkbox" class="listing-featured-filter" value="1"> En İyi Fiyat</label>
+                                <label class="filter-check"><input type="checkbox" class="listing-featured-filter" value="1"> Kampanyalı</label>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="filter-accordion" id="filterCampaigns" open>
+                        <summary class="filter-accordion-summary">
+                            <span>Kampanyalar</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            @if (campaignFilters.Count == 0)
+                            {
+                                <small class="text-muted">Yayında kampanya bulunamadı.</small>
+                            }
+                            else
+                            {
+                                <div class="filter-options campaign-filter-scroll" aria-label="Kampanya filtreleri">
+                                    @foreach (var campaign in campaignFilters)
+                                    {
+                                        <label class="filter-check">
+                                            <input type="checkbox"
+                                                   class="listing-campaign-filter"
+                                                   value="@campaign.Slug"
+                                                   @(campaign.IsActive ? "checked" : null)>
+                                            <span class="filter-check-text">@campaign.Name</span>
+                                        </label>
+                                    }
+                                </div>
+                            }
                         </div>
                     </details>
 
@@ -1003,106 +1132,35 @@
                           </div>
                       </details>
 
-                    <details class="filter-accordion" id="filterRating">
-                        <summary class="filter-accordion-summary">
-                            <span>Misafir Puanı</span>
-                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                        </summary>
-                        <div class="filter-accordion-body">
-                            <div class="rating-stars">
-                                <span class="rating-chip" data-min-score="9">9+ Muhteşem</span>
-                                <span class="rating-chip" data-min-score="8">8+ Çok İyi</span>
-                                <span class="rating-chip" data-min-score="7">7+ İyi</span>
-                            </div>
-                        </div>
-                    </details>
-
-                    <details class="filter-accordion">
-                        <summary class="filter-accordion-summary">
-                            <span>Popüler Filtreler</span>
-                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                        </summary>
-                        <div class="filter-accordion-body">
-                            <div class="filter-options">
-                                @foreach (var amenity in amenityCounts.Take(5))
-                                {
-                                    <label class="filter-check"><input type="checkbox" class="listing-amenity-filter" value="@NormalizeToken(amenity.Key)"> @amenity.Key</label>
-                                }
-                            </div>
-                        </div>
-                    </details>
-
-                    <details class="filter-accordion">
-                        <summary class="filter-accordion-summary">
-                            <span>Özel Konseptler</span>
-                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                        </summary>
-                        <div class="filter-accordion-body">
-                            <div class="filter-options">
-                                <label class="filter-check"><input type="checkbox" class="listing-featured-filter" value="1"> En İyi Fiyat</label>
-                                <label class="filter-check"><input type="checkbox" class="listing-featured-filter" value="1"> Kampanyalı</label>
-                            </div>
-                        </div>
-                    </details>
-
                     <button type="button" class="btn-detail" id="clearAllFiltersBtn" style="width:100%;">Tüm Filtreleri Temizle</button>
                 </div>
             </aside>
 
+            <div class="listing-main">
             <div class="listing-reel-viewport" id="listingReelViewport">
             <div class="hotel-list" id="hotelListView">
-                @{
-                    var shortcutItems = new[]
+                <div class="listing-cards" id="listingCards">
+                    @if (!hotels.Any())
                     {
-                        new { Key = "ay-sonu-ozel", Label = "Ay Sonu Özel", Icon = "fa-bolt", Tone = "is-hot" },
-                        new { Key = "flash-indirim", Label = "Flash İndirim", Icon = "fa-tag", Tone = "is-sale" },
-                        new { Key = "hafta-sonu-firsatlari", Label = "Hafta Sonu Fırsatları", Icon = "fa-calendar-week", Tone = "is-weekend" },
-                        new { Key = "erken-rezervasyon", Label = "Erken Rezervasyon", Icon = "fa-clock", Tone = "is-early" },
-                        new { Key = "akilli-fiyat", Label = "Akıllı Fiyat", Icon = "fa-wand-magic-sparkles", Tone = "is-smart" },
-                        new { Key = "rezervasyon-destegi", Label = "Rezervasyon Desteği", Icon = "fa-headset", Tone = "is-help" }
-                    };
-                }
-
-                <nav class="listing-shortcuts" aria-label="Kısayol filtreleri">
-                    @foreach (var item in shortcutItems)
-                    {
-                        var isActive = string.Equals(Model.ActiveTag, item.Key, StringComparison.OrdinalIgnoreCase);
-                        <a class="listing-shortcut-btn @(isActive ? "active" : string.Empty) @item.Tone"
-                           href="@Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = item.Key, kampanya = Model.CampaignSlug, page = 1 })"
-                           aria-current="@(isActive ? "true" : null)">
-                            <i class="fas @item.Icon" aria-hidden="true"></i>
-                            <span>@item.Label</span>
-                        </a>
-                    }
-
-                    @if (!string.IsNullOrWhiteSpace(Model.ActiveTag))
-                    {
-                        <a class="listing-shortcut-btn is-clear"
-                           href="@Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = (string?)null, kampanya = Model.CampaignSlug, page = 1 })">
-                            <i class="fas fa-xmark" aria-hidden="true"></i>
-                            <span>Temizle</span>
-                        </a>
-                    }
-                </nav>
-
-                @if (!hotels.Any())
-                {
-                    <div class="hotel-card">
-                        <div class="card-content">
-                            <div class="hotel-header">
-                                <h3 class="hotel-name">Filtreye uygun tesis bulunamadı</h3>
+                        <div class="hotel-card">
+                            <div class="card-content">
+                                <div class="hotel-header">
+                                    <h3 class="hotel-name">Filtreye uygun tesis bulunamadı</h3>
+                                </div>
+                                <div class="hotel-location"><i class="fas fa-map-pin"></i> Arama kriterlerini değiştirip tekrar deneyin.</div>
                             </div>
-                            <div class="hotel-location"><i class="fas fa-map-pin"></i> Arama kriterlerini değiştirip tekrar deneyin.</div>
                         </div>
-                    </div>
-                }
-                else
-                {
-                    @foreach (var hotel in hotels)
+                    }
+                    else
                     {
+                        @foreach (var hotel in hotels)
+                        {
                         var price = hotel.StartingPrice ?? 0m;
-                        var amenityText = string.Join(" ", hotel.Amenities.Select(NormalizeToken));
-                        var keywords = NormalizeToken($"{hotel.Name} {hotel.City} {hotel.District} {hotel.Neighborhood} {hotel.PropertyType} {string.Join(" ", hotel.CampaignNames)} {string.Join(" ", hotel.Amenities)}");
+                        var amenitiesSafe = hotel.Amenities ?? new List<string>();
+                        var campaignSlugsSafe = hotel.CampaignSlugs ?? new List<string>();
+                        var campaignNamesSafe = hotel.CampaignNames ?? new List<string>();
+                        var amenityText = string.Join(" ", amenitiesSafe.Select(NormalizeToken));
+                        var keywords = NormalizeToken($"{hotel.Name} {hotel.City} {hotel.District} {hotel.Neighborhood} {hotel.PropertyType} {string.Join(" ", campaignNamesSafe)} {string.Join(" ", amenitiesSafe)}");
                         var locationText = string.IsNullOrWhiteSpace(hotel.Neighborhood)
                             ? $"{hotel.District} · {hotel.City}"
                             : $"{hotel.Neighborhood} · {hotel.District}";
@@ -1117,11 +1175,11 @@
                             && districtMinPrice.TryGetValue(priceKeyDistrict, out var bestD)
                             && price <= bestD;
 
-                        var hasEarly = hotel.CampaignSlugs.Any(x => string.Equals(x, "erken-rezervasyon", StringComparison.OrdinalIgnoreCase));
+                        var hasEarly = campaignSlugsSafe.Any(x => string.Equals(x, "erken-rezervasyon", StringComparison.OrdinalIgnoreCase));
                         var hasWeekend = string.Equals(Model.ActiveTag, "hafta-sonu-firsatlari", StringComparison.OrdinalIgnoreCase)
-                                         || hotel.CampaignSlugs.Any(x => string.Equals(x, "hafta-sonu-firsatlari", StringComparison.OrdinalIgnoreCase));
+                                         || campaignSlugsSafe.Any(x => string.Equals(x, "hafta-sonu-firsatlari", StringComparison.OrdinalIgnoreCase));
                         var isBudget = string.Equals(Model.ActiveTag, "butceme-uygun-oteller", StringComparison.OrdinalIgnoreCase) || (price > 0m && price <= 4000m);
-                        var isCampaign = hotel.CampaignSlugs.Count > 0;
+                        var isCampaign = campaignSlugsSafe.Count > 0;
                         var hasDiscount = hotel.HasDiscount;
                         <article class="hotel-card listing-hotel-card"
                                  data-hotel-id="@hotel.Id"
@@ -1132,6 +1190,7 @@
                                  data-lat="@(hotel.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)"
                                  data-lon="@(hotel.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)"
                                  data-amenities="@amenityText"
+                                 data-campaign-slugs="@string.Join(" ", campaignSlugsSafe.Where(x => !string.IsNullOrWhiteSpace(x)).Select(NormalizeToken).Distinct())"
                                  data-featured="@(hotel.IsFeatured ? "1" : "0")">
                             <div class="card-image">
                                 @{
@@ -1156,6 +1215,47 @@
                                    class="card-image-link"
                                    aria-label="@hotel.Name detay sayfasına git">
                                     <img class="card-main-image" src="@(string.IsNullOrWhiteSpace(mainCardImage) ? "/assets/img/placeholder-hotel.jpg" : mainCardImage)" alt="@hotel.Name">
+                                    @{
+                                        var campaignPairs = campaignNamesSafe
+                                            .Zip(campaignSlugsSafe, (n, s) => new { Name = n, Slug = s })
+                                            .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                                            .DistinctBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                                            .ToList();
+                                        var currentCampaign = string.IsNullOrWhiteSpace(Model.CampaignSlug)
+                                            ? null
+                                            : campaignPairs.FirstOrDefault(x => string.Equals(x.Slug, Model.CampaignSlug, StringComparison.OrdinalIgnoreCase));
+                                        var displayCampaigns = new List<string>();
+                                        if (currentCampaign is not null)
+                                        {
+                                            displayCampaigns.Add(currentCampaign.Name);
+                                        }
+                                        foreach (var c in campaignPairs)
+                                        {
+                                            if (displayCampaigns.Count >= 3) break;
+                                            if (currentCampaign is not null && string.Equals(c.Name, currentCampaign.Name, StringComparison.OrdinalIgnoreCase)) continue;
+                                            displayCampaigns.Add(c.Name);
+                                        }
+                                        var overflowCampaignCount = Math.Max(0, campaignPairs.Count - displayCampaigns.Count);
+                                    }
+                                    @if (campaignPairs.Count > 0)
+                                    {
+                                        <div class="card-campaign-badges" aria-label="Kampanyalar">
+                                            @foreach (var name in displayCampaigns)
+                                            {
+                                                <span class="card-campaign-badge">@name</span>
+                                            }
+                                            @if (overflowCampaignCount > 0)
+                                            {
+                                                <span class="card-campaign-badge card-campaign-badge--more">+@overflowCampaignCount</span>
+                                            }
+                                        </div>
+                                    }
+                                    @if (!hotel.HasAvailabilityToday)
+                                    {
+                                        <div class="card-campaign-badges card-campaign-badges--soldout" aria-label="Müsaitlik uyarısı">
+                                            <span class="card-campaign-badge card-campaign-badge--soldout">Bugün için boş oda kalmadı</span>
+                                        </div>
+                                    }
                                     @if (mosaicImages.Count > 1)
                                     {
                                         <div class="card-image-mosaic" aria-hidden="true">
@@ -1195,18 +1295,44 @@
                                     </div>
                                     <div class="hotel-location"><i class="fas fa-map-pin"></i> @locationText</div>
 
+                                    <div class="listing-card-mobile-lines" aria-label="Liste özeti">
+                                        <p class="listing-mobile-city"><i class="fas fa-location-dot" aria-hidden="true"></i> @hotel.City · @hotel.District</p>
+                                        @if (!string.IsNullOrWhiteSpace(hotel.Neighborhood))
+                                        {
+                                            <p class="listing-mobile-nb">@hotel.Neighborhood</p>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(hotel.ListingLeadRoomName))
+                                        {
+                                            <p class="listing-mobile-room"><i class="fas fa-bed" aria-hidden="true"></i> @hotel.ListingLeadRoomName <span class="listing-mobile-room-note">· bugün</span></p>
+                                        }
+                                        else
+                                        {
+                                            <p class="listing-mobile-room @(hotel.HasAvailabilityToday ? "" : "is-warning")">
+                                                <i class="fas fa-door-open" aria-hidden="true"></i>
+                                                @(hotel.HasAvailabilityToday ? "Bugün uygun oda" : "Bugün uygun oda yok")
+                                            </p>
+                                        }
+                                        @if (hotel.HasDiscount && !string.IsNullOrWhiteSpace(hotel.DiscountName))
+                                        {
+                                            <p class="listing-mobile-discount"><i class="fas fa-tags" aria-hidden="true"></i> @hotel.DiscountName</p>
+                                        }
+                                        @{
+                                            var mobileCampaignLabels = campaignNamesSafe
+                                                .Where(n => !string.IsNullOrWhiteSpace(n))
+                                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                                .Take(2)
+                                                .ToList();
+                                        }
+                                        @if (mobileCampaignLabels.Count > 0)
+                                        {
+                                            <p class="listing-mobile-campaign"><i class="fas fa-bullhorn" aria-hidden="true"></i> @string.Join(" · ", mobileCampaignLabels)</p>
+                                        }
+                                    </div>
+
                                     <div class="listing-badges-mobile" aria-label="Kampanya etiketleri">
                                         @{
                                             // Mobile: show only 1 primary badge to keep layout clean.
-                                            if (isBestNeighborhood)
-                                            {
-                                                <span class="listing-pill best"><i class="fas fa-location-dot"></i> Mahallede En Uygun</span>;
-                                            }
-                                            else if (isBestDistrict)
-                                            {
-                                                <span class="listing-pill best"><i class="fas fa-location-dot"></i> İlçede En Uygun</span>;
-                                            }
-                                            else if (hotel.IsFeatured)
+                                            if (hotel.IsFeatured)
                                             {
                                                 <span class="listing-pill fav"><i class="fas fa-award"></i> Misafir Favorisi</span>;
                                             }
@@ -1230,16 +1356,6 @@
                                     <div class="listing-badges-inline" aria-label="Kampanya etiketleri">
                                         @{
                                             var pillCountInline = 0;
-                                            if (isBestNeighborhood && pillCountInline < 4)
-                                            {
-                                                <span class="listing-pill best"><i class="fas fa-location-dot"></i> Mahallede En Uygun</span>;
-                                                pillCountInline++;
-                                            }
-                                            else if (isBestDistrict && pillCountInline < 4)
-                                            {
-                                                <span class="listing-pill best"><i class="fas fa-location-dot"></i> İlçede En Uygun</span>;
-                                                pillCountInline++;
-                                            }
                                             if (hotel.IsFeatured && pillCountInline < 4)
                                             {
                                                 <span class="listing-pill fav"><i class="fas fa-award"></i> Misafir Favorisi</span>;
@@ -1248,11 +1364,6 @@
                                             if (hasWeekend && pillCountInline < 4)
                                             {
                                                 <span class="listing-pill weekend"><i class="fas fa-calendar-week"></i> Hafta Sonu</span>;
-                                                pillCountInline++;
-                                            }
-                                            if (isBudget && pillCountInline < 4)
-                                            {
-                                                <span class="listing-pill budget"><i class="fas fa-wallet"></i> Bütçe Dostu</span>;
                                                 pillCountInline++;
                                             }
                                             if (hasEarly && pillCountInline < 4)
@@ -1281,14 +1392,6 @@
                                     </div>
 
                                     <div class="listing-badges-under" aria-label="Öne çıkan etiketler">
-                                        @if (isBestNeighborhood)
-                                        {
-                                            <span class="listing-pill best"><i class="fas fa-location-dot"></i> Mahallede En Uygun</span>
-                                        }
-                                        else if (isBestDistrict)
-                                        {
-                                            <span class="listing-pill best"><i class="fas fa-location-dot"></i> İlçede En Uygun</span>
-                                        }
                                         @if (hotel.IsFeatured)
                                         {
                                             <span class="listing-pill fav"><i class="fas fa-award"></i> Misafir Favorisi</span>
@@ -1324,19 +1427,14 @@
                                             <span class="current-price">@(price > 0m ? $"₺{price:N0}" : "Teklif Al")</span>
                                         }
                                     </div>
-                                    @if (!string.IsNullOrWhiteSpace(hotel.CampaignInfoText))
-                                    {
-                                        <button type="button" class="campaign-info-chip" title="@hotel.CampaignInfoText" aria-label="@hotel.CampaignInfoText">
-                                            <i class="fas fa-badge-percent"></i> Kampanya
-                                        </button>
-                                    }
                                     <span class="price-tax-note">Vergiler dahil</span>
                                     <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="btn-detail">İncele</a>
                                 </div>
                             </div>
                         </article>
+                        }
                     }
-                }
+                </div>
             </div>
             </div>
 
@@ -1386,6 +1484,7 @@
                        aria-disabled="@(current >= total ? "true" : "false")">Sonraki</a>
                 </nav>
             }
+            </div> @* /.listing-main *@
 
         </div>
     </div>
@@ -1419,27 +1518,11 @@
     </section>
 </div>
 
-<div class="location-map-modal" id="locationMapModal" hidden aria-hidden="true">
-    <div class="location-map-backdrop" data-location-map-close></div>
-    <section class="location-map-card" role="dialog" aria-modal="true" aria-labelledby="locationMapTitle">
-        <button type="button" class="location-map-close" data-location-map-close aria-label="Haritayı kapat">×</button>
-        <div class="location-map-kicker">Konum Haritası</div>
-        <h3 id="locationMapTitle">Neredeyim?</h3>
-        <p class="location-map-meta" id="locationMapMeta">Konumun ve listelenen oteller harita üzerinde gösterilir.</p>
-        <div class="location-map-helper" id="locationMapHelper" hidden>
-            Yaklaşık konum bulundu. Haritada bulunduğun noktayı seç, daha doğru sonuçları ona göre gösterelim.
-        </div>
-        <div class="location-map-canvas" id="locationMapCanvas" aria-label="Konum ve otel haritası"></div>
-        <div class="location-map-actions" id="locationMapActions" hidden>
-            <button type="button" class="location-map-primary" id="locationMapConfirmBtn" disabled>Konumumu Buraya Sabitle</button>
-        </div>
-    </section>
-</div>
+@* Fiyat uyarı modalı + konum haritası modalı kaldırıldı *@
 
 @* Inline CSS removed: now served from /assets/css/otel-listeleme.inline-extract.css *@
 
 @section Scripts {
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
     <script src="~/assets/js/otel-listeleme-enhancements.js" asp-append-version="true"></script>
     @{
         var nonce = Context.Items["CspNonce"] as string;
@@ -1449,10 +1532,44 @@
             const listView = document.getElementById('hotelListView');
             const sortSelect = document.getElementById('listingSortSelect');
             const keywordInput = document.getElementById('listingKeywordInput');
-            const minPriceInput = document.getElementById('listingMinPriceInput'); // kaldırıldıysa null
-            const maxPriceInput = document.getElementById('listingMaxPriceInput'); // kaldırıldıysa null
-            const maxPriceRange = document.getElementById('listingPriceMaxRange');
-            const priceSliderLiveValue = document.getElementById('priceSliderLiveValue');
+            // Fiyat aralığı + konuma göre ara filtreleri kaldırıldı (kilitlenme sorunları nedeniyle).
+            const minPriceInput = null;
+            const maxPriceInput = null;
+            const priceAutoRelaxNote = null;
+            const useMyLocationBtn = null;
+            const distanceKmRange = null;
+            const distanceKmValue = null;
+            const distanceKmInput = null;
+            const distanceHotelCount = null;
+            const locationStatusText = null;
+            const locationCoordsText = null;
+            const locationInsightText = null;
+            const locationMapModal = null;
+            const listingFilterNoticeModal = null;
+            const locationMapCanvas = null;
+            const locationMapMeta = null;
+            const locationMapHelper = null;
+            const locationMapActions = null;
+            const locationMapConfirmBtn = null;
+            const listingNoticeFocusBtn = null;
+            const locationStorageKey = '';
+            const defaultLocationRadiusKm = 0;
+            const defaultMinPrice = 0;
+            const defaultMaxPrice = 0;
+            let userLocation = null;
+            let locationLogTimer = null;
+            let lastLocationLogSignature = '';
+            let locationPermissionState = 'prompt';
+            let locationLeafletMap = null;
+            let locationLeafletLayer = null;
+            let locationMapPickMode = false;
+            let locationPickedLatLng = null;
+            let locationPickedMarker = null;
+            let hasPromptedManualLocation = false;
+            let desktopApproximateSelectionPending = false;
+            let lastFocusBeforeLocationModal = null;
+            let lastFocusBeforeListingNoticeModal = null;
+            let listingNoticeShown = false;
             let cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
             function refreshCards() {
                 cards = Array.from(document.querySelectorAll('.listing-hotel-card'));
@@ -1462,41 +1579,13 @@
             const starChecks = Array.from(document.querySelectorAll('.listing-star-filter'));
             const ratingChips = Array.from(document.querySelectorAll('.rating-chip'));
             const featuredChecks = Array.from(document.querySelectorAll('.listing-featured-filter'));
+            const campaignChecks = Array.from(document.querySelectorAll('.listing-campaign-filter'));
             const clearAllBtn = document.getElementById('clearAllFiltersBtn');
             const keywordClearBtn = document.getElementById('listingKeywordClear');
             const keywordSuggestions = document.getElementById('listingKeywordSuggestions');
-            const useMyLocationBtn = document.getElementById('useMyLocationBtn');
-            const distanceKmRange = document.getElementById('distanceKmRange');
-            const distanceKmValue = document.getElementById('distanceKmValue');
-            const distanceKmInput = document.getElementById('distanceKmInput');
-            const distanceHotelCount = document.getElementById('distanceHotelCount');
-            const locationStatusText = document.getElementById('locationStatusText');
-            const locationCoordsText = document.getElementById('locationCoordsText');
-            const locationInsightText = document.getElementById('locationInsightText');
-            const locationMapModal = document.getElementById('locationMapModal');
-            const locationMapCanvas = document.getElementById('locationMapCanvas');
-            const locationMapMeta = document.getElementById('locationMapMeta');
-            const locationMapHelper = document.getElementById('locationMapHelper');
-            const locationMapActions = document.getElementById('locationMapActions');
-            const locationMapConfirmBtn = document.getElementById('locationMapConfirmBtn');
-            const locationStorageKey = 'otelturizm.last-user-location';
-            const defaultLocationRadiusKm = 15;
-            const priceAutoRelaxNote = document.getElementById('priceAutoRelaxNote');
+            const discountModal = document.getElementById('discountModal');
             let reelResetToTop = null;
             let keywordSuggestionTimer = null;
-            let userLocation = null;
-            let locationLogTimer = null;
-            let lastLocationLogSignature = '';
-            let locationPermissionState = 'prompt';
-            let priceAutoRelaxing = false;
-            let locationLeafletMap = null;
-            let locationLeafletLayer = null;
-            let locationMapPickMode = false;
-            let locationPickedLatLng = null;
-            let locationPickedMarker = null;
-            let hasPromptedManualLocation = false;
-            let lastFocusBeforeLocationModal = null;
-            const defaultMaxPrice = Number(maxPriceRange?.max || maxPriceInput?.value || '0');
             let clientFilterPoolLoading = false;
             let clientFilterPoolReady = false;
 
@@ -1507,8 +1596,25 @@
             function parseFilterNumber(value) {
                 const raw = String(value ?? '').trim();
                 if (!raw) return 0;
-                const parsed = Number(raw.replace(',', '.'));
+                const parsed = Number(raw.replace(/[^\d]/g, ''));
                 return Number.isFinite(parsed) ? parsed : 0;
+            }
+
+            function getPriceRangeAttr(input, key, fallback) {
+                if (!input || !input.dataset) return parseFilterNumber(String(fallback));
+                return parseFilterNumber(input.dataset[key] || String(fallback));
+            }
+
+            function hasListingRegionContext() {
+                const keyword = String(keywordInput?.value || '').trim();
+                if (keyword.length > 0) {
+                    return true;
+                }
+
+                return !!(
+                    userLocation
+                    && !(isDesktopViewport() && desktopApproximateSelectionPending && userLocation.approximate)
+                );
             }
 
             async function ensureClientFilterPoolLoaded() {
@@ -1540,47 +1646,68 @@
                 return !isMobileViewport();
             }
 
+            function clearUnexpectedScrollLocks() {
+                const locationModalOpen = !!(locationMapModal && !locationMapModal.hidden);
+                const listingNoticeOpen = !!(listingFilterNoticeModal && !listingFilterNoticeModal.hidden);
+                const discountModalOpen = !!(discountModal && !discountModal.hidden);
+                if (locationModalOpen || listingNoticeOpen || discountModalOpen) {
+                    return;
+                }
+
+                if (document.body.style.overflow === 'hidden') {
+                    document.body.style.overflow = '';
+                }
+                if (document.documentElement.style.overflow === 'hidden') {
+                    document.documentElement.style.overflow = '';
+                }
+            }
+
             function formatTry(amount) {
                 const n = Number(amount || 0);
                 if (!Number.isFinite(n)) return '₺0';
                 return '₺' + Math.round(n).toLocaleString('tr-TR');
             }
 
-            function syncPriceLive() {
-                if (!priceSliderLiveValue || !maxPriceRange) return;
-                priceSliderLiveValue.textContent = formatTry(maxPriceRange.value || '0');
+            function getPriceBounds() {
+                const inputMinAttr = getPriceRangeAttr(minPriceInput, 'rangeMin', defaultMinPrice);
+                const inputMaxAttr = getPriceRangeAttr(maxPriceInput, 'rangeMax', defaultMaxPrice);
+                const rawMin = parseFilterNumber(minPriceInput?.value || String(defaultMinPrice || inputMinAttr));
+                const rawMax = parseFilterNumber(maxPriceInput?.value || String(defaultMaxPrice || inputMaxAttr || rawMin));
+                let min = Math.max(0, rawMin || inputMinAttr);
+                let max = Math.max(0, rawMax || inputMaxAttr || min);
+                if (max < min) {
+                    max = min;
+                }
+                return { min, max, sliderMin: inputMinAttr, sliderMax: inputMaxAttr };
             }
 
-            function syncPriceSteps() {
-                const min = parseFilterNumber(maxPriceRange?.min || '0');
-                const max = parseFilterNumber(maxPriceRange?.max || '0');
-                if (!Number.isFinite(max) || max <= 0) return;
-                const a = Math.max(0, Math.min(min, max));
-                const b = max;
-                const labels = Array.from({ length: 7 }, function (_, index) {
-                    const ratio = index / 6;
-                    return a + ((b - a) * ratio);
-                });
-
-                labels.forEach(function (value, index) {
-                    const node = document.getElementById('priceStep' + index);
-                    if (node) {
-                        node.textContent = formatTry(value);
-                    }
-                });
+            function normalizeManualPriceInputs(commit) {
+                if (!minPriceInput && !maxPriceInput) return;
+                const minAttr = getPriceRangeAttr(minPriceInput, 'rangeMin', defaultMinPrice);
+                const maxAttr = getPriceRangeAttr(maxPriceInput, 'rangeMax', defaultMaxPrice);
+                const minRawText = String(minPriceInput?.value || '').replace(/[^\d]/g, '');
+                const maxRawText = String(maxPriceInput?.value || '').replace(/[^\d]/g, '');
+                let nextMin = minRawText ? Number(minRawText) : (commit ? (defaultMinPrice || minAttr) : NaN);
+                let nextMax = maxRawText ? Number(maxRawText) : (commit ? (defaultMaxPrice || maxAttr || nextMin) : NaN);
+                nextMin = Number.isFinite(nextMin) ? Math.max(0, nextMin) : nextMin;
+                nextMax = Number.isFinite(nextMax) ? Math.max(0, nextMax) : nextMax;
+                if (!Number.isFinite(nextMin) && Number.isFinite(nextMax)) {
+                    nextMin = Math.min(nextMax, defaultMinPrice || minAttr);
+                }
+                if (!Number.isFinite(nextMax) && Number.isFinite(nextMin) && commit) {
+                    nextMax = Math.max(nextMin, defaultMaxPrice || maxAttr || nextMin);
+                }
+                if (nextMax < nextMin) {
+                    nextMax = nextMin;
+                }
+                if (minPriceInput) {
+                    minPriceInput.value = minRawText ? String(nextMin) : (commit ? String(defaultMinPrice || minAttr) : '');
+                }
+                if (maxPriceInput) {
+                    maxPriceInput.value = maxRawText ? String(nextMax) : (commit ? String(defaultMaxPrice || maxAttr || nextMin) : '');
+                }
             }
-
-            function syncPriceSliderVisual() {
-                if (!maxPriceRange) return;
-                const min = parseFilterNumber(maxPriceRange.min || '0');
-                const max = parseFilterNumber(maxPriceRange.max || '0');
-                const val = parseFilterNumber(maxPriceRange.value || '0');
-                const pct = max > min ? ((val - min) / (max - min)) * 100 : 100;
-                const wrap = maxPriceRange.closest('.price-slider-wrap');
-                if (wrap) wrap.style.setProperty('--slider-pos', Math.max(0, Math.min(100, pct)).toFixed(2) + '%');
-            }
-
-            // Not: Manuel min/max inputlar kaldırıldığı için normalizePriceInputs artık kullanılmıyor.
+            // Slider kaldırıldı: scroll kilidi/visual senkron yok.
 
             function toRad(d) { return (d * Math.PI) / 180; }
 
@@ -1602,6 +1729,35 @@
                 if (distanceKmInput) {
                     distanceKmInput.value = String(distanceKmRange.value || String(defaultLocationRadiusKm));
                 }
+            }
+
+            function hasManualPriceFilter() {
+                const bounds = getPriceBounds();
+                return bounds.min > defaultMinPrice || bounds.max < defaultMaxPrice;
+            }
+
+            function closeListingNoticeModal() {
+                if (!listingFilterNoticeModal) return;
+                listingFilterNoticeModal.hidden = true;
+                listingFilterNoticeModal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                if (lastFocusBeforeListingNoticeModal instanceof HTMLElement) {
+                    lastFocusBeforeListingNoticeModal.focus();
+                }
+            }
+
+            function openListingNoticeModal() {
+                if (!listingFilterNoticeModal || !listingFilterNoticeModal.hidden) return;
+                lastFocusBeforeListingNoticeModal = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                listingFilterNoticeModal.hidden = false;
+                listingFilterNoticeModal.setAttribute('aria-hidden', 'false');
+                // Sayfayı kilitleme: kullanıcı arkaplanda kaydırabilsin.
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                window.setTimeout(function () {
+                    listingNoticeFocusBtn?.focus();
+                }, 0);
             }
 
             function enableDistanceFilterUi(enabled) {
@@ -1680,23 +1836,6 @@
                 locationCoordsText.classList.add('is-clickable');
             }
 
-            function collectVisibleHotelsForMap() {
-                return cards
-                    .filter(card => !card.hidden)
-                    .map(function (card) {
-                        const lat = Number(card.dataset.lat || '');
-                        const lon = Number(card.dataset.lon || '');
-                        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-                            return null;
-                        }
-
-                        const title = String(card.querySelector('.hotel-name')?.textContent || '').trim() || 'Otel';
-                        const href = String(card.querySelector('a[href*="/oteller/"]')?.getAttribute('href') || '').trim();
-                        return { lat, lon, title, href };
-                    })
-                    .filter(Boolean);
-            }
-
             function closeLocationMapModal() {
                 if (!locationMapModal) return;
                 locationMapModal.hidden = true;
@@ -1732,6 +1871,7 @@
                     approximate: false,
                     source: 'harita-secimi'
                 };
+                desktopApproximateSelectionPending = false;
 
                 if (distanceKmRange) distanceKmRange.value = String(defaultLocationRadiusKm);
                 if (distanceKmInput) distanceKmInput.value = String(defaultLocationRadiusKm);
@@ -1822,38 +1962,19 @@
                 }
                 locationLeafletMap.off('click');
 
-                const bounds = [];
                 const userLatLng = [userLocation.lat, userLocation.lon];
-                bounds.push(userLatLng);
+                const bounds = [userLatLng];
 
-                window.L.marker(userLatLng)
-                    .addTo(locationLeafletLayer)
-                    .bindPopup('<strong>Konumunuz</strong><br>Enlem: ' + userLocation.lat.toFixed(6) + '<br>Boylam: ' + userLocation.lon.toFixed(6));
-
-                visibleHotels.forEach(function (hotel) {
-                    const hotelLatLng = [hotel.lat, hotel.lon];
-                    bounds.push(hotelLatLng);
-                    const popupHtml = hotel.href
-                        ? '<strong>' + hotel.title + '</strong><br><a href="' + hotel.href + '">Detay sayfasına git</a>'
-                        : '<strong>' + hotel.title + '</strong>';
-                    window.L.circleMarker(hotelLatLng, {
-                        radius: 8,
-                        color: '#003B95',
-                        weight: 2,
-                        fillColor: '#2563eb',
-                        fillOpacity: 0.9
-                    })
+                if (!locationMapPickMode) {
+                    window.L.marker(userLatLng)
                         .addTo(locationLeafletLayer)
-                        .bindPopup(popupHtml)
-                        .bindTooltip(hotel.title, { direction: 'top', offset: [0, -6] });
-                });
+                        .bindPopup('<strong>Konumunuz</strong><br>Enlem: ' + userLocation.lat.toFixed(6) + '<br>Boylam: ' + userLocation.lon.toFixed(6));
+                }
 
                 if (locationMapMeta) {
                     locationMapMeta.textContent = locationMapPickMode
-                        ? 'Mavi işaretler listede çıkan otelleri gösterir. Haritada bulunduğun noktaya tıklayıp konumunu sabitleyebilirsin.'
-                        : (visibleHotels.length > 0
-                            ? 'Konumun ve listelenen ' + visibleHotels.length + ' otel aynı harita üzerinde gösteriliyor.'
-                            : 'Konumun haritada gösteriliyor. Listede koordinatlı otel bulunamadı.');
+                        ? 'Yakın bölge merkezde açıldı. Haritada bulunduğun noktayı seçip konumunu netleştir.'
+                        : 'Konumun harita üzerinde gösteriliyor. Gerekirse tekrar seçim yapabilirsin.';
                 }
 
                 if (locationMapPickMode) {
@@ -1884,11 +2005,7 @@
 
                 window.setTimeout(function () {
                     locationLeafletMap.invalidateSize();
-                    if (bounds.length > 1) {
-                        locationLeafletMap.fitBounds(bounds, { padding: [28, 28] });
-                    } else {
-                        locationLeafletMap.setView(userLatLng, 13);
-                    }
+                    locationLeafletMap.setView(userLatLng, locationMapPickMode ? 12 : 13);
                 }, 80);
             }
 
@@ -2034,15 +2151,22 @@
             function applyFilters() {
                 refreshCards();
                 const keyword = normalize(keywordInput?.value || '');
-                const minPrice = Math.max(0, parseFilterNumber(maxPriceRange?.min || '0'));
-                const maxPrice = Math.max(0, parseFilterNumber(maxPriceRange?.value || '0'));
+                const priceBounds = getPriceBounds();
+                const regionContextActive = hasListingRegionContext();
+                const manualPriceActive = hasManualPriceFilter();
+                const allowPriceFilter = !!(minPriceInput || maxPriceInput) && (!manualPriceActive || regionContextActive);
+                const minPrice = allowPriceFilter ? Math.max(0, priceBounds.min) : 0;
+                const maxPrice = allowPriceFilter ? Math.max(0, priceBounds.max) : Number.POSITIVE_INFINITY;
                 const selectedAmenities = amenityChecks.filter(x => x.checked).map(x => normalize(x.value));
                 const selectedStars = starChecks.filter(x => x.checked).map(x => String(x.value));
                 const featuredOnly = featuredChecks.some(x => x.checked);
+                const selectedCampaigns = campaignChecks.filter(x => x.checked).map(x => normalize(x.value));
                 const distanceKm = Number(distanceKmRange?.value || '0');
-                // Konuma göre filtre: UI disabled olsa bile (bazı cihazlarda state kaçabiliyor)
-                // koordinat geldiyse 15km default ile filtre çalışmalı.
-                const distanceActive = !!(userLocation && distanceKm > 0);
+                const distanceActive = !!(
+                    userLocation
+                    && distanceKm > 0
+                    && !(isDesktopViewport() && desktopApproximateSelectionPending && userLocation.approximate)
+                );
                 const minScore = ratingChips
                     .filter(x => x.classList.contains('active'))
                     .map(x => Number(x.dataset.minScore || '0'))
@@ -2056,6 +2180,7 @@
                     const cardRating = Number(card.dataset.rating || '0');
                     const cardKeywords = normalize(card.dataset.keywords || '');
                     const cardAmenities = normalize(card.dataset.amenities || '');
+                    const cardCampaignSlugs = normalize(card.dataset.campaignSlugs || '');
                     const isFeatured = (card.dataset.featured || '0') === '1';
                     const cardLatRaw = String(card.dataset.lat || '').trim();
                     const cardLonRaw = String(card.dataset.lon || '').trim();
@@ -2063,21 +2188,23 @@
                     const cardLon = cardLonRaw ? Number(cardLonRaw) : NaN;
 
                     const keywordOk = !keyword || cardKeywords.indexOf(keyword) > -1;
-                    const priceOk = (!maxPriceRange) || (cardPrice >= minPrice && cardPrice <= maxPrice);
+                    const priceOk = !allowPriceFilter || (cardPrice >= minPrice && cardPrice <= maxPrice);
                     const starOk = selectedStars.length === 0 || selectedStars.includes(cardStars);
                     const ratingOk = minScore <= 0 || cardRating >= minScore;
                     const amenityOk = selectedAmenities.length === 0 || selectedAmenities.every(x => cardAmenities.indexOf(x) > -1);
                     const featuredOk = !featuredOnly || isFeatured;
+                    const campaignOk = selectedCampaigns.length === 0
+                        || selectedCampaigns.some(function (slug) { return cardCampaignSlugs.indexOf(slug) > -1; });
                     const distanceOk = !distanceActive
                         || (Number.isFinite(cardLat) && Number.isFinite(cardLon)
                             && haversineKm(userLocation.lat, userLocation.lon, cardLat, cardLon) <= distanceKm);
 
-                    const nonPriceOk = keywordOk && starOk && ratingOk && amenityOk && featuredOk && distanceOk;
+                    const nonPriceOk = keywordOk && starOk && ratingOk && amenityOk && featuredOk && campaignOk && distanceOk;
                     if (nonPriceOk && Number.isFinite(cardPrice) && cardPrice > 0) {
                         cheapestNonPriceMatch = Math.min(cheapestNonPriceMatch, cardPrice);
                     }
 
-                    const isVisible = keywordOk && priceOk && starOk && ratingOk && amenityOk && featuredOk && distanceOk;
+                    const isVisible = keywordOk && priceOk && starOk && ratingOk && amenityOk && featuredOk && campaignOk && distanceOk;
                     card.hidden = !isVisible;
                     if (isVisible) {
                         visibleCount += 1;
@@ -2085,31 +2212,21 @@
                 });
 
                 // Fiyat filtresi yüzünden liste boş kalmasın: en düşük uygun fiyata otomatik çek.
-                const defaultMax = Number(maxPriceRange?.max || defaultMaxPrice || '0');
-                const priceFilterActive = !!(maxPriceRange && Number.isFinite(defaultMax) && defaultMax > 0 && maxPrice > 0 && maxPrice < defaultMax);
-                if (!priceAutoRelaxing && priceFilterActive && visibleCount === 0 && Number.isFinite(cheapestNonPriceMatch) && cheapestNonPriceMatch !== Number.POSITIVE_INFINITY) {
-                    priceAutoRelaxing = true;
-                    const newMax = Math.max(0, Math.round(cheapestNonPriceMatch));
-                    if (maxPriceRange) maxPriceRange.value = String(newMax);
-                    syncPriceSteps();
-                    syncPriceSliderVisual();
-                    syncPriceLive();
-                    if (priceAutoRelaxNote) {
-                        priceAutoRelaxNote.textContent = 'Bu fiyatta sonuç bulunamadı. En düşük fiyat gösteriliyor.';
-                        priceAutoRelaxNote.hidden = false;
-                    }
-                    applyFilters();
-                    priceAutoRelaxing = false;
-                    return;
-                } else if (priceAutoRelaxNote) {
-                    priceAutoRelaxNote.hidden = true;
-                    priceAutoRelaxNote.textContent = '';
+                if (priceAutoRelaxNote) {
+                    const shouldShowPriceNotice = manualPriceActive && !regionContextActive;
+                    priceAutoRelaxNote.hidden = !shouldShowPriceNotice;
+                    priceAutoRelaxNote.textContent = shouldShowPriceNotice
+                        ? 'Fiyat filtrelemesi için önce il, ilçe ya da mahalle seçin.'
+                        : '';
                 }
 
                 setDistanceHotelCount(visibleCount, distanceActive);
                 if (distanceActive) {
                     setLocationInsight('Seçtiğin ' + distanceKm + ' km yarıçap içinde ' + visibleCount + ' otel bulundu.');
                     queueLocationLog(false);
+                } else if (userLocation && desktopApproximateSelectionPending && isDesktopViewport()) {
+                    setDistanceHotelCount(0, false);
+                    setLocationInsight('Yakın bölgen açıldı. Haritada kendi konumunu seçtiğinde oteller km yarıçapına göre listelenecek.');
                 } else if (userLocation) {
                     setLocationInsight('Konumun doğrulandı. Aşağıdan yarıçapı artırıp otelleri gerçek koordinat mesafesine göre filtreleyebilirsin.');
                 } else {
@@ -2121,13 +2238,28 @@
                     reelResetToTop();
                 }
 
-                if ((distanceActive || priceFilterActive) && !clientFilterPoolReady && !clientFilterPoolLoading) {
+                if (distanceActive && !clientFilterPoolReady && !clientFilterPoolLoading) {
                     ensureClientFilterPoolLoaded().then(function () {
                         applyFilters();
                         sortCards();
                         syncMobileFilterCount();
                     });
                 }
+            }
+
+            function handleManualPriceFilterInteraction(commit) {
+                normalizeManualPriceInputs(!!commit);
+                if (hasManualPriceFilter() && !hasListingRegionContext()) {
+                    if (!listingNoticeShown) {
+                        openListingNoticeModal();
+                        listingNoticeShown = true;
+                    }
+                } else {
+                    listingNoticeShown = false;
+                }
+                applyFilters();
+                sortCards();
+                syncMobileFilterCount();
             }
 
             function hideKeywordSuggestions() {
@@ -2340,6 +2472,7 @@
                     approximate: true,
                     source: approximateLocation.source
                 };
+                desktopApproximateSelectionPending = isDesktopViewport();
 
                 if (distanceKmRange) distanceKmRange.value = String(defaultLocationRadiusKm);
                 if (distanceKmInput) distanceKmInput.value = String(defaultLocationRadiusKm);
@@ -2349,16 +2482,28 @@
                 ensureDistanceControlsEnabled();
                 syncDistanceUi();
                 setLocationCoords(userLocation.lat, userLocation.lon, 0);
-                setLocationStatus('Yaklaşık konum hazır.');
-                setLocationInsight('Yakındaki otelleri görmek için yarıçapı ayarlayabilirsin.');
-                applyFilters();
-                sortCards();
-                ensureClientFilterPoolLoaded().then(function () {
+                if (isDesktopViewport()) {
+                    setLocationStatus('Yakın bölge bulundu.');
+                    setLocationInsight('Yakın bölgen haritada hazır. Doğru sonucu almak için bulunduğun noktayı haritadan seç.');
+                } else {
+                    setLocationStatus('Yaklaşık konum hazır.');
+                    setLocationInsight('Yakındaki otelleri görmek için yarıçapı ayarlayabilirsin.');
+                }
+
+                if (isDesktopViewport()) {
                     applyFilters();
                     sortCards();
                     syncMobileFilterCount();
-                });
-                queueLocationLog(true);
+                } else {
+                    applyFilters();
+                    sortCards();
+                    ensureClientFilterPoolLoaded().then(function () {
+                        applyFilters();
+                        sortCards();
+                        syncMobileFilterCount();
+                    });
+                    queueLocationLog(true);
+                }
 
                 if (!hasPromptedManualLocation && isDesktopViewport()) {
                     hasPromptedManualLocation = true;
@@ -2389,6 +2534,7 @@
             }
 
             function requestUserLocation() {
+                desktopApproximateSelectionPending = false;
                 if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
                     setLocationPermissionState('denied');
                     setLocationStatus('Konum için güvenli bağlantı gerekiyor.');
@@ -2537,38 +2683,8 @@
                 syncDistanceUi();
                 applyFilters();
             });
-            distanceKmInput?.addEventListener('input', function () {
-                const nextValue = Math.min(50, Math.max(1, Number(distanceKmInput.value || String(defaultLocationRadiusKm))));
-                if (distanceKmRange) {
-                    distanceKmRange.value = String(nextValue);
-                }
-                syncDistanceUi();
-                if (userLocation) {
-                    applyFilters();
-                    sortCards();
-                    syncMobileFilterCount();
-                    queueLocationLog(false);
-                }
-            });
-            distanceKmInput?.addEventListener('change', function () {
-                const nextValue = Math.min(50, Math.max(1, Number(distanceKmInput.value || String(defaultLocationRadiusKm))));
-                distanceKmInput.value = String(nextValue);
-                if (distanceKmRange) {
-                    distanceKmRange.value = String(nextValue);
-                }
-                syncDistanceUi();
-                applyFilters();
-                if (userLocation) {
-                    queueLocationLog(false);
-                }
-            });
             distanceKmRange?.addEventListener('pointerdown', function () {
                 if (distanceKmRange.disabled) {
-                    requestUserLocation();
-                }
-            });
-            distanceKmInput?.addEventListener('focus', function () {
-                if (distanceKmInput.disabled) {
                     requestUserLocation();
                 }
             });
@@ -2629,12 +2745,18 @@
             locationMapConfirmBtn?.addEventListener('click', function () {
                 applyManualMapSelection();
             });
-            maxPriceRange?.addEventListener('input', function () {
-                applyFilters();
-                sortCards();
-                syncPriceSliderVisual();
-                syncPriceLive();
-                syncMobileFilterCount();
+            // Slider kaldırıldı.
+            minPriceInput?.addEventListener('input', function () {
+                handleManualPriceFilterInteraction(false);
+            });
+            maxPriceInput?.addEventListener('input', function () {
+                handleManualPriceFilterInteraction(false);
+            });
+            minPriceInput?.addEventListener('change', function () {
+                handleManualPriceFilterInteraction(true);
+            });
+            maxPriceInput?.addEventListener('change', function () {
+                handleManualPriceFilterInteraction(true);
             });
 
             const filterCard = document.getElementById('listingFilterCard');
@@ -2651,9 +2773,13 @@
 
             function openMobileFilters() {
                 if (!modal || !modalHost || !filterCard) return;
+                // Sadece mobilde modal filtre aç (desktop'ta sidebar zaten görünüyor)
+                if (window.innerWidth > 900) {
+                    return;
+                }
                 modal.classList.add('active');
                 modal.setAttribute('aria-hidden', 'false');
-                document.body.style.overflow = 'hidden';
+                // Mobilde sayfayı kilitleme: arkaplan scroll serbest kalsın.
                 if (filterCard.parentElement !== modalHost) {
                     modalHost.appendChild(filterCard);
                 }
@@ -2694,8 +2820,6 @@
                     filterCard.querySelectorAll('details.filter-accordion').forEach(function (d) {
                         if (d && d.id && d.id === sectionId) {
                             d.setAttribute('open', '');
-                        } else {
-                            d.removeAttribute('open');
                         }
                     });
                 }
@@ -2711,7 +2835,6 @@
                 if (!modal) return;
                 modal.classList.remove('active');
                 modal.setAttribute('aria-hidden', 'true');
-                document.body.style.overflow = '';
                 if (desktopSidebar && filterCard && filterCard.parentElement !== desktopSidebar) {
                     desktopSidebar.appendChild(filterCard);
                 }
@@ -2723,11 +2846,16 @@
                     openMobileFilterSection(target);
                 });
             });
+            const yanbarFilterBtn = document.getElementById('listingYanbarFilterBtn');
+            yanbarFilterBtn?.addEventListener('click', function () {
+                openMobileFilterSection('all');
+            });
             modalOverlay?.addEventListener('click', closeMobileFilters);
             modalClose?.addEventListener('click', closeMobileFilters);
             modalApply?.addEventListener('click', closeMobileFilters);
             modalClear?.addEventListener('click', function () {
                 clearAllBtn?.click();
+                closeMobileFilters();
             });
 
             window.addEventListener('resize', function () {
@@ -2738,6 +2866,7 @@
             amenityChecks.forEach(x => x.addEventListener('change', function () { applyFilters(); sortCards(); syncMobileFilterCount(); }));
             starChecks.forEach(x => x.addEventListener('change', function () { applyFilters(); sortCards(); syncMobileFilterCount(); }));
             featuredChecks.forEach(x => x.addEventListener('change', function () { applyFilters(); sortCards(); syncMobileFilterCount(); }));
+            campaignChecks.forEach(x => x.addEventListener('change', function () { applyFilters(); sortCards(); syncMobileFilterCount(); }));
             ratingChips.forEach(function (chip) {
                 chip.addEventListener('click', function () {
                     chip.classList.toggle('active');
@@ -2751,15 +2880,16 @@
                 amenityChecks.forEach(x => x.checked = false);
                 starChecks.forEach(x => x.checked = false);
                 featuredChecks.forEach(x => x.checked = false);
+                campaignChecks.forEach(x => x.checked = false);
                 ratingChips.forEach(x => x.classList.remove('active'));
                 if (keywordInput) keywordInput.value = '';
                 hideKeywordSuggestions();
-                if (minPriceInput) minPriceInput.value = '@minPrice.ToString(CultureInfo.InvariantCulture)';
-                if (maxPriceInput) maxPriceInput.value = '@maxPrice.ToString(CultureInfo.InvariantCulture)';
-                if (maxPriceRange) maxPriceRange.value = '@maxPrice.ToString(CultureInfo.InvariantCulture)';
+                if (minPriceInput) minPriceInput.value = String(defaultMinPrice);
+                if (maxPriceInput) maxPriceInput.value = String(defaultMaxPrice);
                 if (distanceKmRange) distanceKmRange.value = String(defaultLocationRadiusKm);
                 if (distanceKmInput) distanceKmInput.value = String(defaultLocationRadiusKm);
                 userLocation = null;
+                listingNoticeShown = false;
                 lastLocationLogSignature = '';
                 clearPersistedLocationSnapshot();
                 enableDistanceFilterUi(false);
@@ -2770,8 +2900,6 @@
                 setLocationInsight('Konum aramaları, partnerlerin bölgene otel eklemesi için anonim pazar içgörüsü üretir.');
                 applyFilters();
                 sortCards();
-                syncPriceSteps();
-                syncPriceSliderVisual();
                 syncDistanceUi();
                 syncMobileFilterCount();
             });
@@ -2782,10 +2910,11 @@
                     (amenityChecks.filter(x => x.checked).length)
                     + (starChecks.filter(x => x.checked).length)
                     + (featuredChecks.filter(x => x.checked).length)
+                    + (campaignChecks.filter(x => x.checked).length)
                     + (ratingChips.filter(x => x.classList.contains('active')).length)
                     + ((String(keywordInput?.value || '').trim().length > 0) ? 1 : 0)
                     + ((Number(minPriceInput?.value || '0') > 0) ? 1 : 0)
-                    + ((Number(maxPriceInput?.value || '0') > 0 && Number(maxPriceInput?.value || '0') < Number(maxPriceRange?.max || '0')) ? 1 : 0);
+                    + ((Number(maxPriceInput?.value || '0') > 0) ? 1 : 0);
 
                 filterCount.textContent = String(active);
                 filterCount.hidden = active <= 0;
@@ -3036,8 +3165,7 @@
 
             applyFilters();
             sortCards();
-            syncPriceSteps();
-            syncPriceSliderVisual();
+            normalizeManualPriceInputs(true);
             syncMobileFilterCount();
             initializeLocationPermissionState();
 
@@ -3046,11 +3174,18 @@
                 if (closeTarget) {
                     closeLocationMapModal();
                 }
+                const noticeCloseTarget = event.target instanceof HTMLElement ? event.target.closest('[data-listing-notice-close]') : null;
+                if (noticeCloseTarget) {
+                    closeListingNoticeModal();
+                }
             });
 
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape' && locationMapModal && !locationMapModal.hidden) {
                     closeLocationMapModal();
+                }
+                if (event.key === 'Escape' && listingFilterNoticeModal && !listingFilterNoticeModal.hidden) {
+                    closeListingNoticeModal();
                 }
             });
 
@@ -3075,6 +3210,11 @@
                         first.focus();
                     }
                 }
+            });
+            listingNoticeFocusBtn?.addEventListener('click', function () {
+                closeListingNoticeModal();
+                document.getElementById('filterSearch')?.setAttribute('open', 'open');
+                keywordInput?.focus();
             });
         })();
     </script>

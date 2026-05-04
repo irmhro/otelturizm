@@ -1,0 +1,27 @@
+.user-favorites-page {
+  gap: 14px;
+}
+
+.favorites-hero {
+  border-radius: 14px;
+}
+
+.favorite-card {
+  border-radius: 14px;
+}
+
+.favorite-card-media {
+  aspect-ratio: 4 / 3;
+}
+
+.favorite-price-row,
+.favorite-review-callout,
+.favorite-alert-summary {
+  border-radius: 12px;
+}
+
+.favorite-actions .btn,
+.favorite-review-callout .btn,
+.favorite-alert-delete-btn {
+  min-height: 42px;
+}

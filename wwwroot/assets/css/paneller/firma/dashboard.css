@@ -1,5 +1,5 @@
 .firma-list-row b {
-    color: #003b95;
+    color: var(--firma-panel-primary);
 }
 
 .firma-phone-card {
@@ -10,8 +10,8 @@
     padding: 20px;
     margin-bottom: 20px;
     border-radius: 24px;
-    background: linear-gradient(135deg, #f6fbff 0%, #eef6ff 100%);
-    border: 1px solid rgba(0, 59, 149, 0.12);
+    background: linear-gradient(135deg, var(--firma-panel-surface-2) 0%, color-mix(in srgb, var(--firma-panel-surface) 88%, transparent) 100%);
+    border: 1px solid color-mix(in srgb, var(--firma-panel-primary) 18%, var(--firma-panel-border));
 }
 
 .firma-phone-card h2,
@@ -28,8 +28,10 @@
 .firma-phone-form input {
     min-height: 46px;
     border-radius: 14px;
-    border: 1px solid #d8e2f0;
+    border: 1px solid var(--firma-panel-border);
     padding: 0 14px;
+    background: var(--firma-panel-surface);
+    color: var(--firma-panel-text);
 }
 
 @media (max-width: 900px) {

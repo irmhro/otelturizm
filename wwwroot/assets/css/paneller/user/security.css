@@ -1,0 +1,351 @@
+.user-security-page {
+  display: grid;
+  gap: 16px;
+}
+
+.security-hero,
+.security-panel {
+  border: 1px solid var(--user-line);
+  border-radius: 14px;
+  background: var(--user-surface);
+  box-shadow: var(--user-shadow);
+}
+
+.security-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 16px;
+  background:
+    radial-gradient(circle at 10% 18%, rgba(16, 185, 129, .12), transparent 24rem),
+    linear-gradient(135deg, var(--user-surface), var(--user-surface-2));
+}
+
+.security-hero h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.security-hero p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-weight: 760;
+}
+
+.security-state-card {
+  min-width: 190px;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.security-state-card.is-on {
+  color: #065f46;
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+}
+
+.security-state-card.is-off {
+  color: #92400e;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+.security-state-card span {
+  font-size: 22px;
+}
+
+.security-state-card strong,
+.security-state-card small {
+  display: block;
+}
+
+.security-state-card strong {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.security-state-card small {
+  font-weight: 850;
+}
+
+.security-panel {
+  padding: 16px;
+}
+
+.security-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.security-panel-head h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.security-panel-head p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-weight: 760;
+}
+
+.security-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.security-form-grid label {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.security-form-grid span {
+  color: #334155;
+  font-weight: 850;
+}
+
+.security-master-switch {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 13px;
+  border: 1px solid rgba(37, 99, 235, .18);
+  border-radius: 13px;
+  background: #eff6ff;
+}
+
+.security-master-switch input {
+  position: absolute;
+  opacity: 0;
+}
+
+.security-master-switch > span,
+.security-channel-switch {
+  width: 52px;
+  height: 30px;
+  position: relative;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: .18s ease;
+}
+
+.security-master-switch > span::after,
+.security-channel-switch::after {
+  content: "";
+  width: 24px;
+  height: 24px;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .18);
+  transition: .18s ease;
+}
+
+.security-master-switch input[type="checkbox"]:checked ~ span,
+.security-channel-card input:checked + .security-channel-switch {
+  background: linear-gradient(135deg, #22c55e, #10b981);
+}
+
+.security-master-switch input[type="checkbox"]:checked ~ span::after,
+.security-channel-card input:checked + .security-channel-switch::after {
+  transform: translateX(22px);
+}
+
+/* Master kapalıyken kanal switch'leri yeşil görünmesin (UI tutarlılığı) */
+.security-twofactor-form[data-enabled="0"] .security-channel-switch {
+  background: #cbd5e1 !important;
+}
+
+.security-twofactor-form[data-enabled="0"] .security-channel-switch::after {
+  transform: none !important;
+}
+
+.security-twofactor-form[data-enabled="0"] .security-channel-card:not(.is-disabled) {
+  opacity: .9;
+}
+
+.security-master-switch strong,
+.security-master-switch small {
+  display: block;
+}
+
+.security-master-switch strong {
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.security-master-switch small {
+  margin-top: 3px;
+  color: #64748b;
+  font-weight: 760;
+}
+
+.security-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.security-channel-card {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 13px;
+  border: 1px solid rgba(148, 163, 184, .24);
+  border-radius: 13px;
+  background: #fff;
+}
+
+.security-channel-card input {
+  position: absolute;
+  opacity: 0;
+}
+
+.security-channel-card strong,
+.security-channel-card small {
+  display: block;
+}
+
+.security-channel-card strong {
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.security-channel-card small {
+  margin-top: 4px;
+  color: #64748b;
+  font-weight: 760;
+}
+
+.security-channel-card.is-disabled {
+  opacity: .72;
+  background: #f8fafc;
+}
+
+.security-info-button {
+  grid-column: 1 / -1;
+  width: 100%;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-weight: 900;
+}
+
+.security-info-button i {
+  margin-right: 6px;
+}
+
+.security-session-list {
+  display: grid;
+  gap: 10px;
+}
+
+.security-session-row {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.security-session-row > span {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.security-session-row strong,
+.security-session-row small {
+  display: block;
+}
+
+.security-session-row strong {
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.security-session-row small {
+  margin-top: 3px;
+  color: #64748b;
+  font-weight: 760;
+}
+
+.security-info-dialog {
+  width: min(560px, calc(100vw - 28px));
+  border: 0;
+  border-radius: 18px;
+  padding: 0;
+  box-shadow: 0 26px 80px rgba(15, 23, 42, .25);
+}
+
+.security-info-dialog::backdrop {
+  background: rgba(15, 23, 42, .48);
+  backdrop-filter: blur(4px);
+}
+
+.security-info-content {
+  position: relative;
+  padding: 22px;
+  background: #fff;
+}
+
+.security-info-content .btn-icon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
+.security-info-content h3 {
+  margin: 8px 44px 8px 0;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.security-info-content p:last-child {
+  margin: 0;
+  color: #475569;
+  font-weight: 760;
+  line-height: 1.65;
+}
+
+@media (max-width: 1080px) {
+  .security-form-grid,
+  .security-channel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .security-hero,
+  .security-panel-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .security-state-card {
+    min-width: 0;
+  }
+}

@@ -65,6 +65,7 @@ public class SecureFileSaveRequest
     public long? OwnerFirmaId { get; set; }
     public string VisibilityScope { get; set; } = "private";
     public string Category { get; set; } = "message";
+    public long? HotelId { get; set; }
 }
 
 public class StoredSecureFileResult

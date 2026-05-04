@@ -4,92 +4,99 @@
     ViewData["AdminShell"] = Model.Shell;
 }
 
-<div class="row">
-    @foreach (var card in Model.SummaryCards)
-    {
-        <div class="col-lg-3 col-md-6 col-12">
-            <div class="small-box bg-info">
-                <div class="inner">
-                    <h3>@card.Value</h3>
+<section class="admin-partner-applications-page">
+    <div class="admin-kpi-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            var tone = string.IsNullOrWhiteSpace(card.ToneClass) ? "info" : card.ToneClass;
+            <article class="admin-kpi-card @tone">
+                <span class="kpi-icon"><i class="fas @card.IconClass"></i></span>
+                <div>
                     <p>@card.Label</p>
-                    <small>@card.Description</small>
+                    <h2>@card.Value</h2>
+                    <span>@card.Description</span>
                 </div>
-                <div class="icon"><i class="fas @card.IconClass"></i></div>
+            </article>
+        }
+    </div>
+
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">PARTNER ONBOARDING</p>
+                <h2>Partner Başvuru Listesi</h2>
+                <span>Evrak, e-posta doğrulama ve admin giriş onayı aynı akışta takip edilir.</span>
             </div>
         </div>
-    }
-</div>
 
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Partner başvuru listesi</h3>
-    </div>
-    <div class="card-body">
         @if (Model.Applications.Count == 0)
         {
-            <div class="alert alert-secondary mb-0">Bekleyen partner başvurusu bulunmuyor.</div>
+            <div class="admin-empty-panel">Bekleyen partner başvurusu bulunmuyor.</div>
         }
         else
         {
-            @foreach (var application in Model.Applications)
-            {
-                <div class="card card-outline card-primary mb-3">
-                    <div class="card-header">
-                        <h3 class="card-title">@application.CompanyName</h3>
-                        <div class="card-tools">
-                            <span class="badge @(application.StatusToneClass?.Contains("danger") == true ? "badge-danger" : "badge-warning")">@application.StatusText</span>
+            <div class="admin-partner-application-list">
+                @foreach (var application in Model.Applications)
+                {
+                    var tone = application.StatusToneClass?.Contains("danger", StringComparison.OrdinalIgnoreCase) == true
+                        ? "danger"
+                        : application.StatusToneClass?.Contains("success", StringComparison.OrdinalIgnoreCase) == true ? "success" : "warning";
+                    <article class="admin-partner-application-card">
+                        <div class="admin-partner-application-main">
+                            <div>
+                                <p class="mini-caption">#@application.PartnerId · @application.RegistrationDateText</p>
+                                <h3>@application.CompanyName</h3>
+                                <span>@application.HotelName</span>
+                            </div>
+                            <span class="table-status @tone">@application.StatusText</span>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-md-6"><strong>Otel:</strong> @application.HotelName</div>
-                            <div class="col-md-6"><strong>Yetkili:</strong> @application.ContactName</div>
-                            <div class="col-md-6"><strong>E-posta:</strong> @application.Email</div>
-                            <div class="col-md-6"><strong>Vergi No:</strong> @application.TaxNumber</div>
-                            <div class="col-md-6"><strong>Kayıt:</strong> @application.RegistrationDateText</div>
-                            <div class="col-md-6"><strong>E-posta Onayı:</strong> @(application.EmailVerified ? "Tamamlandı" : "Bekleniyor")</div>
-                            <div class="col-md-6"><strong>E-posta Giriş Onayı (Admin):</strong> @(application.EmailLoginApproved ? "Verildi" : "Bekliyor")</div>
+
+                        <div class="admin-partner-meta">
+                            <span><small>Yetkili</small><strong>@application.ContactName</strong></span>
+                            <span><small>E-posta</small><strong>@application.Email</strong></span>
+                            <span><small>Vergi No</small><strong>@application.TaxNumber</strong></span>
+                            <span><small>Evrak</small><strong>@application.DocumentCount belge</strong></span>
+                            <span><small>E-posta doğrulama</small><strong>@(application.EmailVerified ? "Tamamlandı" : "Bekleniyor")</strong></span>
+                            <span><small>Admin giriş onayı</small><strong>@(application.EmailLoginApproved ? "Verildi" : "Bekliyor")</strong></span>
                         </div>
 
                         @if (application.EmailVerified && !application.EmailLoginApproved)
                         {
-                            <form method="post" action="/admin/partner-basvurulari/eposta-giris-onayi" class="mb-3">
+                            <form method="post" action="/admin/partner-basvurulari/eposta-giris-onayi" class="admin-inline-action">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="PartnerId" value="@application.PartnerId" />
                                 <input type="hidden" name="Approved" value="true" />
-                                <button type="submit" class="btn btn-success btn-sm">
-                                    <i class="fas fa-circle-check"></i> E-posta giriş onayı ver (login aç)
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-circle-check me-2"></i>E-posta giriş onayı ver
                                 </button>
                             </form>
                         }
 
                         @if (!string.IsNullOrWhiteSpace(application.ReviewNote))
                         {
-                            <div class="alert alert-light border">@application.ReviewNote</div>
+                            <div class="admin-partner-note">@application.ReviewNote</div>
                         }
 
-                        <form method="post" action="/admin/partner-basvurulari/durum">
+                        <form method="post" action="/admin/partner-basvurulari/durum" class="admin-partner-decision-form">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="PartnerId" value="@application.PartnerId" />
-                            <div class="row">
-                                <div class="col-md-4 form-group">
-                                    <label>Karar</label>
-                                    <select name="TargetStatus" class="form-control">
-                                        <option value="Onaylandi" selected="@(application.StatusText == "Onaylandi" ? "selected" : null)">Onayla</option>
-                                        <option value="Askida" selected="@(application.StatusText == "Askida" ? "selected" : null)">Askıya al</option>
-                                        <option value="Reddedildi" selected="@(application.StatusText == "Reddedildi" ? "selected" : null)">Reddet</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-8 form-group">
-                                    <label>Not</label>
-                                    <textarea name="Note" rows="2" class="form-control" placeholder="Partnera gösterilecek not">@application.ReviewNote</textarea>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm">Kararı Kaydet</button>
+                            <label>
+                                <span>Karar</span>
+                                <select name="TargetStatus">
+                                    <option value="Onaylandi" selected="@(application.StatusText == "Onaylandi")">Onayla</option>
+                                    <option value="Askida" selected="@(application.StatusText == "Askida")">Askıya al</option>
+                                    <option value="Reddedildi" selected="@(application.StatusText == "Reddedildi")">Reddet</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Not</span>
+                                <textarea name="Note" rows="2" placeholder="Partnera gösterilecek not">@application.ReviewNote</textarea>
+                            </label>
+                            <button type="submit" class="btn btn-primary">Kararı Kaydet</button>
                         </form>
-                    </div>
-                </div>
-            }
+                    </article>
+                }
+            </div>
         }
-    </div>
-</div>
+    </article>
+</section>

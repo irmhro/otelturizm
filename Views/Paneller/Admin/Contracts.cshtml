@@ -239,9 +239,7 @@
                     <div class="text-uppercase text-primary" style="font-size:.72rem;font-weight:800;letter-spacing:.08em;">SÖZLEŞME ÖNİZLEME</div>
                     <h5 class="modal-title mb-0" id="contractPreviewTitle">Sözleşme</h5>
                 </div>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Kapat">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
             </div>
             <div class="contract-admin-preview-body" id="contractPreviewBody">
                 <div class="text-muted">Yükleniyor...</div>
@@ -284,8 +282,9 @@
         async function openPreview(contractId, contractTitle) {
             titleEl.textContent = contractTitle || 'Sözleşme';
             bodyEl.innerHTML = '<div class="text-muted">Yükleniyor...</div>';
-            // AdminLTE zaten Bootstrap + jQuery kullanıyor.
-            $('#contractPreviewModal').modal('show');
+            if (window.bootstrap && modalEl) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
 
             try {
                 const response = await fetch(`/admin/sozlesmeler/onizleme?contractId=${encodeURIComponent(contractId)}`, {

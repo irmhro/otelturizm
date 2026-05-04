@@ -147,6 +147,9 @@
                     credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
+                        // ASP.NET Core antiforgery varsayılan header adı: RequestVerificationToken
+                        'RequestVerificationToken': token,
+                        // Geriye dönük/alternatif header (bazı altyapılarda okunuyor olabilir)
                         'X-CSRF-TOKEN': token,
                         'X-Requested-With': 'XMLHttpRequest'
                     },

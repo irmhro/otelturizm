@@ -15,31 +15,35 @@ public class UserPanelController : Controller
     private readonly IUserFavoriteService _userFavoriteService;
     private readonly IUserPanelService _userPanelService;
     private readonly IPhoneVerificationService _phoneVerificationService;
-    private readonly IImageStorageService _imageStorageService;
-    private readonly IWebHostEnvironment _environment;
+    private readonly ISecureFileService _secureFileService;
+    private readonly IPanelThemeService _panelThemeService;
 
     public UserPanelController(
         IUserFavoriteService userFavoriteService,
         IUserPanelService userPanelService,
         IPhoneVerificationService phoneVerificationService,
-        IImageStorageService imageStorageService,
-        IWebHostEnvironment environment)
+        ISecureFileService secureFileService,
+        IPanelThemeService panelThemeService)
     {
         _userFavoriteService = userFavoriteService;
         _userPanelService = userPanelService;
         _phoneVerificationService = phoneVerificationService;
-        _imageStorageService = imageStorageService;
-        _environment = environment;
+        _secureFileService = secureFileService;
+        _panelThemeService = panelThemeService;
     }
 
     [HttpGet("")]
     [HttpGet("index")]
-    public async Task<IActionResult> Index(
+    [HttpGet("dashboard")]
+    [HttpGet("/UserPanel")]
+    [HttpGet("/UserPanel/Index")]
+    public async Task<IActionResult> Dashboard(
         string? reservationStatus = null,
         DateOnly? reservationStartDate = null,
         DateOnly? reservationEndDate = null,
         int reservationPage = 1,
         int reservationPageSize = 5,
+        string? favoriteSort = null,
         CancellationToken cancellationToken = default)
     {
         if (!CanAccessUserPanel())
@@ -54,14 +58,15 @@ public class UserPanelController : Controller
             reservationEndDate,
             reservationPage,
             reservationPageSize,
+            favoriteSort,
             cancellationToken);
-        ViewData["PageCssPath"] = "panel-user-dashboard";
-        ViewData["PanelTitle"] = "Kullanici Paneli";
-        ViewData["PanelSubtitle"] = "Hesabini yonet, rezervasyonlarini takip et ve ozel firsatlari kesfet.";
+        ViewData["PageCssPath"] = "paneller/user/dashboard";
+        ViewData["PanelTitle"] = "Dashboard";
+        ViewData["PanelSubtitle"] = "Rezervasyon, favori otel ve mesaj ozetlerini tek ekranda takip et.";
         ViewData["FavoriteCount"] = model.FavoriteCount;
         ViewData["ReservationCount"] = model.TotalReservationCount;
         ViewData["MessageCount"] = model.MessageCount;
-        return View("~/Views/Paneller/User/Index.cshtml", model);
+        return View("~/Views/Paneller/User/Dashboard.cshtml", model);
     }
 
     [HttpGet("rezervasyonlarim")]
@@ -71,6 +76,8 @@ public class UserPanelController : Controller
         DateOnly? endDate = null,
         int page = 1,
         int pageSize = 5,
+        string? searchTerm = null,
+        string? sort = null,
         CancellationToken cancellationToken = default)
     {
         if (!CanAccessUserPanel())
@@ -79,13 +86,27 @@ public class UserPanelController : Controller
         }
 
         var userId = GetCurrentUserId();
-        var model = await _userPanelService.GetReservationsAsync(userId, status, startDate, endDate, page, pageSize, cancellationToken);
+        var model = await _userPanelService.GetReservationsAsync(userId, status, startDate, endDate, page, pageSize, searchTerm, sort, cancellationToken);
         ViewData["FavoriteCount"] = await _userFavoriteService.GetFavoriteCountAsync(userId, cancellationToken);
         ViewData["ReservationCount"] = model.TotalCount;
-        ViewData["PageCssPath"] = "panel-user-reservations";
-        ViewData["PanelTitle"] = "Rezervasyonlarim";
-        ViewData["PanelSubtitle"] = "Tum yaklasan, gecmis ve iptal edilen rezervasyonlarini yonet.";
+        ViewData["PageCssPath"] = "paneller/user/reservations";
+        ViewData["PanelTitle"] = "Rezervasyonlarım";
+        ViewData["PanelSubtitle"] = "Konaklama kayıtlarını filtrele, takip et ve yönet.";
         return View("~/Views/Paneller/User/Reservations.cshtml", model);
+    }
+
+    [HttpPost("tema/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveTheme(otelturizmnew.Models.Paneller.Partner.PanelThemeViewModel theme, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _panelThemeService.SaveAsync("user", GetCurrentUserId(), theme, cancellationToken);
+        TempData[result.Success ? "UserSuccess" : "UserError"] = result.Message;
+        return Redirect(Request.Headers.Referer.ToString() is { Length: > 0 } refUrl ? refUrl : "/panel/user/dashboard");
     }
 
     [HttpPost("rezervasyonlarim/iptal")]
@@ -124,12 +145,12 @@ public class UserPanelController : Controller
         var model = await _userPanelService.GetReservationReviewPageAsync(userId, reservationId, cancellationToken);
         if (model is null)
         {
-            TempData["UserReservationError"] = "Bu rezervasyon icin yorum formu acilamiyor (otel onayi, konaklama tamami veya mevcut yorum).";
+            TempData["UserReservationError"] = "Bu rezervasyon icin yorum formu acilamiyor (otel onayi, giris/tamamlanma durumu veya mevcut yorum).";
             return RedirectToAction(nameof(Reservations));
         }
 
         ViewData["FavoriteCount"] = await _userFavoriteService.GetFavoriteCountAsync(userId, cancellationToken);
-        ViewData["PageCssPath"] = "panel-user-reservations";
+        ViewData["PageCssPath"] = "paneller/user/reviews";
         ViewData["PanelTitle"] = "Konaklama degerlendirmesi";
         ViewData["PanelSubtitle"] = "Konakladiginiz tesis hakkinda geri bildirim verin.";
         return View("~/Views/Paneller/User/ReservationReview.cshtml", model);
@@ -151,20 +172,68 @@ public class UserPanelController : Controller
         }
 
         var result = await _userPanelService.SubmitReservationReviewAsync(GetCurrentUserId(), form, cancellationToken);
-        TempData[result.Success ? "UserReservationSuccess" : "UserReservationError"] = result.Message;
-        return RedirectToAction(nameof(Reservations));
+        TempData[result.Success ? "UserReviewSuccess" : "UserReservationError"] = result.Message;
+        return RedirectToAction(result.Success ? nameof(Reviews) : nameof(Reservations));
     }
 
-    [HttpGet("favorilerim")]
-    public async Task<IActionResult> Favorites(CancellationToken cancellationToken)
+    [HttpGet("yorumlarim")]
+    public async Task<IActionResult> Reviews(string? status = null, string? searchTerm = null, int page = 1, long? focusReservationId = null, CancellationToken cancellationToken = default)
     {
         if (!CanAccessUserPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
         }
 
-        var model = await _userFavoriteService.GetFavoritesPageAsync(GetCurrentUserId(), cancellationToken);
-        ViewData["PageCssPath"] = "panel-user-favorites";
+        var userId = GetCurrentUserId();
+        if (focusReservationId is > 0 && await _userPanelService.CanUserWriteReviewForReservationAsync(userId, focusReservationId.Value, cancellationToken))
+        {
+            return RedirectToAction(nameof(ReservationReview), new { reservationId = focusReservationId.Value });
+        }
+
+        var model = await _userPanelService.GetReviewsAsync(userId, status, searchTerm, page, cancellationToken);
+        ViewData["FavoriteCount"] = await _userFavoriteService.GetFavoriteCountAsync(userId, cancellationToken);
+        ViewData["PageCssPath"] = "paneller/user/reviews";
+        ViewData["PanelTitle"] = "Yorumlarım";
+        ViewData["PanelSubtitle"] = "Onaylı konaklamaların için yorum yaz, 7 gün içinde düzenle veya sil.";
+        return View("~/Views/Paneller/User/Reviews.cshtml", model);
+    }
+
+    [HttpPost("yorumlarim/guncelle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateReview(UserReviewUpdateForm form, CancellationToken cancellationToken = default)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userPanelService.UpdateReviewAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[result.Success ? "UserReviewSuccess" : "UserReviewError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Reviews));
+    }
+
+    [HttpPost("yorumlarim/sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteReview(UserReviewDeleteForm form, CancellationToken cancellationToken = default)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userPanelService.DeleteReviewAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[result.Success ? "UserReviewSuccess" : "UserReviewError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Reviews));
+    }
+
+    [HttpGet("favorilerim")]
+    public async Task<IActionResult> Favorites(string? searchTerm = null, string? sort = null, int page = 1, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _userFavoriteService.GetFavoritesPageAsync(GetCurrentUserId(), searchTerm, sort, page, cancellationToken);
+        ViewData["PageCssPath"] = "paneller/user/favorites";
         ViewData["PanelTitle"] = "Favorilerim";
         ViewData["PanelSubtitle"] = "Kaydettigin otelleri karsilastir, duzenle ve rezervasyona donustur.";
         ViewData["FavoriteCount"] = model.FavoriteCount;
@@ -219,7 +288,7 @@ public class UserPanelController : Controller
         }
 
         var model = await _userPanelService.GetLoyaltyAsync(GetCurrentUserId(), cancellationToken);
-        ViewData["PageCssPath"] = "panel-user-loyalty";
+        ViewData["PageCssPath"] = "paneller/user/loyalty";
         ViewData["PanelTitle"] = "Puanlarim";
         ViewData["PanelSubtitle"] = "OtelPuan bakiyeni, uye seviyeni ve kullanabilecegin odulleri tek ekranda yonet.";
         return View("~/Views/Paneller/User/Loyalty.cshtml", model);
@@ -258,7 +327,7 @@ public class UserPanelController : Controller
         }
 
         var model = await _userPanelService.GetMessagesAsync(GetCurrentUserId(), conversationId, cancellationToken);
-        ViewData["PageCssPath"] = "panel-user-messages";
+        ViewData["PageCssPath"] = "paneller/user/messages";
         ViewData["PanelTitle"] = "Mesajlarim";
         ViewData["PanelSubtitle"] = "Oteller ve destek ekipleri ile tum mesajlasma akislarini yonet.";
         return View("~/Views/Paneller/User/Messages.cshtml", model);
@@ -281,7 +350,7 @@ public class UserPanelController : Controller
         {
             model.ReturnUrl = returnUrl;
         }
-        ViewData["PageCssPath"] = "panel-user-profile";
+        ViewData["PageCssPath"] = "paneller/user/profile";
         ViewData["PanelTitle"] = "Profil Bilgilerim";
         ViewData["PanelSubtitle"] = "Kisisel bilgilerini, iletisim verilerini ve seyahat tercihlerini duzenle.";
         return View("~/Views/Paneller/User/Profile.cshtml", model);
@@ -296,7 +365,7 @@ public class UserPanelController : Controller
         }
 
         var model = await _userPanelService.GetPaymentMethodsAsync(GetCurrentUserId(), cancellationToken);
-        ViewData["PageCssPath"] = "panel-user-payment";
+        ViewData["PageCssPath"] = "paneller/user/payment-methods";
         ViewData["PanelTitle"] = "Odeme Yontemleri";
         ViewData["PanelSubtitle"] = "Kayitli kartlarini, fatura bilgilerini ve odeme guvenligini yonet.";
         return View("~/Views/Paneller/User/PaymentMethods.cshtml", model);
@@ -311,7 +380,7 @@ public class UserPanelController : Controller
         }
 
         var model = await _userPanelService.GetNotificationsAsync(GetCurrentUserId(), cancellationToken);
-        ViewData["PageCssPath"] = "panel-user-notifications";
+        ViewData["PageCssPath"] = "paneller/user/notifications";
         ViewData["PanelTitle"] = "Bildirim Tercihleri";
         ViewData["PanelSubtitle"] = "E-posta, SMS ve uygulama ici bildirim tercihlerini ozellestir.";
         return View("~/Views/Paneller/User/Notifications.cshtml", model);
@@ -326,7 +395,7 @@ public class UserPanelController : Controller
         }
 
         var model = await _userPanelService.GetSecurityAsync(GetCurrentUserId(), cancellationToken);
-        ViewData["PageCss"] = "panel-user-security";
+        ViewData["PageCssPath"] = "paneller/user/security";
         ViewData["PanelTitle"] = "Guvenlik ve Giris";
         ViewData["PanelSubtitle"] = "Sifre, aktif oturumlar ve iki asamali dogrulama ayarlarini yonet.";
         return View("~/Views/Paneller/User/Security.cshtml", model);
@@ -341,6 +410,26 @@ public class UserPanelController : Controller
             TempData[saved ? "UserProfileSuccess" : "UserProfileError"] = saved
                 ? "Profil bilgileri güncellendi."
                 : "Profil bilgileri güncellenemedi.";
+        }
+
+        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
+        {
+            return Redirect(form.ReturnUrl);
+        }
+
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [HttpPost("profil-bilgilerim/seyahat-tercihleri")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveTravelPreferences(UserTravelPreferencesForm form, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var saved = await _userPanelService.SaveTravelPreferencesAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[saved ? "UserProfileSuccess" : "UserProfileError"] = saved
+                ? "Seyahat tercihleri güncellendi."
+                : "Seyahat tercihleri güncellenemedi.";
         }
 
         if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
@@ -458,21 +547,31 @@ public class UserPanelController : Controller
             return RedirectToAction(nameof(Profile));
         }
 
+        if (profileImage.Length > 4 * 1024 * 1024)
+        {
+            TempData["UserProfileError"] = "Profil görseli en fazla 4 MB olabilir.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        if (string.IsNullOrWhiteSpace(profileImage.ContentType) || !profileImage.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["UserProfileError"] = "Sadece görsel dosyası yükleyebilirsiniz.";
+            return RedirectToAction(nameof(Profile));
+        }
+
         var userId = GetCurrentUserId();
-        var targetDir = Path.Combine(_environment.WebRootPath, "uploads", "user", "avatars", userId.ToString());
         try
         {
-            var saved = await _imageStorageService.SaveAsWebpAsync(profileImage, new otelturizmnew.Services.Abstractions.ImageSaveRequest(
-                TargetDirectory: targetDir,
-                FilePrefix: "avatar",
-                Category: "user-avatar",
-                OwnerUserId: userId,
-                QualityProfile: otelturizmnew.Services.Abstractions.ImageQualityProfile.Avatar,
-                GenerateThumbnails: true
-            ), cancellationToken);
-            var webPath = $"/uploads/user/avatars/{userId}/{saved.FileName}";
+            var saved = await _secureFileService.SaveAsync(profileImage, new SecureFileSaveRequest
+            {
+                ContextTable = "users",
+                ContextId = userId,
+                OwnerUserId = userId,
+                VisibilityScope = "user-only",
+                Category = "profile"
+            }, cancellationToken);
 
-            await _userPanelService.SaveProfileImageAsync(userId, webPath, "upload", cancellationToken);
+            await _userPanelService.SaveProfileImageAsync(userId, $"secure:{saved.FileId}", "secure-upload", cancellationToken);
             TempData["UserProfileSuccess"] = "Profil görseliniz güncellendi.";
         }
         catch (Exception ex)
@@ -504,6 +603,42 @@ public class UserPanelController : Controller
         return RedirectToAction(nameof(Profile));
     }
 
+    [HttpPost("profil-bilgilerim/profil-resmi-sec-secure")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SelectUploadedProfileImage(long fileId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (fileId <= 0)
+        {
+            TempData["UserProfileError"] = "Geçersiz profil görseli.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        await _userPanelService.SaveProfileImageAsync(GetCurrentUserId(), $"secure:{fileId}", "secure-upload", cancellationToken);
+        TempData["UserProfileSuccess"] = "Profil görseliniz güncellendi.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [HttpPost("profil-bilgilerim/profil-resmi-sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteProfileImage(long fileId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var deleted = await _userPanelService.DeleteProfileImageAsync(GetCurrentUserId(), fileId, cancellationToken);
+        TempData[deleted ? "UserProfileSuccess" : "UserProfileError"] = deleted
+            ? "Profil görseli silindi."
+            : "Profil görseli silinemedi.";
+        return RedirectToAction(nameof(Profile));
+    }
+
     [HttpPost("mesajlarim/gonder")]
     [RequestFormLimits(MultipartBodyLengthLimit = 31457280)]
     [RequestSizeLimit(31457280)]
@@ -527,6 +662,19 @@ public class UserPanelController : Controller
         }
 
         return RedirectToAction(nameof(Messages), new { conversationId = form.ConversationId });
+    }
+
+    [HttpPost("rezervasyonlarim/not")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveReservationNote(UserReservationNoteForm form, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userPanelService.SaveReservationNoteAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[result.Success ? "UserReservationSuccess" : "UserReservationError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Reservations));
     }
 
     [HttpPost("bildirim-tercihleri/kaydet")]

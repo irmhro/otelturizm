@@ -67,7 +67,7 @@ public sealed class DevelopmentController : Controller
 
         if (model.IsUnlocked)
         {
-            var path = Path.Combine(_environment.ContentRootPath, "improvements-first-200.md");
+            var path = Path.Combine(_environment.ContentRootPath, "ilk-200-gelistirme-plani.md");
             if (System.IO.File.Exists(path))
             {
                 var raw = System.IO.File.ReadAllText(path, Encoding.UTF8);
@@ -75,7 +75,7 @@ public sealed class DevelopmentController : Controller
             }
             else
             {
-                model.RenderedHtml = "<p>Dosya bulunamadı: improvements-first-200.md</p>";
+                model.RenderedHtml = "<p>Dosya bulunamadı: ilk-200-gelistirme-plani.md</p>";
             }
         }
 

@@ -3,6 +3,8 @@ namespace otelturizmnew.Models.Register;
 public class PartnerRegistrationModel
 {
     public string HotelName { get; set; } = string.Empty;
+    public int? HotelTypeId { get; set; }
+    public string? HotelTypeCode { get; set; }
     public string CompanyName { get; set; } = string.Empty;
     public string CompanyType { get; set; } = string.Empty;
     public string ContactName { get; set; } = string.Empty;

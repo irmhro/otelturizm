@@ -34,8 +34,9 @@ public class AdminPanelController : Controller
     private readonly IOutputCacheStore _outputCacheStore;
     private readonly ISecureFileService _secureFileService;
     private readonly IGrowthGovernanceService _growthGovernance;
+    private readonly IPanelThemeService _panelThemeService;
 
-    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance)
+    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance, IPanelThemeService panelThemeService)
     {
         _adminService = adminService;
         _adminHotelManagementService = adminHotelManagementService;
@@ -51,6 +52,7 @@ public class AdminPanelController : Controller
         _outputCacheStore = outputCacheStore;
         _secureFileService = secureFileService;
         _growthGovernance = growthGovernance;
+        _panelThemeService = panelThemeService;
     }
 
     private async Task EvictPublicOutputCacheAsync(CancellationToken cancellationToken)
@@ -93,8 +95,23 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetDashboardAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = "Admin Dashboard";
-        ViewData["PageCssPath"] = "panel-admin-dashboard";
+        ViewData["PageCssPath"] = "paneller/admin/dashboard";
         return View("~/Views/Paneller/Admin/Dashboard.cshtml", model);
+    }
+
+    [HttpPost("tema/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveTheme(otelturizmnew.Models.Paneller.Partner.PanelThemeViewModel theme, string? returnUrl = null, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var userId = GetUserId();
+        var result = await _panelThemeService.SaveAsync("admin", userId, theme, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return Redirect(!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : "/admin/dashboard");
     }
 
     [HttpGet("sistem-sagligi")]
@@ -110,6 +127,34 @@ public class AdminPanelController : Controller
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "panel-admin-section";
         return View("~/Views/Paneller/Admin/SystemHealth.cshtml", model);
+    }
+
+    [HttpGet("platform-checkup")]
+    public async Task<IActionResult> PlatformCheckup(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetPlatformCheckupAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "paneller/admin/platform-checkup";
+        return View("~/Views/Paneller/Admin/PlatformCheckup.cshtml", model);
+    }
+
+    [HttpGet("onay-merkezi")]
+    public async Task<IActionResult> ApprovalCenter(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetApprovalCenterAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "paneller/admin/approval-center";
+        return View("~/Views/Paneller/Admin/ApprovalCenter.cshtml", model);
     }
 
     [HttpPost("sistem-sagligi/link-kontrol")]
@@ -397,7 +442,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetUnifiedReservationsAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, page, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "paneller/admin/unified-reservations";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/UnifiedReservations.cshtml", model);
     }
@@ -1067,7 +1112,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetCommissionManagementAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-commissions";
+        ViewData["PageCssPath"] = "paneller/admin/commissions";
         return View("~/Views/Paneller/Admin/Commissions.cshtml", model);
     }
 
@@ -1227,7 +1272,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetPartnerApplicationsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-partner-applications";
+        ViewData["PageCssPath"] = "paneller/admin/partner-applications";
         return View("~/Views/Paneller/Admin/PartnerApplications.cshtml", model);
     }
 
@@ -1396,7 +1441,109 @@ public class AdminPanelController : Controller
     public Task<IActionResult> PendingHotels(CancellationToken cancellationToken) => RenderSectionAsync("pending-hotels", "PendingHotels", cancellationToken);
 
     [HttpGet("degerlendirmeler")]
-    public Task<IActionResult> Reviews(CancellationToken cancellationToken) => RenderSectionAsync("reviews", "Reviews", cancellationToken);
+    public async Task<IActionResult> Reviews(string? q = null, string? city = null, string? hotel = null, int take = 20, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetReviewModerationPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, city, hotel, take, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/ReviewsModeration.cshtml", model);
+    }
+
+    [HttpPost("degerlendirmeler/islem")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReviewModerationAction(AdminReviewModerationActionForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.ApplyReviewModerationActionAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "AdminSuccess" : "AdminError"] = result.Message;
+        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
+        {
+            return Redirect(form.ReturnUrl);
+        }
+        return RedirectToAction(nameof(Reviews));
+    }
+
+    [HttpPost("degerlendirmeler/sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteReview(AdminReviewDeleteForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.DeleteReviewAsAdminAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "AdminSuccess" : "AdminError"] = result.Message;
+        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
+        {
+            return Redirect(form.ReturnUrl);
+        }
+        return RedirectToAction(nameof(Reviews));
+    }
+
+    [HttpPost("degerlendirmeler/ihlali-bildir")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> NotifyReviewViolation(AdminReviewViolationNotifyForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.NotifyReviewViolationAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "AdminSuccess" : "AdminError"] = result.Message;
+        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
+        {
+            return Redirect(form.ReturnUrl);
+        }
+        return RedirectToAction(nameof(Reviews));
+    }
+
+    [HttpPost("degerlendirmeler/yasakli-kelime/ekle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddBlockedWord(AdminBlockedWordAddForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.AddBlockedWordAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "AdminSuccess" : "AdminError"] = result.Message;
+        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
+        {
+            return Redirect(form.ReturnUrl);
+        }
+        return RedirectToAction(nameof(Reviews));
+    }
+
+    [HttpPost("degerlendirmeler/yasakli-kelime/durum")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleBlockedWord(AdminBlockedWordToggleForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.ToggleBlockedWordAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "AdminSuccess" : "AdminError"] = result.Message;
+        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
+        {
+            return Redirect(form.ReturnUrl);
+        }
+        return RedirectToAction(nameof(Reviews));
+    }
 
     [HttpGet("raporlar")]
     public Task<IActionResult> Reports(CancellationToken cancellationToken) => RenderSectionAsync("reports", "Reports", cancellationToken);

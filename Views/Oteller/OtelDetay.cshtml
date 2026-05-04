@@ -98,13 +98,17 @@
     var longDescription = string.IsNullOrWhiteSpace(Model.LongDescription) ? Model.ShortDescription : Model.LongDescription;
     var overallBarWidth = Model.Rating > 0 ? Math.Min(100m, Model.Rating * 10m).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0";
     var locScore = Model.ReviewLocationScore > 0 ? Model.ReviewLocationScore : Model.Rating;
-    var roomScore = Model.ReviewRoomScore > 0 ? Model.ReviewRoomScore : Model.Rating;
+    var cleaningScore = Model.ReviewCleaningScore > 0 ? Model.ReviewCleaningScore : (Model.ReviewRoomScore > 0 ? Model.ReviewRoomScore : Model.Rating);
     var valScore = Model.ReviewValueScore > 0 ? Model.ReviewValueScore : Model.Rating;
     var staffScore = Model.ReviewStaffScore > 0 ? Model.ReviewStaffScore : Model.Rating;
+    var quietScore = Model.ReviewQuietnessScore > 0 ? Model.ReviewQuietnessScore : Model.Rating;
+    var transportScore = Model.ReviewTransportScore > 0 ? Model.ReviewTransportScore : locScore;
     var locationBarWidth = locScore > 0 ? Math.Min(100m, locScore * 10m).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0";
-    var roomBarWidth = roomScore > 0 ? Math.Min(100m, roomScore * 10m).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0";
+    var cleaningBarWidth = cleaningScore > 0 ? Math.Min(100m, cleaningScore * 10m).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0";
     var valueBarWidth = valScore > 0 ? Math.Min(100m, valScore * 10m).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0";
     var staffBarWidth = staffScore > 0 ? Math.Min(100m, staffScore * 10m).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0";
+    var quietBarWidth = quietScore > 0 ? Math.Min(100m, quietScore * 10m).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0";
+    var transportBarWidth = transportScore > 0 ? Math.Min(100m, transportScore * 10m).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0";
     var featuredAmenities = Model.Amenities
         .Where(x => !string.IsNullOrWhiteSpace(x.Name))
         .Take(4)
@@ -136,13 +140,14 @@
         .ToList();
     var initialNightCount = Math.Max(1, reservationForm.CheckOutDate.DayNumber - reservationForm.CheckInDate.DayNumber);
     var initialRooms = Math.Max(1, reservationForm.RoomCount);
-    var initialSubtotal = roomPriceSeed * initialNightCount * initialRooms;
+    var initialTotal = roomPriceSeed * initialNightCount * initialRooms;
     var vatRateFrac = Model.TaxDisplayVatPercent / 100m;
     var accomRateFrac = Model.TaxDisplayAccommodationPercent / 100m;
+    var taxDivisor = 1m + vatRateFrac + accomRateFrac;
+    var initialSubtotal = taxDivisor > 0m ? Math.Round(initialTotal / taxDivisor, 0) : initialTotal;
     var initialVat = Math.Round(initialSubtotal * vatRateFrac, 0);
-    var initialAccommodationTax = Math.Round(initialSubtotal * accomRateFrac, 0);
+    var initialAccommodationTax = Math.Max(0m, initialTotal - initialSubtotal - initialVat);
     var initialTax = initialVat + initialAccommodationTax;
-    var initialTotal = initialSubtotal + initialTax;
     var initialInclusiveNightly = initialNightCount > 0 && initialRooms > 0
         ? Math.Round(initialTotal / initialNightCount / initialRooms, 0)
         : 0m;
@@ -153,17 +158,6 @@
     var weatherAccentIcon = "fa-cloud-sun";
     var mapLatitude = Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
     var mapLongitude = Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
-    string? mapBoundingBox = null;
-
-    if (Model.Latitude.HasValue && Model.Longitude.HasValue)
-    {
-        const decimal mapDelta = 0.0125m;
-        var minLon = (Model.Longitude.Value - mapDelta).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var minLat = (Model.Latitude.Value - mapDelta).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var maxLon = (Model.Longitude.Value + mapDelta).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var maxLat = (Model.Latitude.Value + mapDelta).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        mapBoundingBox = $"{minLon}%2C{minLat}%2C{maxLon}%2C{maxLat}";
-    }
 
     if (todayWeather is not null)
     {
@@ -205,7 +199,12 @@
     }
 }
 
-<div class="otel-detail-template-v41">
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      crossorigin="anonymous" />
+<link rel="stylesheet" href="~/assets/css/otel-detay-reservation.css" asp-append-version="true" />
+
+<div class="otel-detail-template-v41 otel-detail-tabler">
 <section class="detail-breadcrumb detail-breadcrumb-with-weather">
     <div class="detail-breadcrumb-left">
         <a asp-controller="Oteller" asp-action="OtelListeleme" class="detail-back-link">
@@ -213,10 +212,73 @@
             <span>Otellere Dön</span>
         </a>
         <span class="detail-breadcrumb-sep" aria-hidden="true">·</span>
-        <span class="detail-breadcrumb-context">
+        <a class="detail-breadcrumb-context"
+           href="@Url.Action("OtelListeleme", "Oteller", new { q = $"{Model.District} {Model.City}".Trim(), city = (string?)null, page = 1 })"
+           aria-label="Bu bölgedeki otelleri listele">
             <i class="fas fa-location-dot"></i>
             <strong>@Model.District</strong><span class="detail-breadcrumb-muted">, @Model.City</span>
-        </span>
+        </a>
+    </div>
+    <div class="detail-breadcrumb-right" aria-label="Hızlı işlemler">
+        <button type="button"
+                id="startConversationBtn"
+                class="detail-quick-action is-attention is-tone-talk"
+                data-hotel-slug="@Model.Slug"
+                data-authenticated="@(Model.IsLoggedInUser ? "true" : "false")"
+                data-can-start="@(Model.HasCompletedReservationAtHotel ? "true" : "false")"
+                data-info-message="@Model.ConversationInfoMessage"
+                aria-label="Görüşme Başlat">
+            <i class="far fa-comments" aria-hidden="true"></i>
+            <span>Görüşme Başlat</span>
+        </button>
+        <div class="detail-share-wrap">
+            <button type="button" id="shareHotelBtn" class="detail-quick-action is-tone-share" aria-haspopup="true" aria-expanded="false" aria-controls="shareMenu" aria-label="Paylaş">
+                <i class="far fa-share-square" aria-hidden="true"></i>
+                <span>Paylaş</span>
+            </button>
+            <div class="share-menu share-menu--top" id="shareMenu" hidden>
+                <p class="share-menu-title">Bu oteli paylas</p>
+                <div class="share-menu-grid">
+                    <a href="#" data-share-platform="whatsapp" target="_blank" rel="noopener">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>WhatsApp</span>
+                    </a>
+                    <a href="#" data-share-platform="facebook" target="_blank" rel="noopener">
+                        <i class="fab fa-facebook-f"></i>
+                        <span>Facebook</span>
+                    </a>
+                    <a href="#" data-share-platform="x" target="_blank" rel="noopener">
+                        <i class="fab fa-x-twitter"></i>
+                        <span>X</span>
+                    </a>
+                    <a href="#" data-share-platform="instagram" target="_blank" rel="noopener">
+                        <i class="fab fa-instagram"></i>
+                        <span>Instagram</span>
+                    </a>
+                    <a href="#" data-share-platform="telegram" target="_blank" rel="noopener">
+                        <i class="fab fa-telegram-plane"></i>
+                        <span>Telegram</span>
+                    </a>
+                    <button type="button" data-share-platform="copy">
+                        <i class="fas fa-link"></i>
+                        <span>Link Kopyala</span>
+                    </button>
+                </div>
+                <button type="button" class="share-more-btn" data-share-platform="more">
+                    <i class="fas fa-share-nodes"></i>
+                    Diger Platformlar
+                </button>
+            </div>
+        </div>
+        <button type="button"
+                id="saveHotelBtnTop"
+                class="detail-quick-action favorite-btn is-tone-fav @(Model.IsFavorite ? "active" : string.Empty)"
+                data-hotel-id="@Model.Id"
+                data-source-page="OtelDetay"
+                aria-label="Favoriye ekle">
+            <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
+            <span data-favorite-label>@(Model.IsFavorite ? "Favoride" : "Favoriye Ekle")</span>
+        </button>
     </div>
 </section>
 
@@ -231,9 +293,27 @@
                 }
             </div>
         }
+        <button type="button"
+                id="saveHotelBtnGallery"
+                class="favorite-btn gallery-favorite-btn @(Model.IsFavorite ? "active" : string.Empty)"
+                data-hotel-id="@Model.Id"
+                data-source-page="OtelDetay"
+                aria-label="Favoriye ekle">
+            <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
+            <span class="sr-only" data-favorite-label>@(Model.IsFavorite ? "Favoride" : "Favoriye Ekle")</span>
+        </button>
         <button type="button" class="gallery-main-trigger" data-gallery-index="0" aria-label="Galeriyi ac">
             <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" fetchpriority="high" decoding="async" />
         </button>
+
+        @if (gallery.Count > 0)
+        {
+            <div class="gallery-count-badge" id="galleryCountBadge" aria-label="Galeri görsel sayacı">
+                <span class="gallery-count-badge__current">1</span>
+                <span class="gallery-count-badge__sep">/</span>
+                <span class="gallery-count-badge__total">@gallery.Count</span>
+            </div>
+        }
 
         @if (Model.ActiveViewerBand > 0)
         {
@@ -243,7 +323,7 @@
             </div>
         }
 
-        <div class="gallery-proof-badge gallery-proof-badge--presence text-muted small"
+        <div class="gallery-proof-badge gallery-proof-badge--presence"
              id="livePresenceLine"
              role="status"
              aria-live="polite"
@@ -280,7 +360,7 @@
  }
     @if (gallery.Count > 1)
     {
-        <div class="gallery-mobile-strip" id="galleryMobileStrip" aria-label="Mobil galeri slider">
+        <section class="gallery-mobile-strip" id="galleryMobileStrip" aria-label="Mobil galeri slider">
             @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
             {
                 <div class="gallery-star-badge gallery-star-badge-mobile" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
@@ -308,25 +388,10 @@
                             aria-selected="@(imageIndex == 0 ? "true" : "false")"></button>
                 }
             </div>
-        </div>
+        </section>
     }
 
-<div class="gallery-lightbox" id="galleryLightbox" hidden>
-    <button type="button" class="gallery-lightbox-close" id="galleryLightboxClose" aria-label="Galeriyi kapat">
-        <i class="fas fa-times"></i>
-    </button>
-    <button type="button" class="gallery-lightbox-nav prev" id="galleryLightboxPrev" aria-label="Onceki gorsel">
-        <i class="fas fa-chevron-left"></i>
-    </button>
-    <figure class="gallery-lightbox-figure">
-        <img src="" alt="@Model.Name tam ekran galeri" id="galleryLightboxImage" />
-        <figcaption id="galleryLightboxCaption"></figcaption>
-        <div class="gallery-lightbox-thumbs" id="galleryLightboxThumbs" aria-label="Galeri küçük görseller"></div>
-    </figure>
-    <button type="button" class="gallery-lightbox-nav next" id="galleryLightboxNext" aria-label="Sonraki gorsel">
-        <i class="fas fa-chevron-right"></i>
-    </button>
-</div>
+@* Eski lightbox/slider DOM'u kaldırıldı: ortak SlaytGorsel (layout + slaytgorsel.js) kullanılıyor. *@
 
 <section class="detail-header hotel-title-section">
     <div class="hotel-name">
@@ -362,6 +427,38 @@
             var locationOnly = string.Join(", ", locationPieces);
         }
         <p class="detail-location"><i class="fas fa-location-dot"></i> @locationOnly</p>
+        <div class="detail-title-subnav" aria-label="Hızlı gezinme">
+            @if (!string.IsNullOrWhiteSpace(Model.VideoUrl))
+            {
+                <button type="button" class="detail-title-subnav-btn is-secondary" data-open-hotel-video>
+                    <i class="fab fa-youtube" aria-hidden="true"></i>
+                    Otel videosu
+                </button>
+            }
+
+            @if (Model.CampaignNames.Count > 0)
+            {
+                <a class="detail-title-subnav-badge is-campaign" href="#" data-campaign-slot="0" hidden>
+                    <i class="fas fa-tag" aria-hidden="true"></i>
+                    <span></span>
+                </a>
+                <a class="detail-title-subnav-badge is-campaign" href="#" data-campaign-slot="1" hidden>
+                    <i class="fas fa-tag" aria-hidden="true"></i>
+                    <span></span>
+                </a>
+                <script type="application/json" id="hotelCampaignPayloadJson">
+                    @{
+                        var items = new List<object>();
+                        var count = Math.Min(Model.CampaignNames.Count, Model.CampaignSlugs.Count);
+                        for (var i = 0; i < count; i++)
+                        {
+                            items.Add(new { name = Model.CampaignNames[i], slug = Model.CampaignSlugs[i] });
+                        }
+                    }
+                    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(items))
+                </script>
+            }
+        </div>
         @if (!string.IsNullOrWhiteSpace(Model.IntentSegmentLabel))
         {
             <p class="detail-intent text-muted small mb-0">Seyahat profili: @Model.IntentSegmentLabel</p>
@@ -369,57 +466,6 @@
 
     </div>
     <div class="header-right-stack">
-        <div class="detail-actions">
-            <button type="button"
-                    id="startConversationBtn"
-                    class="conversation-btn"
-                    data-hotel-slug="@Model.Slug"
-                    data-authenticated="@(Model.IsLoggedInUser ? "true" : "false")"
-                    data-can-start="@(Model.HasCompletedReservationAtHotel ? "true" : "false")"
-                    data-info-message="@Model.ConversationInfoMessage">
-                <i class="far fa-comments"></i> Görüşme Başlat
-            </button>
-            <button type="button" id="shareHotelBtn" aria-haspopup="true" aria-expanded="false" aria-controls="shareMenu">
-                <i class="far fa-share-square"></i> Paylas
-            </button>
-            <div class="share-menu" id="shareMenu" hidden>
-                <p class="share-menu-title">Bu oteli paylas</p>
-                <div class="share-menu-grid">
-                    <a href="#" data-share-platform="whatsapp" target="_blank" rel="noopener">
-                        <i class="fab fa-whatsapp"></i>
-                        <span>WhatsApp</span>
-                    </a>
-                    <a href="#" data-share-platform="facebook" target="_blank" rel="noopener">
-                        <i class="fab fa-facebook-f"></i>
-                        <span>Facebook</span>
-                    </a>
-                    <a href="#" data-share-platform="x" target="_blank" rel="noopener">
-                        <i class="fab fa-x-twitter"></i>
-                        <span>X</span>
-                    </a>
-                    <a href="#" data-share-platform="instagram" target="_blank" rel="noopener">
-                        <i class="fab fa-instagram"></i>
-                        <span>Instagram</span>
-                    </a>
-                    <a href="#" data-share-platform="telegram" target="_blank" rel="noopener">
-                        <i class="fab fa-telegram-plane"></i>
-                        <span>Telegram</span>
-                    </a>
-                    <button type="button" data-share-platform="copy">
-                        <i class="fas fa-link"></i>
-                        <span>Link Kopyala</span>
-                    </button>
-                </div>
-                <button type="button" class="share-more-btn" data-share-platform="more">
-                    <i class="fas fa-share-nodes"></i>
-                    Diger Platformlar
-                </button>
-            </div>
-            <button type="button" id="saveHotelBtn" class="favorite-btn @(Model.IsFavorite ? "active" : string.Empty)" data-hotel-id="@Model.Id" data-source-page="OtelDetay">
-                <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart"></i>
-                <span data-favorite-label>@(Model.IsFavorite ? "Kaydedildi" : "Kaydet")</span>
-            </button>
-        </div>
         <div class="header-top-metrics">
             <div class="detail-utility-row">
                 <button type="button"
@@ -455,7 +501,7 @@
                     <span class="weather-inline-badge">3 Gunluk</span>
                 </button>
             </div>
-            <div class="rating-summary">
+            <div class="rating-summary" id="ratingSummaryJump" role="button" tabindex="0" aria-label="Yorumlara git">
                 <div class="rating-big">
                     <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
                     <span class="rating-max">/10</span>
@@ -469,15 +515,13 @@
     </div>
 </section>
 
-@if (TempData["PublicReservationSuccess"] is string successMessage)
-{
-    <div class="detail-inline-feedback success">@successMessage</div>
-}
-
 @if (TempData["PublicReservationInfo"] is string infoMessage)
 {
     @* Bu bilgi mesajını artık sağ alttaki "tamamlanmayan rezervasyon" bildirimi karşılıyor. *@
-    if (!infoMessage.Contains("Rezervasyonunuz kaydedildi", StringComparison.OrdinalIgnoreCase))
+    if (!infoMessage.Contains("Rezervasyonunuz kaydedildi", StringComparison.OrdinalIgnoreCase)
+        && !infoMessage.Contains("Rezervasyon taslak olarak kaydedildi", StringComparison.OrdinalIgnoreCase)
+        && !infoMessage.Contains("profil bilgilerinizi tamamlayin", StringComparison.OrdinalIgnoreCase)
+        && !infoMessage.Contains("profil bilgilerinizi tamamlayın", StringComparison.OrdinalIgnoreCase))
     {
         <div class="detail-inline-feedback info">@infoMessage</div>
     }
@@ -527,7 +571,7 @@
     var reviewSort = (Context.Request.Query["reviewSort"].ToString() ?? "new").Trim().ToLowerInvariant();
     var reviewPageRaw = Context.Request.Query["reviewPage"].ToString();
     var reviewPage = int.TryParse(reviewPageRaw, out var parsedReviewPage) ? Math.Max(1, parsedReviewPage) : 1;
-    const int reviewPageSize = 7;
+    const int reviewPageSize = 10;
 
     var sortedReviews = (Model.Reviews ?? new List<otelturizmnew.Models.Oteller.HotelReviewViewModel>()).ToList();
     sortedReviews = reviewSort switch
@@ -547,17 +591,115 @@
     if (totalReviewPages <= 0) totalReviewPages = 1;
     if (reviewPage > totalReviewPages) reviewPage = totalReviewPages;
     var pagedReviews = sortedReviews.Skip((reviewPage - 1) * reviewPageSize).Take(reviewPageSize).ToList();
+    var signatureScore = Model.Rating > 0 ? Math.Round(Model.Rating, 2) : 0m;
+
+    string NormalizeReviewText(string? value)
+    {
+        return (FixMojibake(value ?? string.Empty) ?? string.Empty).ToLower(new System.Globalization.CultureInfo("tr-TR"));
+    }
+
+    var reviewTopicDefinitions = new[]
+    {
+        new { Key = "konum", Label = "Konum", Icon = "fa-location-dot", Emoji = "📍", BaseScore = locScore > 0 ? locScore : signatureScore, Keywords = new[] { "konum", "merkez", "lokasyon", "yakın", "yakin", "mesafe", "sahil" } },
+        new { Key = "temizlik", Label = "Temizlik", Icon = "fa-soap", Emoji = "🫧", BaseScore = cleaningScore > 0 ? cleaningScore : signatureScore, Keywords = new[] { "temiz", "temizlik", "hijyen", "nevresim", "banyo", "duş", "dus", "ferah" } },
+        new { Key = "personel", Label = "Personel", Icon = "fa-user-group", Emoji = "🤝", BaseScore = staffScore > 0 ? staffScore : signatureScore, Keywords = new[] { "personel", "çalışan", "calisan", "güler", "guler", "yardımcı", "yardimci", "karşılama", "karsilama", "iletişim", "iletisim" } },
+        new { Key = "fiyat", Label = "Fiyat/Performans", Icon = "fa-tags", Emoji = "🏷️", BaseScore = valScore > 0 ? valScore : signatureScore, Keywords = new[] { "fiyat", "performans", "uygun", "pahalı", "pahali", "değer", "deger", "fiyatına", "fiyatina" } },
+        new { Key = "sessizlik", Label = "Sessizlik", Icon = "fa-moon", Emoji = "🌙", BaseScore = quietScore > 0 ? quietScore : signatureScore, Keywords = new[] { "sessiz", "gürültü", "gurultu", "gece", "uyku", "rahat", "huzurlu", "izolasyon" } },
+        new { Key = "ulasim", Label = "Ulaşım", Icon = "fa-route", Emoji = "🧭", BaseScore = transportScore > 0 ? transportScore : signatureScore, Keywords = new[] { "ulasim", "ulaşım", "metro", "metrobüs", "metrobus", "otobüs", "otobus", "iskele", "havaalanı", "havalimanı", "tramvay" } }
+    };
+
+    var reviewTopicPayload = reviewTopicDefinitions.Select(def =>
+    {
+        var matchCount = sortedReviews.Count(r =>
+        {
+            var text = NormalizeReviewText(r.Text);
+            return def.Keywords.Any(k => text.Contains(k, StringComparison.Ordinal));
+        });
+        var normalizedScore = Math.Max(0m, Math.Min(10m, def.BaseScore + (matchCount > 0 ? 0.12m : 0m)));
+        return new
+        {
+            key = def.Key,
+            label = def.Label,
+            icon = def.Icon,
+            emoji = def.Emoji,
+            count = matchCount,
+            score = normalizedScore.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture),
+            keywords = def.Keywords
+        };
+    }).ToList();
+
+    var reviewFeedPayload = sortedReviews.Select(r =>
+    {
+        var normalized = NormalizeReviewText(r.Text);
+        var topicKeys = reviewTopicDefinitions
+            .Where(def => def.Keywords.Any(k => normalized.Contains(k, StringComparison.Ordinal)))
+            .Select(def => def.Key)
+            .Distinct()
+            .ToList();
+        return new
+        {
+            name = MaskName(r.Name),
+            date = r.DateText,
+            score = r.Score.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture),
+            text = FixMojibake(r.Text),
+            topics = topicKeys
+        };
+    }).ToList();
+
+    var reviewTopicPayloadJson = System.Text.Json.JsonSerializer.Serialize(reviewTopicPayload);
+    var reviewFeedPayloadJson = System.Text.Json.JsonSerializer.Serialize(reviewFeedPayload);
 }
 
 <section class="detail-grid">
     <div class="detail-content">
+        <article class="content-card">
+            <div class="section-head tabler-section-head">
+                <div class="tabler-section-headrow">
+                    <div class="tabler-section-titles">
+                        <h2>Tesis Hakkinda</h2>
+                        <p class="hotel-about-text" id="hotelAboutText">
+                            @(!string.IsNullOrWhiteSpace(Model.LocationDescription) ? Model.LocationDescription : longDescription)
+                        </p>
+                    </div>
+                    <div class="tabler-section-actions">
+                        <button type="button" class="tabler-section-action-btn" data-about-toggle hidden>
+                            Tümünü gör
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden>
+                            Tümünü gör
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </article>
+
         <article class="content-card featured-amenities-card">
-            <div class="amenities-grid amenities-grid-lux">
+            <div class="section-head tabler-section-head">
+                <div class="tabler-section-headrow">
+                    <div class="tabler-section-titles">
+                        <h2>Tesis Ozellikleri</h2>
+                        <p>Konaklama deneyimini guclendiren one cikan tesis ozellikleri.</p>
+                    </div>
+                    @if (Model.Amenities.Count > 0)
+                    {
+                        <div class="tabler-section-actions">
+                            <button type="button" class="tabler-section-action-btn" data-open-amenities>
+                                Tüm özellikler
+                                <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="amenities-list-clean" role="list" aria-label="Tesis ozellik listesi">
                 @foreach (var item in featuredAmenities)
                 {
-                    <div class="amenity-item amenity-item-lux">
-                        <i class="fas @item.IconClass"></i>
-                        <span class="amenity-copy">
+                    <div class="amenities-list-item" role="listitem">
+                        <span class="amenities-list-item-icon" aria-hidden="true">
+                            <i class="fas @item.IconClass"></i>
+                        </span>
+                        <span class="amenities-list-item-copy">
                             <strong>@item.Name</strong>
                             <small>@GetAmenitySubtext(item.Name)</small>
                         </span>
@@ -565,34 +707,59 @@
                 }
                 @if (hiddenAmenities.Count > 0)
                 {
-                    <button type="button" class="amenity-item amenity-item-lux amenities-action-item" id="openAmenitiesModal">
-                        <i class="fas fa-plus"></i>
-                        <span class="amenity-copy">
-                            <strong>Diger ozellikler</strong>
-                            <small>@hiddenAmenities.Count ozellik daha</small>
-                        </span>
+                    <button type="button" class="amenities-list-more" id="openAmenitiesModal">
+                        <i class="fas fa-plus" aria-hidden="true"></i>
+                        Diger ozellikler (@hiddenAmenities.Count)
                     </button>
                 }
             </div>
+
+            @if (Model.Amenities.Count > featuredAmenities.Count)
+            {
+                <details class="amenities-expand" id="amenitiesExpand">
+                    <summary>
+                        <span class="amenities-expand__copy">
+                            <strong>Tüm tesis olanakları</strong>
+                            <small>@Model.Amenities.Count özellik</small>
+                        </span>
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </summary>
+                    <div class="amenities-expand__grid" role="list" aria-label="Tüm tesis olanakları">
+                        @foreach (var a in Model.Amenities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
+                        {
+                            <div class="amenities-expand__item" role="listitem">
+                                <span class="amenities-expand__icon" aria-hidden="true"><i class="fas @a.IconClass"></i></span>
+                                <span class="amenities-expand__name">@a.Name</span>
+                            </div>
+                        }
+                    </div>
+                </details>
+            }
         </article>
 
         <article class="content-card">
-            <div class="section-head">
-                <h2>Tesis Hakkinda</h2>
-                <p class="hotel-about-text" id="hotelAboutText">
-                    @(!string.IsNullOrWhiteSpace(Model.LocationDescription) ? Model.LocationDescription : longDescription)
-                </p>
-                <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden>
-                    Tümünü gör
-                </button>
+            <div class="section-head tabler-section-head">
+                <div class="tabler-section-headrow">
+                    <div class="tabler-section-titles">
+                        <h2>Oda Tipleri ve Fiyatlar</h2>
+                        <p>Bu alandaki Odalardan rezervasyon Yapabilirsiniz</p>
+                    </div>
+                    <div class="tabler-section-actions">
+                        <button type="button" class="tabler-section-action-btn is-primary" data-scroll-booking>
+                            Rezervasyona geç
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
-        </article>
 
-        <article class="content-card">
-            <div class="section-head">
-                <h2>Oda Tipleri ve Fiyatlar</h2>
-                <p>Bu alandaki Odalardan rezervasyon Yapabilirsiniz</p>
-            </div>
+            @if (Model.HasNoOpenRoomsForSelectedDate)
+            {
+                <div class="detail-alert is-warning" style="margin: 10px 0 14px;">
+                    <strong>Bu otelde bugün boş oda yok</strong>
+                    <p>@Model.NoOpenRoomsMessage</p>
+                </div>
+            }
 
             <div class="room-list">
                 @{
@@ -620,6 +787,7 @@
                                                 data-room-id="@room.RoomTypeId"
                                                 data-room-gallery-start="0"
                                                 aria-label="@room.Name galerisi">
+                                            <span class="room-cover-title">@room.Name</span>
                                             <img src="@roomCoverImage" alt="@room.Name" />
                                             @if (roomGallery.Count > 1)
                                             {
@@ -700,65 +868,74 @@
                                 <div class="room-feature-row">
                                     @if (roomTopFeatures.Count > 0)
                                     {
-                                        <div class="room-feature-preview">
+                                        <ul class="room-feature-list" aria-label="Öne çıkan oda özellikleri">
                                             @foreach (var feature in roomTopFeatures)
                                             {
-                                                <span class="room-feature-chip"><i class="fas @feature.IconClass"></i> @feature.Name</span>
+                                                <li class="room-feature-item">
+                                                    <i class="fas @feature.IconClass" aria-hidden="true"></i>
+                                                    <span>@feature.Name</span>
+                                                </li>
                                             }
-                                        </div>
+                                        </ul>
                                     }
                                     @if ((room.Features?.Count ?? 0) > 5)
                                     {
                                         <div class="room-feature-more-inline" data-room-feature-wrap>
                                             <button type="button"
-                                                    class="room-feature-more-btn"
+                                                    class="amenities-btn amenities-btn--compact room-feature-more-btn"
                                                     data-room-feature-toggle
                                                     aria-expanded="false">
                                                 Diğer özellikler
                                                 <i class="fas fa-angle-down" aria-hidden="true"></i>
                                             </button>
                                             <div class="room-feature-panel" data-room-feature-panel hidden>
-                                                <div class="room-feature-panel-grid">
+                                                <h4 class="room-feature-panel-title">Tüm Oda Olanakları</h4>
+                                                <ul class="room-feature-panel-list" aria-label="Tüm oda olanakları">
                                                     @foreach (var feature in (room.Features ?? Enumerable.Empty<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>()))
                                                     {
-                                                        <span class="room-feature-chip room-feature-chip-full"><i class="fas @feature.IconClass"></i> @feature.Name</span>
+                                                        <li class="room-feature-panel-item">
+                                                            <i class="fas @feature.IconClass" aria-hidden="true"></i>
+                                                            <span>@feature.Name</span>
+                                                        </li>
                                                     }
-                                                </div>
+                                                </ul>
                                             </div>
                                         </div>
                                     }
                                 </div>
-                                <span class="cancellation-badge"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
+                                <div class="room-card-aux">
+                                    <button type="button"
+                                            class="room-detail-btn room-detail-btn--link"
+                                            data-room-detail-open
+                                            data-room-name="@room.Name"
+                                            data-room-id="@room.RoomTypeId"
+                                            data-room-specs="@room.Specs"
+                                            data-room-description="@room.DetailDescription"
+                                            data-room-bed-type="@room.BedType"
+                                            data-room-square-meter="@(room.SquareMeter?.ToString() ?? string.Empty)"
+                                            data-room-max-guests="@room.MaxGuestCount"
+                                            data-room-max-adults="@room.MaxAdultCount"
+                                            data-room-max-children="@room.MaxChildCount"
+                                            data-room-price="@(room.Price > 0m ? Model.GuestInclusiveNightlyFromStoredNet(room.Price).ToString("N0") : string.Empty)"
+                                            data-room-cancellation="@room.CancellationText"
+                                            data-room-feature-count="@roomAllFeatures.Count"
+                                            data-room-gallery-count="@roomGallery.Count">
+                                        Detaylar
+                                        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                                    </button>
+                                    <span class="cancellation-badge"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
+                                </div>
                             </div>
                         </div>
                         <div class="room-price-box">
                             <div class="room-price-actions">
-                                <button type="button"
-                                        class="room-detail-btn"
-                                        data-room-detail-open
-                                        data-room-name="@room.Name"
-                                        data-room-id="@room.RoomTypeId"
-                                        data-room-specs="@room.Specs"
-                                        data-room-description="@room.DetailDescription"
-                                        data-room-bed-type="@room.BedType"
-                                        data-room-square-meter="@(room.SquareMeter?.ToString() ?? string.Empty)"
-                                        data-room-max-guests="@room.MaxGuestCount"
-                                        data-room-max-adults="@room.MaxAdultCount"
-                                        data-room-max-children="@room.MaxChildCount"
-                                        data-room-price="@(room.Price > 0m ? Model.GuestInclusiveNightlyFromStoredNet(room.Price).ToString("N0") : string.Empty)"
-                                        data-room-cancellation="@room.CancellationText"
-                                        data-room-feature-count="@roomAllFeatures.Count"
-                                        data-room-gallery-count="@roomGallery.Count"
-                                        >
-                                    Oda Detay
-                                </button>
                                 @if (room.Price > 0m)
                                 {
                                     <button type="button"
                                             class="select-room-btn"
                                             data-room-id="@room.RoomTypeId"
                                             data-price="@room.Price.ToString("0", System.Globalization.CultureInfo.InvariantCulture)">
-                                        Odanı Seç
+                                        Rezervasyon
                                     </button>
                                 }
                                 else
@@ -773,6 +950,7 @@
                                 }
                             </div>
                             <div class="room-price-value">
+                                <small class="room-price-kicker">Gecelik</small>
                                 @{
                                     var hasRoomDiscount = room.DiscountPrice.HasValue
                                                          && room.BasePrice.HasValue
@@ -788,11 +966,14 @@
 
                                 @if (room.Price > 0m)
                                 {
+                                    var nightlyDisplay = Model.GuestInclusiveNightlyFromStoredNet(room.Price);
+                                    var stayTotal = nightlyDisplay * initialNightCount;
+
                                     if (hasRoomDiscount)
                                     {
                                         <div class="room-price-discount-stack">
                                             <span class="room-price-old">₺@baseDisplay.ToString("N0")</span>
-                                            <strong>₺@Model.GuestInclusiveNightlyFromStoredNet(room.Price).ToString("N0")</strong>
+                                            <strong>₺@nightlyDisplay.ToString("N0")</strong>
                                             <span class="room-price-discount-pill">
                                                 %@discountPercent
                                                 @if (room.DiscountId.HasValue && !string.IsNullOrWhiteSpace(room.DiscountName))
@@ -812,10 +993,11 @@
                                     }
                                     else
                                     {
-                                        <strong>₺@Model.GuestInclusiveNightlyFromStoredNet(room.Price).ToString("N0")</strong>
+                                        <strong>₺@nightlyDisplay.ToString("N0")</strong>
                                     }
 
                                     <span class="room-price-inclusive-label" title="Tüm vergiler dahil fiyat">Vergiler dahil</span>
+                                    <small class="room-price-total">Toplam (@initialNightCount gece): ₺@stayTotal.ToString("N0")</small>
                                 }
                                 else
                                 {
@@ -828,27 +1010,7 @@
                 }
             </div>
 
-            <div class="room-gallery-modal" id="roomGalleryModal" hidden>
-                <div class="room-gallery-backdrop" data-room-gallery-close></div>
-                <div class="room-gallery-dialog" role="dialog" aria-modal="true" aria-labelledby="roomGalleryTitle">
-                    <button type="button" class="room-gallery-close" data-room-gallery-close aria-label="Galeri kapat">
-                        <i class="fas fa-times"></i>
-                    </button>
-                    <div class="room-gallery-stage">
-                        <button type="button" class="room-gallery-nav prev" id="roomGalleryPrev" aria-label="Onceki gorsel">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <figure class="room-gallery-figure">
-                            <img src="" alt="" id="roomGalleryMainImage" />
-                            <figcaption id="roomGalleryTitle"></figcaption>
-                        </figure>
-                        <button type="button" class="room-gallery-nav next" id="roomGalleryNext" aria-label="Sonraki gorsel">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                    <div class="room-gallery-thumbs" id="roomGalleryThumbs"></div>
-                </div>
-            </div>
+            @* Oda galeri modalı kaldırıldı: ortak SlaytGorsel kullanılıyor *@
 
             <section class="detail-modal room-detail-modal" id="roomDetailModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="roomDetailModalTitle">
                 <div class="detail-modal-head room-detail-modal-head">
@@ -861,24 +1023,6 @@
                     </button>
                 </div>
                 <div class="room-detail-modal-body">
-                    <div class="room-detail-modal-gallery">
-                        <div class="room-detail-modal-visual">
-                            <img src="" alt="" id="roomDetailModalImage" />
-                            <button type="button" class="room-detail-modal-gallery-open" id="roomDetailModalGalleryOpen">
-                                <i class="fas fa-images"></i>
-                                Tüm görselleri aç
-                            </button>
-                        </div>
-                        <div class="room-detail-modal-thumb-rail">
-                            <button type="button" class="room-detail-modal-thumb-nav prev" id="roomDetailModalThumbPrev" aria-label="Önceki görseller">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <div class="room-detail-modal-thumbs" id="roomDetailModalThumbs"></div>
-                            <button type="button" class="room-detail-modal-thumb-nav next" id="roomDetailModalThumbNext" aria-label="Sonraki görseller">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
                     <div class="room-detail-modal-summary">
                         <div class="room-detail-modal-copy">
                             <strong id="roomDetailModalRoomName">Seçilen oda</strong>
@@ -888,6 +1032,10 @@
                         <div class="room-detail-modal-meta">
                             <span class="room-detail-modal-badge" id="roomDetailModalGalleryBadge">0 görsel</span>
                             <span class="room-detail-modal-badge" id="roomDetailModalFeatureBadge">0 özellik</span>
+                            <button type="button" class="room-detail-modal-gallery-open" id="roomDetailModalGalleryOpen">
+                                <i class="fas fa-images"></i>
+                                Slaytı Aç
+                            </button>
                         </div>
                     </div>
                     <div class="room-detail-modal-stats" id="roomDetailModalStats">
@@ -925,31 +1073,86 @@
             </section>
         </article>
 
-        <article class="content-card">
-            <div class="section-head">
-                <h2>Misafir Değerlendirmeleri</h2>
-                <p>Yorumlar ve puan ortalamasi dogrudan veritabanindan alinmaktadir.</p>
+        <article class="content-card" id="reviewsSection">
+            <div class="section-head tabler-section-head">
+                <div class="tabler-section-headrow">
+                    <div class="tabler-section-titles">
+                        <h2>Misafir Değerlendirmeleri</h2>
+                        <p>Yorumlar ve puan ortalamasi dogrudan veritabanindan alinmaktadir.</p>
+                    </div>
+                    <div class="tabler-section-actions">
+                        <button type="button" class="tabler-section-action-btn" data-scroll-reviews>
+                            Yorumlara git
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.IsLoggedInUser && Model.EligibleReviewStays.Count > 0)
+            {
+                <div class="hotel-guest-review-compose" role="region" aria-label="Konaklama yorumu yaz">
+                    <div class="hotel-guest-review-compose-head">
+                        <strong>Konaklamanı seç, yorum yaz</strong>
+                        <span>Tamamlanan ve değerlendirilmeyi bekleyen konaklamaların için bu otelde yorum ekleyebilirsin.</span>
+                    </div>
+                    <div class="hotel-guest-review-compose-actions">
+                        @foreach (var stay in Model.EligibleReviewStays)
+                        {
+                            <a class="btn btn-primary btn-sm" href="/panel/user/rezervasyonlarim/yorum/@stay.ReservationId">@stay.StayDateText · @stay.RoomName</a>
+                        }
+                    </div>
+                    <a class="hotel-guest-review-compose-link" href="/panel/user/yorumlarim?status=waiting&amp;searchTerm=@Uri.EscapeDataString(Model.Name)">Tüm yorumlarımı aç</a>
+                </div>
+            }
+
+            <div class="review-signature">
+                <div class="review-signature-score">
+                    <span class="laurel" aria-hidden="true">❧</span>
+                    <strong>@(signatureScore > 0 ? signatureScore.ToString("0.0") : "0.0")</strong>
+                    <span class="laurel" aria-hidden="true">❧</span>
+                </div>
+                <p class="review-signature-title">@Model.RatingText</p>
+                <small>@(Model.ReviewCount > 0 ? $"{Model.ReviewCount} doğrulanmış değerlendirme" : "Henüz değerlendirme yok")</small>
             </div>
 
             <div class="review-summary">
-                <div class="review-score">
-                    <strong>@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</strong>
-                    <span>@Model.RatingText</span>
-                    <small>@(Model.ReviewCount > 0 ? $"{Model.ReviewCount} yorum" : "Henuz yorum yok")</small>
-                </div>
                 <div class="review-bars">
                     <div><span>Genel</span><div class="bar"><span style="width:@(overallBarWidth)%"></span></div><strong>@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "-")</strong></div>
-                    <div><span>Oda</span><div class="bar"><span style="width:@(roomBarWidth)%"></span></div><strong>@(roomScore > 0 ? roomScore.ToString("0.0") : "-")</strong></div>
                     <div><span>Konum</span><div class="bar"><span style="width:@(locationBarWidth)%"></span></div><strong>@(locScore > 0 ? locScore.ToString("0.0") : "-")</strong></div>
-                    <div><span>Fiyat</span><div class="bar"><span style="width:@(valueBarWidth)%"></span></div><strong>@(valScore > 0 ? valScore.ToString("0.0") : "-")</strong></div>
+                    <div><span>Temizlik</span><div class="bar"><span style="width:@(cleaningBarWidth)%"></span></div><strong>@(cleaningScore > 0 ? cleaningScore.ToString("0.0") : "-")</strong></div>
                     <div><span>Personel</span><div class="bar"><span style="width:@(staffBarWidth)%"></span></div><strong>@(staffScore > 0 ? staffScore.ToString("0.0") : "-")</strong></div>
+                    <div><span>Fiyat/Performans</span><div class="bar"><span style="width:@(valueBarWidth)%"></span></div><strong>@(valScore > 0 ? valScore.ToString("0.0") : "-")</strong></div>
+                    <div><span>Sessizlik</span><div class="bar"><span style="width:@(quietBarWidth)%"></span></div><strong>@(quietScore > 0 ? quietScore.ToString("0.0") : "-")</strong></div>
+                    <div><span>Ulaşım</span><div class="bar"><span style="width:@(transportBarWidth)%"></span></div><strong>@(transportScore > 0 ? transportScore.ToString("0.0") : "-")</strong></div>
                 </div>
             </div>
+
+            <div class="review-topic-strip" id="reviewTopicStrip">
+                @foreach (var topic in reviewTopicPayload)
+                {
+                    <button type="button"
+                            class="review-topic-chip"
+                            data-review-topic-open="true"
+                            data-topic-key="@topic.key"
+                            data-topic-label="@topic.label"
+                            data-topic-score="@topic.score"
+                            data-topic-count="@topic.count">
+                        <span class="review-topic-chip-icon">@topic.emoji</span>
+                        <span class="review-topic-chip-copy">@topic.label</span>
+                        <span class="review-topic-chip-count">@topic.count</span>
+                    </button>
+                }
+            </div>
+
+            <script type="application/json" id="reviewTopicPayloadJson">@Html.Raw(reviewTopicPayloadJson)</script>
+            <script type="application/json" id="reviewFeedPayloadJson">@Html.Raw(reviewFeedPayloadJson)</script>
 
             @if ((Model.Reviews?.Count ?? 0) == 0)
             {
                 <div class="review-card">
-                    <p>Bu tesis icin onayli misafir yorumu bulunmuyor. Ilk yorumu yapan kullanıcı siz olabilirsiniz.</p>
+                    <p>Bu tesis icin onayli misafir yorumu bulunmuyor. Onayli rezervasyonunuz varsa ilk yorumu kullanıcı panelinizden siz yazabilirsiniz.</p>
+                    <a class="review-more" href="/panel/user/yorumlarim">Yorumlarımı aç</a>
                 </div>
             }
             else
@@ -980,7 +1183,13 @@
                                 <div class="review-meta">
                                     <div>
                                         <h4>@MaskName(review.Name)</h4>
-                                        <p>@review.DateText</p>
+                                        <p>
+                                            @review.DateText
+                                            @if (!string.IsNullOrWhiteSpace(review.ReservationNoTail))
+                                            {
+                                                <span class="review-reservation-chip">Rez. ***@review.ReservationNoTail</span>
+                                            }
+                                        </p>
                                     </div>
                                     <span class="review-chip">@review.Score.ToString("0.0")</span>
                                 </div>
@@ -1023,30 +1232,6 @@
             }
         </article>
 
-        <article class="content-card">
-            <div class="section-head">
-                <h2>Konum</h2>
-                <p>@locationText</p>
-            </div>
-            <div class="map-card">
-                @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
-                {
-                    <iframe
-                        title="Otel Konum"
-                        src="https://www.openstreetmap.org/export/embed.html?bbox=@mapBoundingBox&layer=mapnik&marker=@mapLatitude%2C@mapLongitude"
-                        loading="lazy"></iframe>
-                }
-                else
-                {
-                    <div class="map-fallback">
-                        <strong>Koordinat bilgisi bekleniyor</strong>
-                        <span>@Model.Address</span>
-                    </div>
-                }
-            </div>
-
-        </article>
-
     </div>
 
     <div class="booking-modal-backdrop" id="bookingModalBackdrop" hidden></div>
@@ -1058,9 +1243,8 @@
             <div class="booking-price-head">
                 <div class="booking-price-row">
                     <div class="booking-price-main">
-                        <strong id="bookingPrice">@(initialInclusiveNightly > 0m ? $"₺{initialInclusiveNightly:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
-                        <span class="booking-price-unit"></span>
-                        <span class="booking-price-inclusive-hint" id="bookingPriceHint" title="Tüm vergiler dahil">Vergiler dahil</span>
+                        <strong id="bookingPrice">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
+                        <span class="booking-price-unit">Toplam • Vergiler dahil</span>
                     </div>
                 </div>
             </div>
@@ -1070,16 +1254,6 @@
                 <input type="hidden" name="HotelId" value="@Model.Id" />
                 <input type="hidden" id="profileCompletionRequired" value="@(Model.ProfilePrompt.IsProfileIncomplete && Model.IsLoggedInUser ? "true" : "false")" />
                 <input type="hidden" name="RoomsJson" id="roomsJsonInput" value="" />
-
-                @if (Model.IsLoggedInUser && Model.ProfilePrompt.IsProfileIncomplete)
-                {
-                    <div class="detail-inline-feedback info" style="margin: 0 0 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-                        <span>Rezervasyon oluşturabilmek için profil bilgilerin eksiksiz olmalı (Ad, Soyad, Telefon, Doğum tarihi, adres alanları). Eksik bilgileri tamamla ve kaldığın yerden devam et.</span>
-                        <button type="button" class="detail-modal-primary" id="openProfileCompletionFromBanner" style="padding: 8px 12px; border-radius: 999px;">
-                            Bilgileri tamamla
-                        </button>
-                    </div>
-                }
 
                 <div class="multi-room" id="multiRoomRoot">
                     <div class="multi-room-head">
@@ -1121,6 +1295,14 @@
                                             </option>
                                         }
                                     </select>
+                                </label>
+                                <label class="multi-room-quantity">
+                                    <span>Oda adedi</span>
+                                    <div class="room-quantity-control">
+                                        <button type="button" data-room-quantity-action="minus" aria-label="Oda adedini azalt">-</button>
+                                        <input type="number" data-field="roomCount" min="1" max="20" value="1" inputmode="numeric" />
+                                        <button type="button" data-room-quantity-action="plus" aria-label="Oda adedini artır">+</button>
+                                    </div>
                                 </label>
                             </div>
                         </section>
@@ -1229,7 +1411,14 @@
                     </div>
                 </div>
 
-                <button type="submit" class="reserve-btn">Rezervasyonu Oluştur</button>
+                @await Html.PartialAsync("~/Views/Oteller/Partials/_ReservationCreateButton.cshtml")
+
+                @if (TempData["PublicReservationSuccess"] is string successMessage)
+                {
+                    <div class="detail-inline-feedback success reservation-submit-feedback" data-reservation-success-redirect="/panel/user/rezervasyonlarim">
+                        @successMessage Rezervasyonlarım sayfasına yönlendiriliyorsunuz.
+                    </div>
+                }
 
                 <div class="booking-trust-row" aria-label="Güven bilgileri">
                     <span><i class="fas fa-shield-halved" aria-hidden="true"></i> Güvenli • Hızlı onay</span>
@@ -1245,11 +1434,52 @@
                 <div class="price-row total"><span>Toplam</span><strong>₺@initialTotal.ToString("N0")</strong></div>
             </div>
             <details class="nightly-breakdown-details" id="nightlyBreakdownDetails" hidden>
-                <summary><i class="fas fa-angle-down"></i> Gün gün fiyat detayı</summary>
+                <summary>Gün gün fiyat detayı <i class="fas fa-angle-down" aria-hidden="true"></i></summary>
                 <div class="nightly-breakdown-list" id="nightlyBreakdownList"></div>
             </details>
         </div>
     </aside>
+
+    <article class="content-card detail-map-card">
+        <div class="section-head tabler-section-head">
+            <div class="tabler-section-headrow">
+                <div class="tabler-section-titles">
+                    <h2>Konum</h2>
+                    <p>@locationText</p>
+                </div>
+                @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+                {
+                    <div class="tabler-section-actions">
+                        <a class="tabler-section-action-btn" target="_blank" rel="noopener"
+                           href="https://www.google.com/maps?q=@mapLatitude,@mapLongitude">
+                            Haritada aç
+                            <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="map-card">
+            @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+            {
+                <div id="detailLocationMap"
+                     class="detail-location-map"
+                     data-lat="@mapLatitude"
+                     data-lon="@mapLongitude"
+                     data-name="@Model.Name"
+                     data-location="@locationText"
+                     aria-label="Otel konum haritası"></div>
+            }
+            else
+            {
+                <div class="map-fallback">
+                    <strong>Koordinat bilgisi bekleniyor</strong>
+                    <span>@Model.Address</span>
+                </div>
+            }
+        </div>
+
+    </article>
 
 </section>
 
@@ -1305,6 +1535,55 @@
     </div>
 </div>
 
+<div class="review-insight-modal" id="reviewInsightModal" aria-hidden="true">
+    <div class="review-insight-backdrop" data-review-insight-close></div>
+    <div class="review-insight-dialog" role="dialog" aria-modal="true" aria-labelledby="reviewInsightTitle">
+        <div class="review-insight-head">
+            <div>
+                <strong id="reviewInsightTitle">Yorum içgörüleri</strong>
+                <p id="reviewInsightMeta">Kategoriye göre filtrelenmiş geri bildirimler</p>
+            </div>
+            <button type="button" class="review-insight-close" data-review-insight-close aria-label="Kapat">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="review-insight-controls">
+            <div class="review-insight-tabs" id="reviewInsightTabs" aria-label="Yorum başlıkları"></div>
+            <label class="review-sort review-insight-sort">
+                <span>Sırala</span>
+                <select id="reviewInsightSort">
+                    <option value="new">En yeni</option>
+                    <option value="best">En iyi</option>
+                    <option value="worst">En kötü</option>
+                </select>
+            </label>
+        </div>
+        <div class="review-insight-list" id="reviewInsightList"></div>
+        <div class="review-insight-pager" id="reviewInsightPager" hidden></div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.VideoUrl))
+{
+    <div class="detail-modal-backdrop" id="hotelVideoBackdrop" hidden aria-hidden="true"></div>
+    <section class="detail-modal detail-video-modal" id="hotelVideoModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="hotelVideoModalTitle">
+        <button type="button" class="detail-modal-close" data-close-hotel-video aria-label="Kapat"><i class="fas fa-times"></i></button>
+        <div class="detail-modal-head">
+            <div>
+                <span class="detail-modal-kicker">Otel Videosu</span>
+                <h3 id="hotelVideoModalTitle">@Model.Name</h3>
+            </div>
+        </div>
+        <div class="detail-video-embed">
+            <iframe id="hotelVideoFrame"
+                    title="Otel videosu"
+                    src=""
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen></iframe>
+        </div>
+    </section>
+}
+
 <section class="detail-modal detail-info-modal" id="detailInfoModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="detailInfoModalTitle">
     <button type="button" class="detail-modal-close" data-close-modal="detailInfoModal" aria-label="Kapat"><i class="fas fa-times"></i></button>
     <div class="detail-modal-head">
@@ -1340,6 +1619,11 @@
         <button type="button" class="detail-modal-primary" id="reservationConfirmSubmitBtn">Rezervasyonu Oluştur</button>
     </div>
 </section>
+
+<div class="room-pick-popover" id="roomPickPopover" hidden aria-hidden="true">
+    <div class="room-pick-popover__title">Odayı seç</div>
+    <div class="room-pick-popover__grid" id="roomPickPopoverGrid"></div>
+</div>
 
 @if (Model.ActiveDraft is not null && Model.IsLoggedInUser)
 {
@@ -1567,33 +1851,29 @@
 </div>
 
 @section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
     @{
         var nonce = Context.Items["CspNonce"] as string;
     }
     <script nonce="@nonce">
+        // Inline OtelDetay (v41) script'i aktif: legacy `otel-detay.js` içindeki minimal multi-room init'i devre dışı bırakmak için.
+        window.__otelDetayInlineV41 = true;
         window.__otelDetayConfig = {
+            hotelTitle: '@Model.Name',
             galleryImages: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(gallery)),
             roomGalleries: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(roomGalleryMap)),
             roomDetails: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(roomDetailsMap)),
             activeDraftResumeUrl: '@(Model.ActiveDraft?.ResumeUrl ?? "")',
             activeDraftPromptMessage: '@(Model.ActiveDraft?.Message ?? "")',
-            shouldPromptActiveDraft: @((Model.ActiveDraft is not null && Model.IsLoggedInUser && !Model.ShouldResumeDraftOnLoad) ? "true" : "false")
+            shouldPromptActiveDraft: false
         };
 
-        /*
         (function () {
             const galleryImages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(gallery));
             const mainImage = document.getElementById('mainGalleryImage');
             const mainImageWrap = document.querySelector('.gallery-main-image');
-            const lightbox = document.getElementById('galleryLightbox');
-            const lightboxImage = document.getElementById('galleryLightboxImage');
-            const lightboxCaption = document.getElementById('galleryLightboxCaption');
-            const lightboxThumbs = document.getElementById('galleryLightboxThumbs');
-            const lightboxClose = document.getElementById('galleryLightboxClose');
-            const lightboxPrev = document.getElementById('galleryLightboxPrev');
-            const lightboxNext = document.getElementById('galleryLightboxNext');
-            const lightboxFigure = lightbox?.querySelector('.gallery-lightbox-figure') || null;
-            const saveButton = document.getElementById('saveHotelBtn');
+            // SlaytGorsel ortak bileşen (layout'ta yüklü)
+            const favoriteButtons = Array.from(document.querySelectorAll('.favorite-btn'));
             const bookingForm = document.getElementById('bookingForm');
             const paymentMethodSelect = document.getElementById('paymentMethodSelect');
             const roomsJsonInput = document.getElementById('roomsJsonInput');
@@ -1611,6 +1891,7 @@
             const bookingPaymentNote = document.getElementById('bookingPaymentNote');
             const bookingPaymentMix = document.getElementById('bookingPaymentMix');
             let profileCompletionRequired = document.getElementById('profileCompletionRequired')?.value === 'true';
+            let hasAutoPromptedProfileCompletion = false;
             const actionBackdrop = document.getElementById('detailActionBackdrop');
             const profileModal = document.getElementById('profileCompletionModal');
             const infoModal = document.getElementById('detailInfoModal');
@@ -1644,7 +1925,7 @@
             const cancelDraftForm = document.getElementById('cancelDraftForm');
             const activeDraftResumeUrl = '@(Model.ActiveDraft?.ResumeUrl ?? "")';
             const activeDraftPromptMessage = '@(Model.ActiveDraft?.Message ?? "")';
-            const shouldPromptActiveDraft = @((Model.ActiveDraft is not null && Model.IsLoggedInUser && !Model.ShouldResumeDraftOnLoad) ? "true" : "false");
+            const shouldPromptActiveDraft = false;
             const roomDetailModal = document.getElementById('roomDetailModal');
             const roomDetailModalTitle = document.getElementById('roomDetailModalTitle');
             const roomDetailModalRoomName = document.getElementById('roomDetailModalRoomName');
@@ -1653,11 +1934,7 @@
             const roomDetailModalCancellation = document.getElementById('roomDetailModalCancellation');
             const roomDetailModalGalleryBadge = document.getElementById('roomDetailModalGalleryBadge');
             const roomDetailModalFeatureBadge = document.getElementById('roomDetailModalFeatureBadge');
-            const roomDetailModalImage = document.getElementById('roomDetailModalImage');
-            const roomDetailModalThumbs = document.getElementById('roomDetailModalThumbs');
             const roomDetailModalGalleryOpen = document.getElementById('roomDetailModalGalleryOpen');
-            const roomDetailModalThumbPrev = document.getElementById('roomDetailModalThumbPrev');
-            const roomDetailModalThumbNext = document.getElementById('roomDetailModalThumbNext');
             const roomDetailModalBedType = document.getElementById('roomDetailModalBedType');
             const roomDetailModalSquareMeter = document.getElementById('roomDetailModalSquareMeter');
             const roomDetailModalCapacity = document.getElementById('roomDetailModalCapacity');
@@ -1676,6 +1953,78 @@
             let activeRoomDetailName = 'Oda';
             let activeRoomDetailRoomId = '';
             let reservationSubmitConfirmed = false;
+            let shouldResumeReservationAfterProfile = false;
+
+            function pulseFavorite(btn) {
+                if (!btn) return;
+                btn.classList.remove('is-fav-burst');
+                // reflow
+                void btn.offsetWidth;
+                btn.classList.add('is-fav-burst');
+                window.setTimeout(() => btn.classList.remove('is-fav-burst'), 520);
+            }
+
+            function initFavoriteAnimations() {
+                if (!favoriteButtons || favoriteButtons.length === 0) return;
+                favoriteButtons.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        window.setTimeout(() => {
+                            if (btn.classList.contains('active')) {
+                                pulseFavorite(btn);
+                            }
+                        }, 120);
+                    }, { passive: true });
+                });
+            }
+
+            function initDetailLocationMap() {
+                const mapEl = document.getElementById('detailLocationMap');
+                if (!mapEl || !window.L) {
+                    return;
+                }
+
+                const lat = Number(mapEl.getAttribute('data-lat') || '');
+                const lon = Number(mapEl.getAttribute('data-lon') || '');
+                if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                    return;
+                }
+
+                const hotelName = (mapEl.getAttribute('data-name') || 'Otel').trim();
+                const location = (mapEl.getAttribute('data-location') || '').trim();
+                const map = window.L.map(mapEl, {
+                    zoomControl: true,
+                    scrollWheelZoom: true
+                });
+
+                window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19,
+                    subdomains: 'abcd',
+                    attribution: '&copy; OpenStreetMap katkıda bulunanlar &copy; CARTO'
+                }).addTo(map);
+
+                const flagIcon = window.L.divIcon({
+                    className: 'detail-map-flag-icon',
+                    html:
+                        '<div class="detail-map-flag">' +
+                            '<span class="detail-map-flag__name">' + hotelName + '</span>' +
+                            '<small class="detail-map-flag__area">' + location + '</small>' +
+                        '</div>',
+                    iconSize: [168, 44],
+                    iconAnchor: [26, 44],
+                    popupAnchor: [64, -34]
+                });
+
+                const marker = window.L.marker([lat, lon], { icon: flagIcon }).addTo(map);
+                marker.bindPopup(
+                    '<strong>' + hotelName + '</strong><br>' +
+                    (location ? '<span>' + location + '</span>' : '')
+                );
+                map.setView([lat, lon], 14);
+            }
+
+            initFavoriteAnimations();
+
+            initDetailLocationMap();
 
             function scrollToBookingArea() {
                 if (!(bookingSidebar instanceof HTMLElement)) {
@@ -1688,8 +2037,7 @@
                     behavior: 'smooth'
                 });
             }
-            let lightboxScrollY = 0;
-            let lightboxPrevBodyStyles = null;
+            // SlaytGorsel kendi içinde scroll kilidi yönetir.
 
             function isMobileBookingMode() {
                 return window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
@@ -1705,6 +2053,14 @@
                 bookingModalBackdrop.classList.add('is-open');
                 document.documentElement.classList.add('modal-open');
                 document.body.classList.add('modal-open');
+
+                // Profil eksikse banner yerine modal ile yönlendir.
+                if (profileCompletionRequired && !hasAutoPromptedProfileCompletion) {
+                    hasAutoPromptedProfileCompletion = true;
+                    window.setTimeout(function () {
+                        openProfileCompletionModal('Rezervasyonunuza devam edebilmek için eksik profil bilgilerinizi tamamlayın.');
+                    }, 120);
+                }
             }
 
             function closeBookingSheet() {
@@ -1895,6 +2251,11 @@
                 if (mainImageWrap instanceof HTMLElement) {
                     mainImageWrap.style.setProperty('--hotel-main-ambient', 'url(\"' + (galleryImages[safeIndex] || '') + '\")');
                 }
+                const counter = document.getElementById('galleryCountBadge');
+                if (counter) {
+                    const currentEl = counter.querySelector('.gallery-count-badge__current');
+                    if (currentEl) currentEl.textContent = String(safeIndex + 1);
+                }
                 document.querySelectorAll('.gallery-thumb, .gallery-filmstrip-thumb').forEach(function (thumb) {
                     const thumbIndex = parseInt(thumb.getAttribute('data-gallery-index') || '0', 10);
                     thumb.classList.toggle('active', thumbIndex === safeIndex);
@@ -1902,150 +2263,15 @@
                 setActiveMobileDot(safeIndex);
             }
 
-            function syncLightboxThumbs() {
-                if (!lightboxThumbs || !Array.isArray(galleryImages) || !galleryImages.length) {
+            function openSlayt(images, title, startIndex) {
+                if (!window.SlaytGorsel || !Array.isArray(images) || images.length === 0) {
                     return;
                 }
-
-                lightboxThumbs.innerHTML = galleryImages.map(function (src, idx) {
-                    const isActive = idx === activeGalleryIndex;
-                    return '<button type="button" class="gallery-lightbox-thumb' + (isActive ? ' active' : '') + '" data-lightbox-thumb-index="' + idx + '" aria-label="Gorsel ' + (idx + 1) + '">' +
-                        '<img src="' + src + '" alt="Kucuk gorsel ' + (idx + 1) + '" />' +
-                        '</button>';
-                }).join('');
-
-                lightboxThumbs.querySelectorAll('[data-lightbox-thumb-index]').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        const idx = parseInt(btn.getAttribute('data-lightbox-thumb-index') || '0', 10);
-                        activeGalleryIndex = Math.min(Math.max(idx, 0), galleryImages.length - 1);
-                        if (lightboxImage) {
-                            lightboxImage.src = galleryImages[activeGalleryIndex];
-                        }
-                        if (lightboxCaption) {
-                            lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
-                        }
-                        syncMainImage(activeGalleryIndex);
-                        scrollMobileTrackTo(activeGalleryIndex);
-                        setHotelLightboxAmbientSources();
-                        syncLightboxThumbs();
-                    });
+                window.SlaytGorsel.open({
+                    images: images,
+                    title: title || '',
+                    startIndex: startIndex || 0
                 });
-
-                // aktif thumb görünür kalsın
-                const active = lightboxThumbs.querySelector('.gallery-lightbox-thumb.active');
-                active?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            }
-
-            function setHotelLightboxAmbientSources() {
-                if (!(lightboxFigure instanceof HTMLElement) || !Array.isArray(galleryImages) || galleryImages.length === 0) {
-                    return;
-                }
-
-                const prevIndex = (activeGalleryIndex - 1 + galleryImages.length) % galleryImages.length;
-                const nextIndex = (activeGalleryIndex + 1) % galleryImages.length;
-                lightboxFigure.style.setProperty('--hotel-gallery-prev', 'url(\"' + (galleryImages[prevIndex] || '') + '\")');
-                lightboxFigure.style.setProperty('--hotel-gallery-next', 'url(\"' + (galleryImages[nextIndex] || '') + '\")');
-
-                if (lightbox instanceof HTMLElement) {
-                    lightbox.style.setProperty('--hotel-gallery-active', 'url(\"' + (galleryImages[activeGalleryIndex] || '') + '\")');
-                }
-            }
-
-            function openLightbox(index) {
-                if (!lightbox || !lightboxImage || !Array.isArray(galleryImages) || !galleryImages.length) {
-                    return;
-                }
-
-                syncMainImage(index);
-                lightboxImage.src = galleryImages[activeGalleryIndex];
-                if (lightboxCaption) {
-                    lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
-                }
-                lightbox.hidden = false;
-                // Scroll kilidi + scrollbar zıplamasını engelle
-                lightboxScrollY = window.scrollY || 0;
-                const docEl = document.documentElement;
-                const sbw = Math.max(0, (window.innerWidth || 0) - (docEl?.clientWidth || 0));
-                lightboxPrevBodyStyles = {
-                    overflow: document.body.style.overflow || '',
-                    position: document.body.style.position || '',
-                    top: document.body.style.top || '',
-                    left: document.body.style.left || '',
-                    right: document.body.style.right || '',
-                    width: document.body.style.width || '',
-                    paddingRight: document.body.style.paddingRight || '',
-                    docOverflow: docEl?.style.overflow || ''
-                };
-                if (docEl) docEl.style.overflow = 'hidden';
-                document.body.style.overflow = 'hidden';
-                document.body.style.position = 'fixed';
-                document.body.style.top = (-lightboxScrollY) + 'px';
-                document.body.style.left = '0';
-                document.body.style.right = '0';
-                document.body.style.width = '100%';
-                if (sbw > 0) {
-                    document.body.style.paddingRight = sbw + 'px';
-                }
-                setHotelLightboxAmbientSources();
-                syncLightboxThumbs();
-            }
-
-            function closeLightbox() {
-                if (!lightbox) {
-                    return;
-                }
-
-                lightbox.hidden = true;
-                // Scroll kilidini geri al + eski scroll pozisyonuna dön
-                const docEl = document.documentElement;
-                if (lightboxPrevBodyStyles) {
-                    document.body.style.overflow = lightboxPrevBodyStyles.overflow;
-                    document.body.style.position = lightboxPrevBodyStyles.position;
-                    document.body.style.top = lightboxPrevBodyStyles.top;
-                    document.body.style.left = lightboxPrevBodyStyles.left;
-                    document.body.style.right = lightboxPrevBodyStyles.right;
-                    document.body.style.width = lightboxPrevBodyStyles.width;
-                    document.body.style.paddingRight = lightboxPrevBodyStyles.paddingRight;
-                    if (docEl) docEl.style.overflow = lightboxPrevBodyStyles.docOverflow;
-                } else {
-                    document.body.style.overflow = '';
-                    document.body.style.position = '';
-                    document.body.style.top = '';
-                    document.body.style.left = '';
-                    document.body.style.right = '';
-                    document.body.style.width = '';
-                    document.body.style.paddingRight = '';
-                    if (docEl) docEl.style.overflow = '';
-                }
-                window.scrollTo(0, lightboxScrollY || 0);
-                if (lightboxThumbs) {
-                    lightboxThumbs.innerHTML = '';
-                }
-                if (lightboxFigure instanceof HTMLElement) {
-                    lightboxFigure.style.removeProperty('--hotel-gallery-prev');
-                    lightboxFigure.style.removeProperty('--hotel-gallery-next');
-                }
-                if (lightbox instanceof HTMLElement) {
-                    lightbox.style.removeProperty('--hotel-gallery-active');
-                }
-            }
-
-            function moveLightbox(step) {
-                if (!Array.isArray(galleryImages) || !galleryImages.length) {
-                    return;
-                }
-
-                activeGalleryIndex = (activeGalleryIndex + step + galleryImages.length) % galleryImages.length;
-                if (lightboxImage) {
-                    lightboxImage.src = galleryImages[activeGalleryIndex];
-                }
-                if (lightboxCaption) {
-                    lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
-                }
-                syncMainImage(activeGalleryIndex);
-                scrollMobileTrackTo(activeGalleryIndex);
-                setHotelLightboxAmbientSources();
-                syncLightboxThumbs();
             }
 
             document.querySelectorAll('.gallery-thumb').forEach(function (button) {
@@ -2059,7 +2285,7 @@
                 button.addEventListener('click', function () {
                     const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
                     syncMainImage(index);
-                    openLightbox(index);
+                    openSlayt(galleryImages, '@Model.Name', index);
                 });
             });
 
@@ -2068,7 +2294,19 @@
                     const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
                     syncMainImage(index);
                     scrollMobileTrackTo(index);
-                    openLightbox(index);
+                    openSlayt(galleryImages, '@Model.Name', index);
+                });
+            });
+
+            // Oda kartı görselleri: ortak slayt gösterim
+            document.querySelectorAll('.room-gallery-trigger').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const roomId = button.getAttribute('data-room-id') || '';
+                    const roomName = (button.getAttribute('data-room-name') || button.textContent || 'Oda').trim();
+                    const startIdx = parseInt(button.getAttribute('data-room-gallery-start') || '0', 10) || 0;
+                    const map = window.__otelDetayConfig?.roomGalleries || {};
+                    const imgs = map[roomId] || map[String(roomId)] || [];
+                    openSlayt(imgs, roomName, startIdx);
                 });
             });
 
@@ -2118,10 +2356,7 @@
                 });
             });
 
-            lightboxClose?.addEventListener('click', closeLightbox);
-            lightboxPrev?.addEventListener('click', function () { moveLightbox(-1); });
-            lightboxNext?.addEventListener('click', function () { moveLightbox(1); });
-            // Not: Lightbox arkaplanina tıklayınca kapanmasın (sadece X / ESC).
+            // Not: Eski inline lightbox event'leri kaldırıldı; ortak SlaytGorsel kullanılıyor.
 
             function ensureSelectButtonOriginalText(button) {
                 if (!button) return;
@@ -2175,6 +2410,66 @@
                 button.addEventListener('click', function () {
                     const roomId = button.getAttribute('data-room-id');
                     const nodes = getRoomItemNodes();
+                    const popover = document.getElementById('roomPickPopover');
+                    const popoverGrid = document.getElementById('roomPickPopoverGrid');
+
+                    function closeRoomPickPopover() {
+                        if (!popover) return;
+                        popover.hidden = true;
+                        popover.setAttribute('aria-hidden', 'true');
+                        popoverGrid && (popoverGrid.innerHTML = '');
+                    }
+
+                    function openRoomPickPopover() {
+                        if (!popover || !popoverGrid) {
+                            return false;
+                        }
+
+                        // Mobilde popover yerine mevcut modal akışı daha iyi.
+                        if (window.matchMedia('(max-width: 860px)').matches) {
+                            return false;
+                        }
+
+                        popoverGrid.innerHTML = nodes.map(function (_n, idx) {
+                            return '<button type="button" class="room-pick-popover__btn" data-pick-room-index="' + idx + '"><span>Oda ' + (idx + 1) + '</span></button>';
+                        }).join('');
+
+                        const rect = button.getBoundingClientRect();
+                        const top = Math.max(10, rect.bottom + window.scrollY + 8);
+                        const left = Math.min(window.scrollX + rect.left, (window.scrollX + window.innerWidth) - 260);
+                        popover.style.top = top + 'px';
+                        popover.style.left = left + 'px';
+                        popover.hidden = false;
+                        popover.setAttribute('aria-hidden', 'false');
+
+                        popoverGrid.querySelectorAll('[data-pick-room-index]').forEach(function (pickBtn) {
+                            pickBtn.addEventListener('click', function () {
+                                const idx = parseInt(pickBtn.getAttribute('data-pick-room-index') || '0', 10);
+                                closeRoomPickPopover();
+                                applyRoomSelectionToIndex(Number.isFinite(idx) ? idx : 0);
+                            });
+                        });
+
+                        // dışarı tıkla kapat
+                        const onDocClick = function (evt) {
+                            const t = evt.target;
+                            if (!(t instanceof HTMLElement)) return;
+                            if (t.closest('#roomPickPopover')) return;
+                            if (t.closest('.select-room-btn') === button) return;
+                            document.removeEventListener('click', onDocClick, true);
+                            closeRoomPickPopover();
+                        };
+                        document.addEventListener('click', onDocClick, true);
+                        // ESC ile kapat
+                        const onKey = function (evt) {
+                            if (evt.key === 'Escape') {
+                                document.removeEventListener('keydown', onKey, true);
+                                closeRoomPickPopover();
+                            }
+                        };
+                        document.addEventListener('keydown', onKey, true);
+                        return true;
+                    }
 
                     function applyRoomSelectionToIndex(index) {
                         const target = nodes[index] || null;
@@ -2182,6 +2477,7 @@
                         if (select && roomId) {
                             select.value = roomId;
                         }
+                        setActiveRoomIndex(index);
                         syncRoomsJsonAndHiddenFields();
                         ensureGuestCapacity(true);
                         refreshPriceQuote();
@@ -2195,6 +2491,28 @@
                         updateSelectRoomButtons();
                     }
 
+                    // Yeni davranış: Aynı oda tipinden birden fazla seçilebilsin diye her tıklamada yeni oda satırı ekle.
+                    // (Eski "hangi odaya uygula" akışı yerine, hızlı şekilde çoğaltma.)
+                    if (roomId) {
+                        const first = nodes.length ? getRoomItemData(nodes[0]) : null;
+                        addRoomItem(first ? { roomTypeId: roomId, checkIn: first.checkIn, checkOut: first.checkOut } : { roomTypeId: roomId });
+                        const nextNodes = getRoomItemNodes();
+                        const newIndex = Math.max(0, nextNodes.length - 1);
+                        setActiveRoomIndex(newIndex);
+                        syncRoomsJsonAndHiddenFields();
+                        ensureGuestCapacity(true);
+                        refreshPriceQuote();
+                        if (isMobileBookingMode()) {
+                            openBookingSheet();
+                            setTimeout(scrollToBookingArea, 90);
+                        } else {
+                            scrollToBookingArea();
+                        }
+                        button.dataset.lastPickedRoomIndex = String(newIndex);
+                        updateSelectRoomButtons();
+                        return;
+                    }
+
                     // tek oda: direkt uygula
                     if (nodes.length <= 1) {
                         applyRoomSelectionToIndex(0);
@@ -2202,6 +2520,12 @@
                     }
 
                     // çoklu oda: hangi oda güncellensin?
+                    // Önce eski davranış: buton yanında katman/popup ile oda 1-2-3 seçimi.
+                    if (openRoomPickPopover()) {
+                        return;
+                    }
+
+                    // Popover kullanılamıyorsa: fallback modal
                     if (!infoModal || !infoModalText || !infoModalActions) {
                         applyRoomSelectionToIndex(0);
                         return;
@@ -2304,41 +2628,53 @@
             (function initHotelAboutClamp() {
                 const textEl = document.getElementById('hotelAboutText');
                 const toggleEl = document.getElementById('hotelAboutToggle');
+                const tablerBtn = document.querySelector('[data-about-toggle]');
                 if (!(textEl instanceof HTMLElement) || !(toggleEl instanceof HTMLButtonElement)) {
                     return;
                 }
 
-                // Sadece masaüstünde (>= 900px) 5 satır kısaltma uygula
-                const media = window.matchMedia('(min-width: 900px)');
-
                 function computeNeedsToggle() {
-                    // Clamp aktifken yüksekliği ölç
-                    textEl.classList.add('is-clamped');
-                    const needs = textEl.scrollHeight > textEl.clientHeight + 1;
-                    textEl.classList.toggle('has-toggle', needs);
-                    toggleEl.hidden = !needs;
-                    toggleEl.textContent = 'Tümünü gör';
                     textEl.classList.remove('is-expanded');
-                }
-
-                function applyMode() {
-                    if (!media.matches) {
-                        textEl.classList.remove('is-clamped', 'is-expanded', 'has-toggle');
-                        toggleEl.hidden = true;
-                        return;
+                    textEl.classList.add('is-clamped');
+                    const needs = textEl.scrollHeight > textEl.clientHeight + 2;
+                    textEl.classList.toggle('has-toggle', needs);
+                    if (!needs) {
+                        textEl.classList.remove('is-clamped', 'has-toggle');
                     }
-                    computeNeedsToggle();
+                    toggleEl.textContent = 'Tümünü gör';
+                    if (tablerBtn instanceof HTMLElement) {
+                        tablerBtn.hidden = !needs;
+                        toggleEl.hidden = true;
+                        if (needs) {
+                            syncExpandedLabel(false);
+                        }
+                    } else {
+                        toggleEl.hidden = !needs;
+                    }
                 }
 
-                toggleEl.addEventListener('click', function () {
-                    const expanded = textEl.classList.toggle('is-expanded');
-                    toggleEl.textContent = expanded ? 'Kapat' : 'Tümünü gör';
-                });
+                function syncExpandedLabel(expanded) {
+                    const label = expanded ? 'Kapat' : 'Tümünü gör';
+                    const icon = expanded ? 'fa-chevron-up' : 'fa-chevron-down';
+                    toggleEl.textContent = label;
+                    if (tablerBtn instanceof HTMLElement) {
+                        tablerBtn.innerHTML = label + ' <i class="fas ' + icon + '" aria-hidden="true"></i>';
+                    }
+                }
 
-                applyMode();
-                media.addEventListener?.('change', applyMode);
+                function onAboutToggleClick() {
+                    const expanded = textEl.classList.toggle('is-expanded');
+                    syncExpandedLabel(expanded);
+                }
+
+                toggleEl.addEventListener('click', onAboutToggleClick);
+                if (tablerBtn instanceof HTMLButtonElement) {
+                    tablerBtn.addEventListener('click', onAboutToggleClick);
+                }
+
+                computeNeedsToggle();
                 window.addEventListener('resize', function () {
-                    if (media.matches && !textEl.classList.contains('is-expanded')) {
+                    if (!textEl.classList.contains('is-expanded')) {
                         computeNeedsToggle();
                     }
                 });
@@ -2374,6 +2710,9 @@
                 if (!item) return;
                 item.querySelectorAll('select, input[type="date"]').forEach(function (el) {
                     el.addEventListener('change', function () {
+                        const nodes = getRoomItemNodes();
+                        const idx = nodes.indexOf(item);
+                        if (idx >= 0) setActiveRoomIndex(idx);
                         normalizeRoomItemDates(item);
                         syncRoomsJsonAndHiddenFields();
                         ensureGuestCapacity(false);
@@ -2381,13 +2720,28 @@
                     });
                 });
 
+                item.addEventListener('focusin', function () {
+                    const nodes = getRoomItemNodes();
+                    const idx = nodes.indexOf(item);
+                    if (idx >= 0) setActiveRoomIndex(idx);
+                });
+
                 const removeBtn = item.querySelector('[data-remove-room]');
                 removeBtn?.addEventListener('click', function () {
                     item.remove();
                     renumberRoomItems();
+                    setActiveRoomIndex(0);
                     syncRoomsJsonAndHiddenFields();
                     ensureGuestCapacity(false);
                     refreshPriceQuote();
+                });
+            }
+
+            function setActiveRoomIndex(index) {
+                const nodes = getRoomItemNodes();
+                const safeIndex = Math.max(0, Math.min(index || 0, nodes.length - 1));
+                nodes.forEach(function (node, idx) {
+                    node.classList.toggle('is-active', idx === safeIndex);
                 });
             }
 
@@ -2398,6 +2752,9 @@
                     if (title) {
                         title.textContent = 'Oda ' + (idx + 1);
                     }
+                    node.setAttribute('data-room-index', String(idx));
+                    node.classList.remove('room-tone-1', 'room-tone-2', 'room-tone-3', 'room-tone-4', 'room-tone-5', 'room-tone-6');
+                    node.classList.add('room-tone-' + ((idx % 6) + 1));
                     const removeBtn = node.querySelector('[data-remove-room]');
                     if (removeBtn) {
                         removeBtn.hidden = nodes.length <= 1;
@@ -2580,18 +2937,6 @@
             weatherPopupClose?.addEventListener('click', closeWeatherPopup);
             weatherPopupBackdrop?.addEventListener('click', closeWeatherPopup);
             document.addEventListener('keydown', function (event) {
-                if (event.key === 'Escape' && lightbox && !lightbox.hidden) {
-                    closeLightbox();
-                }
-
-                if (event.key === 'ArrowLeft' && lightbox && !lightbox.hidden) {
-                    moveLightbox(-1);
-                }
-
-                if (event.key === 'ArrowRight' && lightbox && !lightbox.hidden) {
-                    moveLightbox(1);
-                }
-
                 if (event.key === 'Escape' && weatherPopup && !weatherPopup.hidden) {
                     closeWeatherPopup();
                 }
@@ -2827,6 +3172,41 @@
                     + '<small>Bilgiler doğruysa sonraki adımda rezervasyon kaydı oluşturulacak.</small>'
                     + '</div>'
                     + '</div>';
+            }
+
+            function continueReservationAttemptAfterProfile() {
+                if (!bookingForm) {
+                    return;
+                }
+
+                syncRoomsJsonAndHiddenFields();
+                const roomNodes = getRoomItemNodes();
+                const items = roomNodes.map(getRoomItemData);
+                const hasMissingRequiredInfo = roomNodes.length === 0
+                    || items.some(function (x) {
+                        return !x.roomTypeId
+                            || !x.checkIn
+                            || !x.checkOut
+                            || new Date(x.checkOut).getTime() <= new Date(x.checkIn).getTime();
+                    })
+                    || adults < 1;
+                if (hasMissingRequiredInfo) {
+                    showInfoModal('Rezervasyon öncesi tarih, misafir ve oda bilgilerini kontrol edip tamamlayınız.', false);
+                    return;
+                }
+
+                if (!ensureGuestCapacity(true)) {
+                    return;
+                }
+
+                if (!isPaymentMethodChosen()) {
+                    bookingAdvancedFields?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    showInfoModal('Lütfen ödeme planı seçiniz.', false, 'warning');
+                    return;
+                }
+
+                buildReservationConfirmSummary(items);
+                openModal(reservationConfirmModal);
             }
 
             function resumeDraftFlow() {
@@ -3111,8 +3491,11 @@
                             throw new Error('Fiyat özeti alınamadı');
                         }
                         const quote = await response.json();
-                        if (!quote.success || latestQuoteRequest !== requestKey) {
+                        if (latestQuoteRequest !== requestKey) {
                             return;
+                        }
+                        if (!quote.success) {
+                            throw new Error(quote.message || quote.availabilityMessage || 'Fiyat özeti alınamadı');
                         }
 
                         const vat = Number(quote.vatAmount || 0);
@@ -3154,10 +3537,13 @@
                         const diffMs = new Date(item.checkOut).getTime() - new Date(item.checkIn).getTime();
                         const nights = Math.max(1, Math.round(diffMs / 86400000));
                         const subtotal = netNightly * nights;
-                        const vat = Math.round(subtotal * detailVatFraction);
-                        const accommodationTax = Math.round(subtotal * detailAccommodationFraction);
+                        // Vergiler bilgilendirme icin "fiyatin icinden" hesaplanir; toplam tutara eklenmez.
+                        const taxDivisor = 1 + detailVatFraction + detailAccommodationFraction;
+                        const net = taxDivisor > 0 ? (subtotal / taxDivisor) : subtotal;
+                        const vat = Math.round(net * detailVatFraction);
+                        const accommodationTax = Math.max(0, Math.round(subtotal - net - vat));
                         const tax = vat + accommodationTax;
-                        const total = subtotal + tax;
+                        const total = subtotal;
 
                         totals.vatAmount += vat;
                         totals.accommodationTaxAmount += accommodationTax;
@@ -3177,20 +3563,11 @@
                     return;
                 }
 
-                // price head: show total if multiple rooms, otherwise nightly
+                // price head: tek satır toplam (vergiler dahil)
                 const unitEl = document.querySelector('.booking-price-unit');
-                const itemCount = Math.max(1, roomNodes.length);
-                if (itemCount > 1) {
-                    bookingPrice.textContent = formatMoney(totals.totalAmount);
-                    if (unitEl) unitEl.textContent = 'toplam';
-                    if (mobileBookingPrice) mobileBookingPrice.textContent = formatMoney(totals.totalAmount);
-                } else {
-                    const nights = Math.max(1, Math.round((new Date(items[0].checkOut).getTime() - new Date(items[0].checkIn).getTime()) / 86400000));
-                    const inclusiveNightly = totals.totalAmount / nights;
-                    bookingPrice.textContent = formatMoney(inclusiveNightly);
-                    if (unitEl) unitEl.textContent = '';
-                    if (mobileBookingPrice) mobileBookingPrice.textContent = formatMoney(inclusiveNightly);
-                }
+                bookingPrice.textContent = formatMoney(totals.totalAmount);
+                if (unitEl) unitEl.textContent = 'Toplam • Vergiler dahil';
+                if (mobileBookingPrice) mobileBookingPrice.textContent = formatMoney(totals.totalAmount);
 
                 breakdown.innerHTML = buildMultiRoomBreakdownHtml(perRoom, totals);
 
@@ -3237,6 +3614,30 @@
                 const modalScore = document.getElementById('reviewModalScore');
                 const modalText = document.getElementById('reviewModalText');
                 if (!modal || !modalText) return;
+                const insightModal = document.getElementById('reviewInsightModal');
+                const insightTitle = document.getElementById('reviewInsightTitle');
+                const insightMeta = document.getElementById('reviewInsightMeta');
+                const insightList = document.getElementById('reviewInsightList');
+                const insightTabs = document.getElementById('reviewInsightTabs');
+                const insightSort = document.getElementById('reviewInsightSort');
+                const insightPager = document.getElementById('reviewInsightPager');
+                const topicPayloadEl = document.getElementById('reviewTopicPayloadJson');
+                const feedPayloadEl = document.getElementById('reviewFeedPayloadJson');
+                let topicPayload = [];
+                let feedPayload = [];
+                let activeInsightTopic = 'all';
+                let activeInsightPage = 1;
+                const insightPageSize = 10;
+                try {
+                    topicPayload = JSON.parse(topicPayloadEl?.textContent || '[]');
+                } catch (_) {
+                    topicPayload = [];
+                }
+                try {
+                    feedPayload = JSON.parse(feedPayloadEl?.textContent || '[]');
+                } catch (_) {
+                    feedPayload = [];
+                }
 
                 function openReviewModal(payload) {
                     if (modalTitle) modalTitle.textContent = payload.title || 'Misafir yorumu';
@@ -3254,11 +3655,95 @@
                     document.body.style.overflow = '';
                 }
 
+                function buildInsightTabs() {
+                    if (!insightTabs) return;
+                    const tabs = [{ key: 'all', label: 'Genel', count: feedPayload.length }].concat(topicPayload || []);
+                    insightTabs.innerHTML = tabs.map(function (topic) {
+                        const key = topic.key || 'all';
+                        const label = topic.label || 'Genel';
+                        const count = key === 'all' ? feedPayload.length : (topic.count || 0);
+                        const activeClass = key === activeInsightTopic ? ' is-active' : '';
+                        return '<button type="button" class="review-insight-tab' + activeClass + '" data-review-insight-topic="' + escapeHtml(key) + '">' +
+                            escapeHtml(label) + '<span>' + escapeHtml(String(count)) + '</span>' +
+                        '</button>';
+                    }).join('');
+                }
+
+                function getInsightItems() {
+                    const items = activeInsightTopic === 'all'
+                        ? (feedPayload || []).slice()
+                        : (feedPayload || []).filter(function (x) {
+                            return Array.isArray(x?.topics) && x.topics.indexOf(activeInsightTopic) > -1;
+                        });
+                    const sortValue = insightSort?.value || 'new';
+                    if (sortValue === 'best') {
+                        items.sort(function (a, b) { return (parseFloat(b?.score || '0') || 0) - (parseFloat(a?.score || '0') || 0); });
+                    } else if (sortValue === 'worst') {
+                        items.sort(function (a, b) { return (parseFloat(a?.score || '0') || 0) - (parseFloat(b?.score || '0') || 0); });
+                    }
+                    return items;
+                }
+
+                function renderInsightModal() {
+                    if (!insightModal || !insightList) return;
+                    const topic = activeInsightTopic === 'all'
+                        ? { label: 'Genel', score: '', count: feedPayload.length }
+                        : (topicPayload || []).find(function (x) { return x && x.key === activeInsightTopic; });
+                    if (!topic) return;
+                    const matched = getInsightItems();
+                    const totalPages = Math.max(1, Math.ceil(matched.length / insightPageSize));
+                    activeInsightPage = Math.min(Math.max(1, activeInsightPage), totalPages);
+                    const pageItems = matched.slice((activeInsightPage - 1) * insightPageSize, activeInsightPage * insightPageSize);
+                    if (insightTitle) insightTitle.textContent = topic.label + (topic.score ? ' · ' + topic.score : '');
+                    if (insightMeta) insightMeta.textContent = matched.length + ' yorum gösteriliyor · Sayfa başı 10 yorum';
+                    buildInsightTabs();
+                    if (pageItems.length === 0) {
+                        insightList.innerHTML = '<div class="review-insight-empty">Bu başlık için henüz detaylı yorum bulunmuyor.</div>';
+                    } else {
+                        insightList.innerHTML = pageItems.map(function (item) {
+                            const date = item?.date || '';
+                            const name = item?.name || 'Misafir';
+                            const score = item?.score || '';
+                            const text = item?.text || '';
+                            return '<article class="review-insight-card">' +
+                                '<header><strong>' + escapeHtml(name) + '</strong><span>' + escapeHtml(date) + '</span><b>' + escapeHtml(score) + '</b></header>' +
+                                '<p>' + escapeHtml(text) + '</p>' +
+                            '</article>';
+                        }).join('');
+                    }
+                    if (insightPager) {
+                        insightPager.hidden = totalPages <= 1;
+                        insightPager.innerHTML = totalPages <= 1 ? '' :
+                            '<button type="button" data-review-insight-page="prev" ' + (activeInsightPage <= 1 ? 'disabled' : '') + '>Önceki</button>' +
+                            '<span>' + activeInsightPage + ' / ' + totalPages + '</span>' +
+                            '<button type="button" data-review-insight-page="next" ' + (activeInsightPage >= totalPages ? 'disabled' : '') + '>Sonraki</button>';
+                    }
+                }
+
+                function openInsightModal(topicKey) {
+                    if (!insightModal || !insightList) return;
+                    activeInsightTopic = topicKey || 'all';
+                    activeInsightPage = 1;
+                    if (insightSort) insightSort.value = 'new';
+                    renderInsightModal();
+                    insightModal.classList.add('is-open');
+                    insightModal.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                }
+
+                function closeInsightModal() {
+                    if (!insightModal) return;
+                    insightModal.classList.remove('is-open');
+                    insightModal.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                }
+
                 modal.querySelectorAll('[data-review-modal-close]').forEach(function (btn) {
                     btn.addEventListener('click', closeReviewModal);
                 });
                 document.addEventListener('keydown', function (e) {
                     if (e.key === 'Escape' && modal.classList.contains('is-open')) closeReviewModal();
+                    if (e.key === 'Escape' && insightModal && insightModal.classList.contains('is-open')) closeInsightModal();
                 });
 
                 document.querySelectorAll('[data-review-card]').forEach(function (card) {
@@ -3284,6 +3769,38 @@
                             score: score,
                             text: full.textContent || p.textContent || ''
                         });
+                    });
+                });
+
+                if (insightModal) {
+                    insightModal.querySelectorAll('[data-review-insight-close]').forEach(function (btn) {
+                        btn.addEventListener('click', closeInsightModal);
+                    });
+                    insightModal.addEventListener('click', function (event) {
+                        const tab = event.target.closest('[data-review-insight-topic]');
+                        if (tab) {
+                            activeInsightTopic = tab.getAttribute('data-review-insight-topic') || 'all';
+                            activeInsightPage = 1;
+                            renderInsightModal();
+                            return;
+                        }
+                        const pageButton = event.target.closest('[data-review-insight-page]');
+                        if (pageButton) {
+                            const direction = pageButton.getAttribute('data-review-insight-page');
+                            activeInsightPage += direction === 'next' ? 1 : -1;
+                            renderInsightModal();
+                        }
+                    });
+                    insightSort?.addEventListener('change', function () {
+                        activeInsightPage = 1;
+                        renderInsightModal();
+                    });
+                }
+                document.querySelectorAll('[data-review-topic-open="true"]').forEach(function (chip) {
+                    chip.addEventListener('click', function () {
+                        const topicKey = chip.getAttribute('data-topic-key') || '';
+                        if (!topicKey) return;
+                        openInsightModal(topicKey);
                     });
                 });
             }
@@ -3366,31 +3883,8 @@
                 activeRoomDetailName = roomName;
                 activeRoomDetailRoomId = roomId;
 
-                if (roomDetailModalImage) {
-                    const cover = activeRoomDetailGalleryItems[0] || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 520'%3E%3Crect width='800' height='520' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%2364758b' font-family='Arial' font-size='34'%3EOda gorseli hazirlaniyor%3C/text%3E%3C/svg%3E";
-                    roomDetailModalImage.src = cover;
-                    roomDetailModalImage.alt = roomName;
-                }
                 if (roomDetailModalGalleryOpen) {
                     roomDetailModalGalleryOpen.hidden = activeRoomDetailGalleryItems.length === 0;
-                }
-                if (roomDetailModalThumbs) {
-                    roomDetailModalThumbs.innerHTML = '';
-                    activeRoomDetailGalleryItems.forEach(function (item, index) {
-                        const thumb = document.createElement('button');
-                        thumb.type = 'button';
-                        thumb.className = 'room-detail-modal-thumb' + (index === 0 ? ' active' : '');
-                        thumb.innerHTML = '<img src="' + item + '" alt="' + roomName + ' görsel ' + (index + 1) + '">';
-                        thumb.addEventListener('click', function () {
-                            if (roomDetailModalImage) {
-                                roomDetailModalImage.src = item;
-                            }
-                            roomDetailModalThumbs.querySelectorAll('.room-detail-modal-thumb').forEach(function (node, nodeIndex) {
-                                node.classList.toggle('active', nodeIndex === index);
-                            });
-                        });
-                        roomDetailModalThumbs.appendChild(thumb);
-                    });
                 }
 
                 roomDetailModalGrid.innerHTML = '';
@@ -3488,6 +3982,167 @@
             openAmenitiesModal?.addEventListener('click', function () {
                 openModal(amenitiesModal);
             });
+            document.querySelectorAll('[data-open-amenities]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const expand = document.getElementById('amenitiesExpand');
+                    if (expand && 'open' in expand) {
+                        expand.open = true;
+                        scrollToElementWithOffset(expand, 86);
+                        return;
+                    }
+                    openModal(amenitiesModal);
+                });
+            });
+
+            function scrollToElementWithOffset(targetEl, offset) {
+                if (!(targetEl instanceof HTMLElement)) return;
+                const top = targetEl.getBoundingClientRect().top + window.scrollY - (offset || 0);
+                window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+            }
+
+            const ratingSummaryJump = document.getElementById('ratingSummaryJump');
+            ratingSummaryJump?.addEventListener('click', function () {
+                const target = document.getElementById('reviewsSection');
+                scrollToElementWithOffset(target, 86);
+            });
+            ratingSummaryJump?.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    const target = document.getElementById('reviewsSection');
+                    scrollToElementWithOffset(target, 86);
+                }
+            });
+
+            document.querySelectorAll('[data-scroll-booking]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    if (isMobileBookingMode()) {
+                        openBookingSheet();
+                    } else {
+                        scrollToBookingArea();
+                    }
+                });
+            });
+
+            document.querySelectorAll('[data-scroll-reviews]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const target = document.getElementById('reviewsSection');
+                    scrollToElementWithOffset(target, 86);
+                });
+            });
+
+            // Kampanya rozetleri (2 slot): 2 sn'de bir döndür.
+            try {
+                const campaignJsonEl = document.getElementById('hotelCampaignPayloadJson');
+                const campaignItems = campaignJsonEl ? JSON.parse(campaignJsonEl.textContent || '[]') : [];
+                const slots = Array.from(document.querySelectorAll('[data-campaign-slot]'));
+                if (Array.isArray(campaignItems) && campaignItems.length > 0 && slots.length > 0) {
+                    let index = 0;
+                    const applySlots = function () {
+                        for (let i = 0; i < slots.length; i++) {
+                            const el = slots[i];
+                            const item = campaignItems[(index + i) % campaignItems.length];
+                            const name = (item?.name || '').toString().trim();
+                            let slug = (item?.slug || '').toString().trim();
+                            if (!name) {
+                                el.hidden = true;
+                                continue;
+                            }
+                            // sayfa_url gelirse son segmenti al
+                            if (slug.includes('/')) {
+                                const parts = slug.split('/').filter(Boolean);
+                                slug = parts.length ? parts[parts.length - 1] : slug;
+                            }
+                            el.hidden = false;
+                            const span = el.querySelector('span');
+                            if (span) span.textContent = name;
+                            el.setAttribute('href', '/kampanyalar/' + encodeURIComponent(slug || ''));
+                        }
+                        index = (index + 2) % campaignItems.length;
+                    };
+                    applySlots();
+                    window.setInterval(applySlots, 2000);
+                }
+            } catch (_) { /* no-op */ }
+
+            // Otel videosu modal
+            const openHotelVideoBtn = document.querySelector('[data-open-hotel-video]');
+            const hotelVideoModal = document.getElementById('hotelVideoModal');
+            const hotelVideoBackdrop = document.getElementById('hotelVideoBackdrop');
+            const hotelVideoClose = document.querySelector('[data-close-hotel-video]');
+            const hotelVideoFrame = document.getElementById('hotelVideoFrame');
+            const hotelVideoSeed = '@(Model.VideoUrl ?? string.Empty)'.trim();
+
+            function toYoutubeEmbedUrl(url) {
+                const raw = (url || '').toString().trim();
+                if (!raw) return '';
+                try {
+                    const u = new URL(raw, window.location.origin);
+                    const host = (u.hostname || '').toLowerCase();
+                    if (host.includes('youtu.be')) {
+                        const id = u.pathname.split('/').filter(Boolean)[0] || '';
+                        return id ? ('https://www.youtube-nocookie.com/embed/' + id) : raw;
+                    }
+                    if (host.includes('youtube.com')) {
+                        const v = u.searchParams.get('v') || '';
+                        if (v) return 'https://www.youtube-nocookie.com/embed/' + v;
+                        const parts = u.pathname.split('/').filter(Boolean);
+                        const idx = parts.indexOf('embed');
+                        const id = idx >= 0 ? (parts[idx + 1] || '') : (parts[parts.length - 1] || '');
+                        return id ? ('https://www.youtube-nocookie.com/embed/' + id) : raw;
+                    }
+                } catch (_) { /* ignore */ }
+                return raw;
+            }
+
+            function openHotelVideo() {
+                if (!hotelVideoModal || !hotelVideoBackdrop) return;
+                hotelVideoBackdrop.hidden = false;
+                hotelVideoBackdrop.classList.add('is-open');
+                hotelVideoModal.hidden = false;
+                hotelVideoModal.classList.add('is-open');
+                hotelVideoModal.setAttribute('aria-hidden', 'false');
+                if (hotelVideoFrame instanceof HTMLIFrameElement) {
+                    const src = toYoutubeEmbedUrl(hotelVideoSeed);
+                    hotelVideoFrame.src = src ? (src + (src.includes('?') ? '&' : '?') + 'autoplay=1&rel=0') : '';
+                }
+            }
+
+            function closeHotelVideo() {
+                if (!hotelVideoModal || !hotelVideoBackdrop) return;
+                hotelVideoModal.classList.remove('is-open');
+                hotelVideoModal.hidden = true;
+                hotelVideoModal.setAttribute('aria-hidden', 'true');
+                hotelVideoBackdrop.classList.remove('is-open');
+                hotelVideoBackdrop.hidden = true;
+                if (hotelVideoFrame instanceof HTMLIFrameElement) {
+                    hotelVideoFrame.src = '';
+                }
+            }
+
+            openHotelVideoBtn?.addEventListener('click', function () {
+                openHotelVideo();
+            });
+            hotelVideoClose?.addEventListener('click', function () {
+                closeHotelVideo();
+            });
+            hotelVideoBackdrop?.addEventListener('click', function () {
+                closeHotelVideo();
+            });
+
+            // "Sil" butonunun her zaman hızlı çalışması için event delegation (mobil tıklama edge-case fix)
+            roomItemsRoot?.addEventListener('click', function (event) {
+                const target = event.target instanceof HTMLElement ? event.target : null;
+                const removeBtn = target?.closest?.('[data-remove-room]');
+                if (!removeBtn) return;
+                const item = removeBtn.closest?.('[data-room-item]');
+                if (!item) return;
+                event.preventDefault();
+                item.remove();
+                renumberRoomItems();
+                syncRoomsJsonAndHiddenFields();
+                ensureGuestCapacity(false);
+                refreshPriceQuote();
+            });
 
             document.querySelectorAll('[data-room-detail-open]').forEach(function (button) {
                 button.addEventListener('click', function () {
@@ -3497,16 +4152,8 @@
 
             roomDetailModalGalleryOpen?.addEventListener('click', function () {
                 if (activeRoomDetailGalleryItems.length > 0) {
-                    openGallery(activeRoomDetailGalleryItems, activeRoomDetailName, 0);
+                    openSlayt(activeRoomDetailGalleryItems, activeRoomDetailName, 0);
                 }
-            });
-
-            roomDetailModalThumbPrev?.addEventListener('click', function () {
-                roomDetailModalThumbs?.scrollBy({ left: -220, behavior: 'smooth' });
-            });
-
-            roomDetailModalThumbNext?.addEventListener('click', function () {
-                roomDetailModalThumbs?.scrollBy({ left: 220, behavior: 'smooth' });
             });
 
             roomDetailModalSelectBtn?.addEventListener('click', function () {
@@ -3556,14 +4203,9 @@
                     return;
                 }
 
-                if (isOnlinePaymentSelected()) {
-                    event.preventDefault();
-                    showInfoModal('Online ödeme altyapısı şu anda geliştirme aşamasında. Şimdilik kapıda ödeme / nakit seçeneği ile rezervasyon tamamlayabilirsiniz.', false);
-                    return;
-                }
-
                 if (profileCompletionRequired) {
                     event.preventDefault();
+                    shouldResumeReservationAfterProfile = true;
                     openProfileCompletionModal('Rezervasyon oluşturabilmek için telefon, doğum tarihi, cinsiyet, il, ilçe ve mahalle bilgilerinizi tamamlayın.');
                     return;
                 }
@@ -3582,12 +4224,9 @@
                 }
 
                 reservationSubmitConfirmed = true;
+                syncRoomsJsonAndHiddenFields();
                 closeModal(reservationConfirmModal);
-                if (typeof bookingForm.requestSubmit === 'function') {
-                    bookingForm.requestSubmit();
-                } else {
-                    bookingForm.submit();
-                }
+                HTMLFormElement.prototype.submit.call(bookingForm);
             });
 
             profileCompletionForm?.addEventListener('submit', async function (event) {
@@ -3620,6 +4259,11 @@
                     window.setTimeout(function () {
                         markProfileCompletionResolved();
                         closeModal(profileModal);
+                        if (shouldResumeReservationAfterProfile) {
+                            shouldResumeReservationAfterProfile = false;
+                            continueReservationAttemptAfterProfile();
+                            return;
+                        }
                         resumeDraftFlow();
                     }, 700);
                 } catch (error) {
@@ -3696,6 +4340,7 @@
                 });
             }
             renumberRoomItems();
+            setActiveRoomIndex(0);
             syncRoomsJsonAndHiddenFields();
             syncGuestInputs();
             ensureGuestCapacity(false);
@@ -3704,6 +4349,22 @@
             initReviewReadMore();
             initRoomFeaturePanels();
             paymentMethodSelect?.addEventListener('change', syncPaymentMethodState);
+
+            // Oda kart görselleri scroll'a gelince "geç yükleniyor" hissi vermesin diye
+            // ilk etapta oda kapak görsellerini prefetch edelim (tarayıcı cache'e alsın).
+            (function prefetchRoomCoverImages() {
+                const covers = Array.from(document.querySelectorAll('.room-card-cover img'))
+                    .map(function (img) { return img instanceof HTMLImageElement ? (img.currentSrc || img.src || '').trim() : ''; })
+                    .filter(Boolean);
+                if (!covers.length) return;
+                const limit = Math.min(14, covers.length);
+                for (let i = 0; i < limit; i++) {
+                    const src = covers[i];
+                    const pre = new Image();
+                    pre.decoding = 'async';
+                    pre.src = src;
+                }
+            })();
 
             const reviewSortSelect = document.getElementById('reviewSortSelect');
             reviewSortSelect?.addEventListener('change', function () {
@@ -3733,8 +4394,8 @@
                     });
             });
         })();
-        */
     </script>
+    <script src="~/assets/js/otel-detay-reservation.js" asp-append-version="true"></script>
     <script nonce="@nonce">
         (function () {
             var hid = @Model.Id;

@@ -1,0 +1,91 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerAccountInfoPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    var q = Model.Shell.SelectedHotelId is long hid ? $"?otelId={hid}" : string.Empty;
+}
+
+<section class="partner-growth-hero">
+    <div>
+        <p class="partner-room-kicker">Profil</p>
+        <h2>Hesap bilgileri</h2>
+        <p>Bu ekran salt okunur özet bilgisidir. Kurumsal ve başvuru alanlarını güncellemek için <a href="/panel/partner/basvuru-ve-evraklar@q" class="partner-text-link">Başvuru ve evraklar</a> sayfasını kullanın.</p>
+    </div>
+</section>
+
+<div class="partner-account-grid">
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>Kullanıcı hesabı</h2>
+                <p><code>users</code> tablosu</p>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.UserSection.ProfilePhotoPath))
+            {
+                var rawPhoto = Model.UserSection.ProfilePhotoPath!.Trim();
+                var photoSrc = rawPhoto.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? rawPhoto : Url.Content("~/" + rawPhoto.TrimStart('/'));
+                <img src="@photoSrc" alt="" class="partner-account-avatar" />
+            }
+        </div>
+        <dl class="partner-dl-grid">
+            <div><dt>Ad soyad</dt><dd>@Model.UserSection.FullName</dd></div>
+            <div><dt>Kullanıcı ID</dt><dd>@Model.UserSection.UserId</dd></div>
+            <div><dt>E-posta</dt><dd>@Model.UserSection.Email</dd></div>
+            <div><dt>Telefon</dt><dd>@(string.IsNullOrWhiteSpace(Model.UserSection.Phone) ? "—" : Model.UserSection.Phone)</dd></div>
+            <div><dt>Rol</dt><dd>@Model.UserSection.Role</dd></div>
+            <div><dt>Dil</dt><dd>@Model.UserSection.Language</dd></div>
+            <div><dt>Hesap durumu</dt><dd><span class="badge bg-blue-lt">@Model.UserSection.AccountStatusText</span></dd></div>
+            <div><dt>Kayıt</dt><dd>@Model.UserSection.RegistrationText</dd></div>
+            <div><dt>Son giriş</dt><dd>@Model.UserSection.LastLoginText</dd></div>
+            <div><dt>E-posta doğrulama</dt><dd>@Model.UserSection.EmailVerificationText</dd></div>
+            <div><dt>Telefon doğrulama</dt><dd>@Model.UserSection.PhoneVerificationText</dd></div>
+            <div><dt>KVKK onayı</dt><dd>@Model.UserSection.KvkkText</dd></div>
+            <div><dt>Pazarlama izni</dt><dd>@Model.UserSection.MarketingConsentText</dd></div>
+        </dl>
+    </article>
+
+    @if (Model.PartnerSection is not null)
+    {
+        <article class="partner-section-card">
+            <div class="partner-section-head">
+                <div>
+                    <h2>Partner / kurumsal</h2>
+                    <p><code>partner_detaylari</code> · ID @Model.PartnerSection.PartnerId</p>
+                </div>
+                <span class="badge @(Model.PartnerSection.PartnerActive ? "bg-green-lt" : "bg-secondary-lt")">@(Model.PartnerSection.PartnerActive ? "Aktif kayıt" : "Pasif")</span>
+            </div>
+            <dl class="partner-dl-grid">
+                <div><dt>Firma ünvanı</dt><dd>@Model.PartnerSection.CompanyName</dd></div>
+                <div><dt>Firma türü</dt><dd>@Model.PartnerSection.CompanyType</dd></div>
+                <div><dt>Vergi dairesi / no</dt><dd>@Model.PartnerSection.TaxOffice · @Model.PartnerSection.TaxNumber</dd></div>
+                <div><dt>Yetkili</dt><dd>@Model.PartnerSection.AuthorizedName</dd></div>
+                <div><dt>Yetkili e-posta</dt><dd>@Model.PartnerSection.AuthorizedEmail</dd></div>
+                <div><dt>Yetkili telefon</dt><dd>@Model.PartnerSection.AuthorizedPhone</dd></div>
+                <div class="partner-dl-full"><dt>Fatura adresi</dt><dd>@Model.PartnerSection.BillingAddress</dd></div>
+                <div><dt>İl / ilçe</dt><dd>@Model.PartnerSection.BillingCity / @Model.PartnerSection.BillingDistrict</dd></div>
+                <div><dt>Banka</dt><dd>@Model.PartnerSection.BankName @(string.IsNullOrWhiteSpace(Model.PartnerSection.BankBranch) ? "" : "(" + Model.PartnerSection.BankBranch + ")")</dd></div>
+                <div><dt>IBAN</dt><dd class="text-break">@Model.PartnerSection.Iban</dd></div>
+                <div><dt>Hesap sahibi</dt><dd>@Model.PartnerSection.AccountHolderName</dd></div>
+                <div><dt>Onay durumu</dt><dd><span class="badge bg-azure-lt">@Model.PartnerSection.ApprovalStatus</span></dd></div>
+                <div><dt>Kayıt tarihi</dt><dd>@Model.PartnerSection.RegistrationText</dd></div>
+                <div><dt>Onay tarihi</dt><dd>@(Model.PartnerSection.ApprovalDateText ?? "—")</dd></div>
+                @if (!string.IsNullOrWhiteSpace(Model.PartnerSection.RejectionReason))
+                {
+                    <div class="partner-dl-full"><dt>Red / açıklama</dt><dd>@Model.PartnerSection.RejectionReason</dd></div>
+                }
+                <div><dt>Sözleşme no</dt><dd>@(Model.PartnerSection.ContractNo ?? "—")</dd></div>
+                <div><dt>Sözleşme dönemi</dt><dd>@(Model.PartnerSection.ContractStartText ?? "—") — @(Model.PartnerSection.ContractEndText ?? "—")</dd></div>
+            </dl>
+        </article>
+    }
+    else
+    {
+        <article class="partner-section-card">
+            <div class="partner-empty-state">
+                <strong>Partner kurumsal kaydı bulunamadı</strong>
+                <p>Bu kullanıcı için <code>partner_detaylari</code> satırı yoksa özet gösterilmez. Başvuru sürecini tamamlayın.</p>
+                <a href="/panel/partner/basvuru-ve-evraklar@q" class="partner-primary-btn partner-inline-btn">Başvuru ve evraklar</a>
+            </div>
+        </article>
+    }
+</div>

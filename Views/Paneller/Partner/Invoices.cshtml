@@ -1,0 +1,68 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerFinancePageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/finance";
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Finans</div>
+            <h2 class="page-title">Faturalar</h2>
+            <div class="text-muted mt-1">Kesilen faturaları indirip dönem bazlı takip edebilirsiniz.</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title mb-0">Fatura listesi</h3>
+        <div class="card-actions">
+            <a class="btn btn-outline-primary btn-sm" href="/panel/partner/finans?otelId=@Model.Shell.SelectedHotelId">
+                Finans merkezine dön
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+                <tr>
+                    <th>Fatura No</th>
+                    <th>Tarih</th>
+                    <th>Tür</th>
+                    <th>Durum</th>
+                    <th>Toplam</th>
+                    <th>Alıcı</th>
+                    <th class="text-end">İndir</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Invoices.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-muted p-3">Fatura kaydı bulunmuyor.</td></tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.Invoices)
+                    {
+                        <tr>
+                            <td class="fw-bold">@item.InvoiceNo</td>
+                            <td class="text-muted">@item.InvoiceDateText</td>
+                            <td>@item.InvoiceTypeText</td>
+                            <td>@item.InvoiceStatusText</td>
+                            <td class="fw-bold">@item.TotalText</td>
+                            <td class="text-muted">@item.RecipientText</td>
+                            <td class="text-end">
+                                <a class="btn btn-outline-primary btn-sm" href="/panel/partner/finans/fatura-indir?hotelId=@Model.Shell.SelectedHotelId&invoiceId=@item.InvoiceId">
+                                    <i class="fas fa-download me-1"></i>Doküman
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

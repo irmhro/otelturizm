@@ -1,0 +1,96 @@
+@using System.Globalization
+@model otelturizmnew.Models.Paneller.Partner.PartnerHotelInfoPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/hotel-info";
+    var form = Model.Form;
+    string Dec(decimal? value) => value.HasValue ? value.Value.ToString("0.########", CultureInfo.InvariantCulture) : string.Empty;
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Tesis yönetimi</div>
+            <h2 class="page-title">Konum & Harita</h2>
+            <div class="text-muted mt-1">Adres, koordinat ve konum açıklaması otel detay ve harita aramalarında kullanılır.</div>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+                <a class="btn btn-outline-primary" href="/panel/partner/otel-bilgileri?otelId=@form.HotelId#adres">
+                    <i class="fas fa-arrow-up-right-from-square me-2"></i>Tesis veri merkezini aç
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="post" action="/panel/partner/tesis/konum/kaydet">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="HotelId" value="@form.HotelId" />
+
+    <div class="row row-cards">
+        <div class="col-12">
+            <div class="card" id="adres">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title mb-0">Adres ve koordinat</h3>
+                        <div class="text-muted small">Koordinat girilmezse harita ve mesafe filtreleri eksik çalışır.</div>
+                    </div>
+                    <div class="card-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-floppy-disk me-2"></i>Kaydet
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Ülke</label>
+                            <input class="form-control" name="Country" value="@(form.Country ?? "Türkiye")" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Şehir</label>
+                            <input class="form-control" name="City" value="@form.City" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">İlçe</label>
+                            <input class="form-control" name="District" value="@form.District" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Mahalle</label>
+                            <input class="form-control" name="Neighborhood" value="@form.Neighborhood" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Posta kodu</label>
+                            <input class="form-control" name="PostalCode" value="@form.PostalCode" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Enlem</label>
+                            <input class="form-control" type="text" inputmode="decimal" name="Latitude" value="@Dec(form.Latitude)" placeholder="Örn: 40.9060787" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Boylam</label>
+                            <input class="form-control" type="text" inputmode="decimal" name="Longitude" value="@Dec(form.Longitude)" placeholder="Örn: 29.2809220" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Tam adres</label>
+                            <textarea class="form-control" name="Address" rows="3" required>@form.Address</textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Konum açıklaması</label>
+                            <textarea class="form-control" name="LocationDescription" rows="3" placeholder="Metro, havaalanı, sahil, merkez gibi ulaşım notları">@form.LocationDescription</textarea>
+                            <div class="form-hint">Google Maps üzerinde otel noktasına sağ tıklayıp kopyaladığınız enlem/boylam değerini nokta veya virgülle girebilirsiniz.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-floppy-disk me-2"></i>Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+

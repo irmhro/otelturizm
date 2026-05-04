@@ -167,6 +167,54 @@ public class AdminCompanyApplicationDecisionRequest
     public string? Note { get; set; }
 }
 
+public sealed class AdminApprovalCenterPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public List<AdminApprovalTaskRowViewModel> PendingApprovals { get; set; } = new();
+    public List<AdminApprovalHotelRowViewModel> Hotels { get; set; } = new();
+    public List<AdminApprovalInvoiceRowViewModel> Invoices { get; set; } = new();
+}
+
+public sealed class AdminApprovalTaskRowViewModel
+{
+    public string Type { get; set; } = string.Empty;
+    public long EntityId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string ToneClass { get; set; } = "warning";
+    public string CreatedAtText { get; set; } = string.Empty;
+    public string ActionUrl { get; set; } = string.Empty;
+}
+
+public sealed class AdminApprovalHotelRowViewModel
+{
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public string PartnerName { get; set; } = string.Empty;
+    public string CityLabel { get; set; } = string.Empty;
+    public string ApprovalStatus { get; set; } = string.Empty;
+    public string PublishStatus { get; set; } = string.Empty;
+    public string ToneClass { get; set; } = "warning";
+    public decimal CommissionRate { get; set; }
+    public decimal MonthRevenue { get; set; }
+    public decimal MonthCommission { get; set; }
+}
+
+public sealed class AdminApprovalInvoiceRowViewModel
+{
+    public long InvoiceId { get; set; }
+    public string InvoiceNo { get; set; } = string.Empty;
+    public string InvoiceType { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string BuyerTitle { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string ToneClass { get; set; } = "info";
+    public decimal TotalAmount { get; set; }
+    public string DateText { get; set; } = string.Empty;
+}
+
 public class AdminCommissionRuleRowViewModel
 {
     public long RuleId { get; set; }

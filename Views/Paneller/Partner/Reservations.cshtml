@@ -6,410 +6,431 @@
     var hasNextPage = Model.CurrentPage < Model.TotalPages;
 }
 
-<section class="partner-grid">
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Rezervasyonlar</div>
+            <h2 class="page-title">Rezervasyon Listesi</h2>
+            <div class="text-muted mt-1">Onay, red, detay ve misafir mesajı aksiyonlarını tek ekranda yönetin.</div>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+                <a href="/panel/partner/rezervasyonlar/disa-aktar?otelId=@Model.Shell.SelectedHotelId" class="btn btn-outline-primary">
+                    <i class="fas fa-download me-2"></i>Dışa aktar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards">
 @foreach (var card in Model.SummaryCards)
 {
-    <article class="partner-stat-card @card.ToneClass">
-        <i class="fas @card.IconClass"></i>
-        <strong>@card.Value</strong>
-        <span>@card.Label</span>
-        <p>@card.Description</p>
-    </article>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <div class="text-muted text-uppercase fw-bold" style="letter-spacing:.06em; font-size:12px;">@card.Label</div>
+                        <div class="h1 m-0 mt-2">@card.Value</div>
+                        <div class="text-muted mt-1">@card.Description</div>
+                    </div>
+                    <span class="avatar bg-primary-lt text-primary">
+                        <i class="fas @card.IconClass" aria-hidden="true"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
 }
-</section>
+</div>
 
-<section class="partner-section-card">
-    <div class="partner-section-head partner-reservation-toolbar">
-        <div>
-            <h2>Rezervasyon Listesi</h2>
-            <p>Onay, red, detay ve misafir mesajı aksiyonlarını tek ekranda yönetin.</p>
-        </div>
-        <div class="partner-reservation-toolbar-actions">
-            <a href="/panel/partner/rezervasyonlar/disa-aktar?otelId=@Model.Shell.SelectedHotelId" class="partner-secondary-btn ot-btn ot-btn--ghost">
-                <i class="fas fa-download"></i>
-                Dışa aktar
-            </a>
-        </div>
-    </div>
-    <form method="get" action="/panel/partner/rezervasyonlar" class="partner-reservation-filters">
-        <input type="hidden" name="otelId" value="@Model.Shell.SelectedHotelId" />
-        <label>
-            <span>Giriş tarihi (başlangıç)</span>
-            <input type="date" name="dateFrom" value="@Model.Filters.DateFrom" />
-        </label>
-        <label>
-            <span>Çıkış tarihi (bitiş)</span>
-            <input type="date" name="dateTo" value="@Model.Filters.DateTo" />
-        </label>
-        <label>
-            <span>Durum</span>
-            <select name="status">
-                <option value="all" selected="@(Model.Filters.Status == "all")">Tüm durumlar</option>
-                <option value="pending" selected="@(Model.Filters.Status == "pending")">Bekleyen</option>
-                <option value="approved" selected="@(Model.Filters.Status == "approved")">Onaylı</option>
-                <option value="rejected" selected="@(Model.Filters.Status == "rejected")">Red / İptal</option>
-            </select>
-        </label>
-        <label>
-            <span>Ödeme tipi</span>
-            <select name="paymentMethod">
-                <option value="all" selected="@(Model.Filters.PaymentMethod == "all")">Tumu</option>
-                <option value="card" selected="@(Model.Filters.PaymentMethod == "card")">Kart ile ode</option>
-                <option value="cash" selected="@(Model.Filters.PaymentMethod == "cash")">Kapıda ödeme / nakit</option>
-                <option value="transfer" selected="@(Model.Filters.PaymentMethod == "transfer")">Havale / EFT</option>
-                <option value="mixed" selected="@(Model.Filters.PaymentMethod == "mixed")">Karma ödeme</option>
-            </select>
-        </label>
-        <label>
-            <span>Sayfa başı</span>
-            <select name="pageSize">
-                <option value="10" selected="@(Model.PageSize == 10)">10</option>
-                <option value="20" selected="@(Model.PageSize == 20)">20</option>
-                <option value="30" selected="@(Model.PageSize == 30)">30</option>
-            </select>
-        </label>
-        <input type="hidden" name="page" value="1" />
-        <button type="submit" class="partner-primary-btn ot-btn ot-btn--primary">
-            <i class="fas fa-filter"></i>
-            Filtrele
-        </button>
-    </form>
-    <div class="partner-policy-alert @(Model.PenaltyActive ? "is-critical" : Model.RejectCountLast30Days >= 3 ? "is-warning" : string.Empty)">
-        <h4>Rezervasyon onay ve red politikası</h4>
-        <p>Son 30 gündeki red sayınız: <strong>@Model.RejectCountLast30Days</strong>. Her red için nedeni detaylı ve aydınlatıcı şekilde yazmanız zorunludur.</p>
-        <ul>
-            <li>3 red ve üzeri: sistem tesisi 3 gün süreyle listelemeden otomatik kapatır.</li>
-            <li>5 red ve üzeri: kontenjan ve fiyat stratejisinin tekrar yapılandırılması önerilir.</li>
-            <li>Onay ve red işlemlerinde misafire e-posta bildirimi otomatik gönderilir.</li>
-        </ul>
-        @if (Model.PenaltyActive && !string.IsNullOrWhiteSpace(Model.PenaltyEndText))
-        {
-            <p class="partner-policy-meta">Cezai kapatma bitiş tarihi: <strong>@Model.PenaltyEndText</strong></p>
-        }
-    </div>
-    <div class="partner-table-wrap">
-        <table class="partner-table partner-reservation-table">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Misafir</th>
-                    <th>Oda</th>
-                    <th>Konaklama</th>
-                    <th>Durum</th>
-                    <th>Odeme</th>
-                    <th>Tutar</th>
-                    <th>Olusturma</th>
-                    <th>Aksiyon</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach (var row in Model.Reservations)
-            {
-                <tr class="partner-reservation-row" data-reservation-search="@($"{row.ReservationNo} {row.GuestName} {row.GuestEmail} {row.GuestPhone} {row.RoomName}".ToLowerInvariant())">
-                    <td>
-                        <strong>@row.ReservationNo</strong>
-                        <small>@(row.SourceLabel ?? "Web")</small>
-                    </td>
-                    <td>
-                        <strong>@row.GuestName</strong>
-                        <small>@row.GuestEmail</small>
-                    </td>
-                    <td>
-                        <strong>@(row.RoomName ?? "Oda bilgisi yok")</strong>
-                        <small>@row.AdultCount yetiskin / @row.ChildCount cocuk</small>
-                    </td>
-                    <td>
-                        <strong>@row.StayText</strong>
-                        <small>@row.NightCount gece</small>
-                    </td>
-                    <td>
-                        <span class="partner-status-pill ot-badge">@row.StatusLabel</span>
-                        @if (!string.IsNullOrWhiteSpace(row.CancellationReason))
-                        {
-                            <small>Iptal: @row.CancellationReason</small>
-                        }
-                    </td>
-                    <td>
-                        <strong>@row.PaymentStatusLabel</strong>
-                        <small>
-                            @(row.PaymentMethodLabel ?? "Yontem belirtilmedi")
-                            @if (row.PaymentLineCount > 1 && !string.IsNullOrWhiteSpace(row.PaymentMixSummary))
-                            {
-                                <span> · @row.PaymentMixSummary</span>
-                            }
-                        </small>
-                    </td>
-                    <td>@row.TotalText</td>
-                    <td>@row.CreatedText</td>
-                    <td>
-                        <div class="partner-table-actions">
-                            @if (row.CanApprove)
-                            {
-                                <form method="post" action="/panel/partner/rezervasyonlar/durum">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
-                                    <input type="hidden" name="ReservationId" value="@row.ReservationId" />
-                                    <input type="hidden" name="ActionType" value="approve" />
-                                    <button type="submit" class="partner-icon-btn is-success ot-btn ot-btn--success" title="Onayla">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </form>
-                            }
-                            @if (row.CanReject)
-                            {
-                                <button type="button"
-                                        class="partner-icon-btn is-danger ot-btn ot-btn--danger"
-                                        title="Reddet"
-                                        data-reservation-reject
-                                        data-reservation-id="@row.ReservationId"
-                                        data-reservation-no="@row.ReservationNo"
-                                        data-guest-name="@row.GuestName">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            }
-                            <button type="button"
-                                    class="partner-icon-btn ot-btn ot-btn--ghost"
-                                    title="Detay gor"
-                                    data-reservation-detail
-                                    data-reservation-no="@row.ReservationNo"
-                                    data-guest-name="@row.GuestName"
-                                    data-guest-email="@row.GuestEmail"
-                                    data-guest-phone="@row.GuestPhone"
-                                    data-room-name="@(row.RoomName ?? string.Empty)"
-                                    data-stay-text="@row.StayText"
-                                    data-status="@row.StatusLabel"
-                                    data-payment-status="@row.PaymentStatusLabel"
-                                    data-payment-method="@(row.PaymentMethodLabel ?? string.Empty)"
-                                    data-source="@(row.SourceLabel ?? string.Empty)"
-                                    data-total="@row.TotalText"
-                                    data-created="@row.CreatedText"
-                                    data-guest-note="@(row.GuestNote ?? string.Empty)"
-                                    data-request-note="@(row.RequestNote ?? string.Empty)"
-                                    data-cancellation-reason="@(row.CancellationReason ?? string.Empty)"
-                                    data-cancellation-time="@(row.CancellationTimeText ?? string.Empty)">
-                                <i class="fas fa-eye"></i>
+<div class="row row-cards mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Filtreler</h3>
+            </div>
+            <div class="card-body">
+                <form method="get" action="/panel/partner/rezervasyonlar" data-partner-filter-form>
+                    <input type="hidden" name="otelId" value="@Model.Shell.SelectedHotelId" />
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-4 col-xl-2">
+                            <label class="form-label">Giriş tarihi (başlangıç)</label>
+                            <input class="form-control" type="date" name="dateFrom" value="@Model.Filters.DateFrom" />
+                        </div>
+                        <div class="col-12 col-md-4 col-xl-2">
+                            <label class="form-label">Çıkış tarihi (bitiş)</label>
+                            <input class="form-control" type="date" name="dateTo" value="@Model.Filters.DateTo" />
+                        </div>
+                        <div class="col-12 col-md-4 col-xl-2">
+                            <label class="form-label">Durum</label>
+                            <select class="form-select" name="status">
+                                <option value="all" selected="@(Model.Filters.Status == "all")">Tüm durumlar</option>
+                                <option value="pending" selected="@(Model.Filters.Status == "pending")">Bekleyen</option>
+                                <option value="approved" selected="@(Model.Filters.Status == "approved")">Onaylı</option>
+                                <option value="completed" selected="@(Model.Filters.Status == "completed")">Giriş yaptı</option>
+                                <option value="rejected" selected="@(Model.Filters.Status == "rejected")">Red / İptal</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">Ödeme tipi</label>
+                            <select class="form-select" name="paymentMethod">
+                                <option value="all" selected="@(Model.Filters.PaymentMethod == "all")">Tümü</option>
+                                <option value="card" selected="@(Model.Filters.PaymentMethod == "card")">Kart ile ödeme</option>
+                                <option value="cash" selected="@(Model.Filters.PaymentMethod == "cash")">Kapıda ödeme / nakit</option>
+                                <option value="transfer" selected="@(Model.Filters.PaymentMethod == "transfer")">Havale / EFT</option>
+                                <option value="mixed" selected="@(Model.Filters.PaymentMethod == "mixed")">Karma ödeme</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-2">
+                            <label class="form-label">Sayfa başı</label>
+                            <select class="form-select" name="pageSize">
+                                <option value="7" selected="@(Model.PageSize == 7)">7</option>
+                                <option value="10" selected="@(Model.PageSize == 10)">10</option>
+                                <option value="20" selected="@(Model.PageSize == 20)">20</option>
+                                <option value="30" selected="@(Model.PageSize == 30)">30</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-xl-1">
+                            <input type="hidden" name="page" value="1" />
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-2"></i>Filtrele
                             </button>
-                            @if (row.CanMessageGuest)
-                            {
-                                <button type="button"
-                                        class="partner-icon-btn is-info ot-btn ot-btn--primary"
-                                        title="Misafire mesaj"
-                                        data-reservation-message
-                                        data-reservation-id="@row.ReservationId"
-                                        data-reservation-no="@row.ReservationNo"
-                                        data-guest-name="@row.GuestName">
-                                    <i class="fas fa-envelope"></i>
-                                </button>
-                            }
                         </div>
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    </div>
-    <div class="partner-pagination">
-        <div class="partner-pagination-meta">
-            Toplam <strong>@Model.TotalCount</strong> kayit · Sayfa <strong>@Model.CurrentPage</strong> / <strong>@Model.TotalPages</strong>
-        </div>
-        <div class="partner-pagination-actions">
-            <a class="partner-secondary-btn @(hasPrevPage ? string.Empty : "is-disabled") ot-btn ot-btn--ghost"
-               href="@(hasPrevPage ? $"/panel/partner/rezervasyonlar?otelId={Model.Shell.SelectedHotelId}&dateFrom={Model.Filters.DateFrom}&dateTo={Model.Filters.DateTo}&status={Model.Filters.Status}&paymentMethod={Model.Filters.PaymentMethod}&pageSize={Model.PageSize}&conversationId={Model.SelectedConversationId}&page={Model.CurrentPage - 1}" : "#")">
-                <i class="fas fa-chevron-left"></i>
-                Onceki
-            </a>
-            <a class="partner-secondary-btn @(hasNextPage ? string.Empty : "is-disabled") ot-btn ot-btn--ghost"
-               href="@(hasNextPage ? $"/panel/partner/rezervasyonlar?otelId={Model.Shell.SelectedHotelId}&dateFrom={Model.Filters.DateFrom}&dateTo={Model.Filters.DateTo}&status={Model.Filters.Status}&paymentMethod={Model.Filters.PaymentMethod}&pageSize={Model.PageSize}&conversationId={Model.SelectedConversationId}&page={Model.CurrentPage + 1}" : "#")">
-                Sonraki
-                <i class="fas fa-chevron-right"></i>
-            </a>
-        </div>
-    </div>
-</section>
+                    </div>
+                </form>
 
-<section class="partner-section-card partner-chat-shell" id="partner-reservation-chat">
-    <div class="partner-section-head">
-        <div>
-            <h2>Partner Sohbet Alani</h2>
-            <p>Misafir mesajlari burada anlik listelenir. Konusma secip yanit verebilirsiniz.</p>
-        </div>
-    </div>
-    @if (Model.Conversations.Count == 0)
-    {
-        <div class="partner-empty-state">
-            <strong>Henüz mesaj konuşması yok</strong>
-            <p>Misafir bir mesaj gonderdiginde veya siz rezervasyondan mesaj attiginizda bu alanda sohbet gorunur.</p>
-        </div>
-    }
-    else
-    {
-        <div class="partner-chat-grid">
-            <aside class="partner-chat-thread-list">
-                @foreach (var thread in Model.Conversations)
-                {
-                    <a href="/panel/partner/rezervasyonlar?otelId=@Model.Shell.SelectedHotelId&dateFrom=@Model.Filters.DateFrom&dateTo=@Model.Filters.DateTo&status=@Model.Filters.Status&paymentMethod=@Model.Filters.PaymentMethod&pageSize=@Model.PageSize&page=@Model.CurrentPage&conversationId=@thread.ConversationId#partner-reservation-chat"
-                       class="partner-chat-thread @(thread.IsSelected ? "is-selected" : string.Empty)">
-                        <div>
-                            <strong>@thread.GuestName</strong>
-                            <small>@thread.ReservationNo</small>
-                        </div>
-                        @if (thread.UnreadCount > 0)
-                        {
-                            <span class="partner-chat-unread">@thread.UnreadCount</span>
-                        }
-                        <p>@thread.LastMessagePreview</p>
-                        <small>@thread.LastMessageTimeText</small>
-                    </a>
-                }
-            </aside>
-            <div class="partner-chat-panel">
-                <div class="partner-chat-messages">
-                    @foreach (var message in Model.ConversationMessages)
+                <div class="mt-3 alert @(Model.PenaltyActive ? "alert-danger" : Model.RejectCountLast30Days >= 3 ? "alert-warning" : "alert-info")" role="alert">
+                    <h4 class="alert-title">Rezervasyon onay &amp; red politikası</h4>
+                    <div class="text-muted">
+                        Son 30 gündeki red sayınız: <strong>@Model.RejectCountLast30Days</strong>. Her red için nedeni detaylı ve aydınlatıcı şekilde yazmanız zorunludur.
+                    </div>
+                    <ul class="mb-0 mt-2">
+                        <li>3 red ve üzeri: sistem tesisi 3 gün süreyle listelemeden otomatik kapatır.</li>
+                        <li>5 red ve üzeri: kontenjan ve fiyat stratejisinin tekrar yapılandırılması önerilir.</li>
+                        <li>Onay ve red işlemlerinde misafire e-posta bildirimi otomatik gönderilir.</li>
+                    </ul>
+                    @if (Model.PenaltyActive && !string.IsNullOrWhiteSpace(Model.PenaltyEndText))
                     {
-                        <article class="partner-chat-bubble @(message.IsFromHotel ? "is-self" : "is-guest")">
-                            <header>
-                                <strong>@message.SenderLabel</strong>
-                                <small>@message.TimeText</small>
-                            </header>
-                            <p>@message.Body</p>
-                        </article>
+                        <div class="mt-2 fw-bold">Cezai kapatma bitiş tarihi: @Model.PenaltyEndText</div>
                     }
                 </div>
-                @if (Model.MessageForm.ReservationId > 0)
-                {
-                    <form method="post" action="/panel/partner/rezervasyonlar/misafire-mesaj" class="partner-chat-reply-form">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
-                        <input type="hidden" name="ReservationId" value="@Model.MessageForm.ReservationId" />
-                        <input type="hidden" name="ConversationId" value="@Model.SelectedConversationId" />
-                        <input type="hidden" name="Subject" value="Rezervasyon bilgilendirmesi" />
-                        <textarea name="Message" rows="3" minlength="2" required placeholder="Misafire yanit yazin..."></textarea>
-                        <button type="submit" class="partner-primary-btn">
-                            <i class="fas fa-paper-plane"></i>
-                            Yanit gonder
-                        </button>
-                    </form>
-                }
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Misafir</th>
+                            <th>Oda</th>
+                            <th>Konaklama</th>
+                            <th>Durum</th>
+                            <th>Ödeme</th>
+                            <th class="text-end">Tutar</th>
+                            <th>Oluşturma</th>
+                            <th class="text-end">Aksiyon</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var row in Model.Reservations)
+                    {
+                        <tr class="partner-reservation-row partner-reservation-row--@row.StatusTone" data-reservation-search="@($"{row.ReservationNo} {row.GuestName} {row.GuestEmail} {row.GuestPhone} {row.RoomName}".ToLowerInvariant())">
+                            <td>
+                                <div class="fw-bold">@row.ReservationNo</div>
+                                <div class="text-muted small">@(row.SourceLabel ?? "Web")</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">@row.GuestName</div>
+                                <div class="text-muted small">@row.GuestEmail</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">@(row.RoomName ?? "Oda bilgisi yok")</div>
+                                <div class="text-muted small">@row.AdultCount yetişkin / @row.ChildCount çocuk</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">@row.StayText</div>
+                                <div class="text-muted small">@row.NightCount gece</div>
+                            </td>
+                            <td>
+                                <span class="partner-status-pill partner-status-pill--@row.StatusTone">@row.StatusLabel</span>
+                                @if (!string.IsNullOrWhiteSpace(row.CancellationReason))
+                                {
+                                    <div class="text-muted small mt-1">İptal: @row.CancellationReason</div>
+                                }
+                            </td>
+                            <td>
+                                <div class="fw-bold">@row.PaymentStatusLabel</div>
+                                <div class="text-muted small">
+                                    @(row.PaymentMethodLabel ?? "Yöntem belirtilmedi")
+                                    @if (row.PaymentLineCount > 1 && !string.IsNullOrWhiteSpace(row.PaymentMixSummary))
+                                    {
+                                        <span> · @row.PaymentMixSummary</span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="text-end fw-bold">@row.TotalText</td>
+                            <td class="text-muted">@row.CreatedText</td>
+                            <td class="text-end">
+                                <div class="btn-list flex-nowrap justify-content-end">
+                                    @if (row.CanApprove)
+                                    {
+                                        <form method="post" action="/panel/partner/rezervasyonlar/durum" class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                                            <input type="hidden" name="ReservationId" value="@row.ReservationId" />
+                                            <input type="hidden" name="ActionType" value="approve" />
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                Onayla
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (row.CanCheckIn)
+                                    {
+                                        <form method="post" action="/panel/partner/rezervasyonlar/durum" class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                                            <input type="hidden" name="ReservationId" value="@row.ReservationId" />
+                                            <input type="hidden" name="ActionType" value="checkin" />
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                Giriş Yaptı
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (row.CanReject)
+                                    {
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm"
+                                                title="Reddet"
+                                                data-reservation-reject
+                                                data-reservation-id="@row.ReservationId"
+                                                data-reservation-no="@row.ReservationNo"
+                                                data-guest-name="@row.GuestName">
+                                            İptal
+                                        </button>
+                                    }
+                                    <button type="button"
+                                            class="btn btn-outline-primary btn-sm"
+                                            title="Detay gör"
+                                            data-reservation-detail
+                                            data-reservation-no="@row.ReservationNo"
+                                            data-guest-name="@row.GuestName"
+                                            data-guest-email="@row.GuestEmail"
+                                            data-guest-phone="@row.GuestPhone"
+                                            data-room-name="@(row.RoomName ?? string.Empty)"
+                                            data-stay-text="@row.StayText"
+                                            data-status="@row.StatusLabel"
+                                            data-payment-status="@row.PaymentStatusLabel"
+                                            data-payment-method="@(row.PaymentMethodLabel ?? string.Empty)"
+                                            data-source="@(row.SourceLabel ?? string.Empty)"
+                                            data-total="@row.TotalText"
+                                            data-created="@row.CreatedText"
+                                            data-guest-note="@(row.GuestNote ?? string.Empty)"
+                                            data-request-note="@(row.RequestNote ?? string.Empty)"
+                                            data-cancellation-reason="@(row.CancellationReason ?? string.Empty)"
+                                            data-cancellation-time="@(row.CancellationTimeText ?? string.Empty)">
+                                        Detay
+                                    </button>
+                                    @if (row.CanMessageGuest)
+                                    {
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm"
+                                                title="Misafire mesaj"
+                                                data-reservation-message
+                                                data-reservation-id="@row.ReservationId"
+                                                data-reservation-no="@row.ReservationNo"
+                                                data-guest-name="@row.GuestName">
+                                            Mesaj
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer d-flex align-items-center">
+                <div class="text-muted">
+                    Toplam <strong>@Model.TotalCount</strong> kayıt · Sayfa <strong>@Model.CurrentPage</strong> / <strong>@Model.TotalPages</strong>
+                </div>
+                <div class="ms-auto btn-list">
+                    <a class="btn btn-outline-primary btn-sm @(hasPrevPage ? string.Empty : "disabled")"
+                       href="@(hasPrevPage ? $"/panel/partner/rezervasyonlar?otelId={Model.Shell.SelectedHotelId}&dateFrom={Model.Filters.DateFrom}&dateTo={Model.Filters.DateTo}&status={Model.Filters.Status}&paymentMethod={Model.Filters.PaymentMethod}&pageSize={Model.PageSize}&conversationId={Model.SelectedConversationId}&page={Model.CurrentPage - 1}" : "#")">
+                        <i class="fas fa-chevron-left me-1"></i>Önceki
+                    </a>
+                    <a class="btn btn-outline-primary btn-sm @(hasNextPage ? string.Empty : "disabled")"
+                       href="@(hasNextPage ? $"/panel/partner/rezervasyonlar?otelId={Model.Shell.SelectedHotelId}&dateFrom={Model.Filters.DateFrom}&dateTo={Model.Filters.DateTo}&status={Model.Filters.Status}&paymentMethod={Model.Filters.PaymentMethod}&pageSize={Model.PageSize}&conversationId={Model.SelectedConversationId}&page={Model.CurrentPage + 1}" : "#")">
+                        Sonraki<i class="fas fa-chevron-right ms-1"></i>
+                    </a>
+                </div>
             </div>
         </div>
-    }
-</section>
+    </div>
+</div>
 
 <dialog id="partner-reservation-detail-dialog" class="partner-dialog">
-    <div class="partner-dialog-card">
+    <div class="partner-dialog-card partner-reservation-detail-card">
         <div class="partner-dialog-head">
             <div>
-                <p class="partner-dialog-kicker">Rezervasyon detaylari</p>
+                <p class="partner-dialog-kicker">Rezervasyon detayları</p>
                 <h3 id="reservation-detail-no">-</h3>
             </div>
-            <button type="button" class="partner-icon-btn" data-close-dialog>
+            <button type="button" class="btn btn-icon btn-outline-primary" data-close-dialog aria-label="Kapat">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
-        <div class="partner-dialog-grid">
-            <article class="partner-dialog-panel">
-                <h4>Misafir</h4>
-                <dl>
-                    <div><dt>Ad Soyad</dt><dd id="reservation-detail-guest-name">-</dd></div>
-                    <div><dt>E-posta</dt><dd id="reservation-detail-guest-email">-</dd></div>
-                    <div><dt>Telefon</dt><dd id="reservation-detail-guest-phone">-</dd></div>
-                </dl>
+
+        <div class="partner-dialog-summary">
+            <article>
+                <span>Misafir</span>
+                <strong id="reservation-detail-guest-name">-</strong>
             </article>
-            <article class="partner-dialog-panel">
-                <h4>Konaklama</h4>
-                <dl>
-                    <div><dt>Oda</dt><dd id="reservation-detail-room-name">-</dd></div>
-                    <div><dt>Tarih</dt><dd id="reservation-detail-stay">-</dd></div>
-                    <div><dt>Durum</dt><dd id="reservation-detail-status">-</dd></div>
-                </dl>
+            <article>
+                <span>Konaklama</span>
+                <strong id="reservation-detail-stay">-</strong>
             </article>
-            <article class="partner-dialog-panel">
-                <h4>Odeme</h4>
-                <dl>
-                    <div><dt>Odeme durumu</dt><dd id="reservation-detail-payment-status">-</dd></div>
-                    <div><dt>Yontem</dt><dd id="reservation-detail-payment-method">-</dd></div>
-                    <div><dt>Tutar</dt><dd id="reservation-detail-total">-</dd></div>
-                </dl>
+            <article>
+                <span>Durum</span>
+                <strong id="reservation-detail-status">-</strong>
             </article>
-            <article class="partner-dialog-panel">
-                <h4>Kayit</h4>
-                <dl>
-                    <div><dt>Kanal</dt><dd id="reservation-detail-source">-</dd></div>
-                    <div><dt>Olusturma</dt><dd id="reservation-detail-created">-</dd></div>
-                    <div><dt>Iptal tarihi</dt><dd id="reservation-detail-cancel-time">-</dd></div>
-                    <div><dt>Iptal nedeni</dt><dd id="reservation-detail-cancel-reason">-</dd></div>
-                </dl>
+            <article>
+                <span>Tutar</span>
+                <strong id="reservation-detail-total">-</strong>
             </article>
         </div>
+
+        <div class="partner-dialog-table-grid">
+            <section class="partner-dialog-panel">
+                <h4><i class="fas fa-user me-2"></i>Misafir</h4>
+                <table class="partner-dialog-detail-table">
+                    <tbody>
+                        <tr><th>Ad Soyad</th><td id="reservation-detail-guest-name-table">-</td></tr>
+                        <tr><th>E-posta</th><td id="reservation-detail-guest-email">-</td></tr>
+                        <tr><th>Telefon</th><td id="reservation-detail-guest-phone">-</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            <section class="partner-dialog-panel">
+                <h4><i class="fas fa-bed me-2"></i>Konaklama</h4>
+                <table class="partner-dialog-detail-table">
+                    <tbody>
+                        <tr><th>Oda</th><td id="reservation-detail-room-name">-</td></tr>
+                        <tr><th>Tarih</th><td id="reservation-detail-stay-table">-</td></tr>
+                        <tr><th>Durum</th><td id="reservation-detail-status-table">-</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            <section class="partner-dialog-panel">
+                <h4><i class="fas fa-credit-card me-2"></i>Ödeme</h4>
+                <table class="partner-dialog-detail-table">
+                    <tbody>
+                        <tr><th>Durum</th><td id="reservation-detail-payment-status">-</td></tr>
+                        <tr><th>Yöntem</th><td id="reservation-detail-payment-method">-</td></tr>
+                        <tr><th>Tutar</th><td class="fw-bold" id="reservation-detail-total-table">-</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            <section class="partner-dialog-panel">
+                <h4><i class="fas fa-database me-2"></i>Kayıt</h4>
+                <table class="partner-dialog-detail-table">
+                    <tbody>
+                        <tr><th>Kanal</th><td id="reservation-detail-source">-</td></tr>
+                        <tr><th>Oluşturma</th><td id="reservation-detail-created">-</td></tr>
+                        <tr><th>İptal</th><td id="reservation-detail-cancel-time">-</td></tr>
+                        <tr><th>Neden</th><td id="reservation-detail-cancel-reason">-</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+
         <div class="partner-dialog-notes">
-            <article class="partner-dialog-panel">
+            <section class="partner-dialog-panel">
                 <h4>Misafir notu</h4>
-                <p id="reservation-detail-guest-note">-</p>
-            </article>
-            <article class="partner-dialog-panel">
+                <p class="partner-dialog-note-text" id="reservation-detail-guest-note">-</p>
+            </section>
+            <section class="partner-dialog-panel">
                 <h4>Talep notu</h4>
-                <p id="reservation-detail-request-note">-</p>
-            </article>
+                <p class="partner-dialog-note-text" id="reservation-detail-request-note">-</p>
+            </section>
+        </div>
+        <div class="partner-dialog-footer">
+            <button type="button" class="btn btn-outline-primary" data-close-dialog>Kapat</button>
         </div>
     </div>
 </dialog>
 
 <dialog id="partner-reservation-reject-dialog" class="partner-dialog">
-    <div class="partner-dialog-card">
-        <div class="partner-dialog-head">
+    <div class="card" style="max-width: 760px;">
+        <div class="card-header">
             <div>
-                <p class="partner-dialog-kicker">Rezervasyon reddet</p>
-                <h3 id="reservation-reject-title">Red sebebini belirtin</h3>
+                <div class="text-muted small">Rezervasyon reddet</div>
+                <h3 class="card-title" id="reservation-reject-title">Red sebebini belirtin</h3>
             </div>
-            <button type="button" class="partner-icon-btn" data-close-dialog>
-                <i class="fas fa-xmark"></i>
-            </button>
+            <div class="card-actions">
+                <button type="button" class="btn btn-icon btn-outline-primary" data-close-dialog aria-label="Kapat">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
         </div>
-        <form method="post" action="/panel/partner/rezervasyonlar/durum" class="partner-form-grid">
+        <form method="post" action="/panel/partner/rezervasyonlar/durum">
             @Html.AntiForgeryToken()
-            <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
-            <input type="hidden" name="ReservationId" id="reservation-reject-id" value="0" />
-            <input type="hidden" name="ActionType" value="reject" />
-            <label class="partner-form-span">
-                <span>Detayli red sebebi</span>
-                <textarea name="Reason" id="reservation-reject-reason" rows="6" minlength="15" required placeholder="Misafire aciklayici bir red nedeni yazin (en az 15 karakter)."></textarea>
-            </label>
-            <button type="submit" class="partner-primary-btn partner-form-span">
-                <i class="fas fa-ban"></i>
-                Red sebebi ile kaydet
-            </button>
+            <div class="card-body">
+                <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                <input type="hidden" name="ReservationId" id="reservation-reject-id" value="0" />
+                <input type="hidden" name="ActionType" value="reject" />
+                <div>
+                    <label class="form-label">Detaylı red sebebi</label>
+                    <textarea class="form-control" name="Reason" id="reservation-reject-reason" rows="6" minlength="15" required placeholder="Misafire açıklayıcı bir red nedeni yazın (en az 15 karakter)."></textarea>
+                    <div class="form-hint">Bu açıklama misafire e‑posta ile iletilir.</div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-primary" data-close-dialog>Vazgeç</button>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-ban me-2"></i>Red sebebi ile kaydet
+                </button>
+            </div>
         </form>
     </div>
 </dialog>
 
 <dialog id="partner-reservation-message-dialog" class="partner-dialog">
-    <div class="partner-dialog-card">
-        <div class="partner-dialog-head">
+    <div class="card" style="max-width: 760px;">
+        <div class="card-header">
             <div>
-                <p class="partner-dialog-kicker">Misafire mesaj</p>
-                <h3 id="reservation-message-title">Mesaj paneli</h3>
+                <div class="text-muted small">Misafire mesaj</div>
+                <h3 class="card-title" id="reservation-message-title">Mesaj paneli</h3>
             </div>
-            <button type="button" class="partner-icon-btn" data-close-dialog>
-                <i class="fas fa-xmark"></i>
-            </button>
+            <div class="card-actions">
+                <button type="button" class="btn btn-icon btn-outline-primary" data-close-dialog aria-label="Kapat">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
         </div>
-        <form method="post" action="/panel/partner/rezervasyonlar/misafire-mesaj" class="partner-form-grid">
+        <form method="post" action="/panel/partner/rezervasyonlar/misafire-mesaj">
             @Html.AntiForgeryToken()
-            <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
-            <input type="hidden" name="ReservationId" id="reservation-message-id" value="0" />
-            <input type="hidden" name="ConversationId" value="@Model.SelectedConversationId" />
-            <label>
-                <span>Konu</span>
-                <input type="text" name="Subject" id="reservation-message-subject" value="Konaklama bilgilendirmesi" />
-            </label>
-            <label class="partner-form-span">
-                <span>Mesaj</span>
-                <textarea name="Message" rows="5" placeholder="Misafire gonderilecek mesaj"></textarea>
-            </label>
-            <button type="submit" class="partner-primary-btn partner-form-span">
-                <i class="fas fa-paper-plane"></i>
-                Mesaji gonder
-            </button>
+            <div class="card-body">
+                <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                <input type="hidden" name="ReservationId" id="reservation-message-id" value="0" />
+                <input type="hidden" name="ConversationId" value="@Model.SelectedConversationId" />
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Konu</label>
+                        <input class="form-control" type="text" name="Subject" id="reservation-message-subject" value="Konaklama bilgilendirmesi" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Mesaj</label>
+                        <textarea class="form-control" name="Message" rows="5" placeholder="Misafire gönderilecek mesaj"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-primary" data-close-dialog>Vazgeç</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-2"></i>Mesajı gönder
+                </button>
+            </div>
         </form>
     </div>
 </dialog>
@@ -423,21 +444,28 @@
     const detailDialog = document.getElementById('partner-reservation-detail-dialog');
     const rejectDialog = document.getElementById('partner-reservation-reject-dialog');
     const messageDialog = document.getElementById('partner-reservation-message-dialog');
+    document.querySelectorAll('[data-partner-filter-form] select[name="status"], [data-partner-filter-form] select[name="pageSize"]').forEach((select) => {
+        select.addEventListener('change', () => select.form?.requestSubmit());
+    });
 
     document.querySelectorAll('[data-reservation-detail]').forEach((button) => {
         button.addEventListener('click', () => {
             if (!detailDialog) return;
             document.getElementById('reservation-detail-no').textContent = button.dataset.reservationNo || '-';
             document.getElementById('reservation-detail-guest-name').textContent = button.dataset.guestName || '-';
+            document.getElementById('reservation-detail-guest-name-table').textContent = button.dataset.guestName || '-';
             document.getElementById('reservation-detail-guest-email').textContent = button.dataset.guestEmail || '-';
             document.getElementById('reservation-detail-guest-phone').textContent = button.dataset.guestPhone || '-';
             document.getElementById('reservation-detail-room-name').textContent = button.dataset.roomName || '-';
             document.getElementById('reservation-detail-stay').textContent = button.dataset.stayText || '-';
+            document.getElementById('reservation-detail-stay-table').textContent = button.dataset.stayText || '-';
             document.getElementById('reservation-detail-status').textContent = button.dataset.status || '-';
+            document.getElementById('reservation-detail-status-table').textContent = button.dataset.status || '-';
             document.getElementById('reservation-detail-payment-status').textContent = button.dataset.paymentStatus || '-';
             document.getElementById('reservation-detail-payment-method').textContent = button.dataset.paymentMethod || '-';
             document.getElementById('reservation-detail-source').textContent = button.dataset.source || '-';
             document.getElementById('reservation-detail-total').textContent = button.dataset.total || '-';
+            document.getElementById('reservation-detail-total-table').textContent = button.dataset.total || '-';
             document.getElementById('reservation-detail-created').textContent = button.dataset.created || '-';
             document.getElementById('reservation-detail-cancel-time').textContent = button.dataset.cancellationTime || '-';
             document.getElementById('reservation-detail-cancel-reason').textContent = button.dataset.cancellationReason || '-';

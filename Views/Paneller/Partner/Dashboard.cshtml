@@ -1,143 +1,270 @@
 @using System.Globalization
 @model otelturizmnew.Models.Paneller.Partner.PartnerDashboardViewModel
-@{ Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml"; ViewData["PartnerShell"] = Model.Shell; }
-<section class="partner-section-card ot-card" style="margin-bottom:14px;">
-    <div class="partner-row-between">
-        <div>
-            <h2>Operasyon Merkezi</h2>
-            <p class="partner-muted">Seçili otel: <strong>@(string.IsNullOrWhiteSpace(Model.Shell.SelectedHotelName) ? "-" : Model.Shell.SelectedHotelName)</strong></p>
-        </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-            <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/rezervasyonlar?otelId=@Model.Shell.SelectedHotelId"><i class="fas fa-list"></i> Rezervasyonlar</a>
-            <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/takvim-fiyatlar?otelId=@Model.Shell.SelectedHotelId"><i class="fas fa-calendar-days"></i> Takvim & Fiyat</a>
-            <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/fotograflar?otelId=@Model.Shell.SelectedHotelId"><i class="fas fa-camera"></i> Fotoğraflar</a>
-            <a class="partner-secondary-btn ot-btn ot-btn--ghost" href="/panel/partner/otel-bilgileri?otelId=@Model.Shell.SelectedHotelId"><i class="fas fa-hotel"></i> Otel Bilgileri</a>
-        </div>
-    </div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-        <span class="ot-badge ot-badge--warning"><i class="fas fa-hourglass-half"></i> @Model.Shell.PendingReservations bekleyen</span>
-        <span class="ot-badge"><i class="fas fa-headset"></i> @Model.Shell.OpenSupportTickets destek</span>
-        <span class="ot-badge ot-badge--danger"><i class="fas fa-box-open"></i> @Model.Shell.LowStockAlerts stok uyarısı</span>
-        <span class="ot-badge ot-badge--info"><i class="fas fa-star"></i> @Model.Shell.UnansweredReviews yorum</span>
-    </div>
-</section>
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/dashboard";
+    ViewData["Title"] = "Partner Dashboard";
+    var hotelQuery = Model.Shell.SelectedHotelId.HasValue ? $"?otelId={Model.Shell.SelectedHotelId.Value}" : string.Empty;
+    string PartnerUrl(string path) => $"{path}{hotelQuery}";
+    var rejectTone = Model.PenaltyActive ? "danger" : Model.RejectCountLast30Days >= 3 ? "warning" : "info";
+}
 
-<section class="partner-grid partner-dashboard-grid">
-    @foreach (var card in Model.SummaryCards)
-    {
-        <article class="partner-stat-card @card.ToneClass ot-card">
-            <i class="fas @card.IconClass"></i>
-            <strong>@card.Value</strong>
-            <span>@card.Label</span>
-            <p>@card.Description</p>
-        </article>
-    }
-</section>
-<section class="partner-dashboard-actions">
-    @foreach (var action in Model.QuickActions)
-    {
-        <a href="@action.Url" class="partner-dashboard-action-card @action.ToneClass ot-card">
-            <i class="fas @action.IconClass"></i>
-            <div>
-                <strong>@action.Title</strong>
-                <p>@action.Description</p>
-            </div>
-        </a>
-    }
-</section>
-<section class="partner-two-column">
-    <article class="partner-section-card partner-revenue-card">
-        <h2>Gelir Trendi</h2>
-        @if (Model.RevenueTrend.Count == 0)
-        {
-            <div class="partner-empty-state">
-                <strong>Henüz gelir verisi yok</strong>
-                <p>Rezervasyon ve odeme verileri geldikce grafikler burada dolacak.</p>
-            </div>
-        }
-        else
-        {
-            <div class="partner-chart-bars">
-                @foreach (var point in Model.RevenueTrend)
-                {
-                    <div class="chart-col">
-                        <span class="chart-bar" style="height:@(point.HeightPercent)%"></span>
-                        <strong>@point.Label</strong>
-                        <small>@point.ReservationCount rezervasyon</small>
-                        <em>@point.RevenueAmount.ToString("C0", CultureInfo.GetCultureInfo("tr-TR"))</em>
-                    </div>
-                }
-            </div>
-        }
-    </article>
-    <article class="partner-section-card">
-        <h2>Yaklasan Rezervasyonlar</h2>
-        <div class="partner-policy-alert @(Model.PenaltyActive ? "is-critical" : Model.RejectCountLast30Days >= 3 ? "is-warning" : string.Empty)">
-            <h4>Rezervasyon onay ve red politikasi</h4>
-            <p>Son 30 gundeki red sayiniz: <strong>@Model.RejectCountLast30Days</strong>. Her red icin nedeni detayli ve aydinlatici sekilde yazmaniz zorunludur.</p>
-            <ul>
-                <li>3 red ve uzeri: sistem tesisi 3 gun sureyle listelemeden otomatik kapatir.</li>
-                <li>5 red ve uzeri: kontenjan ve fiyat stratejisinin tekrar yapilandirilmasi onerilir.</li>
-                <li>Onay ve red islemlerinde misafire e-posta bildirimi otomatik gonderilir.</li>
-            </ul>
-            @if (Model.PenaltyActive && !string.IsNullOrWhiteSpace(Model.PenaltyEndText))
-            {
-                <p class="partner-policy-meta">Cezai kapatma bitis tarihi: <strong>@Model.PenaltyEndText</strong></p>
-            }
+<div class="partner-dashboard">
+    <section class="partner-dashboard-hero">
+        <div>
+            <div class="page-pretitle">Partner Operasyon Merkezi</div>
+            <h1 class="page-title">Tesis performansını tek ekrandan yönetin</h1>
+            <p class="text-muted mb-0">Rezervasyon, fiyat, oda, stok, yorum ve kampanya aksiyonları canlı operasyon akışına göre sıralandı.</p>
         </div>
-        @if (Model.UpcomingReservations.Count == 0)
-        {
-            <div class="partner-empty-state">
-                <strong>Yaklasan rezervasyon yok</strong>
-                <p>Yeni rezervasyonlar geldiginde burada goreceksiniz.</p>
-            </div>
-        }
-        else
-        {
-            <div class="partner-list">
-                @foreach (var item in Model.UpcomingReservations)
+        <div class="partner-hero-actions">
+            <a class="btn btn-primary btn-pill" href="@PartnerUrl("/panel/partner/takvim-fiyatlar")"><i class="fas fa-calendar-days me-2"></i>Fiyat Güncelle</a>
+            <a class="btn btn-outline-primary btn-pill" href="@PartnerUrl("/panel/partner/rezervasyonlar")"><i class="fas fa-list me-2"></i>Rezervasyonlar</a>
+        </div>
+    </section>
+
+    <section class="row row-cards">
+        <div class="col-12">
+            <div class="partner-widget-strip" aria-label="Özet metrikler">
+                @foreach (var card in (Model.WidgetCards.Count > 0 ? Model.WidgetCards : Model.SummaryCards))
                 {
-                    <div class="partner-list-row partner-list-row-rich">
-                        <div>
-                            <strong>@item.GuestName</strong>
-                            <span>@item.StayText</span>
-                            <small>@item.StatusLabel · @item.PaymentStatusLabel</small>
-                        </div>
-                        <div class="partner-list-actions">
-                            <b>@item.TotalText</b>
-                            @if (item.CanApprove)
-                            {
-                                <form method="post" action="/panel/partner/rezervasyonlar/durum" class="partner-quick-action-form">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
-                                    <input type="hidden" name="ReservationId" value="@item.ReservationId" />
-                                    <input type="hidden" name="ActionType" value="approve" />
-                                    <input type="hidden" name="ReturnUrl" value="/panel/partner/dashboard?otelId=@Model.Shell.SelectedHotelId" />
-                                    <button type="submit" class="partner-dashboard-action-btn is-success ot-btn ot-btn--success">
-                                        <i class="fas fa-circle-check"></i>
-                                        Onayla
-                                    </button>
-                                </form>
-                            }
-                            @if (item.CanReject)
-                            {
-                                <button type="button"
-                                        class="partner-dashboard-action-btn is-danger ot-btn ot-btn--danger"
-                                        data-dashboard-reservation-reject
-                                        data-reservation-id="@item.ReservationId"
-                                        data-reservation-no="@item.ReservationNo"
-                                        data-guest-name="@item.GuestName">
-                                    <i class="fas fa-circle-xmark"></i>
-                                    Reddet
-                                </button>
-                            }
+                    var tone = string.IsNullOrWhiteSpace(card.ToneClass) ? "primary" : card.ToneClass;
+                    <div class="partner-widget partner-widget--@tone">
+                        <span class="partner-widget-icon"><i class="fas @card.IconClass"></i></span>
+                        <div class="partner-widget-copy">
+                            <strong>@card.Value</strong>
+                            <span>@card.Label</span>
+                            <small>@card.Description</small>
                         </div>
                     </div>
                 }
             </div>
-        }
-    </article>
-</section>
+        </div>
+    </section>
+
+    <section class="row row-cards">
+        <div class="col-12">
+            <div class="card partner-table-card">
+                <div class="card-header">
+                    <h3 class="card-title">Yaklaşan / Son Rezervasyonlar</h3>
+                    <div class="card-actions">
+                        <a class="btn btn-outline-primary btn-sm" href="@PartnerUrl("/panel/partner/rezervasyonlar")">Tümünü Gör</a>
+                    </div>
+                </div>
+                <div class="card-body border-bottom">
+                    <form method="get" action="/panel/partner/dashboard" data-dashboard-filter-form>
+                        <input type="hidden" name="otelId" value="@Model.Shell.SelectedHotelId" />
+                        <div class="row g-3 align-items-end">
+                            <div class="col-12 col-md-4 col-xl-2">
+                                <label class="form-label">Giriş tarihi</label>
+                                <input class="form-control" type="date" name="dateFrom" value="@Model.Filters.DateFrom" />
+                            </div>
+                            <div class="col-12 col-md-4 col-xl-2">
+                                <label class="form-label">Çıkış tarihi</label>
+                                <input class="form-control" type="date" name="dateTo" value="@Model.Filters.DateTo" />
+                            </div>
+                            <div class="col-12 col-md-4 col-xl-2">
+                                <label class="form-label">Durum</label>
+                                <select class="form-select" name="status">
+                                    <option value="all" selected="@(Model.Filters.Status == "all")">Tüm durumlar</option>
+                                    <option value="pending" selected="@(Model.Filters.Status == "pending")">Bekleyen</option>
+                                    <option value="approved" selected="@(Model.Filters.Status == "approved")">Onaylı</option>
+                                    <option value="completed" selected="@(Model.Filters.Status == "completed")">Giriş yaptı</option>
+                                    <option value="rejected" selected="@(Model.Filters.Status == "rejected")">Red / İptal</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-3">
+                                <label class="form-label">Ödeme tipi</label>
+                                <select class="form-select" name="paymentMethod">
+                                    <option value="all" selected="@(Model.Filters.PaymentMethod == "all")">Tümü</option>
+                                    <option value="card" selected="@(Model.Filters.PaymentMethod == "card")">Kart ile ödeme</option>
+                                    <option value="cash" selected="@(Model.Filters.PaymentMethod == "cash")">Kapıda ödeme / nakit</option>
+                                    <option value="transfer" selected="@(Model.Filters.PaymentMethod == "transfer")">Havale / EFT</option>
+                                    <option value="mixed" selected="@(Model.Filters.PaymentMethod == "mixed")">Karma ödeme</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3 col-xl-1">
+                                <label class="form-label">Sayfa başı</label>
+                                <select class="form-select" name="pageSize">
+                                    <option value="7" selected="@(Model.DashboardPageSize == 7)">7</option>
+                                    <option value="10" selected="@(Model.DashboardPageSize == 10)">10</option>
+                                    <option value="20" selected="@(Model.DashboardPageSize == 20)">20</option>
+                                    <option value="30" selected="@(Model.DashboardPageSize == 30)">30</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3 col-xl-2">
+                                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-2"></i>Filtrele</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-vcenter table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rezervasyon</th>
+                                <th>Misafir</th>
+                                <th>Oda</th>
+                                <th>Konaklama</th>
+                                <th>Durum</th>
+                                <th class="text-end">Tutar</th>
+                                <th class="text-end">Aksiyon</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @{
+                            var reservationRows = Model.UpcomingReservations.Count > 0 ? Model.UpcomingReservations : Model.RecentReservations;
+                        }
+                        @if (reservationRows.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty">
+                                        <div class="empty-icon"><i class="fas fa-calendar-xmark"></i></div>
+                                        <p class="empty-title">Rezervasyon bulunmuyor</p>
+                                        <p class="empty-subtitle text-muted">Yeni rezervasyonlar geldiğinde burada listelenecek.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var row in reservationRows.Take(Model.DashboardPageSize))
+                            {
+                                <tr class="partner-reservation-row partner-reservation-row--@row.StatusTone">
+                                    <td><div class="fw-bold">@row.ReservationNo</div><div class="text-muted small">#@row.ReservationId</div></td>
+                                    <td><div class="fw-bold">@row.GuestName</div><div class="text-muted small">@row.GuestEmail</div></td>
+                                    <td><div class="fw-bold">@(row.RoomName ?? "Oda bilgisi yok")</div><div class="text-muted small">@row.AdultCount yetişkin / @row.ChildCount çocuk</div></td>
+                                    <td><div class="fw-bold">@row.StayText</div><div class="text-muted small">@row.NightCount gece</div></td>
+                                    <td><span class="partner-status-pill partner-status-pill--@row.StatusTone">@row.StatusLabel</span></td>
+                                    <td class="text-end fw-bold">@row.TotalText</td>
+                                    <td class="text-end">
+                                        <div class="btn-list justify-content-end flex-nowrap">
+                                            @if (row.CanApprove)
+                                            {
+                                                <form method="post" action="/panel/partner/rezervasyonlar/durum" class="m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                                                    <input type="hidden" name="ReservationId" value="@row.ReservationId" />
+                                                    <input type="hidden" name="ActionType" value="approve" />
+                                                    <input type="hidden" name="ReturnUrl" value="@PartnerUrl("/panel/partner/dashboard")" />
+                                                    <button type="submit" class="btn btn-success btn-sm">Onayla</button>
+                                                </form>
+                                            }
+                                            @if (row.CanCheckIn)
+                                            {
+                                                <form method="post" action="/panel/partner/rezervasyonlar/durum" class="m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                                                    <input type="hidden" name="ReservationId" value="@row.ReservationId" />
+                                                    <input type="hidden" name="ActionType" value="checkin" />
+                                                    <input type="hidden" name="ReturnUrl" value="@PartnerUrl("/panel/partner/dashboard")" />
+                                                    <button type="submit" class="btn btn-primary btn-sm">Giriş Yaptı</button>
+                                                </form>
+                                            }
+                                            @if (row.CanReject)
+                                            {
+                                                <button type="button" class="btn btn-outline-danger btn-sm" data-dashboard-reservation-reject data-reservation-id="@row.ReservationId" data-reservation-no="@row.ReservationNo" data-guest-name="@row.GuestName">İptal</button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="row row-cards" id="partner-reservation-chat">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Partner Sohbet Alanı</h3>
+                    <div class="text-muted">Misafir mesajları burada listelenir. Konuşma seçip yanıt verebilirsiniz.</div>
+                </div>
+                <div class="card-body">
+                    @if (Model.Conversations.Count == 0)
+                    {
+                        <div class="empty">
+                            <div class="empty-icon"><i class="fas fa-comments"></i></div>
+                            <p class="empty-title">Henüz mesaj konuşması yok</p>
+                            <p class="empty-subtitle text-muted">Misafir mesaj gönderdiğinde veya siz rezervasyondan mesaj attığınızda burada görünür.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-4">
+                                <div class="list-group list-group-flush">
+                                    @foreach (var thread in Model.Conversations)
+                                    {
+                                        <a href="/panel/partner/dashboard?otelId=@Model.Shell.SelectedHotelId&dateFrom=@Model.Filters.DateFrom&dateTo=@Model.Filters.DateTo&status=@Model.Filters.Status&paymentMethod=@Model.Filters.PaymentMethod&pageSize=@Model.DashboardPageSize&conversationId=@thread.ConversationId#partner-reservation-chat"
+                                           class="list-group-item list-group-item-action @(thread.IsSelected ? "active" : string.Empty)">
+                                            <div class="d-flex align-items-start justify-content-between">
+                                                <div class="min-w-0">
+                                                    <div class="fw-bold text-truncate">@thread.GuestName</div>
+                                                    <div class="text-muted small text-truncate">@thread.ReservationNo · @thread.LastMessagePreview</div>
+                                                </div>
+                                                @if (thread.UnreadCount > 0)
+                                                {
+                                                    <span class="badge bg-danger">@thread.UnreadCount</span>
+                                                }
+                                            </div>
+                                            <div class="text-muted small mt-1">@thread.LastMessageTimeText</div>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-8">
+                                <div class="border rounded-3 p-3" style="min-height: 380px;">
+                                    <div class="d-flex flex-column gap-2" style="max-height: 360px; overflow:auto;">
+                                        @foreach (var message in Model.ConversationMessages)
+                                        {
+                                            <div class="d-flex @(message.IsFromHotel ? "justify-content-end" : "justify-content-start")">
+                                                <div class="p-2 rounded-3 @(message.IsFromHotel ? "bg-primary text-white" : "bg-light")" style="max-width: 85%;">
+                                                    <div class="d-flex justify-content-between gap-3">
+                                                        <div class="fw-bold small">@message.SenderLabel</div>
+                                                        <div class="small @(message.IsFromHotel ? "text-white-50" : "text-muted")">@message.TimeText</div>
+                                                    </div>
+                                                    <div class="mt-1">@message.Body</div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    @if (Model.MessageForm.ReservationId > 0)
+                                    {
+                                        <form method="post" action="/panel/partner/rezervasyonlar/misafire-mesaj" class="mt-3">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+                                            <input type="hidden" name="ReservationId" value="@Model.MessageForm.ReservationId" />
+                                            <input type="hidden" name="ConversationId" value="@Model.SelectedConversationId" />
+                                            <input type="hidden" name="Subject" value="Rezervasyon bilgilendirmesi" />
+                                            <input type="hidden" name="ReturnUrl" value="/panel/partner/dashboard?otelId=@Model.Shell.SelectedHotelId&dateFrom=@Model.Filters.DateFrom&dateTo=@Model.Filters.DateTo&status=@Model.Filters.Status&paymentMethod=@Model.Filters.PaymentMethod&pageSize=@Model.DashboardPageSize&conversationId=@Model.SelectedConversationId#partner-reservation-chat" />
+                                            <div class="row g-2 align-items-end">
+                                                <div class="col">
+                                                    <label class="form-label">Yanıt</label>
+                                                    <textarea class="form-control" name="Message" rows="3" minlength="2" required placeholder="Misafire yanıt yazın..."></textarea>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-paper-plane me-2"></i>Yanıt gönder
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
 
 <dialog id="partner-dashboard-reject-dialog" class="partner-dialog">
     <div class="partner-dialog-card">
@@ -146,85 +273,24 @@
                 <p class="partner-dialog-kicker">Rezervasyon reddet</p>
                 <h3 id="dashboard-reject-title">Red sebebini belirtin</h3>
             </div>
-            <button type="button" class="partner-icon-btn" data-close-dashboard-dialog>
-                <i class="fas fa-xmark"></i>
-            </button>
-        </div>
-        <div class="partner-policy-alert @(Model.PenaltyActive ? "is-critical" : Model.RejectCountLast30Days >= 3 ? "is-warning" : string.Empty)">
-            <p>Bu islem misafire aciklayici bir neden ile bildirilir. Son 30 gunde <strong>@Model.RejectCountLast30Days</strong> red gorunuyor.</p>
-            <ul>
-                <li>3 red ve uzeri durumunda tesis 3 gun otomatik kapanir.</li>
-                <li>5 red ve uzeri durumunda fiyat ve kontenjan stratejisi gozden gecirilmelidir.</li>
-            </ul>
+            <button type="button" class="partner-icon-btn" data-close-dashboard-dialog><i class="fas fa-xmark"></i></button>
         </div>
         <form method="post" action="/panel/partner/rezervasyonlar/durum" class="partner-form-grid">
             @Html.AntiForgeryToken()
             <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
             <input type="hidden" name="ReservationId" id="dashboard-reject-id" value="0" />
             <input type="hidden" name="ActionType" value="reject" />
-            <input type="hidden" name="ReturnUrl" value="/panel/partner/dashboard?otelId=@Model.Shell.SelectedHotelId" />
+            <input type="hidden" name="ReturnUrl" value="@PartnerUrl("/panel/partner/dashboard")" />
             <label class="partner-form-span">
-                <span>Misafire gidecek detayli red aciklamasi</span>
-                <textarea name="Reason" id="dashboard-reject-reason" rows="6" minlength="15" required placeholder="Odayi neden onaylayamadiginizi, alternatif oneriniz varsa bunu ve misafirin ne yapmasi gerektigini acikca yazin."></textarea>
+                <span>Misafire gidecek detaylı red açıklaması</span>
+                <textarea name="Reason" id="dashboard-reject-reason" rows="6" minlength="15" required placeholder="Odayı neden onaylayamadığınızı ve misafirin ne yapması gerektiğini açıkça yazın."></textarea>
             </label>
             <button type="submit" class="partner-primary-btn partner-form-span ot-btn ot-btn--danger">
-                <i class="fas fa-ban"></i>
-                Red sebebi ile kaydet
+                <i class="fas fa-ban"></i>Red sebebi ile kaydet
             </button>
         </form>
     </div>
 </dialog>
-<section class="partner-two-column">
-    <article class="partner-section-card">
-        <h2>Müsaitlik Uyarıları</h2>
-        @if (Model.InventoryAlerts.Count == 0)
-        {
-            <div class="partner-empty-state">
-                <strong>Kritik stok uyarısı yok</strong>
-                <p>Düşük stok veya kapalı satış günleri burada listelenecek.</p>
-            </div>
-        }
-        else
-        {
-            <div class="partner-list">
-                @foreach (var alert in Model.InventoryAlerts)
-                {
-                    <div class="partner-list-row"><strong>@alert.RoomName</strong><span>@alert.DateText</span><b>@alert.AvailabilityText</b></div>
-                }
-            </div>
-        }
-    </article>
-    <article class="partner-section-card">
-        <div class="partner-section-card-head">
-            <div>
-                <h2>Son Yorumlar</h2>
-                <p>En güncel 2 misafir yorumunu buradan izleyin.</p>
-            </div>
-            <a class="partner-section-link" href="/panel/partner/degerlendirmeler?otelId=@Model.Shell.SelectedHotelId">Tüm Yorumlar</a>
-        </div>
-        @if (Model.RecentReviews.Count == 0)
-        {
-            <div class="partner-empty-state">
-                <strong>Yorum bulunmuyor</strong>
-                <p>Onaylı veya bekleyen yorumlar bu alanda hızlıca görünür.</p>
-            </div>
-        }
-        else
-        {
-            <div class="partner-review-stack">
-                @foreach (var review in Model.RecentReviews)
-                {
-                    <article class="partner-review-card">
-                        <strong>@review.GuestName - @review.ScoreText</strong>
-                        <small>@review.CreatedText</small>
-                        <span>@review.Title</span>
-                        <p>@review.Comment</p>
-                    </article>
-                }
-            </div>
-        }
-    </article>
-</section>
 
 @section Scripts {
 @{
@@ -233,32 +299,19 @@
 <script nonce="@nonce">
 (() => {
     const rejectDialog = document.getElementById('partner-dashboard-reject-dialog');
-    if (!rejectDialog) {
-        return;
-    }
-
+    if (!rejectDialog) return;
+    document.querySelectorAll('[data-dashboard-filter-form] select[name="status"], [data-dashboard-filter-form] select[name="pageSize"]').forEach((select) => {
+        select.addEventListener('change', () => select.form?.requestSubmit());
+    });
     document.querySelectorAll('[data-dashboard-reservation-reject]').forEach((button) => {
         button.addEventListener('click', () => {
             document.getElementById('dashboard-reject-id').value = button.dataset.reservationId || '0';
-            document.getElementById('dashboard-reject-title').textContent = `${button.dataset.reservationNo || 'Rezervasyon'} / ${button.dataset.guestName || 'Misafir'} icin red sebebi`;
+            document.getElementById('dashboard-reject-title').textContent = `${button.dataset.reservationNo || 'Rezervasyon'} / ${button.dataset.guestName || 'Misafir'} için red sebebi`;
             document.getElementById('dashboard-reject-reason').value = '';
             rejectDialog.showModal();
         });
     });
-
-    document.querySelectorAll('[data-close-dashboard-dialog]').forEach((button) => {
-        button.addEventListener('click', () => {
-            button.closest('dialog')?.close();
-        });
-    });
-
-    rejectDialog.addEventListener('click', (event) => {
-        const rect = rejectDialog.getBoundingClientRect();
-        const inDialog = rect.top <= event.clientY && event.clientY <= rect.top + rect.height && rect.left <= event.clientX && event.clientX <= rect.left + rect.width;
-        if (!inDialog) {
-            rejectDialog.close();
-        }
-    });
+    document.querySelectorAll('[data-close-dashboard-dialog]').forEach((button) => button.addEventListener('click', () => button.closest('dialog')?.close()));
 })();
 </script>
 }

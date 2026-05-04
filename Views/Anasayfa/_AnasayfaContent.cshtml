@@ -200,12 +200,21 @@
         const checkInEl = document.querySelector('.hero-section input[type="date"][name="checkIn"]');
         const checkOutEl = document.querySelector('.hero-section input[type="date"][name="checkOut"]');
         const today = new Date();
-        const todayIso = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().slice(0, 10);
+
+        function toLocalIso(dateValue) {
+            const d = new Date(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate());
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        const todayIso = toLocalIso(today);
 
         function addDaysIso(isoDate, dayCount) {
             const base = new Date(isoDate + 'T00:00:00');
             base.setDate(base.getDate() + (dayCount || 0));
-            return new Date(base.getFullYear(), base.getMonth(), base.getDate()).toISOString().slice(0, 10);
+            return toLocalIso(base);
         }
 
         function syncDateMins() {

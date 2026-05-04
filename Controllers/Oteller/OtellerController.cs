@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Caching.Memory;
+using System.Linq;
 using System.Security.Claims;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Payments;
@@ -79,6 +80,23 @@ public class OtellerController : Controller
         await ApplyFavoriteStatesAsync(model, cancellationToken);
         ViewData["Title"] = model.CampaignTitle;
         return View("~/Views/Oteller/OtelListeleme.cshtml", model);
+    }
+
+    [HttpGet("harita")]
+    [OutputCache(PolicyName = "public-short")]
+    public async Task<IActionResult> HaritaOteller([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? kampanya, CancellationToken cancellationToken)
+    {
+        ViewData["PageCss"] = "haritaoteller";
+        ViewData["PageCssMobile"] = "haritaoteller.mobile";
+        var searchTermRaw = !string.IsNullOrWhiteSpace(q) ? q : city;
+        var searchTerm = SearchTextNormalizer.Normalize(searchTermRaw);
+        var etiketN = SearchTextNormalizer.Normalize(etiket);
+        var kampanyaN = SearchTextNormalizer.Normalize(kampanya);
+        var ctxBoost = Request.Cookies.TryGetValue("Otelturizm.SearchCtx", out var cx) ? cx.ToString() : null;
+        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, 1, ctxBoost, cancellationToken);
+        await ApplyFavoriteStatesAsync(model, cancellationToken);
+        ViewData["Title"] = string.IsNullOrWhiteSpace(model.SearchLabel) ? "Haritada Oteller" : $"{model.SearchLabel} haritası";
+        return View("~/Views/Oteller/HaritaOteller.cshtml", model);
     }
 
     [HttpGet("{slug}")]
@@ -177,6 +195,7 @@ public class OtellerController : Controller
                 var conversationAccess = await _messageCenterService.CanStartHotelConversationAsync(userId, model.Id, cancellationToken);
                 model.HasCompletedReservationAtHotel = conversationAccess.Allowed;
                 model.ConversationInfoMessage = conversationAccess.Message;
+                model.EligibleReviewStays = (await _userPanelService.GetEligibleReviewStaysForHotelAsync(userId, model.Id, cancellationToken)).ToList();
             }
         }
 

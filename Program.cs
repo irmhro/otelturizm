@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Http.Features;
@@ -152,6 +153,7 @@ builder.Services.AddScoped<SqlMigrationRunner>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAddressLookupService, AddressLookupService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IDepartmentPanelService, DepartmentPanelService>();
 builder.Services.AddScoped<ICurrencyFormatter, CurrencyFormatter>();
 builder.Services.AddScoped<IUserPreferenceService, UserPreferenceService>();
 builder.Services.AddScoped<IPublicTextService, PublicTextService>();
@@ -162,6 +164,7 @@ builder.Services.AddScoped<IIdempotencyService, IdempotencyService>();
 builder.Services.AddScoped<IAdminHotelManagementService, AdminHotelManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IContractContentService, ContractContentService>();
+builder.Services.AddScoped<otelturizmnew.Services.Abstractions.IPanelThemeService, otelturizmnew.Services.PanelThemeService>();
 builder.Services.AddScoped<IDevelopmentRequestService, DevelopmentRequestService>();
 builder.Services.AddScoped<IDeveloperFeedbackService, DeveloperFeedbackService>();
 builder.Services.AddScoped<IFirmaService, FirmaService>();
@@ -477,6 +480,69 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 builder.Services.AddAuthorization();
 var app = builder.Build();
+
+// One-shot: run SQL migrations and exit (local DB sync)
+if (args.Any(static a => string.Equals(a, "--run-sql-migrations", StringComparison.OrdinalIgnoreCase)))
+{
+    try
+    {
+        Console.WriteLine("SQL migrations baslatiliyor...");
+        await app.Services.RunSqlMigrationsAsync();
+        Console.WriteLine("SQL migrations tamamlandi.");
+        return;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine("SQL migrations hata verdi:");
+        Console.Error.WriteLine(ex.ToString());
+        Environment.ExitCode = 1;
+        return;
+    }
+}
+
+// One-shot: generate drift repair script + run migrations (local DB full sync)
+if (args.Any(static a => string.Equals(a, "--sync-local-schema", StringComparison.OrdinalIgnoreCase)))
+{
+    try
+    {
+        Console.WriteLine("Local schema drift repair script uretiliyor...");
+        var script = await app.Services.GenerateSchemaDriftRepairScriptAsync();
+        var outPath = Path.Combine(app.Environment.ContentRootPath, "Database", "MigrationsSql", $"{DateTime.UtcNow:yyyyMMdd}_sqlserver_local_schema_drift_repair_auto.sql");
+        await File.WriteAllTextAsync(outPath, script, Encoding.UTF8);
+        Console.WriteLine($"Repair script yazildi: {outPath}");
+
+        Console.WriteLine("SQL migrations baslatiliyor...");
+        await app.Services.RunSqlMigrationsAsync();
+        Console.WriteLine("SQL migrations tamamlandi.");
+        return;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine("Local schema sync hata verdi:");
+        Console.Error.WriteLine(ex.ToString());
+        Environment.ExitCode = 1;
+        return;
+    }
+}
+
+// One-shot: DB performance maintenance (local)
+if (args.Any(static a => string.Equals(a, "--optimize-local-db", StringComparison.OrdinalIgnoreCase)))
+{
+    try
+    {
+        Console.WriteLine("Local DB optimize baslatiliyor (stats + index reorganize)...");
+        await app.Services.OptimizeSqlServerAsync();
+        Console.WriteLine("Local DB optimize tamamlandi.");
+        return;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine("Local DB optimize hata verdi:");
+        Console.Error.WriteLine(ex.ToString());
+        Environment.ExitCode = 1;
+        return;
+    }
+}
 
 var runMigrations = builder.Configuration.GetValue<bool>("Database:RunMigrationsOnStartup", false);
 if (runMigrations)

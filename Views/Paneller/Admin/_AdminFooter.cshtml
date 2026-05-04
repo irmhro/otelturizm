@@ -1,12 +1,24 @@
-<footer class="main-footer">
 @inject otelturizmnew.Services.Abstractions.ITimeZoneService TimeZoneService
 @{
     var localNow = TimeZoneService.ToLocal(DateTime.UtcNow);
 }
-    <strong>Copyright &copy; @localNow.Year <a href="/">Otelturizm</a>.</strong>
-    Tüm hakları saklıdır.
-    <div class="float-right d-none d-sm-inline-block">
-        <b>Admin Panel</b> v1
-        <span class="ml-2 text-muted">Saat: @localNow.ToString("dd.MM.yyyy HH:mm")</span>
+<footer class="footer footer-transparent d-print-none partner-footer admin-footer-tabler">
+    <div class="container-fluid">
+        <div class="row align-items-center gy-2">
+            <div class="col-md">
+                <div class="text-muted">
+                    &copy; @localNow.Year <a href="/" class="link-secondary">Otelturizm</a> Admin
+                    <span class="mx-2">·</span>
+                    <span class="badge bg-blue-lt text-blue">Tabler</span>
+                </div>
+            </div>
+            <div class="col-md-auto">
+                <ul class="list-inline list-inline-dots mb-0">
+                    <li class="list-inline-item text-muted">@localNow.ToString("dd.MM.yyyy HH:mm")</li>
+                    <li class="list-inline-item"><a href="/yardim-merkezi" class="link-secondary">Yardım</a></li>
+                    <li class="list-inline-item"><a asp-controller="Home" asp-action="Privacy" class="link-secondary">Gizlilik</a></li>
+                </ul>
+            </div>
+        </div>
     </div>
 </footer>

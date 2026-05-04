@@ -18,7 +18,23 @@ public class PartnerShellViewModel
     public int OpenSupportTickets { get; set; }
     public int LowStockAlerts { get; set; }
     public int UnansweredReviews { get; set; }
+    public int FavoriteCount { get; set; }
+    public string FavoriteSummaryText { get; set; } = string.Empty;
     public List<PartnerHotelSwitchItemViewModel> ManagedHotels { get; set; } = new();
+    public PanelThemeViewModel Theme { get; set; } = new();
+}
+
+public sealed class PanelThemeViewModel
+{
+    public string BsTheme { get; set; } = "light"; // light/dark/auto
+    public string? PrimaryHex { get; set; }
+    public string? AccentHex { get; set; }
+    public string? SidebarBgHex { get; set; }
+    public decimal? RadiusScale { get; set; }
+    public string? Density { get; set; } // compact/normal/cozy
+    public string? FontFamily { get; set; }
+    public string? LayoutMode { get; set; } // vertical/horizontal/condensed
+    public bool Rtl { get; set; }
 }
 
 public class PartnerHotelSwitchItemViewModel
@@ -52,11 +68,20 @@ public class PartnerDashboardViewModel
 {
     public PartnerShellViewModel Shell { get; set; } = new();
     public List<PartnerStatCardViewModel> SummaryCards { get; set; } = new();
+    public List<PartnerStatCardViewModel> WidgetCards { get; set; } = new();
     public List<PartnerRevenuePointViewModel> RevenueTrend { get; set; } = new();
     public List<PartnerReservationRowViewModel> UpcomingReservations { get; set; } = new();
+    public List<PartnerReservationRowViewModel> RecentReservations { get; set; } = new();
     public List<PartnerInventoryAlertViewModel> InventoryAlerts { get; set; } = new();
     public List<PartnerReviewRowViewModel> RecentReviews { get; set; } = new();
     public List<PartnerQuickActionViewModel> QuickActions { get; set; } = new();
+    public PartnerReservationFilterViewModel Filters { get; set; } = new();
+    public int DashboardReservationTotalCount { get; set; }
+    public int DashboardPageSize { get; set; } = 7;
+    public long? SelectedConversationId { get; set; }
+    public List<PartnerConversationSummaryViewModel> Conversations { get; set; } = new();
+    public List<PartnerConversationMessageViewModel> ConversationMessages { get; set; } = new();
+    public PartnerGuestMessageRequest MessageForm { get; set; } = new();
     public int RejectCountLast30Days { get; set; }
     public bool PenaltyActive { get; set; }
     public string? PenaltyEndText { get; set; }
@@ -116,8 +141,10 @@ public class PartnerReservationRowViewModel
     public short NightCount { get; set; }
     public bool CanApprove { get; set; }
     public bool CanReject { get; set; }
+    public bool CanCheckIn { get; set; }
     public bool CanMessageGuest { get; set; }
     public bool CanOpenDetails { get; set; } = true;
+    public string StatusTone { get; set; } = "pending";
 }
 
 public class PartnerReservationsPageViewModel
@@ -188,6 +215,156 @@ public class PartnerGuestMessageRequest
     public long? ConversationId { get; set; }
     public string Subject { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
+    public string? ReturnUrl { get; set; }
+}
+
+public class PartnerGuestMessagesPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public long? SelectedConversationId { get; set; }
+    public List<PartnerConversationSummaryViewModel> Conversations { get; set; } = new();
+    public List<PartnerConversationMessageViewModel> ConversationMessages { get; set; } = new();
+    public PartnerGuestMessageRequest MessageForm { get; set; } = new();
+}
+
+public class PartnerReservationCalendarPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public string RangeLabel { get; set; } = string.Empty;
+    public string DateFrom { get; set; } = string.Empty;
+    public string DateTo { get; set; } = string.Empty;
+    public List<PartnerReservationCalendarDayRowViewModel> Days { get; set; } = new();
+    public List<PartnerReservationRowViewModel> UpcomingCheckins { get; set; } = new();
+    public List<PartnerReservationRowViewModel> UpcomingCheckouts { get; set; } = new();
+}
+
+public class PartnerReservationCalendarDayRowViewModel
+{
+    public DateOnly Date { get; set; }
+    public string DayLabel { get; set; } = string.Empty;
+    public string WeekdayLabel { get; set; } = string.Empty;
+    public int CheckinCount { get; set; }
+    public int CheckoutCount { get; set; }
+    public int InhouseCount { get; set; }
+    public int CancelledCount { get; set; }
+}
+
+public class PartnerCancellationNoShowPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public string? CancellationSummary { get; set; }
+    public string? CancellationDetails { get; set; }
+    public byte? FreeCancellationDays { get; set; }
+    public decimal? LateCancellationPenaltyPercent { get; set; }
+    public decimal? NoShowPenaltyPercent { get; set; }
+    public int CancelCountLast30Days { get; set; }
+    public int RejectCountLast30Days { get; set; }
+    public List<(string Reason, int Count)> TopCancellationReasons { get; set; } = new();
+}
+
+public class PartnerPaymentStatusesPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public string? DateFrom { get; set; }
+    public string? DateTo { get; set; }
+    public string PaymentStatus { get; set; } = "all";
+    public string PaymentMethod { get; set; } = "all";
+    public List<PartnerPaymentStatusRowViewModel> Rows { get; set; } = new();
+}
+
+public class PartnerPaymentStatusRowViewModel
+{
+    public long ReservationId { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public string StayText { get; set; } = string.Empty;
+    public string StatusLabel { get; set; } = string.Empty;
+    public string PaymentStatusLabel { get; set; } = string.Empty;
+    public string PaymentMethodLabel { get; set; } = string.Empty;
+    public string TotalText { get; set; } = string.Empty;
+    public string CollectedText { get; set; } = string.Empty;
+    public string RemainingText { get; set; } = string.Empty;
+    public string LastPaymentTimeText { get; set; } = string.Empty;
+    public string ToneClass { get; set; } = "secondary";
+}
+
+public class PartnerCompanyReservationsPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public string? DateFrom { get; set; }
+    public string? DateTo { get; set; }
+    public long? CompanyId { get; set; }
+    public string Status { get; set; } = "all";
+    public List<PartnerCompanyOptionViewModel> CompanyOptions { get; set; } = new();
+    public List<PartnerCompanyReservationRowViewModel> Rows { get; set; } = new();
+}
+
+public class PartnerCompanyReservationRowViewModel
+{
+    public long ReservationId { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
+    public string CompanyName { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public string StayText { get; set; } = string.Empty;
+    public string StatusLabel { get; set; } = string.Empty;
+    public string CompanyApprovalStatus { get; set; } = string.Empty;
+    public string TotalText { get; set; } = string.Empty;
+    public string CreatedText { get; set; } = string.Empty;
+}
+
+public class PartnerCompanyAnalyticsPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public string RangeLabel { get; set; } = "Son 90 gün";
+    public List<PartnerCompanyAnalyticsRowViewModel> Rows { get; set; } = new();
+}
+
+public class PartnerCompanyAnalyticsRowViewModel
+{
+    public long CompanyId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public int ReservationCount { get; set; }
+    public string RevenueText { get; set; } = string.Empty;
+    public string AvgTicketText { get; set; } = string.Empty;
+    public string LastReservationText { get; set; } = string.Empty;
+}
+
+public class PartnerCompanyRequestsPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public List<PartnerCompanyRequestRowViewModel> Companies { get; set; } = new();
+    public List<PartnerCompanyRequestActivityRowViewModel> Activities { get; set; } = new();
+}
+
+public class PartnerCompanyRequestRowViewModel
+{
+    public long CompanyId { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string CreatedText { get; set; } = string.Empty;
+    public string ContactText { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+}
+
+public class PartnerCompanyRequestActivityRowViewModel
+{
+    public long ActivityId { get; set; }
+    public long CompanyId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string TimeText { get; set; } = string.Empty;
+    public string? Note { get; set; }
 }
 
 public class PartnerPricingPageViewModel
@@ -233,8 +410,10 @@ public class PartnerPricingDayViewModel
     public short BlockedRooms { get; set; }
     public byte MinStay { get; set; }
     public short MaxStay { get; set; }
-    public long? CampaignId { get; set; }
+    public long? DiscountId { get; set; }
     public string? CampaignLabel { get; set; }
+    public string? DiscountPercentText { get; set; }
+    public string ToneClass { get; set; } = "open";
     public string? PriceNote { get; set; }
     public bool IsClosed { get; set; }
     public bool IsHighlighted { get; set; }
@@ -372,6 +551,9 @@ public class PartnerRoomSummaryViewModel
     public string StockText { get; set; } = string.Empty;
     public string BasePriceText { get; set; } = string.Empty;
     public string DiscountPriceText { get; set; } = string.Empty;
+    public int MonthlyReservationCount { get; set; }
+    public int MonthlyDiscountDayCount { get; set; }
+    public string ToneClass { get; set; } = "tone-1";
     public string? CoverPhotoUrl { get; set; }
     public bool IsActive { get; set; }
 }
@@ -436,18 +618,21 @@ public class PartnerHotelInfoPageViewModel
     public PartnerShellViewModel Shell { get; set; } = new();
     public PartnerHotelInfoForm Form { get; set; } = new();
     public List<PartnerAmenityOptionViewModel> AvailableAmenities { get; set; } = new();
+    public List<PartnerHotelTypeOptionViewModel> HotelTypes { get; set; } = new();
 }
 
 public class PartnerHotelInfoForm
 {
     public long HotelId { get; set; }
     public string HotelName { get; set; } = string.Empty;
+    public int? HotelTypeId { get; set; }
     public string HotelType { get; set; } = "Hotel";
     public string? TourismDocumentNo { get; set; }
     public string? TourismDocumentType { get; set; }
     public string? Description { get; set; }
     public string? ShortDescription { get; set; }
     public string? Address { get; set; }
+    public string? Country { get; set; }
     public string? City { get; set; }
     public string? District { get; set; }
     public string? Neighborhood { get; set; }
@@ -459,7 +644,12 @@ public class PartnerHotelInfoForm
     public string? ContactEmail { get; set; }
     public string? HotelPhone { get; set; }
     public string? HotelPhone2 { get; set; }
+    public string? ReservationPhone { get; set; }
     public string? Fax { get; set; }
+    public string? SalesContactName { get; set; }
+    public string? SalesContactPhone { get; set; }
+    public string? SalesContactEmail { get; set; }
+    public string? SalesNotes { get; set; }
     public string? CheckInTime { get; set; }
     public string? CheckOutTime { get; set; }
     public bool LateCheckoutAvailable { get; set; }
@@ -475,12 +665,51 @@ public class PartnerHotelInfoForm
     public bool ElevatorAvailable { get; set; }
     public byte ElevatorCount { get; set; }
     public decimal DefaultCommissionRate { get; set; }
+    public string? CommissionType { get; set; }
+    public string? CommissionCalculationType { get; set; }
+    public string? PaymentTerm { get; set; }
+    public string? PaymentMethod { get; set; }
+    public string? InvoiceIssueType { get; set; }
     public decimal? DepositAmount { get; set; }
     public byte? DepositReturnDays { get; set; }
     public string? SpokenLanguages { get; set; }
     public string? VideoUrl { get; set; }
     public string? VirtualTourUrl { get; set; }
+    public string? PublishStatus { get; set; }
+    public string? ApprovalStatus { get; set; }
+    public decimal? AverageScore { get; set; }
+    public int TotalReviewCount { get; set; }
+    public DateTime? CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
     public List<long> SelectedAmenityIds { get; set; } = new();
+}
+
+public class PartnerHotelAmenitiesUpdateRequest
+{
+    public long HotelId { get; set; }
+    public List<long> SelectedAmenityIds { get; set; } = new();
+}
+
+public class PartnerHotelLocationUpdateRequest
+{
+    public long HotelId { get; set; }
+    public string? Country { get; set; }
+    public string? City { get; set; }
+    public string? District { get; set; }
+    public string? Neighborhood { get; set; }
+    public string? PostalCode { get; set; }
+    public string? Address { get; set; }
+    public string? LocationDescription { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+}
+
+public class PartnerHotelTypeOptionViewModel
+{
+    public int HotelTypeId { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string IconClass { get; set; } = "fa-hotel";
 }
 
 public class PartnerAmenityOptionViewModel
@@ -488,7 +717,87 @@ public class PartnerAmenityOptionViewModel
     public long AmenityId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string IconClass { get; set; } = "fa-circle-check";
+    public string CategoryName { get; set; } = "Genel";
     public bool IsSelected { get; set; }
+}
+
+public class PartnerHotelPoliciesPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public PartnerHotelPoliciesForm Form { get; set; } = new();
+}
+
+public class PartnerHotelPoliciesForm
+{
+    public long HotelId { get; set; }
+    public string? SmokingPolicy { get; set; }
+    public string? PetPolicy { get; set; }
+    public decimal? PetFee { get; set; }
+    public decimal? PetDeposit { get; set; }
+    public bool PartyAllowed { get; set; }
+    public string? QuietHoursStart { get; set; }
+    public string? QuietHoursEnd { get; set; }
+    public byte? MinimumAgeLimit { get; set; }
+    public bool AdultsOnly { get; set; }
+    public string? ChildAgeRange { get; set; }
+    public bool BabyCribAvailable { get; set; }
+    public decimal? BabyCribFee { get; set; }
+    public bool ExtraBedAvailable { get; set; }
+    public decimal? ExtraBedFee { get; set; }
+    public byte? MaxChildren { get; set; }
+    public bool PrepaymentRequired { get; set; } = true;
+    public decimal? PrepaymentPercent { get; set; } = 30m;
+    public string? RemainingPaymentTimeText { get; set; }
+    public bool CreditCardPaymentAccepted { get; set; } = true;
+    public bool CashPaymentAccepted { get; set; }
+    public string? AcceptedCardsText { get; set; }
+    public string? CancellationSummary { get; set; }
+    public string? CancellationDetails { get; set; }
+    public byte? FreeCancellationDays { get; set; }
+    public decimal? LateCancellationPenaltyPercent { get; set; }
+    public decimal? NoShowPenaltyPercent { get; set; }
+    public decimal? DamageDepositAmount { get; set; }
+    public string? DamageDepositDescription { get; set; }
+    public bool OutsideFoodAllowed { get; set; } = true;
+    public bool VisitorAllowed { get; set; }
+    public string? VisitorHoursStart { get; set; }
+    public string? VisitorHoursEnd { get; set; }
+    public string? SpecialConditions { get; set; }
+}
+
+public class PartnerRoomFeaturesPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public List<PartnerRoomFeatureRowViewModel> Features { get; set; } = new();
+    public PartnerRoomFeatureAddRequest AddForm { get; set; } = new();
+}
+
+public class PartnerRoomFeatureRowViewModel
+{
+    public short FeatureId { get; set; }
+    public string Category { get; set; } = "Genel";
+    public string Name { get; set; } = string.Empty;
+    public string? IconClass { get; set; }
+    public short Order { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public class PartnerRoomFeatureAddRequest
+{
+    public long HotelId { get; set; }
+    public string Category { get; set; } = "Genel";
+    public string Name { get; set; } = string.Empty;
+    public string? IconClass { get; set; }
+    public short Order { get; set; }
+}
+
+public class PartnerRoomFeatureToggleRequest
+{
+    public long HotelId { get; set; }
+    public short FeatureId { get; set; }
+    public bool IsActive { get; set; }
 }
 
 public class PartnerPhotosPageViewModel
@@ -700,6 +1009,7 @@ public class PartnerApplicationPageViewModel
     public PartnerApplicationProfileForm Form { get; set; } = new();
     public PartnerApplicationDocumentUploadForm UploadForm { get; set; } = new();
     public List<PartnerApplicationDocumentViewModel> Documents { get; set; } = new();
+    public List<PartnerHotelTypeOptionViewModel> HotelTypes { get; set; } = new();
 }
 
 public class PartnerApplicationStatusViewModel
@@ -724,6 +1034,8 @@ public class PartnerApplicationProfileForm
     public string CompanyName { get; set; } = string.Empty;
     public string CompanyType { get; set; } = string.Empty;
     public string HotelName { get; set; } = string.Empty;
+    public int? HotelTypeId { get; set; }
+    public string HotelType { get; set; } = "Otel";
     public string ContactName { get; set; } = string.Empty;
     public string ContactTitle { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
@@ -773,6 +1085,10 @@ public class PartnerSupportPageViewModel
     public List<PartnerKnowledgeBaseArticleViewModel> KnowledgeBaseArticles { get; set; } = new();
     public List<PartnerSupportChannelViewModel> Channels { get; set; } = new();
     public PartnerSupportCreateTicketRequest CreateTicketForm { get; set; } = new();
+    public long? SelectedTicketId { get; set; }
+    public PartnerSupportTicketDetailViewModel? SelectedTicket { get; set; }
+    public List<PartnerSupportMessageViewModel> Messages { get; set; } = new();
+    public PartnerSupportSendMessageRequest SendMessageForm { get; set; } = new();
 }
 
 public class PartnerSupportTicketViewModel
@@ -784,6 +1100,29 @@ public class PartnerSupportTicketViewModel
     public string Priority { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string UpdatedText { get; set; } = string.Empty;
+    public bool IsSelected { get; set; }
+}
+
+public class PartnerSupportTicketDetailViewModel
+{
+    public long TicketId { get; set; }
+    public string TicketNo { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string Priority { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string CreatedText { get; set; } = string.Empty;
+    public string UpdatedText { get; set; } = string.Empty;
+}
+
+public class PartnerSupportMessageViewModel
+{
+    public long MessageId { get; set; }
+    public string SenderLabel { get; set; } = "Partner";
+    public string Body { get; set; } = string.Empty;
+    public string TimeText { get; set; } = string.Empty;
+    public bool IsFromPartner { get; set; }
+    public string? AttachmentUrl { get; set; }
 }
 
 public class PartnerKnowledgeBaseArticleViewModel
@@ -808,4 +1147,154 @@ public class PartnerSupportCreateTicketRequest
     public string Category { get; set; } = "Operasyon";
     public string Priority { get; set; } = "Normal";
     public string Message { get; set; } = string.Empty;
+}
+
+public class PartnerSupportSendMessageRequest
+{
+    public long HotelId { get; set; }
+    public long TicketId { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public IFormFile? File { get; set; }
+}
+
+public sealed class PartnerLocationInsightsPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public string HotelLocationLabel { get; set; } = string.Empty;
+    public string InfoNote { get; set; } = string.Empty;
+    public List<PartnerStatCardViewModel> SummaryCards { get; set; } = new();
+    public List<PartnerGuestCityInsightRowViewModel> GuestCityRows { get; set; } = new();
+    public List<PartnerGuestCountryInsightRowViewModel> GuestCountryRows { get; set; } = new();
+    public List<PartnerDailyHotelStatRowViewModel> DailyStatRows { get; set; } = new();
+}
+
+public sealed class PartnerGuestCityInsightRowViewModel
+{
+    public string CityLabel { get; set; } = string.Empty;
+    public int ReservationCount { get; set; }
+    public decimal SharePercent { get; set; }
+}
+
+public sealed class PartnerGuestCountryInsightRowViewModel
+{
+    public string CountryLabel { get; set; } = string.Empty;
+    public int ReservationCount { get; set; }
+    public decimal SharePercent { get; set; }
+}
+
+public sealed class PartnerDailyHotelStatRowViewModel
+{
+    public string DateText { get; set; } = string.Empty;
+    public int Reservations { get; set; }
+    public decimal? OccupancyPercent { get; set; }
+    public decimal? NetRevenue { get; set; }
+}
+
+public sealed class PartnerFavoriteGuestsPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public string PrivacyNote { get; set; } = string.Empty;
+    public List<PartnerStatCardViewModel> SummaryCards { get; set; } = new();
+    public List<PartnerFavoriteGuestRowViewModel> Rows { get; set; } = new();
+}
+
+public sealed class PartnerFavoriteGuestRowViewModel
+{
+    public long FavoriteLinkId { get; set; }
+    public long UserId { get; set; }
+    public string DisplayName { get; set; } = string.Empty;
+    public string MaskedEmail { get; set; } = string.Empty;
+    public string UserCity { get; set; } = string.Empty;
+    public string SourcePage { get; set; } = string.Empty;
+    public string DeviceType { get; set; } = string.Empty;
+    public string AddedText { get; set; } = string.Empty;
+}
+
+public sealed class PartnerMarketingEventsPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public long SelectedHotelId { get; set; }
+    public string IntroNote { get; set; } = string.Empty;
+    public List<PartnerStatCardViewModel> SummaryCards { get; set; } = new();
+    public List<PartnerCampaignParticipationRowViewModel> Participations { get; set; } = new();
+}
+
+public sealed class PartnerCampaignParticipationRowViewModel
+{
+    public long CampaignHotelLinkId { get; set; }
+    public long CampaignId { get; set; }
+    public string CampaignName { get; set; } = string.Empty;
+    public string CampaignCode { get; set; } = string.Empty;
+    public string ParticipationStatus { get; set; } = string.Empty;
+    public string WindowStartText { get; set; } = string.Empty;
+    public string WindowEndText { get; set; } = string.Empty;
+    public bool IsFeatured { get; set; }
+    public string? LandingUrl { get; set; }
+    public string? PartnerNote { get; set; }
+}
+
+public sealed class PartnerCampaignParticipationNoteRequest
+{
+    public long HotelId { get; set; }
+    public long CampaignHotelLinkId { get; set; }
+    public string? PartnerNote { get; set; }
+}
+
+public sealed class PartnerSettingsPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+}
+
+public sealed class PartnerAccountInfoPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public PartnerAccountUserSectionViewModel UserSection { get; set; } = new();
+    public PartnerAccountPartnerSectionViewModel? PartnerSection { get; set; }
+}
+
+public sealed class PartnerAccountUserSectionViewModel
+{
+    public long UserId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string Language { get; set; } = string.Empty;
+    public string RegistrationText { get; set; } = string.Empty;
+    public string LastLoginText { get; set; } = string.Empty;
+    public string AccountStatusText { get; set; } = string.Empty;
+    public string EmailVerificationText { get; set; } = string.Empty;
+    public string PhoneVerificationText { get; set; } = string.Empty;
+    public string KvkkText { get; set; } = string.Empty;
+    public string MarketingConsentText { get; set; } = string.Empty;
+    public string? ProfilePhotoPath { get; set; }
+}
+
+public sealed class PartnerAccountPartnerSectionViewModel
+{
+    public long PartnerId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string CompanyType { get; set; } = string.Empty;
+    public string TaxOffice { get; set; } = string.Empty;
+    public string TaxNumber { get; set; } = string.Empty;
+    public string AuthorizedName { get; set; } = string.Empty;
+    public string AuthorizedEmail { get; set; } = string.Empty;
+    public string AuthorizedPhone { get; set; } = string.Empty;
+    public string BillingAddress { get; set; } = string.Empty;
+    public string BillingCity { get; set; } = string.Empty;
+    public string BillingDistrict { get; set; } = string.Empty;
+    public string BankName { get; set; } = string.Empty;
+    public string BankBranch { get; set; } = string.Empty;
+    public string Iban { get; set; } = string.Empty;
+    public string AccountHolderName { get; set; } = string.Empty;
+    public string ApprovalStatus { get; set; } = string.Empty;
+    public string RegistrationText { get; set; } = string.Empty;
+    public string? ApprovalDateText { get; set; }
+    public string? RejectionReason { get; set; }
+    public string? ContractNo { get; set; }
+    public string? ContractStartText { get; set; }
+    public string? ContractEndText { get; set; }
+    public bool PartnerActive { get; set; } = true;
 }

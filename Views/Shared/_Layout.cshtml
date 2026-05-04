@@ -1,13 +1,22 @@
 @using System.Security.Claims
 @using otelturizmnew.Constants
+@using Microsoft.AspNetCore.Hosting
 @inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
 @inject otelturizmnew.Services.Abstractions.IDevelopmentAccessService DevelopmentAccessService
 <!DOCTYPE html>
 @{
     var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
     var nonce = Context.Items["CspNonce"] as string;
-    var isDevelopmentPage = Context.Request.Path.StartsWithSegments("/gelisim", StringComparison.OrdinalIgnoreCase);
-    var isDevelopmentUnlocked = DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
+    // Gelisim rotasi artik yok; overlay her sayfada tek davranis ile calisiyor.
+    var hostEnv = Context.RequestServices.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
+    var requestHost = Context.Request.Host.Host ?? string.Empty;
+    var isLoopbackHost =
+        string.Equals(requestHost, "localhost", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(requestHost, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(requestHost, "::1", StringComparison.OrdinalIgnoreCase)
+        || requestHost.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
+    var isLocalDevelopment = hostEnv?.IsDevelopment() == true || isLoopbackHost;
+    var isDevelopmentUnlocked = isLocalDevelopment || DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
 
     var publicBaseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
                         ?? "https://otelturizm.com";
@@ -69,11 +78,14 @@
     <link rel="preload" as="style" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/vendor/flag-icons/css/flag-icon.min.css" asp-append-version="true" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="preload" as="style" href="~/assets/css/site-layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/slaytgorsel.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/yanbar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/development-gate.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/development-gate.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     @{
@@ -126,14 +138,13 @@
     <partial name="~/Views/Shared/_ActiveReservationDraftBanner.cshtml" model="publicActiveDraft" />
 }
 
-@if (!isDevelopmentPage)
-{
-    <partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
-}
+<partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
 
 <main class="site-main" id="mainContent">@RenderBody()</main>
 
 <partial name="~/Views/Anasayfa/_AnasayfaFooter.cshtml" />
+<partial name="~/Views/Shared/yanbar.cshtml" />
+<partial name="~/Views/Shared/_SlaytGorsel.cshtml" />
 
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -142,6 +153,7 @@
 <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
 <script src="~/assets/js/rum-webvitals.js" asp-append-version="true"></script>
 <script src="~/assets/js/growth-analytics.js" asp-append-version="true"></script>
+<script src="~/assets/js/slaytgorsel.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

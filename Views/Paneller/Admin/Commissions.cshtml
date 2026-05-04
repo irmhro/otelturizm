@@ -2,143 +2,112 @@
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
 }
 
-<div class="row">
-    @foreach (var card in Model.SummaryCards)
-    {
-        <div class="col-lg-3 col-md-6 col-12">
-            <div class="small-box bg-success">
-                <div class="inner">
-                    <h3>@card.Value</h3>
+<section class="admin-commissions-page">
+    <div class="admin-kpi-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            var tone = string.IsNullOrWhiteSpace(card.ToneClass) ? "info" : card.ToneClass;
+            <article class="admin-kpi-card @tone">
+                <span class="kpi-icon"><i class="fas @card.IconClass"></i></span>
+                <div>
                     <p>@card.Label</p>
-                    <small>@card.Description</small>
+                    <h2>@card.Value</h2>
+                    <span>@card.Description</span>
                 </div>
-                <div class="icon"><i class="fas @card.IconClass"></i></div>
-            </div>
-        </div>
-    }
-</div>
-
-<div class="row">
-    <div class="col-12">
-        <div class="card card-outline card-secondary">
-            <div class="card-header">
-                <h3 class="card-title">Otel bazlı gelir ve komisyon özeti</h3>
-            </div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-striped table-hover text-nowrap mb-0">
-                    <thead>
-                        <tr>
-                            <th>Otel</th>
-                            <th>Toplam Gelir</th>
-                            <th>Toplam Komisyon</th>
-                            <th>Ödenen Komisyon</th>
-                            <th>Bekleyen Komisyon</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @if (Model.HotelFinanceRows.Count == 0)
-                    {
-                        <tr><td colspan="5">Gelir veya komisyon kaydı bulunmuyor.</td></tr>
-                    }
-                    else
-                    {
-                        @foreach (var row in Model.HotelFinanceRows)
-                        {
-                            <tr>
-                                <td>@row.HotelName</td>
-                                <td>₺@row.GrossRevenue.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))</td>
-                                <td>₺@row.TotalCommission.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))</td>
-                                <td>₺@row.PaidCommission.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))</td>
-                                <td>₺@row.PendingCommission.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))</td>
-                            </tr>
-                        }
-                    }
-                    </tbody>
-                </table>
-            </div>
-        </div>
+            </article>
+        }
     </div>
-</div>
 
-<div class="row">
-    <div class="col-lg-5">
-        <div class="card card-primary card-outline">
-            <div class="card-header">
-                <h3 class="card-title">Komisyon ve vergi kuralı</h3>
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">PARTNER OTEL FİNANSI</p>
+                <h2>Otel Bazlı Gelir ve Komisyon Özeti</h2>
+                <span>Ciro, tahakkuk eden komisyon, ödenen komisyon ve bekleyen hakediş tek tabloda.</span>
             </div>
-            <form method="post" action="/admin/komisyonlar/kaydet">
-                <div class="card-body">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="RuleId" value="@Model.Form.RuleId" />
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Otel</th>
+                        <th>Toplam Gelir</th>
+                        <th>Toplam Komisyon</th>
+                        <th>Ödenen</th>
+                        <th>Bekleyen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (Model.HotelFinanceRows.Count == 0)
+                {
+                    <tr><td colspan="5">Gelir veya komisyon kaydı bulunmuyor.</td></tr>
+                }
+                else
+                {
+                    foreach (var row in Model.HotelFinanceRows)
+                    {
+                        <tr>
+                            <td><strong>@row.HotelName</strong></td>
+                            <td>₺@row.GrossRevenue.ToString("N0", tr)</td>
+                            <td>₺@row.TotalCommission.ToString("N0", tr)</td>
+                            <td><span class="table-status success">₺@row.PaidCommission.ToString("N0", tr)</span></td>
+                            <td><span class="table-status warning">₺@row.PendingCommission.ToString("N0", tr)</span></td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </article>
 
-                    <div class="form-group">
-                        <label>Otel</label>
-                        <select name="HotelId" class="form-control">
-                            @foreach (var hotel in Model.Hotels)
-                            {
-                                <option value="@hotel.HotelId" selected="@(hotel.HotelId == Model.Form.HotelId)">@hotel.HotelName (@hotel.HotelCode)</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="row">
-                        <div class="col-6 form-group">
-                            <label>Başlangıç</label>
-                            <input type="date" name="StartDate" class="form-control" value="@Model.Form.StartDate.ToString("yyyy-MM-dd")" />
-                        </div>
-                        <div class="col-6 form-group">
-                            <label>Bitiş</label>
-                            <input type="date" name="EndDate" class="form-control" value="@(Model.Form.EndDate?.ToString("yyyy-MM-dd"))" />
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6 form-group">
-                            <label>Komisyon %</label>
-                            <input type="number" step="0.01" min="0" name="CommissionRate" class="form-control" value="@Model.Form.CommissionRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
-                        </div>
-                        <div class="col-6 form-group">
-                            <label>Komisyon gelir vergisi %</label>
-                            <input type="number" step="0.01" min="0" name="CommissionIncomeTaxRate" class="form-control" value="@Model.Form.CommissionIncomeTaxRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6 form-group">
-                            <label>KDV %</label>
-                            <input type="number" step="0.01" min="0" name="VatRate" class="form-control" value="@Model.Form.VatRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
-                        </div>
-                        <div class="col-6 form-group">
-                            <label>Konaklama vergisi %</label>
-                            <input type="number" step="0.01" min="0" name="AccommodationTaxRate" class="form-control" value="@Model.Form.AccommodationTaxRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Para birimi</label>
-                        <select name="Currency" class="form-control">
-                            <option value="TRY" selected="@(Model.Form.Currency == "TRY")">TRY</option>
-                            <option value="USD" selected="@(Model.Form.Currency == "USD")">USD</option>
-                            <option value="EUR" selected="@(Model.Form.Currency == "EUR")">EUR</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Not</label>
-                        <textarea name="Note" rows="3" class="form-control">@Model.Form.Note</textarea>
-                    </div>
+    <div class="admin-commission-grid">
+        <article class="admin-section-card">
+            <div class="admin-section-head">
+                <div>
+                    <p class="mini-caption">KURAL TANIMI</p>
+                    <h2>Komisyon ve Vergi Kuralı</h2>
+                    <span>Partner otelin dönemsel komisyon oranını ve vergi kırılımını yönetin.</span>
                 </div>
-                <div class="card-footer">
+            </div>
+            <form method="post" action="/admin/komisyonlar/kaydet" class="admin-form-grid">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="RuleId" value="@Model.Form.RuleId" />
+                <label class="admin-form-span">
+                    <span>Otel</span>
+                    <select name="HotelId">
+                        @foreach (var hotel in Model.Hotels)
+                        {
+                            <option value="@hotel.HotelId" selected="@(hotel.HotelId == Model.Form.HotelId)">@hotel.HotelName (@hotel.HotelCode)</option>
+                        }
+                    </select>
+                </label>
+                <label><span>Başlangıç</span><input type="date" name="StartDate" value="@Model.Form.StartDate.ToString("yyyy-MM-dd")" /></label>
+                <label><span>Bitiş</span><input type="date" name="EndDate" value="@(Model.Form.EndDate?.ToString("yyyy-MM-dd"))" /></label>
+                <label><span>Komisyon %</span><input type="number" step="0.01" min="0" name="CommissionRate" value="@Model.Form.CommissionRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" /></label>
+                <label><span>Komisyon gelir vergisi %</span><input type="number" step="0.01" min="0" name="CommissionIncomeTaxRate" value="@Model.Form.CommissionIncomeTaxRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" /></label>
+                <label><span>KDV %</span><input type="number" step="0.01" min="0" name="VatRate" value="@Model.Form.VatRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" /></label>
+                <label><span>Konaklama vergisi %</span><input type="number" step="0.01" min="0" name="AccommodationTaxRate" value="@Model.Form.AccommodationTaxRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" /></label>
+                <label><span>Para birimi</span><select name="Currency"><option value="TRY" selected="@(Model.Form.Currency == "TRY")">TRY</option><option value="USD" selected="@(Model.Form.Currency == "USD")">USD</option><option value="EUR" selected="@(Model.Form.Currency == "EUR")">EUR</option></select></label>
+                <label class="admin-form-span"><span>Not</span><textarea name="Note" rows="3">@Model.Form.Note</textarea></label>
+                <div class="admin-form-actions">
                     <button type="submit" class="btn btn-primary">Kuralı Kaydet</button>
                 </div>
             </form>
-        </div>
-    </div>
+        </article>
 
-    <div class="col-lg-7">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Kayıtlı komisyon kuralları</h3>
+        <article class="admin-section-card">
+            <div class="admin-section-head">
+                <div>
+                    <p class="mini-caption">KAYITLI KURALLAR</p>
+                    <h2>Komisyon Kuralları</h2>
+                    <span>Aktif ve geçmiş dönem kuralları.</span>
+                </div>
             </div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-striped table-hover text-nowrap mb-0">
+            <div class="admin-table-wrap">
+                <table class="admin-table">
                     <thead>
                         <tr>
                             <th>Otel</th>
@@ -156,12 +125,12 @@
                     }
                     else
                     {
-                        @foreach (var item in Model.Rules)
+                        foreach (var item in Model.Rules)
                         {
                             <tr>
                                 <td><strong>@item.HotelName</strong><div>@item.HotelCode</div></td>
                                 <td>@item.DateRangeText</td>
-                                <td>@item.CommissionText</td>
+                                <td><span class="table-status info">@item.CommissionText</span></td>
                                 <td>@item.TaxText</td>
                                 <td>@item.NetText</td>
                                 <td>@(string.IsNullOrWhiteSpace(item.Note) ? "-" : item.Note)</td>
@@ -171,6 +140,6 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </article>
     </div>
-</div>
+</section>

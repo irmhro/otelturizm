@@ -1,1 +1,68 @@
-@import url("./hotel-info.css");
+.hotel-info-hero {
+  align-items: stretch;
+  flex-direction: column;
+  padding: 20px;
+  border-radius: 22px;
+}
+
+.hotel-info-hero-actions {
+  justify-content: stretch;
+}
+
+.hotel-info-hero-actions .btn,
+.hotel-info-status {
+  width: 100%;
+  justify-content: center;
+}
+
+.hotel-info-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.hotel-info-shell {
+  grid-template-columns: 1fr;
+}
+
+.hotel-info-nav {
+  position: static;
+  display: flex;
+  overflow-x: auto;
+  border-radius: 18px;
+}
+
+.hotel-info-nav a {
+  flex: 0 0 auto;
+}
+
+.hotel-info-card {
+  padding: 18px;
+  border-radius: 20px;
+}
+
+.hotel-info-card-head {
+  display: grid;
+}
+
+.hotel-info-grid {
+  grid-template-columns: 1fr;
+}
+
+.field.span-2 {
+  grid-column: auto;
+}
+
+.hotel-amenity-grid {
+  grid-template-columns: 1fr;
+}
+
+.hotel-info-savebar {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.hotel-info-savebar .btn {
+  width: 100%;
+}

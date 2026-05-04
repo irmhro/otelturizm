@@ -209,6 +209,7 @@ public class HotelService : IHotelService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var hotelId = reader.GetInt64(reader.GetOrdinal("id"));
             var isFeatured = ReadFlag(reader, "one_cikan_otel");
             var isRecommended = ReadFlag(reader, "tavsiye_edilen_otel");
             var rating = reader.GetDecimal(reader.GetOrdinal("ortalama_puan"));
@@ -288,7 +289,7 @@ public class HotelService : IHotelService
 
             hotels.Add(new HomeHotelCardViewModel
             {
-                Id = reader.GetInt64(reader.GetOrdinal("id")),
+                Id = hotelId,
                 HotelCode = reader.GetString(reader.GetOrdinal("otel_kodu")),
                 Name = reader.GetString(reader.GetOrdinal("otel_adi")),
                 City = reader.GetString(reader.GetOrdinal("sehir")),
@@ -310,7 +311,7 @@ public class HotelService : IHotelService
                     ? $"TRY {guestDiscountedPrice.Value:N0}"
                     : guestStartingPrice.HasValue ? $"TRY {guestStartingPrice.Value:N0}" : "Teklif Al",
                 PriceNote = guestStartingPrice.HasValue ? "Vergiler dahil" : "Musait fiyat bilgisi bulunamadi",
-                ImageUrl = NormalizeImageUrl(imageUrl),
+                ImageUrl = NormalizeHotelImageUrl(hotelId, imageUrl),
                 DetailSlug = BuildSlug(reader.GetString(reader.GetOrdinal("otel_adi")), reader.GetString(reader.GetOrdinal("otel_kodu"))),
                 Amenities = amenities,
                 Tags = tags,
@@ -516,6 +517,51 @@ public class HotelService : IHotelService
                 Url = x.Url,
                 IsActive = x.IsActive
             }).ToList(),
+            MapHotels = src.MapHotels.Select(h => new HotelListingCardViewModel
+            {
+                Id = h.Id,
+                HotelCode = h.HotelCode,
+                Name = h.Name,
+                PropertyType = h.PropertyType,
+                StarCount = h.StarCount,
+                City = h.City,
+                District = h.District,
+                Neighborhood = h.Neighborhood,
+                Latitude = h.Latitude,
+                Longitude = h.Longitude,
+                Rating = h.Rating,
+                RatingText = h.RatingText,
+                ReviewCount = h.ReviewCount,
+                IsFeatured = h.IsFeatured,
+                ImageUrl = h.ImageUrl,
+                GalleryImages = new List<string>(h.GalleryImages),
+                StartingPrice = h.StartingPrice,
+                OriginalPrice = h.OriginalPrice,
+                DiscountedPrice = h.DiscountedPrice,
+                DiscountPercent = h.DiscountPercent,
+                HasDiscount = h.HasDiscount,
+                DiscountName = h.DiscountName,
+                DiscountShortDescription = h.DiscountShortDescription,
+                DiscountImageUrl = h.DiscountImageUrl,
+                PriceNote = h.PriceNote,
+                Amenities = new List<string>(h.Amenities),
+                AmenityItems = h.AmenityItems.Select(a => new HotelAmenityViewModel
+                {
+                    Name = a.Name,
+                    IconClass = a.IconClass
+                }).ToList(),
+                Tags = new List<string>(h.Tags),
+                CampaignNames = new List<string>(h.CampaignNames),
+                CampaignSlugs = new List<string>(h.CampaignSlugs),
+                CampaignBadgeText = h.CampaignBadgeText,
+                CampaignInfoText = h.CampaignInfoText,
+                Summary = h.Summary,
+                Slug = h.Slug,
+                IsFavorite = false,
+                DiscountId = h.DiscountId,
+                HasAvailabilityToday = h.HasAvailabilityToday,
+                ListingLeadRoomName = h.ListingLeadRoomName
+            }).ToList(),
             Hotels = src.Hotels.Select(h => new HotelListingCardViewModel
             {
                 Id = h.Id,
@@ -557,7 +603,10 @@ public class HotelService : IHotelService
                 Summary = h.Summary,
                 Slug = h.Slug,
                 // kullanıcıya göre set edilir (controller ApplyFavoriteStatesAsync)
-                IsFavorite = false
+                IsFavorite = false,
+                DiscountId = h.DiscountId,
+                HasAvailabilityToday = h.HasAvailabilityToday,
+                ListingLeadRoomName = h.ListingLeadRoomName
             }).ToList()
         };
     }
@@ -965,7 +1014,8 @@ public class HotelService : IHotelService
                 Score = x.Score,
                 Text = x.Text,
                 TravelProfile = x.TravelProfile,
-                SatisfactionLabel = x.SatisfactionLabel
+                SatisfactionLabel = x.SatisfactionLabel,
+                ReservationNoTail = x.ReservationNoTail
             }).ToList(),
             SimilarHotels = src.SimilarHotels.Select(x => new HotelSimilarCardViewModel
             {
@@ -1114,6 +1164,7 @@ public class HotelService : IHotelService
                 COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
                 COALESCE(og3.gorsel_listesi, '') AS gorsel_listesi,
                 pf.baslangic_fiyat,
+                COALESCE(NULLIF(LTRIM(RTRIM(pf.listing_room_adi)), ''), '') AS listing_room_adi,
                 pf.min_normal_fiyat,
                 pf.min_indirimli_fiyat,
                 pf.indirim_id,
@@ -1121,18 +1172,21 @@ public class HotelService : IHotelService
                 oz.ozellikler,
                 COALESCE(kc.kampanya_adlari, '') AS kampanya_adlari,
                 COALESCE(kc.kampanya_sluglari, '') AS kampanya_sluglari,
-                COALESCE(kc.kampanya_badgetext, '') AS kampanya_badgetext
+                COALESCE(kc.kampanya_badgetext, '') AS kampanya_badgetext,
+                COALESCE(av.has_open_today, 0) AS has_open_today
             FROM oteller o
             LEFT JOIN (
                 SELECT
                     hotel_prices.otel_id,
                     hotel_prices.effective_price AS baslangic_fiyat,
+                    hotel_prices.listing_room_adi,
                     hotel_prices.base_price AS min_normal_fiyat,
                     hotel_prices.discount_price AS min_indirimli_fiyat,
                     hotel_prices.discount_id AS indirim_id
                 FROM (
                     SELECT
                         ot.otel_id,
+                        ot.oda_adi AS listing_room_adi,
                         best.effective_price,
                         best.base_price,
                         best.discount_price,
@@ -1239,9 +1293,11 @@ public class HotelService : IHotelService
                     JOIN kampanyalar k ON k.id = ko.kampanya_id
                     WHERE ko.katilim_durumu = N'Aktif'
                       AND k.aktif_mi = 1
-                      AND k.gorunurluk_durumu = N'Yayında'
-                      AND SYSUTCDATETIME() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
-                      AND SYSUTCDATETIME() BETWEEN ko.baslangic_tarihi AND ko.bitis_tarihi
+                      AND (
+                            k.gorunurluk_durumu IS NULL
+                            OR LTRIM(RTRIM(k.gorunurluk_durumu)) = N''
+                            OR LOWER(REPLACE(LTRIM(RTRIM(k.gorunurluk_durumu)), N'ı', N'i')) IN (N'yayinda', N'yayında')
+                          )
                 ) c
                 GROUP BY c.otel_id
             ) kc ON kc.otel_id = o.id
@@ -1254,6 +1310,19 @@ public class HotelService : IHotelService
                 JOIN otel_ozellikleri oo ON oo.id = oi.ozellik_id AND oo.aktif_mi = 1
                 GROUP BY oi.otel_id
             ) oz ON oz.otel_id = o.id
+            OUTER APPLY (
+                SELECT TOP (1) 1 AS has_open_today
+                FROM oda_tipleri ot2
+                INNER JOIN oda_fiyat_musaitlik ofm2
+                    ON ofm2.oda_tip_id = ot2.id
+                   AND ofm2.otel_id = ot2.otel_id
+                WHERE ot2.otel_id = o.id
+                  AND ot2.aktif_mi = 1
+                  AND ofm2.tarih = CAST(SYSUTCDATETIME() AS date)
+                  AND ofm2.kapali_satis = 0
+                  AND (COALESCE(ofm2.toplam_oda_sayisi, ot2.toplam_oda_sayisi) - COALESCE(ofm2.satilan_oda_sayisi, 0) - COALESCE(ofm2.bloke_oda_sayisi, 0)) > 0
+                  AND COALESCE(ofm2.gecelik_fiyat, 0) > 0
+            ) av
             {subscriptionApplySql}
             WHERE o.yayin_durumu = N'Yayında'
               AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
@@ -1266,9 +1335,11 @@ public class HotelService : IHotelService
                         WHERE ko.otel_id = o.id
                           AND ko.katilim_durumu = N'Aktif'
                           AND k.aktif_mi = 1
-                          AND k.gorunurluk_durumu = N'Yayında'
-                          AND SYSUTCDATETIME() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
-                          AND SYSUTCDATETIME() BETWEEN ko.baslangic_tarihi AND ko.bitis_tarihi
+                          AND (
+                                k.gorunurluk_durumu IS NULL
+                                OR LTRIM(RTRIM(k.gorunurluk_durumu)) = N''
+                                OR LOWER(REPLACE(LTRIM(RTRIM(k.gorunurluk_durumu)), N'ı', N'i')) IN (N'yayinda', N'yayında')
+                              )
                           AND k.seo_slug = @campaignSlug
                     )
                   )
@@ -1336,7 +1407,7 @@ public class HotelService : IHotelService
                 ? new List<string>()
                 : galleryRaw
                     .Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .Select(NormalizeImageUrl)
+                    .Select(x => NormalizeHotelImageUrl(id, x))
                     .Where(x => !string.IsNullOrWhiteSpace(x))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .Take(3)
@@ -1367,6 +1438,11 @@ public class HotelService : IHotelService
             var campaignBadgeText = reader.IsDBNull(reader.GetOrdinal("kampanya_badgetext"))
                 ? string.Empty
                 : NormalizeTurkishText(reader.GetString(reader.GetOrdinal("kampanya_badgetext")));
+            var hasOpenToday = !reader.IsDBNull(reader.GetOrdinal("has_open_today"))
+                && Convert.ToInt32(reader.GetValue(reader.GetOrdinal("has_open_today")), CultureInfo.InvariantCulture) == 1;
+            var listingRoomAdiOrdinal = reader.GetOrdinal("listing_room_adi");
+            var listingRoomAdiRaw = reader.IsDBNull(listingRoomAdiOrdinal) ? string.Empty : reader.GetString(listingRoomAdiOrdinal);
+            var listingLeadRoomName = string.IsNullOrWhiteSpace(listingRoomAdiRaw) ? null : listingRoomAdiRaw.Trim();
 
             var amenityItems = rawAmenities
                 .Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -1436,7 +1512,7 @@ public class HotelService : IHotelService
                 DiscountShortDescription = hasDiscount && !string.IsNullOrWhiteSpace(discountDesc) ? discountDesc : null,
                 DiscountImageUrl = hasDiscount && !string.IsNullOrWhiteSpace(discountImageUrl) ? NormalizeImageUrl(discountImageUrl) : null,
                 PriceNote = startingPrice.HasValue ? "Vergiler dahil" : "Musait fiyat bilgisi bulunamadi",
-                ImageUrl = NormalizeImageUrl(imageUrl),
+                ImageUrl = NormalizeHotelImageUrl(id, imageUrl),
                 GalleryImages = galleryImages,
                 IsFeatured = isFeatured,
                 Amenities = amenities,
@@ -1454,7 +1530,9 @@ public class HotelService : IHotelService
                 CampaignInfoText = campaignInfoText,
                 Summary = string.IsNullOrWhiteSpace(summary)
                     ? "Sehir konaklamasi, esnek rezervasyon ve mobil uyumlu deneyim icin yayindaki tesis."
-                    : summary
+                    : summary,
+                HasAvailabilityToday = hasOpenToday,
+                ListingLeadRoomName = listingLeadRoomName
             });
         }
 
@@ -1477,21 +1555,7 @@ public class HotelService : IHotelService
         model.Neighborhoods = filteredHotels.Select(x => x.Neighborhood).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
         model.PropertyTypes = filteredHotels.Select(x => x.PropertyType).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
         model.StarOptions = new List<int> { 5, 4, 3, 2, 1 };
-        model.Campaigns = filteredHotels
-            .SelectMany(x => x.CampaignNames.Zip(x.CampaignSlugs, (name, slug) => new { Name = name, Slug = slug }))
-            .Where(x => !string.IsNullOrWhiteSpace(x.Name) && !string.IsNullOrWhiteSpace(x.Slug))
-            .GroupBy(x => $"{x.Slug}||{x.Name}", StringComparer.OrdinalIgnoreCase)
-            .Select(group => new HotelListingCampaignFilterViewModel
-            {
-                Slug = group.First().Slug,
-                Name = group.First().Name,
-                HotelCount = group.Count(),
-                IsActive = string.Equals(group.First().Slug, model.CampaignSlug, StringComparison.OrdinalIgnoreCase)
-            })
-            .OrderByDescending(x => x.IsActive)
-            .ThenByDescending(x => x.HotelCount)
-            .ThenBy(x => x.Name)
-            .ToList();
+        model.Campaigns = await LoadListingCampaignFiltersAsync(connection, model.CampaignSlug, cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(model.CampaignSlug))
         {
@@ -1506,6 +1570,7 @@ public class HotelService : IHotelService
             model.CampaignDescription = campaignMeta.Description;
         }
 
+        model.MapHotels = filteredHotels.ToList();
         model.QuickLinks = BuildListingQuickLinks(displayLabel, model.ActiveTag);
         model.TotalPages = model.TotalCount <= 0
             ? 1
@@ -1746,6 +1811,7 @@ public class HotelService : IHotelService
                 o.check_out_saati,
                 o.enlem,
                 o.boylam,
+                COALESCE(NULLIF(o.video_url, ''), '') AS video_url,
                 COALESCE(NULLIF(o.kapak_fotografi, ''), '') AS gorsel_url
             FROM oteller o
             WHERE o.id = @hotelId;
@@ -1781,7 +1847,8 @@ public class HotelService : IHotelService
                 CheckOutTime = reader.IsDBNull(reader.GetOrdinal("check_out_saati")) ? null : reader.GetTimeSpan(reader.GetOrdinal("check_out_saati")),
                 Latitude = reader.IsDBNull(reader.GetOrdinal("enlem")) ? null : reader.GetDecimal(reader.GetOrdinal("enlem")),
                 Longitude = reader.IsDBNull(reader.GetOrdinal("boylam")) ? null : reader.GetDecimal(reader.GetOrdinal("boylam")),
-                MainImageUrl = NormalizeImageUrl(reader.GetString(reader.GetOrdinal("gorsel_url")))
+                VideoUrl = NormalizeMediaUrl(reader.GetString(reader.GetOrdinal("video_url"))),
+                MainImageUrl = NormalizeHotelImageUrl(reader.GetInt64(reader.GetOrdinal("id")), reader.GetString(reader.GetOrdinal("gorsel_url")))
             };
         }
 
@@ -1803,7 +1870,7 @@ public class HotelService : IHotelService
             await using var galleryReader = await galleryCommand.ExecuteReaderAsync(cancellationToken);
             while (await galleryReader.ReadAsync(cancellationToken))
             {
-                model.GalleryImages.Add(NormalizeImageUrl(galleryReader.GetString(0)));
+                model.GalleryImages.Add(NormalizeHotelImageUrl(model.Id, galleryReader.GetString(0)));
             }
         }
 
@@ -1836,6 +1903,36 @@ public class HotelService : IHotelService
                     Name = NormalizeAmenityLabel(amenityName),
                     IconClass = NormalizeAmenityIcon(amenityIcon, amenityName)
                 });
+            }
+        }
+
+        const string hotelCampaignSql = """
+            SELECT TOP (10)
+                COALESCE(NULLIF(ko.kampanya_etiketi, ''), k.kampanya_adi) AS kampanya_adi,
+                COALESCE(NULLIF(k.seo_slug, ''), NULLIF(k.sayfa_url, ''), k.kampanya_kodu) AS kampanya_slug
+            FROM kampanya_oteller ko
+            JOIN kampanyalar k
+              ON k.id = ko.kampanya_id
+            WHERE ko.otel_id = @hotelId
+              AND ko.katilim_durumu = N'Aktif'
+              AND (k.aktif_mi = 1 OR k.aktif_mi IS NULL)
+              AND SYSUTCDATETIME() >= ko.baslangic_tarihi
+              AND SYSUTCDATETIME() <= ko.bitis_tarihi
+            ORDER BY ko.one_cikan DESC, ko.siralama ASC, k.siralama ASC, k.id DESC;
+            """;
+
+        await using (var campaignCommand = new SqlCommand(hotelCampaignSql, connection))
+        {
+            campaignCommand.Parameters.AddWithValue("@hotelId", model.Id);
+            await using var campaignReader = await campaignCommand.ExecuteReaderAsync(cancellationToken);
+            while (await campaignReader.ReadAsync(cancellationToken))
+            {
+                var name = NormalizeTurkishText(campaignReader.IsDBNull(0) ? string.Empty : campaignReader.GetString(0));
+                var campaignSlugValue = campaignReader.IsDBNull(1) ? string.Empty : campaignReader.GetString(1);
+                if (string.IsNullOrWhiteSpace(name)) continue;
+                if (model.CampaignNames.Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase))) continue;
+                model.CampaignNames.Add(name.Trim());
+                model.CampaignSlugs.Add((campaignSlugValue ?? string.Empty).Trim());
             }
         }
 
@@ -1917,9 +2014,13 @@ public class HotelService : IHotelService
                 var bedType = roomsReader.IsDBNull(5) ? "Yatak bilgisi yok" : roomsReader.GetString(5);
                 ushort? squareMeter = roomsReader.IsDBNull(6) ? null : Convert.ToUInt16(roomsReader.GetValue(6), CultureInfo.InvariantCulture);
                 var roomPrice = roomsReader.GetDecimal(7);
-                var coverPhoto = NormalizeImageUrl(roomsReader.IsDBNull(8) ? string.Empty : roomsReader.GetString(8));
+                var coverPhoto = NormalizeRoomImageUrl(model.Id, roomId, roomsReader.IsDBNull(8) ? string.Empty : roomsReader.GetString(8));
                 var galleryJson = roomsReader.IsDBNull(9) ? string.Empty : roomsReader.GetString(9);
-                var roomGalleryImages = ParseImageList(galleryJson);
+                var roomGalleryImages = ParseImageList(galleryJson)
+                    .Select(x => NormalizeRoomImageUrl(model.Id, roomId, x))
+                    .Where(static item => !string.IsNullOrWhiteSpace(item))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
                 if (!string.IsNullOrWhiteSpace(coverPhoto))
                 {
                     roomGalleryImages.Insert(0, coverPhoto);
@@ -1972,7 +2073,7 @@ public class HotelService : IHotelService
                 while (await roomGalleryReader.ReadAsync(cancellationToken))
                 {
                     var roomId = roomGalleryReader.GetInt64(0);
-                    var imageUrl = NormalizeImageUrl(roomGalleryReader.IsDBNull(1) ? string.Empty : roomGalleryReader.GetString(1));
+                    var imageUrl = NormalizeRoomImageUrl(model.Id, roomId, roomGalleryReader.IsDBNull(1) ? string.Empty : roomGalleryReader.GetString(1));
                     if (string.IsNullOrWhiteSpace(imageUrl))
                     {
                         continue;
@@ -2102,6 +2203,97 @@ public class HotelService : IHotelService
             }
         }
 
+        // Otel detay: seçili check-in tarihine göre satışa kapalı odaları gösterme.
+        // Not: ReservationForm default olarak "bugün/yarın" gelir.
+        var availabilityDate = model.ReservationForm.CheckInDate;
+        model.AvailabilityCheckDate = availabilityDate;
+        if (model.Rooms.Count > 0)
+        {
+            const string closedRoomsSql = """
+                SELECT DISTINCT ofm.oda_tip_id
+                FROM oda_fiyat_musaitlik ofm
+                WHERE ofm.otel_id = @hotelId
+                  AND ofm.tarih = @date
+                  AND ofm.kapali_satis = 1;
+                """;
+            var closedRoomIds = new HashSet<long>();
+            await using (var closedCommand = new SqlCommand(closedRoomsSql, connection))
+            {
+                closedCommand.Parameters.AddWithValue("@hotelId", model.Id);
+                closedCommand.Parameters.AddWithValue("@date", availabilityDate.ToDateTime(TimeOnly.MinValue));
+                await using var closedReader = await closedCommand.ExecuteReaderAsync(cancellationToken);
+                while (await closedReader.ReadAsync(cancellationToken))
+                {
+                    closedRoomIds.Add(closedReader.GetInt64(0));
+                }
+            }
+
+            if (closedRoomIds.Count > 0)
+            {
+                model.Rooms = model.Rooms.Where(r => !closedRoomIds.Contains(r.RoomTypeId)).ToList();
+            }
+
+            var hasAnyReservableRoom = model.Rooms.Any(r => r.Price > 0m);
+            if (model.Rooms.Count == 0 || !hasAnyReservableRoom)
+            {
+                model.HasNoOpenRoomsForSelectedDate = true;
+                model.NoOpenRoomsMessage = $"Bu otelde {availabilityDate:dd.MM.yyyy} için satışa açık boş oda bulunmuyor.";
+            }
+
+            // (Pasif) Email altyapısı için 1 haftalık kapanış raporu hazırla.
+            // Gönderim bu aşamada kapalı; sadece rapor text'i üretilir.
+            if (model.HasNoOpenRoomsForSelectedDate)
+            {
+                var rangeStart = availabilityDate;
+                var rangeEnd = availabilityDate.AddDays(6);
+                const string reportSql = """
+                    SELECT
+                        ot.oda_adi,
+                        ofm.tarih,
+                        ofm.kapali_satis
+                    FROM oda_tipleri ot
+                    INNER JOIN oda_fiyat_musaitlik ofm
+                        ON ofm.oda_tip_id = ot.id
+                       AND ofm.otel_id = ot.otel_id
+                    WHERE ot.otel_id = @hotelId
+                      AND ot.aktif_mi = 1
+                      AND ofm.tarih BETWEEN @startDate AND @endDate
+                    ORDER BY ofm.tarih ASC, ot.siralama ASC, ot.id ASC;
+                    """;
+
+                var lines = new List<string>();
+                await using (var reportCommand = new SqlCommand(reportSql, connection))
+                {
+                    reportCommand.Parameters.AddWithValue("@hotelId", model.Id);
+                    reportCommand.Parameters.AddWithValue("@startDate", rangeStart.ToDateTime(TimeOnly.MinValue));
+                    reportCommand.Parameters.AddWithValue("@endDate", rangeEnd.ToDateTime(TimeOnly.MinValue));
+                    await using var reportReader = await reportCommand.ExecuteReaderAsync(cancellationToken);
+                    while (await reportReader.ReadAsync(cancellationToken))
+                    {
+                        var roomName = NormalizeTurkishText(reportReader.IsDBNull(0) ? string.Empty : reportReader.GetString(0));
+                        var date = DateOnly.FromDateTime(reportReader.GetDateTime(1));
+                        var isClosed = !reportReader.IsDBNull(2) && reportReader.GetBoolean(2);
+                        if (!string.IsNullOrWhiteSpace(roomName) && isClosed)
+                        {
+                            lines.Add($"{date:dd.MM.yyyy} · {roomName} · satışa kapalı");
+                        }
+                    }
+                }
+
+                if (lines.Count > 0)
+                {
+                    model.InventoryClosureWeekReport = string.Join("\n", lines.Distinct(StringComparer.OrdinalIgnoreCase));
+                }
+            }
+
+            // Seçilen oda tipi filtre sonrası yoksa rezervasyon formunu stabilize et.
+            if (model.ReservationForm.RoomTypeId > 0 && model.Rooms.All(x => x.RoomTypeId != model.ReservationForm.RoomTypeId))
+            {
+                var fallback = model.Rooms.FirstOrDefault(x => x.Price > 0m) ?? model.Rooms.FirstOrDefault();
+                model.ReservationForm.RoomTypeId = fallback?.RoomTypeId ?? 0;
+            }
+        }
+
         const string reviewStatsSql = """
             SELECT
                 COUNT(*) AS review_count,
@@ -2117,12 +2309,14 @@ public class HotelService : IHotelService
                         WHEN y.konum_puani <= 10 THEN CAST(y.konum_puani AS DECIMAL(9, 3))
                         ELSE 10
                     END) AS DECIMAL(9, 3))), 0) AS avg_konum,
-                COALESCE(AVG(CAST(COALESCE(CAST(y.puan_oda_10 AS DECIMAL(9, 3)),
+                COALESCE(AVG(CAST(COALESCE(CAST(y.puan_temizlik_10 AS DECIMAL(9, 3)), CAST(y.puan_oda_10 AS DECIMAL(9, 3)),
                     CASE
+                        WHEN y.temizlik_puani <= 5 THEN CAST(y.temizlik_puani AS DECIMAL(9, 3)) * 2
+                        WHEN y.temizlik_puani <= 10 THEN CAST(y.temizlik_puani AS DECIMAL(9, 3))
                         WHEN y.konfor_puani <= 5 THEN CAST(y.konfor_puani AS DECIMAL(9, 3)) * 2
                         WHEN y.konfor_puani <= 10 THEN CAST(y.konfor_puani AS DECIMAL(9, 3))
                         ELSE 10
-                    END) AS DECIMAL(9, 3))), 0) AS avg_oda,
+                    END) AS DECIMAL(9, 3))), 0) AS avg_temizlik,
                 COALESCE(AVG(CAST(COALESCE(CAST(y.puan_fiyat_10 AS DECIMAL(9, 3)),
                     CASE
                         WHEN y.fiyat_performans_puani <= 5 THEN CAST(y.fiyat_performans_puani AS DECIMAL(9, 3)) * 2
@@ -2134,7 +2328,19 @@ public class HotelService : IHotelService
                         WHEN y.personel_puani <= 5 THEN CAST(y.personel_puani AS DECIMAL(9, 3)) * 2
                         WHEN y.personel_puani <= 10 THEN CAST(y.personel_puani AS DECIMAL(9, 3))
                         ELSE 10
-                    END) AS DECIMAL(9, 3))), 0) AS avg_personel
+                    END) AS DECIMAL(9, 3))), 0) AS avg_personel,
+                COALESCE(AVG(CAST(COALESCE(CAST(y.puan_sessizlik_10 AS DECIMAL(9, 3)), CAST(y.genel_puan_10 AS DECIMAL(9, 3)),
+                    CASE
+                        WHEN y.genel_puan <= 5 THEN CAST(y.genel_puan AS DECIMAL(9, 3)) * 2
+                        WHEN y.genel_puan <= 10 THEN CAST(y.genel_puan AS DECIMAL(9, 3))
+                        ELSE 10
+                    END) AS DECIMAL(9, 3))), 0) AS avg_sessizlik,
+                COALESCE(AVG(CAST(COALESCE(CAST(y.puan_ulasim_10 AS DECIMAL(9, 3)), CAST(y.puan_konum_10 AS DECIMAL(9, 3)),
+                    CASE
+                        WHEN y.konum_puani <= 5 THEN CAST(y.konum_puani AS DECIMAL(9, 3)) * 2
+                        WHEN y.konum_puani <= 10 THEN CAST(y.konum_puani AS DECIMAL(9, 3))
+                        ELSE 10
+                    END) AS DECIMAL(9, 3))), 0) AS avg_ulasim
             FROM yorumlar AS y
             WHERE y.otel_id = @hotelId
               AND y.onay_durumu LIKE N'Onaylan%';
@@ -2159,17 +2365,26 @@ public class HotelService : IHotelService
                         Convert.ToDecimal(statsReader.GetValue(2), CultureInfo.InvariantCulture),
                         1,
                         MidpointRounding.AwayFromZero));
-                    model.ReviewRoomScore = ClampDisplayTen(decimal.Round(
+                    model.ReviewCleaningScore = ClampDisplayTen(decimal.Round(
                         Convert.ToDecimal(statsReader.GetValue(3), CultureInfo.InvariantCulture),
                         1,
                         MidpointRounding.AwayFromZero));
-                    model.ReviewComfortScore = model.ReviewRoomScore;
+                    model.ReviewRoomScore = model.ReviewCleaningScore;
+                    model.ReviewComfortScore = model.ReviewCleaningScore;
                     model.ReviewValueScore = ClampDisplayTen(decimal.Round(
                         Convert.ToDecimal(statsReader.GetValue(4), CultureInfo.InvariantCulture),
                         1,
                         MidpointRounding.AwayFromZero));
                     model.ReviewStaffScore = ClampDisplayTen(decimal.Round(
                         Convert.ToDecimal(statsReader.GetValue(5), CultureInfo.InvariantCulture),
+                        1,
+                        MidpointRounding.AwayFromZero));
+                    model.ReviewQuietnessScore = ClampDisplayTen(decimal.Round(
+                        Convert.ToDecimal(statsReader.GetValue(6), CultureInfo.InvariantCulture),
+                        1,
+                        MidpointRounding.AwayFromZero));
+                    model.ReviewTransportScore = ClampDisplayTen(decimal.Round(
+                        Convert.ToDecimal(statsReader.GetValue(7), CultureInfo.InvariantCulture),
                         1,
                         MidpointRounding.AwayFromZero));
                 }
@@ -2179,10 +2394,13 @@ public class HotelService : IHotelService
                     model.Rating = 0m;
                     model.RatingText = BuildGuestRatingSummaryText(0m);
                     model.ReviewLocationScore = 0m;
+                    model.ReviewCleaningScore = 0m;
                     model.ReviewRoomScore = 0m;
                     model.ReviewComfortScore = 0m;
                     model.ReviewValueScore = 0m;
                     model.ReviewStaffScore = 0m;
+                    model.ReviewQuietnessScore = 0m;
+                    model.ReviewTransportScore = 0m;
                 }
             }
         }
@@ -2195,8 +2413,10 @@ public class HotelService : IHotelService
                 y.yorum_metni,
                 y.olusturulma_tarihi,
                 COALESCE(NULLIF(y.seyahat_profili, ''), '') AS seyahat_profili,
-                y.memnuniyet_seviyesi
+                y.memnuniyet_seviyesi,
+                COALESCE(NULLIF(y.rezervasyon_no, ''), NULLIF(r.rezervasyon_no, '')) AS rezervasyon_no
             FROM yorumlar y
+            LEFT JOIN rezervasyonlar r ON r.id = y.rezervasyon_id
             LEFT JOIN users u ON u.id = y.kullanici_id
             WHERE y.otel_id = @hotelId
               AND y.onay_durumu LIKE N'Onaylan%'
@@ -2205,6 +2425,7 @@ public class HotelService : IHotelService
         await using (var reviewsCommand = new SqlCommand(reviewsSql, connection))
         {
             reviewsCommand.Parameters.AddWithValue("@hotelId", model.Id);
+            var blockedWords = await LoadBlockedReviewWordsAsync(connection, cancellationToken);
             await using var reviewsReader = await reviewsCommand.ExecuteReaderAsync(cancellationToken);
             while (await reviewsReader.ReadAsync(cancellationToken))
             {
@@ -2224,15 +2445,20 @@ public class HotelService : IHotelService
                 var travel = reviewsReader.IsDBNull(5) ? null : reviewsReader.GetString(5);
                 var memRaw = reviewsReader.IsDBNull(6) ? null : reviewsReader.GetValue(6);
                 int? memLevel = memRaw is null || memRaw is DBNull ? null : Convert.ToInt32(memRaw, CultureInfo.InvariantCulture);
+                var reservationNo = reviewsReader.IsDBNull(7) ? null : reviewsReader.GetString(7);
+                var rawText = reviewsReader.IsDBNull(3) ? string.Empty : reviewsReader.GetString(3);
                 model.Reviews.Add(new HotelReviewViewModel
                 {
                     Avatar = BuildAvatar(reviewName),
                     Name = reviewName,
                     DateText = reviewDate.ToString("dd MMMM yyyy", new CultureInfo("tr-TR")),
                     Score = decimal.Round(reviewScore, 1, MidpointRounding.AwayFromZero),
-                    Text = reviewsReader.IsDBNull(3) ? string.Empty : reviewsReader.GetString(3),
+                    Text = ReviewTextFilter.MaskBlockedWords(rawText, blockedWords),
                     TravelProfile = string.IsNullOrWhiteSpace(travel) ? null : travel,
-                    SatisfactionLabel = MemnuniyetEtiketi(memLevel)
+                    SatisfactionLabel = MemnuniyetEtiketi(memLevel),
+                    ReservationNoTail = string.IsNullOrWhiteSpace(reservationNo)
+                        ? null
+                        : reservationNo.Length <= 3 ? reservationNo : reservationNo[^3..]
                 });
             }
         }
@@ -2385,6 +2611,85 @@ public class HotelService : IHotelService
         }
 
         return "/" + imageUrl.TrimStart('~', '/').Replace("\\", "/");
+    }
+
+    private static string NormalizeMediaUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = url.Trim();
+        if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed;
+        }
+
+        // Relative: treat as local route or file under wwwroot.
+        return "/" + trimmed.TrimStart('~', '/', '\\').Replace("\\", "/");
+    }
+
+    private static string NormalizeHotelImageUrl(long hotelId, string imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = imageUrl.Trim();
+        if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed;
+        }
+
+        var normalized = trimmed.TrimStart('~', '/', '\\').Replace("\\", "/");
+        if (normalized.StartsWith("uploads/", StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith("assets/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/" + normalized;
+        }
+
+        if (normalized.Contains("/", StringComparison.Ordinal))
+        {
+            return "/" + normalized;
+        }
+
+        // Demo/test verilerinde sadece dosya adi saklanmis olabiliyor.
+        return MediaStoragePaths.HotelImagesUrl(hotelId, normalized);
+    }
+
+    private static string NormalizeRoomImageUrl(long hotelId, long roomId, string imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = imageUrl.Trim();
+        if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed;
+        }
+
+        var normalized = trimmed.TrimStart('~', '/', '\\').Replace("\\", "/");
+        if (normalized.StartsWith("uploads/", StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith("assets/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/" + normalized;
+        }
+
+        if (normalized.Contains("/", StringComparison.Ordinal))
+        {
+            return "/" + normalized;
+        }
+
+        return MediaStoragePaths.RoomImagesUrl(hotelId, roomId, normalized);
     }
 
     private static string NormalizeTurkishText(string? value)
@@ -2691,6 +2996,56 @@ public class HotelService : IHotelService
         return campaignSlug.Trim().ToLowerInvariant();
     }
 
+    private static async Task<List<HotelListingCampaignFilterViewModel>> LoadListingCampaignFiltersAsync(SqlConnection connection, string activeCampaignSlug, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT
+                k.seo_slug,
+                COALESCE(NULLIF(k.kampanya_adi, ''), NULLIF(k.listeleme_basligi, ''), N'Kampanya') AS kampanya_adi,
+                COUNT(DISTINCT ko.otel_id) AS otel_adedi,
+                MAX(CASE WHEN k.one_cikan_kampanya = 1 THEN 1 ELSE 0 END) AS one_cikan,
+                MIN(COALESCE(k.siralama, 9999)) AS min_siralama
+            FROM kampanyalar k
+            JOIN kampanya_oteller ko ON ko.kampanya_id = k.id
+            JOIN oteller o ON o.id = ko.otel_id
+            WHERE k.aktif_mi = 1
+              AND ko.katilim_durumu = N'Aktif'
+              AND o.yayin_durumu = N'Yayında'
+              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+              AND (
+                    k.gorunurluk_durumu IS NULL
+                    OR LTRIM(RTRIM(k.gorunurluk_durumu)) = N''
+                    OR LOWER(REPLACE(LTRIM(RTRIM(k.gorunurluk_durumu)), N'ı', N'i')) IN (N'yayinda', N'yayında')
+                  )
+              AND NULLIF(LTRIM(RTRIM(k.seo_slug)), N'') IS NOT NULL
+            GROUP BY k.seo_slug, COALESCE(NULLIF(k.kampanya_adi, ''), NULLIF(k.listeleme_basligi, ''), N'Kampanya')
+            HAVING COUNT(DISTINCT ko.otel_id) > 0
+            ORDER BY one_cikan DESC, min_siralama ASC, otel_adedi DESC, kampanya_adi ASC;
+            """;
+
+        var campaigns = new List<HotelListingCampaignFilterViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var slug = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+            if (string.IsNullOrWhiteSpace(slug))
+            {
+                continue;
+            }
+
+            campaigns.Add(new HotelListingCampaignFilterViewModel
+            {
+                Slug = NormalizeCampaignSlug(slug),
+                Name = NormalizeTurkishText(reader.IsDBNull(1) ? "Kampanya" : reader.GetString(1)),
+                HotelCount = reader.IsDBNull(2) ? 0 : Convert.ToInt32(reader.GetValue(2), CultureInfo.InvariantCulture),
+                IsActive = string.Equals(NormalizeCampaignSlug(slug), activeCampaignSlug, StringComparison.OrdinalIgnoreCase)
+            });
+        }
+
+        return campaigns;
+    }
+
     private static async Task<(string Title, string Description)> GetCampaignMetaFromDatabaseAsync(SqlConnection connection, string campaignSlug, CancellationToken cancellationToken)
     {
         const string sql = """
@@ -2699,8 +3054,11 @@ public class HotelService : IHotelService
                 COALESCE(NULLIF(k.listeleme_aciklamasi, ''), NULLIF(k.kisa_aciklama, ''), LEFT(k.kampanya_aciklamasi, 220), N'Secili kampanyaya dahil yayindaki otelleri listeleyin.') AS aciklama
             FROM kampanyalar k
             WHERE k.aktif_mi = 1
-              AND k.gorunurluk_durumu = N'Yayında'
-              AND SYSUTCDATETIME() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
+              AND (
+                    k.gorunurluk_durumu IS NULL
+                    OR LTRIM(RTRIM(k.gorunurluk_durumu)) = N''
+                    OR LOWER(REPLACE(LTRIM(RTRIM(k.gorunurluk_durumu)), N'ı', N'i')) IN (N'yayinda', N'yayında')
+                  )
               AND k.seo_slug = @campaignSlug;
             """;
 
@@ -2919,6 +3277,31 @@ public class HotelService : IHotelService
         }
 
         return "Iyi";
+    }
+
+    private static async Task<IReadOnlyList<string>> LoadBlockedReviewWordsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        var result = new List<string>();
+        if (!await HotelTableExistsAsync(connection, "blockyorumkelime", cancellationToken))
+        {
+            return result;
+        }
+
+        const string sql = @"SELECT kelime FROM dbo.blockyorumkelime WHERE aktif_mi = 1 ORDER BY id DESC;";
+        await using var cmd = new SqlCommand(sql, connection);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            if (!reader.IsDBNull(0))
+            {
+                var w = reader.GetString(0)?.Trim();
+                if (!string.IsNullOrWhiteSpace(w))
+                {
+                    result.Add(w);
+                }
+            }
+        }
+        return result;
     }
 
     private static string BuildSlug(string name, string hotelCode)
@@ -3171,7 +3554,7 @@ public class HotelService : IHotelService
         const string sql = """
             SELECT COUNT(*)
             FROM information_schema.TABLES
-            WHERE TABLE_SCHEMA = DB_NAME()
+            WHERE TABLE_CATALOG = DB_NAME()
               AND TABLE_NAME = @tableName;
             """;
         await using var command = new SqlCommand(sql, connection);

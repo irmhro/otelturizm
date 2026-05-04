@@ -1,0 +1,64 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerSettingsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    var q = Model.Shell.SelectedHotelId is long hid ? $"?otelId={hid}" : string.Empty;
+}
+
+<section class="partner-growth-hero">
+    <div>
+        <p class="partner-room-kicker">Panel</p>
+        <h2>Ayarlar</h2>
+        <p>Görünüm tercihleri <code>tema_panel</code> tablosuna kaydedilir. Başvuru ve kurumsal bilgi düzenlemeleri için ilgili modüllere gidin.</p>
+    </div>
+</section>
+
+@if (TempData["PartnerError"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="partner-alert is-danger mb-3">@err</div>
+}
+@if (TempData["PartnerSuccess"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="partner-alert is-success mb-3">@ok</div>
+}
+
+<section class="partner-settings-grid">
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>Görünüm</h2>
+                <p>Açık / koyu mod ve ana renk seçimi üst menüdeki tema çekmecesinden yapılır; kayıt sonrası bu sayfaya dönebilirsiniz.</p>
+            </div>
+        </div>
+        <button type="button" class="partner-primary-btn" data-bs-toggle="offcanvas" data-bs-target="#partnerThemeSettings">
+            <i class="fas fa-palette me-2"></i>Tema ayarlarını aç
+        </button>
+    </article>
+
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>Hesap ve başvuru</h2>
+                <p>Veri tabanı kaynaklı formlar.</p>
+            </div>
+        </div>
+        <ul class="partner-settings-links">
+            <li><a href="/panel/partner/basvuru-ve-evraklar@q"><i class="fas fa-file-contract text-muted me-2"></i>Başvuru ve evraklar</a><span class="partner-muted small d-block ms-4">partner_detaylari, partner evrak tabloları</span></li>
+            <li><a href="/panel/partner/hesap-bilgileri@q"><i class="fas fa-id-card text-muted me-2"></i>Hesap bilgileri</a><span class="partner-muted small d-block ms-4">users + partner_detaylari özeti</span></li>
+        </ul>
+    </article>
+
+    <article class="partner-section-card">
+        <div class="partner-section-head">
+            <div>
+                <h2>Güvenlik ve bildirim</h2>
+            </div>
+        </div>
+        <ul class="partner-settings-links">
+            <li><a href="/panel/partner/guvenlik@q"><i class="fas fa-shield-halved text-muted me-2"></i>Güvenlik (2FA)</a></li>
+            <li><a href="/panel/partner/guvenlik/tesis-kullanicilari@q"><i class="fas fa-users text-muted me-2"></i>Tesis kullanıcıları</a></li>
+            <li><a href="/panel/partner/bildirim-tercihleri@q"><i class="fas fa-bell text-muted me-2"></i>Bildirim tercihleri</a></li>
+            <li><a href="/panel/partner/724-destek@q"><i class="fas fa-headset text-muted me-2"></i>7/24 Destek</a></li>
+        </ul>
+    </article>
+</section>

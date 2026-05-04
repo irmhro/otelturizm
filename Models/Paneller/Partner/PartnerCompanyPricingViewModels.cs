@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Collections.Generic;
 
 namespace otelturizmnew.Models.Paneller.Partner;
 
@@ -33,9 +34,12 @@ public class PartnerCompanyPricingDayViewModel
     public string DateText { get; set; } = string.Empty;
     public decimal? CompanyPrice { get; set; }
     public decimal? BasePrice { get; set; }
+    public int? MinimumNights { get; set; }
+    public int? MaximumNights { get; set; }
     public bool IsClosed { get; set; }
     public string CompanyPriceText { get; set; } = "-";
     public string BasePriceText { get; set; } = "-";
+    public string NightRuleText { get; set; } = "Koşul yok";
 }
 
 public class PartnerCompanyRoomOptionViewModel
@@ -50,9 +54,12 @@ public class PartnerCompanyBulkPricingUpdateRequest
     public long HotelId { get; set; }
     public long CompanyId { get; set; }
     public long RoomTypeId { get; set; }
+    public List<long> RoomTypeIds { get; set; } = new();
     public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(14));
     public decimal CompanyNightlyPrice { get; set; }
+    public int? MinimumNights { get; set; }
+    public int? MaximumNights { get; set; }
     public bool CloseSales { get; set; }
     public string? Note { get; set; }
 }

@@ -1,0 +1,270 @@
+:root {
+    --loyalty-gold: #d99a14;
+}
+
+.content-header,
+.hero-personalized,
+.loyalty-hero,
+.feature-card,
+.stat-mini-card {
+    border: 1px solid #dbe5f2;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(15, 37, 64, .06);
+}
+
+.content-header {
+    padding: 22px 24px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #ffffff 0%, #eef6ff 100%);
+}
+
+.page-title h1,
+.hero-text h1,
+.tier-details h3 {
+    margin: 0 0 8px;
+    color: #152238;
+    font-weight: 800;
+}
+
+.page-title p,
+.hero-text p,
+.tier-details p,
+.points-label,
+.hero-tier-copy,
+.next-tier,
+.feature-empty,
+.feature-support-copy,
+.alert-sub {
+    color: #64748b;
+}
+
+.hero-personalized,
+.loyalty-hero {
+    padding: 22px;
+    margin-bottom: 16px;
+}
+
+.hero-content,
+.loyalty-header,
+.progress-info,
+.next-tier,
+.alert-item,
+.shared-item,
+.passport-recent-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.hero-badge,
+.points-display {
+    min-width: 190px;
+    padding: 16px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #fff7df, #ffffff);
+    text-align: center;
+}
+
+.points,
+.points-value {
+    color: #152238;
+    font-size: 32px;
+    font-weight: 900;
+}
+
+.tier-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tier-icon,
+.stat-mini-icon,
+.feature-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: #e8f2ff;
+    color: #0b72d9;
+}
+
+.progress-container {
+    display: grid;
+    gap: 10px;
+    margin: 18px 0;
+}
+
+.progress-bar {
+    height: 12px;
+    border-radius: 999px;
+    background: #e9eff7;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #0b72d9, #22c55e);
+}
+
+.stats-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.stat-mini-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+}
+
+.stat-mini-content h3 {
+    margin: 0;
+    font-size: 24px;
+    color: #152238;
+}
+
+.stat-mini-content p {
+    margin: 2px 0 0;
+    color: #64748b;
+}
+
+.stat-success { background: #dcfce7; color: #15803d; }
+.stat-danger { background: #fee2e2; color: #b91c1c; }
+.stat-gold { background: #fef3c7; color: #a16207; }
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.feature-card {
+    padding: 20px;
+}
+
+.feature-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.feature-header h3 {
+    margin: 0;
+    color: #152238;
+}
+
+.alert-item,
+.shared-item,
+.passport-map,
+.passport-recent,
+.badge-item {
+    padding: 12px;
+    border: 1px solid #e3ebf6;
+    border-radius: 8px;
+    background: #f8fbff;
+}
+
+.alert-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert-price {
+    font-weight: 800;
+    color: #152238;
+}
+
+.alert-price.is-triggered {
+    color: #15803d;
+}
+
+.icon-delete {
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fff;
+    color: #dc2626;
+    width: 34px;
+    height: 34px;
+}
+
+.btn-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-weight: 800;
+    color: #0b72d9;
+}
+
+.badges-grid,
+.city-list,
+.passport-recent-list {
+    display: grid;
+    gap: 10px;
+}
+
+.badges-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.badge-icon {
+    color: #94a3b8;
+}
+
+.badge-icon.earned {
+    color: #d99a14;
+}
+
+.city-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.city-tag {
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: #edf4ff;
+    color: #24558a;
+    font-weight: 700;
+}
+
+.city-tag.visited {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.loyalty-inline-form {
+    display: grid;
+    gap: 10px;
+}
+
+.loyalty-inline-form input {
+    border: 1px solid #d5e0ee;
+    border-radius: 8px;
+    padding: 11px 13px;
+}
+
+.inline-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.alert-banner {
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    font-weight: 700;
+}
+
+.alert-banner.success { background: #dcfce7; color: #166534; }
+.alert-banner.danger { background: #fee2e2; color: #991b1b; }

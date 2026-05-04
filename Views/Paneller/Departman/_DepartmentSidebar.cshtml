@@ -1,0 +1,25 @@
+@model otelturizmnew.Models.Paneller.Departman.DepartmentPanelShellViewModel
+@{
+    var initial = string.IsNullOrWhiteSpace(Model.FullName) ? "D" : Model.FullName.Trim()[0].ToString().ToUpperInvariant();
+}
+<aside class="department-sidebar">
+    <div class="department-brand">
+        <strong>OTEL<span>TURİZM</span></strong>
+        <small>Departman Operasyon</small>
+    </div>
+    <div class="department-user">
+        <div class="department-avatar">@initial</div>
+        <div>
+            <strong>@Model.FullName</strong>
+            <small>@Model.Email</small>
+        </div>
+    </div>
+    <nav class="department-nav">
+        <a class="@(Model.ActiveDepartment == "kullanici" ? "active" : null)" href="/panel/departman/kullanici"><i class="fas fa-users"></i> Kullanıcı</a>
+        <a class="@(Model.ActiveDepartment == "partner" ? "active" : null)" href="/panel/departman/partner"><i class="fas fa-hotel"></i> Partner</a>
+        <a class="@(Model.ActiveDepartment == "firma" ? "active" : null)" href="/panel/departman/firma"><i class="fas fa-building"></i> Firma</a>
+        <a class="@(Model.ActiveDepartment == "satis" ? "active" : null)" href="/panel/departman/satis"><i class="fas fa-handshake"></i> Satış</a>
+        <a class="@(Model.ActiveDepartment == "muhasebe" ? "active" : null)" href="/panel/departman/muhasebe"><i class="fas fa-file-invoice-dollar"></i> Muhasebe</a>
+        <a class="@(Model.ActiveDepartment == "destek" ? "active" : null)" href="/panel/departman/destek"><i class="fas fa-headset"></i> Destek</a>
+    </nav>
+</aside>

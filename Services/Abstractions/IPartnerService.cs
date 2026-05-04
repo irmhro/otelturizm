@@ -4,10 +4,18 @@ namespace otelturizmnew.Services.Abstractions;
 
 public interface IPartnerService
 {
-    Task<PartnerDashboardViewModel> GetDashboardAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
-    Task<PartnerReservationsPageViewModel> GetReservationsAsync(long userId, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, string? status = null, string? paymentMethod = null, int page = 1, int pageSize = 10, long? conversationId = null, CancellationToken cancellationToken = default);
+    Task<PartnerDashboardViewModel> GetDashboardAsync(long userId, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, string? status = null, string? paymentMethod = null, int pageSize = 7, long? conversationId = null, CancellationToken cancellationToken = default);
+    Task<PartnerReservationsPageViewModel> GetReservationsAsync(long userId, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, string? status = null, string? paymentMethod = null, int page = 1, int pageSize = 7, long? conversationId = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> UpdateReservationStatusAsync(long userId, PartnerReservationStatusRequest request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SendGuestMessageAsync(long userId, PartnerGuestMessageRequest request, CancellationToken cancellationToken = default);
+    Task<PartnerGuestMessagesPageViewModel> GetGuestMessagesAsync(long userId, long? hotelId = null, long? conversationId = null, CancellationToken cancellationToken = default);
+    Task<PartnerReservationCalendarPageViewModel> GetReservationCalendarAsync(long userId, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, CancellationToken cancellationToken = default);
+    Task<PartnerCancellationNoShowPageViewModel> GetCancellationNoShowAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<PartnerPaymentStatusesPageViewModel> GetPaymentStatusesAsync(long userId, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, string? paymentStatus = null, string? paymentMethod = null, CancellationToken cancellationToken = default);
+
+    Task<PartnerCompanyReservationsPageViewModel> GetCompanyReservationsAsync(long userId, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, long? companyId = null, string? status = null, CancellationToken cancellationToken = default);
+    Task<PartnerCompanyAnalyticsPageViewModel> GetCompanyAnalyticsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<PartnerCompanyRequestsPageViewModel> GetCompanyRequestsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
     Task<string> ExportReservationsCsvAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
     Task<PartnerPricingPageViewModel> GetPricingAsync(long userId, long? hotelId = null, long? roomId = null, string? month = null, CancellationToken cancellationToken = default);
     Task<PartnerCampaignsPageViewModel> GetCampaignsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
@@ -23,6 +31,13 @@ public interface IPartnerService
     Task<(bool Success, string Message)> DeleteRoomPhotoAsync(long userId, long hotelId, long roomId, long photoId, CancellationToken cancellationToken = default);
     Task<PartnerHotelInfoPageViewModel> GetHotelInfoAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> UpdateHotelInfoAsync(long userId, PartnerHotelInfoForm request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> UpdateHotelAmenitiesAsync(long userId, PartnerHotelAmenitiesUpdateRequest request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> UpdateHotelLocationAsync(long userId, PartnerHotelLocationUpdateRequest request, CancellationToken cancellationToken = default);
+    Task<PartnerHotelPoliciesPageViewModel> GetHotelPoliciesAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> UpdateHotelPoliciesAsync(long userId, PartnerHotelPoliciesForm request, CancellationToken cancellationToken = default);
+    Task<PartnerRoomFeaturesPageViewModel> GetRoomFeaturesAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> AddRoomFeatureAsync(long userId, PartnerRoomFeatureAddRequest request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> ToggleRoomFeatureAsync(long userId, PartnerRoomFeatureToggleRequest request, CancellationToken cancellationToken = default);
     Task<PartnerPhotosPageViewModel> GetPhotosAsync(long userId, long? hotelId = null, long? photoId = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> UploadPhotosAsync(long userId, PartnerPhotoUploadRequest request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SetCoverPhotoAsync(long userId, long hotelId, long photoId, CancellationToken cancellationToken = default);
@@ -35,6 +50,7 @@ public interface IPartnerService
     Task<PartnerReviewsPageViewModel> GetReviewsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ReplyToReviewAsync(long userId, PartnerReviewReplyRequest request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ReportReviewAsync(long userId, PartnerReviewReportRequest request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> RequestReviewTakedownAsync(long userId, long hotelId, long reviewId, string? reason, CancellationToken cancellationToken = default);
     Task<PartnerFinancePageViewModel> GetFinanceAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveBankInfoAsync(long userId, PartnerBankInfoForm request, CancellationToken cancellationToken = default);
     Task<string> ExportFinanceCsvAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
@@ -43,12 +59,29 @@ public interface IPartnerService
     Task<(bool Success, string Message)> SaveApplicationAsync(long userId, PartnerApplicationProfileForm request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> UploadApplicationDocumentAsync(long userId, PartnerApplicationDocumentUploadForm request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> DeleteApplicationDocumentAsync(long userId, long hotelId, long documentId, CancellationToken cancellationToken = default);
-    Task<PartnerSupportPageViewModel> GetSupportAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<PartnerSupportPageViewModel> GetSupportAsync(long userId, long? hotelId = null, long? ticketId = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> CreateSupportTicketAsync(long userId, PartnerSupportCreateTicketRequest request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SendSupportMessageAsync(long userId, PartnerSupportSendMessageRequest request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> CloseSupportTicketAsync(long userId, long hotelId, long ticketId, CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string Message)> SaveThemeAsync(long userId, long? hotelId, string scope, PanelThemeViewModel theme, CancellationToken cancellationToken = default);
+
+    Task<PartnerFacilityUsersPageViewModel> GetFacilityUsersAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> InviteFacilityUserAsync(long userId, PartnerFacilityUserInviteRequest request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> RevokeFacilityUserAsync(long userId, PartnerFacilityUserRevokeRequest request, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> ApproveFacilityInviteAsync(long userId, string token, CancellationToken cancellationToken = default);
 
     Task<PartnerCompanyPricingPageViewModel> GetCompanyPricingAsync(long userId, long? hotelId = null, long? companyId = null, long? roomId = null, string? month = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ApplyCompanyBulkPricingAsync(long userId, PartnerCompanyBulkPricingUpdateRequest request, CancellationToken cancellationToken = default);
 
     Task<PartnerListingSubscriptionsPageViewModel> GetListingSubscriptionsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> CreateListingSubscriptionAsync(long userId, PartnerListingSubscriptionCreateRequest request, CancellationToken cancellationToken = default);
+
+    Task<PartnerLocationInsightsPageViewModel> GetLocationInsightsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<PartnerFavoriteGuestsPageViewModel> GetFavoriteGuestsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<PartnerMarketingEventsPageViewModel> GetMarketingEventsAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SaveCampaignParticipationNoteAsync(long userId, PartnerCampaignParticipationNoteRequest request, CancellationToken cancellationToken = default);
+
+    Task<PartnerSettingsPageViewModel> GetPartnerSettingsPageAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<PartnerAccountInfoPageViewModel> GetAccountInfoAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
 }

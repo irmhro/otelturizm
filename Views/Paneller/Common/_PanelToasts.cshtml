@@ -50,5 +50,36 @@
             </div>
         }
     </div>
+
+    <script>
+        (function () {
+            const stack = document.querySelector('.ot-toast-stack');
+            if (!stack) return;
+
+            const toasts = Array.from(stack.querySelectorAll('.ot-toast'));
+            if (!toasts.length) return;
+
+            const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            toasts.forEach((toast) => {
+                const msAttr = toast.getAttribute('data-timeout-ms');
+                const ms = Math.max(0, parseInt(msAttr || '0', 10) || 0);
+                if (!ms) return;
+
+                window.setTimeout(() => {
+                    if (!toast || !toast.isConnected) return;
+                    toast.classList.add('is-hiding');
+                    if (prefersReduced) {
+                        toast.remove();
+                        return;
+                    }
+                    const removeAfter = 260;
+                    window.setTimeout(() => {
+                        if (toast && toast.isConnected) toast.remove();
+                    }, removeAfter);
+                }, ms);
+            });
+        })();
+    </script>
 }
 

@@ -335,6 +335,23 @@
     top: 24px;
 }
 
+.partner-pricing-bulk-wide .card-header {
+    align-items: flex-start;
+}
+
+.partner-pricing-room-check {
+    min-height: 72px;
+    height: 100%;
+    padding: 14px 16px;
+    border: 1px solid rgba(148, 163, 184, .28);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #fff, #f8fbff);
+}
+
+.partner-pricing-room-check .form-check-input {
+    margin-top: 3px;
+}
+
 .partner-pricing-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -596,5 +613,396 @@
     .partner-room-chip {
         width: 100%;
         min-width: 0;
+    }
+}
+
+.partner-pricing-summary-grid {
+    margin-bottom: 14px;
+}
+
+.partner-pricing-stat {
+    min-height: 132px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    overflow: hidden;
+}
+
+.partner-pricing-stat::before {
+    content: "";
+    display: block;
+    height: 4px;
+    background: linear-gradient(90deg, #2563eb, #38bdf8);
+}
+
+.partner-pricing-stat.is-success::before { background: linear-gradient(90deg, #059669, #86efac); }
+.partner-pricing-stat.is-danger::before { background: linear-gradient(90deg, #dc2626, #fecaca); }
+.partner-pricing-stat.is-warning::before { background: linear-gradient(90deg, #d97706, #fde68a); }
+
+.partner-pricing-stat-label {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.partner-room-overview-card .card-header,
+.partner-calendar-card-header {
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.partner-room-month-card {
+    position: relative;
+    display: grid;
+    gap: 16px;
+    min-height: 132px;
+    padding: 16px;
+    color: #0f172a;
+    text-decoration: none;
+    border: 1px solid rgba(148, 163, 184, .24);
+    border-radius: 16px;
+    background: #fff;
+    overflow: hidden;
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.partner-room-month-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: #2563eb;
+}
+
+.partner-room-month-card:hover,
+.partner-room-month-card.is-selected {
+    transform: translateY(-1px);
+    border-color: rgba(37, 99, 235, .36);
+    box-shadow: 0 14px 28px rgba(15, 23, 42, .08);
+}
+
+.partner-room-month-card.tone-2::before { background: #059669; }
+.partner-room-month-card.tone-3::before { background: #7c3aed; }
+.partner-room-month-card.tone-4::before { background: #ea580c; }
+.partner-room-month-card.tone-5::before { background: #0891b2; }
+.partner-room-month-card.tone-6::before { background: #be123c; }
+
+.partner-room-month-card-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.partner-room-month-card-head span {
+    align-self: flex-start;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #eef6ff;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.partner-room-month-title {
+    font-weight: 800;
+}
+
+.partner-room-month-meta {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.partner-room-month-stats {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr;
+    align-items: baseline;
+    gap: 4px 8px;
+    color: #475569;
+}
+
+.partner-room-month-stats strong {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.partner-room-month-stats small {
+    font-size: 12px;
+}
+
+.partner-pricing-bulk-disclosure {
+    border: 1px solid rgba(148, 163, 184, .24);
+}
+
+.partner-pricing-bulk-disclosure > summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 20px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.partner-pricing-bulk-disclosure > summary::-webkit-details-marker {
+    display: none;
+}
+
+.partner-pricing-bulk-disclosure > summary strong {
+    display: block;
+    font-size: 16px;
+}
+
+.partner-pricing-bulk-disclosure > summary small {
+    display: block;
+    margin-top: 4px;
+    color: #64748b;
+}
+
+.partner-pricing-bulk-disclosure > summary b {
+    flex: 0 0 auto;
+    padding: 9px 13px;
+    border-radius: 12px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 13px;
+}
+
+.partner-pricing-bulk-body {
+    border-top: 1px solid rgba(148, 163, 184, .2);
+    background: linear-gradient(180deg, #fff, #f8fbff);
+}
+
+.partner-calendar-card {
+    overflow: hidden;
+}
+
+.partner-calendar-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.partner-calendar-month-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 5px 10px;
+    border: 1px solid rgba(148, 163, 184, .34);
+    border-radius: 10px;
+    background: #fff;
+}
+
+.partner-calendar-month-form label {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.partner-calendar-month-form select {
+    border: 0;
+    background: transparent;
+    color: #0f172a;
+    font-weight: 800;
+    outline: 0;
+}
+
+.partner-calendar-legend {
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+
+.partner-calendar-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #f8fafc;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.partner-calendar-legend .is-open i { color: #059669; }
+.partner-calendar-legend .is-discount i { color: #2563eb; }
+.partner-calendar-legend .is-closed i { color: #dc2626; }
+
+.partner-calendar-weekdays {
+    margin-bottom: 6px;
+}
+
+.partner-calendar-weekdays div {
+    padding: 10px 6px;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #475569;
+}
+
+.partner-calendar-month-grid {
+    gap: 6px;
+}
+
+.partner-calendar-cell {
+    min-height: 156px;
+    padding: 10px;
+    gap: 7px;
+    border-radius: 14px;
+    box-shadow: none;
+}
+
+.partner-calendar-cell.is-open {
+    border-color: rgba(16, 185, 129, .22);
+    background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
+}
+
+.partner-calendar-cell.is-discount {
+    border-color: rgba(37, 99, 235, .26);
+    background: linear-gradient(145deg, #ffffff 0%, #eff6ff 100%);
+}
+
+.partner-calendar-cell.is-closed {
+    border-color: rgba(220, 38, 38, .24);
+    background: linear-gradient(145deg, #ffffff 0%, #fff1f2 100%);
+}
+
+.partner-calendar-cell.is-other-month {
+    background: #f8fafc;
+    opacity: .58;
+}
+
+.partner-calendar-cell.is-today {
+    outline: 2px solid rgba(37, 99, 235, .22);
+    outline-offset: -2px;
+}
+
+.partner-calendar-cell-head strong {
+    font-size: 12px;
+}
+
+.partner-calendar-cell-head span {
+    font-size: 11px;
+}
+
+.partner-calendar-status {
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, .7);
+    color: #0f172a;
+    font-size: 10px;
+}
+
+.partner-calendar-price-block {
+    gap: 2px;
+}
+
+.partner-calendar-price-block strong {
+    font-size: 20px;
+}
+
+.partner-calendar-price-block em {
+    color: #1d4ed8;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 800;
+}
+
+.partner-calendar-discount-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.partner-calendar-discount-line span {
+    color: #1d4ed8;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.partner-calendar-meta {
+    gap: 2px;
+    font-size: 12px;
+}
+
+.partner-calendar-tag {
+    max-width: 100%;
+    padding: 4px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: rgba(37, 99, 235, .1);
+    color: #1d4ed8;
+    font-size: 11px;
+}
+
+.partner-calendar-note {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-size: 11px;
+}
+
+.partner-calendar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+}
+
+.partner-calendar-inline-btn,
+.partner-calendar-edit-btn {
+    width: 100%;
+    min-height: 30px;
+    padding: 6px 7px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    font-size: 11px;
+    line-height: 1.1;
+}
+
+.partner-calendar-inline-btn.is-open {
+    border-color: rgba(5, 150, 105, .22);
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+}
+
+.partner-calendar-inline-btn.is-close {
+    border-color: rgba(220, 38, 38, .22);
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+}
+
+.partner-calendar-edit-btn {
+    margin-top: 0;
+    justify-content: center;
+    grid-column: 1 / -1;
+    border-color: rgba(37, 99, 235, .24);
+    background: rgba(255, 255, 255, .72);
+    color: #1d4ed8;
+}
+
+@media (max-width: 1200px) {
+    .partner-calendar-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .partner-calendar-card-header,
+    .partner-calendar-toolbar,
+    .partner-pricing-bulk-disclosure > summary {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .partner-calendar-month-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .partner-calendar-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

@@ -1,6 +1,8 @@
 @model otelturizmnew.Models.Kampanyalar.CampaignListingPageViewModel
 
 @{
+    ViewData["Title"] = "Kampanyalar";
+    ViewData["PageCss"] = "kampanyalar";
     ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.PageDescription)
         ? "Otelturizm kampanyalarını keşfedin. Sezon fırsatları ve özel indirimleri görüntüleyin."
         : Model.PageDescription;
@@ -22,18 +24,6 @@
     }
     catch { }
 }
-
-<section class="campaign-page-hero">
-    <div class="campaign-page-hero__copy">
-        <span class="campaign-page-kicker">Aktif kampanya vitrini</span>
-        <h1>@Model.PageTitle</h1>
-        <p>@Model.PageDescription</p>
-    </div>
-    <div class="campaign-page-hero__badge">
-        <strong>@Model.Campaigns.Count</strong>
-        <span>yayındaki kampanya</span>
-    </div>
-</section>
 
 <section class="campaign-index-grid">
     @if (Model.Campaigns.Count == 0)
@@ -65,15 +55,12 @@
                         }
                     </div>
                     <div class="campaign-card__body">
-                        <small>@campaign.CampaignCode</small>
                         <h2>@campaign.CampaignName</h2>
                         <p>@campaign.ShortDescription</p>
                         <div class="campaign-card__meta">
                             <span><i class="fas fa-tag"></i> @campaign.CampaignType</span>
-                            <span><i class="fas fa-calendar-plus"></i> @campaign.StartDateText</span>
-                            <span><i class="fas fa-calendar-check"></i> @campaign.EndDateText</span>
-                            <span><i class="fas fa-hotel"></i> @campaign.HotelCount otel</span>
                         </div>
+                        <span class="campaign-card__date"><i class="fas fa-calendar-check"></i> @campaign.EndDateText</span>
                         <span class="campaign-card__link">Otelleri Listele</span>
                     </div>
                 </a>

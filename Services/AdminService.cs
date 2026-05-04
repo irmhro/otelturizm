@@ -1621,7 +1621,13 @@ public class AdminService : IAdminService
                    COALESCE(r.durum,'') AS durum,
                    COALESCE(r.toplam_tutar,0) AS toplam_tutar,
                    COALESCE(r.para_birimi,'TRY') AS para_birimi,
-                   COALESCE(r.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at
+                   COALESCE(r.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at,
+                   COALESCE(r.komisyon_tutari, 0) AS komisyon_tutari,
+                   CASE
+                       WHEN r.firma_id IS NOT NULL THEN N'Firma'
+                       WHEN COALESCE(r.satis_temsilcisi_id, 0) > 0 THEN N'Satış'
+                       ELSE N'Bireysel'
+                   END AS kaynak
             FROM rezervasyonlar r
             LEFT JOIN oteller o ON o.id = r.otel_id
             LEFT JOIN users u ON u.id = r.kullanici_id
@@ -1649,7 +1655,9 @@ public class AdminService : IAdminService
                     Status = reader.GetString(5),
                     TotalAmount = reader.GetDecimal(6),
                     Currency = reader.GetString(7),
-                    CreatedAtUtc = new DateTimeOffset(reader.GetDateTime(8), TimeSpan.Zero)
+                    CreatedAtUtc = new DateTimeOffset(reader.GetDateTime(8), TimeSpan.Zero),
+                    CommissionAmount = reader.GetDecimal(9),
+                    SourceText = reader.GetString(10)
                 });
             }
         }
@@ -1728,6 +1736,102 @@ public class AdminService : IAdminService
                 model.Items["EmailProvider:Active"] = reader.IsDBNull(1) ? "0" : (reader.GetInt32(1) == 1 ? "1" : "0");
             }
         }
+
+        return model;
+    }
+
+    public async Task<AdminPlatformCheckupPageViewModel> GetPlatformCheckupAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var shell = await GetShellAsync(connection, "Platform Checkup", "Yetki, onay, satış, içerik, e-posta, log ve kurulum eksiklerini tek ekranda izleyin.", fullName, email, userRole, cancellationToken);
+        var model = new AdminPlatformCheckupPageViewModel { Shell = shell };
+
+        model.SummaryCards.Add(new AdminSummaryCardViewModel
+        {
+            Label = "Bekleyen Partner",
+            Value = shell.PendingPartnerApplications.ToString(CultureInfo.InvariantCulture),
+            Description = "Admin onayı bekleyen tesis başvuruları",
+            ToneClass = shell.PendingPartnerApplications > 0 ? "warning" : "success",
+            IconClass = "fas fa-hotel"
+        });
+        model.SummaryCards.Add(new AdminSummaryCardViewModel
+        {
+            Label = "Bekleyen Firma",
+            Value = shell.PendingCompanyApplications.ToString(CultureInfo.InvariantCulture),
+            Description = "Kurumsal hesap onay akışı",
+            ToneClass = shell.PendingCompanyApplications > 0 ? "warning" : "success",
+            IconClass = "fas fa-building"
+        });
+        model.SummaryCards.Add(new AdminSummaryCardViewModel
+        {
+            Label = "E-posta Kuyruğu",
+            Value = (await CountIfTableExistsAsync(connection, "bildirim_loglari", "COALESCE(durum,'') IN (N'Beklemede',N'Kuyrukta',N'Basarisiz',N'Başarısız')", cancellationToken)).ToString(CultureInfo.InvariantCulture),
+            Description = "Bekleyen veya hatalı bildirim işleri",
+            ToneClass = "info",
+            IconClass = "fas fa-envelope-open-text"
+        });
+        model.SummaryCards.Add(new AdminSummaryCardViewModel
+        {
+            Label = "Aktif E-posta Servisi",
+            Value = (await CountIfTableExistsAsync(connection, "email_services", "COALESCE(aktif_mi,0)=1", cancellationToken)).ToString(CultureInfo.InvariantCulture),
+            Description = "Canlı gönderime açık SMTP hesapları",
+            ToneClass = "success",
+            IconClass = "fas fa-server"
+        });
+
+        model.Groups.Add(await BuildTableCheckGroupAsync(connection, "Yetki ve Kullanıcı", "Rol, yetki, kullanıcı ve admin işlem izleri.", "primary", cancellationToken,
+            ("Kullanıcılar", "kullanicilar", "/admin/kullanicilar"),
+            ("Yöneticiler", "yoneticiler", "/admin/yoneticiler"),
+            ("Yetki tanımları", "yetkiler", "/admin/platform-yetkilileri"),
+            ("Rol yetkileri", "rol_yetkileri", "/admin/platform-yetkilileri"),
+            ("Admin işlem logları", "admin_islem_loglari", "/admin/islem-loglari")));
+
+        model.Groups.Add(await BuildTableCheckGroupAsync(connection, "Ticari Operasyon", "Rezervasyon, ödeme, komisyon, satış ekibi ve ciro takibi.", "success", cancellationToken,
+            ("Rezervasyonlar", "rezervasyonlar", "/admin/rezervasyonlar-tek-liste"),
+            ("Ödeme işlemleri", "odeme_islemleri", "/admin/odemeler"),
+            ("Komisyon kayıtları", "komisyon_muhasebe_kayitlari", "/admin/komisyonlar"),
+            ("Firma rezervasyonları", "firma_rezervasyonlari", "/admin/firma-rezervasyonlari"),
+            ("Satış müşteri havuzu", "satis_musterileri", "/satis/musteri-yonetimi")));
+
+        model.Groups.Add(await BuildTableCheckGroupAsync(connection, "Otel, Oda ve Fiyat", "Otel içerikleri, odalar, özellikler, fiyat takvimi ve görsel kayıtları.", "azure", cancellationToken,
+            ("Oteller", "oteller", "/admin/oteller"),
+            ("Oda tipleri", "oda_tipleri", "/admin/oteller"),
+            ("Oda özellikleri", "oda_ozellikleri", "/admin/oteller"),
+            ("Fiyat/müsaitlik takvimi", "oda_fiyat_musaitlik", "/admin/ticari-icgoru"),
+            ("Otel fotoğrafları", "otel_fotograflari", "/admin/oteller"),
+            ("Oda fotoğrafları", "oda_fotograflari", "/admin/oteller")));
+
+        model.Groups.Add(await BuildTableCheckGroupAsync(connection, "Başvuru ve Onay", "Partner/firma onboarding, evrak ve admin karar kayıtları.", "warning", cancellationToken,
+            ("Partner detayları", "partner_detaylari", "/admin/partner-basvurulari"),
+            ("Partner evrakları", "partner_application_assets", "/admin/partner-basvurulari"),
+            ("Partner başvuru hareketleri", "partner_basvuru_hareketleri", "/admin/partner-basvurulari"),
+            ("Firmalar", "firmalar", "/admin/firma-basvurulari"),
+            ("Firma çalışanları", "firma_calisanlari", "/firma/calisanlar")));
+
+        model.Groups.Add(await BuildTableCheckGroupAsync(connection, "E-posta, Log ve Sağlık", "Kuyruk, şablon, servis, sistem logları ve health izleme.", "danger", cancellationToken,
+            ("E-posta servisleri", "email_services", "/admin/mail-merkezi"),
+            ("Bildirim kuyruğu", "bildirim_loglari", "/admin/email-kuyruk"),
+            ("Bildirim şablonları", "bildirim_sablonlari", "/admin/eposta-sablonlari"),
+            ("Sistem hata logları", "sistem_hata_loglari", "/admin/loglar"),
+            ("API logları", "api_loglari", "/admin/rate-limit")));
+
+        model.Groups.Add(await BuildTableCheckGroupAsync(connection, "Konum ve Kurulum", "İl, ilçe, mahalle, geo arama ve kurulum verileri.", "info", cancellationToken,
+            ("İller", "iller", "/admin/ayarlar"),
+            ("İlçeler", "ilceler", "/admin/ayarlar"),
+            ("Mahalleler", "mahalleler", "/admin/ayarlar"),
+            ("Konum arama logları", "geo_search_logs", "/admin/konum-arama-loglari"),
+            ("Otel koordinat değişimleri", "otel_koordinat_degisiklikleri", "/admin/otel-koordinat-degisimleri")));
+
+        model.Roadmap.AddRange(new[]
+        {
+            new AdminPlatformRoadmapItemViewModel { Phase = "1", Scope = "Admin temel yönetim", Status = "Devam ediyor", Detail = "Dashboard, tek rezervasyon listesi, komisyon, partner başvuru ve platform checkup Tabler yapısına alındı." },
+            new AdminPlatformRoadmapItemViewModel { Phase = "2", Scope = "Yetki ve satış ekibi", Status = "Sırada", Detail = "Rol/yetki matrisi, satış ciroları, kullanıcı rezervasyon adetleri ve işlem logları tekil sayfalara ayrılacak." },
+            new AdminPlatformRoadmapItemViewModel { Phase = "3", Scope = "Otel/oda/fiyat/görsel", Status = "Sırada", Detail = "Otel detay, oda, fiyat, WEBP görsel ve güvenli silme yönetimi admin/partner ortak standarda bağlanacak." },
+            new AdminPlatformRoadmapItemViewModel { Phase = "4", Scope = "E-posta ve sistem sağlığı", Status = "Sırada", Detail = "Canlı SMTP servisleri, kuyruk retry, şablon, health ve ayar izleme tek akışta tamamlanacak." },
+            new AdminPlatformRoadmapItemViewModel { Phase = "5", Scope = "Firma/partner tamamlama", Status = "Planlandı", Detail = "Yarım kalan firma ve partner sayfaları aynı sayfa-adı CS/CSS/CSHTML sözleşmesiyle tamamlanacak." }
+        });
 
         return model;
     }
@@ -2272,6 +2376,168 @@ public class AdminService : IAdminService
                 },
                 CreatedAtText = reader.GetDateTime(7).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"))
             });
+        }
+
+        return model;
+    }
+
+    public async Task<AdminApprovalCenterPageViewModel> GetApprovalCenterAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var model = new AdminApprovalCenterPageViewModel
+        {
+            Shell = await GetShellAsync(connection, "Onay Merkezi", "Partner, firma, otel, evrak, komisyon ve fatura onaylarını tek merkezde yönetin.", fullName, email, userRole, cancellationToken)
+        };
+
+        const string summarySql = @"
+            SELECT
+                (SELECT COUNT(*) FROM oteller),
+                (SELECT COUNT(*) FROM oteller WHERE COALESCE(onay_durumu,'Beklemede') <> 'Onaylandi' OR COALESCE(yayin_durumu,'Kapali') <> 'Yayinda'),
+                (SELECT COUNT(*) FROM partner_detaylari WHERE COALESCE(onay_durumu,'Beklemede') = 'Beklemede'),
+                (SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu,'Beklemede') = 'Beklemede'),
+                (SELECT COUNT(*) FROM rezervasyonlar),
+                (SELECT COALESCE(SUM(COALESCE(toplam_tutar,0)),0) FROM rezervasyonlar WHERE COALESCE(durum,'') <> N'İptal Edildi'),
+                (SELECT COALESCE(SUM(COALESCE(komisyon_tutari,0)),0) FROM komisyon_muhasebe_kayitlari),
+                (SELECT COUNT(*) FROM faturalar WHERE COALESCE(fatura_durumu,'Taslak') IN ('Taslak','Beklemede'));";
+
+        await using (var command = new SqlCommand(summarySql, connection))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Toplam Otel", Value = SafeInt(reader, 0).ToString(CultureInfo.InvariantCulture), Description = "Platformdaki tüm oteller", ToneClass = "info", IconClass = "fa-hotel" });
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Onay/Yayın Bekleyen", Value = SafeInt(reader, 1).ToString(CultureInfo.InvariantCulture), Description = "Admin onayı veya yayın kararı bekleyen oteller", ToneClass = "warning", IconClass = "fa-circle-pause" });
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Partner Başvuru", Value = SafeInt(reader, 2).ToString(CultureInfo.InvariantCulture), Description = "Evrak/onay bekleyen partnerler", ToneClass = "warning", IconClass = "fa-file-signature" });
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Firma Başvuru", Value = SafeInt(reader, 3).ToString(CultureInfo.InvariantCulture), Description = "Kurumsal hesap onayı bekleyenler", ToneClass = "warning", IconClass = "fa-building" });
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Rezervasyon", Value = SafeInt(reader, 4).ToString(CultureInfo.InvariantCulture), Description = "Tüm zamanlar rezervasyon adedi", ToneClass = "success", IconClass = "fa-calendar-check" });
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Ciro", Value = $"{SafeDecimal(reader, 5).ToString("N0", CultureInfo.GetCultureInfo("tr-TR"))} TL", Description = "İptal dışı toplam rezervasyon cirosu", ToneClass = "success", IconClass = "fa-chart-line" });
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Komisyon", Value = $"{SafeDecimal(reader, 6).ToString("N0", CultureInfo.GetCultureInfo("tr-TR"))} TL", Description = "Muhasebe komisyon kaydı", ToneClass = "primary", IconClass = "fa-percent" });
+                model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Fatura Bekleyen", Value = SafeInt(reader, 7).ToString(CultureInfo.InvariantCulture), Description = "Taslak/beklemede fatura kayıtları", ToneClass = "danger", IconClass = "fa-receipt" });
+            }
+        }
+
+        const string approvalsSql = @"
+            SELECT TOP (150) type_name, entity_id, title, detail, status_text, created_at, action_url
+            FROM (
+                SELECT N'Partner' AS type_name, p.id AS entity_id, p.firma_unvani AS title,
+                       CONCAT(COALESCE(o.otel_adi, N'Otel bağlantısı yok'), N' · ', COALESCE(p.yetkili_eposta, N'')) AS detail,
+                       COALESCE(p.onay_durumu, N'Beklemede') AS status_text,
+                       COALESCE(p.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at,
+                       N'/admin/partner-basvurulari' AS action_url
+                FROM partner_detaylari p
+                LEFT JOIN oteller o ON o.partner_id = p.id
+                WHERE COALESCE(p.onay_durumu, N'Beklemede') <> N'Onaylandi'
+                UNION ALL
+                SELECT N'Firma', f.id, f.firma_adi,
+                       CONCAT(COALESCE(f.yetkili_eposta, f.firma_eposta, N''), N' · ', COALESCE(f.vergi_no, N'')),
+                       COALESCE(f.onay_durumu, N'Beklemede'),
+                       COALESCE(f.olusturulma_tarihi, SYSUTCDATETIME()),
+                       N'/admin/firma-basvurulari'
+                FROM firmalar f
+                WHERE COALESCE(f.onay_durumu, N'Beklemede') <> N'Onaylandı'
+                UNION ALL
+                SELECT N'Otel', o.id, o.otel_adi,
+                       CONCAT(COALESCE(o.ilce, N''), N', ', COALESCE(o.sehir, N''), N' · ', COALESCE(p.firma_unvani, N'Partner yok')),
+                       CONCAT(COALESCE(o.onay_durumu, N'Beklemede'), N' / ', COALESCE(o.yayin_durumu, N'Kapali')),
+                       COALESCE(o.olusturulma_tarihi, SYSUTCDATETIME()),
+                       CONCAT(N'/admin/otel-detay/', o.id)
+                FROM oteller o
+                LEFT JOIN partner_detaylari p ON p.id = o.partner_id
+                WHERE COALESCE(o.onay_durumu, N'Beklemede') <> N'Onaylandi' OR COALESCE(o.yayin_durumu, N'Kapali') <> N'Yayinda'
+            ) x
+            ORDER BY created_at DESC;";
+
+        await using (var command = new SqlCommand(approvalsSql, connection))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var status = reader.GetString(4);
+                model.PendingApprovals.Add(new AdminApprovalTaskRowViewModel
+                {
+                    Type = reader.GetString(0),
+                    EntityId = reader.GetInt64(1),
+                    Title = reader.GetString(2),
+                    Detail = reader.GetString(3),
+                    StatusText = status,
+                    ToneClass = ResolveApprovalTone(status),
+                    CreatedAtText = reader.GetDateTime(5).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                    ActionUrl = reader.GetString(6)
+                });
+            }
+        }
+
+        var monthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        const string hotelsSql = @"
+            SELECT TOP (100)
+                o.id, o.otel_adi, COALESCE(p.firma_unvani, N'Partner yok'),
+                CONCAT(COALESCE(o.ilce, N''), N', ', COALESCE(o.sehir, N'')),
+                COALESCE(o.onay_durumu, N'Beklemede'), COALESCE(o.yayin_durumu, N'Kapali'),
+                COALESCE(o.varsayilan_komisyon_orani, 0),
+                COALESCE(SUM(CASE WHEN r.olusturulma_tarihi >= @monthStart AND COALESCE(r.durum,'') <> N'İptal Edildi' THEN COALESCE(r.toplam_tutar,0) ELSE 0 END),0),
+                COALESCE(SUM(CASE WHEN k.kayit_tarihi >= @monthStart THEN COALESCE(k.komisyon_tutari,0) ELSE 0 END),0)
+            FROM oteller o
+            LEFT JOIN partner_detaylari p ON p.id = o.partner_id
+            LEFT JOIN rezervasyonlar r ON r.otel_id = o.id
+            LEFT JOIN komisyon_muhasebe_kayitlari k ON k.otel_id = o.id
+            GROUP BY o.id, o.otel_adi, p.firma_unvani, o.ilce, o.sehir, o.onay_durumu, o.yayin_durumu, o.varsayilan_komisyon_orani
+            ORDER BY CASE WHEN COALESCE(o.onay_durumu,'Beklemede') <> 'Onaylandi' OR COALESCE(o.yayin_durumu,'Kapali') <> 'Yayinda' THEN 0 ELSE 1 END, o.id DESC;";
+
+        await using (var command = new SqlCommand(hotelsSql, connection))
+        {
+            command.Parameters.AddWithValue("@monthStart", monthStart);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var approval = reader.GetString(4);
+                var publish = reader.GetString(5);
+                model.Hotels.Add(new AdminApprovalHotelRowViewModel
+                {
+                    HotelId = reader.GetInt64(0),
+                    HotelName = reader.GetString(1),
+                    PartnerName = reader.GetString(2),
+                    CityLabel = reader.GetString(3),
+                    ApprovalStatus = approval,
+                    PublishStatus = publish,
+                    ToneClass = ResolveApprovalTone($"{approval} {publish}"),
+                    CommissionRate = SafeDecimal(reader, 6),
+                    MonthRevenue = SafeDecimal(reader, 7),
+                    MonthCommission = SafeDecimal(reader, 8)
+                });
+            }
+        }
+
+        const string invoicesSql = @"
+            SELECT TOP (50)
+                f.id, COALESCE(f.fatura_no, CONCAT(N'Taslak-', f.id)), COALESCE(f.fatura_turu, N'Konaklama'),
+                COALESCE(o.otel_adi, N'-'), COALESCE(f.fatura_alici_unvan, u.ad_soyad, N'-'),
+                COALESCE(f.fatura_durumu, N'Taslak'), COALESCE(f.genel_toplam, 0), COALESCE(f.fatura_tarihi, f.olusturulma_tarihi)
+            FROM faturalar f
+            LEFT JOIN oteller o ON o.id = f.otel_id
+            LEFT JOIN users u ON u.id = f.kullanici_id
+            ORDER BY COALESCE(f.fatura_tarihi, f.olusturulma_tarihi) DESC, f.id DESC;";
+
+        await using (var command = new SqlCommand(invoicesSql, connection))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var status = reader.GetString(5);
+                model.Invoices.Add(new AdminApprovalInvoiceRowViewModel
+                {
+                    InvoiceId = reader.GetInt64(0),
+                    InvoiceNo = reader.GetString(1),
+                    InvoiceType = reader.GetString(2),
+                    HotelName = reader.GetString(3),
+                    BuyerTitle = reader.GetString(4),
+                    StatusText = status,
+                    ToneClass = ResolveApprovalTone(status),
+                    TotalAmount = SafeDecimal(reader, 6),
+                    DateText = reader.GetDateTime(7).ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR"))
+                });
+            }
         }
 
         return model;
@@ -2876,7 +3142,7 @@ public class AdminService : IAdminService
         }
 
         const string financeSql = @"
-            SELECT TOP (20)
+            SELECT TOP (15)
                 o.id,
                 o.otel_adi,
                 COALESCE(reservationStats.gross_revenue, 0) AS gross_revenue,
@@ -3369,6 +3635,406 @@ public class AdminService : IAdminService
         };
     }
 
+    public async Task<AdminReviewModerationPageViewModel> GetReviewModerationPageAsync(
+        string fullName,
+        string email,
+        string userRole,
+        string? q,
+        string? city,
+        string? hotel,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        var shellPage = await GetSectionPageAsync("reviews", fullName, email, userRole, cancellationToken);
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var model = new AdminReviewModerationPageViewModel
+        {
+            Shell = shellPage.Shell,
+            Q = string.IsNullOrWhiteSpace(q) ? null : q.Trim(),
+            City = string.IsNullOrWhiteSpace(city) ? null : city.Trim(),
+            Hotel = string.IsNullOrWhiteSpace(hotel) ? null : hotel.Trim(),
+            Take = take is <= 0 or > 200 ? 20 : take
+        };
+
+        model.BlockedWords = await LoadBlockedWordsAsync(connection, cancellationToken);
+        model.TakedownRequests = await LoadReviewTakedownRequestsAsync(connection, cancellationToken);
+        model.Reviews = await LoadReviewsForModerationAsync(connection, model.Q, model.City, model.Hotel, model.Take, cancellationToken);
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> ApplyReviewModerationActionAsync(long adminUserId, AdminReviewModerationActionForm form, CancellationToken cancellationToken = default)
+    {
+        var action = (form.Action ?? string.Empty).Trim().ToLowerInvariant();
+        if (form.ReviewId <= 0)
+        {
+            return (false, "Yorum kaydı bulunamadı.");
+        }
+        if (action is not ("approve" or "unpublish" or "reject"))
+        {
+            return (false, "Geçersiz işlem.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var tx = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            const string getSql = @"SELECT TOP (1) otel_id FROM yorumlar WHERE id = @id;";
+            long hotelId;
+            await using (var getCmd = new SqlCommand(getSql, connection, (SqlTransaction)tx))
+            {
+                getCmd.Parameters.AddWithValue("@id", form.ReviewId);
+                var obj = await getCmd.ExecuteScalarAsync(cancellationToken);
+                if (obj is null || obj is DBNull)
+                {
+                    return (false, "Yorum kaydı bulunamadı.");
+                }
+                hotelId = Convert.ToInt64(obj, CultureInfo.InvariantCulture);
+            }
+
+            var status = action switch
+            {
+                "approve" => "Onaylandı",
+                "unpublish" => "Kaldırıldı",
+                "reject" => "Reddedildi",
+                _ => "Beklemede"
+            };
+
+            const string updSql = @"
+UPDATE yorumlar
+SET onay_durumu = @status,
+    onaylayan_admin_id = @adminId,
+    onay_tarihi = CASE WHEN @status LIKE N'Onaylan%' THEN SYSUTCDATETIME() ELSE onay_tarihi END,
+    red_nedeni = CASE WHEN @status <> N'Onaylandı' THEN @note ELSE NULL END,
+    guncellenme_tarihi = SYSUTCDATETIME()
+WHERE id = @id;";
+            await using (var updCmd = new SqlCommand(updSql, connection, (SqlTransaction)tx))
+            {
+                updCmd.Parameters.AddWithValue("@id", form.ReviewId);
+                updCmd.Parameters.AddWithValue("@adminId", adminUserId);
+                updCmd.Parameters.AddWithValue("@status", status);
+                updCmd.Parameters.AddWithValue("@note", string.IsNullOrWhiteSpace(form.Note) ? (object)DBNull.Value : form.Note.Trim());
+                await updCmd.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            if (hotelId > 0)
+            {
+                await RefreshHotelAggregatesFromApprovedReviewsAsync(connection, (SqlTransaction)tx, hotelId, cancellationToken);
+            }
+
+            await tx.CommitAsync(cancellationToken);
+            return (true, action == "approve" ? "Yorum yayına alındı." : action == "unpublish" ? "Yorum yayından kaldırıldı." : "Yorum reddedildi.");
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return (false, $"İşlem başarısız: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> DeleteReviewAsAdminAsync(long adminUserId, AdminReviewDeleteForm form, CancellationToken cancellationToken = default)
+    {
+        if (form.ReviewId <= 0)
+        {
+            return (false, "Yorum kaydı bulunamadı.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var tx = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            const string getSql = @"SELECT TOP (1) otel_id FROM yorumlar WHERE id = @id;";
+            long hotelId;
+            await using (var getCmd = new SqlCommand(getSql, connection, (SqlTransaction)tx))
+            {
+                getCmd.Parameters.AddWithValue("@id", form.ReviewId);
+                var obj = await getCmd.ExecuteScalarAsync(cancellationToken);
+                hotelId = obj is null || obj is DBNull ? 0 : Convert.ToInt64(obj, CultureInfo.InvariantCulture);
+            }
+
+            const string delSql = @"DELETE FROM yorumlar WHERE id = @id;";
+            await using (var delCmd = new SqlCommand(delSql, connection, (SqlTransaction)tx))
+            {
+                delCmd.Parameters.AddWithValue("@id", form.ReviewId);
+                var affected = await delCmd.ExecuteNonQueryAsync(cancellationToken);
+                if (affected <= 0)
+                {
+                    return (false, "Yorum kaydı bulunamadı.");
+                }
+            }
+
+            if (hotelId > 0)
+            {
+                await RefreshHotelAggregatesFromApprovedReviewsAsync(connection, (SqlTransaction)tx, hotelId, cancellationToken);
+            }
+
+            await tx.CommitAsync(cancellationToken);
+            _ = adminUserId;
+            return (true, "Yorum silindi.");
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return (false, $"Silme başarısız: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> NotifyReviewViolationAsync(long adminUserId, AdminReviewViolationNotifyForm form, CancellationToken cancellationToken = default)
+    {
+        if (form.UserId <= 0 || form.ReviewId <= 0)
+        {
+            return (false, "Geçersiz istek.");
+        }
+
+        var summary = string.IsNullOrWhiteSpace(form.RuleSummary)
+            ? "Yorum içeriği topluluk kurallarına aykırı olabilir."
+            : form.RuleSummary!.Trim();
+        var note = string.IsNullOrWhiteSpace(form.AdminNote) ? null : form.AdminNote!.Trim();
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = @"
+INSERT INTO sistem_ici_bildirimler(
+    kullanici_id, bildirim_turu, baslik, mesaj, ikon, renk,
+    aksiyon_url, aksiyon_metni, onem_derecesi, ilgili_tablo, ilgili_kayit_id
+)
+VALUES(
+    @userId, N'ReviewViolation', N'Yorum ihlali bildirimi',
+    @msg, N'fa-shield-halved', N'danger',
+    N'/panel/user/yorumlarim', N'Yorumlarım', N'High', N'yorumlar', @reviewId
+);";
+        var msg = note is null ? summary : $"{summary}\n\nNot: {note}";
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@userId", form.UserId);
+        cmd.Parameters.AddWithValue("@reviewId", form.ReviewId);
+        cmd.Parameters.AddWithValue("@msg", msg);
+        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        _ = adminUserId;
+        return (true, "Kullanıcıya ihlal bildirimi gönderildi.");
+    }
+
+    public async Task<(bool Success, string Message)> AddBlockedWordAsync(long adminUserId, AdminBlockedWordAddForm form, CancellationToken cancellationToken = default)
+    {
+        var word = (form.Word ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(word))
+        {
+            return (false, "Kelime boş olamaz.");
+        }
+        if (word.Length > 120)
+        {
+            return (false, "Kelime çok uzun.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = @"
+IF EXISTS (SELECT 1 FROM dbo.blockyorumkelime WHERE kelime = @w)
+BEGIN
+    UPDATE dbo.blockyorumkelime
+    SET aktif_mi = 1,
+        aciklama = COALESCE(NULLIF(@d,''), aciklama),
+        ekleyen_admin_id = COALESCE(@adminId, ekleyen_admin_id),
+        guncellenme_tarihi = SYSUTCDATETIME()
+    WHERE kelime = @w;
+END
+ELSE
+BEGIN
+    INSERT INTO dbo.blockyorumkelime(kelime, aktif_mi, aciklama, ekleyen_admin_id)
+    VALUES(@w, 1, NULLIF(@d,''), @adminId);
+END";
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@w", word);
+        cmd.Parameters.AddWithValue("@d", (object?)(form.Description ?? string.Empty) ?? string.Empty);
+        cmd.Parameters.AddWithValue("@adminId", adminUserId);
+        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        return (true, "Yasaklı kelime kaydedildi.");
+    }
+
+    public async Task<(bool Success, string Message)> ToggleBlockedWordAsync(long adminUserId, AdminBlockedWordToggleForm form, CancellationToken cancellationToken = default)
+    {
+        if (form.Id <= 0)
+        {
+            return (false, "Kayıt bulunamadı.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE dbo.blockyorumkelime
+SET aktif_mi = @active,
+    ekleyen_admin_id = COALESCE(ekleyen_admin_id, @adminId),
+    guncellenme_tarihi = SYSUTCDATETIME()
+WHERE id = @id;";
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@id", form.Id);
+        cmd.Parameters.AddWithValue("@active", form.Active ? 1 : 0);
+        cmd.Parameters.AddWithValue("@adminId", adminUserId);
+        var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        return affected > 0 ? (true, "Güncellendi.") : (false, "Kayıt bulunamadı.");
+    }
+
+    private static async Task RefreshHotelAggregatesFromApprovedReviewsAsync(SqlConnection connection, SqlTransaction transaction, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+;WITH agg AS (
+    SELECT
+        y.otel_id,
+        COUNT(*) AS cnt,
+        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.genel_puan_10 AS DECIMAL(9, 4)),
+            CASE
+                WHEN y.genel_puan <= 5 THEN CAST(y.genel_puan AS DECIMAL(9, 4)) * 2
+                WHEN y.genel_puan <= 10 THEN CAST(y.genel_puan AS DECIMAL(9, 4))
+                ELSE 10
+            END) AS DECIMAL(9, 4))), 2) AS DECIMAL(5, 2)) AS avg_genel
+    FROM yorumlar AS y
+    WHERE y.otel_id = @hotelId
+      AND y.onay_durumu LIKE N'Onaylan%'
+    GROUP BY y.otel_id
+)
+UPDATE o
+SET
+    o.toplam_yorum_sayisi = agg.cnt,
+    o.ortalama_puan = agg.avg_genel
+FROM oteller AS o
+INNER JOIN agg ON agg.otel_id = o.id;";
+        await using var cmd = new SqlCommand(sql, connection, transaction);
+        cmd.Parameters.AddWithValue("@hotelId", hotelId);
+        await cmd.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task<List<AdminBlockedWordRowViewModel>> LoadBlockedWordsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        var items = new List<AdminBlockedWordRowViewModel>();
+        if (!await TableExistsAsync(connection, "blockyorumkelime", cancellationToken))
+        {
+            return items;
+        }
+
+        const string sql = @"
+SELECT TOP (200) id, kelime, aktif_mi, aciklama, olusturulma_tarihi
+FROM dbo.blockyorumkelime
+ORDER BY aktif_mi DESC, id DESC;";
+        await using var cmd = new SqlCommand(sql, connection);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(new AdminBlockedWordRowViewModel
+            {
+                Id = reader.GetInt64(0),
+                Word = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                Active = !reader.IsDBNull(2) && Convert.ToInt32(reader.GetValue(2), CultureInfo.InvariantCulture) == 1,
+                Description = reader.IsDBNull(3) ? null : reader.GetString(3),
+                CreatedText = reader.IsDBNull(4) ? "-" : reader.GetDateTime(4).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"))
+            });
+        }
+        return items;
+    }
+
+    private static async Task<List<AdminReviewTakedownRequestRowViewModel>> LoadReviewTakedownRequestsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        var items = new List<AdminReviewTakedownRequestRowViewModel>();
+        if (!await TableExistsAsync(connection, "yorum_kaldirma_talepleri", cancellationToken))
+        {
+            return items;
+        }
+
+        const string sql = @"
+SELECT TOP (40)
+    t.id,
+    t.yorum_id,
+    COALESCE(t.otel_id, 0) AS otel_id,
+    COALESCE(o.otel_adi, '') AS otel_adi,
+    t.partner_kullanici_id,
+    COALESCE(pu.eposta, '') AS partner_eposta,
+    COALESCE(t.durum, 'Beklemede') AS durum,
+    COALESCE(t.sebep, '') AS sebep,
+    t.olusturulma_tarihi
+FROM dbo.yorum_kaldirma_talepleri t
+LEFT JOIN oteller o ON o.id = t.otel_id
+LEFT JOIN users pu ON pu.id = t.partner_kullanici_id
+ORDER BY CASE WHEN COALESCE(t.durum,'') = 'Beklemede' THEN 0 ELSE 1 END, t.olusturulma_tarihi DESC;";
+        await using var cmd = new SqlCommand(sql, connection);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(new AdminReviewTakedownRequestRowViewModel
+            {
+                RequestId = reader.GetInt64(0),
+                ReviewId = reader.GetInt64(1),
+                HotelId = Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture),
+                HotelName = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                PartnerUserId = reader.IsDBNull(4) ? 0 : reader.GetInt64(4),
+                PartnerEmail = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
+                StatusText = reader.IsDBNull(6) ? "Beklemede" : reader.GetString(6),
+                Reason = reader.IsDBNull(7) ? null : reader.GetString(7),
+                CreatedText = reader.IsDBNull(8) ? "-" : reader.GetDateTime(8).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"))
+            });
+        }
+        return items;
+    }
+
+    private static async Task<List<AdminReviewModerationRowViewModel>> LoadReviewsForModerationAsync(SqlConnection connection, string? q, string? city, string? hotel, int take, CancellationToken cancellationToken)
+    {
+        var items = new List<AdminReviewModerationRowViewModel>();
+
+        const string sql = @"
+SELECT TOP (@take)
+    y.id,
+    y.otel_id,
+    COALESCE(o.otel_adi,'') AS otel_adi,
+    COALESCE(o.sehir,'') AS sehir,
+    COALESCE(o.ilce,'') AS ilce,
+    y.kullanici_id,
+    COALESCE(u.ad_soyad, u.eposta, 'Kullanıcı') AS kullanici,
+    COALESCE(y.genel_puan, 0) AS puan,
+    COALESCE(y.onay_durumu, 'Beklemede') AS durum,
+    COALESCE(y.rapor_sayisi, 0) AS rapor,
+    y.olusturulma_tarihi,
+    COALESCE(y.yorum_metni, '') AS yorum
+FROM yorumlar y
+LEFT JOIN oteller o ON o.id = y.otel_id
+LEFT JOIN users u ON u.id = y.kullanici_id
+WHERE (@q IS NULL OR (COALESCE(y.yorum_metni,'') LIKE N'%' + @q + N'%' OR COALESCE(o.otel_adi,'') LIKE N'%' + @q + N'%' OR COALESCE(u.ad_soyad,'') LIKE N'%' + @q + N'%' OR COALESCE(u.eposta,'') LIKE N'%' + @q + N'%'))
+  AND (@city IS NULL OR COALESCE(o.sehir,'') LIKE N'%' + @city + N'%')
+  AND (@hotel IS NULL OR COALESCE(o.otel_adi,'') LIKE N'%' + @hotel + N'%')
+ORDER BY y.olusturulma_tarihi DESC, y.id DESC;";
+
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@take", take);
+        cmd.Parameters.AddWithValue("@q", string.IsNullOrWhiteSpace(q) ? (object)DBNull.Value : q);
+        cmd.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? (object)DBNull.Value : city);
+        cmd.Parameters.AddWithValue("@hotel", string.IsNullOrWhiteSpace(hotel) ? (object)DBNull.Value : hotel);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var comment = reader.IsDBNull(11) ? string.Empty : reader.GetString(11);
+            var snippet = comment.Length <= 220 ? comment : comment.Substring(0, 220) + "…";
+            items.Add(new AdminReviewModerationRowViewModel
+            {
+                ReviewId = reader.GetInt64(0),
+                HotelId = reader.IsDBNull(1) ? 0 : reader.GetInt64(1),
+                HotelName = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                City = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                District = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                UserId = reader.IsDBNull(5) ? 0 : reader.GetInt64(5),
+                UserName = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+                Score = reader.IsDBNull(7) ? (byte)0 : Convert.ToByte(reader.GetValue(7), CultureInfo.InvariantCulture),
+                StatusText = reader.IsDBNull(8) ? "Beklemede" : reader.GetString(8),
+                ReportCount = reader.IsDBNull(9) ? (short)0 : Convert.ToInt16(reader.GetValue(9), CultureInfo.InvariantCulture),
+                CreatedText = reader.IsDBNull(10) ? "-" : reader.GetDateTime(10).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                CommentSnippet = snippet
+            });
+        }
+
+        return items;
+    }
+
     private static int SafeInt(SqlDataReader reader, int ordinal)
     {
         return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
@@ -3382,6 +4048,27 @@ public class AdminService : IAdminService
     private static decimal SafeDecimal(SqlDataReader reader, int ordinal)
     {
         return reader.IsDBNull(ordinal) ? 0m : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+    }
+
+    private static string ResolveApprovalTone(string? status)
+    {
+        var normalized = (status ?? string.Empty).Trim().ToLowerInvariant();
+        if (normalized.Contains("redded") || normalized.Contains("iptal"))
+        {
+            return "danger";
+        }
+
+        if (normalized.Contains("ask") || normalized.Contains("bekle") || normalized.Contains("kapali") || normalized.Contains("kapalı"))
+        {
+            return "warning";
+        }
+
+        if (normalized.Contains("onay") || normalized.Contains("yayin") || normalized.Contains("yayın") || normalized.Contains("odendi") || normalized.Contains("ödendi"))
+        {
+            return "success";
+        }
+
+        return "info";
     }
 
     private static string FormatScalar(object? value)
@@ -3437,6 +4124,49 @@ public class AdminService : IAdminService
         await using var command = new SqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("@tableName", tableName);
         return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) > 0;
+    }
+
+    private static async Task<int> CountIfTableExistsAsync(SqlConnection connection, string tableName, string whereClause, CancellationToken cancellationToken)
+    {
+        if (!await TableExistsAsync(connection, tableName, cancellationToken))
+        {
+            return 0;
+        }
+
+        var sql = $"SELECT COUNT(*) FROM dbo.{tableName} WHERE {whereClause};";
+        await using var command = new SqlCommand(sql, connection);
+        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
+    }
+
+    private static async Task<AdminPlatformCheckupGroupViewModel> BuildTableCheckGroupAsync(
+        SqlConnection connection,
+        string title,
+        string description,
+        string toneClass,
+        CancellationToken cancellationToken,
+        params (string Label, string TableName, string ActionUrl)[] checks)
+    {
+        var group = new AdminPlatformCheckupGroupViewModel
+        {
+            Title = title,
+            Description = description,
+            ToneClass = toneClass
+        };
+
+        foreach (var check in checks)
+        {
+            var exists = await TableExistsAsync(connection, check.TableName, cancellationToken);
+            group.Items.Add(new AdminPlatformCheckupItemViewModel
+            {
+                Label = check.Label,
+                StatusText = exists ? "Hazır" : "Eksik",
+                Detail = exists ? $"dbo.{check.TableName} şeması mevcut." : $"dbo.{check.TableName} bulunamadı; kurulum/migration planına alınmalı.",
+                ToneClass = exists ? "success" : "warning",
+                ActionUrl = check.ActionUrl
+            });
+        }
+
+        return group;
     }
 
     private static string ResolvePreferredSenderEmail(string templateCode)

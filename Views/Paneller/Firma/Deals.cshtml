@@ -3,7 +3,9 @@
 <section class="firma-section-card ot-card">
     <h2>Kurumsal Otel Fiyatları</h2>
     <form method="get" action="/panel/firma/firma-fiyatlari" class="firma-filter-bar">
-        <label><span>Şehir</span><select name="city"><option value="">Tüm şehirler</option>@foreach (var city in Model.AvailableCities) { <option value="@city" selected="@(string.Equals(city, Model.Filter.City, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@city</option> }</select></label>
+        <label><span>İl</span><select name="city" onchange="this.form.submit()"><option value="">Tüm iller</option>@foreach (var city in Model.AvailableCities) { <option value="@city" selected="@(string.Equals(city, Model.Filter.City, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@city</option> }</select></label>
+        <label><span>İlçe</span><select name="district" onchange="this.form.submit()"><option value="">Tüm ilçeler</option>@foreach (var d in Model.AvailableDistricts) { <option value="@d" selected="@(string.Equals(d, Model.Filter.District, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@d</option> }</select></label>
+        <label><span>Mahalle</span><select name="neighborhood"><option value="">Tümü</option>@foreach (var n in Model.AvailableNeighborhoods) { <option value="@n" selected="@(string.Equals(n, Model.Filter.Neighborhood, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@n</option> }</select></label>
         <label><span>Min. Oda</span><select name="minRoomCount"><option value="">Tümü</option><option value="1" selected="@(Model.Filter.MinRoomCount == 1 ? "selected" : null)">1+</option><option value="3" selected="@(Model.Filter.MinRoomCount == 3 ? "selected" : null)">3+</option><option value="5" selected="@(Model.Filter.MinRoomCount == 5 ? "selected" : null)">5+</option><option value="10" selected="@(Model.Filter.MinRoomCount == 10 ? "selected" : null)">10+</option></select></label>
         <label class="is-search"><span>Arama</span><input type="text" name="search" value="@Model.Filter.Search" placeholder="Otel / İl / İlçe / Mahalle" /></label>
         <div class="firma-filter-actions"><button type="submit" class="firma-btn-primary ot-btn ot-btn--primary">Filtrele</button><a href="/panel/firma/firma-fiyatlari" class="firma-btn-light ot-btn ot-btn--ghost">Temizle</a></div>
@@ -49,6 +51,10 @@
                         <small>@item.CityText</small>
                     </div>
                     <b class="firma-pill is-success ot-badge ot-badge--success">@item.MinimumRoomText</b>
+                </div>
+                <div class="firma-deal-meta">
+                    <span class="ot-badge">Kapasite: <b>@item.CapacityText</b></span>
+                    <span class="ot-badge">Stok: <b>@item.StockText</b></span>
                 </div>
                 <div class="firma-price-stack">
                     <div><label>Standart</label><span class="is-strike">@item.StandardPriceText</span></div>

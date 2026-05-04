@@ -1,0 +1,64 @@
+@using otelturizmnew.Models.Layout
+
+<aside class="yanbar-fab" aria-label="Hızlı kampanya menüsü">
+    <button type="button" class="yanbar-fab__trigger" id="yanbarTrigger" aria-haspopup="dialog" aria-controls="yanbarPanel" aria-expanded="false">
+        <i class="fas fa-bullseye" aria-hidden="true"></i>
+        <span class="yanbar-fab__pulse" aria-hidden="true"></span>
+    </button>
+</aside>
+
+<section class="yanbar-panel" id="yanbarPanel" aria-hidden="true">
+    <div class="yanbar-panel__backdrop" id="yanbarBackdrop"></div>
+    <div class="yanbar-panel__dialog" role="dialog" aria-modal="true" aria-labelledby="yanbarTitle">
+        <header class="yanbar-panel__head">
+            <h3 id="yanbarTitle">Sana Özel Fırsatlar</h3>
+            <button type="button" class="yanbar-panel__close" id="yanbarClose" aria-label="Kapat">
+                <i class="fas fa-xmark" aria-hidden="true"></i>
+            </button>
+        </header>
+        <nav class="yanbar-links" aria-label="Kampanya ve indirim bağlantıları">
+            @foreach (var item in Yanbar.DefaultItems)
+            {
+                <a class="yanbar-link" href="@item.Url">
+                    <i class="@item.IconClass" aria-hidden="true"></i>
+                    <div>
+                        <span>@item.Title</span>
+                        <small>@item.Description</small>
+                    </div>
+                </a>
+            }
+        </nav>
+    </div>
+</section>
+
+<script>
+    (function () {
+        const trigger = document.getElementById('yanbarTrigger');
+        const panel = document.getElementById('yanbarPanel');
+        const closeBtn = document.getElementById('yanbarClose');
+        const backdrop = document.getElementById('yanbarBackdrop');
+        if (!trigger || !panel) return;
+
+        function openPanel() {
+            panel.classList.add('is-open');
+            panel.setAttribute('aria-hidden', 'false');
+            trigger.setAttribute('aria-expanded', 'true');
+        }
+
+        function closePanel() {
+            panel.classList.remove('is-open');
+            panel.setAttribute('aria-hidden', 'true');
+            trigger.setAttribute('aria-expanded', 'false');
+        }
+
+        trigger.addEventListener('click', function () {
+            if (panel.classList.contains('is-open')) closePanel();
+            else openPanel();
+        });
+        closeBtn?.addEventListener('click', closePanel);
+        backdrop?.addEventListener('click', closePanel);
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') closePanel();
+        });
+    })();
+</script>

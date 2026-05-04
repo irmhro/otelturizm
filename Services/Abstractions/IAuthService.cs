@@ -15,6 +15,7 @@ public interface IAuthService
     Task<(bool Success, string Message, string? PhoneE164)> GetTwoFactorPhoneAsync(long userId, CancellationToken cancellationToken = default);
     Task<UserSecurityPageViewModel> GetTwoFactorSecurityAsync(long userId, string accountType, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveTwoFactorSecurityAsync(long userId, UserTwoFactorForm form, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<(string TimeText, string IpAddress, string DurationText, string DeviceLabel)>> GetRecentLoginHistoryAsync(long userId, int take = 5, CancellationToken cancellationToken = default);
     Task RecordLoginAsync(long userId, string accountType, string? ipAddress, string? userAgent, string? deviceLabel, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message, UserSessionModel? User)> RegisterUserAsync(UserRegistrationModel model, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message, UserSessionModel? User)> RegisterPartnerAsync(PartnerRegistrationModel model, CancellationToken cancellationToken = default);

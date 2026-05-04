@@ -1,58 +1,27 @@
-# Otelturizm Panel Design Sozlesmesi
+# Panel Tasarım Notları
 
-Bu dosya, admin/partner/firma panellerinde kullanilan tasarim ve fonksiyon gelistirme sozlesmesidir.
-Temel tasarim sistemi kaynak dokuman: `d:/otelturizm-transfer-20260421/peneldesing.md`.
+## Listeleme Tabloları Durum Renkleri
 
-## Tasarim Kurallari (Zorunlu)
+- Tüm panel listeleme tablolarında durum etiketleri yazılı ve anlaşılır olmalı; yalnız ikon kullanılmamalı.
+- Rezervasyon durumlarında kullanıcıya gösterilen standart sözlük üçlü olmalı: `Tamamlandı`, `Bekliyor`, `Reddedildi`.
+- DB veya operasyon içindeki `Onaylandı`, `Giriş Yaptı`, `Tamamlandı` değerleri liste ve kartlarda `Tamamlandı` olarak gösterilmeli.
+- DB veya operasyon içindeki `İptal Edildi`, `Reddedildi`, otel onay durumu `Reddedildi` değerleri liste ve kartlarda `Reddedildi` olarak gösterilmeli. İptal/ret nedeni varsa detay popup içinde açıkça gösterilmeli.
+- DB veya operasyon içindeki `Onay Bekliyor`, `Değişiklik Bekliyor`, otel onay durumu `Beklemede` değerleri liste ve kartlarda `Bekliyor` olarak gösterilmeli.
+- Durum renkleri sabit kullanılmalı:
+  - Tamamlandı: yeşil geçişli arka plan.
+  - Reddedildi: kırmızı geçişli arka plan.
+  - Bekliyor: sarı geçişli arka plan.
+- Durum hücresinde farklı anlamdaki bilgi gösterilmemeli. Örneğin ödeme durumu, rezervasyon durumunun altında değil ayrı ödeme alanında yer almalı.
+- Liste satırlarında durum rengine uygun hafif geçişli satır arka planı kullanılabilir; metin okunabilirliği korunmalı.
 
-- Renk/spacing/radius degiskenleri merkezi `:root` yapisinda tutulur.
-- Buton, kart, tablo, rozet ve form siniflari ortak bir tasarim diliyle ilerler.
-- Mobil oncelikli responsive yaklasim uygulanir.
-- Tum admin sayfalari ayni layout/shell icerisinde tutarli render edilir.
+## Panel Tabler Standardı
 
-## Admin Panel Kapsam Sozlesmesi
-
-Asagidaki moduller veritabani baglantili calismalidir:
-
-1. Partner basvurulari
-2. Firma basvurulari
-3. Kullanicilar
-4. Platform yetkilileri
-5. Acik oteller
-6. Bekleyen oteller
-7. Degerlendirmeler
-8. Komisyonlar
-9. Otel bazli gelir / komisyon ozetleri
-10. Dosya yukleme / silme / kapali-acik durum aksiyonlari
-
-## Gelistirme Gunlugu
-
-### 2026-04-22
-
-- Admin paneline yeni veritabani liste sayfalari eklendi:
-  - `firma-basvurulari`
-  - `platform-yetkilileri`
-  - `acik-oteller`
-  - `bekleyen-oteller`
-- Sol menude bu moduller icin yeni gezinme butonlari eklendi.
-- `AdminService` tarafinda bu moduller icin:
-  - sayfa konfigurasyonlari
-  - ozet kart SQL tanimlari
-  - tablo SQL sorgulari
-  eklendi.
-- Komisyon ekrani genisletildi:
-  - otel bazli `toplam gelir / toplam komisyon / odenen komisyon / bekleyen komisyon` tablosu eklendi.
-- Dashboard KPI kartlari genisletildi:
-  - bekleyen partner
-  - bekleyen firma
-  - acik otel
-  - bekleyen otel
-
-## Sonraki Faz (Kodlanacak)
-
-- Kullanici / platform yetkili durum degistirme aksiyon butonlari (aktif-pasif, rol atama).
-- Firma basvuru karar akisinda "onayla / askiya al / reddet" islemleri.
-- Bekleyen oteller icin hizli onay/yayin aksiyonlari.
-- Degerlendirme moderasyonunda toplu onay/red/isaretleme.
-- Komisyon muhasebe kayitlari icin durum degistirme (beklemede/odendi/itiraz).
-- Dosya yukleme/silme operasyonlarinin tum admin modullerine standartlastirilmasi.
+- Partner, kullanıcı, firma, satış ve admin panelleri kademeli olarak Tabler şablon yapısına taşınacak.
+- Panel layout yapısı `page`, `navbar-vertical`, `page-wrapper`, `navbar`, `page-body`, `footer` sırasını izlemeli.
+- Her panelin shell dosyaları panel klasörüne göre ayrılmalı: örnek `assets/css/paneller/user/shell.css`.
+- Sayfa özel CSS dosyaları sayfa adıyla tutulmalı: örnek `assets/css/paneller/user/dashboard.css`.
+- Panel sayfası geliştirildiğinde route, view, code-behind/service metodu ve CSS dosyası aynı sayfa adı standardıyla ilerlemeli. Örnek: `/panel/user/favorilerim` için `Favorites.cshtml`, ilgili `Favorites` action/metodu ve `assets/css/paneller/user/favorites.css`; `/panel/user/rezervasyonlarim` için `Reservations.cshtml`, `Reservations` action/metodu ve `reservations.css`.
+- Yeni sayfa özel CSS gerekiyorsa aynı ada sahip mobil dosya da hazırlanmalı: `dashboard.css` + `dashboard.mobile.css`, `favorites.css` + `favorites.mobile.css`.
+- Yeni panel geliştirmelerinde içerik, buton, kart, tablo, filtre ve listeleme davranışları partner paneldeki Tabler yaklaşımıyla uyumlu olmalı.
+- İkon tek başına aksiyon anlatmak için kullanılmamalı; kritik işlemlerde yazılı buton kullanılmalı.
+- MCP/proje haritası mevcutsa önce dar kapsamlı MCP araçlarıyla ilgili dosya, metot veya satır okunmalı; MCP yoksa dosya sistemi aramaları yalnız ilgili panel alanıyla sınırlandırılmalı.

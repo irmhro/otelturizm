@@ -2,242 +2,394 @@
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Rezervasyonlarım";
+    var pageStart = Model.FilteredCount == 0 ? 0 : ((Model.Page - 1) * Model.PageSize) + 1;
+    var pageEnd = Math.Min(Model.FilteredCount, Model.Page * Model.PageSize);
 }
 
-<section class="panel-card">
+<div class="user-reservations-page">
     @if (TempData["UserReservationSuccess"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
     {
-        <div class="user-reservation-alert is-success">@successMessage</div>
+        <div class="reservation-alert reservation-alert--success"><i class="fas fa-check-circle"></i><span>@successMessage</span></div>
     }
     @if (TempData["UserReservationError"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
     {
-        <div class="user-reservation-alert is-error">@errorMessage</div>
+        <div class="reservation-alert reservation-alert--danger"><i class="fas fa-triangle-exclamation"></i><span>@errorMessage</span></div>
     }
 
-    <div class="stats-strip">
-        <article><strong>@Model.UpcomingCount</strong><span>Yaklaşan Rezervasyon</span></article>
-        <article><strong>@Model.PastCount</strong><span>Geçmiş Rezervasyon</span></article>
-        <article><strong>@Model.CancelledCount</strong><span>İptal Edilen</span></article>
-    </div>
-
-    <div class="section-head">
+    <section class="reservation-hero">
         <div>
-            <p class="mini-label">YÖNETİM ALANI</p>
-            <h2>Rezervasyon listesi</h2>
+            <div class="page-pretitle">KONAKLAMA MERKEZİ</div>
+            <h1 class="page-title">Rezervasyonlarım</h1>
+            <p class="text-muted mb-0">Aktif, geçmiş ve reddedilen konaklama kayıtlarını tek ekranda takip et.</p>
         </div>
-    </div>
-
-    <div class="chip-row">
-        <a asp-action="Reservations" asp-route-status="all" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-page="1" class="chip @(Model.StatusFilter == "all" ? "active" : string.Empty)">Tümü</a>
-        <a asp-action="Reservations" asp-route-status="upcoming" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-page="1" class="chip @(Model.StatusFilter == "upcoming" ? "active" : string.Empty)">Yaklaşan</a>
-        <a asp-action="Reservations" asp-route-status="past" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-page="1" class="chip @(Model.StatusFilter == "past" ? "active" : string.Empty)">Geçmiş</a>
-        <a asp-action="Reservations" asp-route-status="cancelled" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-page="1" class="chip @(Model.StatusFilter == "cancelled" ? "active" : string.Empty)">İptal Edilen</a>
-    </div>
-    <form method="get" asp-action="Reservations" class="user-reservation-filter-form">
-        <input type="hidden" name="status" value="@Model.StatusFilter" />
-        <input type="hidden" name="page" value="1" />
-        <label>
-            <span>Giriş başlangıç</span>
-            <input type="date" name="startDate" value="@Model.StartDateText" />
-        </label>
-        <label>
-            <span>Giriş bitiş</span>
-            <input type="date" name="endDate" value="@Model.EndDateText" />
-        </label>
-        <label>
-            <span>Sayfa başı</span>
-            <select name="pageSize">
-                @foreach (var option in new[] { 5, 10, 15 })
-                {
-                    <option value="@option" selected="@(Model.PageSize == option)">@option</option>
-                }
-            </select>
-        </label>
-        <div class="user-reservation-filter-actions">
-            <button type="submit" class="ghost-btn">Filtrele</button>
-            <a asp-action="Reservations" class="ghost-btn">Temizle</a>
+        <div class="reservation-hero-actions">
+            <a class="btn btn-primary btn-pill" href="/oteller"><i class="fas fa-magnifying-glass me-2"></i>Otel Ara</a>
+            <a class="btn btn-outline-primary btn-pill" href="/panel/user/mesajlarim"><i class="fas fa-envelope me-2"></i>Mesajlarım</a>
         </div>
-    </form>
+    </section>
 
-    <div class="reservation-list-stack">
-        @if (Model.Reservations.Count == 0)
-        {
-            <article class="reservation-card">
-                <div class="favorite-card-image-fallback"></div>
-                <div class="reservation-body">
-                    <div class="reservation-top">
-                        <div>
-                            <h3>Rezervasyon kaydı bulunamadı</h3>
-                            <p>Kullanıcı hesabına bağlı herhangi bir konaklama görünmüyor.</p>
-                        </div>
-                        <span class="status info">Boş</span>
-                    </div>
-                    <div class="reservation-footer">
-                        <strong>Keşfet ile başlayın</strong>
-                        <div class="action-row">
-                            <a href="/" class="ghost-btn">Otel keşfet</a>
-                        </div>
+    <section class="reservation-stat-grid" aria-label="Rezervasyon özetleri">
+        <article class="reservation-stat reservation-stat--all">
+            <span><i class="fas fa-calendar-check"></i></span>
+            <div><strong>@Model.TotalCount</strong><small>Toplam kayıt</small></div>
+        </article>
+        <article class="reservation-stat reservation-stat--upcoming">
+            <span><i class="fas fa-suitcase-rolling"></i></span>
+            <div><strong>@Model.UpcomingCount</strong><small>Yaklaşan</small></div>
+        </article>
+        <article class="reservation-stat reservation-stat--past">
+            <span><i class="fas fa-clock-rotate-left"></i></span>
+            <div><strong>@Model.PastCount</strong><small>Geçmiş</small></div>
+        </article>
+        <article class="reservation-stat reservation-stat--cancelled">
+            <span><i class="fas fa-ban"></i></span>
+            <div><strong>@Model.CancelledCount</strong><small>İptal / red</small></div>
+        </article>
+    </section>
+
+    <section class="card reservation-filter-card">
+        <div class="card-header">
+            <h3 class="card-title">Gelişmiş Filtreleme</h3>
+            <div class="card-actions">
+                <span class="reservation-count-chip">@pageStart-@pageEnd / @Model.FilteredCount kayıt</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <nav class="reservation-status-tabs" aria-label="Rezervasyon durumları">
+                <a asp-action="Reservations" asp-route-status="all" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="1" class="reservation-tab @(Model.StatusFilter == "all" ? "is-active" : string.Empty)">Tümü</a>
+                <a asp-action="Reservations" asp-route-status="upcoming" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="1" class="reservation-tab @(Model.StatusFilter == "upcoming" ? "is-active" : string.Empty)">Yaklaşan</a>
+                <a asp-action="Reservations" asp-route-status="past" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="1" class="reservation-tab @(Model.StatusFilter == "past" ? "is-active" : string.Empty)">Geçmiş</a>
+                <a asp-action="Reservations" asp-route-status="cancelled" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="1" class="reservation-tab @(Model.StatusFilter == "cancelled" ? "is-active" : string.Empty)">İptal / Red</a>
+            </nav>
+
+            <form method="get" asp-action="Reservations" class="reservation-filter-form" data-user-reservations-filter>
+                <input type="hidden" name="status" value="@Model.StatusFilter" />
+                <input type="hidden" name="page" value="1" />
+                <div class="reservation-filter-field reservation-filter-field--search">
+                    <label class="form-label">Arama</label>
+                    <div class="input-icon">
+                        <span class="input-icon-addon"><i class="fas fa-search"></i></span>
+                        <input class="form-control" type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Rezervasyon no, otel, şehir veya oda ara" />
                     </div>
                 </div>
-            </article>
+                <div class="reservation-filter-field">
+                    <label class="form-label">Giriş başlangıç</label>
+                    <input class="form-control" type="date" name="startDate" value="@Model.StartDateText" />
+                </div>
+                <div class="reservation-filter-field">
+                    <label class="form-label">Giriş bitiş</label>
+                    <input class="form-control" type="date" name="endDate" value="@Model.EndDateText" />
+                </div>
+                <div class="reservation-filter-field">
+                    <label class="form-label">Sıralama</label>
+                    <select class="form-select" name="sort">
+                        <option value="newest" selected="@(Model.SortFilter == "newest")">En yeni</option>
+                        <option value="oldest" selected="@(Model.SortFilter == "oldest")">En eski</option>
+                        <option value="price_desc" selected="@(Model.SortFilter == "price_desc")">Tutar yüksek</option>
+                        <option value="price_asc" selected="@(Model.SortFilter == "price_asc")">Tutar düşük</option>
+                    </select>
+                </div>
+                <div class="reservation-filter-field">
+                    <label class="form-label">Sayfa başı</label>
+                    <select class="form-select" name="pageSize">
+                        @foreach (var option in new[] { 5, 10, 15, 20 })
+                        {
+                            <option value="@option" selected="@(Model.PageSize == option)">@option</option>
+                        }
+                    </select>
+                </div>
+                <div class="reservation-filter-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-2"></i>Filtrele</button>
+                    <a asp-action="Reservations" class="btn btn-outline-primary">Temizle</a>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="card reservation-list-card">
+        <div class="card-header">
+            <h3 class="card-title">Rezervasyon Listesi</h3>
+            <div class="card-actions text-muted">Sayfa @Model.Page / @Model.TotalPages</div>
+        </div>
+
+        @if (Model.Reservations.Count == 0)
+        {
+            <div class="empty reservation-empty">
+                <div class="empty-icon"><i class="fas fa-calendar-xmark"></i></div>
+                <p class="empty-title">Rezervasyon kaydı bulunamadı</p>
+                <p class="empty-subtitle text-muted">Filtreleri değiştirerek tekrar deneyebilir veya yeni otel araması yapabilirsin.</p>
+                <div class="empty-action"><a href="/oteller" class="btn btn-primary">Otel Ara</a></div>
+            </div>
         }
         else
         {
-            foreach (var reservation in Model.Reservations)
-            {
-                <article class="reservation-card">
-                    @if (!string.IsNullOrWhiteSpace(reservation.ImageUrl))
+            <div class="table-responsive reservation-table-wrap">
+                <table class="table reservation-table">
+                    <thead>
+                        <tr>
+                            <th>Rezervasyon</th>
+                            <th>Otel</th>
+                            <th>Konaklama</th>
+                            <th>Durum</th>
+                            <th class="text-end">Tutar</th>
+                            <th class="text-end">Aksiyon</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var reservation in Model.Reservations)
                     {
-                        <img src="@reservation.ImageUrl" alt="@reservation.HotelName" />
-                    }
-                    else
-                    {
-                        <div class="favorite-card-image-fallback"></div>
-                    }
-                    <div class="reservation-body">
-                        <div class="reservation-top">
-                            <div>
-                                <h3>@reservation.HotelName</h3>
-                                <p>@reservation.District, @reservation.City</p>
-                            </div>
-                            <span class="status @reservation.StatusTone">@reservation.StatusText</span>
-                        </div>
-                        <div class="reservation-meta">
-                            <span><i class="far fa-calendar"></i> @reservation.StayDateText</span>
-                            <span><i class="far fa-user"></i> @reservation.GuestText</span>
-                            <span><i class="far fa-moon"></i> @reservation.RoomName</span>
-                        </div>
-                        <p class="sub-note @reservation.SubNoteTone">@reservation.SubNote</p>
-                        <div class="reservation-footer">
-                            <strong>@reservation.TotalText</strong>
-                            <div class="action-row">
-                                @if (reservation.CanSubmitReview)
-                                {
-                                    <a asp-action="ReservationReview"
-                                       asp-route-reservationId="@reservation.ReservationId"
-                                       class="ghost-btn">
-                                        Konaklamayı değerlendir
-                                    </a>
-                                }
-                                <button type="button"
-                                        class="ghost-btn"
-                                        data-reservation-detail
-                                        data-reservation-no="@reservation.ReservationNo"
-                                        data-hotel-name="@reservation.HotelName"
-                                        data-room-name="@reservation.RoomName"
-                                        data-stay="@reservation.StayDateText"
-                                        data-guest="@reservation.GuestText"
-                                        data-status="@reservation.StatusText"
-                                        data-total="@reservation.TotalText"
-                                        data-cancel-reason="@(reservation.CancellationReason ?? string.Empty)"
-                                        data-cancel-time="@(reservation.CancellationTimeText ?? string.Empty)">
-                                    Detaylar
-                                </button>
-                                <a asp-action="Messages" class="ghost-btn">Otelle iletişim</a>
-                                @if (reservation.CanCancel)
-                                {
+                        <tr class="reservation-row reservation-row--@reservation.StatusTone">
+                            <td>
+                                <div class="fw-bold">@reservation.ReservationNo</div>
+                                <div class="text-muted small">#@reservation.ReservationId</div>
+                            </td>
+                            <td>
+                                <a class="reservation-hotel" href="/oteller/@reservation.HotelSlug">
+                                    @if (!string.IsNullOrWhiteSpace(reservation.ImageUrl))
+                                    {
+                                        <span class="avatar rounded" style="background-image:url('@reservation.ImageUrl')"></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="avatar rounded bg-blue-lt text-blue"><i class="fas fa-hotel"></i></span>
+                                    }
+                                    <span>
+                                        <strong>@reservation.HotelName</strong>
+                                        <small>@reservation.District, @reservation.City</small>
+                                    </span>
+                                </a>
+                            </td>
+                            <td>
+                                <div class="fw-bold">@reservation.StayDateText</div>
+                                <div class="text-muted small">@reservation.RoomName · @reservation.GuestText</div>
+                            </td>
+                            <td>
+                                <span class="reservation-status reservation-status--@reservation.StatusTone">@reservation.StatusText</span>
+                            </td>
+                            <td class="text-end fw-bold">@reservation.TotalText</td>
+                            <td class="text-end">
+                                <div class="btn-list justify-content-end flex-nowrap">
                                     <button type="button"
-                                            class="ghost-btn danger"
-                                            data-reservation-cancel
+                                            class="btn btn-outline-primary btn-sm"
+                                            data-reservation-detail
                                             data-reservation-id="@reservation.ReservationId"
                                             data-reservation-no="@reservation.ReservationNo"
-                                            data-hotel-name="@reservation.HotelName">
-                                        İptal Et
-                                    </button>
-                                }
+                                            data-hotel-name="@reservation.HotelName"
+                                            data-room-name="@reservation.RoomName"
+                                            data-stay="@reservation.StayDateText"
+                                            data-guest="@reservation.GuestText"
+                                            data-status="@reservation.StatusText"
+                                            data-total="@reservation.TotalText"
+                                            data-guest-name="@reservation.GuestName"
+                                            data-guest-email="@reservation.GuestEmail"
+                                            data-guest-phone="@reservation.GuestPhone"
+                                            data-payment-status="@reservation.PaymentStatus"
+                                            data-payment-method="@reservation.PaymentMethod"
+                                            data-source="@reservation.Source"
+                                            data-created="@reservation.CreatedAtText"
+                                            data-guest-note="@reservation.GuestNote"
+                                            data-request-note="@reservation.RequestNote"
+                                            data-cancel-reason="@(reservation.CancellationReason ?? string.Empty)"
+                                            data-cancel-time="@(reservation.CancellationTimeText ?? string.Empty)">Detay</button>
+                                    <a asp-action="Messages" class="btn btn-primary btn-sm">Mesaj</a>
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            data-reservation-note
+                                            data-reservation-id="@reservation.ReservationId"
+                                            data-reservation-no="@reservation.ReservationNo"
+                                            data-hotel-name="@reservation.HotelName"
+                                            data-request-note="@reservation.RequestNote">Not ekle</button>
+                                    @if (reservation.CanSubmitReview)
+                                    {
+                                        <a asp-action="ReservationReview" asp-route-reservationId="@reservation.ReservationId" class="btn btn-outline-success btn-sm">Değerlendir</a>
+                                    }
+                                    @if (reservation.CanCancel)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger btn-sm" data-reservation-cancel data-reservation-id="@reservation.ReservationId" data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName">İptal</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="reservation-mobile-list">
+                @foreach (var reservation in Model.Reservations)
+                {
+                    <article class="reservation-mobile-card reservation-mobile-card--@reservation.StatusTone">
+                        <a class="reservation-mobile-media" href="/oteller/@reservation.HotelSlug">
+                            @if (!string.IsNullOrWhiteSpace(reservation.ImageUrl))
+                            {
+                                <img src="@reservation.ImageUrl" alt="@reservation.HotelName" />
+                            }
+                            else
+                            {
+                                <span><i class="fas fa-hotel"></i></span>
+                            }
+                        </a>
+                        <div class="reservation-mobile-body">
+                            <div class="reservation-mobile-top">
+                                <div>
+                                    <strong>@reservation.HotelName</strong>
+                                    <small>@reservation.District, @reservation.City</small>
+                                </div>
+                                <span class="reservation-status reservation-status--@reservation.StatusTone">@reservation.StatusText</span>
+                            </div>
+                            <div class="reservation-mobile-meta">
+                                <span><i class="far fa-calendar"></i>@reservation.StayDateText</span>
+                                <span><i class="far fa-moon"></i>@reservation.RoomName</span>
+                                <span><i class="far fa-user"></i>@reservation.GuestText</span>
+                            </div>
+                            <div class="reservation-mobile-footer">
+                                <div>
+                                    <small>@reservation.ReservationNo</small>
+                                    <strong>@reservation.TotalText</strong>
+                                </div>
+                                <div class="reservation-mobile-actions">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" data-reservation-detail data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName" data-room-name="@reservation.RoomName" data-stay="@reservation.StayDateText" data-guest="@reservation.GuestText" data-status="@reservation.StatusText" data-total="@reservation.TotalText" data-cancel-reason="@(reservation.CancellationReason ?? string.Empty)" data-cancel-time="@(reservation.CancellationTimeText ?? string.Empty)">Detay</button>
+                                    <a asp-action="Messages" class="btn btn-primary btn-sm">Mesaj</a>
+                                    @if (reservation.CanCancel)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger btn-sm" data-reservation-cancel data-reservation-id="@reservation.ReservationId" data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName">İptal</button>
+                                    }
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </article>
-            }
+                    </article>
+                }
+            </div>
         }
-    </div>
-    @if (Model.TotalPages > 1)
-    {
-        <div class="user-reservation-pager">
-            <a asp-action="Reservations"
-               asp-route-status="@Model.StatusFilter"
-               asp-route-startDate="@Model.StartDateText"
-               asp-route-endDate="@Model.EndDateText"
-               asp-route-pageSize="@Model.PageSize"
-               asp-route-page="@(Math.Max(1, Model.Page - 1))"
-               class="pager-link @(Model.Page <= 1 ? "disabled" : string.Empty)">Önceki</a>
-            <span>Sayfa @Model.Page / @Model.TotalPages · @Model.FilteredCount kayıt</span>
-            <a asp-action="Reservations"
-               asp-route-status="@Model.StatusFilter"
-               asp-route-startDate="@Model.StartDateText"
-               asp-route-endDate="@Model.EndDateText"
-               asp-route-pageSize="@Model.PageSize"
-               asp-route-page="@(Math.Min(Model.TotalPages, Model.Page + 1))"
-               class="pager-link @(Model.Page >= Model.TotalPages ? "disabled" : string.Empty)">Sonraki</a>
-        </div>
-    }
-</section>
 
-<dialog id="user-reservation-detail-dialog" class="user-reservation-dialog">
-    <div class="user-reservation-dialog-card">
-        <div class="user-reservation-dialog-head">
+        <div class="card-footer reservation-pager">
+            <div class="text-muted">@pageStart-@pageEnd arası gösteriliyor · @Model.FilteredCount kayıt</div>
+            <div class="btn-list">
+                <a asp-action="Reservations" asp-route-status="@Model.StatusFilter" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="@(Math.Max(1, Model.Page - 1))" class="btn btn-outline-primary btn-sm @(Model.Page <= 1 ? "disabled" : string.Empty)">
+                    <i class="fas fa-chevron-left me-1"></i>Önceki
+                </a>
+                <a asp-action="Reservations" asp-route-status="@Model.StatusFilter" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="@(Math.Min(Model.TotalPages, Model.Page + 1))" class="btn btn-outline-primary btn-sm @(Model.Page >= Model.TotalPages ? "disabled" : string.Empty)">
+                    Sonraki<i class="fas fa-chevron-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+
+<dialog id="user-reservation-detail-dialog" class="reservation-dialog reservation-dialog--wide">
+    <div class="reservation-dialog-card">
+        <div class="reservation-dialog-head">
             <div>
-                <p class="mini-label">REZERVASYON DETAYLARI</p>
+                <p class="page-pretitle">REZERVASYON DETAYLARI</p>
                 <h3 id="detail-reservation-no">-</h3>
             </div>
-            <button type="button" class="ghost-btn" data-close-user-dialog>Kapat</button>
+            <button type="button" class="btn btn-icon btn-outline-primary" data-close-user-dialog aria-label="Kapat"><i class="fas fa-xmark"></i></button>
         </div>
-        <div class="user-reservation-dialog-grid">
-            <article>
-                <span>Otel</span>
-                <strong id="detail-hotel-name">-</strong>
-            </article>
-            <article>
-                <span>Oda</span>
-                <strong id="detail-room-name">-</strong>
-            </article>
-            <article>
-                <span>Tarih</span>
-                <strong id="detail-stay">-</strong>
-            </article>
-            <article>
-                <span>Misafir</span>
-                <strong id="detail-guest">-</strong>
-            </article>
-            <article>
-                <span>Durum</span>
-                <strong id="detail-status">-</strong>
-            </article>
-            <article>
-                <span>Tutar</span>
-                <strong id="detail-total">-</strong>
-            </article>
+
+        <div class="reservation-dialog-grid">
+            <article><span>Misafir</span><strong id="detail-guest-name">-</strong></article>
+            <article><span>Konaklama</span><strong id="detail-stay">-</strong></article>
+            <article><span>Durum</span><strong id="detail-status">-</strong></article>
+            <article><span>Tutar</span><strong id="detail-total">-</strong></article>
         </div>
-        <article class="user-reservation-dialog-note">
-            <span>İptal Bilgisi</span>
-            <p id="detail-cancel-info">İptal kaydı yok.</p>
-        </article>
+
+        <div class="reservation-dialog-panels">
+            <section class="reservation-dialog-panel">
+                <h4><i class="fas fa-user me-2"></i>Misafir</h4>
+                <table class="reservation-dialog-table">
+                    <tbody>
+                        <tr><th>Ad Soyad</th><td id="detail-guest-name-table">-</td></tr>
+                        <tr><th>E-posta</th><td id="detail-guest-email">-</td></tr>
+                        <tr><th>Telefon</th><td id="detail-guest-phone">-</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            <section class="reservation-dialog-panel">
+                <h4><i class="fas fa-bed me-2"></i>Konaklama</h4>
+                <table class="reservation-dialog-table">
+                    <tbody>
+                        <tr><th>Otel</th><td id="detail-hotel-name">-</td></tr>
+                        <tr><th>Oda</th><td id="detail-room-name">-</td></tr>
+                        <tr><th>Tarih</th><td id="detail-stay-table">-</td></tr>
+                        <tr><th>Misafir</th><td id="detail-guest">-</td></tr>
+                        <tr><th>Durum</th><td id="detail-status-table">-</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            <section class="reservation-dialog-panel">
+                <h4><i class="fas fa-credit-card me-2"></i>Ödeme</h4>
+                <table class="reservation-dialog-table">
+                    <tbody>
+                        <tr><th>Durum</th><td id="detail-payment-status">-</td></tr>
+                        <tr><th>Yöntem</th><td id="detail-payment-method">-</td></tr>
+                        <tr><th>Tutar</th><td class="fw-bold" id="detail-total-table">-</td></tr>
+                    </tbody>
+                </table>
+            </section>
+            <section class="reservation-dialog-panel">
+                <h4><i class="fas fa-database me-2"></i>Kayıt</h4>
+                <table class="reservation-dialog-table">
+                    <tbody>
+                        <tr><th>Kanal</th><td id="detail-source">-</td></tr>
+                        <tr><th>Oluşturma</th><td id="detail-created">-</td></tr>
+                        <tr><th>İptal</th><td id="detail-cancel-time">-</td></tr>
+                        <tr><th>Neden</th><td id="detail-cancel-reason">-</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+
+        <div class="reservation-dialog-notes">
+            <section class="reservation-dialog-panel">
+                <h4>Misafir notu</h4>
+                <p class="reservation-dialog-note-text" id="detail-guest-note">-</p>
+            </section>
+            <section class="reservation-dialog-panel">
+                <h4>Talep notu</h4>
+                <p class="reservation-dialog-note-text" id="detail-request-note">-</p>
+            </section>
+        </div>
+
+        <div class="reservation-dialog-footer">
+            <button type="button" class="btn btn-outline-primary" data-close-user-dialog>Kapat</button>
+        </div>
     </div>
 </dialog>
 
-<dialog id="user-reservation-cancel-dialog" class="user-reservation-dialog">
-    <div class="user-reservation-dialog-card">
-        <div class="user-reservation-dialog-head">
+<dialog id="user-reservation-note-dialog" class="reservation-dialog">
+    <div class="reservation-dialog-card">
+        <div class="reservation-dialog-head">
             <div>
-                <p class="mini-label">REZERVASYON İPTALİ</p>
+                <p class="page-pretitle">REZERVASYON NOTU</p>
+                <h3 id="note-dialog-title">Not ekle</h3>
+            </div>
+            <button type="button" class="btn btn-icon btn-outline-primary" data-close-user-dialog aria-label="Kapat"><i class="fas fa-xmark"></i></button>
+        </div>
+        <form method="post" asp-action="SaveReservationNote" class="reservation-cancel-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ReservationId" id="note-reservation-id" value="0" />
+            <label class="form-label" for="note-text">Not</label>
+            <textarea class="form-control" name="Note" id="note-text" rows="6" maxlength="2000" placeholder="Otele iletilmesini istediğiniz ek not (opsiyonel)"></textarea>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk me-2"></i>Notu Kaydet</button>
+        </form>
+    </div>
+</dialog>
+
+<dialog id="user-reservation-cancel-dialog" class="reservation-dialog">
+    <div class="reservation-dialog-card">
+        <div class="reservation-dialog-head">
+            <div>
+                <p class="page-pretitle">REZERVASYON İPTALİ</p>
                 <h3 id="cancel-dialog-title">İptal nedeni girin</h3>
             </div>
-            <button type="button" class="ghost-btn" data-close-user-dialog>Kapat</button>
+            <button type="button" class="btn btn-icon btn-outline-primary" data-close-user-dialog aria-label="Kapat"><i class="fas fa-xmark"></i></button>
         </div>
-        <form method="post" asp-action="CancelReservation" class="user-reservation-cancel-form">
+        <form method="post" asp-action="CancelReservation" class="reservation-cancel-form">
             @Html.AntiForgeryToken()
             <input type="hidden" name="reservationId" id="cancel-reservation-id" value="0" />
-            <label>
-                <span>İptal nedeni (zorunlu)</span>
-                <textarea name="cancellationReason"
-                          id="cancel-reason"
-                          rows="5"
-                          minlength="10"
-                          required
-                          placeholder="Lutfen rezervasyonu neden iptal ettiginizi aciklayin."></textarea>
-            </label>
-            <button type="submit" class="ghost-btn danger">İptal Talebini Kaydet</button>
+            <label class="form-label" for="cancel-reason">İptal nedeni</label>
+            <textarea class="form-control" name="cancellationReason" id="cancel-reason" rows="5" minlength="10" required placeholder="Lütfen rezervasyonu neden iptal ettiğinizi açıklayın."></textarea>
+            <button type="submit" class="btn btn-danger"><i class="fas fa-ban me-2"></i>İptal Talebini Kaydet</button>
         </form>
     </div>
 </dialog>
@@ -250,54 +402,79 @@
 (() => {
     const detailDialog = document.getElementById('user-reservation-detail-dialog');
     const cancelDialog = document.getElementById('user-reservation-cancel-dialog');
+    const noteDialog = document.getElementById('user-reservation-note-dialog');
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value || '-';
+    };
+
+    document.querySelectorAll('[data-user-reservations-filter] select').forEach((select) => {
+        select.addEventListener('change', () => select.form?.requestSubmit());
+    });
 
     document.querySelectorAll('[data-reservation-detail]').forEach((button) => {
         button.addEventListener('click', () => {
             if (!detailDialog) return;
-            document.getElementById('detail-reservation-no').textContent = button.dataset.reservationNo || '-';
-            document.getElementById('detail-hotel-name').textContent = button.dataset.hotelName || '-';
-            document.getElementById('detail-room-name').textContent = button.dataset.roomName || '-';
-            document.getElementById('detail-stay').textContent = button.dataset.stay || '-';
-            document.getElementById('detail-guest').textContent = button.dataset.guest || '-';
-            document.getElementById('detail-status').textContent = button.dataset.status || '-';
-            document.getElementById('detail-total').textContent = button.dataset.total || '-';
-
+            setText('detail-reservation-no', button.dataset.reservationNo);
+            setText('detail-hotel-name', button.dataset.hotelName);
+            setText('detail-room-name', button.dataset.roomName);
+            setText('detail-stay', button.dataset.stay);
+            setText('detail-stay-table', button.dataset.stay);
+            setText('detail-guest', button.dataset.guest);
+            setText('detail-status', button.dataset.status);
+            setText('detail-status-table', button.dataset.status);
+            setText('detail-total', button.dataset.total);
+            setText('detail-total-table', button.dataset.total);
+            setText('detail-guest-name', button.dataset.guestName || button.dataset.guest || '-');
+            setText('detail-guest-name-table', button.dataset.guestName || button.dataset.guest || '-');
+            setText('detail-guest-email', button.dataset.guestEmail);
+            setText('detail-guest-phone', button.dataset.guestPhone);
+            setText('detail-payment-status', button.dataset.paymentStatus);
+            setText('detail-payment-method', button.dataset.paymentMethod);
+            setText('detail-source', button.dataset.source);
+            setText('detail-created', button.dataset.created);
             const reason = (button.dataset.cancelReason || '').trim();
             const time = (button.dataset.cancelTime || '').trim();
-            document.getElementById('detail-cancel-info').textContent = reason
-                ? `${reason}${time ? ` (Iptal tarihi: ${time})` : ''}`
-                : 'İptal kaydı yok.';
+            setText('detail-cancel-time', time || '—');
+            setText('detail-cancel-reason', reason || '—');
+            setText('detail-guest-note', (button.dataset.guestNote || '').trim() || 'Misafir notu bulunmuyor.');
+            setText('detail-request-note', (button.dataset.requestNote || '').trim() || 'Ek talep bulunmuyor.');
             detailDialog.showModal();
+        });
+    });
+
+    document.querySelectorAll('[data-reservation-note]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!noteDialog) return;
+            setText('note-dialog-title', `${button.dataset.reservationNo || 'Rezervasyon'} / ${button.dataset.hotelName || 'Otel'}`);
+            const id = button.dataset.reservationId || '0';
+            const note = (button.dataset.requestNote || '').toString();
+            const idInput = document.getElementById('note-reservation-id');
+            const noteInput = document.getElementById('note-text');
+            if (idInput) idInput.value = id;
+            if (noteInput) noteInput.value = note;
+            noteDialog.showModal();
         });
     });
 
     document.querySelectorAll('[data-reservation-cancel]').forEach((button) => {
         button.addEventListener('click', () => {
             if (!cancelDialog) return;
+            setText('cancel-dialog-title', `${button.dataset.reservationNo || 'Rezervasyon'} / ${button.dataset.hotelName || 'Otel'}`);
             document.getElementById('cancel-reservation-id').value = button.dataset.reservationId || '0';
             document.getElementById('cancel-reason').value = '';
-            document.getElementById('cancel-dialog-title').textContent = `${button.dataset.reservationNo || 'Rezervasyon'} / ${button.dataset.hotelName || 'Otel'}`;
             cancelDialog.showModal();
         });
     });
 
     document.querySelectorAll('[data-close-user-dialog]').forEach((button) => {
-        button.addEventListener('click', () => {
-            button.closest('dialog')?.close();
-        });
+        button.addEventListener('click', () => button.closest('dialog')?.close());
     });
 
-    [detailDialog, cancelDialog].forEach((dialog) => {
+    [detailDialog, cancelDialog, noteDialog].forEach((dialog) => {
         if (!dialog) return;
         dialog.addEventListener('click', (event) => {
-            const rect = dialog.getBoundingClientRect();
-            const inDialog = rect.top <= event.clientY
-                && event.clientY <= rect.top + rect.height
-                && rect.left <= event.clientX
-                && event.clientX <= rect.left + rect.width;
-            if (!inDialog) {
-                dialog.close();
-            }
+            if (event.target === dialog) dialog.close();
         });
     });
 })();

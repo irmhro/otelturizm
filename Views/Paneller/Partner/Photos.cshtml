@@ -5,122 +5,163 @@
     var photoTypes = new[] { "Dış Cephe", "Lobi", "Restoran", "Havuz", "Plaj", "Oda", "Banyo", "Spor Salonu", "SPA", "Toplantı Odası", "Genel Alan", "Yemek", "Manzara" };
 }
 
-<section class="partner-grid">
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Otel Medya</div>
+            <h2 class="page-title">Fotoğraflar</h2>
+            <div class="text-muted mt-1">Yeni galeri görsellerini yükleyin, kapağa alın ve medya alanlarını doldurun.</div>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+                <a class="btn btn-primary" href="#fotograf-yukle">
+                    <i class="fas fa-cloud-arrow-up me-2"></i>Fotoğraf yükle
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards">
     @foreach (var card in Model.SummaryCards)
     {
-        <article class="partner-stat-card @card.ToneClass">
-            <i class="fas @card.IconClass"></i>
-            <strong>@card.Value</strong>
-            <span>@card.Label</span>
-            <p>@card.Description</p>
-        </article>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="text-muted text-uppercase fw-bold" style="letter-spacing:.06em; font-size:12px;">@card.Label</div>
+                            <div class="h1 m-0 mt-2">@card.Value</div>
+                            <div class="text-muted mt-1">@card.Description</div>
+                        </div>
+                        <span class="avatar bg-primary-lt text-primary">
+                            <i class="fas @card.IconClass" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
-</section>
+</div>
 
-<section class="partner-two-column partner-photo-layout">
-    <article id="fotograf-yukle" class="partner-section-card">
-        <div class="partner-section-head">
-            <div>
-                <h2>Fotoğraf yükle</h2>
-                <p>Yeni galeri görsellerini anında yükleyin, kapağa alın ve referans şablondaki medya alanlarını doldurun.</p>
+<div class="row row-cards mt-2">
+    <div class="col-12 col-xl-6">
+        <div class="card" id="fotograf-yukle">
+            <div class="card-header">
+                <h3 class="card-title">Fotoğraf yükle</h3>
             </div>
+            <form id="partner-photo-upload-form" method="post" action="/panel/partner/fotograflar/yukle" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="card-body">
+                    <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Başlık</label>
+                            <input class="form-control" type="text" name="Title" value="@Model.UploadForm.Title" placeholder="Örn. Giriş cephesi gün batımı çekimi" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Görsel tipi</label>
+                            <select class="form-select" name="PhotoType">
+                                @foreach (var photoType in photoTypes)
+                                {
+                                    <option value="@photoType" selected="@(Model.UploadForm.PhotoType == photoType)">@photoType</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Açıklama</label>
+                            <textarea class="form-control" name="Description" rows="4" placeholder="Misafirlerin galeride göreceği kısa açıklama">@Model.UploadForm.Description</textarea>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Sıralama</label>
+                            <input class="form-control" type="number" name="DisplayOrder" value="@Model.UploadForm.DisplayOrder" min="0" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Dosyalar</label>
+                            <input id="partner-photo-files" class="form-control" type="file" name="Files" multiple accept="image/*" />
+                        </div>
+                        <div class="col-12 partner-upload-meta" id="partner-upload-meta" hidden>
+                            <div class="d-flex justify-content-between">
+                                <strong id="partner-upload-count">0 dosya seçildi</strong>
+                                <span class="text-muted" id="partner-upload-size">0 MB</span>
+                            </div>
+                            <div class="progress mt-2" hidden id="partner-upload-progress-shell">
+                                <div class="progress-bar" id="partner-upload-progress-bar" style="width:0%"></div>
+                            </div>
+                            <div class="text-muted mt-2" id="partner-upload-help">Seçilen görseller yüklenmeye hazır.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-check">
+                                <input class="form-check-input" type="checkbox" name="MakeCover" value="true" checked="@(Model.UploadForm.MakeCover)" />
+                                <span class="form-check-label">İlk yüklenen görseli kapak fotoğrafı yap</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary w-100" id="partner-upload-submit">
+                        <i class="fas fa-cloud-arrow-up me-2"></i>Fotoğrafları yükle
+                    </button>
+                </div>
+            </form>
         </div>
-        <form id="partner-photo-upload-form" method="post" action="/panel/partner/fotograflar/yukle" enctype="multipart/form-data" class="partner-form-grid">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
-            <label>
-                <span>Başlık</span>
-                <input type="text" name="Title" value="@Model.UploadForm.Title" placeholder="Örn. Giriş cephesi gün batımı çekimi" />
-            </label>
-            <label>
-                <span>Görsel tipi</span>
-                <select name="PhotoType">
-                    @foreach (var photoType in photoTypes)
-                    {
-                        <option value="@photoType" selected="@(Model.UploadForm.PhotoType == photoType)">@photoType</option>
-                    }
-                </select>
-            </label>
-            <label class="partner-form-span">
-                <span>Açıklama</span>
-                <textarea name="Description" placeholder="Misafirlerin galeride göreceği kısa açıklama">@Model.UploadForm.Description</textarea>
-            </label>
-            <label>
-                <span>Sıralama</span>
-                <input type="number" name="DisplayOrder" value="@Model.UploadForm.DisplayOrder" min="0" />
-            </label>
-            <label class="partner-file-input">
-                <span>Dosyalar</span>
-                <input id="partner-photo-files" type="file" name="Files" multiple accept="image/*" />
-            </label>
-            <div class="partner-upload-meta partner-form-span" id="partner-upload-meta" hidden>
-                <div class="partner-upload-meta-row">
-                    <strong id="partner-upload-count">0 dosya seçildi</strong>
-                    <span id="partner-upload-size">0 MB</span>
-                </div>
-                <div class="partner-upload-progress-shell" hidden id="partner-upload-progress-shell">
-                    <div class="partner-upload-progress-bar" id="partner-upload-progress-bar"></div>
-                </div>
-                <p class="partner-upload-help" id="partner-upload-help">Seçilen görseller yüklenmeye hazır.</p>
-            </div>
-            <label class="partner-checkbox-inline partner-form-span">
-                <input type="checkbox" name="MakeCover" value="true" checked="@(Model.UploadForm.MakeCover)" />
-                <span>İlk yüklenen görseli kapak fotoğrafı yap</span>
-            </label>
-            <button type="submit" class="partner-primary-btn partner-form-span" id="partner-upload-submit">
-                <i class="fas fa-cloud-arrow-up"></i>
-                Fotoğrafları yükle
-            </button>
-        </form>
-    </article>
+    </div>
 
-    <article class="partner-section-card">
-        <div class="partner-section-head">
-            <div>
-                <h2>@(Model.IsEditingPhoto ? "Fotoğrafı düzenle" : "Galeri kartı seçin")</h2>
-                <p>@(Model.IsEditingPhoto ? "Seçili görselin başlık, açıklama ve öne çıkan ayarlarını düzenleyin." : "Galeriden bir görsel seçtiğinizde düzenleme formu burada dolacaktır.")</p>
-            </div>
-            @if (Model.IsEditingPhoto)
-            {
-                <a href="/panel/partner/fotograflar?otelId=@Model.SelectedHotelId" class="partner-text-link">Seçimi temizle</a>
-            }
-        </div>
-        <form method="post" action="/panel/partner/fotograflar/guncelle" class="partner-form-grid">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
-            <input type="hidden" name="PhotoId" value="@Model.EditForm.PhotoId" />
-            <label>
-                <span>Başlık</span>
-                <input type="text" name="Title" value="@Model.EditForm.Title" placeholder="Galeri başlığı" />
-            </label>
-            <label>
-                <span>Görsel tipi</span>
-                <select name="PhotoType">
-                    @foreach (var photoType in photoTypes)
+    <div class="col-12 col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">@(Model.IsEditingPhoto ? "Fotoğrafı düzenle" : "Galeri kartı seçin")</h3>
+                <div class="card-actions">
+                    @if (Model.IsEditingPhoto)
                     {
-                        <option value="@photoType" selected="@(Model.EditForm.PhotoType == photoType)">@photoType</option>
+                        <a href="/panel/partner/fotograflar?otelId=@Model.SelectedHotelId" class="btn btn-outline-primary btn-sm">Seçimi temizle</a>
                     }
-                </select>
-            </label>
-            <label>
-                <span>Sıralama</span>
-                <input type="number" name="DisplayOrder" value="@Model.EditForm.DisplayOrder" min="0" />
-            </label>
-            <label class="partner-checkbox-inline">
-                <input type="checkbox" name="MarkAsFeatured" value="true" checked="@(Model.EditForm.MarkAsFeatured)" />
-                <span>Öne çıkan görsel olarak işaretle</span>
-            </label>
-            <label class="partner-form-span">
-                <span>Açıklama</span>
-                <textarea name="Description" placeholder="Kısa açıklama">@Model.EditForm.Description</textarea>
-            </label>
-            <button type="submit" class="partner-primary-btn partner-form-span" @(Model.IsEditingPhoto ? null : "disabled")>
-                <i class="fas fa-floppy-disk"></i>
-                Fotoğrafı güncelle
-            </button>
-        </form>
-    </article>
-</section>
+                </div>
+            </div>
+            <form method="post" action="/panel/partner/fotograflar/guncelle">
+                @Html.AntiForgeryToken()
+                <div class="card-body">
+                    <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+                    <input type="hidden" name="PhotoId" value="@Model.EditForm.PhotoId" />
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Başlık</label>
+                            <input class="form-control" type="text" name="Title" value="@Model.EditForm.Title" placeholder="Galeri başlığı" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Görsel tipi</label>
+                            <select class="form-select" name="PhotoType">
+                                @foreach (var photoType in photoTypes)
+                                {
+                                    <option value="@photoType" selected="@(Model.EditForm.PhotoType == photoType)">@photoType</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Sıralama</label>
+                            <input class="form-control" type="number" name="DisplayOrder" value="@Model.EditForm.DisplayOrder" min="0" />
+                        </div>
+                        <div class="col-12 col-md-6 d-flex align-items-end">
+                            <label class="form-check m-0">
+                                <input class="form-check-input" type="checkbox" name="MarkAsFeatured" value="true" checked="@(Model.EditForm.MarkAsFeatured)" />
+                                <span class="form-check-label">Öne çıkan görsel olarak işaretle</span>
+                            </label>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Açıklama</label>
+                            <textarea class="form-control" name="Description" rows="4" placeholder="Kısa açıklama">@Model.EditForm.Description</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary w-100" @(Model.IsEditingPhoto ? null : "disabled")>
+                        <i class="fas fa-floppy-disk me-2"></i>Fotoğrafı güncelle
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <section class="partner-section-card">
     <div class="partner-section-head">

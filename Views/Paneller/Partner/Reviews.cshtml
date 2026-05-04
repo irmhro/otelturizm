@@ -36,6 +36,17 @@
                     Incelemeye gonder
                 </button>
             </form>
+            <form method="post" action="/panel/partner/degerlendirmeler/kaldirma-talebi" class="partner-review-report-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="hotelId" value="@Model.Shell.SelectedHotelId" />
+                <input type="hidden" name="reviewId" value="@review.ReviewId" />
+                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                <input type="hidden" name="reason" value="Partner kaldırma talebi: içerik ihlali şüphesi." />
+                <button type="submit" class="partner-secondary-btn partner-inline-btn">
+                    <i class="fas fa-circle-xmark"></i>
+                    Kaldırma talebi
+                </button>
+            </form>
         </article>
     }
     </div>

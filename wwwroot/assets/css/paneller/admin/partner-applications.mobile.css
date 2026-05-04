@@ -1,0 +1,17 @@
+@media (max-width: 980px) {
+    .admin-partner-meta,
+    .admin-partner-decision-form {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-partner-application-main,
+    .admin-inline-action {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-inline-action .btn,
+    .admin-partner-decision-form .btn {
+        width: 100%;
+    }
+}

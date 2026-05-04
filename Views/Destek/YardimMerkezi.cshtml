@@ -3,70 +3,97 @@
     ViewData["Title"] = "Yardım Merkezi";
 }
 
-<section class="help-page">
-    <div class="help-container">
-        <div class="help-hero">
-            <h1>Size Nasıl Yardımcı Olabiliriz?</h1>
-            <p>7/24 destek ekibimiz sorularınızı yanıtlamak için burada.</p>
-            <form method="get" action="/yardim-merkezi" class="help-search">
-                <input type="text" name="ara" value="@Model.SearchTerm" placeholder="Sorunuzu yazın... (Örn: İptal politikası)" />
-                <button type="submit"><i class="fas fa-search"></i> Ara</button>
-            </form>
-        </div>
+<section class="ym-page" aria-labelledby="ym-heading">
+    <div class="ym-page__aurora" aria-hidden="true"></div>
+    <div class="container-xl ym-page__inner">
+        <header class="ym-hero">
+            <div class="ym-hero__glass">
+                <p class="ym-hero__eyebrow"><i class="fas fa-circle-question me-2" aria-hidden="true"></i>Yardım Merkezi</p>
+                <h1 id="ym-heading" class="ym-hero__title">Size nasıl yardımcı olabiliriz?</h1>
+                <p class="ym-hero__lead">Rezervasyon, iptal ve hesap konularında yanıtları burada bulabilir veya destek kanallarımıza ulaşabilirsiniz.</p>
+                <form method="get" action="/yardim-merkezi" class="ym-search" role="search" aria-label="Yardım merkezi arama">
+                    <div class="ym-search__wrap">
+                        <span class="ym-search__icon" aria-hidden="true"><i class="fas fa-search"></i></span>
+                        <input class="form-control ym-search__input"
+                               type="search"
+                               name="ara"
+                               value="@Model.SearchTerm"
+                               placeholder="Örn: iptal politikası, ödeme, üyelik"
+                               autocomplete="off"
+                               enterkeyhint="search" />
+                    </div>
+                    <button type="submit" class="btn btn-primary ym-search__btn">Ara</button>
+                </form>
+            </div>
+        </header>
 
-        <div class="categories-grid">
+        <h2 class="ym-section-title"><span class="ym-section-title__icon"><i class="fas fa-layer-group" aria-hidden="true"></i></span>Kategoriler</h2>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3 g-lg-4 ym-stack">
             @foreach (var category in Model.Categories)
             {
-                <a href="@category.LinkUrl" class="category-card">
-                    <div class="category-icon" style="background: color-mix(in srgb, @category.ColorHex 14%, white); color: @category.ColorHex;">
-                        <i class="fas @category.IconClass"></i>
-                    </div>
-                    <h3>@category.Name</h3>
-                    <p>@category.Description</p>
-                </a>
+                <div class="col">
+                    <a href="@category.LinkUrl" class="ym-tile ym-tile--category h-100">
+                        <div class="ym-tile__icon" style="--ym-accent: @category.ColorHex; background: color-mix(in srgb, @category.ColorHex 16%, rgba(255,255,255,0.85)); color: @category.ColorHex;">
+                            <i class="fas @category.IconClass" aria-hidden="true"></i>
+                        </div>
+                        <h3 class="ym-tile__title">@category.Name</h3>
+                        <p class="ym-tile__text">@category.Description</p>
+                    </a>
+                </div>
             }
         </div>
 
-        <h2 class="section-title"><i class="fas fa-fire"></i> Sık Sorulan Konular</h2>
-        <div class="topics-grid">
+        <h2 class="ym-section-title"><span class="ym-section-title__icon ym-section-title__icon--hot"><i class="fas fa-fire" aria-hidden="true"></i></span>Sık sorulan konular</h2>
+        <div class="row row-cols-1 row-cols-lg-2 g-3 ym-stack">
             @foreach (var topic in Model.PopularTopics)
             {
-                <a href="@topic.LinkUrl" class="topic-card">
-                    <div class="topic-icon"><i class="fas @topic.IconClass"></i></div>
-                    <div class="topic-content">
-                        <h4>@topic.Title</h4>
-                        <p>@topic.Summary</p>
-                    </div>
-                </a>
+                <div class="col">
+                    <a href="@topic.LinkUrl" class="ym-tile ym-tile--topic h-100">
+                        <div class="ym-tile__bullet" aria-hidden="true"><i class="fas @topic.IconClass"></i></div>
+                        <div class="ym-tile__body">
+                            <h3 class="ym-tile__title">@topic.Title</h3>
+                            <p class="ym-tile__text">@topic.Summary</p>
+                        </div>
+                        <span class="ym-tile__chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+                    </a>
+                </div>
             }
         </div>
 
-        <h2 class="section-title" id="destek-kanallari"><i class="fas fa-headset"></i> Destek Seçenekleri</h2>
-        <div class="support-options">
+        <h2 class="ym-section-title" id="destek-kanallari"><span class="ym-section-title__icon"><i class="fas fa-headset" aria-hidden="true"></i></span>Destek seçenekleri</h2>
+        <div class="row row-cols-1 row-cols-md-3 g-3 g-lg-4 ym-stack">
             @foreach (var channel in Model.SupportChannels)
             {
-                <div class="support-card support-card-@channel.Tone">
-                    <i class="fas @channel.IconClass"></i>
-                    <h4>@channel.Name</h4>
-                    <p>@channel.Description</p>
-                    <a href="@channel.Url" class="btn @(channel.Tone == "primary" ? "btn-primary" : "btn-outline")">@channel.ButtonText</a>
-                    @if (!string.IsNullOrWhiteSpace(channel.Note))
-                    {
-                        <p class="support-note">@channel.Note</p>
-                    }
+                <div class="col">
+                    <div class="ym-support-card ym-support-card--@channel.Tone h-100">
+                        <div class="ym-support-card__icon"><i class="fas @channel.IconClass" aria-hidden="true"></i></div>
+                        <h3 class="ym-support-card__title">@channel.Name</h3>
+                        <p class="ym-support-card__text">@channel.Description</p>
+                        <a href="@channel.Url" class="btn @(channel.Tone == "primary" ? "btn-primary" : "btn-outline-primary") w-100 ym-support-card__action">
+                            @channel.ButtonText
+                        </a>
+                        @if (!string.IsNullOrWhiteSpace(channel.Note))
+                        {
+                            <p class="ym-support-card__note">@channel.Note</p>
+                        }
+                    </div>
                 </div>
             }
         </div>
 
         @if (Model.LiveChatChannel is not null)
         {
-            <div class="live-chat-banner">
-                <div>
-                    <h3>Hemen Yardım Alın</h3>
-                    <p>@Model.LiveChatChannel.Description</p>
+            <aside class="ym-live-banner">
+                <div class="ym-live-banner__glass">
+                    <div class="ym-live-banner__copy">
+                        <h3 class="ym-live-banner__title">Hemen yardım alın</h3>
+                        <p class="ym-live-banner__text">@Model.LiveChatChannel.Description</p>
+                    </div>
+                    <a href="@Model.LiveChatChannel.Url" class="btn btn-light ym-live-banner__cta">
+                        @Model.LiveChatChannel.ButtonText <i class="fas fa-arrow-right ms-2" aria-hidden="true"></i>
+                    </a>
                 </div>
-                <a href="@Model.LiveChatChannel.Url" class="btn btn-live">@Model.LiveChatChannel.ButtonText <i class="fas fa-arrow-right"></i></a>
-            </div>
+            </aside>
         }
     </div>
 </section>

@@ -37,7 +37,11 @@ public class EmailQueueService : IEmailQueueService
             ? ResolvePreferredSenderEmail(request.TemplateCode)
             : request.SenderEmailOverride.Trim();
         var provider = await LoadProviderAsync(connection, transaction, request.ServiceCodeOverride, preferredSenderEmail, cancellationToken);
-        var renderedSubject = ReplaceTokens(string.IsNullOrWhiteSpace(request.SubjectOverride) ? subject : request.SubjectOverride!, tokensWithUtm);
+        var renderedSubject = BuildInboxFriendlySubject(
+            request.TemplateCode,
+            ReplaceTokens(string.IsNullOrWhiteSpace(request.SubjectOverride) ? subject : request.SubjectOverride!, tokensWithUtm),
+            tokensWithUtm,
+            request.RelatedRecordId);
         var renderedBody = await _emailTemplateService.RenderTemplateFileAsync(viewPath, tokensWithUtm, cancellationToken);
         var safeUserId = await ResolveSafeUserIdAsync(connection, transaction, request.UserId, request.RecipientEmail, cancellationToken);
         var attachmentsJson = BuildAttachmentsJson(request.Attachments);
@@ -189,6 +193,59 @@ public class EmailQueueService : IEmailQueueService
         }
 
         return rendered;
+    }
+
+    private static string BuildInboxFriendlySubject(string templateCode, string subject, IReadOnlyDictionary<string, string> tokens, long? relatedRecordId)
+    {
+        var title = ResolveSubjectTitle(templateCode, subject);
+        var reservationNo = ResolveReservationNumber(tokens);
+        if (string.IsNullOrWhiteSpace(reservationNo) && relatedRecordId.HasValue)
+        {
+            reservationNo = $"KAYIT-{relatedRecordId.Value.ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        var stamp = DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"));
+        var parts = new[] { title, reservationNo, stamp }
+            .Where(static p => !string.IsNullOrWhiteSpace(p))
+            .Select(static p => p!.Trim());
+
+        return string.Join(" | ", parts);
+    }
+
+    private static string ResolveSubjectTitle(string templateCode, string fallback)
+    {
+        var code = (templateCode ?? string.Empty).Trim().ToLowerInvariant();
+        return code switch
+        {
+            "reservation_received_customer" => "Rezervasyon Talebi Alındı",
+            "reservation_confirmed_customer" => "Rezervasyon Onaylandı",
+            "reservation_new_partner" => "Yeni Rezervasyon Onayı",
+            "reservation_rejected_customer" => "Rezervasyon Reddedildi",
+            "reservation_guest_message" => "Misafir Mesajı",
+            "reservation_cancelled_partner" => "Rezervasyon İptali",
+            "firma_reservation_created_company" => "Kurumsal Rezervasyon Alındı",
+            "firma_reservation_created_partner" => "Yeni Kurumsal Rezervasyon",
+            _ => NormalizeSubjectTitle(fallback)
+        };
+    }
+
+    private static string NormalizeSubjectTitle(string fallback)
+    {
+        var title = (fallback ?? string.Empty).Split('-', StringSplitOptions.TrimEntries).FirstOrDefault();
+        return string.IsNullOrWhiteSpace(title) ? "otelturizm.com Bildirimi" : title.Trim();
+    }
+
+    private static string? ResolveReservationNumber(IReadOnlyDictionary<string, string> tokens)
+    {
+        foreach (var key in new[] { "reservation_no", "rezervasyon_no", "reservation_number", "reservation_code", "rezervasyon_kodu", "code" })
+        {
+            if (tokens.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+            {
+                return value.Trim();
+            }
+        }
+
+        return null;
     }
 
     private static async Task<(long TemplateId, string Subject, string ViewPath)> LoadTemplateAsync(

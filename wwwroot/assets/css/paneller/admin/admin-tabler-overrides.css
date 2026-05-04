@@ -1,0 +1,91 @@
+/* Admin panel — Tabler + partner shell ile aynı iskelet; ek ince ayar */
+
+/* Eski dashboard özet kutuları (AdminLTE .small-box yapısı, AdminLTE CSS olmadan) */
+.admin-panel-theme .small-box {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  border-radius: 16px;
+  box-shadow: var(--partner-shadow);
+  color: #fff;
+}
+.admin-panel-theme .small-box > .inner {
+  padding: 14px 16px;
+  position: relative;
+  z-index: 2;
+}
+.admin-panel-theme .small-box > .inner > h3 {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+  margin: 0 0 6px;
+  white-space: nowrap;
+}
+.admin-panel-theme .small-box > .inner > p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.admin-panel-theme .small-box > .inner > small {
+  display: block;
+  margin-top: 6px;
+  opacity: 0.92;
+  font-size: 0.82rem;
+}
+.admin-panel-theme .small-box > .icon {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 4.5rem;
+  line-height: 1;
+  pointer-events: none;
+}
+.admin-panel-theme .small-box.bg-info {
+  background: linear-gradient(135deg, #0ea5e9, #0369a1);
+}
+.admin-panel-theme .small-box.bg-success {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+}
+.admin-panel-theme .small-box.bg-warning {
+  background: linear-gradient(135deg, #f59e0b, #c2410c);
+  color: #fff;
+}
+.admin-panel-theme .small-box.bg-danger {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+}
+.admin-panel-theme .small-box.bg-primary {
+  background: linear-gradient(135deg, #2563eb, #1e3a8a);
+}
+
+.admin-tabler-shell .admin-topbar {
+  border-bottom-color: var(--partner-line);
+}
+
+.admin-tabler-shell .page-header {
+  border-color: var(--partner-line) !important;
+}
+
+.admin-tabler-shell .page-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--partner-heading);
+}
+
+/* Eski AdminLTE sınıflarına dayanan sayfa parçaları: kart uyumu */
+.admin-tabler-shell .admin-section-card,
+.admin-tabler-shell .admin-page-heading,
+.admin-tabler-shell .admin-info-note {
+  background: var(--partner-surface);
+  border-color: var(--partner-line);
+  color: var(--partner-text);
+}
+
+/* Mobil alt bar için içerik boşluğu (panel-admin-shell ile birlikte) */
+@media (max-width: 1080px) {
+  .admin-tabler-shell .page-body .container-fluid {
+    padding-bottom: 88px;
+  }
+}

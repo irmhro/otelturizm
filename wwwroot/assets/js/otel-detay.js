@@ -16,6 +16,10 @@
         const galleryImages = Array.isArray(cfg.galleryImages) ? cfg.galleryImages : [];
         const mainImage = document.getElementById('mainGalleryImage');
         const mainImageWrap = document.querySelector('.gallery-main-image');
+        // Otel galeri slaytı artık ortak SlaytGorsel ile açılıyor.
+        // Eski "galleryLightbox" DOM'u kaldırıldı (OtelDetay.cshtml).
+        const hasSlayt = !!(window.SlaytGorsel && typeof window.SlaytGorsel.open === 'function');
+        const hotelTitle = String(cfg.hotelName || cfg.hotelTitle || document.title || 'Otel');
         const lightbox = document.getElementById('galleryLightbox');
         const lightboxImage = document.getElementById('galleryLightboxImage');
         const lightboxCaption = document.getElementById('galleryLightboxCaption');
@@ -384,6 +388,25 @@
 
         function openLightbox(index) {
             if (!lightbox || !lightboxImage || !Array.isArray(galleryImages) || !galleryImages.length) {
+                // SlaytGorsel varsa lightbox DOM'u olmasa bile slayt aç.
+                if (hasSlayt && Array.isArray(galleryImages) && galleryImages.length) {
+                    syncMainImage(index);
+                    window.SlaytGorsel.open({
+                        images: galleryImages,
+                        title: hotelTitle,
+                        startIndex: activeGalleryIndex
+                    });
+                }
+                return;
+            }
+
+            if (hasSlayt) {
+                syncMainImage(index);
+                window.SlaytGorsel.open({
+                    images: galleryImages,
+                    title: hotelTitle,
+                    startIndex: activeGalleryIndex
+                });
                 return;
             }
 
@@ -472,46 +495,48 @@
             openLightbox(Number.isFinite(idx) ? idx : 0);
         });
 
-        lightboxClose?.addEventListener('click', closeLightbox);
-        lightboxPrev?.addEventListener('click', function () {
-            if (!Array.isArray(galleryImages) || galleryImages.length === 0) return;
-            activeGalleryIndex = (activeGalleryIndex - 1 + galleryImages.length) % galleryImages.length;
-            if (lightboxImage) lightboxImage.src = galleryImages[activeGalleryIndex];
-            if (lightboxCaption) lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
-            syncMainImage(activeGalleryIndex);
-            scrollMobileTrackTo(activeGalleryIndex);
-            setHotelLightboxAmbientSources();
-            syncLightboxThumbs();
-        });
-        lightboxNext?.addEventListener('click', function () {
-            if (!Array.isArray(galleryImages) || galleryImages.length === 0) return;
-            activeGalleryIndex = (activeGalleryIndex + 1) % galleryImages.length;
-            if (lightboxImage) lightboxImage.src = galleryImages[activeGalleryIndex];
-            if (lightboxCaption) lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
-            syncMainImage(activeGalleryIndex);
-            scrollMobileTrackTo(activeGalleryIndex);
-            setHotelLightboxAmbientSources();
-            syncLightboxThumbs();
-        });
+        if (!hasSlayt) {
+            lightboxClose?.addEventListener('click', closeLightbox);
+            lightboxPrev?.addEventListener('click', function () {
+                if (!Array.isArray(galleryImages) || galleryImages.length === 0) return;
+                activeGalleryIndex = (activeGalleryIndex - 1 + galleryImages.length) % galleryImages.length;
+                if (lightboxImage) lightboxImage.src = galleryImages[activeGalleryIndex];
+                if (lightboxCaption) lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
+                syncMainImage(activeGalleryIndex);
+                scrollMobileTrackTo(activeGalleryIndex);
+                setHotelLightboxAmbientSources();
+                syncLightboxThumbs();
+            });
+            lightboxNext?.addEventListener('click', function () {
+                if (!Array.isArray(galleryImages) || galleryImages.length === 0) return;
+                activeGalleryIndex = (activeGalleryIndex + 1) % galleryImages.length;
+                if (lightboxImage) lightboxImage.src = galleryImages[activeGalleryIndex];
+                if (lightboxCaption) lightboxCaption.textContent = (activeGalleryIndex + 1) + ' / ' + galleryImages.length;
+                syncMainImage(activeGalleryIndex);
+                scrollMobileTrackTo(activeGalleryIndex);
+                setHotelLightboxAmbientSources();
+                syncLightboxThumbs();
+            });
 
-        lightbox?.addEventListener('click', function (e) {
-            if (e.target === lightbox) {
-                closeLightbox();
-            }
-        });
+            lightbox?.addEventListener('click', function (e) {
+                if (e.target === lightbox) {
+                    closeLightbox();
+                }
+            });
 
-        document.addEventListener('keydown', function (event) {
-            if (!lightbox || lightbox.hidden) {
-                return;
-            }
-            if (event.key === 'Escape') {
-                closeLightbox();
-            } else if (event.key === 'ArrowLeft') {
-                lightboxPrev?.click();
-            } else if (event.key === 'ArrowRight') {
-                lightboxNext?.click();
-            }
-        });
+            document.addEventListener('keydown', function (event) {
+                if (!lightbox || lightbox.hidden) {
+                    return;
+                }
+                if (event.key === 'Escape') {
+                    closeLightbox();
+                } else if (event.key === 'ArrowLeft') {
+                    lightboxPrev?.click();
+                } else if (event.key === 'ArrowRight') {
+                    lightboxNext?.click();
+                }
+            });
+        }
 
         galleryMobileDots.forEach(function (dot) {
             dot.addEventListener('click', function () {
@@ -551,77 +576,86 @@
         }
 
         // --- Multi-room init + \"Odanı Seç\" bindings (minimal) ---
-        function ensureFirstRoomItem() {
-            if (!roomItemsRoot || !roomItemTemplate) return null;
-            const existing = roomItemsRoot.querySelector('[data-room-item]');
-            if (existing) return existing;
+        // Not: OtelDetay sayfasında inline (v41) script varken bu blok çalışırsa oda satırları 2x/3x oluşabiliyor.
+        // Inline taraf, daha kapsamlı multi-room akışını zaten yönetiyor.
+        if (!window.__otelDetayInlineV41) {
+            function ensureFirstRoomItem() {
+                if (!roomItemsRoot || !roomItemTemplate) return null;
+                const existing = roomItemsRoot.querySelector('[data-room-item]');
+                if (existing) return existing;
 
-            const fragment = roomItemTemplate.content.cloneNode(true);
-            roomItemsRoot.appendChild(fragment);
-            const node = roomItemsRoot.querySelector('[data-room-item]');
-            if (!node) return null;
+                const fragment = roomItemTemplate.content.cloneNode(true);
+                roomItemsRoot.appendChild(fragment);
+                const node = roomItemsRoot.querySelector('[data-room-item]');
+                if (!node) return null;
 
-            // defaults
-            const checkIn = node.querySelector('[data-field=\"checkIn\"]');
-            const checkOut = node.querySelector('[data-field=\"checkOut\"]');
-            const roomType = node.querySelector('[data-field=\"roomType\"]');
-            if (checkInInput && checkIn instanceof HTMLInputElement) checkIn.value = checkInInput.value || checkIn.value || '';
-            if (checkOutInput && checkOut instanceof HTMLInputElement) checkOut.value = checkOutInput.value || checkOut.value || '';
-            if (roomTypeIdInput && roomType instanceof HTMLSelectElement) roomType.value = roomTypeIdInput.value || roomType.value || '';
+                // defaults
+                const checkIn = node.querySelector('[data-field=\"checkIn\"]');
+                const checkOut = node.querySelector('[data-field=\"checkOut\"]');
+                const roomType = node.querySelector('[data-field=\"roomType\"]');
+                if (checkInInput && checkIn instanceof HTMLInputElement) checkIn.value = checkInInput.value || checkIn.value || '';
+                if (checkOutInput && checkOut instanceof HTMLInputElement) checkOut.value = checkOutInput.value || checkOut.value || '';
+                if (roomTypeIdInput && roomType instanceof HTMLSelectElement) roomType.value = roomTypeIdInput.value || roomType.value || '';
 
-            // title
-            const title = node.querySelector('[data-room-title]');
-            if (title && roomType instanceof HTMLSelectElement) {
-                title.textContent = roomType.selectedOptions?.[0]?.dataset.roomName || roomType.selectedOptions?.[0]?.textContent?.trim() || 'Oda';
-            }
-
-            return node;
-        }
-
-        function applyRoomSelection(roomId) {
-            const item = ensureFirstRoomItem();
-            if (!item) return;
-            const roomType = item.querySelector('[data-field=\"roomType\"]');
-            if (roomType instanceof HTMLSelectElement) {
-                roomType.value = String(roomId);
-                const title = item.querySelector('[data-room-title]');
-                if (title) {
+                // title
+                const title = node.querySelector('[data-room-title]');
+                if (title && roomType instanceof HTMLSelectElement) {
                     title.textContent = roomType.selectedOptions?.[0]?.dataset.roomName || roomType.selectedOptions?.[0]?.textContent?.trim() || 'Oda';
                 }
+
+                return node;
             }
-            if (roomTypeIdInput) roomTypeIdInput.value = String(roomId);
-            if (roomCountInput) roomCountInput.value = '1';
-        }
 
-        // ensure at least one item on load
-        ensureFirstRoomItem();
-
-        // \"Oda ekle\" basic
-        addRoomBtn?.addEventListener('click', function () {
-            if (!roomItemsRoot || !roomItemTemplate) return;
-            const fragment = roomItemTemplate.content.cloneNode(true);
-            roomItemsRoot.appendChild(fragment);
-            const nodes = Array.from(roomItemsRoot.querySelectorAll('[data-room-item]'));
-            if (roomCountInput) roomCountInput.value = String(Math.max(1, nodes.length));
-        });
-
-        // room select buttons from room cards
-        document.querySelectorAll('.select-room-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                const roomId = parseInt(btn.getAttribute('data-room-id') || '0', 10);
-                if (!roomId) return;
-                applyRoomSelection(roomId);
-
-                if (isMobileBookingMode()) {
-                    openBookingSheet();
-                } else {
-                    bookingForm?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+            function applyRoomSelection(roomId) {
+                const item = ensureFirstRoomItem();
+                if (!item) return;
+                const roomType = item.querySelector('[data-field=\"roomType\"]');
+                if (roomType instanceof HTMLSelectElement) {
+                    roomType.value = String(roomId);
+                    const title = item.querySelector('[data-room-title]');
+                    if (title) {
+                        title.textContent = roomType.selectedOptions?.[0]?.dataset.roomName || roomType.selectedOptions?.[0]?.textContent?.trim() || 'Oda';
+                    }
                 }
+                if (roomTypeIdInput) roomTypeIdInput.value = String(roomId);
+                if (roomCountInput) roomCountInput.value = '1';
+            }
+
+            // ensure at least one item on load
+            ensureFirstRoomItem();
+
+            // \"Oda ekle\" basic
+            addRoomBtn?.addEventListener('click', function () {
+                if (!roomItemsRoot || !roomItemTemplate) return;
+                const fragment = roomItemTemplate.content.cloneNode(true);
+                roomItemsRoot.appendChild(fragment);
+                const nodes = Array.from(roomItemsRoot.querySelectorAll('[data-room-item]'));
+                if (roomCountInput) roomCountInput.value = String(Math.max(1, nodes.length));
             });
-        });
+
+            // room select buttons from room cards
+            document.querySelectorAll('.select-room-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const roomId = parseInt(btn.getAttribute('data-room-id') || '0', 10);
+                    if (!roomId) return;
+                    applyRoomSelection(roomId);
+
+                    if (isMobileBookingMode()) {
+                        openBookingSheet();
+                    } else {
+                        bookingForm?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        }
     })();
 
     (function () {
+        // Oda galerisi artık ortak SlaytGorsel ile açılıyor (inline v41).
+        // Eski "roomGalleryModal" akışı çift katman oluşturduğu için devre dışı bırakıldı.
+        if (window.__otelDetayInlineV41 || window.SlaytGorsel) {
+            return;
+        }
         const modal = document.getElementById('roomGalleryModal');
         const mainImage = document.getElementById('roomGalleryMainImage');
         const title = document.getElementById('roomGalleryTitle');

@@ -1,0 +1,115 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerRoomFeaturesPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/rooms";
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Tesis yönetimi</div>
+            <h2 class="page-title">Oda Özellikleri</h2>
+            <div class="text-muted mt-1">Oda tiplerinde seçilebilir özellik listesini yönetin (aktif/pasif, ikon, sıralama).</div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards">
+    <div class="col-12 col-xl-4">
+        <form method="post" action="/panel/partner/oda/ozellikler/ekle" class="card">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+            <div class="card-header">
+                <h3 class="card-title mb-0">Yeni özellik ekle</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Kategori</label>
+                    <input class="form-control" name="Category" value="@Model.AddForm.Category" placeholder="Genel" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Özellik adı</label>
+                    <input class="form-control" name="Name" value="@Model.AddForm.Name" required maxlength="100" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">İkon (FontAwesome class)</label>
+                    <input class="form-control" name="IconClass" value="@Model.AddForm.IconClass" placeholder="fa-wifi" maxlength="50" />
+                    <div class="form-hint">Sadece class yazın. Örn: <code>fa-wifi</code></div>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Sıralama</label>
+                    <input class="form-control" type="number" name="Order" value="@Model.AddForm.Order" />
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Ekle
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-12 col-xl-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Mevcut özellikler</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Kategori</th>
+                                <th>Özellik</th>
+                                <th>İkon</th>
+                                <th>Sıra</th>
+                                <th>Durum</th>
+                                <th class="text-end">Aksiyon</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.Features)
+                            {
+                                <tr>
+                                    <td class="text-muted">@row.FeatureId</td>
+                                    <td>@row.Category</td>
+                                    <td class="fw-bold">@row.Name</td>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(row.IconClass))
+                                        {
+                                            <span class="badge bg-azure-lt text-azure"><i class="fas @row.IconClass me-1"></i>@row.IconClass</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>@row.Order</td>
+                                    <td>
+                                        <span class="badge @(row.IsActive ? "bg-success-lt text-success" : "bg-secondary-lt text-secondary")">
+                                            @(row.IsActive ? "Aktif" : "Pasif")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <form method="post" action="/panel/partner/oda/ozellikler/toggle" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+                                            <input type="hidden" name="FeatureId" value="@row.FeatureId" />
+                                            <input type="hidden" name="IsActive" value="@(row.IsActive ? "false" : "true")" />
+                                            <button type="submit" class="btn btn-sm @(row.IsActive ? "btn-outline-warning" : "btn-outline-success")">
+                                                @(row.IsActive ? "Pasife al" : "Aktif et")
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

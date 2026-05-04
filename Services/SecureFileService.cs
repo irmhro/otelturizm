@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Security.Cryptography;
 using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Http;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Services.Abstractions;
 using otelturizmnew.Utils;
@@ -58,12 +60,24 @@ public class SecureFileService : ISecureFileService
 
         var safeExtension = NormalizeAndValidateExtension(file.FileName, file.ContentType);
         await ValidateMagicHeaderAsync(file, safeExtension, cancellationToken);
-        var storedName = $"{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}{safeExtension}";
-        var root = Path.Combine(_environment.ContentRootPath, "App_Data", "secure-storage", safeCategory);
+        var isImage = IsImageContentType(file.ContentType);
+        var storedExtension = isImage ? ".webp" : safeExtension;
+        var storedContentType = isImage ? "image/webp" : string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType;
+        var storedName = $"{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}{storedExtension}";
+        var root = request.HotelId.HasValue && request.HotelId.Value > 0
+            ? MediaStoragePaths.HotelFilesDirectory(_environment.WebRootPath, request.HotelId.Value, safeCategory)
+            : BuildSecureRoot(safeCategory, request);
         Directory.CreateDirectory(root);
         var absolutePath = Path.Combine(root, storedName);
 
-        await AtomicFileWriter.CopyFromFormFileAtomicAsync(file, absolutePath, cancellationToken);
+        if (isImage)
+        {
+            await SaveImageAsWebpAsync(file, absolutePath, cancellationToken);
+        }
+        else
+        {
+            await AtomicFileWriter.CopyFromFormFileAtomicAsync(file, absolutePath, cancellationToken);
+        }
 
         var hash = await AtomicFileWriter.ComputeSha256Async(absolutePath, cancellationToken);
         await using var connection = new SqlConnection(_connectionString);
@@ -94,11 +108,11 @@ public class SecureFileService : ISecureFileService
         command.Parameters.AddWithValue("@originalFileName", Path.GetFileName(file.FileName));
         command.Parameters.AddWithValue("@storedFileName", storedName);
         command.Parameters.AddWithValue("@storagePath", absolutePath);
-        command.Parameters.AddWithValue("@contentType", string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType);
-        command.Parameters.AddWithValue("@extension", safeExtension);
+        command.Parameters.AddWithValue("@contentType", storedContentType);
+        command.Parameters.AddWithValue("@extension", storedExtension);
         command.Parameters.AddWithValue("@size", file.Length);
         command.Parameters.AddWithValue("@hash", hash);
-        command.Parameters.AddWithValue("@isImage", IsImageContentType(file.ContentType) ? 1 : 0);
+        command.Parameters.AddWithValue("@isImage", isImage ? 1 : 0);
 
         var fileId = Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken) ?? 0L, CultureInfo.InvariantCulture);
         var stored = new StoredSecureFileResult
@@ -106,8 +120,8 @@ public class SecureFileService : ISecureFileService
             FileId = fileId,
             StoredPath = absolutePath,
             OriginalFileName = Path.GetFileName(file.FileName),
-            ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
-            IsImage = IsImageContentType(file.ContentType),
+            ContentType = storedContentType,
+            IsImage = isImage,
             SizeInBytes = file.Length
         };
 
@@ -124,7 +138,7 @@ public class SecureFileService : ISecureFileService
                 StoredName: storedName,
                 StoredPathOrUrl: absolutePath,
                 ContentType: stored.ContentType,
-                Extension: safeExtension,
+                Extension: storedExtension,
                 Sha256: hash,
                 OwnerUserId: request.OwnerUserId,
                 OwnerFirmaId: request.OwnerFirmaId,
@@ -207,8 +221,8 @@ public class SecureFileService : ISecureFileService
             path = reader.GetString(0);
             originalName = reader.GetString(1);
             contentType = reader.GetString(2);
-            accessTokenId = reader.GetInt64(3);
-            usageCount = reader.IsDBNull(4) ? 0L : reader.GetInt64(4);
+            accessTokenId = Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture);
+            usageCount = reader.IsDBNull(4) ? 0L : Convert.ToInt64(reader.GetValue(4), CultureInfo.InvariantCulture);
             maxUsage = reader.IsDBNull(5) ? null : Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture);
         }
 
@@ -240,8 +254,141 @@ public class SecureFileService : ISecureFileService
         };
     }
 
+    public async Task<bool> DeleteOwnedFileAsync(long fileId, long ownerUserId, string category, CancellationToken cancellationToken = default)
+    {
+        if (fileId <= 0 || ownerUserId <= 0)
+        {
+            return false;
+        }
+
+        var safeCategory = NormalizeCategory(category);
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        string? path = null;
+        await using (var lookup = new SqlCommand("""
+            SELECT TOP (1) depolama_yolu
+            FROM guvenli_dosya_varliklari
+            WHERE id = @fileId
+              AND sahibi_kullanici_id = @ownerUserId
+              AND kategori = @category;
+            """, connection))
+        {
+            lookup.Parameters.AddWithValue("@fileId", fileId);
+            lookup.Parameters.AddWithValue("@ownerUserId", ownerUserId);
+            lookup.Parameters.AddWithValue("@category", safeCategory);
+            path = Convert.ToString(await lookup.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
+        }
+
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            await using (var tokenDelete = new SqlCommand("DELETE FROM guvenli_dosya_erisim_tokenlari WHERE guvenli_dosya_id = @fileId;", connection, (SqlTransaction)transaction))
+            {
+                tokenDelete.Parameters.AddWithValue("@fileId", fileId);
+                await tokenDelete.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await using (var fileDelete = new SqlCommand("""
+                DELETE FROM guvenli_dosya_varliklari
+                WHERE id = @fileId
+                  AND sahibi_kullanici_id = @ownerUserId
+                  AND kategori = @category;
+                """, connection, (SqlTransaction)transaction))
+            {
+                fileDelete.Parameters.AddWithValue("@fileId", fileId);
+                fileDelete.Parameters.AddWithValue("@ownerUserId", ownerUserId);
+                fileDelete.Parameters.AddWithValue("@category", safeCategory);
+                var affected = await fileDelete.ExecuteNonQueryAsync(cancellationToken);
+                if (affected <= 0)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return false;
+                }
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // Dosya kilitliyse DB temizliği korunur; bakım görevi artık dosya kalıntısını toplayabilir.
+        }
+
+        return true;
+    }
+
     private static bool IsImageContentType(string? contentType)
         => !string.IsNullOrWhiteSpace(contentType) && contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+
+    private static async Task SaveImageAsWebpAsync(IFormFile file, string absolutePath, CancellationToken cancellationToken)
+    {
+        var directory = Path.GetDirectoryName(absolutePath);
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var tempPath = $"{absolutePath}.{Guid.NewGuid():N}.tmp";
+        await using (var input = file.OpenReadStream())
+        using (var image = await Image.LoadAsync(input, cancellationToken))
+        {
+            image.Mutate(x =>
+            {
+                x.AutoOrient();
+                if (image.Width > 1600 || image.Height > 1600)
+                {
+                    x.Resize(new ResizeOptions
+                    {
+                        Mode = ResizeMode.Max,
+                        Size = new Size(1600, 1600)
+                    });
+                }
+            });
+            await image.SaveAsWebpAsync(tempPath, cancellationToken);
+        }
+
+        if (File.Exists(absolutePath))
+        {
+            File.Delete(absolutePath);
+        }
+
+        File.Move(tempPath, absolutePath);
+    }
+
+    private string BuildSecureRoot(string safeCategory, SecureFileSaveRequest request)
+    {
+        if (string.Equals(safeCategory, "profile", StringComparison.OrdinalIgnoreCase)
+            && request.OwnerUserId.HasValue
+            && request.OwnerUserId.Value > 0)
+        {
+            return Path.Combine(
+                _environment.ContentRootPath,
+                "App_Data",
+                "secure-storage",
+                "profile",
+                request.OwnerUserId.Value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        return Path.Combine(_environment.ContentRootPath, "App_Data", "secure-storage", safeCategory);
+    }
 
     private static string NormalizeCategory(string? category)
     {

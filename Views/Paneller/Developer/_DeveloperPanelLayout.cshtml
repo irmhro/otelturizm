@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="~/assets/css/paneller/panel-standards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/panel-user-shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/panel-user-shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/developer-feedback.css" asp-append-version="true" />
     @if (!string.IsNullOrWhiteSpace(pageCssPath))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
@@ -38,6 +39,7 @@
                         <i class="fas fa-code-branch"></i>
                         <input type="text" value="Canliya hazir is takibi" readonly />
                     </div>
+                    <partial name="~/Views/Paneller/Common/_DeveloperFeedbackWidget.cshtml" />
                     <form method="post" action="/cikis-yap" class="panel-header-logout-form">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="panel-header-logout-btn">
@@ -54,6 +56,7 @@
     </div>
 
     <partial name="~/Views/Paneller/Developer/_DeveloperMobileNav.cshtml" />
+    <script src="~/assets/js/developer-feedback.js" asp-append-version="true"></script>
     <script src="~/assets/js/panel-toasts.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 </body>

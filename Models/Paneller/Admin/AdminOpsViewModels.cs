@@ -205,7 +205,9 @@ public sealed class AdminUnifiedReservationRowViewModel
     public string? CompanyName { get; set; }
     public string Status { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
+    public decimal CommissionAmount { get; set; }
     public string Currency { get; set; } = "TRY";
+    public string SourceText { get; set; } = "Bireysel";
     public DateTimeOffset CreatedAtUtc { get; set; }
 }
 
@@ -256,6 +258,39 @@ public sealed class AdminSettingsMonitorPageViewModel
 {
     public AdminShellViewModel Shell { get; set; } = new();
     public Dictionary<string, string?> Items { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+public sealed class AdminPlatformCheckupPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public List<AdminPlatformCheckupGroupViewModel> Groups { get; set; } = new();
+    public List<AdminPlatformRoadmapItemViewModel> Roadmap { get; set; } = new();
+}
+
+public sealed class AdminPlatformCheckupGroupViewModel
+{
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string ToneClass { get; set; } = "info";
+    public List<AdminPlatformCheckupItemViewModel> Items { get; set; } = new();
+}
+
+public sealed class AdminPlatformCheckupItemViewModel
+{
+    public string Label { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
+    public string ToneClass { get; set; } = "info";
+    public string? ActionUrl { get; set; }
+}
+
+public sealed class AdminPlatformRoadmapItemViewModel
+{
+    public string Phase { get; set; } = string.Empty;
+    public string Scope { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
 }
 
 public sealed class AdminCommerceRumRowViewModel

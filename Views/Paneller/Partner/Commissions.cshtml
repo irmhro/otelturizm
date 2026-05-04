@@ -1,0 +1,105 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerFinancePageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/finance";
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Finans</div>
+            <h2 class="page-title">Komisyonlar</h2>
+            <div class="text-muted mt-1">Komisyon ve vergi özetleri ile son finans hareketleri.</div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards">
+    <div class="col-12 col-xl-5">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Aktif kural</h3>
+            </div>
+            <div class="card-body">
+                <div class="fw-bold">@Model.ActiveRuleCommissionText</div>
+                <div class="text-muted mt-2">@Model.ActiveRuleTaxText</div>
+                <div class="text-muted mt-2 small">@Model.ActiveRuleDateText</div>
+                <div class="text-muted mt-3 small">@Model.PayoutNote</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-7">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Vergi ve komisyon özeti</h3>
+            </div>
+            <div class="card-body">
+                @if (Model.TaxRows.Count == 0)
+                {
+                    <div class="text-muted">Vergi özeti henüz hazır değil.</div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var row in Model.TaxRows)
+                        {
+                            <div class="d-flex justify-content-between align-items-start gap-3 border rounded-3 p-3">
+                                <div class="min-w-0">
+                                    <div class="fw-bold">@row.Label</div>
+                                    <div class="text-muted small">@row.Description</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="text-muted small">@row.RateText</div>
+                                    <div class="fw-bold">@row.AmountText</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Son finans hareketleri</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>Kayıt</th>
+                            <th>Tarih</th>
+                            <th>Durum</th>
+                            <th>Tutar</th>
+                            <th>Detay</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Transactions.Count == 0)
+                        {
+                            <tr><td colspan="5" class="text-muted p-3">Henüz finans hareketi yok.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Transactions)
+                            {
+                                <tr>
+                                    <td>@item.Label</td>
+                                    <td class="text-muted">@item.DateText</td>
+                                    <td>@item.StatusText</td>
+                                    <td class="fw-bold">@item.AmountText</td>
+                                    <td class="text-muted">@item.DetailText</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+

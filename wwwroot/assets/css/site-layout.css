@@ -122,6 +122,34 @@
   align-items: center;
   gap: 10px;
 }
+.dropdown .dropdown-item a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+.dropdown .dropdown-item a:hover,
+.dropdown .dropdown-item a:focus,
+.dropdown .dropdown-item a:active {
+  color: inherit;
+  text-decoration: none;
+}
+
+.dropdown .dropdown-item > button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
 .dropdown .flag-icon-eu { background-image: linear-gradient(90deg,#2b2b2b,#3b82f6); background-size: cover; }
 .currency-dropdown .dropdown-item { padding-left: 14px; }
 
@@ -132,6 +160,12 @@
   display: inline-block;
   width: 20px;
   height: 14px;
+}
+.dropdown .flag-icon,
+.drawer-language-btn .flag-icon,
+.top-utility-bar .toggle-flag {
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(148,163,184,.35);
 }
 .dropdown-toggle::after {
   content: '\25BE'; /* small down-pointing triangle */
@@ -466,6 +500,7 @@ body {
 
 .logo.logo-image-only {
   gap: 0;
+  position: relative;
 }
 
 .brand-logo-image {
@@ -474,6 +509,24 @@ body {
   height: 42px;
   max-width: 220px;
   object-fit: contain;
+}
+
+.brand-beta {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.10);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  color: rgba(30, 64, 175, 0.92);
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
 }
 
 .desktop-nav {

@@ -2,8 +2,23 @@
 .gallery-grid,
 .detail-header,
 .detail-grid {
-    width: min(1320px, calc(100% - 48px));
+    width: min(var(--page-max-width, 1280px), calc(100% - 48px));
     margin: 0 auto;
+}
+
+/* OtelDetay tipografi + buton ölçeği (marka bağımsız) */
+:root {
+    --detail-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    --detail-text: #222222;
+    --detail-muted: #6a6a6a;
+    --detail-border: rgba(34, 34, 34, 0.14);
+    --detail-radius-lg: 20px;
+    --detail-radius-pill: 999px;
+    --detail-h1: clamp(28px, 2.6vw, 40px);
+    --detail-body: 16px;
+    --detail-small: 14px;
+    --detail-btn: 16px;
+    --detail-btn-h: 48px;
 }
 
 .detail-breadcrumb {
@@ -21,6 +36,255 @@
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-left {
+    width: 100%;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-left: 10px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-actions button,
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-actions .favorite-btn,
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-actions .amenities-btn {
+    border-radius: 999px;
+    min-height: 36px;
+    padding: 0 12px;
+    font-weight: 900;
+    font-size: 0.84rem;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-left: 6px;
+    margin-left: auto;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-right::-webkit-scrollbar { display: none; }
+
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action {
+    min-height: 36px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(10px);
+    color: #0f172a;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    font-weight: 900;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    --qa-accent: rgba(37, 99, 235, 1);
+    --qa-accent-bg: rgba(37, 99, 235, 0.10);
+    --qa-accent-bd: rgba(37, 99, 235, 0.22);
+}
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action:hover {
+    transform: translateY(-1px);
+    border-color: rgba(37, 99, 235, 0.26);
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.10);
+}
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.22);
+    outline-offset: 2px;
+}
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action i {
+    font-size: 1.02rem;
+    color: var(--qa-accent);
+    background: var(--qa-accent-bg);
+    border: 1px solid var(--qa-accent-bd);
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action span {
+    line-height: 1;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.is-tone-talk {
+    --qa-accent: rgba(34, 197, 94, 1);
+    --qa-accent-bg: rgba(34, 197, 94, 0.12);
+    --qa-accent-bd: rgba(34, 197, 94, 0.24);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.is-tone-share {
+    --qa-accent: rgba(59, 130, 246, 1);
+    --qa-accent-bg: rgba(59, 130, 246, 0.12);
+    --qa-accent-bd: rgba(59, 130, 246, 0.24);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.is-tone-fav {
+    --qa-accent: rgba(244, 63, 94, 1);
+    --qa-accent-bg: rgba(244, 63, 94, 0.12);
+    --qa-accent-bd: rgba(244, 63, 94, 0.24);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.favorite-btn.active i {
+    color: rgba(244, 63, 94, 1);
+    background: rgba(244, 63, 94, 0.16);
+    border-color: rgba(244, 63, 94, 0.32);
+    box-shadow: 0 10px 20px rgba(244, 63, 94, 0.18);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.is-fav-burst i {
+    animation: favBeat 520ms cubic-bezier(.2,.9,.2,1) both;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.is-fav-burst::before,
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.is-fav-burst::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 999px;
+    pointer-events: none;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.is-fav-burst::before {
+    background: radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.24), rgba(244, 63, 94, 0) 60%);
+    animation: favGlow 520ms ease-out both;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.is-fav-burst::after {
+    border: 2px solid rgba(244, 63, 94, 0.35);
+    animation: favRing 520ms ease-out both;
+}
+
+@keyframes favBeat {
+    0% { transform: scale(1); }
+    22% { transform: scale(1.28); }
+    55% { transform: scale(0.92); }
+    100% { transform: scale(1); }
+}
+
+@keyframes favGlow {
+    0% { opacity: 0.0; transform: scale(0.86); }
+    35% { opacity: 1; }
+    100% { opacity: 0.0; transform: scale(1.16); }
+}
+
+@keyframes favRing {
+    0% { opacity: 0.0; transform: scale(0.86); }
+    40% { opacity: 0.85; }
+    100% { opacity: 0.0; transform: scale(1.18); }
+}
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.is-attention {
+    position: relative;
+}
+.otel-detail-template-v41.otel-detail-tabler .detail-quick-action.is-attention::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 999px;
+    border: 2px solid rgba(37, 99, 235, 0.40);
+    opacity: 0.0;
+    animation: detailPulse 1.6s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes detailPulse {
+    0% { transform: scale(0.90); opacity: 0.0; }
+    30% { opacity: 0.9; }
+    100% { transform: scale(1.18); opacity: 0.0; }
+}
+
+.otel-detail-template-v41.otel-detail-tabler .share-menu--top {
+    position: absolute;
+    top: 46px;
+    right: 0;
+    z-index: 20;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-share-wrap {
+    position: relative;
+}
+
+/* -------- Galeri üstü aksiyon ikonları (sağ üst) -------- */
+.otel-detail-template-v41.otel-detail-tabler .gallery-main-image {
+    position: relative;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-action-stack {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    gap: 10px;
+    z-index: 6;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-quick-action {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(10px);
+    color: rgba(255, 255, 255, 0.96);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 24px rgba(2, 6, 23, 0.24);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-quick-action:hover {
+    transform: translateY(-1px);
+    background: rgba(15, 23, 42, 0.46);
+    border-color: rgba(255, 255, 255, 0.56);
+    box-shadow: 0 16px 30px rgba(2, 6, 23, 0.30);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-quick-action i {
+    font-size: 1.05rem;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-quick-action.is-attention::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 999px;
+    border: 2px solid rgba(59, 130, 246, 0.55);
+    opacity: 0.0;
+    animation: galleryPulse 1.6s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-quick-action.is-attention {
+    position: relative;
+}
+
+@keyframes galleryPulse {
+    0% { transform: scale(0.90); opacity: 0.0; }
+    30% { opacity: 0.9; }
+    100% { transform: scale(1.18); opacity: 0.0; }
+}
+
+.otel-detail-template-v41.otel-detail-tabler .share-menu--gallery {
+    position: absolute;
+    top: 52px;
+    right: 0;
+    z-index: 7;
 }
 
 .detail-breadcrumb a {
@@ -186,6 +450,44 @@
 
 .gallery-star-badge i {
     color: #fbbf24;
+}
+
+.gallery-favorite-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 4;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid rgba(226, 232, 240, 0.28);
+    background: rgba(2, 6, 23, 0.38);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 14px 28px rgba(2, 6, 23, 0.22);
+}
+
+.gallery-favorite-btn i {
+    font-size: 18px;
+}
+
+.gallery-favorite-btn.active {
+    background: rgba(220, 38, 38, 0.22);
+    border-color: rgba(248, 113, 113, 0.45);
+}
+
+.rating-summary#ratingSummaryJump {
+    cursor: pointer;
+}
+
+.rating-summary#ratingSummaryJump:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.28);
+    outline-offset: 3px;
+    border-radius: 16px;
 }
 
 .gallery-main-trigger {
@@ -402,215 +704,6 @@
     background: #1d4ed8;
 }
 
-.gallery-lightbox {
-    position: fixed;
-    inset: 0;
-    background: rgba(2, 6, 23, 0.18);
-    z-index: 1900;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    overflow: hidden;
-    /* Masaüstü: sağ/sol kaçma olmasın */
-    max-width: 100%;
-    overscroll-behavior: none;
-    touch-action: none;
-}
-
-/* Slayt ekrani: mobil tarayici bar degisimlerinde kayma olmasin */
-.gallery-lightbox,
-.gallery-lightbox-figure {
-    box-sizing: border-box;
-}
-
-.gallery-lightbox {
-    height: 100dvh;
-    width: 100%;
-    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-}
-
-.gallery-lightbox::before {
-    content: "";
-    position: absolute;
-    inset: -24px;
-    background-image: var(--hotel-gallery-active);
-    background-size: cover;
-    background-position: center;
-    transform: scale(1.08);
-    filter: blur(34px) saturate(150%);
-    opacity: 0.86;
-    pointer-events: none;
-    z-index: 0;
-}
-
-.gallery-lightbox::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(circle at 50% 40%, rgba(2, 6, 23, 0.10), rgba(2, 6, 23, 0.52)),
-        linear-gradient(180deg, rgba(2, 6, 23, 0.10) 0%, rgba(2, 6, 23, 0.46) 100%);
-    pointer-events: none;
-    z-index: 1;
-}
-
-.gallery-lightbox > * {
-    position: relative;
-    z-index: 2;
-}
-
-.gallery-lightbox-figure {
-    margin: 0;
-    width: min(1120px, calc(100% - 32px));
-    height: min(calc(100dvh - 64px), 860px);
-    display: grid;
-    grid-template-rows: minmax(0, 1fr) auto auto;
-    gap: 14px;
-    justify-items: center;
-    padding: 22px;
-    border-radius: 28px;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.46) 0%, rgba(15, 23, 42, 0.66) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: 0 32px 80px rgba(2, 6, 23, 0.42);
-    backdrop-filter: blur(26px) saturate(160%);
-    -webkit-backdrop-filter: blur(26px) saturate(160%);
-    position: relative;
-    overflow: hidden;
-    /* Yatay kayma olmasın */
-    max-width: 100%;
-}
-
-.gallery-lightbox-figure::before,
-.gallery-lightbox-figure::after {
-    content: "";
-    position: absolute;
-    inset: 18px;
-    border-radius: 24px;
-    pointer-events: none;
-    opacity: 0.26;
-    filter: blur(22px) saturate(140%);
-    transform: scale(1.04);
-    background-size: cover;
-    background-position: center;
-    mix-blend-mode: screen;
-    z-index: 0;
-}
-
-.gallery-lightbox-figure::before {
-    background-image: var(--hotel-gallery-prev);
-    clip-path: inset(0 52% 0 0 round 24px);
-}
-
-.gallery-lightbox-figure::after {
-    background-image: var(--hotel-gallery-next);
-    clip-path: inset(0 0 0 52% round 24px);
-}
-
-.gallery-lightbox-figure > * {
-    position: relative;
-    z-index: 1;
-}
-
-.gallery-lightbox-figure img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: contain;
-    border-radius: 18px;
-    background: rgba(15, 23, 42, 0.28);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 26px 70px rgba(2, 6, 23, 0.34);
-}
-
-.gallery-lightbox-figure figcaption {
-    color: #e2e8f0;
-    font-weight: 700;
-}
-
-.gallery-lightbox-close,
-.gallery-lightbox-nav {
-    border: 1px solid rgba(226, 232, 240, 0.35);
-    background: rgba(15, 23, 42, 0.42);
-    color: #f8fafc;
-    border-radius: 999px;
-    cursor: pointer;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}
-
-.gallery-lightbox-thumbs {
-    width: 100%;
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 2px 2px 4px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-}
-
-.gallery-lightbox-thumbs::-webkit-scrollbar {
-    display: none;
-}
-
-.gallery-lightbox-thumb {
-    flex: 0 0 110px;
-    height: 78px;
-    border-radius: 16px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    background: rgba(255, 255, 255, 0.04);
-    cursor: pointer;
-    opacity: 0.8;
-    padding: 0;
-    scroll-snap-align: center;
-    transition: transform 0.18s ease, opacity 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.gallery-lightbox-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.gallery-lightbox-thumb:hover,
-.gallery-lightbox-thumb.active {
-    opacity: 1;
-    transform: translateY(-1px);
-    border-color: rgba(96, 165, 250, 0.92);
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.18);
-}
-
-.gallery-lightbox-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 44px;
-    height: 44px;
-}
-
-.gallery-lightbox-nav {
-    width: 46px;
-    height: 46px;
-}
-
-.gallery-lightbox-nav.prev {
-    position: absolute;
-    left: 18px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.gallery-lightbox-nav.next {
-    position: absolute;
-    right: 18px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
 .detail-header {
     display: flex;
     justify-content: space-between;
@@ -660,10 +753,11 @@
 
 .detail-header h1 {
     margin: 0 0 8px;
-    font-size: clamp(1.9rem, 2.6vw, 2.6rem);
+    font-family: var(--detail-font-sans);
+    font-size: var(--detail-h1);
     line-height: 1.12;
     letter-spacing: -0.02em;
-    color: #0f172a;
+    color: var(--detail-text);
 }
 
 .detail-stars {
@@ -673,9 +767,10 @@
 }
 
 .detail-location {
-    color: #64748b;
+    font-family: var(--detail-font-sans);
+    color: var(--detail-muted);
     margin: 0;
-    font-size: 0.98rem;
+    font-size: 15px;
 }
 
 .detail-location i {
@@ -1255,17 +1350,27 @@
 }
 
 .detail-actions button {
-    border: 1px solid #dbe4f0;
+    font-family: var(--detail-font-sans);
+    border: 1px solid var(--detail-border);
     background: #fff;
-    border-radius: 999px;
-    padding: 10px 14px;
-    min-height: 40px;
-    font-weight: 600;
-    font-size: 14px;
-    letter-spacing: 0.005em;
-    color: #0f172a;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    border-radius: var(--detail-radius-pill);
+    padding: 0 16px;
+    min-height: 44px;
+    font-weight: 700;
+    font-size: var(--detail-small);
+    letter-spacing: 0.01em;
+    color: var(--detail-text);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.reserve-btn,
+.select-room-btn {
+    font-family: var(--detail-font-sans);
+    min-height: var(--detail-btn-h);
+    font-size: var(--detail-btn);
+    font-weight: 800;
+    border-radius: var(--detail-radius-pill);
 }
 
 .detail-actions button:hover {
@@ -1465,9 +1570,18 @@
 .amenities-grid-lux {
     position: relative;
     z-index: 1;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0;
+    display: flex;
+    gap: 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 2px 10px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.amenities-grid-lux::-webkit-scrollbar {
+    display: none;
 }
 
 .featured-amenities-card .section-head {
@@ -1484,30 +1598,59 @@
     font-weight: 800;
 }
 
-.amenity-item-lux {
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-    border-radius: 0;
-    padding: 10px 16px;
-    min-height: 64px;
-    align-items: flex-start;
+.amenities-btn--pill {
+    border: 1px solid #dbe4f0;
+    border-radius: 999px;
+    background: #fff;
+    padding: 10px 14px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #0f172a;
     font-weight: 700;
-    letter-spacing: 0;
+    font-size: 14px;
+    letter-spacing: 0.005em;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    flex: 0 0 auto;
+    user-select: none;
 }
 
-.featured-amenities-card .amenity-item-lux:not(:last-child) {
-    border-right: 1px solid var(--border-light);
+.amenities-btn--pill[disabled] {
+    cursor: default;
+    opacity: 1;
 }
 
-.amenity-item-lux i {
-    width: 36px;
-    height: 36px;
+.amenities-btn--pill i {
+    width: 30px;
+    height: 30px;
     border-radius: 999px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: rgba(29, 78, 216, 0.08);
+    color: #1d4ed8;
+}
+
+.amenities-btn--pill:hover {
+    border-color: rgba(59, 130, 246, 0.55);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10);
+    transform: translateY(-1px);
+}
+
+.amenities-btn--pill:active {
+    transform: translateY(0);
+}
+
+.amenities-btn--action {
+    color: #1d4ed8;
+}
+
+.amenities-btn--compact {
+    padding: 9px 12px;
+    min-height: 40px;
+    font-weight: 800;
 }
 
 .amenity-copy {
@@ -1529,30 +1672,15 @@
 
 @media (max-width: 900px) {
     .featured-amenities-card .amenities-grid-lux {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .featured-amenities-card .amenity-item-lux:nth-child(2n) {
-        border-right: 0;
-    }
-
-    .featured-amenities-card .amenity-item-lux:nth-child(-n + 2) {
-        border-bottom: 1px solid var(--border-light);
+        gap: 10px;
+        padding: 6px 2px 10px;
     }
 }
 
 @media (max-width: 560px) {
-    .featured-amenities-card .amenities-grid-lux {
-        grid-template-columns: 1fr;
-    }
-
-    .featured-amenities-card .amenity-item-lux {
-        border-right: 0;
-        border-bottom: 1px solid var(--border-light);
-    }
-
-    .featured-amenities-card .amenity-item-lux:last-child {
-        border-bottom: 0;
+    .amenities-btn--pill {
+        padding: 9px 12px;
+        min-height: 42px;
     }
 }
 
@@ -1567,19 +1695,27 @@
     justify-content: space-between;
     gap: 16px;
     padding: 20px;
-    border-radius: 22px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    border-radius: var(--detail-radius-lg);
+    background: #fff;
+    border: 1px solid rgba(34, 34, 34, 0.10);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.06);
 }
 
 .room-card h3 {
     margin: 0 0 8px;
-    color: #0f172a;
+    font-family: var(--detail-font-sans);
+    color: var(--detail-text);
+    font-size: 18px;
+    line-height: 1.25;
+    font-weight: 800;
 }
 
 .room-card p {
     margin: 0 0 12px;
-    color: #64748b;
+    font-family: var(--detail-font-sans);
+    color: var(--detail-muted);
+    font-size: 14px;
+    line-height: 1.45;
 }
 
 .cancellation-badge {
@@ -2112,10 +2248,52 @@
 
 .review-summary {
     display: grid;
-    grid-template-columns: 180px minmax(0, 1fr);
-    gap: 24px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
     align-items: center;
     margin-bottom: 22px;
+}
+
+.review-signature {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    margin: 0 0 20px;
+    text-align: center;
+}
+
+.review-signature-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.review-signature-score .laurel {
+    font-size: 2.35rem;
+    line-height: 1;
+    color: #0f172a;
+    opacity: 0.86;
+}
+
+.review-signature-score strong {
+    font-size: clamp(2.05rem, 5vw, 3.7rem);
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: #111827;
+}
+
+.review-signature-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.review-signature small {
+    color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 600;
 }
 
 .review-score {
@@ -2145,9 +2323,55 @@
 
 .review-bars > div {
     display: grid;
-    grid-template-columns: 90px minmax(0, 1fr) 40px;
+    grid-template-columns: 122px minmax(0, 1fr) 40px;
     align-items: center;
     gap: 10px;
+}
+
+.review-topic-strip {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin: 0 0 20px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+}
+
+.review-topic-chip {
+    flex: 0 0 auto;
+    border: 1px solid rgba(148, 163, 184, 0.42);
+    background: #fff;
+    border-radius: 999px;
+    min-height: 44px;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all .16s ease;
+}
+
+.review-topic-chip:hover {
+    border-color: rgba(30, 64, 175, 0.45);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(30, 64, 175, 0.14);
+}
+
+.review-topic-chip-icon {
+    font-size: 1rem;
+}
+
+.review-topic-chip-copy {
+    font-weight: 800;
+    color: #1f2937;
+    font-size: 0.93rem;
+}
+
+.review-topic-chip-count {
+    font-size: 0.86rem;
+    color: #64748b;
+    font-weight: 700;
 }
 
 .bar {
@@ -2270,6 +2494,268 @@
     background: rgba(15, 23, 42, 0.06);
 }
 
+.review-insight-modal {
+    display: none;
+}
+
+.review-insight-modal.is-open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 2150;
+}
+
+.review-insight-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.56);
+}
+
+.review-insight-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(880px, calc(100% - 32px));
+    margin: 6vh auto 0;
+    border-radius: 22px;
+    background: #fff;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 26px 76px rgba(2, 6, 23, 0.34);
+    max-height: 86vh;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+}
+
+.review-insight-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 18px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.review-insight-head strong {
+    display: block;
+    font-size: 1.08rem;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.review-insight-head p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.review-insight-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.review-insight-close:hover {
+    background: rgba(15, 23, 42, 0.06);
+}
+
+.review-insight-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.review-insight-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+}
+
+.review-insight-tab {
+    flex: 0 0 auto;
+    min-height: 38px;
+    border: 1px solid rgba(148, 163, 184, 0.44);
+    border-radius: 999px;
+    background: #fff;
+    color: #334155;
+    font-weight: 800;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+}
+
+.review-insight-tab span {
+    color: #64748b;
+    font-size: 0.82rem;
+}
+
+.review-insight-tab.is-active {
+    border-color: rgba(29, 78, 216, 0.42);
+    background: rgba(29, 78, 216, 0.09);
+    color: #1d4ed8;
+}
+
+.review-insight-sort {
+    flex: 0 0 auto;
+}
+
+.review-insight-list {
+    overflow: auto;
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+}
+
+.review-insight-card {
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    border-radius: 16px;
+    padding: 14px;
+    background: #f8fafc;
+}
+
+.review-insight-card header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.review-insight-card header strong {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.review-insight-card header span {
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.review-insight-card header b {
+    color: #1d4ed8;
+    background: rgba(29, 78, 216, 0.1);
+    font-size: 0.82rem;
+    padding: 5px 9px;
+    border-radius: 999px;
+}
+
+.review-insight-card p {
+    margin: 0;
+    color: #334155;
+    line-height: 1.6;
+}
+
+.review-insight-empty {
+    border: 1px dashed rgba(148, 163, 184, 0.5);
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    padding: 18px;
+}
+
+.review-insight-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.review-insight-pager button {
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    border-radius: 999px;
+    background: #fff;
+    color: #0f172a;
+    font-weight: 800;
+    min-height: 38px;
+    padding: 0 14px;
+    cursor: pointer;
+}
+
+.review-insight-pager button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.review-insight-pager span {
+    color: #64748b;
+    font-size: .9rem;
+    font-weight: 800;
+}
+
+.amenities-list-clean {
+    display: grid;
+    gap: 10px;
+}
+
+.amenities-list-item {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(203, 213, 225, 0.75);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.amenities-list-item-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f766e;
+    background: rgba(13, 148, 136, 0.12);
+    font-size: 0.95rem;
+}
+
+.amenities-list-item-copy {
+    display: grid;
+    gap: 2px;
+}
+
+.amenities-list-item-copy strong {
+    font-size: 0.96rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.amenities-list-item-copy small {
+    font-size: 0.84rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.amenities-list-more {
+    justify-self: start;
+    min-height: 40px;
+    border-radius: 999px;
+    border: 1px solid rgba(59, 130, 246, 0.28);
+    background: rgba(59, 130, 246, 0.08);
+    color: #1d4ed8;
+    font-weight: 800;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
 /* Sırala select görünümü */
 .review-sort select {
     padding: 8px 38px 8px 12px;
@@ -2293,6 +2779,45 @@
     padding: 18px 20px;
     border-radius: 18px;
     background: #f8fafc;
+}
+
+.hotel-guest-review-compose {
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(29, 78, 216, 0.22);
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+}
+
+.hotel-guest-review-compose-head {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.hotel-guest-review-compose-head strong {
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.hotel-guest-review-compose-head span {
+    font-size: 0.88rem;
+    color: #475569;
+    line-height: 1.45;
+}
+
+.hotel-guest-review-compose-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.hotel-guest-review-compose-link {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #1d4ed8;
+    text-decoration: underline;
 }
 
 .review-meta {
@@ -2374,10 +2899,55 @@
     min-height: 320px;
 }
 
-.map-card iframe {
+.detail-location-map {
     width: 100%;
     min-height: 320px;
     border: 0;
+}
+
+.detail-map-flag {
+    display: grid;
+    gap: 2px;
+    min-width: 132px;
+    max-width: 168px;
+    padding: 7px 10px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(30,41,59,0.94));
+    border: 1px solid rgba(148,163,184,0.28);
+    box-shadow: 0 10px 22px rgba(2,6,23,0.30);
+    color: #f8fafc;
+    position: relative;
+}
+
+.detail-map-flag::after {
+    content: "";
+    position: absolute;
+    left: 14px;
+    bottom: -6px;
+    width: 12px;
+    height: 12px;
+    transform: rotate(45deg);
+    background: rgba(15,23,42,0.95);
+    border-right: 1px solid rgba(148,163,184,0.28);
+    border-bottom: 1px solid rgba(148,163,184,0.28);
+}
+
+.detail-map-flag__name {
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.detail-map-flag__area {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(226,232,240,0.88);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .map-fallback {
@@ -2982,6 +3552,58 @@ label [aria-invalid="true"] {
     gap: 12px;
 }
 
+.room-pick-popover {
+    position: absolute;
+    z-index: 5600;
+    width: min(260px, calc(100vw - 28px));
+    padding: 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    background: linear-gradient(180deg, rgba(236, 253, 245, 0.92) 0%, rgba(255, 255, 255, 0.98) 70%);
+    box-shadow: 0 26px 70px rgba(2, 6, 23, 0.22);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.room-pick-popover__title {
+    font-weight: 900;
+    color: #064e3b;
+    font-size: 13px;
+    margin-bottom: 10px;
+    letter-spacing: 0.02em;
+}
+
+.room-pick-popover__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.room-pick-popover__btn {
+    min-height: 42px;
+    border-radius: 14px;
+    border: 1px solid rgba(16, 185, 129, 0.26);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.18), rgba(59, 130, 246, 0.08));
+    color: #0f172a;
+    font-weight: 900;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.room-pick-popover__btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(16, 185, 129, 0.12);
+}
+
+.room-pick-popover__btn:active {
+    transform: translateY(0);
+}
+
+.room-pick-popover__btn:focus-visible {
+    outline: 3px solid rgba(16, 185, 129, 0.28);
+    outline-offset: 2px;
+}
+
 .multi-room-head {
     display: flex;
     align-items: center;
@@ -3023,22 +3645,64 @@ label [aria-invalid="true"] {
 }
 
 .multi-room-item {
+    --room-tone-border: rgba(148, 163, 184, 0.55);
+    --room-tone-bg: #fff;
+    --room-tone-head: rgba(148, 163, 184, 0.22);
     padding: 14px;
     border-radius: 16px;
-    border: 1px solid #dbe4f0;
-    background: #fff;
+    border: 1px solid var(--room-tone-border);
+    background: var(--room-tone-bg);
 }
 
-/* 1'den fazla oda eklendiginde kartlari ayirt etmek icin hafif yesil ton */
-#multiRoomRoot.has-multiple-rooms .multi-room-item {
-    border-color: rgba(16, 185, 129, 0.22);
-    background: linear-gradient(180deg, rgba(236, 253, 245, 0.55) 0%, rgba(255, 255, 255, 0.98) 68%);
-    box-shadow: 0 10px 24px rgba(16, 185, 129, 0.06);
+/* Oda kartı renkleri (Oda 1/2/3...) */
+.multi-room-item.room-tone-1 {
+    --room-tone-border: rgba(16, 185, 129, 0.34); /* yeşil */
+    --room-tone-bg: linear-gradient(180deg, rgba(236, 253, 245, 0.70) 0%, rgba(255, 255, 255, 0.98) 70%);
+    --room-tone-head: rgba(16, 185, 129, 0.28);
 }
 
-#multiRoomRoot.has-multiple-rooms .multi-room-item-head {
+.multi-room-item.room-tone-2 {
+    --room-tone-border: rgba(59, 130, 246, 0.34); /* mavi */
+    --room-tone-bg: linear-gradient(180deg, rgba(239, 246, 255, 0.78) 0%, rgba(255, 255, 255, 0.98) 70%);
+    --room-tone-head: rgba(59, 130, 246, 0.26);
+}
+
+.multi-room-item.room-tone-3 {
+    --room-tone-border: rgba(249, 115, 22, 0.34); /* turuncu */
+    --room-tone-bg: linear-gradient(180deg, rgba(255, 247, 237, 0.82) 0%, rgba(255, 255, 255, 0.98) 70%);
+    --room-tone-head: rgba(249, 115, 22, 0.24);
+}
+
+.multi-room-item.room-tone-4 {
+    --room-tone-border: rgba(168, 85, 247, 0.30); /* mor */
+    --room-tone-bg: linear-gradient(180deg, rgba(250, 245, 255, 0.82) 0%, rgba(255, 255, 255, 0.98) 70%);
+    --room-tone-head: rgba(168, 85, 247, 0.22);
+}
+
+.multi-room-item.room-tone-5 {
+    --room-tone-border: rgba(234, 179, 8, 0.32); /* sarı */
+    --room-tone-bg: linear-gradient(180deg, rgba(254, 252, 232, 0.82) 0%, rgba(255, 255, 255, 0.98) 70%);
+    --room-tone-head: rgba(234, 179, 8, 0.22);
+}
+
+.multi-room-item.room-tone-6 {
+    --room-tone-border: rgba(236, 72, 153, 0.28); /* pembe */
+    --room-tone-bg: linear-gradient(180deg, rgba(253, 242, 248, 0.82) 0%, rgba(255, 255, 255, 0.98) 70%);
+    --room-tone-head: rgba(236, 72, 153, 0.20);
+}
+
+.multi-room-item.is-active {
+    box-shadow: 0 14px 34px rgba(2, 6, 23, 0.10);
+    border-color: color-mix(in oklab, var(--room-tone-border) 80%, rgba(15, 23, 42, 0.20));
+}
+
+.multi-room-item.is-active .multi-room-item-title {
+    font-weight: 900;
+}
+
+.multi-room-item-head {
     padding-bottom: 10px;
-    border-bottom: 1px dashed rgba(16, 185, 129, 0.22);
+    border-bottom: 1px dashed var(--room-tone-head);
     margin-bottom: 10px;
 }
 
@@ -3064,7 +3728,35 @@ label [aria-invalid="true"] {
     font-weight: 700;
     font-size: 0.82rem;
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
+
+.amenities-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.10));
+    color: rgba(15, 23, 42, 0.9);
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.amenities-btn i {
+    color: rgba(16, 185, 129, 0.95);
+}
+
+.amenities-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(16, 185, 129, 0.38);
+    box-shadow: 0 16px 30px rgba(2, 6, 23, 0.10);
+}
+
+.amenities-btn:active { transform: translateY(0); }
 
 .multi-room-item-grid {
     display: grid;
@@ -3262,10 +3954,10 @@ label [aria-invalid="true"] {
 
     .gallery-mobile-track {
         grid-auto-flow: column;
-        grid-auto-columns: minmax(78%, 78%);
-        gap: 10px;
+        grid-auto-columns: 100%;
+        gap: 12px;
         overflow-x: auto;
-        padding-bottom: 4px;
+        padding: 0 2px 4px;
         scroll-snap-type: x mandatory;
         scrollbar-width: none;
     }
@@ -3278,11 +3970,11 @@ label [aria-invalid="true"] {
         border: 0;
         padding: 0;
         margin: 0;
-        height: 158px;
+        height: 220px;
         border-radius: 18px;
         overflow: hidden;
         background: #0f172a;
-        scroll-snap-align: center;
+        scroll-snap-align: start;
         box-shadow: 0 16px 28px rgba(15, 23, 42, 0.16);
     }
 
@@ -3454,49 +4146,204 @@ label [aria-invalid="true"] {
         gap: 8px;
     }
 
-    .gallery-lightbox {
-        grid-template-columns: 1fr;
+}
+
+@media (max-width: 560px) {
+    /* Mobilde galeri "slayt" alanı ana görsel gibi dursun */
+    .gallery-grid,
+    .gallery-filmstrip-wrap {
+        display: none;
+    }
+
+    .gallery-mobile-strip {
+        width: min(1320px, calc(100% - 24px));
+        margin: 10px auto 0;
+    }
+
+    .gallery-mobile-track {
+        gap: 0;
+        padding: 0;
+        border-radius: 22px;
+        overflow: hidden;
+        background: rgba(15, 23, 42, 0.10);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        box-shadow: 0 18px 46px rgba(2, 6, 23, 0.14);
+        scroll-padding-left: 0;
+    }
+
+    .gallery-mobile-slide {
+        height: 260px;
+        border-radius: 0;
+        box-shadow: none;
+        scroll-snap-align: start;
+    }
+
+    .gallery-star-badge.gallery-star-badge-mobile {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 3;
+    }
+
+    .gallery-mobile-strip {
+        position: relative;
+    }
+
+    .gallery-mobile-dots {
+        margin-top: 10px;
+    }
+
+    /* Hava + yorum kartlarını kompakt iki kolon yap */
+    .header-top-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .detail-utility-row {
+        margin: 0;
+    }
+
+    .weather-inline-trigger {
+        padding: 10px;
+        border-radius: 16px;
+        align-items: center;
+    }
+
+    .weather-inline-copy strong {
+        font-size: 0.9rem;
+    }
+
+    .weather-inline-copy small {
+        font-size: 0.72rem;
+        line-height: 1.2;
+        max-width: 18ch;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .weather-inline-badge {
+        font-size: 0.7rem;
+        padding: 6px 10px;
+        border-radius: 999px;
+    }
+
+    .rating-summary {
+        padding: 12px;
+        border-radius: 16px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .rating-big .rating-number {
+        font-size: 1.4rem;
+    }
+
+    .rating-text strong {
+        font-size: 0.92rem;
+    }
+
+    .rating-text span {
+        font-size: 0.76rem;
+    }
+
+    /* Otel özellikleri: mobilde 2'li grid */
+    .amenities-list-clean {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .amenities-list-item {
+        margin: 0;
+        border-radius: 16px;
+        padding: 12px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06);
+    }
+
+    .amenities-list-item-copy strong {
+        font-size: 0.92rem;
+    }
+
+    .amenities-list-item-copy small {
+        font-size: 0.78rem;
+    }
+
+    .amenities-list-more {
+        grid-column: 1 / -1;
+        border-radius: 16px;
+    }
+
+    /* Oda kartı: mobilde tek kart + premium CTA */
+    .room-card {
+        border-radius: 22px;
+        overflow: hidden;
+    }
+
+    .room-price-box {
+        border-top: 1px solid rgba(226, 232, 240, 0.9);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
         padding: 14px;
     }
 
-    /* Mobil: son görselde lightbox kaymasını engelle (sabit yükseklik + sabit satırlar) */
-    .gallery-lightbox-figure {
-        width: 100%;
-        height: calc(100dvh - 28px);
-        max-height: none;
-        padding: 14px;
+    .room-price-actions {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
         gap: 10px;
-        grid-template-rows: minmax(0, 1fr) 20px 86px;
+        margin-bottom: 10px;
+    }
+
+    .room-detail-btn {
+        border-radius: 16px;
+        min-height: 46px;
+        font-weight: 800;
+    }
+
+    .select-room-btn {
+        border-radius: 16px;
+        min-height: 46px;
+        font-weight: 900;
+        border: 0;
+        color: #fff;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        box-shadow: 0 18px 38px rgba(29, 78, 216, 0.22);
+    }
+
+    .select-room-btn:disabled {
+        background: #94a3b8;
+        box-shadow: none;
+        color: #fff;
+    }
+
+    .room-price-value strong {
+        font-size: 1.3rem;
+        letter-spacing: -0.02em;
+    }
+
+    /* Misafir değerlendirme alanı: mobilde daha dengeli */
+    .review-summary {
+        padding: 16px;
         border-radius: 22px;
     }
 
-    .gallery-lightbox-figure figcaption {
-        min-height: 20px;
-        line-height: 20px;
-        font-size: 0.92rem;
-        justify-self: center;
+    .review-bars {
+        gap: 10px;
     }
 
-    .gallery-lightbox-thumbs {
-        height: 86px;
-        align-self: end;
-        overscroll-behavior: contain;
-        scroll-padding-inline: 18px;
+    .review-topic-strip {
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        scrollbar-width: none;
     }
 
-    .gallery-lightbox-thumb {
-        flex-basis: 100px;
-        height: 72px;
+    .review-topic-strip::-webkit-scrollbar {
+        display: none;
     }
-
-    .gallery-lightbox-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-    .gallery-lightbox-nav.prev { left: 10px; }
-    .gallery-lightbox-nav.next { right: 10px; }
 }
 
 @media (max-width: 640px) {
@@ -3949,14 +4796,19 @@ body.room-gallery-open {
     flex-wrap: wrap;
     gap: 10px;
     margin-top: 12px;
+    justify-content: space-between;
 }
 
 .room-feature-row .room-feature-preview {
     margin-top: 0;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .room-feature-row .room-feature-more-inline {
     margin-top: 0;
+    flex: 0 0 auto;
+    margin-left: auto;
 }
 
 .room-feature-chip {
@@ -3977,18 +4829,7 @@ body.room-gallery-open {
 }
 
 .room-feature-more-btn {
-    min-height: 40px;
-    padding: 8px 12px;
-    border-radius: 14px;
-    border: 1px solid rgba(148, 163, 184, 0.50);
-    background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
-    color: #0f172a;
-    font-weight: 800;
-    display: inline-flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    cursor: pointer;
+    white-space: nowrap;
 }
 
 .room-feature-more-btn:focus-visible {
@@ -4846,13 +5687,20 @@ body.room-gallery-open {
 }
 
 .gallery-filmstrip {
-    display: grid;
-    grid-template-columns: repeat(10, minmax(0, 1fr));
-    gap: 8px;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 4px 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
+.gallery-filmstrip::-webkit-scrollbar { display: none; }
 
 .gallery-filmstrip-thumb {
-    height: 88px;
+    flex: 0 0 108px;
+    height: 78px;
     border: 1px solid rgba(148, 163, 184, 0.26);
     border-radius: 18px;
     overflow: hidden;
@@ -4878,6 +5726,31 @@ body.room-gallery-open {
     object-fit: cover;
     display: block;
 }
+
+.gallery-count-badge {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(226, 232, 240, 0.24);
+    background: rgba(2, 6, 23, 0.38);
+    color: rgba(255, 255, 255, 0.94);
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 18px 34px rgba(2, 6, 23, 0.22);
+    user-select: none;
+    pointer-events: none;
+}
+.gallery-count-badge__current { color: #fff; }
+.gallery-count-badge__sep { opacity: 0.78; }
+.gallery-count-badge__total { opacity: 0.92; }
 
 .room-card-media {
     display: grid;
@@ -5017,6 +5890,1498 @@ body.room-gallery-open {
     padding: 16px 0 24px;
 }
 
+/* ------------------------------------------------------------
+   Tabler/panel diline yakın "skin" (OtelDetay özel)
+   - HTML tarafında `.otel-detail-tabler` class'ı ile aktif olur.
+   - Tabler CSS import edilmez; aynı hissi lokal CSS ile yakalar.
+------------------------------------------------------------ */
+.otel-detail-template-v41.otel-detail-tabler {
+    --detail-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+    --detail-text: #1f2937;
+    --detail-muted: #6b7280;
+    --detail-border: rgba(17, 24, 39, 0.12);
+    --detail-radius-lg: 14px;
+    --detail-radius-pill: 999px;
+    --detail-body: 15px;
+    --detail-small: 13px;
+    --detail-btn: 14px;
+    --detail-btn-h: 44px;
+    background: #f4f6fb;
+
+    /* Tabler-minimal renk skalası */
+    --t-bg: #f4f6fb;
+    --t-surface: #ffffff;
+    --t-surface-2: #f8fafc;
+    --t-border: rgba(17, 24, 39, 0.10);
+    --t-muted: #6b7280;
+    --t-text: #111827;
+    --t-primary: #2563eb;
+    --t-primary-2: #1d4ed8;
+    --t-focus: rgba(37, 99, 235, 0.24);
+    --t-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.otel-detail-template-v41.otel-detail-tabler a:focus-visible,
+.otel-detail-template-v41.otel-detail-tabler button:focus-visible,
+.otel-detail-template-v41.otel-detail-tabler input:focus-visible,
+.otel-detail-template-v41.otel-detail-tabler select:focus-visible,
+.otel-detail-template-v41.otel-detail-tabler textarea:focus-visible {
+    outline: 3px solid var(--t-focus);
+    outline-offset: 2px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb {
+    padding: 12px 0 14px;
+    color: var(--t-muted);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb .detail-back-link {
+    border-color: rgba(17, 24, 39, 0.12);
+    background: var(--t-surface);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 10px 18px rgba(15, 23, 42, 0.05);
+    color: var(--t-primary-2);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-context {
+    background: rgba(15, 23, 42, 0.03);
+    border-color: rgba(17, 24, 39, 0.10);
+    color: #374151;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-grid {
+    gap: 12px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-main-image,
+.otel-detail-template-v41.otel-detail-tabler .gallery-thumb {
+    border-radius: 18px;
+    border: 1px solid var(--t-border);
+    box-shadow: var(--t-shadow);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-filmstrip-wrap {
+    margin-top: 12px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-filmstrip {
+    padding: 10px 10px;
+    border-radius: var(--detail-radius-lg);
+    border: 1px solid var(--t-border);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 10px 20px rgba(15, 23, 42, 0.05);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-filmstrip-thumb {
+    border-radius: 12px;
+    border-color: rgba(17, 24, 39, 0.10);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-filmstrip-thumb.active {
+    border-color: rgba(37, 99, 235, 0.55);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-header.hotel-title-section {
+    /* Galeri/breadcrumb ile aynı yatay iç boşluk (shell padding ile çakışmasın) */
+    padding: 18px var(--space-8) 16px;
+    border-radius: var(--detail-radius-lg);
+    border: 1px solid var(--t-border);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--t-shadow);
+    position: relative;
+    flex-wrap: wrap;
+    gap: 14px 18px;
+    min-width: 0;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-header.hotel-title-section > .hotel-name {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-header.hotel-title-section > .header-right-stack {
+    flex: 1 1 280px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .header-right-stack {
+    gap: 12px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .hotel-name {
+    padding-right: 6px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    align-items: center;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-btn,
+.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-badge {
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 900;
+    font-size: 0.84rem;
+    white-space: nowrap;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-btn {
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    background: #fff;
+    color: var(--t-text);
+    text-decoration: none;
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-btn.is-secondary {
+    border-color: rgba(37, 99, 235, 0.18);
+    background: rgba(37, 99, 235, 0.06);
+    color: var(--t-primary-2);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-badge {
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    background: rgba(15, 23, 42, 0.03);
+    color: #374151;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-badge.is-campaign {
+    text-decoration: none;
+    border-color: rgba(16, 185, 129, 0.24);
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.10), rgba(16, 185, 129, 0.06));
+    color: rgba(6, 95, 70, 0.92);
+}
+.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-badge.is-campaign i {
+    color: rgba(5, 150, 105, 0.95);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-badge.is-campaign:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02), 0 12px 22px rgba(15, 23, 42, 0.06);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-badge i {
+    color: var(--t-primary-2);
+}
+
+@media (max-width: 560px) {
+    .otel-detail-template-v41.otel-detail-tabler .detail-title-subnav {
+        gap: 8px;
+    }
+    .otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-btn,
+    .otel-detail-template-v41.otel-detail-tabler .detail-title-subnav-badge {
+        min-height: 34px;
+        padding: 0 10px;
+        font-size: 0.82rem;
+    }
+}
+
+.otel-detail-template-v41.otel-detail-tabler .header-top-metrics {
+    gap: 12px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-actions {
+    gap: 10px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-actions button:hover,
+.otel-detail-template-v41.otel-detail-tabler .conversation-btn:hover,
+.otel-detail-template-v41.otel-detail-tabler .amenities-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 14px 24px rgba(15, 23, 42, 0.06);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-actions button:active,
+.otel-detail-template-v41.otel-detail-tabler .conversation-btn:active,
+.otel-detail-template-v41.otel-detail-tabler .amenities-btn:active {
+    transform: translateY(0);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .content-card {
+    border-radius: var(--detail-radius-lg);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.015), 0 14px 28px rgba(15, 23, 42, 0.055);
+    background: rgba(255, 255, 255, 0.52);
+    backdrop-filter: blur(10px);
+}
+
+/* -------- Booking: Tabler form dili -------- */
+.otel-detail-template-v41.otel-detail-tabler .booking-card {
+    padding: 12px;
+    border-radius: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(255, 255, 255, 0.50);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02), 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-price-subrow { display: none; }
+.otel-detail-template-v41.otel-detail-tabler .booking-price-inclusive-hint { display: none; }
+.otel-detail-template-v41.otel-detail-tabler .booking-price-unit { white-space: nowrap; }
+
+.otel-detail-template-v41.otel-detail-tabler .booking-hero {
+    width: 100%;
+    height: 120px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(15, 23, 42, 0.04);
+    margin-bottom: 12px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-price-head {
+    padding: 2px 2px 10px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+    margin-bottom: 10px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-price-head strong {
+    color: var(--t-text);
+    letter-spacing: -0.02em;
+    font-size: 1.9rem;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-price-head span {
+    color: var(--t-muted);
+    font-weight: 700;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-price-inclusive-hint {
+    border-radius: 999px;
+    padding: 6px 10px;
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    background: rgba(16, 185, 129, 0.10);
+    color: rgba(6, 95, 70, 0.95);
+    font-weight: 900;
+    font-size: 0.76rem;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-price-subrow small {
+    display: inline-flex;
+    gap: 6px;
+    align-items: baseline;
+    color: #475569;
+    font-weight: 800;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-price-subrow strong {
+    font-size: 0.98rem;
+    color: #0f172a;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-form {
+    gap: 10px;
+}
+.otel-detail-template-v41.otel-detail-tabler .multi-room-head {
+    display: none;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .multi-room-item {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.56);
+    padding: 10px;
+    box-shadow: none;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .multi-room-item-head {
+    display: none;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .multi-room-item-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .multi-room-item-span {
+    grid-column: 1 / -1;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .guest-row {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 16px;
+    padding: 9px 11px;
+    background: rgba(255, 255, 255, 0.56);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .reserve-btn {
+    border-radius: 999px;
+    min-height: 52px;
+    font-size: 1.02rem;
+    font-weight: 900;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-advanced-fields {
+    display: none;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .price-breakdown {
+    margin-top: 12px;
+    border-top: 1px solid rgba(148, 163, 184, 0.22);
+    padding-top: 10px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .price-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    color: #475569;
+    font-weight: 700;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .price-row.total {
+    color: #0f172a;
+    font-weight: 900;
+    padding-top: 10px;
+}
+
+
+.otel-detail-template-v41.otel-detail-tabler .booking-form span {
+    color: #374151;
+    font-weight: 800;
+    font-size: 0.86rem;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-form input,
+.otel-detail-template-v41.otel-detail-tabler .booking-form select {
+    padding: 11px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(255, 255, 255, 0.62);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    font: inherit;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-form input:focus,
+.otel-detail-template-v41.otel-detail-tabler .booking-form select:focus {
+    outline: none;
+    border-color: rgba(37, 99, 235, 0.48);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .guest-btn {
+    border-radius: 12px;
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    background: var(--t-surface);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 10px 18px rgba(15, 23, 42, 0.05);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-advanced-fields {
+    border-radius: var(--detail-radius-lg);
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    background: var(--t-surface-2);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-advanced-fields summary {
+    border-radius: 12px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-trust-row {
+    border-radius: var(--detail-radius-lg);
+    border-color: rgba(17, 24, 39, 0.10);
+    background: rgba(15, 23, 42, 0.02);
+}
+
+/* -------- Modals: Tabler modal hissi -------- */
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-backdrop {
+    background: rgba(17, 24, 39, 0.46);
+    backdrop-filter: blur(10px);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-modal {
+    border-radius: 18px;
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.26);
+    padding: 18px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-head {
+    margin-bottom: 10px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-kicker {
+    background: rgba(37, 99, 235, 0.10);
+    color: var(--t-primary-2);
+    border: 1px solid rgba(37, 99, 235, 0.18);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-head h3 {
+    color: var(--t-text);
+    letter-spacing: -0.02em;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-copy {
+    color: var(--t-muted);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-close {
+    border-radius: 12px;
+    border-color: rgba(17, 24, 39, 0.12);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 10px 18px rgba(15, 23, 42, 0.05);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-actions {
+    gap: 10px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-primary,
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-secondary {
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-weight: 900;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-primary {
+    border: 0;
+    color: #fff;
+    background: linear-gradient(135deg, var(--t-primary), var(--t-primary-2));
+    box-shadow: 0 16px 34px rgba(29, 78, 216, 0.22);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-modal-secondary {
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    background: var(--t-surface);
+    color: var(--t-text);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 10px 18px rgba(15, 23, 42, 0.05);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-profile-form input,
+.otel-detail-template-v41.otel-detail-tabler .detail-profile-form select,
+.otel-detail-template-v41.otel-detail-tabler .detail-profile-form textarea {
+    border-radius: 12px;
+    border-color: rgba(17, 24, 39, 0.14);
+    padding: 11px 12px;
+}
+
+@media (max-width: 560px) {
+    .otel-detail-template-v41.otel-detail-tabler .detail-header.hotel-title-section {
+        padding: 14px var(--space-5);
+    }
+    .otel-detail-template-v41.otel-detail-tabler .gallery-main-image {
+        border-radius: 16px;
+    }
+}
+
+/* -------- Finishing layer: Tabler modunda kalan parçaları normalize et -------- */
+.otel-detail-template-v41.otel-detail-tabler .review-sort select {
+    border-radius: 12px;
+    border-color: rgba(17, 24, 39, 0.14);
+    padding: 9px 38px 9px 12px;
+    font-weight: 800;
+    font-size: 0.86rem;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-sort select:focus {
+    outline: none;
+    border-color: rgba(37, 99, 235, 0.48);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-tax-banner {
+    border-radius: var(--detail-radius-lg);
+    border-color: rgba(245, 158, 11, 0.30);
+    background: linear-gradient(145deg, rgba(255, 251, 235, 0.96) 0%, rgba(254, 243, 199, 0.70) 100%);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .discount-pill {
+    background: #047857;
+    font-weight: 800;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-step,
+.otel-detail-template-v41.otel-detail-tabler .booking-step__num {
+    border-color: rgba(17, 24, 39, 0.10);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .booking-step__num {
+    background: rgba(37, 99, 235, 0.10);
+    color: var(--t-primary-2);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-draft-toast__btn:focus-visible,
+.otel-detail-template-v41.otel-detail-tabler .review-modal-close:focus-visible,
+.otel-detail-template-v41.otel-detail-tabler .review-insight-close:focus-visible,
+.otel-detail-template-v41.otel-detail-tabler .booking-modal-close:focus-visible {
+    outline: 3px solid var(--t-focus);
+    outline-offset: 2px;
+}
+
+/* -------- Review topic strip (Konum/Temizlik...) daha yumuşak + sığan -------- */
+.otel-detail-template-v41.otel-detail-tabler .review-topic-strip {
+    gap: 8px;
+    margin-bottom: 14px;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+}
+.otel-detail-template-v41.otel-detail-tabler .review-topic-strip::-webkit-scrollbar { display: none; }
+
+.otel-detail-template-v41.otel-detail-tabler .review-topic-chip {
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02);
+    transform: none;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-topic-chip:hover {
+    transform: none;
+    border-color: rgba(37, 99, 235, 0.26);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02), 0 10px 18px rgba(15, 23, 42, 0.04);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-topic-chip-icon { font-size: 0.96rem; }
+.otel-detail-template-v41.otel-detail-tabler .review-topic-chip-copy { font-size: 0.86rem; font-weight: 900; }
+.otel-detail-template-v41.otel-detail-tabler .review-topic-chip-count { font-size: 0.82rem; }
+
+/* -------- Review insight popup taşma fix + responsive controls -------- */
+.otel-detail-template-v41.otel-detail-tabler .review-insight-dialog {
+    width: min(880px, calc(100vw - 24px));
+    overflow-x: hidden;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-insight-controls {
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-insight-tabs {
+    flex: 1 1 420px;
+    min-width: 0;
+    scrollbar-width: none;
+}
+.otel-detail-template-v41.otel-detail-tabler .review-insight-tabs::-webkit-scrollbar { display: none; }
+
+.otel-detail-template-v41.otel-detail-tabler .review-insight-sort {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 720px) {
+    .otel-detail-template-v41.otel-detail-tabler .review-insight-sort {
+        width: 100%;
+    }
+    .otel-detail-template-v41.otel-detail-tabler .review-insight-sort select {
+        width: 100%;
+    }
+}
+
+/* -------- Tesis özellikleri: profesyonel yatay tek satır şerit -------- */
+.otel-detail-template-v41.otel-detail-tabler .amenities-list-clean {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 10px;
+    padding-bottom: 14px;
+    scrollbar-width: none;
+}
+.otel-detail-template-v41.otel-detail-tabler .amenities-list-clean::-webkit-scrollbar { display: none; }
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-list-item {
+    flex: 0 0 auto;
+    min-width: 220px;
+    border-radius: 18px;
+    border-color: rgba(17, 24, 39, 0.10);
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.85), rgba(255, 255, 255, 1));
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02), 0 14px 26px rgba(15, 23, 42, 0.06);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-list-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02), 0 18px 32px rgba(15, 23, 42, 0.08);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-list-item-icon {
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.16);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-list-more {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    border-radius: 18px;
+    border-color: rgba(17, 24, 39, 0.12);
+    background: rgba(15, 23, 42, 0.03);
+    color: #111827;
+}
+
+/* -------- Tesis özellikleri: "Tüm olanaklar" açılır alan -------- */
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand {
+    margin-top: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.50);
+    backdrop-filter: blur(10px);
+    padding: 10px 12px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand summary::-webkit-details-marker { display: none; }
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand__copy {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand__copy strong {
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand__copy small {
+    font-weight: 800;
+    color: #64748b;
+    font-size: 0.82rem;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand summary i {
+    transition: transform 0.18s ease;
+    color: #334155;
+}
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand[open] summary i { transform: rotate(180deg); }
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand__grid {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 12px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(255, 255, 255, 0.62);
+    min-width: 0;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand__icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.14);
+    color: rgba(29, 78, 216, 0.95);
+    flex: 0 0 auto;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-expand__name {
+    font-weight: 800;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .otel-detail-template-v41.otel-detail-tabler .amenities-expand__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 560px) {
+    .otel-detail-template-v41.otel-detail-tabler .amenities-expand__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* -------- Video modal -------- */
+.otel-detail-template-v41.otel-detail-tabler .detail-video-modal {
+    max-width: 980px;
+}
+.otel-detail-template-v41.otel-detail-tabler .detail-video-embed {
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    background: #0b1220;
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02), 0 14px 28px rgba(15, 23, 42, 0.10);
+    aspect-ratio: 16 / 9;
+}
+.otel-detail-template-v41.otel-detail-tabler .detail-video-embed iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+/* -------- Tesis Hakkında kartı: section head kenarlarını yumuşat -------- */
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-head {
+    border-top-left-radius: var(--detail-radius-lg);
+    border-top-right-radius: var(--detail-radius-lg);
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.42), rgba(255, 255, 255, 0.72));
+}
+
+/* Gün gün fiyat detayı: Tabler glass + ikon sağ */
+.otel-detail-template-v41.otel-detail-tabler .nightly-breakdown-details {
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(255, 255, 255, 0.46);
+    border-radius: 18px;
+    padding: 10px;
+}
+.otel-detail-template-v41.otel-detail-tabler .nightly-breakdown-details summary {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.otel-detail-template-v41.otel-detail-tabler .nightly-breakdown-details summary i {
+    margin-left: auto;
+}
+.otel-detail-template-v41.otel-detail-tabler .nightly-breakdown-row {
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(255, 255, 255, 0.62);
+}
+.otel-detail-template-v41.otel-detail-tabler .content-card,
+.otel-detail-template-v41.otel-detail-tabler .booking-card,
+.otel-detail-template-v41.otel-detail-tabler .room-card,
+.otel-detail-template-v41.otel-detail-tabler .review-summary,
+.otel-detail-template-v41.otel-detail-tabler .detail-header {
+    border-radius: var(--detail-radius-lg);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.50);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.015), 0 16px 32px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(10px);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-header.hotel-title-section {
+    border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .hotel-name h1 {
+    color: #111827;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-location {
+    color: #6b7280;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .rating-summary,
+.otel-detail-template-v41.otel-detail-tabler .weather-inline-trigger {
+    border-radius: 14px;
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    background: #fff;
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 10px 22px rgba(15, 23, 42, 0.05);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-actions button,
+.otel-detail-template-v41.otel-detail-tabler .conversation-btn,
+.otel-detail-template-v41.otel-detail-tabler .amenities-btn {
+    border-radius: var(--detail-radius-pill);
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    background: #fff;
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.04), 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .reserve-btn,
+.otel-detail-template-v41.otel-detail-tabler .select-room-btn {
+    border-radius: 12px;
+    min-height: var(--detail-btn-h);
+    font-size: var(--detail-btn);
+    font-weight: 900;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .reserve-btn,
+.otel-detail-template-v41.otel-detail-tabler .select-room-btn:not(:disabled) {
+    border: 0;
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    box-shadow: 0 16px 34px rgba(29, 78, 216, 0.22);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .select-room-btn:disabled {
+    border: 0;
+    color: #fff;
+    background: #94a3b8;
+    box-shadow: none;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-price-box {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .gallery-main-image,
+.otel-detail-template-v41.otel-detail-tabler .gallery-thumb {
+    border-radius: var(--detail-radius-lg);
+    border: 1px solid rgba(17, 24, 39, 0.10);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-head {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.92), rgba(255, 255, 255, 0.86));
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-headrow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-titles h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    font-weight: 900;
+    color: #111827;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-titles p {
+    margin: 6px 0 0;
+    color: #6b7280;
+    font-size: 0.86rem;
+    line-height: 1.35;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-action-btn {
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    background: #fff;
+    color: #111827;
+    font-weight: 800;
+    font-size: 0.86rem;
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 10px 18px rgba(15, 23, 42, 0.05);
+    cursor: pointer;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 14px 24px rgba(15, 23, 42, 0.06);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-action-btn:active {
+    transform: translateY(0);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-action-btn:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.24);
+    outline-offset: 2px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-action-btn.is-primary {
+    border: 0;
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    box-shadow: 0 16px 34px rgba(29, 78, 216, 0.22);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .tabler-section-action-btn i {
+    opacity: 0.92;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .content-card > .section-head:not(.tabler-section-head) {
+    padding: 14px 16px 12px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .content-card {
+    overflow: hidden;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-list-clean,
+.otel-detail-template-v41.otel-detail-tabler .room-list,
+.otel-detail-template-v41.otel-detail-tabler .review-signature,
+.otel-detail-template-v41.otel-detail-tabler .review-summary,
+.otel-detail-template-v41.otel-detail-tabler .review-topic-strip,
+.otel-detail-template-v41.otel-detail-tabler .review-toolbar,
+.otel-detail-template-v41.otel-detail-tabler .review-list,
+.otel-detail-template-v41.otel-detail-tabler .map-card {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .hotel-about-text {
+    color: #4b5563;
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .map-card {
+    padding-bottom: 16px;
+}
+
+/* -------- Oda kartlari: minimal Tabler card -------- */
+.otel-detail-template-v41.otel-detail-tabler .room-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 252px);
+    align-items: stretch;
+    padding: 18px 20px 18px 18px;
+    gap: 22px;
+    border-radius: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(255, 255, 255, 0.70);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03), 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-card-main {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+    min-width: 0;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-card-media {
+    min-width: 0;
+    width: auto;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-card-cover {
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02), 0 14px 26px rgba(15, 23, 42, 0.08);
+    background: #fff;
+    height: auto;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-card-cover .room-gallery-trigger {
+    display: block;
+    width: 100%;
+    position: relative;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-cover-title {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    font-weight: 900;
+    color: rgba(15, 23, 42, 0.96);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.72));
+    border: 1px solid rgba(148, 163, 184, 0.30);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+    backdrop-filter: blur(8px);
+    text-align: left;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-card-cover img {
+    display: block;
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-thumb-strip {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+}
+.otel-detail-template-v41.otel-detail-tabler .room-thumb-strip::-webkit-scrollbar { display: none; }
+
+.otel-detail-template-v41.otel-detail-tabler .room-thumb-item {
+    flex: 0 0 auto;
+    width: 54px;
+    height: 40px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    background: #fff;
+}
+.otel-detail-template-v41.otel-detail-tabler .room-thumb-item.active {
+    border-color: rgba(37, 99, 235, 0.55);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.otel-detail-template-v41.otel-detail-tabler .room-thumb-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-card-copy {
+    min-width: 0;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-card h3 {
+    font-size: 1.02rem;
+    margin: 0 0 6px;
+    color: #111827;
+    letter-spacing: -0.01em;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-card p {
+    font-size: 0.84rem;
+    margin: 0 0 10px;
+    color: #6b7280;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-chip {
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    color: #374151;
+    font-weight: 700;
+    flex: 0 0 auto;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 2px 0 0;
+    display: grid;
+    gap: 8px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-item i {
+    width: 26px;
+    height: 26px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.14);
+    color: rgba(29, 78, 216, 0.95);
+    flex: 0 0 auto;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-preview {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+}
+.otel-detail-template-v41.otel-detail-tabler .room-feature-preview::-webkit-scrollbar { display: none; }
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-card-aux {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-detail-btn.room-detail-btn--link {
+    border-radius: 999px;
+    min-height: 36px;
+    padding: 0 12px;
+    font-weight: 900;
+    font-size: 0.86rem;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(255, 255, 255, 0.92);
+    color: rgba(30, 41, 59, 0.95);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-detail-btn.room-detail-btn--link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02), 0 14px 24px rgba(15, 23, 42, 0.06);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-panel {
+    margin-top: 10px;
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(10px);
+    padding: 12px;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02), 0 16px 32px rgba(15, 23, 42, 0.06);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-panel-title {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-panel-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 14px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-panel-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    color: #0f172a;
+    min-width: 0;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-panel-item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-panel-item i {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    color: rgba(5, 150, 105, 0.95);
+    flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+    .otel-detail-template-v41.otel-detail-tabler .room-feature-panel-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    .otel-detail-template-v41.otel-detail-tabler .room-feature-panel-list {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-feature-more-btn {
+    border-radius: 999px;
+    padding: 0 12px;
+    min-height: 36px;
+    font-weight: 900;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .cancellation-badge {
+    color: #047857;
+    background: rgba(16, 185, 129, 0.10);
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    width: fit-content;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-price-box {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    justify-content: space-between;
+    align-self: stretch;
+    justify-self: end;
+    width: 100%;
+    max-width: 252px;
+    border-radius: 0;
+    border: 0;
+    border-left: 1px solid rgba(148, 163, 184, 0.28);
+    background: transparent;
+    padding: 14px 0 14px 22px;
+    min-width: 0;
+    box-shadow: none;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-price-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+    justify-content: flex-start;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .select-room-btn.is-selected-room,
+.otel-detail-template-v41.otel-detail-tabler .select-room-btn.is-picked-feedback {
+    background: rgba(16, 185, 129, 0.10) !important;
+    color: rgba(6, 95, 70, 0.95) !important;
+    border: 1px solid rgba(16, 185, 129, 0.22) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .select-room-btn.is-selected-room::after,
+.otel-detail-template-v41.otel-detail-tabler .select-room-btn.is-picked-feedback::after,
+.otel-detail-template-v41.otel-detail-tabler .select-room-btn.is-selected-room::before,
+.otel-detail-template-v41.otel-detail-tabler .select-room-btn.is-picked-feedback::before {
+    display: none !important;
+    content: none !important;
+    opacity: 0 !important;
+    animation: none !important;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-price-actions .room-detail-btn,
+.otel-detail-template-v41.otel-detail-tabler .room-price-actions .select-room-btn {
+    width: 100%;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-price-value {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-price-kicker {
+    font-size: 0.78rem;
+    font-weight: 900;
+    color: #64748b;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-price-total {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #334155;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-price-box strong {
+    font-size: 1.6rem;
+    color: #111827;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-detail-btn {
+    border-radius: 12px;
+    min-height: 40px;
+    padding: 0 14px;
+    font-weight: 800;
+    border-color: rgba(17, 24, 39, 0.12);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 10px 18px rgba(15, 23, 42, 0.05);
+    background: #fff;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-price-box .select-room-btn {
+    border-radius: 12px;
+    min-height: 40px;
+    padding: 0 14px;
+}
+
+@media (max-width: 860px) {
+    .otel-detail-template-v41.otel-detail-tabler .room-price-box {
+        max-width: none;
+        border-left: 0;
+        border-top: 1px solid rgba(148, 163, 184, 0.24);
+        padding: 14px 0 0;
+        min-width: 0;
+        width: 100%;
+    }
+    .otel-detail-template-v41.otel-detail-tabler .room-price-actions {
+        justify-content: flex-start;
+    }
+    .otel-detail-template-v41.otel-detail-tabler .room-card {
+        grid-template-columns: 1fr;
+    }
+    .otel-detail-template-v41.otel-detail-tabler .room-card-main {
+        grid-template-columns: 1fr;
+    }
+    .otel-detail-template-v41.otel-detail-tabler .room-card-cover img {
+        height: 210px;
+    }
+    .otel-detail-template-v41.otel-detail-tabler .room-price-value {
+        align-items: flex-start;
+    }
+}
+
+/* -------- Yorum kartlari: Tabler list-item hissi -------- */
+.otel-detail-template-v41.otel-detail-tabler .review-card {
+    background: #fff;
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 12px 28px rgba(15, 23, 42, 0.05);
+    border-radius: var(--detail-radius-lg);
+    padding: 14px 16px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-meta {
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-meta h4 {
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #111827;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-meta p {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #6b7280;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-chip {
+    background: rgba(37, 99, 235, 0.10);
+    color: #1d4ed8;
+    border: 1px solid rgba(37, 99, 235, 0.22);
+    font-weight: 900;
+    padding: 7px 10px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-card p {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: #374151;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-topic-chip {
+    border-radius: 999px;
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 10px 18px rgba(15, 23, 42, 0.04);
+}
+
+/* Review pager: Tabler-like buttons */
+.otel-detail-template-v41.otel-detail-tabler .review-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 16px 16px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    background: #fff;
+    color: #111827;
+    font-weight: 900;
+    font-size: 0.88rem;
+    text-decoration: none;
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 10px 18px rgba(15, 23, 42, 0.05);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-page-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(37, 99, 235, 0.28);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03), 0 14px 24px rgba(15, 23, 42, 0.06);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-page-btn:active {
+    transform: translateY(0);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-page-btn.disabled,
+.otel-detail-template-v41.otel-detail-tabler .review-page-btn[aria-disabled="true"] {
+    opacity: 0.55;
+    pointer-events: none;
+    box-shadow: none;
+    background: rgba(15, 23, 42, 0.03);
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-page-indicator {
+    font-weight: 800;
+    color: #6b7280;
+    font-size: 0.86rem;
+}
+
+@media (max-width: 520px) {
+    .otel-detail-template-v41.otel-detail-tabler .review-pager {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    .otel-detail-template-v41.otel-detail-tabler .review-page-btn {
+        flex: 1 1 0;
+    }
+    .otel-detail-template-v41.otel-detail-tabler .review-page-indicator {
+        flex: 0 0 auto;
+        padding: 0 10px;
+        white-space: nowrap;
+    }
+}
+
+.otel-detail-template-v41.otel-detail-tabler .amenities-list-clean {
+    padding-bottom: 14px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-list {
+    padding-bottom: 16px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .review-list {
+    padding-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+    .otel-detail-template-v41.otel-detail-tabler .tabler-section-headrow {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .otel-detail-template-v41.otel-detail-tabler .tabler-section-actions {
+        justify-content: flex-start;
+    }
+}
+
 .otel-detail-template-v41 .detail-breadcrumb,
 .otel-detail-template-v41 .gallery-grid,
 .otel-detail-template-v41 .gallery-filmstrip-wrap,
@@ -5057,9 +7422,27 @@ body.room-gallery-open {
 }
 
 .otel-detail-template-v41 .detail-grid {
+    display: grid;
     grid-template-columns: minmax(0, 1fr) 338px;
+    grid-template-rows: auto auto;
     gap: 18px;
     padding-top: 8px;
+    align-items: start;
+}
+
+.otel-detail-template-v41 .detail-grid > .detail-content {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.otel-detail-template-v41 .detail-grid > .booking-sidebar {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.otel-detail-template-v41 .detail-grid > .detail-map-card {
+    grid-column: 1 / -1;
+    grid-row: 2;
 }
 
 .otel-detail-template-v41 .content-card {
@@ -5465,7 +7848,27 @@ body.room-gallery-open {
 .otel-detail-template-v41 .gallery-filmstrip-wrap,
 .otel-detail-template-v41 .detail-header,
 .otel-detail-template-v41 .detail-grid {
-    width: min(var(--page-max-width), calc(100% - 48px));
+    width: min(var(--page-max-width), calc(100% - 64px));
+}
+
+@media (max-width: 1024px) {
+    .otel-detail-template-v41 .detail-breadcrumb,
+    .otel-detail-template-v41 .gallery-grid,
+    .otel-detail-template-v41 .gallery-filmstrip-wrap,
+    .otel-detail-template-v41 .detail-header,
+    .otel-detail-template-v41 .detail-grid {
+        width: min(var(--page-max-width), calc(100% - 48px));
+    }
+}
+
+@media (max-width: 560px) {
+    .otel-detail-template-v41 .detail-breadcrumb,
+    .otel-detail-template-v41 .gallery-grid,
+    .otel-detail-template-v41 .gallery-filmstrip-wrap,
+    .otel-detail-template-v41 .detail-header,
+    .otel-detail-template-v41 .detail-grid {
+        width: min(var(--page-max-width), calc(100% - 40px));
+    }
 }
 
 .otel-detail-template-v41 .detail-header.hotel-title-section {
@@ -5526,6 +7929,63 @@ body.room-gallery-open {
 
 .otel-detail-template-v41 .weather-inline-copy small {
     font-size: 0.74rem;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb {
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    overflow: visible;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-left {
+    flex: 1 1 320px;
+    width: auto;
+    min-width: 0;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-right {
+    flex: 0 1 auto;
+    max-width: 100%;
+    margin-left: auto;
+    padding-left: 0;
+    overflow: visible;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .detail-share-wrap {
+    flex: 0 0 auto;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-card {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 252px);
+    gap: 22px;
+    padding: 18px 20px 18px 18px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .room-price-box {
+    width: 100%;
+    max-width: 252px;
+    justify-self: end;
+    align-self: stretch;
+    border: 0;
+    border-left: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 0;
+    background: transparent;
+    padding: 14px 0 14px 22px;
+}
+
+@media (max-width: 860px) {
+    .otel-detail-template-v41.otel-detail-tabler .room-card {
+        grid-template-columns: 1fr;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .room-price-box {
+        max-width: none;
+        border-left: 0;
+        border-top: 1px solid rgba(148, 163, 184, 0.24);
+        padding: 14px 0 0;
+    }
 }
 
 .otel-detail-template-v41 .weather-inline-badge {
@@ -5828,5 +8288,87 @@ body.room-gallery-open {
     }
     .discount-modal-head h3 {
         font-size: 20px;
+    }
+}
+
+/* Header genişliği ile sayfa içerik genişliğini eşitle */
+.otel-detail-template-v41 .detail-breadcrumb,
+.otel-detail-template-v41 .gallery-grid,
+.otel-detail-template-v41 .gallery-filmstrip-wrap,
+.otel-detail-template-v41 .gallery-mobile-strip,
+.otel-detail-template-v41 .detail-header,
+.otel-detail-template-v41 .detail-grid {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--page-max-width, 1280px);
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.otel-detail-template-v41 .detail-breadcrumb-left,
+.otel-detail-template-v41 .detail-breadcrumb-right,
+.otel-detail-template-v41 .hotel-name,
+.otel-detail-template-v41 .header-right-stack,
+.otel-detail-template-v41 .header-top-metrics,
+.otel-detail-template-v41 .weather-inline-trigger,
+.otel-detail-template-v41 .rating-summary {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.otel-detail-template-v41 .header-top-metrics {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 1024px) {
+    .otel-detail-template-v41 .detail-breadcrumb,
+    .otel-detail-template-v41 .gallery-grid,
+    .otel-detail-template-v41 .gallery-filmstrip-wrap,
+    .otel-detail-template-v41 .gallery-mobile-strip,
+    .otel-detail-template-v41 .detail-header,
+    .otel-detail-template-v41 .detail-grid {
+        padding-left: var(--space-6);
+        padding-right: var(--space-6);
+    }
+}
+
+@media (max-width: 560px) {
+    .otel-detail-template-v41 .detail-breadcrumb,
+    .otel-detail-template-v41 .gallery-grid,
+    .otel-detail-template-v41 .gallery-filmstrip-wrap,
+    .otel-detail-template-v41 .gallery-mobile-strip,
+    .otel-detail-template-v41 .detail-header,
+    .otel-detail-template-v41 .detail-grid {
+        padding-left: var(--space-5);
+        padding-right: var(--space-5);
+    }
+}
+
+/* Başlık bandı + rezervasyon grid: iç taşmayı kes (hava/yorum metni, sidebar sütunu) */
+.otel-detail-template-v41 .weather-inline-copy {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.otel-detail-template-v41 .weather-inline-trigger {
+    flex-wrap: wrap;
+    row-gap: 8px;
+}
+
+.otel-detail-template-v41 .rating-summary {
+    flex-wrap: wrap;
+}
+
+.otel-detail-template-v41 .detail-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+    min-width: 0;
+}
+
+@media (max-width: 1024px) {
+    .otel-detail-template-v41.otel-detail-tabler .detail-header.hotel-title-section {
+        padding-left: var(--space-6);
+        padding-right: var(--space-6);
     }
 }

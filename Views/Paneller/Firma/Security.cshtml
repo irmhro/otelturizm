@@ -27,21 +27,43 @@
                             @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "email" ? "Açık" : "Kapalı")
                         </span>
                     </label>
-                    <label class="radio-option @(!Model.PhoneUsableForTwoFactor ? "is-disabled" : string.Empty)">
-                        <input type="radio" name="Channel" value="whatsapp" @(Model.SelectedTwoFactorChannel == "whatsapp" ? "checked" : null) @(!Model.PhoneUsableForTwoFactor ? "disabled" : null) />
-                        <span>
-                            <strong>Telefon / WhatsApp kodu</strong>
-                            <small>@(Model.PhoneUsableForTwoFactor ? $"Doğrulanmış numara: {Model.MaskedPhoneNumber}" : "Telefon / WhatsApp altyapısı geliştirilmekte. Doğrulanmış numara gerektirir.")</small>
-                        </span>
-                        <span class="twofactor-status @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "whatsapp" ? "on" : "off")">
-                            <i class="fas @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "whatsapp" ? "fa-toggle-on" : "fa-toggle-off")"></i>
-                            @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "whatsapp" ? "Açık" : "Kapalı")
-                        </span>
-                    </label>
                 </div>
             </label>
         </div>
-        <p class="auth-inline-hint" style="margin-top:14px;">Firma çalışanları e-posta kanalını seçerse girişte şifre sonrası e-posta kutularına güvenlik kodu gelir. Telefon kanalı beta destek olarak sunulur.</p>
+        <p class="auth-inline-hint" style="margin-top:14px;">Firma hesabı için 2FA doğrulaması e-posta kanalı ile yapılır. Telefon/WhatsApp doğrulaması bu panelde kullanılmaz.</p>
         <div class="save-row"><button type="submit" class="primary-btn">Güvenlik tercihini kaydet</button></div>
     </form>
+
+    <div class="panel-card">
+        <div class="section-head"><h2>Sözleşmeler</h2></div>
+        <div class="form-grid" style="margin-top: 18px;">
+            <label class="full">
+                <span>Kullanıcı sözleşmeleri</span>
+                <div class="radio-stack">
+                    <a class="radio-option" href="/sozlesmeler/kullanici-kullanim-kosullari" target="_blank" rel="noopener">
+                        <i class="fas fa-file-signature" style="width: 18px; text-align: center;"></i>
+                        <span>
+                            <strong>Kullanıcı Kullanım Koşulları</strong>
+                            <small>Platform üyeliği ve rezervasyon kullanım kuralları.</small>
+                        </span>
+                        <span class="twofactor-status on">
+                            <i class="fas fa-arrow-up-right-from-square"></i>
+                            Aç
+                        </span>
+                    </a>
+                    <a class="radio-option" href="/sozlesmeler/kullanici-kvkk-aydinlatma" target="_blank" rel="noopener">
+                        <i class="fas fa-shield-halved" style="width: 18px; text-align: center;"></i>
+                        <span>
+                            <strong>Kullanıcı KVKK Aydınlatma Metni</strong>
+                            <small>6698 sayılı Kanun kapsamında aydınlatma metni.</small>
+                        </span>
+                        <span class="twofactor-status on">
+                            <i class="fas fa-arrow-up-right-from-square"></i>
+                            Aç
+                        </span>
+                    </a>
+                </div>
+            </label>
+        </div>
+    </div>
 </section>

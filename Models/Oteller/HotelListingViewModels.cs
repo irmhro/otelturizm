@@ -18,6 +18,7 @@ public class HotelListingPageViewModel
     public int PageSize { get; set; } = 10;
     public int TotalPages { get; set; }
     public List<HotelListingCardViewModel> Hotels { get; set; } = new();
+    public List<HotelListingCardViewModel> MapHotels { get; set; } = new();
     public List<string> Cities { get; set; } = new();
     public decimal MinPrice { get; set; }
     public decimal MaxPrice { get; set; }
@@ -92,6 +93,12 @@ public class HotelListingCardViewModel
     public string CampaignBadgeText { get; set; } = string.Empty;
     public string CampaignInfoText { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;
+
+    /// <summary>Bugün için satışa açık ve stoklu oda var mı?</summary>
+    public bool HasAvailabilityToday { get; set; } = true;
+
+    /// <summary>Listede gösterilen gecelik fiyatın bağlı olduğu oda tipi adı (bugünkü satır).</summary>
+    public string? ListingLeadRoomName { get; set; }
 }
 
 public class HotelDetailPageViewModel
@@ -112,14 +119,20 @@ public class HotelDetailPageViewModel
     public int ReviewCount { get; set; }
     /// <summary>Konum ortalamasi (1-10 vitrin).</summary>
     public decimal ReviewLocationScore { get; set; }
-    /// <summary>Oda / konaklama kalitesi ortalamasi (1-10 vitrin).</summary>
+    /// <summary>Temizlik ortalamasi (1-10 vitrin).</summary>
+    public decimal ReviewCleaningScore { get; set; }
+    /// <summary>Oda / konaklama kalitesi ortalamasi (1-10 vitrin, legacy).</summary>
     public decimal ReviewRoomScore { get; set; }
-    /// <summary>Konfor ortalamasi; yeni modelde oda puanina esler (geriye donuk).</summary>
+    /// <summary>Konfor ortalamasi; yeni modelde temizlik/oda puanina esler (geriye donuk).</summary>
     public decimal ReviewComfortScore { get; set; }
     /// <summary>Fiyat/performans ortalamasi (1-10 vitrin).</summary>
     public decimal ReviewValueScore { get; set; }
     /// <summary>Personel ortalamasi (1-10 vitrin).</summary>
     public decimal ReviewStaffScore { get; set; }
+    /// <summary>Sessizlik ortalamasi (1-10 vitrin).</summary>
+    public decimal ReviewQuietnessScore { get; set; }
+    /// <summary>Ulasim ortalamasi (1-10 vitrin).</summary>
+    public decimal ReviewTransportScore { get; set; }
     public TimeSpan? CheckInTime { get; set; }
     public TimeSpan? CheckOutTime { get; set; }
     public decimal? Latitude { get; set; }
@@ -157,6 +170,37 @@ public class HotelDetailPageViewModel
 
     /// <summary>?trip= veya çerez ile gelen kullanıcı niyeti etiketi (segmentasyon).</summary>
     public string IntentSegmentLabel { get; set; } = string.Empty;
+
+    /// <summary>Seçili giriş tarihi için satışa açık oda bulunamadı.</summary>
+    public bool HasNoOpenRoomsForSelectedDate { get; set; }
+
+    /// <summary>Seçili tarih için oda yoksa kullanıcıya gösterilecek uyarı metni.</summary>
+    public string NoOpenRoomsMessage { get; set; } = string.Empty;
+
+    /// <summary>Envanter kontrolünün yapıldığı tarih (genelde ReservationForm.CheckInDate).</summary>
+    public DateOnly AvailabilityCheckDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+
+    /// <summary>Geliştirme için: bugün/1 hafta kapalı satış raporu (email'e hazır, şimdilik gönderilmez).</summary>
+    public string InventoryClosureWeekReport { get; set; } = string.Empty;
+
+    /// <summary>Otele ait tanıtım videosu (YouTube / URL). `oteller.video_url`.</summary>
+    public string? VideoUrl { get; set; }
+
+    /// <summary>Otelin dahil olduğu aktif kampanyalar (etiket/isim).</summary>
+    public List<string> CampaignNames { get; set; } = new();
+
+    /// <summary>Kampanya detay sayfası için slug listesi (seo_slug veya kampanya_kodu).</summary>
+    public List<string> CampaignSlugs { get; set; } = new();
+
+    /// <summary>Giriş yapmış kullanıcı için bu otelde yorum yazılabilir geçmiş konaklamalar.</summary>
+    public List<HotelEligibleReviewStayViewModel> EligibleReviewStays { get; set; } = new();
+}
+
+public class HotelEligibleReviewStayViewModel
+{
+    public long ReservationId { get; set; }
+    public string StayDateText { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
 }
 
 public class HotelAmenityViewModel
@@ -221,6 +265,7 @@ public class HotelReviewViewModel
     public string Text { get; set; } = string.Empty;
     public string? TravelProfile { get; set; }
     public string? SatisfactionLabel { get; set; }
+    public string? ReservationNoTail { get; set; }
 }
 
 public class HotelSimilarCardViewModel

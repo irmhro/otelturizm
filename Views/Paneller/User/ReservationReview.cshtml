@@ -2,66 +2,116 @@
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Konaklama değerlendirmesi";
+    string StarGroup(string name, int current, int max, bool tenPoint)
+    {
+        var values = tenPoint ? new[] { 2, 4, 6, 8, 10 } : new[] { 1, 2, 3, 4, 5 };
+        var labels = new[] { "Çok zayıf", "Zayıf", "İyi", "Çok iyi", "Kusursuz" };
+        var html = new System.Text.StringBuilder();
+        html.Append($"""<div class="star-rating" data-star-rating data-score-suffix="{(tenPoint ? "/10" : "/5")}">""");
+        for (var i = 0; i < values.Length; i++)
+        {
+            var value = values[i];
+            var checkedAttr = current == value ? " checked" : string.Empty;
+            html.Append($"""<label class="star-option" title="{labels[i]}"><input type="radio" name="{name}" value="{value}"{checkedAttr} required><span><i class="fas fa-star"></i></span></label>""");
+        }
+        html.Append($"""<strong class="star-rating-value">{current}{(tenPoint ? "/10" : "/5")}</strong></div>""");
+        return html.ToString();
+    }
 }
 
-<section class="panel-card">
-    <div class="section-head">
+<section class="reservation-review-shell">
+    <div class="reservation-review-hero">
         <div>
-            <p class="mini-label">GERİ BİLDİRİM</p>
-            <h2>@Model.HotelName</h2>
-            <p>@Model.District, @Model.City · @Model.StayDateText · @Model.RoomName</p>
+            <span class="panel-eyebrow">Onaylı misafir yorumu</span>
+            <h1>@Model.HotelName</h1>
+            <p>Konaklama deneyimini net ve kısa biçimde paylaş. Yorumun otel detay sayfasında doğrulanmış misafir yorumu olarak yayınlanır.</p>
+        </div>
+        <div class="reservation-review-meta">
+            <span>Rezervasyon <strong>@Model.ReservationNo</strong></span>
+            <span>Konum <strong>@Model.District, @Model.City</strong></span>
+            <span>Konaklama <strong>@Model.StayDateText</strong></span>
+            <span>Oda <strong>@Model.RoomName</strong></span>
         </div>
     </div>
 
-    <p class="sub-note info">Konakladığınız yeri 1–10 arası kategorilerde değerlendirin; genel memnuniyet derecenizi seçin.</p>
-
-    <form method="post" asp-action="ReservationReviewPosted" class="user-review-form">
-        @Html.AntiForgeryToken()
-        <input type="hidden" asp-for="Form.ReservationId" value="@Model.ReservationId" />
-
-        <label class="user-review-field">
-            <span>Seyahat profiliniz</span>
-            <select asp-for="Form.TravelProfile" required>
-                <option value="">Seçin</option>
-                <option value="Aileler">Aileler</option>
-                <option value="Çiftler">Çiftler</option>
-                <option value="Arkadaş grubu">Arkadaş grubu</option>
-                <option value="Yalnız gezgin">Yalnız gezgin</option>
-                <option value="İş seyahati">İş seyahati</option>
-            </select>
-        </label>
-
-        <label class="user-review-field">
-            <span>Genel memnuniyet</span>
-            <select asp-for="Form.SatisfactionLevel" required>
-                <option value="1">Çok kötü</option>
-                <option value="2">Kötü</option>
-                <option value="3">İdare eder</option>
-                <option value="4">İyi</option>
-                <option value="5">Çok iyi</option>
-            </select>
-        </label>
-
-        <div class="user-review-grid">
-            <label><span>Oda</span><input asp-for="Form.PuanOda" type="number" min="1" max="10" required /></label>
-            <label><span>Konum</span><input asp-for="Form.PuanKonum" type="number" min="1" max="10" required /></label>
-            <label><span>Fiyat / değer</span><input asp-for="Form.PuanFiyat" type="number" min="1" max="10" required /></label>
-            <label><span>Personel</span><input asp-for="Form.PuanPersonel" type="number" min="1" max="10" required /></label>
+    <section class="review-form-card">
+        <div class="review-form-head">
+            <div>
+                <h2>Değerlendirmeni oluştur</h2>
+                <p>Kategori puanları 1 ile 10 arasında olmalı. Her rezervasyon için bir yorum yazılabilir.</p>
+            </div>
+            <a href="/panel/user/yorumlarim" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i>
+                Yorumlarıma dön
+            </a>
         </div>
 
-        <label class="user-review-field">
-            <span>Yorumunuz (en az 20 karakter)</span>
-            <textarea asp-for="Form.Comment" rows="5" maxlength="4000" placeholder="Konaklamanızla ilgili deneyiminizi paylaşın." required></textarea>
-        </label>
+        <form method="post" asp-action="ReservationReviewPosted" class="user-review-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Form.ReservationId" value="@Model.ReservationId" />
 
-        <label class="user-review-checkbox">
-            <input asp-for="Form.Anonymous" type="checkbox" />
-            <span>Adımı “Misafir” olarak göster</span>
-        </label>
+            <div class="review-form-grid">
+                <label class="user-review-field">
+                    <span>Seyahat profiliniz</span>
+                    <select asp-for="Form.TravelProfile" required>
+                        <option value="">Seçin</option>
+                        <option value="Aileler">Aileler</option>
+                        <option value="Çiftler">Çiftler</option>
+                        <option value="Arkadaş grubu">Arkadaş grubu</option>
+                        <option value="Yalnız gezgin">Yalnız gezgin</option>
+                        <option value="İş seyahati">İş seyahati</option>
+                    </select>
+                </label>
 
-        <div class="user-review-actions">
-            <button type="submit" class="ghost-btn primary">Yorumu gönder</button>
-            <a asp-action="Reservations" class="ghost-btn">Vazgeç</a>
-        </div>
-    </form>
+                <label class="user-review-field">
+                    <span>Genel memnuniyet</span>
+                    @Html.Raw(StarGroup("Form.SatisfactionLevel", Model.Form.SatisfactionLevel, 5, false))
+                </label>
+            </div>
+
+            <div class="user-review-grid">
+                <label class="rating-input rating-input--stars"><span>Konum</span>@Html.Raw(StarGroup("Form.PuanKonum", Model.Form.PuanKonum, 10, true))</label>
+                <label class="rating-input rating-input--stars"><span>Temizlik</span>@Html.Raw(StarGroup("Form.PuanTemizlik", Model.Form.PuanTemizlik, 10, true))</label>
+                <label class="rating-input rating-input--stars"><span>Personel</span>@Html.Raw(StarGroup("Form.PuanPersonel", Model.Form.PuanPersonel, 10, true))</label>
+                <label class="rating-input rating-input--stars"><span>Fiyat / Performans</span>@Html.Raw(StarGroup("Form.PuanFiyat", Model.Form.PuanFiyat, 10, true))</label>
+                <label class="rating-input rating-input--stars"><span>Sessizlik</span>@Html.Raw(StarGroup("Form.PuanSessizlik", Model.Form.PuanSessizlik, 10, true))</label>
+                <label class="rating-input rating-input--stars"><span>Ulaşım</span>@Html.Raw(StarGroup("Form.PuanUlasim", Model.Form.PuanUlasim, 10, true))</label>
+            </div>
+
+            <label class="user-review-field">
+                <span>Yorumunuz</span>
+                <textarea asp-for="Form.Comment" rows="5" minlength="20" maxlength="4000" placeholder="Oda, temizlik, konum, personel ve fiyat deneyiminizi yazın." required></textarea>
+            </label>
+
+            <div class="user-review-actions">
+                <a href="/panel/user/yorumlarim" class="btn btn-outline-primary">Vazgeç</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                    Yorumu gönder
+                </button>
+            </div>
+        </form>
+    </section>
 </section>
+
+@section Scripts {
+    <script nonce="@(Context.Items["CspNonce"] as string)">
+        (() => {
+            document.querySelectorAll('[data-star-rating]').forEach((rating) => {
+                const value = rating.querySelector('.star-rating-value');
+                const suffix = rating.dataset.scoreSuffix || '';
+                const sync = () => {
+                    const checked = rating.querySelector('input:checked');
+                    const selected = checked ? Number(checked.value) : 0;
+                    rating.querySelectorAll('.star-option').forEach((label) => {
+                        const input = label.querySelector('input');
+                        label.classList.toggle('is-active', input && Number(input.value) <= selected);
+                    });
+                    if (value) value.textContent = selected ? `${selected}${suffix}` : `-${suffix}`;
+                };
+                rating.querySelectorAll('input').forEach((input) => input.addEventListener('change', sync));
+                sync();
+            });
+        })();
+    </script>
+}

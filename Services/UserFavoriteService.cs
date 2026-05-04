@@ -37,7 +37,7 @@ public class UserFavoriteService : IUserFavoriteService
         }
 
         var parameters = string.Join(", ", ids.Select((_, index) => $"@hotelId{index}"));
-        var sql = $"SELECT otel_id FROM user_favori_oteller WHERE user_id = @userId AND otel_id IN ({parameters}) AND COALESCE(aktif_mi, 1) = 1;";
+        var sql = $"SELECT otel_id FROM user_favori_oteller WHERE user_id = @userId AND otel_id IN ({parameters}) AND COALESCE(aktif_mi, 1) = 1 AND kaldirilma_tarihi IS NULL;";
 
         var result = new HashSet<long>();
 
@@ -72,7 +72,7 @@ public class UserFavoriteService : IUserFavoriteService
             return 0;
         }
 
-        const string sql = @"SELECT COUNT(*) FROM user_favori_oteller WHERE user_id = @userId AND COALESCE(aktif_mi, 1) = 1;";
+        const string sql = @"SELECT COUNT(*) FROM user_favori_oteller WHERE user_id = @userId AND COALESCE(aktif_mi, 1) = 1 AND kaldirilma_tarihi IS NULL;";
 
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -82,9 +82,17 @@ public class UserFavoriteService : IUserFavoriteService
         return Convert.ToInt32(result, CultureInfo.InvariantCulture);
     }
 
-    public async Task<UserFavoritesPageViewModel> GetFavoritesPageAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<UserFavoritesPageViewModel> GetFavoritesPageAsync(long userId, string? searchTerm = null, string? sort = null, int page = 1, CancellationToken cancellationToken = default)
     {
-        var model = new UserFavoritesPageViewModel();
+        var normalizedSearch = (searchTerm ?? string.Empty).Trim();
+        var normalizedSort = NormalizeFavoriteSort(sort);
+        var model = new UserFavoritesPageViewModel
+        {
+            Page = Math.Max(1, page),
+            PageSize = 7,
+            SearchTerm = normalizedSearch,
+            Sort = normalizedSort
+        };
         if (userId <= 0)
         {
             return model;
@@ -122,7 +130,72 @@ public class UserFavoriteService : IUserFavoriteService
                       AND r.otel_id = f.otel_id
                       AND r.durum <> 'İptal Edildi'
                       AND CAST(r.cikis_tarihi AS date) < CAST(SYSUTCDATETIME() AS date)
-                ) AS past_stay_count
+                ) AS past_stay_count,
+                (
+                    SELECT COUNT(*)
+                    FROM rezervasyonlar r
+                    WHERE r.kullanici_id = @userId
+                      AND r.otel_id = f.otel_id
+                      AND r.durum <> N'İptal Edildi'
+                ) AS reservation_count,
+                (
+                    SELECT COUNT(*)
+                    FROM yorumlar y
+                    INNER JOIN rezervasyonlar r ON r.id = y.rezervasyon_id
+                    WHERE y.kullanici_id = @userId
+                      AND r.otel_id = f.otel_id
+                ) AS user_review_count,
+                (
+                    SELECT COUNT(*)
+                    FROM rezervasyonlar r
+                    WHERE r.kullanici_id = @userId
+                      AND r.otel_id = f.otel_id
+                      AND r.durum <> N'İptal Edildi'
+                      AND CAST(r.cikis_tarihi AS date) < CAST(SYSUTCDATETIME() AS date)
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM yorumlar y
+                          WHERE y.rezervasyon_id = r.id
+                            AND y.kullanici_id = @userId
+                      )
+                ) AS pending_review_count,
+                (
+                    SELECT CAST(ROUND(AVG(CAST(COALESCE(
+                        CAST(y.genel_puan_10 AS DECIMAL(9, 4)),
+                        CASE
+                            WHEN y.genel_puan <= 5 THEN CAST(y.genel_puan AS DECIMAL(9, 4)) * 2
+                            WHEN y.genel_puan <= 10 THEN CAST(y.genel_puan AS DECIMAL(9, 4))
+                            ELSE 10
+                        END
+                    ) AS DECIMAL(9, 4))), 1) AS DECIMAL(5, 1))
+                    FROM yorumlar y
+                    INNER JOIN rezervasyonlar r ON r.id = y.rezervasyon_id
+                    WHERE y.kullanici_id = @userId
+                      AND r.otel_id = f.otel_id
+                ) AS user_average_rating,
+                (
+                    SELECT MAX(r.olusturulma_tarihi)
+                    FROM rezervasyonlar r
+                    WHERE r.kullanici_id = @userId
+                      AND r.otel_id = f.otel_id
+                      AND r.durum <> N'İptal Edildi'
+                ) AS last_reservation_date,
+                (
+                    SELECT TOP (1) r.id
+                    FROM rezervasyonlar r
+                    LEFT JOIN yorumlar y ON y.rezervasyon_id = r.id AND y.kullanici_id = @userId
+                    WHERE r.kullanici_id = @userId
+                      AND r.otel_id = f.otel_id
+                      AND y.id IS NULL
+                      AND r.durum NOT IN (N'İptal Edildi', N'Reddedildi')
+                      AND CAST(r.cikis_tarihi AS date) < CAST(SYSUTCDATETIME() AS date)
+                      AND r.durum IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı')
+                      AND (
+                          COALESCE(r.otel_onay_durumu, '') = N'Onaylandı'
+                          OR r.durum IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı')
+                      )
+                    ORDER BY r.cikis_tarihi DESC, r.id DESC
+                ) AS first_eligible_review_reservation_id
             FROM user_favori_oteller f
             JOIN oteller o ON o.id = f.otel_id
             LEFT JOIN (
@@ -197,6 +270,16 @@ public class UserFavoriteService : IUserFavoriteService
             DateTime? alertStart = reader.IsDBNull(reader.GetOrdinal("alert_baslangic_tarihi")) ? null : reader.GetDateTime(reader.GetOrdinal("alert_baslangic_tarihi"));
             DateTime? alertEnd = reader.IsDBNull(reader.GetOrdinal("alert_bitis_tarihi")) ? null : reader.GetDateTime(reader.GetOrdinal("alert_bitis_tarihi"));
             DateTime? lastTriggered = reader.IsDBNull(reader.GetOrdinal("alert_son_tetiklenen_tarih")) ? null : reader.GetDateTime(reader.GetOrdinal("alert_son_tetiklenen_tarih"));
+            DateTime? lastReservationDate = reader.IsDBNull(reader.GetOrdinal("last_reservation_date")) ? null : reader.GetDateTime(reader.GetOrdinal("last_reservation_date"));
+            var reservationCount = Convert.ToInt32(reader.GetValue(reader.GetOrdinal("reservation_count")), CultureInfo.InvariantCulture);
+            var reviewGivenCount = Convert.ToInt32(reader.GetValue(reader.GetOrdinal("user_review_count")), CultureInfo.InvariantCulture);
+            var reviewPendingCount = Convert.ToInt32(reader.GetValue(reader.GetOrdinal("pending_review_count")), CultureInfo.InvariantCulture);
+            var firstEligibleRevOrd = reader.GetOrdinal("first_eligible_review_reservation_id");
+            long? firstEligibleReviewReservationId = reader.IsDBNull(firstEligibleRevOrd)
+                ? null
+                : reader.GetInt64(firstEligibleRevOrd);
+            var averageRatingOrdinal = reader.GetOrdinal("user_average_rating");
+            var userAverageRating = reader.IsDBNull(averageRatingOrdinal) ? 0m : reader.GetDecimal(averageRatingOrdinal);
 
             model.Hotels.Add(new UserFavoriteHotelCardViewModel
             {
@@ -213,8 +296,20 @@ public class UserFavoriteService : IUserFavoriteService
                 StartingPrice = price,
                 PriceText = price.HasValue ? $"TRY {price.Value:N0}" : "Teklif Al",
                 RatingText = rating > 0 ? (rating >= 9 ? "Olağanüstü" : rating >= 8 ? "Çok İyi" : "İyi") : "Yorum Bekleniyor",
+                FavoriteAddedAt = createdAt,
                 AddedDateText = $"{createdAt.ToString("dd MMMM yyyy", culture)} tarihinde kaydedildi",
+                LastReservationDate = lastReservationDate,
+                LastReservationDateText = lastReservationDate.HasValue ? $"{lastReservationDate.Value.ToString("dd MMMM yyyy", culture)} son rezervasyon" : "Henüz rezervasyon yok",
                 PastStayCount = Convert.ToInt32(reader.GetValue(reader.GetOrdinal("past_stay_count")), CultureInfo.InvariantCulture),
+                ReservationCount = reservationCount,
+                ReviewGivenCount = reviewGivenCount,
+                ReviewPendingCount = reviewPendingCount,
+                FirstEligibleReviewReservationId = firstEligibleReviewReservationId,
+                UserAverageRating = userAverageRating,
+                ReservationCountText = reservationCount > 0 ? $"{reservationCount} rezervasyon" : "Rezervasyon yok",
+                ReviewGivenText = reviewGivenCount > 0 ? $"{reviewGivenCount} yorum verdiniz" : "Henüz yorum yok",
+                ReviewPendingText = reviewPendingCount > 0 ? $"{reviewPendingCount} konaklama yorum bekliyor" : "Yorum bekleyen konaklama yok",
+                UserAverageRatingText = userAverageRating > 0 ? $"{userAverageRating:0.0}/10" : "-",
                 PriceAlertEnabled = alertActive,
                 PriceAlertTargetAmount = alertTarget,
                 PriceAlertTargetText = alertTarget.HasValue ? $"TRY {alertTarget.Value:N0}" : null,
@@ -224,6 +319,52 @@ public class UserFavoriteService : IUserFavoriteService
                 PriceAlertEndDateValue = alertEnd?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
             });
         }
+
+        model.FavoriteCount = model.Hotels.Count;
+        if (!string.IsNullOrWhiteSpace(normalizedSearch))
+        {
+            model.Hotels = model.Hotels
+                .Where(h => h.Name.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase)
+                            || h.City.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase)
+                            || h.District.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        model.Hotels = normalizedSort switch
+        {
+            "most-reserved" => model.Hotels
+                .OrderByDescending(h => h.ReservationCount)
+                .ThenByDescending(h => h.LastReservationDate ?? DateTime.MinValue)
+                .ThenBy(h => h.Name)
+                .ToList(),
+            "highest-rating" => model.Hotels
+                .OrderByDescending(h => h.Rating)
+                .ThenByDescending(h => h.ReviewCount)
+                .ThenBy(h => h.Name)
+                .ToList(),
+            "review-waiting" => model.Hotels
+                .OrderByDescending(h => h.ReviewPendingCount)
+                .ThenByDescending(h => h.LastReservationDate ?? DateTime.MinValue)
+                .ThenBy(h => h.Name)
+                .ToList(),
+            "newest-favorite" => model.Hotels
+                .OrderByDescending(h => h.FavoriteAddedAt)
+                .ThenBy(h => h.Name)
+                .ToList(),
+            _ => model.Hotels
+                .OrderByDescending(h => h.LastReservationDate ?? DateTime.MinValue)
+                .ThenByDescending(h => h.FavoriteAddedAt)
+                .ThenBy(h => h.Name)
+                .ToList()
+        };
+
+        model.TotalCount = model.Hotels.Count;
+        model.TotalPages = Math.Max(1, (int)Math.Ceiling(model.TotalCount / (double)model.PageSize));
+        model.Page = Math.Min(model.Page, model.TotalPages);
+        model.Hotels = model.Hotels
+            .Skip((model.Page - 1) * model.PageSize)
+            .Take(model.PageSize)
+            .ToList();
 
         if (model.Hotels.Count > 0)
         {
@@ -247,9 +388,18 @@ public class UserFavoriteService : IUserFavoriteService
             }
         }
 
-        model.FavoriteCount = model.Hotels.Count;
         return model;
     }
+
+    private static string NormalizeFavoriteSort(string? sort)
+        => (sort ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "most-reserved" => "most-reserved",
+            "highest-rating" => "highest-rating",
+            "review-waiting" => "review-waiting",
+            "newest-favorite" => "newest-favorite",
+            _ => "latest-reservation"
+        };
 
     public async Task<HotelFavoriteToggleResponse> ToggleFavoriteAsync(long userId, long hotelId, string sourcePage, string sourceUrl, string? deviceType, string? ipAddress, CancellationToken cancellationToken = default)
     {
@@ -272,6 +422,11 @@ public class UserFavoriteService : IUserFavoriteService
             return new HotelFavoriteToggleResponse { Success = false, Message = "Favorilere eklenecek otel bulunamadı." };
         }
 
+        var hasHotelFavoriteCounter = await ColumnExistsAsync(connection, "oteller", "favori_sayisi", cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+
         const string selectSql = @"
             SELECT TOP (1)
                 id,
@@ -283,7 +438,7 @@ public class UserFavoriteService : IUserFavoriteService
             WHERE user_id = @userId
               AND otel_id = @hotelId
             ORDER BY id DESC;";
-        await using var selectCommand = new SqlCommand(selectSql, connection);
+        await using var selectCommand = new SqlCommand(selectSql, connection, (SqlTransaction)transaction);
         selectCommand.Parameters.AddWithValue("@userId", userId);
         selectCommand.Parameters.AddWithValue("@hotelId", hotelId);
 
@@ -311,7 +466,7 @@ public class UserFavoriteService : IUserFavoriteService
                 VALUES
                 (@userId, @hotelId, @sourcePage, @sourceUrl, @deviceType, @ipAddress, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);";
 
-            await using var insertCommand = new SqlCommand(insertSql, connection);
+            await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
             insertCommand.Parameters.AddWithValue("@userId", userId);
             insertCommand.Parameters.AddWithValue("@hotelId", hotelId);
             insertCommand.Parameters.AddWithValue("@sourcePage", DbValue(normalizedSourcePage));
@@ -319,7 +474,9 @@ public class UserFavoriteService : IUserFavoriteService
             insertCommand.Parameters.AddWithValue("@deviceType", DbValue(normalizedDeviceType));
             insertCommand.Parameters.AddWithValue("@ipAddress", DbValue(normalizedIp));
             await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+            if (hasHotelFavoriteCounter) await RefreshHotelFavoriteCounterAsync(connection, (SqlTransaction)transaction, hotelId, cancellationToken);
 
+            await transaction.CommitAsync(cancellationToken);
             return new HotelFavoriteToggleResponse { Success = true, IsFavorite = true, Message = "Otel favorilerinize eklendi." };
         }
 
@@ -334,7 +491,7 @@ public class UserFavoriteService : IUserFavoriteService
                 son_islem_tarihi = CURRENT_TIMESTAMP
             WHERE id = @id;";
 
-        await using var updateCommand = new SqlCommand(updateSql, connection);
+        await using var updateCommand = new SqlCommand(updateSql, connection, (SqlTransaction)transaction);
         updateCommand.Parameters.AddWithValue("@id", recordId.Value);
         updateCommand.Parameters.AddWithValue("@sourcePage", DbValue(normalizedSourcePage));
         updateCommand.Parameters.AddWithValue("@sourceUrl", DbValue(normalizedSourceUrl));
@@ -342,6 +499,7 @@ public class UserFavoriteService : IUserFavoriteService
         updateCommand.Parameters.AddWithValue("@ipAddress", DbValue(normalizedIp));
         updateCommand.Parameters.AddWithValue("@isFavorite", isActive ? 0 : 1);
         await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+        if (hasHotelFavoriteCounter) await RefreshHotelFavoriteCounterAsync(connection, (SqlTransaction)transaction, hotelId, cancellationToken);
 
         if (isActive)
         {
@@ -351,18 +509,25 @@ public class UserFavoriteService : IUserFavoriteService
                     guncellenme_tarihi = CURRENT_TIMESTAMP
                 WHERE user_id = @userId
                   AND otel_id = @hotelId;";
-            await using var disableAlertCommand = new SqlCommand(disableAlertSql, connection);
+            await using var disableAlertCommand = new SqlCommand(disableAlertSql, connection, (SqlTransaction)transaction);
             disableAlertCommand.Parameters.AddWithValue("@userId", userId);
             disableAlertCommand.Parameters.AddWithValue("@hotelId", hotelId);
             await disableAlertCommand.ExecuteNonQueryAsync(cancellationToken);
         }
 
+        await transaction.CommitAsync(cancellationToken);
         return new HotelFavoriteToggleResponse
         {
             Success = true,
             IsFavorite = !isActive,
             Message = isActive ? "Otel favorilerinizden çıkarıldı." : "Otel favorilerinize yeniden eklendi."
         };
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public async Task<(bool Success, string Message)> SavePriceAlertAsync(long userId, UserFavoritePriceAlertForm form, CancellationToken cancellationToken = default)
@@ -532,6 +697,43 @@ public class UserFavoriteService : IUserFavoriteService
     }
 
     private static object DbValue(string? value) => string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();
+
+    private static async Task<bool> ColumnExistsAsync(SqlConnection connection, string tableName, string columnName, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_CATALOG = DB_NAME()
+              AND TABLE_NAME = @tableName
+              AND COLUMN_NAME = @columnName;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@columnName", columnName);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;
+    }
+
+    private static async Task RefreshHotelFavoriteCounterAsync(SqlConnection connection, SqlTransaction transaction, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            UPDATE o
+            SET o.favori_sayisi = src.toplam
+            FROM oteller o
+            CROSS APPLY
+            (
+                SELECT COUNT(DISTINCT uf.user_id) AS toplam
+                FROM user_favori_oteller uf
+                WHERE uf.otel_id = @hotelId
+                  AND COALESCE(uf.aktif_mi, 1) = 1
+                  AND uf.kaldirilma_tarihi IS NULL
+            ) src
+            WHERE o.id = @hotelId;";
+
+        await using var command = new SqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
 
     private static string SafeTrim(string? value, int maxLength)
     {

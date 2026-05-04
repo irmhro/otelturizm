@@ -1,0 +1,281 @@
+@using System.Globalization
+@using System.Text.Json
+@model otelturizmnew.Models.Oteller.HotelListingPageViewModel
+
+@{
+    ViewData["Title"] = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Haritada Oteller" : $"{Model.SearchLabel} haritası";
+    var mapHotels = (Model.MapHotels ?? new()).Where(x => x.Latitude.HasValue && x.Longitude.HasValue).ToList();
+    var mapPayload = mapHotels.Select(x => new
+    {
+        id = x.Id,
+        name = x.Name,
+        slug = x.Slug,
+        city = x.City,
+        district = x.District,
+        neighborhood = x.Neighborhood,
+        lat = x.Latitude,
+        lon = x.Longitude,
+        price = x.StartingPrice,
+        rating = x.Rating,
+        starCount = x.StarCount,
+        image = x.ImageUrl
+    }).ToList();
+    var serializedHotels = JsonSerializer.Serialize(mapPayload);
+}
+
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      crossorigin="anonymous" />
+
+<section class="hotel-map-page">
+    <div class="hotel-map-page__shell">
+        <header class="hotel-map-page__topline">
+            <a class="hotel-map-page__back" href="@Url.Action("OtelListeleme", "Oteller")">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                <span>Listeye Dön</span>
+            </a>
+            <h1>@(string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Haritadaki Oteller" : Model.SearchLabel)</h1>
+        </header>
+
+        <div class="hotel-map-page__layout">
+            <section class="hotel-map-page__map-panel">
+                <div class="hotel-map-page__toolbar">
+                    <div class="hotel-map-page__toolbar-copy">
+                        <h2>Harita</h2>
+                        <p id="hotelMapSummaryText">Fiyat marker'ları ile otelleri sade biçimde inceleyin.</p>
+                    </div>
+                    <div class="hotel-map-page__toolbar-actions">
+                        <button type="button" class="hotel-map-page__toolbar-btn" id="fitHotelMapBtn">
+                            <i class="fas fa-expand" aria-hidden="true"></i>
+                            <span>Tümünü Göster</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="hotel-map-page__map-canvas" id="hotelMapCanvas"></div>
+            </section>
+
+            <aside class="hotel-map-page__sidebar">
+                <div class="hotel-map-page__sidebar-head">
+                    <h2>Oteller</h2>
+                    <span id="hotelMapVisibleCount">@mapHotels.Count</span>
+                </div>
+
+                <div class="hotel-map-page__search">
+                    <input type="search"
+                           id="hotelMapSearchInput"
+                           placeholder="Otel adı, il, ilçe, mahalle ara"
+                           autocomplete="off"
+                           aria-label="Haritadaki otellerde ara" />
+                </div>
+
+                <div class="hotel-map-page__list" id="hotelMapHotelList">
+                    @foreach (var hotel in mapHotels)
+                    {
+                        var areaText = string.IsNullOrWhiteSpace(hotel.Neighborhood)
+                            ? $"{hotel.District}, {hotel.City}"
+                            : $"{hotel.Neighborhood}, {hotel.District}, {hotel.City}";
+                        var searchText = $"{hotel.Name} {hotel.City} {hotel.District} {hotel.Neighborhood}".ToLowerInvariant();
+                        <a class="hotel-map-page__item"
+                           href="@Url.Action("OtelDetay", "Oteller", new { slug = hotel.Slug })"
+                           data-map-focus
+                           data-map-id="@hotel.Id"
+                           data-search="@searchText"
+                           data-lat="@hotel.Latitude?.ToString(CultureInfo.InvariantCulture)"
+                           data-lon="@hotel.Longitude?.ToString(CultureInfo.InvariantCulture)">
+                            <div class="hotel-map-page__item-visual">
+                                @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
+                                {
+                                    <img src="@hotel.ImageUrl" alt="@hotel.Name" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span><i class="fas fa-hotel" aria-hidden="true"></i></span>
+                                }
+                            </div>
+                            <div class="hotel-map-page__item-copy">
+                                <strong>@hotel.Name</strong>
+                                <span>@areaText</span>
+                                <small data-distance-label hidden></small>
+                            </div>
+                            <div class="hotel-map-page__item-meta">
+                                @if (hotel.StartingPrice.HasValue && hotel.StartingPrice.Value > 0)
+                                {
+                                    <small>₺@hotel.StartingPrice.Value.ToString("N0")</small>
+                                }
+                                <em>@hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture)</em>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </aside>
+        </div>
+    </div>
+</section>
+
+<script type="application/json" id="hotelMapPayload">@Html.Raw(serializedHotels)</script>
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+    <script>
+        (function () {
+            const mapCanvas = document.getElementById('hotelMapCanvas');
+            const fitBtn = document.getElementById('fitHotelMapBtn');
+            const payload = document.getElementById('hotelMapPayload');
+            const searchInput = document.getElementById('hotelMapSearchInput');
+            const visibleCount = document.getElementById('hotelMapVisibleCount');
+            const summaryText = document.getElementById('hotelMapSummaryText');
+            const listItems = Array.from(document.querySelectorAll('[data-map-focus]'));
+            if (!mapCanvas || !window.L) return;
+
+            let hotels = [];
+            try {
+                hotels = JSON.parse(payload?.textContent || '[]');
+            } catch (_) {
+                hotels = [];
+            }
+
+            function normalizeText(value) {
+                return String(value || '')
+                    .toLocaleLowerCase('tr-TR')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function formatPrice(value) {
+                const amount = Number(value || 0);
+                if (!Number.isFinite(amount) || amount <= 0) return 'Fiyat yok';
+                return '₺' + Math.round(amount).toLocaleString('tr-TR');
+            }
+
+            const map = window.L.map(mapCanvas, {
+                zoomControl: true,
+                scrollWheelZoom: true
+            });
+
+            window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                subdomains: 'abcd',
+                attribution: '&copy; OpenStreetMap katkıda bulunanlar &copy; CARTO'
+            }).addTo(map);
+
+            const hotelLayer = window.L.layerGroup().addTo(map);
+            const markers = [];
+
+            hotels.forEach(function (hotel) {
+                const lat = Number(hotel.lat);
+                const lon = Number(hotel.lon);
+                if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+                const areaParts = [hotel.neighborhood, hotel.district, hotel.city].filter(Boolean);
+                const areaText = areaParts.join(' / ');
+                const priceText = formatPrice(hotel.price);
+                const pillIcon = window.L.divIcon({
+                    className: 'hotel-map-pill-icon',
+                    html:
+                        '<button type="button" class="hotel-map-pill" aria-label="' + escapeHtml(String(hotel.name || 'Otel')) + '">' +
+                            '<span>' + escapeHtml(priceText) + '</span>' +
+                        '</button>',
+                    iconSize: [74, 36],
+                    iconAnchor: [37, 18],
+                    popupAnchor: [0, -8]
+                });
+
+                const popupImage = hotel.image
+                    ? '<div class="hotel-map-popup__visual"><img src="' + escapeHtml(hotel.image) + '" alt="' + escapeHtml(String(hotel.name || 'Otel')) + '" loading="lazy"></div>'
+                    : '<div class="hotel-map-popup__visual is-placeholder"><i class="fas fa-hotel" aria-hidden="true"></i></div>';
+
+                const popupHtml =
+                    '<article class="hotel-map-popup">' +
+                        popupImage +
+                        '<div class="hotel-map-popup__body">' +
+                            '<strong>' + escapeHtml(String(hotel.name || 'Otel')) + '</strong>' +
+                            '<span>' + escapeHtml(areaText) + '</span>' +
+                            '<div class="hotel-map-popup__meta">' +
+                                '<b>' + escapeHtml(priceText) + '</b>' +
+                                '<em>' + escapeHtml(Number(hotel.rating || 0).toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })) + '</em>' +
+                            '</div>' +
+                            '<a href="/oteller/' + encodeURIComponent(String(hotel.slug || '')) + '">Oteli İncele</a>' +
+                        '</div>' +
+                    '</article>';
+
+                const marker = window.L.marker([lat, lon], { icon: pillIcon });
+                marker.bindPopup(popupHtml, { closeButton: false, offset: [0, -6], maxWidth: 280, className: 'hotel-map-popup-shell' });
+                markers.push({
+                    id: Number(hotel.id || 0),
+                    lat,
+                    lon,
+                    hotel,
+                    marker,
+                    areaText,
+                    search: normalizeText([hotel.name, hotel.city, hotel.district, hotel.neighborhood].join(' '))
+                });
+            });
+
+            function getFilteredEntries() {
+                const query = normalizeText(searchInput?.value || '');
+                return markers.filter(function (entry) {
+                    return !query || entry.search.indexOf(query) > -1;
+                });
+            }
+
+            function fitEntries(entries) {
+                if (!entries.length) {
+                    map.setView([41.015137, 28.97953], 10);
+                    return;
+                }
+
+                const bounds = window.L.latLngBounds(entries.map(function (entry) {
+                    return [entry.lat, entry.lon];
+                }));
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+            }
+
+            function applyMapState() {
+                const entries = getFilteredEntries();
+                hotelLayer.clearLayers();
+
+                entries.forEach(function (entry) {
+                    entry.marker.addTo(hotelLayer);
+                });
+
+                listItems.forEach(function (item) {
+                    const id = Number(item.getAttribute('data-map-id') || '0');
+                    const entry = entries.find(function (x) { return x.id === id; });
+                    item.hidden = !entry;
+                });
+
+                visibleCount.textContent = String(entries.length);
+                summaryText.textContent = 'Koordinatı doğrulanmış tüm oteller fiyat marker’ları ile gösteriliyor.';
+                fitEntries(entries);
+            }
+
+            fitBtn?.addEventListener('click', function () {
+                applyMapState();
+            });
+
+            searchInput?.addEventListener('input', applyMapState);
+
+            listItems.forEach(function (link) {
+                link.addEventListener('mouseenter', function () {
+                    const id = Number(link.getAttribute('data-map-id') || '0');
+                    const entry = markers.find(function (x) { return x.id === id; });
+                    if (!entry) return;
+                    map.flyTo([entry.lat, entry.lon], Math.max(map.getZoom(), 13), { duration: 0.45 });
+                    entry.marker.openPopup();
+                });
+            });
+
+            applyMapState();
+        })();
+    </script>
+}

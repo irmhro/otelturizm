@@ -1,0 +1,33 @@
+.user-profile-page,
+.profile-form {
+  gap: 14px;
+}
+
+.profile-hero,
+.profile-panel,
+.profile-preset-card {
+  border-radius: 13px;
+}
+
+.profile-hero,
+.profile-panel {
+  padding: 14px;
+}
+
+.profile-identity h1 {
+  font-size: 23px;
+}
+
+.profile-file-picker {
+  min-height: 62px;
+}
+
+.profile-preset-list button {
+  width: 44px;
+  height: 44px;
+}
+
+.profile-uploaded-avatar-list,
+.profile-uploaded-avatar-actions {
+  grid-template-columns: 1fr;
+}

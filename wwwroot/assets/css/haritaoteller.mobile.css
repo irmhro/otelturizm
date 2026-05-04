@@ -1,0 +1,129 @@
+@media (max-width: 1100px) {
+    .hotel-map-page__topline {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hotel-map-page__hero {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .hotel-map-page__hero-stats {
+        width: 100%;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .hotel-map-page__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .hotel-map-page__sidebar {
+        order: 2;
+    }
+}
+
+@media (max-width: 900px) {
+    .hotel-map-page {
+        padding: 14px 0 84px;
+    }
+
+    .hotel-map-page__shell {
+        width: min(calc(100% - 18px), 100%);
+    }
+
+    .hotel-map-page__hero {
+        padding: 20px 18px;
+        border-radius: 24px;
+        gap: 18px;
+    }
+
+    .hotel-map-page__topline h1 {
+        font-size: 1.45rem;
+    }
+
+    .hotel-map-page__hero h1 {
+        font-size: 2.2rem;
+    }
+
+    .hotel-map-page__hero p {
+        font-size: 0.92rem;
+    }
+
+    .hotel-map-page__hero-stats {
+        gap: 10px;
+    }
+
+    .hotel-map-page__stat {
+        min-height: 108px;
+        padding: 16px;
+        border-radius: 22px;
+    }
+
+    .hotel-map-page__stat strong {
+        font-size: 2rem;
+    }
+
+    .hotel-map-page__map-panel,
+    .hotel-map-page__sidebar {
+        padding: 16px;
+        border-radius: 24px;
+    }
+
+    .hotel-map-page__toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .hotel-map-page__toolbar-actions {
+        width: 100%;
+    }
+
+    .hotel-map-page__toolbar-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .hotel-map-page__map-canvas {
+        height: 54vh;
+        min-height: 360px;
+        border-radius: 22px;
+    }
+
+    .hotel-map-page__list {
+        max-height: none;
+    }
+
+    .hotel-map-page__item {
+        grid-template-columns: 64px minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .hotel-map-page__item-visual {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+    }
+
+    .hotel-map-page__item-meta {
+        grid-column: 2;
+        justify-items: start;
+        grid-template-columns: auto auto;
+        gap: 8px;
+    }
+
+    .hotel-map-pill {
+        min-width: 62px;
+        min-height: 32px;
+        padding: 0 12px;
+        font-size: 0.8rem;
+    }
+
+    .hotel-map-popup {
+        width: 228px;
+    }
+
+    .hotel-map-popup__visual {
+        height: 116px;
+    }
+}

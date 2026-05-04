@@ -1,0 +1,29 @@
+@media (max-width: 900px) {
+    .section-head,
+    .payment-hero,
+    .payment-panel-head,
+    .payment-method-row,
+    .action-row,
+    .toggle-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .payment-grid,
+    .form-grid,
+    .payment-method-row,
+    .info-list div {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-primary-solid,
+    .btn-danger-soft,
+    .action-row form,
+    .action-row button {
+        width: 100%;
+    }
+
+    .payment-hero-metric {
+        width: 100%;
+    }
+}

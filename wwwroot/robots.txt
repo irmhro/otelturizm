@@ -1,12 +1,2 @@
 User-agent: *
-Disallow: /admin
-Disallow: /panel
-Disallow: /gelisim
-Disallow: /*?*utm_
-Disallow: /*?*gclid=
-Disallow: /*?*fbclid=
-Disallow: /*?*returnUrl=
-Disallow: /*?*ReturnUrl=
-Disallow: /*?*lang=
-
-Sitemap: https://otelturizm.com/sitemap.xml
+Disallow: /
