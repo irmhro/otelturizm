@@ -21,6 +21,9 @@
         image = x.ImageUrl
     }).ToList();
     var serializedHotels = JsonSerializer.Serialize(mapPayload);
+    var cityOptions = mapHotels.Select(x => x.City).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+    var districtOptions = mapHotels.Select(x => x.District).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+    var neighborhoodOptions = mapHotels.Select(x => x.Neighborhood).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
 }
 
 <link rel="stylesheet"
@@ -34,7 +37,10 @@
                 <i class="fas fa-arrow-left" aria-hidden="true"></i>
                 <span>Listeye Dön</span>
             </a>
-            <h1>@(string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Haritadaki Oteller" : Model.SearchLabel)</h1>
+            <div class="hotel-map-page__title">
+                <span>Harita görünümü</span>
+                <h1>@(string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Haritadaki Oteller" : Model.SearchLabel)</h1>
+            </div>
         </header>
 
         <div class="hotel-map-page__layout">
@@ -42,7 +48,7 @@
                 <div class="hotel-map-page__toolbar">
                     <div class="hotel-map-page__toolbar-copy">
                         <h2>Harita</h2>
-                        <p id="hotelMapSummaryText">Fiyat marker'ları ile otelleri sade biçimde inceleyin.</p>
+                        <p id="hotelMapSummaryText">İl, ilçe, mahalle ve otel adına göre filtrelenen tesisleri fiyat marker'ları ile inceleyin.</p>
                     </div>
                     <div class="hotel-map-page__toolbar-actions">
                         <button type="button" class="hotel-map-page__toolbar-btn" id="fitHotelMapBtn">
@@ -57,17 +63,69 @@
 
             <aside class="hotel-map-page__sidebar">
                 <div class="hotel-map-page__sidebar-head">
-                    <h2>Oteller</h2>
-                    <span id="hotelMapVisibleCount">@mapHotels.Count</span>
+                    <div>
+                        <h2>Oteller</h2>
+                        <p>Konum ve otel adı bazlı gelişmiş listeleme</p>
+                    </div>
+                    <span><strong id="hotelMapVisibleCount">@mapHotels.Count</strong> sonuç</span>
                 </div>
 
-                <div class="hotel-map-page__search">
-                    <input type="search"
-                           id="hotelMapSearchInput"
-                           placeholder="Otel adı, il, ilçe, mahalle ara"
-                           autocomplete="off"
-                           aria-label="Haritadaki otellerde ara" />
-                </div>
+                <form class="hotel-map-page__filters" id="hotelMapFilterForm" autocomplete="off">
+                    <label class="hotel-map-page__field">
+                        <span>Otel adı</span>
+                        <input type="search"
+                               id="hotelMapSearchInput"
+                               placeholder="Otel adı ara"
+                               aria-label="Otel adı ara" />
+                    </label>
+                    <div class="hotel-map-page__filter-grid">
+                        <label class="hotel-map-page__field">
+                            <span>İl</span>
+                            <select id="hotelMapCityFilter" aria-label="İle göre filtrele">
+                                <option value="">Tüm iller</option>
+                                @foreach (var city in cityOptions)
+                                {
+                                    <option value="@city">@city</option>
+                                }
+                            </select>
+                        </label>
+                        <label class="hotel-map-page__field">
+                            <span>İlçe</span>
+                            <select id="hotelMapDistrictFilter" aria-label="İlçeye göre filtrele">
+                                <option value="">Tüm ilçeler</option>
+                                @foreach (var district in districtOptions)
+                                {
+                                    <option value="@district">@district</option>
+                                }
+                            </select>
+                        </label>
+                    </div>
+                    <div class="hotel-map-page__filter-grid">
+                        <label class="hotel-map-page__field">
+                            <span>Mahalle</span>
+                            <select id="hotelMapNeighborhoodFilter" aria-label="Mahalleye göre filtrele">
+                                <option value="">Tüm mahalleler</option>
+                                @foreach (var neighborhood in neighborhoodOptions)
+                                {
+                                    <option value="@neighborhood">@neighborhood</option>
+                                }
+                            </select>
+                        </label>
+                        <label class="hotel-map-page__field">
+                            <span>Puan</span>
+                            <select id="hotelMapRatingFilter" aria-label="Puana göre filtrele">
+                                <option value="">Tüm puanlar</option>
+                                <option value="9">9.0 ve üzeri</option>
+                                <option value="8">8.0 ve üzeri</option>
+                                <option value="7">7.0 ve üzeri</option>
+                            </select>
+                        </label>
+                    </div>
+                    <button type="button" class="hotel-map-page__clear" id="hotelMapClearFilters">
+                        <i class="fas fa-rotate-left" aria-hidden="true"></i>
+                        <span>Temizle</span>
+                    </button>
+                </form>
 
                 <div class="hotel-map-page__list" id="hotelMapHotelList">
                     @foreach (var hotel in mapHotels)
@@ -81,6 +139,11 @@
                            data-map-focus
                            data-map-id="@hotel.Id"
                            data-search="@searchText"
+                           data-name="@hotel.Name"
+                           data-city="@hotel.City"
+                           data-district="@hotel.District"
+                           data-neighborhood="@hotel.Neighborhood"
+                           data-rating="@hotel.Rating.ToString(CultureInfo.InvariantCulture)"
                            data-lat="@hotel.Latitude?.ToString(CultureInfo.InvariantCulture)"
                            data-lon="@hotel.Longitude?.ToString(CultureInfo.InvariantCulture)">
                             <div class="hotel-map-page__item-visual">
@@ -123,6 +186,11 @@
             const fitBtn = document.getElementById('fitHotelMapBtn');
             const payload = document.getElementById('hotelMapPayload');
             const searchInput = document.getElementById('hotelMapSearchInput');
+            const cityFilter = document.getElementById('hotelMapCityFilter');
+            const districtFilter = document.getElementById('hotelMapDistrictFilter');
+            const neighborhoodFilter = document.getElementById('hotelMapNeighborhoodFilter');
+            const ratingFilter = document.getElementById('hotelMapRatingFilter');
+            const clearFilters = document.getElementById('hotelMapClearFilters');
             const visibleCount = document.getElementById('hotelMapVisibleCount');
             const summaryText = document.getElementById('hotelMapSummaryText');
             const listItems = Array.from(document.querySelectorAll('[data-map-focus]'));
@@ -217,14 +285,28 @@
                     hotel,
                     marker,
                     areaText,
-                    search: normalizeText([hotel.name, hotel.city, hotel.district, hotel.neighborhood].join(' '))
+                    nameSearch: normalizeText(hotel.name),
+                    citySearch: normalizeText(hotel.city),
+                    districtSearch: normalizeText(hotel.district),
+                    neighborhoodSearch: normalizeText(hotel.neighborhood),
+                    ratingValue: Number(hotel.rating || 0)
                 });
             });
 
             function getFilteredEntries() {
                 const query = normalizeText(searchInput?.value || '');
+                const city = normalizeText(cityFilter?.value || '');
+                const district = normalizeText(districtFilter?.value || '');
+                const neighborhood = normalizeText(neighborhoodFilter?.value || '');
+                const minRating = Number(ratingFilter?.value || 0);
+
                 return markers.filter(function (entry) {
-                    return !query || entry.search.indexOf(query) > -1;
+                    if (query && entry.nameSearch.indexOf(query) === -1) return false;
+                    if (city && entry.citySearch !== city) return false;
+                    if (district && entry.districtSearch !== district) return false;
+                    if (neighborhood && entry.neighborhoodSearch !== neighborhood) return false;
+                    if (minRating > 0 && entry.ratingValue < minRating) return false;
+                    return true;
                 });
             }
 
@@ -255,7 +337,9 @@
                 });
 
                 visibleCount.textContent = String(entries.length);
-                summaryText.textContent = 'Koordinatı doğrulanmış tüm oteller fiyat marker’ları ile gösteriliyor.';
+                summaryText.textContent = entries.length
+                    ? entries.length + ' tesis filtrelerinize uygun olarak haritada gösteriliyor.'
+                    : 'Filtrelere uygun tesis bulunamadı. Aramayı genişletin veya filtreleri temizleyin.';
                 fitEntries(entries);
             }
 
@@ -263,7 +347,19 @@
                 applyMapState();
             });
 
-            searchInput?.addEventListener('input', applyMapState);
+            [searchInput, cityFilter, districtFilter, neighborhoodFilter, ratingFilter].forEach(function (control) {
+                control?.addEventListener('input', applyMapState);
+                control?.addEventListener('change', applyMapState);
+            });
+
+            clearFilters?.addEventListener('click', function () {
+                if (searchInput) searchInput.value = '';
+                if (cityFilter) cityFilter.value = '';
+                if (districtFilter) districtFilter.value = '';
+                if (neighborhoodFilter) neighborhoodFilter.value = '';
+                if (ratingFilter) ratingFilter.value = '';
+                applyMapState();
+            });
 
             listItems.forEach(function (link) {
                 link.addEventListener('mouseenter', function () {

@@ -3,79 +3,202 @@
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
-}
 
-<div class="row">
-    @foreach (var card in Model.SummaryCards)
+    static string StatusTone(string? value)
     {
-        <div class="col-lg-3 col-md-6 col-12">
-            <div class="small-box bg-primary">
-                <div class="inner">
-                    <h3>@card.Value</h3>
-                    <p>@card.Label</p>
-                    <small>@card.Description</small>
-                </div>
-                <div class="icon"><i class="fas @card.IconClass"></i></div>
-            </div>
-        </div>
+        var text = (value ?? string.Empty).Trim().ToLowerInvariant();
+        if (text.Contains("onay") || text.Contains("yayinda") || text.Contains("yayında") || text.Contains("aktif")) return "success";
+        if (text.Contains("bekle") || text.Contains("taslak")) return "warning";
+        if (text.Contains("red") || text.Contains("ask") || text.Contains("kapat") || text.Contains("kapali") || text.Contains("kapalı")) return "danger";
+        return "info";
     }
-</div>
 
-@if (TempData["AdminHotelMessage"] is string successMessage)
-{
-    <div class="alert alert-success ot-card">@successMessage</div>
-}
-@if (TempData["AdminHotelError"] is string errorMessage)
-{
-    <div class="alert alert-danger ot-card">@errorMessage</div>
+    var pageSizes = new[] { 7, 10, 20, 50, 100 };
+    var currentPath = Context.Request.Path.Value ?? "/admin/oteller";
+    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    static string Enc(string? value) => System.Net.WebUtility.UrlEncode(value ?? string.Empty);
+    string PageUrl(int targetPage) => $"{currentPath}?q={Enc(Model.SearchTerm)}&city={Enc(Model.CityFilter)}&district={Enc(Model.DistrictFilter)}&neighborhood={Enc(Model.NeighborhoodFilter)}&publishStatus={Enc(Model.PublishStatusFilter)}&approvalStatus={Enc(Model.ApprovalStatusFilter)}&page={targetPage}&pageSize={Model.PageSize}";
 }
 
-<div class="card ot-card">
-    <div class="card-header">
-        <h3 class="card-title">Merkezi otel yönetimi</h3>
-        <div class="card-tools">
-            <form method="get" action="/admin/oteller" class="input-group input-group-sm" style="width: 280px;">
-                <input type="text" name="q" value="@Model.SearchTerm" class="form-control float-right" placeholder="Otel adı, kodu, şehir..." />
-                <div class="input-group-append">
-                    <button type="submit" class="btn btn-default ot-btn ot-btn--ghost"><i class="fas fa-search"></i></button>
+<section class="admin-hotels-page">
+    <div class="admin-summary-grid admin-hotels-summary">
+        @foreach (var card in Model.SummaryCards)
+        {
+            var tone = string.IsNullOrWhiteSpace(card.ToneClass) ? "info" : card.ToneClass;
+            <article class="admin-summary-card @tone">
+                <span class="summary-icon"><i class="fas @card.IconClass"></i></span>
+                <div>
+                    <p>@card.Label</p>
+                    <h2>@card.Value</h2>
+                    <span>@card.Description</span>
                 </div>
-            </form>
-        </div>
+            </article>
+        }
     </div>
-    <div class="card-body">
+
+    @if (TempData["AdminHotelMessage"] is string successMessage)
+    {
+        <div class="admin-alert is-success"><i class="fas fa-circle-check"></i><span>@successMessage</span></div>
+    }
+    @if (TempData["AdminHotelError"] is string errorMessage)
+    {
+        <div class="admin-alert is-error"><i class="fas fa-triangle-exclamation"></i><span>@errorMessage</span></div>
+    }
+
+    <article class="admin-hotel-listing-card admin-hotels-table-card">
+        <header class="admin-hotel-listing-head">
+            <div>
+                <p class="mini-caption">MERKEZI OTEL YONETIMI</p>
+                <h2>Oteller</h2>
+                <span>Otel kayıtları, yayın/onay durumları, oda ve görsel adetleri yatay tablo üzerinden yönetilir.</span>
+            </div>
+        </header>
+
+        <form method="get" action="@currentPath" class="admin-hotels-filter-grid">
+            <label>
+                <span>Otel adı / kod / arama</span>
+                <input type="text" name="q" value="@Model.SearchTerm" placeholder="Otel adı, kodu, ilçe..." />
+            </label>
+            <label>
+                <span>İl</span>
+                <select name="city">
+                    <option value="">Tüm iller</option>
+                    @foreach (var option in Model.CityOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(Model.CityFilter, option, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@option</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>İlçe</span>
+                <select name="district">
+                    <option value="">Tüm ilçeler</option>
+                    @foreach (var option in Model.DistrictOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(Model.DistrictFilter, option, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@option</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Mahalle</span>
+                <select name="neighborhood">
+                    <option value="">Tüm mahalleler</option>
+                    @foreach (var option in Model.NeighborhoodOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(Model.NeighborhoodFilter, option, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@option</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Yayın</span>
+                <select name="publishStatus">
+                    <option value="">Tüm yayın durumları</option>
+                    @foreach (var option in Model.PublishStatusOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(Model.PublishStatusFilter, option, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@option</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Onay</span>
+                <select name="approvalStatus">
+                    <option value="">Tüm onay durumları</option>
+                    @foreach (var option in Model.ApprovalStatusOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(Model.ApprovalStatusFilter, option, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@option</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Sayfa başı</span>
+                <select name="pageSize">
+                    @foreach (var size in pageSizes)
+                    {
+                        <option value="@size" selected="@(Model.PageSize == size ? "selected" : null)">@size</option>
+                    }
+                </select>
+            </label>
+            <input type="hidden" name="page" value="1" />
+            <div class="admin-hotels-filter-actions">
+                <button type="submit" class="admin-action-btn primary"><i class="fas fa-filter"></i> Filtrele</button>
+                <a class="admin-action-btn secondary" href="/admin/oteller"><i class="fas fa-rotate-left"></i> Temizle</a>
+            </div>
+        </form>
+
         @if (Model.Hotels.Count == 0)
         {
-            <div class="alert alert-secondary mb-0 ot-card">Arama kriterlerine uygun otel bulunamadı.</div>
+            <div class="admin-empty-panel">Arama kriterlerine uygun otel bulunamadı.</div>
         }
         else
         {
-            <div class="row">
-                @foreach (var hotel in Model.Hotels)
-                {
-                    <div class="col-lg-4 col-md-6">
-                        <div class="card card-outline card-info ot-card">
-                            <div class="card-header">
-                                <h3 class="card-title">@hotel.HotelName</h3>
-                                <div class="card-tools">
-                                    <span class="badge badge-light ot-badge">@hotel.HotelCode</span>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <p class="mb-2 text-muted">@hotel.LocationText</p>
-                                <div class="mb-2"><i class="fas fa-hotel mr-1"></i>@hotel.HotelType</div>
-                                <div class="mb-2"><i class="fas fa-bed mr-1"></i>@hotel.RoomCount oda tipi</div>
-                                <div class="mb-2"><i class="fas fa-image mr-1"></i>@hotel.HotelPhotoCount otel görseli</div>
-                                <div class="mb-2"><i class="fas fa-camera mr-1"></i>@hotel.RoomPhotoCount oda görseli</div>
-                                <div class="mb-2"><span class="badge badge-info ot-badge">Yayın: @hotel.PublishStatus</span></div>
-                                <div class="mb-3"><span class="badge badge-warning ot-badge">Onay: @hotel.ApprovalStatus</span></div>
-                                <a class="btn btn-primary btn-sm ot-btn ot-btn--primary" href="/admin/oteller/duzenle/@hotel.HotelId">
-                                    <i class="fas fa-pen mr-1"></i>Oteli Düzenle
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                }
+            <div class="admin-hotels-table-wrap">
+                <table class="admin-hotels-table">
+                    <thead>
+                        <tr>
+                            <th>Otel</th>
+                            <th>Konum</th>
+                            <th>Tip</th>
+                            <th>Oda</th>
+                            <th>Görsel</th>
+                            <th>Yayın</th>
+                            <th>Onay</th>
+                            <th>Puan</th>
+                            <th>Aksiyon</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var hotel in Model.Hotels)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@hotel.HotelName</strong>
+                                    <small>@hotel.HotelCode</small>
+                                </td>
+                                <td>@hotel.LocationText</td>
+                                <td><span class="admin-chip info"><i class="fas fa-hotel"></i>@hotel.HotelType</span></td>
+                                <td><strong>@hotel.RoomCount</strong><small>oda tipi</small></td>
+                                <td>
+                                    <span>@hotel.HotelPhotoCount otel</span>
+                                    <small>@hotel.RoomPhotoCount oda</small>
+                                </td>
+                                <td><span class="admin-chip @StatusTone(hotel.PublishStatus)">@hotel.PublishStatus</span></td>
+                                <td><span class="admin-chip @StatusTone(hotel.ApprovalStatus)">@hotel.ApprovalStatus</span></td>
+                                <td><span class="admin-hotel-score compact">@hotel.ScoreText</span></td>
+                                <td class="admin-hotels-actions">
+                                    <a class="admin-action-btn primary" href="/admin/oteller/duzenle/@hotel.HotelId">
+                                        <i class="fas fa-pen"></i> Düzenle
+                                    </a>
+                                    @if (string.Equals(hotel.PublishStatus, "Yayında", StringComparison.OrdinalIgnoreCase) || string.Equals(hotel.PublishStatus, "Yayinda", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <form method="post" action="/admin/oteller/pasife-al" class="admin-inline-post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="hotelId" value="@hotel.HotelId" />
+                                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                            <button type="submit" class="admin-action-btn danger"><i class="fas fa-eye-slash"></i> Yayını Kapat</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" action="/admin/oteller/aktive-et" class="admin-inline-post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="hotelId" value="@hotel.HotelId" />
+                                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                            <button type="submit" class="admin-action-btn success"><i class="fas fa-broadcast-tower"></i> Yayına Al</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
+            <footer class="admin-hotels-pager">
+                <span>@Model.TotalCount kayıt · Sayfa @Model.Page / @Model.TotalPages</span>
+                <div>
+                    <a class="admin-action-btn secondary @(Model.HasPreviousPage ? string.Empty : "is-disabled")" href="@(Model.HasPreviousPage ? PageUrl(Model.Page - 1) : "#")">Önceki</a>
+                    <a class="admin-action-btn secondary @(Model.HasNextPage ? string.Empty : "is-disabled")" href="@(Model.HasNextPage ? PageUrl(Model.Page + 1) : "#")">Sonraki</a>
+                </div>
+            </footer>
         }
-    </div>
-</div>
+    </article>
+</section>

@@ -42,27 +42,35 @@
         }
         else
         {
-            <div class="partner-campaign-option-grid">
-                @foreach (var campaign in Model.AvailableCampaigns)
-                {
-                    <article class="partner-campaign-option" style="--campaign-accent:@campaign.ColorCode;">
-                        <div class="partner-campaign-option__head">
-                            <div>
-                                <small>@campaign.CampaignCode</small>
-                                <h3>@campaign.CampaignName</h3>
-                            </div>
-                            @if (!string.IsNullOrWhiteSpace(campaign.PromoBadge))
-                            {
-                                <span class="partner-campaign-option__promo">@campaign.PromoBadge</span>
-                            }
-                        </div>
-                        <p>@campaign.Description</p>
-                        <div class="partner-campaign-option__meta">
-                            <span><i class="fas fa-calendar"></i> @campaign.DateText</span>
-                            <span><i class="fas fa-percent"></i> @campaign.DiscountText</span>
-                        </div>
-                    </article>
-                }
+            <div class="partner-table-wrap">
+                <table class="partner-table">
+                    <thead>
+                        <tr>
+                            <th>Kampanya</th>
+                            <th>Tarih</th>
+                            <th>İndirim</th>
+                            <th>Not</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var campaign in Model.AvailableCampaigns)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@campaign.CampaignName</strong>
+                                    <div class="partner-table-note">@campaign.CampaignCode</div>
+                                    @if (!string.IsNullOrWhiteSpace(campaign.PromoBadge))
+                                    {
+                                        <div class="partner-table-note">@campaign.PromoBadge</div>
+                                    }
+                                </td>
+                                <td>@campaign.DateText</td>
+                                <td>@campaign.DiscountText</td>
+                                <td class="partner-muted">@campaign.Description</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
 
             <form method="post" action="/panel/partner/kampanyalar/katil" class="partner-campaign-form">
@@ -155,50 +163,53 @@
         }
         else
         {
-            <div class="partner-campaign-card-list">
-                @foreach (var item in Model.JoinedCampaigns)
-                {
-                    <article class="partner-campaign-card">
-                        <div class="partner-campaign-card__top">
-                            <div>
-                                <small>@item.CampaignCode</small>
-                                <h3>@item.CampaignName</h3>
-                            </div>
-                            <span class="partner-campaign-status @(item.StatusText == "Aktif" ? "is-active" : string.Empty)">@item.StatusText</span>
-                        </div>
-
-                        <div class="partner-campaign-meta">
-                            <span><i class="fas fa-calendar"></i> @item.DateText</span>
-                            @if (!string.IsNullOrWhiteSpace(item.CampaignLabel))
-                            {
-                                <span><i class="fas fa-tag"></i> @item.CampaignLabel</span>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(item.DiscountText))
-                            {
-                                <span><i class="fas fa-percent"></i> @item.DiscountText</span>
-                            }
-                            @if (item.IsFeatured)
-                            {
-                                <span><i class="fas fa-star"></i> Öne çıkan</span>
-                            }
-                        </div>
-
-                        @if (!string.IsNullOrWhiteSpace(item.PartnerNote))
+            <div class="partner-table-wrap">
+                <table class="partner-table">
+                    <thead>
+                        <tr>
+                            <th>Kampanya</th>
+                            <th>Durum</th>
+                            <th>Tarih</th>
+                            <th>Etiket</th>
+                            <th>İndirim</th>
+                            <th>Not</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.JoinedCampaigns)
                         {
-                            <p class="partner-campaign-note">@item.PartnerNote</p>
+                            <tr>
+                                <td>
+                                    <strong>@item.CampaignName</strong>
+                                    <div class="partner-table-note">@item.CampaignCode</div>
+                                </td>
+                                <td>
+                                    <span class="partner-status ot-badge">@item.StatusText</span>
+                                    @if (item.IsFeatured)
+                                    {
+                                        <span class="partner-status ot-badge">Öne çıkan</span>
+                                    }
+                                </td>
+                                <td>@item.DateText</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.CampaignLabel) ? "—" : item.CampaignLabel)</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.DiscountText) ? "—" : item.DiscountText)</td>
+                                <td class="partner-muted">@(!string.IsNullOrWhiteSpace(item.PartnerNote) ? item.PartnerNote : "—")</td>
+                                <td class="text-end">
+                                    <form method="post" action="/panel/partner/kampanyalar/ayril" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
+                                        <input type="hidden" name="campaignId" value="@item.CampaignId" />
+                                        <button type="submit" class="partner-secondary-btn">
+                                            <i class="fas fa-xmark"></i>
+                                            Ayrıl
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
                         }
-
-                        <form method="post" action="/panel/partner/kampanyalar/ayril" class="partner-campaign-leave-form">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="hotelId" value="@Model.SelectedHotelId" />
-                            <input type="hidden" name="campaignId" value="@item.CampaignId" />
-                            <button type="submit" class="partner-secondary-btn">
-                                <i class="fas fa-xmark"></i>
-                                Kampanyadan Ayrıl
-                            </button>
-                        </form>
-                    </article>
-                }
+                    </tbody>
+                </table>
             </div>
         }
     </article>

@@ -29,21 +29,63 @@ body.firma-panel-v2[data-bs-theme="dark"]{
 }
 .firma-panel-shell { display:grid; grid-template-columns: 290px 1fr; min-height: 100vh; width: 100%; max-width: 100vw; }
 .firma-sidebar { align-self: stretch; }
-.firma-sidebar { background: radial-gradient(circle at 12% 8%, rgba(186,230,253,.16), transparent 28%), linear-gradient(180deg,#14213d 0%,#1d3f67 52%,#2f7897 100%); color:#fff; padding:20px 14px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:18px 0 44px rgba(22,50,80,.14); }
-.firma-brand { display:flex; align-items:center; justify-content:center; min-height:72px; padding:14px 18px; margin-bottom:16px; border-radius:22px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); }
+.firma-sidebar {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(186,230,253,.18), transparent 30%),
+    linear-gradient(180deg,#0f172a 0%,#14213d 42%,#1e4976 78%,#256f8f 100%);
+  color:#fff;
+  padding: 18px 12px 16px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  box-shadow: 22px 0 48px rgba(15,23,42,.18);
+  border-right: 1px solid rgba(255,255,255,.06);
+}
+.firma-sidebar-inner {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.25) transparent;
+}
+.firma-brand {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:76px;
+  padding:16px 18px;
+  margin-bottom:14px;
+  border-radius:22px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+.firma-nav-group-label {
+  margin: 16px 8px 8px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: rgba(255,255,255,.42);
+}
 .firma-brand img { height: 34px; width:auto; max-width:168px; object-fit:contain; display:block; }
-.firma-profile-card, .firma-sidebar-footer { background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius: 18px; padding: 14px; }
-.firma-profile-card { display:flex; gap:14px; margin-bottom:18px; }
+.firma-profile-card, .firma-sidebar-footer { background: rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius: 18px; padding: 14px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.firma-profile-card { display:flex; gap:14px; margin-bottom:14px; box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
 .firma-avatar, .firma-employee-avatar { width: 52px; height: 52px; border-radius: 16px; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg,#1f6dff,#003b95); font-weight:800; color:#fff; }
-.firma-sidebar-nav { display:grid; gap:6px; }
-.firma-sidebar-nav a, .firma-sidebar-footer a, .firma-sidebar-footer .logout-link { color:#dbe5f4; text-decoration:none; display:flex; align-items:center; gap:10px; padding: 11px 12px; border-radius: 12px; }
-.firma-sidebar-nav a.active { background: rgba(31,109,255,.18); color:#fff; }
+.firma-sidebar-nav { display:grid; gap:6px; margin-bottom: 4px; }
+.firma-sidebar-nav a, .firma-sidebar-footer a, .firma-sidebar-footer .logout-link { color:#dbe5f4; text-decoration:none; display:flex; align-items:center; gap:10px; padding: 11px 12px; border-radius: 12px; transition: background .15s ease, color .15s ease, transform .12s ease; }
+.firma-sidebar-nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+.firma-sidebar-nav a.active { background: linear-gradient(135deg, rgba(31,109,255,.35), rgba(31,109,255,.12)); color:#fff; border: 1px solid rgba(96,165,250,.25); box-shadow: 0 8px 22px rgba(15,23,42,.2); }
 .firma-nav-badge { margin-left:auto; min-width:24px; height:24px; border-radius:999px; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,.14); font-size:12px; }
 .firma-sidebar-footer { display:grid; gap:8px; }
 .firma-sidebar-footer .panel-logout-form { margin:0; }
 .firma-sidebar-footer .logout-link { width:100%; border:none; background:transparent; cursor:pointer; font:inherit; text-align:left; }
 .firma-panel-main { padding: 28px 28px 90px; }
-.firma-page-header { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:24px; padding:18px 20px; border:1px solid var(--firma-panel-border); border-radius:16px; background:linear-gradient(135deg, var(--firma-panel-surface) 0%, color-mix(in srgb, var(--firma-panel-surface-2) 90%, transparent) 100%); box-shadow:0 14px 34px rgba(15,23,42,.06); }
+.firma-page-header { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:24px; padding:20px 22px; border:1px solid var(--firma-panel-border); border-radius:18px; background:linear-gradient(135deg, var(--firma-panel-surface) 0%, color-mix(in srgb, var(--firma-panel-surface-2) 88%, transparent) 100%); box-shadow:0 16px 38px rgba(15,23,42,.07); backdrop-filter: blur(8px); }
 .firma-kicker { margin:0 0 8px; font-size:12px; letter-spacing:.16em; color: var(--firma-panel-primary); font-weight:700; }
 .firma-page-header h1 { margin:0 0 6px; font-size:34px; }
 .firma-subtitle { margin:0; color: var(--firma-panel-muted); max-width:740px; }
@@ -110,7 +152,78 @@ body.firma-panel-v2[data-bs-theme="dark"]{
 .firma-modal-overlay.is-visible { display:flex; }
 .firma-modal-card { width:min(720px, 100%); background:var(--firma-panel-surface); border-radius:28px; padding:24px; box-shadow:0 24px 60px rgba(15,23,42,.22); color:var(--firma-panel-text); }
 .firma-mobile-nav { display:none; }
-.firma-mobile-nav .panel-mobile-logout-form { margin:0; }
-.firma-mobile-nav .panel-mobile-logout-form button { width:100%; border:none; background:transparent; color:#dbe5f4; display:grid; gap:6px; text-align:center; font:inherit; cursor:pointer; }
+.firma-mobile-nav .firma-mobile-logout { margin:0; width:100%; }
+.firma-mobile-nav .firma-mobile-logout button { width:100%; border:none; background:rgba(255,255,255,.06); border-radius:12px; color:#dbe5f4; display:flex; align-items:center; justify-content:center; gap:8px; text-align:center; font:inherit; font-weight:700; cursor:pointer; padding:10px 12px; }
+.firma-mobile-nav-scroll { display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin; padding-bottom:2px; }
+.firma-mobile-nav-scroll::-webkit-scrollbar { height:4px; }
+.firma-mobile-nav-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,.22); border-radius:999px; }
+.firma-mobile-nav-scroll a { flex:0 0 auto; min-width:72px; max-width:96px; color:#dbe5f4; text-decoration:none; display:grid; gap:6px; text-align:center; font-size:11px; padding:8px 6px; border-radius:12px; }
+.firma-mobile-nav-scroll a.active { color:#60a5fa; background:rgba(96,165,250,.12); }
 @media (max-width: 1100px) { .firma-grid, .firma-two-column, .firma-employee-grid, .firma-form-grid { grid-template-columns: 1fr 1fr; } .firma-page-header { flex-direction:column; } .firma-header-badges { width:100%; justify-content:flex-start; } .panel-header-logout-btn { width:100%; justify-content:center; } }
-@media (max-width: 900px) { .firma-panel-shell { grid-template-columns: 1fr; } .firma-sidebar { display:none; } .firma-panel-main { padding: 22px 18px 92px; } .firma-grid, .firma-two-column, .firma-employee-grid, .firma-form-grid { grid-template-columns: 1fr; } .firma-mobile-nav { position:fixed; left:0; right:0; bottom:0; display:grid; grid-template-columns: repeat(6,1fr); background: var(--firma-panel-dark); padding:10px; z-index:50; } .firma-mobile-nav a, .firma-mobile-nav .panel-mobile-logout-form button { color:#dbe5f4; text-decoration:none; display:grid; gap:6px; text-align:center; font-size:12px; } .firma-mobile-nav a.active { color:#60a5fa; } .firma-panel-footer { display:grid; gap:10px; padding-bottom:70px; } .firma-footer-main { flex-direction:column; align-items:flex-start; gap:8px; } .firma-footer-meta { grid-template-columns: repeat(2, minmax(0,1fr)); align-items:start; gap:10px; } .firma-footer-agency { text-align:left; } .firma-footer-links { gap:10px; } .firma-form-actions { flex-direction:column; } }
+@media (max-width: 900px) { .firma-panel-shell { grid-template-columns: 1fr; } .firma-sidebar { display:none; } .firma-panel-main { padding: 22px 18px 108px; } .firma-grid, .firma-two-column, .firma-employee-grid, .firma-form-grid { grid-template-columns: 1fr; } .firma-mobile-nav { position:fixed; left:0; right:0; bottom:0; display:flex; flex-direction:column; gap:8px; background: var(--firma-panel-dark); padding:10px 10px calc(10px + env(safe-area-inset-bottom)); z-index:50; box-shadow:0 -12px 32px rgba(15,23,42,.35); } .firma-panel-footer { display:grid; gap:10px; padding-bottom:88px; } .firma-footer-main { flex-direction:column; align-items:flex-start; gap:8px; } .firma-footer-meta { grid-template-columns: repeat(2, minmax(0,1fr)); align-items:start; gap:10px; } .firma-footer-agency { text-align:left; } .firma-footer-links { gap:10px; } .firma-form-actions { flex-direction:column; } }
+
+/* Firma shell layout lock: partner panel seviyesinde sabit sidebar + güvenli içerik akışı. */
+@media (min-width: 901px) {
+  body.firma-panel-v2 {
+    min-height: 100vh;
+  }
+
+  .firma-panel-shell {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+    max-width: 100%;
+    padding-left: 290px;
+    background: linear-gradient(180deg,#f6f9fd 0%,#eef4fa 100%);
+  }
+
+  .firma-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1030;
+    width: 290px;
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .firma-sidebar-inner {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 16px;
+  }
+
+  .firma-sidebar-footer {
+    flex: 0 0 auto;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: 10px;
+  }
+
+  .firma-panel-main {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 24px 28px 90px;
+  }
+
+  .firma-page-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin: -24px -28px 24px;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .firma-panel-main > * {
+    max-width: 100%;
+  }
+}

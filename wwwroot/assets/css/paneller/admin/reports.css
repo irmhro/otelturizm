@@ -1,0 +1,10 @@
+@import url("./payments.css");
+
+.admin-reports-page {
+    display: grid;
+    gap: 20px;
+}
+
+.admin-reports-filter {
+    grid-template-columns: minmax(240px, 1.5fr) minmax(150px, .8fr) minmax(150px, .8fr) minmax(120px, .6fr) auto auto;
+}

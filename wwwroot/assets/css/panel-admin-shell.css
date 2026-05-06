@@ -1,4 +1,5 @@
-body {
+/* Legacy AdminLTE shell stilleri (kullanılmıyorsa etkisiz kalsın) */
+body.admin-legacy-shell {
     margin: 0;
     font-family: "Inter", sans-serif;
     background: linear-gradient(180deg, #f6f9fd 0%, #eef4fa 100%);
@@ -1039,18 +1040,39 @@ body {
     width: 100%;
     min-height: 76px;
     margin: 0;
-    padding: 14px 6px 10px;
+    padding: 14px 8px 10px;
+    overflow: hidden;
 }
 
 .admin-tabler-shell .admin-sidebar-alias .partner-brand-link {
     width: 100%;
     min-height: 52px;
+    display: flex;
+    align-items: center;
     justify-content: center;
+    gap: 8px;
+    padding: 10px 8px;
+    overflow: hidden;
 }
 
 .admin-tabler-shell .admin-sidebar-alias .partner-brand-logo {
-    max-width: 188px;
-    height: 42px;
+    display: block;
+    width: auto;
+    max-width: 156px;
+    height: 32px;
+    object-fit: contain;
+    object-position: center;
+    min-width: 0;
+}
+
+.admin-tabler-shell .admin-sidebar-alias .partner-brand-link .badge {
+    flex: 0 0 auto;
+    max-width: 54px;
+    margin-left: 0 !important;
+    padding-inline: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .admin-tabler-shell .admin-sidebar-alias .navbar-collapse {
@@ -1088,6 +1110,8 @@ body {
     min-height: 100vh;
     margin-left: var(--admin-sidebar-width);
     background: transparent;
+    position: relative;
+    z-index: 1;
 }
 
 .admin-tabler-shell .admin-topbar {
@@ -1128,4 +1152,115 @@ body {
     padding: 16px 0 22px;
     border-top: 1px solid rgba(214, 224, 237, 0.82);
     background: transparent;
+}
+
+/* Admin Tabler shell layout lock
+   Sidebar fixed oldugu icin ana sayfa akisi kendi sol boslugunu garanti eder. */
+@media (min-width: 992px) {
+    .admin-tabler-shell {
+        --admin-sidebar-width: 304px;
+    }
+
+    .admin-tabler-shell .page {
+        display: block;
+        min-width: 0;
+        width: 100%;
+        padding-left: 0;
+    }
+
+    .admin-tabler-shell .page-wrapper {
+        width: calc(100% - var(--admin-sidebar-width));
+        max-width: 100%;
+        min-width: 0;
+        margin-left: var(--admin-sidebar-width) !important;
+    }
+
+    .admin-tabler-shell .admin-sidebar-alias {
+        z-index: 1035;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .admin-tabler-shell .admin-sidebar-alias > .container-fluid {
+        height: 100vh;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .admin-tabler-shell .admin-sidebar-alias .navbar-collapse {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .admin-tabler-shell .admin-sidebar-alias .partner-sidebar-scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-bottom: 16px;
+        scrollbar-width: thin;
+    }
+
+    .admin-tabler-shell .admin-sidebar-alias .partner-sidebar-footer {
+        flex: 0 0 auto;
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+    }
+
+    .admin-tabler-shell .admin-topbar,
+    .admin-tabler-shell .page-body,
+    .admin-tabler-shell .admin-footer-tabler {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+/* Admin shell final lock: every admin page keeps the sidebar fixed and the page
+   content outside the sidebar column, including dense listing pages. */
+@media (min-width: 992px) {
+    body.admin-tabler-shell .admin-sidebar-alias {
+        position: fixed !important;
+        inset: 0 auto 0 0 !important;
+        width: var(--admin-sidebar-width) !important;
+        min-width: var(--admin-sidebar-width) !important;
+        max-width: var(--admin-sidebar-width) !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+
+    body.admin-tabler-shell .page {
+        padding-left: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    body.admin-tabler-shell .page-wrapper {
+        margin-left: var(--admin-sidebar-width) !important;
+        width: calc(100% - var(--admin-sidebar-width)) !important;
+        min-width: 0 !important;
+    }
+
+    body.admin-tabler-shell .admin-sidebar-alias .partner-sidebar-scroll {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+
+    body.admin-tabler-shell .admin-sidebar-alias .partner-brand-logo {
+        width: auto !important;
+        max-width: 132px !important;
+        height: 28px !important;
+        object-fit: contain !important;
+    }
+
+    body.admin-tabler-shell .admin-sidebar-alias .navbar-brand,
+    body.admin-tabler-shell .admin-sidebar-alias .partner-brand-link,
+    body.admin-tabler-shell .admin-sidebar-alias > .container-fluid {
+        overflow-x: hidden !important;
+    }
 }

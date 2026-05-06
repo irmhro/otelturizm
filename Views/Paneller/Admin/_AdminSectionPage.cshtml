@@ -1,48 +1,82 @@
 @using otelturizmnew.Models.Paneller.Admin
 @model AdminSectionPageViewModel
-<div class="row">
-    @foreach (var card in Model.SummaryCards)
+@{
+    string Tone(string value)
     {
-        <div class="col-lg-3 col-md-6 col-12">
-            <div class="small-box bg-primary">
-                <div class="inner">
-                    <h3>@card.Value</h3>
-                    <p>@card.Label</p>
-                    <small>@card.Description</small>
-                </div>
-                <div class="icon"><i class="fas @card.IconClass"></i></div>
-            </div>
-        </div>
+        var text = (value ?? string.Empty).ToLowerInvariant();
+        if (text.Contains("aktif") || text.Contains("yay") || text.Contains("onay") || text.Contains("tamam")) return "success";
+        if (text.Contains("bekle") || text.Contains("taslak") || text.Contains("onaysiz")) return "warning";
+        if (text.Contains("red") || text.Contains("iptal") || text.Contains("pasif") || text.Contains("hata")) return "danger";
+        return "info";
     }
-</div>
 
-@if (!string.IsNullOrWhiteSpace(Model.InfoNote))
-{
-    <div class="alert alert-info">
-        <i class="fas fa-circle-info mr-1"></i>@Model.InfoNote
-    </div>
+    var csvUrl = ViewData["MonthlyCsvExportUrl"] as string;
 }
 
-@if (Model.Columns.Count > 0)
-{
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">@Model.Shell.PanelTitle</h3>
-            <div class="card-tools">
-                <span class="badge badge-light">Veritabanı listesi</span>
+<section class="admin-section-shell">
+    @if (Model.SummaryCards.Count > 0)
+    {
+        <div class="admin-summary-grid">
+            @foreach (var card in Model.SummaryCards)
+            {
+                <article class="admin-summary-card admin-summary-card--@card.ToneClass">
+                    <span class="admin-summary-icon"><i class="fas @card.IconClass"></i></span>
+                    <div>
+                        <p>@card.Label</p>
+                        <h2>@card.Value</h2>
+                        <span>@card.Description</span>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.InfoNote) || !string.IsNullOrWhiteSpace(csvUrl))
+    {
+        <div class="admin-section-note">
+            <div>
+                <strong>Operasyon notu</strong>
+                @if (!string.IsNullOrWhiteSpace(Model.InfoNote))
+                {
+                    <span>@Model.InfoNote</span>
+                }
+                else
+                {
+                    <span>Bu sayfa canlı veritabanı üzerinden okunur; özel aksiyonlar sonraki fazda sayfa adına özel servise taşınacaktır.</span>
+                }
             </div>
+            @if (!string.IsNullOrWhiteSpace(csvUrl))
+            {
+                <a class="btn btn-outline-primary" href="@csvUrl" download>
+                    <i class="fas fa-file-csv me-2"></i>CSV indir
+                </a>
+            }
+        </div>
+    }
+
+    <div class="card admin-section-card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title mb-1">@Model.Shell.PanelTitle</h3>
+                <div class="text-muted small">@Model.Shell.PanelSubtitle</div>
+            </div>
+            <span class="badge bg-blue-lt text-blue">@Model.Rows.Count kayıt</span>
         </div>
 
-        @if (Model.Rows.Count == 0)
+        @if (Model.Columns.Count == 0 || Model.Rows.Count == 0)
         {
             <div class="card-body">
-                <div class="alert alert-secondary mb-0">@Model.EmptyStateMessage</div>
+                <div class="admin-empty-state">
+                    <span><i class="fas fa-database"></i></span>
+                    <strong>@Model.EmptyStateMessage</strong>
+                    <p>Bu admin modülü sıradaki özel sayfa geliştirme fazına alınmıştır.</p>
+                </div>
             </div>
         }
         else
         {
-            <div class="card-body table-responsive p-0">
-                <table class="table table-striped table-hover text-nowrap mb-0">
+            <div class="table-responsive">
+                <table class="table table-vcenter table-hover admin-table admin-section-table">
                     <thead>
                         <tr>
                             @foreach (var column in Model.Columns)
@@ -55,9 +89,30 @@
                         @foreach (var row in Model.Rows)
                         {
                             <tr>
-                                @foreach (var cell in row)
+                                @for (var i = 0; i < row.Count; i++)
                                 {
-                                    <td>@cell</td>
+                                    var cell = row[i] ?? string.Empty;
+                                    <td data-label="@(i < Model.Columns.Count ? Model.Columns[i].Label : "Alan")">
+                                        @if (i == 0)
+                                        {
+                                            <strong>@cell</strong>
+                                        }
+                                        else if (cell.Length <= 18 && (cell.Contains("Aktif", StringComparison.OrdinalIgnoreCase)
+                                            || cell.Contains("Pasif", StringComparison.OrdinalIgnoreCase)
+                                            || cell.Contains("Onay", StringComparison.OrdinalIgnoreCase)
+                                            || cell.Contains("Bekle", StringComparison.OrdinalIgnoreCase)
+                                            || cell.Contains("Yayın", StringComparison.OrdinalIgnoreCase)
+                                            || cell.Contains("Taslak", StringComparison.OrdinalIgnoreCase)
+                                            || cell.Contains("Red", StringComparison.OrdinalIgnoreCase)
+                                            || cell.Contains("İptal", StringComparison.OrdinalIgnoreCase)))
+                                        {
+                                            <span class="badge bg-@(Tone(cell))-lt text-@(Tone(cell))">@cell</span>
+                                        }
+                                        else
+                                        {
+                                            @cell
+                                        }
+                                    </td>
                                 }
                             </tr>
                         }
@@ -66,18 +121,4 @@
             </div>
         }
     </div>
-}
-else
-{
-    <div class="card">
-        <div class="card-body">
-            <strong>@Model.EmptyStateMessage</strong>
-        @if (!string.IsNullOrWhiteSpace(Model.InfoNote))
-        {
-            <p class="mb-0 mt-2 text-muted">@Model.InfoNote</p>
-        }
-        </div>
-    </div>
-}
-
-
+</section>

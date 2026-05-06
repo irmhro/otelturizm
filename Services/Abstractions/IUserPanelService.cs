@@ -6,6 +6,11 @@ namespace otelturizmnew.Services.Abstractions;
 
 public interface IUserPanelService
 {
+    /// <summary>
+    /// Kenar çubuğu rozetleri için (sayfa ViewData vermediyse layout doldurur).
+    /// </summary>
+    Task<(int TotalReservations, int FavoriteCount, int MessageThreads)> GetNavBadgeCountsAsync(long userId, CancellationToken cancellationToken = default);
+
     Task<UserDashboardPageViewModel> GetDashboardAsync(
         long userId,
         string? reservationStatus = null,

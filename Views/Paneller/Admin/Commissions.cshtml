@@ -29,13 +29,34 @@
                 <span>Ciro, tahakkuk eden komisyon, ödenen komisyon ve bekleyen hakediş tek tabloda.</span>
             </div>
         </div>
+        <form method="get" action="/admin/komisyonlar" class="admin-form-grid" style="margin: 0 0 1rem 0;">
+            <label class="admin-form-span">
+                <span>Otel</span>
+                <select name="hotelId">
+                    <option value="">Tüm oteller</option>
+                    @foreach (var hotel in Model.Hotels)
+                    {
+                        <option value="@hotel.HotelId" selected="@(hotel.IsSelected)">@hotel.HotelName (@hotel.HotelCode)</option>
+                    }
+                </select>
+            </label>
+            <label><span>Başlangıç</span><input type="date" name="dateFrom" value="@(Model.DateFrom?.ToString("yyyy-MM-dd"))" /></label>
+            <label><span>Bitiş</span><input type="date" name="dateTo" value="@(Model.DateTo?.ToString("yyyy-MM-dd"))" /></label>
+            <div class="admin-form-actions">
+                <button type="submit" class="btn btn-outline-primary">Filtrele</button>
+                <a class="btn btn-outline-secondary" href="/admin/komisyonlar">Sıfırla</a>
+            </div>
+        </form>
         <div class="admin-table-wrap">
             <table class="admin-table">
                 <thead>
                     <tr>
                         <th>Otel</th>
+                        <th>Rezervasyon</th>
+                        <th>Tamamlanan</th>
                         <th>Toplam Gelir</th>
                         <th>Toplam Komisyon</th>
+                        <th>Platform Net</th>
                         <th>Ödenen</th>
                         <th>Bekleyen</th>
                     </tr>
@@ -43,7 +64,7 @@
                 <tbody>
                 @if (Model.HotelFinanceRows.Count == 0)
                 {
-                    <tr><td colspan="5">Gelir veya komisyon kaydı bulunmuyor.</td></tr>
+                    <tr><td colspan="8">Gelir veya komisyon kaydı bulunmuyor.</td></tr>
                 }
                 else
                 {
@@ -51,8 +72,11 @@
                     {
                         <tr>
                             <td><strong>@row.HotelName</strong></td>
+                            <td>@row.ReservationCount.ToString("N0", tr)</td>
+                            <td>@row.CompletedReservationCount.ToString("N0", tr)</td>
                             <td>₺@row.GrossRevenue.ToString("N0", tr)</td>
                             <td>₺@row.TotalCommission.ToString("N0", tr)</td>
+                            <td>₺@row.PlatformNetCommission.ToString("N0", tr)</td>
                             <td><span class="table-status success">₺@row.PaidCommission.ToString("N0", tr)</span></td>
                             <td><span class="table-status warning">₺@row.PendingCommission.ToString("N0", tr)</span></td>
                         </tr>

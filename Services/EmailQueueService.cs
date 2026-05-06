@@ -199,10 +199,6 @@ public class EmailQueueService : IEmailQueueService
     {
         var title = ResolveSubjectTitle(templateCode, subject);
         var reservationNo = ResolveReservationNumber(tokens);
-        if (string.IsNullOrWhiteSpace(reservationNo) && relatedRecordId.HasValue)
-        {
-            reservationNo = $"KAYIT-{relatedRecordId.Value.ToString(CultureInfo.InvariantCulture)}";
-        }
 
         var stamp = DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"));
         var parts = new[] { title, reservationNo, stamp }

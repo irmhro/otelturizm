@@ -21,12 +21,17 @@ public class HeaderBildiriController : ControllerBase
 
     [HttpPost("okundu")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> MarkAsRead([FromBody] HeaderBildiriReadRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> MarkAsRead([FromBody] HeaderBildiriReadRequest? request, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
         if (userId <= 0)
         {
             return Unauthorized();
+        }
+
+        if (request is null || request.ItemKeys is null)
+        {
+            return BadRequest(new { success = false, message = "Geçersiz istek." });
         }
 
         await _headerBildiriService.MarkAsReadAsync(request.PanelKey, userId, request.ItemKeys, cancellationToken);

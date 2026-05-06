@@ -32,6 +32,7 @@ public class AuthService : IAuthService
     private readonly string _connectionString;
     private readonly IEmailQueueService _emailQueueService;
     private readonly IContractContentService _contractContentService;
+    private readonly IAdminEmailRoutingService _adminEmailRoutingService;
     private readonly string _publicBaseUrl;
     private readonly ILogger<AuthService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -40,6 +41,7 @@ public class AuthService : IAuthService
         IConfiguration configuration,
         IEmailQueueService emailQueueService,
         IContractContentService contractContentService,
+        IAdminEmailRoutingService adminEmailRoutingService,
         ILogger<AuthService> logger,
         IHttpContextAccessor httpContextAccessor)
     {
@@ -47,6 +49,7 @@ public class AuthService : IAuthService
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _emailQueueService = emailQueueService;
         _contractContentService = contractContentService;
+        _adminEmailRoutingService = adminEmailRoutingService;
         _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://localhost:7223").TrimEnd('/');
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
@@ -1315,6 +1318,27 @@ public class AuthService : IAuthService
                 cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
+
+            try
+            {
+                await _adminEmailRoutingService.NotifyPartnerRegistrationAsync(
+                    userId,
+                    partnerId,
+                    hotelId,
+                    hotelName,
+                    companyName,
+                    contactName,
+                    email,
+                    phone,
+                    city,
+                    district,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Partner kaydı sonrası admin bildirim e-postası gönderilemedi.");
+            }
+
             await CreateAndQueueEmailVerificationAsync(
                 connection,
                 null,
@@ -1625,6 +1649,24 @@ public class AuthService : IAuthService
                 cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
+
+            try
+            {
+                await _adminEmailRoutingService.NotifyFirmaRegistrationAsync(
+                    userId,
+                    firmaId,
+                    companyName,
+                    contactName,
+                    contactEmail,
+                    contactPhone,
+                    city,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Firma başvurusu sonrası admin bildirim e-postası gönderilemedi.");
+            }
+
             await CreateAndQueueEmailVerificationAsync(
                 connection,
                 null,

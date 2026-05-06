@@ -5,6 +5,8 @@
     ViewData["AdminShell"] = Model.Shell;
     var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
     var totalPages = Model.PageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(Model.Total / (double)Model.PageSize));
+    var currentPath = Context.Request.Path.Value ?? "/admin/rezervasyonlar-tek-liste";
+    static string Enc(string? value) => System.Net.WebUtility.UrlEncode(value ?? string.Empty);
     string Tone(string status)
     {
         var normalized = (status ?? string.Empty).ToLowerInvariant();
@@ -26,7 +28,7 @@
             <span class="table-status info">Toplam @Model.Total kayıt</span>
         </div>
 
-        <form method="get" action="/admin/rezervasyonlar-tek-liste" class="admin-reservation-filter">
+        <form method="get" action="@currentPath" class="admin-reservation-filter">
             <label>
                 <span>Arama</span>
                 <input name="q" value="@Model.Query" placeholder="Otel / müşteri / email / firma" />
@@ -91,8 +93,8 @@
         <div class="admin-pagination-row">
             <span>@Model.Page / @totalPages sayfa</span>
             <div>
-                <a class="btn btn-outline-primary btn-sm @(Model.Page <= 1 ? "disabled" : "")" href="/admin/rezervasyonlar-tek-liste?page=@(Model.Page - 1)&pageSize=@Model.PageSize&q=@Model.Query&status=@Model.Status">Önceki</a>
-                <a class="btn btn-outline-primary btn-sm @(Model.Page >= totalPages ? "disabled" : "")" href="/admin/rezervasyonlar-tek-liste?page=@(Model.Page + 1)&pageSize=@Model.PageSize&q=@Model.Query&status=@Model.Status">Sonraki</a>
+                <a class="btn btn-outline-primary btn-sm @(Model.Page <= 1 ? "disabled" : "")" href="@currentPath?page=@(Model.Page - 1)&pageSize=@Model.PageSize&q=@Enc(Model.Query)&status=@Enc(Model.Status)">Önceki</a>
+                <a class="btn btn-outline-primary btn-sm @(Model.Page >= totalPages ? "disabled" : "")" href="@currentPath?page=@(Model.Page + 1)&pageSize=@Model.PageSize&q=@Enc(Model.Query)&status=@Enc(Model.Status)">Sonraki</a>
             </div>
         </div>
     </article>

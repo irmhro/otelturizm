@@ -1,9 +1,11 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace otelturizmnew.Controllers.Security;
 
 [ApiController]
+[EnableRateLimiting("csp-ingest")]
 public sealed class CspReportController : ControllerBase
 {
     private readonly ILogger<CspReportController> _logger;

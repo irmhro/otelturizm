@@ -53,6 +53,8 @@
     <link rel="stylesheet" href="~/assets/css/paneller/admin/admin-tabler-overrides.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/panel-admin-shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/panel-admin-shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     @if (!string.IsNullOrWhiteSpace(pageCssPath))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
@@ -141,6 +143,23 @@
 
     <script src="~/paneltematabler/dist/js/tabler.min.js" asp-append-version="true"></script>
     <script src="~/assets/js/panel-toasts.js" asp-append-version="true"></script>
+    <script nonce="@nonce">
+        (function () {
+            // Mobile sidebar open/close: :has() desteklemeyen tarayıcılarda overlay sorunu için fallback.
+            var sidebar = document.querySelector('.admin-tabler-shell .admin-sidebar-alias');
+            var collapse = document.getElementById('adminSidebarMenu');
+            if (!sidebar || !collapse) return;
+
+            function sync() {
+                if (collapse.classList.contains('show')) sidebar.classList.add('is-open');
+                else sidebar.classList.remove('is-open');
+            }
+
+            collapse.addEventListener('shown.bs.collapse', sync);
+            collapse.addEventListener('hidden.bs.collapse', sync);
+            sync();
+        })();
+    </script>
     <script nonce="@nonce">
     (() => {
         const primaryInput = document.getElementById('adminThemePrimaryHex');

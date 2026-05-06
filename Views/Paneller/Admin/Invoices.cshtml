@@ -1,9 +1,136 @@
 @using otelturizmnew.Models.Paneller.Admin
-@model AdminSectionPageViewModel
+@model AdminInvoicesPageViewModel
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+    var totalPages = Model.PageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(Model.Total / (double)Model.PageSize));
+    var pageSizes = new[] { 10, 25, 50, 100, 200 };
+    static string Enc(string? value) => System.Net.WebUtility.UrlEncode(value ?? string.Empty);
+    string Tone(string status)
+    {
+        var text = (status ?? string.Empty).ToLowerInvariant();
+        if (text.Contains("kesil") || text.Contains("ödendi") || text.Contains("odendi")) return "success";
+        if (text.Contains("bek") || text.Contains("taslak")) return "warning";
+        if (text.Contains("iptal") || text.Contains("red")) return "danger";
+        return "info";
+    }
 }
-<partial name="~/Views/Paneller/Admin/_AdminSectionPage.cshtml" model="Model" />
 
+<section class="admin-invoices-page">
+    <div class="admin-summary-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <article class="admin-summary-card admin-summary-card--@card.ToneClass">
+                <span class="admin-summary-icon"><i class="fas @card.IconClass"></i></span>
+                <div>
+                    <p>@card.Label</p>
+                    <h2>@card.Value</h2>
+                    <span>@card.Description</span>
+                </div>
+            </article>
+        }
+    </div>
 
+    <article class="admin-section-card">
+        <div class="card-header">
+            <div>
+                <p class="mini-caption">MUHASEBE</p>
+                <h2 class="card-title mb-1">Faturalar</h2>
+                <span class="text-muted">Konaklama, partner, firma ve kullanıcı fatura kayıtlarını takip edin.</span>
+            </div>
+            <span class="badge bg-blue-lt text-blue">@Model.Total kayıt</span>
+        </div>
+
+        <form method="get" action="/admin/faturalar" class="admin-ops-filter">
+            <label>
+                <span>Arama</span>
+                <input name="q" value="@Model.Query" placeholder="Fatura no, alıcı, otel, rezervasyon" />
+            </label>
+            <label>
+                <span>Durum</span>
+                <select name="status">
+                    <option value="">Tüm durumlar</option>
+                    @foreach (var option in Model.StatusOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(Model.Status, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Fatura türü</span>
+                <select name="invoiceType">
+                    <option value="">Tüm türler</option>
+                    @foreach (var option in Model.TypeOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(Model.InvoiceType, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Sayfa başı</span>
+                <select name="pageSize">
+                    @foreach (var size in pageSizes)
+                    {
+                        <option value="@size" selected="@(Model.PageSize == size)">@size</option>
+                    }
+                </select>
+            </label>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-2"></i>Filtrele</button>
+            <a class="btn btn-outline-primary" href="/admin/faturalar"><i class="fas fa-rotate-left me-2"></i>Temizle</a>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-vcenter table-hover admin-ops-table">
+                <thead>
+                    <tr>
+                        <th>Fatura</th>
+                        <th>Otel / Alıcı</th>
+                        <th>Tür</th>
+                        <th>Durum</th>
+                        <th>Toplam</th>
+                        <th>Vergi</th>
+                        <th>Tarihler</th>
+                        <th>Dosya</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr><td colspan="8">Filtreye uygun fatura kaydı bulunamadı.</td></tr>
+                    }
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td><strong>@row.InvoiceNo</strong><small>#@row.InvoiceId</small></td>
+                            <td><strong>@row.HotelName</strong><small>@row.BuyerTitle · @row.BuyerEmail</small></td>
+                            <td>@row.InvoiceType</td>
+                            <td><span class="badge bg-@(Tone(row.Status))-lt text-@(Tone(row.Status))">@row.Status</span><small>@row.EInvoiceStatus</small></td>
+                            <td><strong>@row.GrandTotal.ToString("N2", tr) @row.Currency</strong><small>Ara toplam @row.SubTotal.ToString("N2", tr)</small></td>
+                            <td><span>KDV @row.TaxAmount.ToString("N2", tr)</span><small>Konaklama @row.AccommodationTaxAmount.ToString("N2", tr)</small></td>
+                            <td><span>@(row.InvoiceDate?.ToString("dd.MM.yyyy") ?? "-")</span><small>Vade @(row.DueDate?.ToString("dd.MM.yyyy") ?? "-") · Ödeme @(row.PaymentDate?.ToString("dd.MM.yyyy") ?? "-")</small></td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(row.PdfPath))
+                                {
+                                    <a class="btn btn-outline-primary btn-sm" href="@row.PdfPath" target="_blank" rel="noopener">PDF</a>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-yellow-lt text-yellow">Yok</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-pagination-row">
+            <span>@Model.Page / @totalPages sayfa</span>
+            <div>
+                <a class="btn btn-outline-primary btn-sm @(Model.Page <= 1 ? "disabled" : "")" href="/admin/faturalar?page=@(Model.Page - 1)&pageSize=@Model.PageSize&q=@Enc(Model.Query)&status=@Enc(Model.Status)&invoiceType=@Enc(Model.InvoiceType)">Önceki</a>
+                <a class="btn btn-outline-primary btn-sm @(Model.Page >= totalPages ? "disabled" : "")" href="/admin/faturalar?page=@(Model.Page + 1)&pageSize=@Model.PageSize&q=@Enc(Model.Query)&status=@Enc(Model.Status)&invoiceType=@Enc(Model.InvoiceType)">Sonraki</a>
+            </div>
+        </div>
+    </article>
+</section>

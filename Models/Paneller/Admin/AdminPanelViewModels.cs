@@ -5,6 +5,7 @@ public class AdminShellViewModel
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string UserRole { get; set; } = "admin";
+    public HashSet<string> Permissions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public string PanelTitle { get; set; } = string.Empty;
     public string PanelSubtitle { get; set; } = string.Empty;
     public int PendingPartnerApplications { get; set; }
@@ -12,6 +13,8 @@ public class AdminShellViewModel
     public int CriticalLogs { get; set; }
     public int PendingReviews { get; set; }
     public int PendingCompanyApplications { get; set; }
+
+    public bool HasPermission(string code) => Permissions.Contains(code);
 }
 
 public class AdminDashboardViewModel
@@ -31,7 +34,7 @@ public class AdminSectionPageViewModel
     public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
     public List<AdminTableColumnViewModel> Columns { get; set; } = new();
     public List<List<string>> Rows { get; set; } = new();
-    public string EmptyStateMessage { get; set; } = "Bu sayfa icin gosterilecek veri bulunamadi.";
+    public string EmptyStateMessage { get; set; } = "Bu sayfa için gösterilecek veri bulunamadı.";
     public string? InfoNote { get; set; }
 }
 
@@ -238,6 +241,8 @@ public class AdminCommissionManagementPageViewModel
     public List<AdminHotelCommissionFinanceRowViewModel> HotelFinanceRows { get; set; } = new();
     public AdminCommissionRuleForm Form { get; set; } = new();
     public List<AdminCommissionHotelOptionViewModel> Hotels { get; set; } = new();
+    public DateTime? DateFrom { get; set; }
+    public DateTime? DateTo { get; set; }
 }
 
 public class AdminHotelCommissionFinanceRowViewModel
@@ -248,6 +253,9 @@ public class AdminHotelCommissionFinanceRowViewModel
     public decimal TotalCommission { get; set; }
     public decimal PaidCommission { get; set; }
     public decimal PendingCommission => Math.Max(0m, TotalCommission - PaidCommission);
+    public int ReservationCount { get; set; }
+    public int CompletedReservationCount { get; set; }
+    public decimal PlatformNetCommission { get; set; }
 }
 
 public class AdminCommissionHotelOptionViewModel
@@ -271,5 +279,117 @@ public class AdminCommissionRuleForm
     public decimal AccommodationTaxRate { get; set; }
     public string Currency { get; set; } = "TRY";
     public string? Note { get; set; }
+}
+
+public class AdminPlatformTeamPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminPlatformTeamRowViewModel> Members { get; set; } = new();
+    public AdminPlatformTeamForm Form { get; set; } = new();
+}
+
+public class AdminPlatformTeamRowViewModel
+{
+    public long Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string AvatarUrl { get; set; } = string.Empty;
+    public int OrderNo { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public class AdminPlatformTeamForm
+{
+    public long? Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public int OrderNo { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class AdminHelpCenterPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminHelpCenterCategoryRowViewModel> Categories { get; set; } = new();
+    public List<AdminHelpCenterFaqRowViewModel> FaqItems { get; set; } = new();
+    public List<AdminHelpCenterContentRowViewModel> Contents { get; set; } = new();
+
+    public AdminHelpCenterCategoryForm CategoryForm { get; set; } = new();
+    public AdminHelpCenterFaqForm FaqForm { get; set; } = new();
+    public AdminHelpCenterContentForm ContentForm { get; set; } = new();
+}
+
+public class AdminHelpCenterCategoryRowViewModel
+{
+    public long CategoryId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string IconClass { get; set; } = string.Empty;
+    public string ShortDescription { get; set; } = string.Empty;
+    public string? HeroTitle { get; set; }
+    public string? HeroSubtitle { get; set; }
+    public string? HeroImageUrl { get; set; }
+    public string? FullHtml { get; set; }
+}
+
+public class AdminHelpCenterFaqRowViewModel
+{
+    public long Id { get; set; }
+    public long CategoryId { get; set; }
+    public string CategoryName { get; set; } = string.Empty;
+    public int OrderNo { get; set; }
+    public bool IsActive { get; set; }
+    public string Question { get; set; } = string.Empty;
+    public string AnswerHtml { get; set; } = string.Empty;
+}
+
+public class AdminHelpCenterContentRowViewModel
+{
+    public long Id { get; set; }
+    public string Type { get; set; } = "blog";
+    public string Title { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public int OrderNo { get; set; }
+    public bool IsFeatured { get; set; }
+}
+
+public class AdminHelpCenterCategoryForm
+{
+    public long CategoryId { get; set; }
+    public string? HeroTitle { get; set; }
+    public string? HeroSubtitle { get; set; }
+    public string? HeroImageUrl { get; set; }
+    public string? FullHtml { get; set; }
+}
+
+public class AdminHelpCenterFaqForm
+{
+    public long? Id { get; set; }
+    public long CategoryId { get; set; }
+    public string Question { get; set; } = string.Empty;
+    public string AnswerHtml { get; set; } = string.Empty;
+    public int OrderNo { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class AdminHelpCenterContentForm
+{
+    public long? Id { get; set; }
+    public string Type { get; set; } = "blog";
+    public string Title { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string? Summary { get; set; }
+    public string? HeroTitle { get; set; }
+    public string? HeroSubtitle { get; set; }
+    public string? HeroImageUrl { get; set; }
+    public string Html { get; set; } = string.Empty;
+    public int OrderNo { get; set; }
+    public bool IsFeatured { get; set; }
+    public bool IsActive { get; set; } = true;
 }
 

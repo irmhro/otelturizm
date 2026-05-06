@@ -28,6 +28,52 @@
     <input type="hidden" name="HotelId" value="@form.HotelId" />
 
     <div class="row row-cards">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title mb-0">Seçilebilir koşullar (sözlük)</h3>
+                        <div class="text-muted small">Bu bölümde seçilen maddeler misafire “Otel koşulları” kısmında rozet/liste olarak gösterilir.</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.PolicyOptions.Count == 0)
+                    {
+                        <div class="text-muted">Koşul sözlüğü henüz tanımlı değil.</div>
+                    }
+                    else
+                    {
+                        foreach (var group in Model.PolicyOptions
+                                     .OrderBy(x => x.Category)
+                                     .ThenBy(x => x.Order)
+                                     .GroupBy(x => x.Category))
+                        {
+                            <div class="mb-3">
+                                <div class="fw-bold mb-2">@group.Key</div>
+                                <div class="row g-2">
+                                    @foreach (var opt in group)
+                                    {
+                                        <div class="col-12 col-md-6 col-xl-4">
+                                            <label class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="SelectedPolicyIds" value="@opt.PolicyId" checked="@(opt.IsSelected ? "checked" : null)" />
+                                                <span class="form-check-label">
+                                                    <span class="fw-bold">@opt.Name</span>
+                                                    @if (!string.IsNullOrWhiteSpace(opt.Description))
+                                                    {
+                                                        <span class="text-muted d-block small">@opt.Description</span>
+                                                    }
+                                                </span>
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
         <div class="col-12 col-xl-6">
             <div class="card">
                 <div class="card-header">

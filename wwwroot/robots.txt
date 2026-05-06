@@ -1,2 +1,15 @@
+# Genel indeksleme: panel ve kimlik doğrulama yolları kapalı.
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /panel/
+Disallow: /admin
+Disallow: /admin-giris
+Disallow: /kullanici-giris
+Disallow: /partner-giris
+Disallow: /firma-giris
+Disallow: /secure-files
+Disallow: /api/
+Disallow: /cikis-yap
+Disallow: /gelisim/
+
+Sitemap: https://otelturizm.com/sitemap.xml

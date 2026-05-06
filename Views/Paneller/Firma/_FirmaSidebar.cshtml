@@ -1,53 +1,109 @@
 @model otelturizmnew.Models.Paneller.Firma.FirmaPanelShellViewModel
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
-    var items = new[]
+    var navGroups = new[]
     {
-        new { Action = "Index", Label = "Dashboard", Icon = "fa-chart-pie", Route = "/panel/firma/dashboard" },
-        new { Action = "Deals", Label = "Firma Fiyatları", Icon = "fa-hotel", Route = "/panel/firma/firma-fiyatlari" },
-        new { Action = "CreateReservation", Label = "Yeni Rezervasyon", Icon = "fa-plus-circle", Route = "/panel/firma/yeni-rezervasyon" },
-        new { Action = "Reservations", Label = "Rezervasyonlar", Icon = "fa-calendar-check", Route = "/panel/firma/rezervasyonlar" },
-        new { Action = "Messages", Label = "Mesajlar", Icon = "fa-envelope-open-text", Route = "/panel/firma/mesajlar" },
-        new { Action = "Employees", Label = "Çalışanlar", Icon = "fa-users", Route = "/panel/firma/calisanlar" },
-        new { Action = "Limits", Label = "Limitler & Onaylar", Icon = "fa-sliders", Route = "/panel/firma/limitler-onaylar" },
-        new { Action = "Invoices", Label = "Faturalar", Icon = "fa-file-invoice", Route = "/panel/firma/faturalar" },
-        new { Action = "Spending", Label = "Harcama Raporları", Icon = "fa-chart-column", Route = "/panel/firma/harcama-raporlari" },
-        new { Action = "Hotels", Label = "Otel Bazlı Rapor", Icon = "fa-building", Route = "/panel/firma/otel-bazli-rapor" },
-        new { Action = "Security", Label = "Güvenlik", Icon = "fa-shield-halved", Route = "/panel/firma/guvenlik" }
+        new
+        {
+            Title = "Özet",
+            Items = new[]
+            {
+                new { Action = "Index", Label = "Dashboard", Icon = "fa-chart-pie", Route = "/panel/firma/dashboard" }
+            }
+        },
+        new
+        {
+            Title = "Satış & rezervasyon",
+            Items = new[]
+            {
+                new { Action = "Deals", Label = "Firma Fiyatları", Icon = "fa-hotel", Route = "/panel/firma/firma-fiyatlari" },
+                new { Action = "CreateReservation", Label = "Yeni Rezervasyon", Icon = "fa-plus-circle", Route = "/panel/firma/yeni-rezervasyon" },
+                new { Action = "Reservations", Label = "Rezervasyonlar", Icon = "fa-calendar-check", Route = "/panel/firma/rezervasyonlar" },
+                new { Action = "Messages", Label = "Mesajlar", Icon = "fa-envelope-open-text", Route = "/panel/firma/mesajlar" }
+            }
+        },
+        new
+        {
+            Title = "Yönetim",
+            Items = new[]
+            {
+                new { Action = "Employees", Label = "Çalışanlar", Icon = "fa-users", Route = "/panel/firma/calisanlar" },
+                new { Action = "Limits", Label = "Limitler & Onaylar", Icon = "fa-sliders", Route = "/panel/firma/limitler-onaylar" },
+                new { Action = "Invoices", Label = "Faturalar", Icon = "fa-file-invoice", Route = "/panel/firma/faturalar" }
+            }
+        },
+        new
+        {
+            Title = "Raporlar",
+            Items = new[]
+            {
+                new { Action = "Spending", Label = "Harcama Raporları", Icon = "fa-chart-column", Route = "/panel/firma/harcama-raporlari" },
+                new { Action = "Hotels", Label = "Otel Bazlı Rapor", Icon = "fa-building", Route = "/panel/firma/otel-bazli-rapor" }
+            }
+        },
+        new
+        {
+            Title = "Hesap",
+            Items = new[]
+            {
+                new { Action = "Security", Label = "Güvenlik", Icon = "fa-shield-halved", Route = "/panel/firma/guvenlik" },
+                new { Action = "ContractsNav", Label = "Sözleşmeler", Icon = "fa-file-signature", Route = "/panel/firma/guvenlik#firma-sozlesmeler-panel" }
+            }
+        }
     };
 }
+
 <aside class="firma-sidebar">
-    <div>
-        <a href="/panel/firma/dashboard" class="firma-brand" aria-label="Otelturizm Firma">
+    <div class="firma-sidebar-inner">
+        <a href="/panel/firma/dashboard" class="firma-brand" aria-label="Otelturizm Firma paneli">
             <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
         </a>
         <div class="firma-profile-card">
-            <div class="firma-avatar">@string.Concat(Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(static x => x[0]))</div>
+            <div class="firma-avatar" aria-hidden="true">@string.Concat(Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(static x => x[0]))</div>
             <div>
                 <h3>@Model.CompanyName</h3>
                 <p>@Model.FullName</p>
                 <small>@Model.UserRole</small>
             </div>
         </div>
-        <nav class="firma-sidebar-nav">
-            @foreach (var item in items)
-            {
-                var badge = item.Action switch
+
+        @foreach (var group in navGroups)
+        {
+            <p class="firma-nav-group-label">@group.Title</p>
+            <nav class="firma-sidebar-nav">
+                @foreach (var item in group.Items)
                 {
-                    "Limits" when Model.PendingApprovalCount > 0 => Model.PendingApprovalCount.ToString(),
-                    "Employees" when Model.EmployeeCount > 0 => Model.EmployeeCount.ToString(),
-                    "Deals" when Model.DealCount > 0 => Model.DealCount.ToString(),
-                    _ => null
-                };
-                <a href="@item.Route" class="@(currentAction == item.Action ? "active" : string.Empty)"><i class="fas @item.Icon"></i><span>@item.Label</span>@if (!string.IsNullOrWhiteSpace(badge)) { <b class="firma-nav-badge">@badge</b> }</a>
-            }
-        </nav>
+                    var badge = item.Action switch
+                    {
+                        "Limits" when Model.PendingApprovalCount > 0 => Model.PendingApprovalCount.ToString(),
+                        "Employees" when Model.EmployeeCount > 0 => Model.EmployeeCount.ToString(),
+                        "Deals" when Model.DealCount > 0 => Model.DealCount.ToString(),
+                        _ => null
+                    };
+                    var isActive = item.Action switch
+                    {
+                        "ContractsNav" => false,
+                        "Deals" => string.Equals(currentAction, "Deals", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(currentAction, "CompareDeals", StringComparison.OrdinalIgnoreCase),
+                        _ => string.Equals(currentAction, item.Action, StringComparison.OrdinalIgnoreCase)
+                    };
+                    <a href="@item.Route" class="@(isActive ? "active" : string.Empty)">
+                        <i class="fas @item.Icon" aria-hidden="true"></i>
+                        <span>@item.Label</span>
+                        @if (!string.IsNullOrWhiteSpace(badge))
+                        {
+                            <b class="firma-nav-badge">@badge</b>
+                        }
+                    </a>
+                }
+            </nav>
+        }
     </div>
     <div class="firma-sidebar-footer">
-        <a href="/firma"><i class="fas fa-arrow-left"></i> Firma sayfasına dön</a>
+        <a href="/firma"><i class="fas fa-arrow-left" aria-hidden="true"></i> Firma sayfasına dön</a>
         <form method="post" action="/cikis-yap" class="panel-logout-form">
             @Html.AntiForgeryToken()
-            <button type="submit" class="logout-link"><i class="fas fa-right-from-bracket"></i> Cikis Yap</button>
+            <button type="submit" class="logout-link"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Çıkış Yap</button>
         </form>
     </div>
 </aside>

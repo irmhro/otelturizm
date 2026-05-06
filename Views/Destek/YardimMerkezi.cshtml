@@ -81,6 +81,25 @@
             }
         </div>
 
+        @if (Model.PlatformTeam.Count > 0)
+        {
+            <h2 class="ym-section-title" id="ekibimiz"><span class="ym-section-title__icon"><i class="fas fa-users" aria-hidden="true"></i></span>Ekibimiz</h2>
+            <p class="ym-team-lead text-muted mb-3">Platform yetkilileri ve iletişim rolleri. Randevu veya kurumsal talepler için uygun kanalı seçebilirsiniz.</p>
+            <div class="ym-stack ym-team-grid">
+                @foreach (var member in Model.PlatformTeam)
+                {
+                    <article class="ym-team-card">
+                        <div class="ym-team-card__avatar-wrap">
+                            <img src="@member.AvatarUrl" alt="" class="ym-team-card__avatar" width="96" height="96" loading="lazy" decoding="async" />
+                        </div>
+                        <h3 class="ym-team-card__name">@member.Name</h3>
+                        <p class="ym-team-card__role">@member.Title</p>
+                        <a class="ym-team-card__email" href="mailto:@member.Email">@member.Email</a>
+                    </article>
+                }
+            </div>
+        }
+
         @if (Model.LiveChatChannel is not null)
         {
             <aside class="ym-live-banner">

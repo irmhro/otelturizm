@@ -209,6 +209,17 @@
                                             İptal
                                         </button>
                                     }
+                                    @if (row.CanMarkPaymentCompleted)
+                                    {
+                                        <form method="post" action="/panel/partner/rezervasyonlar/odeme-tamamlandi" class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="hotelId" value="@Model.Shell.SelectedHotelId" />
+                                            <input type="hidden" name="reservationId" value="@row.ReservationId" />
+                                            <button type="submit" class="btn btn-success btn-sm" title="Ödemeyi tamamlandı olarak işaretle">
+                                                Ödeme Tamamlandı
+                                            </button>
+                                        </form>
+                                    }
                                     <button type="button"
                                             class="btn btn-outline-primary btn-sm"
                                             title="Detay gör"

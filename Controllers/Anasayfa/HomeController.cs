@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System.Security.Claims;
+using System.Text.Json;
 using otelturizmnew.Constants;
 using otelturizmnew.Models;
 using otelturizmnew.Models.Anasayfa;
@@ -15,22 +17,46 @@ public class HomeController : Controller
     private readonly IUserFavoriteService _userFavoriteService;
     private readonly IDeadLinkRedirectService _deadLinkRedirectService;
     private readonly ILogger<HomeController> _logger;
+    private readonly IConfiguration _configuration;
 
     public HomeController(
         IHotelService hotelService,
         IUserFavoriteService userFavoriteService,
         IDeadLinkRedirectService deadLinkRedirectService,
-        ILogger<HomeController> logger)
+        ILogger<HomeController> logger,
+        IConfiguration configuration)
     {
         _hotelService = hotelService;
         _userFavoriteService = userFavoriteService;
         _deadLinkRedirectService = deadLinkRedirectService;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
         ViewData["PageCss"] = "home-index";
+        ViewData["Title"] = "Oteller, kampanyalar ve güvenli rezervasyon";
+        ViewData["MetaDescription"] =
+            "Otelturizm ile yüzlerce oteli karşılaştırın, kampanyalı fiyatları görün ve onaylı rezervasyon oluşturun. Çok otelli yapı, güvenli ödeme ve şeffaf iptal koşulları.";
+        var publicBase = (_configuration["App:PublicBaseUrl"] ?? $"{Request.Scheme}://{Request.Host}").TrimEnd('/');
+        ViewData["Canonical"] = publicBase + "/";
+        ViewData["OgImage"] = publicBase + "/uploads/logo/logo.png";
+        var jsonLd = new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "WebSite",
+            ["name"] = "Otelturizm",
+            ["url"] = publicBase,
+            ["potentialAction"] = new Dictionary<string, object?>
+            {
+                ["@type"] = "SearchAction",
+                ["target"] = $"{publicBase}/oteller?q={{search_term_string}}",
+                ["query-input"] = "required name=search_term_string"
+            }
+        };
+        ViewData["HomeJsonLd"] = JsonSerializer.Serialize(jsonLd);
+
         var model = await _hotelService.GetHomepageAsync(cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
 

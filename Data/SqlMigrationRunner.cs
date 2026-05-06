@@ -355,15 +355,22 @@ EXEC sp_executesql @sql;";
     {
         if (string.IsNullOrWhiteSpace(fileName)) return true;
         if (fileName.Equals("README.md", StringComparison.OrdinalIgnoreCase)) return true;
+        // Tek dosyada toplu uygulama runbook'u; runner zaten scriptleri tek tek izliyor (çift çalışma riski).
+        if (fileName.Equals("20260504_apply_all_migrations_safe.sql", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
         if (!relativePath.StartsWith("000_current_schema_by_table", StringComparison.OrdinalIgnoreCase))
         {
             // Kök klasördeki eski/MySQL döneminden kalma 0xx create/seed scriptleri var.
-            // MSSQL için sadece sqlserver_* ve seed_* paketlerini çalıştırıyoruz.
+            // MSSQL için: sqlserver_*, 20260504_seed_*, 20YYMMDD_* tarih önekli migrationlar, tema_panel.
             var lower = fileName.ToLowerInvariant();
             var isSqlServerScript = lower.Contains("sqlserver");
             var isSeedScript = lower.StartsWith("20260504_seed_", StringComparison.OrdinalIgnoreCase);
             var isThemePanelScript = lower.Contains("tema_panel", StringComparison.OrdinalIgnoreCase);
-            if (!isSqlServerScript && !isSeedScript)
+            var isDatedMigration = IsEightDigitDatedMigration(fileName);
+            if (!isSqlServerScript && !isSeedScript && !isDatedMigration)
             {
                 if (isThemePanelScript)
                 {
@@ -373,6 +380,25 @@ EXEC sp_executesql @sql;";
             }
         }
         return false;
+    }
+
+    /// <summary>20YYMMDD_*.sql biçimindeki tarih önekli MSSQL migration dosyaları.</summary>
+    private static bool IsEightDigitDatedMigration(string fileName)
+    {
+        if (fileName.Length < 10 || fileName[8] != '_')
+        {
+            return false;
+        }
+
+        for (var i = 0; i < 8; i++)
+        {
+            if (!char.IsDigit(fileName[i]))
+            {
+                return false;
+            }
+        }
+
+        return fileName.StartsWith("20", StringComparison.Ordinal);
     }
 
     private static bool IsUnsupportedForSqlServer(string scriptText)

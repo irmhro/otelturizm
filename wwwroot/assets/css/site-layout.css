@@ -253,36 +253,6 @@ body {
   text-align: right;
 }
 
-/* Acenta bilgisi (badges'in üstünde, sağda) */
-.site-footer .footer-agency-note-inline {
-  margin-bottom: 10px;
-  font-size: 0.86rem;
-  font-weight: 800;
-  color: rgba(15, 23, 42, 0.72);
-  letter-spacing: 0.01em;
-  text-align: right;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.site-footer .footer-local-time {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  overflow: visible;
-  text-overflow: clip;
-  font-variant-numeric: tabular-nums;
-}
-
-@media (max-width: 900px) {
-  .site-footer .footer-agency-note-inline {
-    text-align: left;
-    white-space: nowrap;
-  }
-}
-
 @media (max-width: 900px) {
   .compact-footer .footer-top { flex-direction: column; align-items: stretch; gap:12px; }
   .compact-footer .footer-left { align-items:flex-start; }

@@ -42,6 +42,25 @@ public class UserPanelService : IUserPanelService
         _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://localhost:7223").TrimEnd('/');
     }
 
+    public async Task<(int TotalReservations, int FavoriteCount, int MessageThreads)> GetNavBadgeCountsAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        const string sql = @"
+            SELECT
+                (SELECT COUNT(*) FROM rezervasyonlar WHERE kullanici_id = @userId),
+                (SELECT COUNT(*) FROM user_favori_oteller WHERE user_id = @userId AND aktif_mi = 1),
+                (SELECT COUNT(*) FROM mesaj_konusmalari WHERE misafir_kullanici_id = @userId AND durum <> 'Arşivlendi');";
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return (0, 0, 0);
+        }
+
+        return (SafeInt(reader, 0), SafeInt(reader, 1), SafeInt(reader, 2));
+    }
+
     public async Task<UserDashboardPageViewModel> GetDashboardAsync(
         long userId,
         string? reservationStatus = null,

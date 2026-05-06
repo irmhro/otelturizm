@@ -297,3 +297,77 @@ body.partner-panel-v2[data-bs-theme="dark"] .partner-sidebar-footer {
   color: #fff;
   font-weight: 900;
 }
+
+/* Partner shell layout lock: uzun menüler sidebar içinde scroll olur, içerik sidebar altına girmez. */
+@media (min-width: 901px) {
+  body.partner-panel-v2 {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body.partner-panel-v2 .page {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+    max-width: 100%;
+    padding-left: 304px;
+    background:
+      radial-gradient(circle at 14% 0%, rgba(37,99,235,.08), transparent 30rem),
+      linear-gradient(180deg, #f6f9fd 0%, #eef4fa 100%);
+  }
+
+  body.partner-panel-v2 .partner-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1030;
+    width: 304px;
+    min-width: 304px;
+    max-width: 304px;
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.partner-panel-v2 .partner-sidebar > .container-fluid {
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.partner-panel-v2 .partner-sidebar .navbar-collapse {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.partner-panel-v2 .partner-sidebar-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 16px;
+  }
+
+  body.partner-panel-v2 .partner-sidebar-footer {
+    flex: 0 0 auto;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+  }
+
+  body.partner-panel-v2 .page-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-left: 0 !important;
+    background: transparent;
+  }
+
+  body.partner-panel-v2 .partner-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+  }
+}

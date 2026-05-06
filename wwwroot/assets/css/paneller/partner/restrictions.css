@@ -1,0 +1,14 @@
+.restrictions-room-check {
+    min-height: 44px;
+    align-items: center;
+    padding: 10px 12px 10px 44px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 12px;
+    background: var(--partner-surface, #fff);
+}
+
+.restrictions-room-check:hover {
+    border-color: rgba(37, 99, 235, .30);
+    background: color-mix(in srgb, rgba(37, 99, 235, .10), var(--partner-surface, #fff));
+}
+

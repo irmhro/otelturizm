@@ -4,16 +4,6 @@
     ViewData["Title"] = "Developer Guvenlik";
 }
 
-@if (TempData["DeveloperSuccess"] is string successMessage)
-{
-    <div class="panel-inline-status success">@successMessage</div>
-}
-
-@if (TempData["DeveloperError"] is string errorMessage)
-{
-    <div class="panel-inline-status error">@errorMessage</div>
-}
-
 <section class="form-stack">
     <form method="post" asp-action="ChangePassword" class="panel-card">
         @Html.AntiForgeryToken()

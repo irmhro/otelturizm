@@ -13,7 +13,10 @@ public interface IAdminService
     Task<AdminCompanyApplicationsPageViewModel> GetCompanyApplicationsAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ReviewCompanyApplicationAsync(long adminUserId, AdminCompanyApplicationDecisionRequest request, CancellationToken cancellationToken = default);
     Task<AdminApprovalCenterPageViewModel> GetApprovalCenterAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
-    Task<AdminCommissionManagementPageViewModel> GetCommissionManagementAsync(string fullName, string email, string userRole, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<AdminCommissionManagementPageViewModel> GetCommissionManagementAsync(string fullName, string email, string userRole, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, CancellationToken cancellationToken = default);
+    Task<AdminPlatformTeamPageViewModel> GetPlatformTeamAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SavePlatformTeamMemberAsync(long adminUserId, AdminPlatformTeamForm form, string? avatarUrl, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> DeletePlatformTeamMemberAsync(long adminUserId, long id, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveCommissionRuleAsync(long adminUserId, AdminCommissionRuleForm request, CancellationToken cancellationToken = default);
 
     Task<AdminListingSubscriptionsPageViewModel> GetListingSubscriptionsAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
@@ -35,11 +38,16 @@ public interface IAdminService
     Task<(bool Success, string Message)> MarkEmailFailedAsync(long adminUserId, long queueId, string reason, CancellationToken cancellationToken = default);
 
     Task<AdminUnifiedReservationsPageViewModel> GetUnifiedReservationsAsync(string fullName, string email, string userRole, string? q, string? status, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<AdminPaymentsPageViewModel> GetPaymentsAsync(string fullName, string email, string userRole, string? q, string? status, string? paymentType, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<AdminInvoicesPageViewModel> GetInvoicesAsync(string fullName, string email, string userRole, string? q, string? status, string? invoiceType, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<AdminReportsPageViewModel> GetReportsAsync(string fullName, string email, string userRole, long? hotelId, DateTime? dateFrom, DateTime? dateTo, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<AdminRateLimitStatsPageViewModel> GetRateLimitStatsAsync(string fullName, string email, string userRole, int windowHours = 24, CancellationToken cancellationToken = default);
     Task<AdminSettingsMonitorPageViewModel> GetSettingsMonitorAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<AdminPlatformCheckupPageViewModel> GetPlatformCheckupAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
 
     Task<AdminCommerceInsightPageViewModel> GetCommerceInsightPageAsync(string fullName, string email, string userRole, long priceHistoryHotelId, CancellationToken cancellationToken = default);
+
+    Task<string> ExportMonthlyHotelRevenueCommissionCsvAsync(CancellationToken cancellationToken = default);
 
     Task<AdminReviewModerationPageViewModel> GetReviewModerationPageAsync(string fullName, string email, string userRole, string? q, string? city, string? hotel, int take, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ApplyReviewModerationActionAsync(long adminUserId, AdminReviewModerationActionForm form, CancellationToken cancellationToken = default);
@@ -47,5 +55,8 @@ public interface IAdminService
     Task<(bool Success, string Message)> NotifyReviewViolationAsync(long adminUserId, AdminReviewViolationNotifyForm form, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> AddBlockedWordAsync(long adminUserId, AdminBlockedWordAddForm form, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ToggleBlockedWordAsync(long adminUserId, AdminBlockedWordToggleForm form, CancellationToken cancellationToken = default);
+
+    /// <summary>E-posta yönlendirme sayfası için ortak shell (başlık/altyazı).</summary>
+    Task<AdminShellViewModel> GetShellForEmailRoutingAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
 }
 

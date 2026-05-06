@@ -1,12 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Controllers.Api;
 
 [ApiController]
 [Route("api/pricing")]
+[EnableRateLimiting("quote-strict")]
 public class PricingController : ControllerBase
 {
+    private const int MaxBatchHotels = 150;
+    private const int MaxDateRangeDays = 400;
+
     private readonly IHotelPricingReadService _hotelPricingReadService;
 
     public PricingController(IHotelPricingReadService hotelPricingReadService)
@@ -26,6 +31,11 @@ public class PricingController : ControllerBase
             return BadRequest(new { success = false, message = "hotelId zorunludur." });
         }
 
+        if (!ValidateDateRange(startDate, endDate, out var rangeError))
+        {
+            return BadRequest(new { success = false, message = rangeError });
+        }
+
         var effectivePrice = await _hotelPricingReadService.GetHotelEffectivePriceAsync(hotelId, startDate, endDate, cancellationToken);
         return Ok(new
         {
@@ -42,9 +52,20 @@ public class PricingController : ControllerBase
         [FromBody] HotelPricingBatchRequest request,
         CancellationToken cancellationToken)
     {
-        var ids = request.HotelIds
+        if (request is null)
+        {
+            return BadRequest(new { success = false, message = "İstek gövdesi gerekli." });
+        }
+
+        if (!ValidateDateRange(request.StartDate, request.EndDate, out var rangeError))
+        {
+            return BadRequest(new { success = false, message = rangeError });
+        }
+
+        var ids = (request.HotelIds ?? new List<long>())
             .Where(static id => id > 0)
             .Distinct()
+            .Take(MaxBatchHotels)
             .ToList();
 
         if (ids.Count == 0)
@@ -66,6 +87,25 @@ public class PricingController : ControllerBase
             endDate = request.EndDate.ToString("yyyy-MM-dd"),
             items = rows
         });
+    }
+
+    private static bool ValidateDateRange(DateOnly start, DateOnly end, out string? error)
+    {
+        if (end < start)
+        {
+            error = "Bitiş tarihi başlangıçtan önce olamaz.";
+            return false;
+        }
+
+        var days = end.DayNumber - start.DayNumber;
+        if (days > MaxDateRangeDays)
+        {
+            error = $"Tarih aralığı en fazla {MaxDateRangeDays} gün olabilir.";
+            return false;
+        }
+
+        error = null;
+        return true;
     }
 }
 

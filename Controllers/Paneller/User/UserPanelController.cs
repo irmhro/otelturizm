@@ -62,7 +62,7 @@ public class UserPanelController : Controller
             cancellationToken);
         ViewData["PageCssPath"] = "paneller/user/dashboard";
         ViewData["PanelTitle"] = "Dashboard";
-        ViewData["PanelSubtitle"] = "Rezervasyon, favori otel ve mesaj ozetlerini tek ekranda takip et.";
+        ViewData["PanelSubtitle"] = "Rezervasyon, favori otel ve mesaj özetlerini tek ekranda takip edin.";
         ViewData["FavoriteCount"] = model.FavoriteCount;
         ViewData["ReservationCount"] = model.TotalReservationCount;
         ViewData["MessageCount"] = model.MessageCount;
@@ -145,14 +145,14 @@ public class UserPanelController : Controller
         var model = await _userPanelService.GetReservationReviewPageAsync(userId, reservationId, cancellationToken);
         if (model is null)
         {
-            TempData["UserReservationError"] = "Bu rezervasyon icin yorum formu acilamiyor (otel onayi, giris/tamamlanma durumu veya mevcut yorum).";
+            TempData["UserReservationError"] = "Bu rezervasyon için yorum formu açılamıyor (otel onayı, giriş/tamamlanma durumu veya mevcut yorum).";
             return RedirectToAction(nameof(Reservations));
         }
 
         ViewData["FavoriteCount"] = await _userFavoriteService.GetFavoriteCountAsync(userId, cancellationToken);
         ViewData["PageCssPath"] = "paneller/user/reviews";
-        ViewData["PanelTitle"] = "Konaklama degerlendirmesi";
-        ViewData["PanelSubtitle"] = "Konakladiginiz tesis hakkinda geri bildirim verin.";
+        ViewData["PanelTitle"] = "Konaklama değerlendirmesi";
+        ViewData["PanelSubtitle"] = "Konakladığınız tesis hakkında geri bildirim verin.";
         return View("~/Views/Paneller/User/ReservationReview.cshtml", model);
     }
 
@@ -235,7 +235,7 @@ public class UserPanelController : Controller
         var model = await _userFavoriteService.GetFavoritesPageAsync(GetCurrentUserId(), searchTerm, sort, page, cancellationToken);
         ViewData["PageCssPath"] = "paneller/user/favorites";
         ViewData["PanelTitle"] = "Favorilerim";
-        ViewData["PanelSubtitle"] = "Kaydettigin otelleri karsilastir, duzenle ve rezervasyona donustur.";
+        ViewData["PanelSubtitle"] = "Kaydettiğiniz otelleri karşılaştırın, düzenleyin ve rezervasyona dönüştürün.";
         ViewData["FavoriteCount"] = model.FavoriteCount;
         return View("~/Views/Paneller/User/Favorites.cshtml", model);
     }
@@ -289,8 +289,8 @@ public class UserPanelController : Controller
 
         var model = await _userPanelService.GetLoyaltyAsync(GetCurrentUserId(), cancellationToken);
         ViewData["PageCssPath"] = "paneller/user/loyalty";
-        ViewData["PanelTitle"] = "Puanlarim";
-        ViewData["PanelSubtitle"] = "OtelPuan bakiyeni, uye seviyeni ve kullanabilecegin odulleri tek ekranda yonet.";
+        ViewData["PanelTitle"] = "Puanlarım";
+        ViewData["PanelSubtitle"] = "OtelPuan bakiyenizi, üye seviyenizi ve kullanabileceğiniz ödülleri tek ekranda yönetin.";
         return View("~/Views/Paneller/User/Loyalty.cshtml", model);
     }
 
@@ -328,8 +328,8 @@ public class UserPanelController : Controller
 
         var model = await _userPanelService.GetMessagesAsync(GetCurrentUserId(), conversationId, cancellationToken);
         ViewData["PageCssPath"] = "paneller/user/messages";
-        ViewData["PanelTitle"] = "Mesajlarim";
-        ViewData["PanelSubtitle"] = "Oteller ve destek ekipleri ile tum mesajlasma akislarini yonet.";
+        ViewData["PanelTitle"] = "Mesajlarım";
+        ViewData["PanelSubtitle"] = "Oteller ve destek ekipleri ile tüm mesajlaşma akışlarını yönetin.";
         return View("~/Views/Paneller/User/Messages.cshtml", model);
     }
 
@@ -352,7 +352,7 @@ public class UserPanelController : Controller
         }
         ViewData["PageCssPath"] = "paneller/user/profile";
         ViewData["PanelTitle"] = "Profil Bilgilerim";
-        ViewData["PanelSubtitle"] = "Kisisel bilgilerini, iletisim verilerini ve seyahat tercihlerini duzenle.";
+        ViewData["PanelSubtitle"] = "Kişisel bilgilerinizi, iletişim verilerinizi ve seyahat tercihlerinizi düzenleyin.";
         return View("~/Views/Paneller/User/Profile.cshtml", model);
     }
 
@@ -366,8 +366,8 @@ public class UserPanelController : Controller
 
         var model = await _userPanelService.GetPaymentMethodsAsync(GetCurrentUserId(), cancellationToken);
         ViewData["PageCssPath"] = "paneller/user/payment-methods";
-        ViewData["PanelTitle"] = "Odeme Yontemleri";
-        ViewData["PanelSubtitle"] = "Kayitli kartlarini, fatura bilgilerini ve odeme guvenligini yonet.";
+        ViewData["PanelTitle"] = "Ödeme Yöntemleri";
+        ViewData["PanelSubtitle"] = "Kayıtlı kartlarınızı, fatura bilgilerinizi ve ödeme güvenliğini yönetin.";
         return View("~/Views/Paneller/User/PaymentMethods.cshtml", model);
     }
 
@@ -382,7 +382,7 @@ public class UserPanelController : Controller
         var model = await _userPanelService.GetNotificationsAsync(GetCurrentUserId(), cancellationToken);
         ViewData["PageCssPath"] = "paneller/user/notifications";
         ViewData["PanelTitle"] = "Bildirim Tercihleri";
-        ViewData["PanelSubtitle"] = "E-posta, SMS ve uygulama ici bildirim tercihlerini ozellestir.";
+        ViewData["PanelSubtitle"] = "E-posta, SMS ve uygulama içi bildirim tercihlerinizi özelleştirin.";
         return View("~/Views/Paneller/User/Notifications.cshtml", model);
     }
 
@@ -396,8 +396,8 @@ public class UserPanelController : Controller
 
         var model = await _userPanelService.GetSecurityAsync(GetCurrentUserId(), cancellationToken);
         ViewData["PageCssPath"] = "paneller/user/security";
-        ViewData["PanelTitle"] = "Guvenlik ve Giris";
-        ViewData["PanelSubtitle"] = "Sifre, aktif oturumlar ve iki asamali dogrulama ayarlarini yonet.";
+        ViewData["PanelTitle"] = "Güvenlik ve Giriş";
+        ViewData["PanelSubtitle"] = "Şifre, aktif oturumlar ve iki aşamalı doğrulama ayarlarını yönetin.";
         return View("~/Views/Paneller/User/Security.cshtml", model);
     }
 

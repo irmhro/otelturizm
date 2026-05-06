@@ -142,6 +142,7 @@ public class PartnerReservationRowViewModel
     public bool CanApprove { get; set; }
     public bool CanReject { get; set; }
     public bool CanCheckIn { get; set; }
+    public bool CanMarkPaymentCompleted { get; set; }
     public bool CanMessageGuest { get; set; }
     public bool CanOpenDetails { get; set; } = true;
     public string StatusTone { get; set; } = "pending";
@@ -298,6 +299,10 @@ public class PartnerCompanyReservationsPageViewModel
     public long SelectedHotelId { get; set; }
     public string? DateFrom { get; set; }
     public string? DateTo { get; set; }
+    /// <summary>creation = oluşturulma tarihi; stay = giriş/çıkış (konaklama penceresi).</summary>
+    public string DateRangeMode { get; set; } = "creation";
+    /// <summary>Çıkış tarihi geçmiş ve iptal dışı kayıtlar (konaklaması bitmiş).</summary>
+    public bool CompletedStaysOnly { get; set; }
     public long? CompanyId { get; set; }
     public string Status { get; set; } = "all";
     public List<PartnerCompanyOptionViewModel> CompanyOptions { get; set; } = new();
@@ -535,6 +540,8 @@ public class PartnerRoomManagementPageViewModel
     public List<PartnerRoomSummaryViewModel> Rooms { get; set; } = new();
     public List<PartnerRoomInventoryRowViewModel> InventoryRows { get; set; } = new();
     public List<PartnerRoomPhotoCardViewModel> SelectedRoomPhotos { get; set; } = new();
+    public List<PartnerRoomFeatureRowViewModel> AvailableRoomFeatures { get; set; } = new();
+    public List<long> SelectedRoomFeatureIds { get; set; } = new();
     public PartnerRoomUpsertRequest Form { get; set; } = new();
     public PartnerRoomPhotoUploadRequest PhotoUploadForm { get; set; } = new();
     public bool IsEditingRoom => Form.RoomId.HasValue;
@@ -588,6 +595,7 @@ public class PartnerRoomUpsertRequest
     public decimal? DiscountPrice { get; set; }
     public string? CoverPhotoPath { get; set; }
     public string? RoomFeaturesText { get; set; }
+    public List<long> SelectedFeatureIds { get; set; } = new();
     public bool IsActive { get; set; } = true;
 }
 
@@ -693,6 +701,9 @@ public class PartnerHotelAmenitiesUpdateRequest
 public class PartnerHotelLocationUpdateRequest
 {
     public long HotelId { get; set; }
+    public long? CityId { get; set; }
+    public long? DistrictId { get; set; }
+    public long? NeighborhoodId { get; set; }
     public string? Country { get; set; }
     public string? City { get; set; }
     public string? District { get; set; }
@@ -702,6 +713,26 @@ public class PartnerHotelLocationUpdateRequest
     public string? LocationDescription { get; set; }
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
+}
+
+public class PartnerLocationOptionViewModel
+{
+    public long Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class PartnerHotelLocationPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public PartnerHotelInfoForm Form { get; set; } = new();
+
+    public List<PartnerLocationOptionViewModel> Cities { get; set; } = new();
+    public List<PartnerLocationOptionViewModel> Districts { get; set; } = new();
+    public List<PartnerLocationOptionViewModel> Neighborhoods { get; set; } = new();
+
+    public long? SelectedCityId { get; set; }
+    public long? SelectedDistrictId { get; set; }
+    public long? SelectedNeighborhoodId { get; set; }
 }
 
 public class PartnerHotelTypeOptionViewModel
@@ -726,11 +757,23 @@ public class PartnerHotelPoliciesPageViewModel
     public PartnerShellViewModel Shell { get; set; } = new();
     public long SelectedHotelId { get; set; }
     public PartnerHotelPoliciesForm Form { get; set; } = new();
+    public List<PartnerHotelPolicyOptionViewModel> PolicyOptions { get; set; } = new();
+}
+
+public class PartnerHotelPolicyOptionViewModel
+{
+    public long PolicyId { get; set; }
+    public string Category { get; set; } = "Genel";
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public short Order { get; set; } = 100;
+    public bool IsSelected { get; set; }
 }
 
 public class PartnerHotelPoliciesForm
 {
     public long HotelId { get; set; }
+    public List<long> SelectedPolicyIds { get; set; } = new();
     public string? SmokingPolicy { get; set; }
     public string? PetPolicy { get; set; }
     public decimal? PetFee { get; set; }
@@ -806,10 +849,20 @@ public class PartnerPhotosPageViewModel
     public long SelectedHotelId { get; set; }
     public List<PartnerStatCardViewModel> SummaryCards { get; set; } = new();
     public List<PartnerPhotoCardViewModel> Photos { get; set; } = new();
+    public List<PartnerPhotoRoomLinkViewModel> Rooms { get; set; } = new();
     public PartnerPhotoUploadRequest UploadForm { get; set; } = new();
     public PartnerPhotoEditForm EditForm { get; set; } = new();
     public PartnerPhotoBulkDeleteRequest BulkDeleteForm { get; set; } = new();
     public bool IsEditingPhoto => EditForm.PhotoId.HasValue;
+}
+
+public class PartnerPhotoRoomLinkViewModel
+{
+    public long RoomId { get; set; }
+    public string RoomName { get; set; } = string.Empty;
+    public string? CoverPhotoUrl { get; set; }
+    public short TotalRooms { get; set; }
+    public bool IsActive { get; set; }
 }
 
 public class PartnerPhotoCardViewModel
@@ -897,6 +950,7 @@ public class PartnerReviewRowViewModel
     public string ScoreText { get; set; } = string.Empty;
     public string StatusText { get; set; } = string.Empty;
     public string CreatedText { get; set; } = string.Empty;
+    public DateTime? CreatedAtUtc { get; set; }
     public string Comment { get; set; } = string.Empty;
     public string? ResponseText { get; set; }
 }
@@ -907,6 +961,14 @@ public class PartnerReviewsPageViewModel
     public List<PartnerStatCardViewModel> SummaryCards { get; set; } = new();
     public List<PartnerReviewRowViewModel> Reviews { get; set; } = new();
     public PartnerReviewReplyRequest ReplyForm { get; set; } = new();
+    public string StatusFilter { get; set; } = string.Empty;
+    public string ReplyStateFilter { get; set; } = string.Empty;
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 7;
+    public int TotalCount { get; set; }
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)Math.Max(1, PageSize)));
+    public bool HasPreviousPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
 }
 
 public class PartnerReviewReplyRequest
@@ -963,6 +1025,25 @@ public class PartnerFinanceInvoiceViewModel
     public string InvoiceStatusText { get; set; } = string.Empty;
     public string TotalText { get; set; } = string.Empty;
     public string RecipientText { get; set; } = string.Empty;
+}
+
+public class PartnerReservationGuestInvoiceRowViewModel
+{
+    public long ReservationId { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public string StayText { get; set; } = string.Empty;
+    public string TotalText { get; set; } = string.Empty;
+    public bool HasInvoice { get; set; }
+    public long? SecureFileId { get; set; }
+    public string? DownloadUrl { get; set; }
+    public string? UploadedAtText { get; set; }
+}
+
+public class PartnerReservationGuestInvoicesPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public List<PartnerReservationGuestInvoiceRowViewModel> Rows { get; set; } = new();
 }
 
 public class PartnerBankInfoForm
@@ -1252,6 +1333,26 @@ public sealed class PartnerAccountInfoPageViewModel
     public PartnerShellViewModel Shell { get; set; } = new();
     public PartnerAccountUserSectionViewModel UserSection { get; set; } = new();
     public PartnerAccountPartnerSectionViewModel? PartnerSection { get; set; }
+    public PartnerAccountInfoUpdateForm UpdateForm { get; set; } = new();
+}
+
+public sealed class PartnerAccountInfoUpdateForm
+{
+    public long? HotelId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string CompanyType { get; set; } = string.Empty;
+    public string TaxOffice { get; set; } = string.Empty;
+    public string TaxNumber { get; set; } = string.Empty;
+    public string AuthorizedName { get; set; } = string.Empty;
+    public string AuthorizedEmail { get; set; } = string.Empty;
+    public string AuthorizedPhone { get; set; } = string.Empty;
+    public string BillingAddress { get; set; } = string.Empty;
+    public string BillingCity { get; set; } = string.Empty;
+    public string BillingDistrict { get; set; } = string.Empty;
+    public string BankName { get; set; } = string.Empty;
+    public string BankBranch { get; set; } = string.Empty;
+    public string Iban { get; set; } = string.Empty;
+    public string AccountHolderName { get; set; } = string.Empty;
 }
 
 public sealed class PartnerAccountUserSectionViewModel

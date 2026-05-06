@@ -90,58 +90,7 @@ textarea:focus-visible{
 }
 .ot-empty strong{ color: var(--ot-text); }
 
-/* p98: toast/flash */
-.ot-toast-stack{
-  position: fixed;
-  top: 14px;
-  right: 14px;
-  z-index: 2050;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  margin: 0;
-  width: min(420px, calc(100% - 28px));
-  pointer-events: none;
-}
-.ot-toast{
-  display:flex;
-  align-items:flex-start;
-  gap:10px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(15,23,42,.10);
-  background:#fff;
-  box-shadow: var(--ot-shadow-1);
-  pointer-events: auto;
-  transform: translateY(-2px);
-  opacity: 1;
-  transition: transform .22s ease, opacity .22s ease;
-}
-.ot-toast.is-hiding{
-  transform: translateY(-8px);
-  opacity: 0;
-}
-.ot-toast i{
-  font-size: 18px;
-  margin-top: 2px;
-}
-.ot-toast--success{
-  border-color: rgba(22,163,74,.28);
-  background: linear-gradient(135deg, rgba(22,163,74,.16) 0%, rgba(22,163,74,.06) 55%, rgba(255,255,255,.92) 100%);
-  color:#14532d;
-}
-.ot-toast--danger{
-  border-color: rgba(239,68,68,.30);
-  background: linear-gradient(135deg, rgba(239,68,68,.18) 0%, rgba(239,68,68,.07) 55%, rgba(255,255,255,.92) 100%);
-  color:#7f1d1d;
-}
-.ot-toast--warning{
-  border-color: rgba(245,158,11,.36);
-  background: linear-gradient(135deg, rgba(245,158,11,.20) 0%, rgba(245,158,11,.08) 55%, rgba(255,255,255,.92) 100%);
-  color:#78350f;
-}
-.ot-toast__title{ font-weight: 850; margin:0; font-size:14px; color: inherit; }
-.ot-toast__text{ margin:3px 0 0; font-size:13px; line-height:1.5; color: inherit; }
+/* p98: toast — wwwroot/assets/css/paneller/panel-toasts.css (ortak, layout’ta linklenir) */
 
 /* p99: mobil nav standard (layoutlar kendi class'larını kullanıyor, sadece hizalama) */
 .panel-mobile-nav a,
@@ -156,6 +105,5 @@ textarea:focus-visible{
   .ot-form-grid{ grid-template-columns: 1fr; }
   .ot-card{ padding: 14px; }
   .ot-table{ min-width: 560px; }
-  .ot-toast-stack{ top: 10px; right: 10px; width: calc(100% - 20px); }
 }
 

@@ -8,6 +8,33 @@
         #fff;
 }
 
+.platform-checkup-hero h1,
+.platform-checkup-hero p {
+    margin-left: 0;
+}
+
+.platform-checkup-hero h1 {
+    margin-top: 0.2rem;
+    margin-bottom: 0.45rem;
+    font-size: clamp(1.45rem, 2vw, 2rem);
+    font-weight: 900;
+}
+
+.platform-checkup-hero p {
+    margin-bottom: 0;
+    color: #52637a;
+}
+
+.admin-eyebrow {
+    display: inline-flex;
+    margin-bottom: 0.2rem;
+    color: #2563eb;
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 .platform-checkup-hero__meta {
     min-width: 180px;
     padding: 1rem 1.15rem;
@@ -37,7 +64,83 @@
 }
 
 .platform-checkup-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
     margin-top: 1rem;
+}
+
+.platform-checkup-kpis .admin-kpi-card {
+    display: flex;
+    align-items: center;
+    gap: 0.95rem;
+    min-height: 112px;
+    padding: 1rem 1.1rem;
+    border: 1px solid rgba(214, 224, 237, 0.95);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,251,255,0.96));
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
+}
+
+.platform-checkup-kpis .admin-kpi-icon {
+    flex: 0 0 auto;
+    display: grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #dbeafe, #eff6ff);
+    color: #1d4ed8;
+    font-size: 1.1rem;
+}
+
+.platform-checkup-kpis .admin-kpi-card strong,
+.platform-checkup-kpis .admin-kpi-card span,
+.platform-checkup-kpis .admin-kpi-card small {
+    display: block;
+}
+
+.platform-checkup-kpis .admin-kpi-card strong {
+    color: #0f172a;
+    font-size: 1.5rem;
+    line-height: 1;
+    font-weight: 900;
+}
+
+.platform-checkup-kpis .admin-kpi-card span:not(.admin-kpi-icon) {
+    margin-top: 0.25rem;
+    color: #0f172a;
+    font-weight: 850;
+}
+
+.platform-checkup-kpis .admin-kpi-card small {
+    margin-top: 0.12rem;
+    color: #64748b;
+    line-height: 1.35;
+}
+
+.platform-checkup-kpis .admin-kpi-card.tone-success .admin-kpi-icon,
+.platform-checkup-kpis .admin-kpi-card.success .admin-kpi-icon {
+    background: linear-gradient(135deg, #dcfce7, #86efac);
+    color: #166534;
+}
+
+.platform-checkup-kpis .admin-kpi-card.tone-warning .admin-kpi-icon,
+.platform-checkup-kpis .admin-kpi-card.warning .admin-kpi-icon {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+}
+
+.platform-checkup-kpis .admin-kpi-card.tone-danger .admin-kpi-icon,
+.platform-checkup-kpis .admin-kpi-card.danger .admin-kpi-icon {
+    background: linear-gradient(135deg, #fee2e2, #fca5a5);
+    color: #991b1b;
+}
+
+.platform-checkup-kpis .admin-kpi-card.tone-info .admin-kpi-icon,
+.platform-checkup-kpis .admin-kpi-card.info .admin-kpi-icon {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    color: #1d4ed8;
 }
 
 .platform-checkup-grid {

@@ -7,6 +7,15 @@ public class YardimMerkeziViewModel
     public List<DestekMakaleViewModel> PopularTopics { get; set; } = new();
     public List<DestekKanalViewModel> SupportChannels { get; set; } = new();
     public DestekKanalViewModel? LiveChatChannel { get; set; }
+    public List<YardimMerkeziTeamMemberViewModel> PlatformTeam { get; set; } = new();
+}
+
+public class YardimMerkeziTeamMemberViewModel
+{
+    public string Name { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string AvatarUrl { get; set; } = string.Empty;
 }
 
 public class SssViewModel
@@ -26,6 +35,35 @@ public class DestekKategoriViewModel
     public string IconClass { get; set; } = "fa-circle-info";
     public string ColorHex { get; set; } = "#003B95";
     public string LinkUrl { get; set; } = "#";
+    public string? HeroTitle { get; set; }
+    public string? HeroSubtitle { get; set; }
+    public string? HeroImageUrl { get; set; }
+    public string? FullContentHtml { get; set; }
+    public List<YardimMerkeziFaqItemViewModel> FaqItems { get; set; } = new();
+}
+
+public class YardimMerkeziFaqItemViewModel
+{
+    public string Question { get; set; } = string.Empty;
+    public string AnswerHtml { get; set; } = string.Empty;
+}
+
+public class YardimMerkeziKategoriDetaySayfaViewModel
+{
+    public DestekKategoriViewModel Category { get; set; } = new();
+    public List<DestekMakaleViewModel> RelatedArticles { get; set; } = new();
+    public string SearchTerm { get; set; } = string.Empty;
+}
+
+public class YardimMerkeziIcerikSayfaViewModel
+{
+    public string ContentType { get; set; } = "about";
+    public string Title { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty;
+    public string? HeroTitle { get; set; }
+    public string? HeroSubtitle { get; set; }
+    public string? HeroImageUrl { get; set; }
+    public string Html { get; set; } = string.Empty;
 }
 
 public class DestekMakaleViewModel

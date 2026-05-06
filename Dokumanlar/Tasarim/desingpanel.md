@@ -174,6 +174,10 @@ Rezervasyon listesinde tablo kolonları:
 - Tutar
 - Aksiyon
 
+## 7.1) Panel Listeleme Standardı
+
+Partner, firma, kullanıcı, satış ve admin panellerinde veri listeleyen tüm sayfalar öncelikle tablo mantığıyla tasarlanır. Kart grid yalnızca özet KPI, medya galerisi veya tekrar eden küçük aksiyon kartları için kullanılır. Oda, otel, rezervasyon, evrak, kampanya, abonelik, finans, kullanıcı ve fiyat stok listelerinde standart: filtre barı, sayfa başı seçimi, tablo başlığı, durum rozeti, yazılı aksiyon butonları ve mobil uyumlu satır/kart kırılımıdır.
+
 ## 8) Takvim & Fiyatlar Tasarım Kuralı
 
 Kaynak:

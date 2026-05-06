@@ -34,6 +34,7 @@ public sealed class DevelopmentAccessService : IDevelopmentAccessService
             {
                 HttpOnly = true,
                 IsEssential = true,
+                Path = "/",
                 Secure = context.Request.IsHttps,
                 SameSite = SameSiteMode.Lax,
                 Expires = expiresAt
@@ -80,6 +81,7 @@ public sealed class DevelopmentAccessService : IDevelopmentAccessService
 
     public void RevokeAccess(HttpContext context)
     {
-        context.Response.Cookies.Delete(AccessCookieName);
+        context.Response.Cookies.Delete(AccessCookieName, new CookieOptions { Path = "/" });
+        context.Response.Cookies.Delete(AccessCookieName, new CookieOptions { Path = "/gelisim" });
     }
 }

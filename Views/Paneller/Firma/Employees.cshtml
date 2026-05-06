@@ -1,38 +1,106 @@
 @model otelturizmnew.Models.Paneller.Firma.FirmaEmployeesPageViewModel
 @{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
 <section class="firma-mini-stats">
-    <article class="firma-mini-stat"><strong>@Model.Employees.Count</strong><span>Toplam Çalışan</span></article>
+    <article class="firma-mini-stat"><strong>@Model.TotalCount</strong><span>Toplam Çalışan</span></article>
     <article class="firma-mini-stat"><strong>@Model.TravelingEmployeeCount</strong><span>Rezervasyon Açan</span></article>
     <article class="firma-mini-stat"><strong>@Model.AverageLimitText</strong><span>Ortalama Limit</span></article>
     <button type="button" class="firma-action-btn" data-modal-open="employee-modal"><i class="fas fa-plus"></i> Çalışan Ekle</button>
 </section>
 
-<section class="firma-employee-grid">
-@foreach (var item in Model.Employees)
-{
-    <article class="firma-employee-card">
-        <div class="firma-employee-avatar">@item.Initials</div>
-        <div class="firma-employee-meta">
-            <div class="firma-row-between">
-                <div>
-                    <strong>@item.FullName</strong>
-                    <span>@item.Department · @item.Title</span>
-                    <small>@item.Email</small>
-                </div>
-                <b class="firma-role-badge @(item.IsManager ? "is-manager" : string.Empty)">@item.RoleText</b>
-            </div>
-            <div class="firma-card-stats">
-                <div><label>Rezervasyon</label><b>@item.ReservationCountText</b></div>
-                <div><label>Harcama</label><b>@item.SpendText</b></div>
-            </div>
-            <div class="firma-card-footer">
-                <span class="firma-pill">@item.LimitText</span>
-                <span class="firma-pill @(item.ApprovalText.Contains("Onaylı") ? "is-warning" : "is-success")">@item.ApprovalText</span>
-                <span class="firma-pill @item.PhoneVerificationToneClass">@item.PhoneVerificationText</span>
+<section class="firma-card">
+    <form method="get" action="/panel/firma/calisanlar" class="firma-form-grid" id="employeeFilterForm">
+        <label>
+            <span>Arama</span>
+            <input type="text" name="q" value="@(Model.SearchTerm ?? string.Empty)" placeholder="İsim / e-posta / departman" autocomplete="off" id="employeeSearchInput" />
+        </label>
+        <label>
+            <span>Departman</span>
+            <select name="departman" id="employeeDepartmentSelect">
+                <option value="">Tümü</option>
+                @foreach (var dep in Model.Departments)
+                {
+                    if (string.Equals(Model.DepartmentFilter, dep, StringComparison.OrdinalIgnoreCase))
+                    {
+                        <option value="@dep" selected>@dep</option>
+                    }
+                    else
+                    {
+                        <option value="@dep">@dep</option>
+                    }
+                }
+            </select>
+        </label>
+        <label>
+            <span>Sayfa başı</span>
+            <select name="pageSize" id="employeePageSizeSelect">
+                @if (Model.PageSize == 25) { <option value="25" selected>25</option> } else { <option value="25">25</option> }
+                @if (Model.PageSize == 35) { <option value="35" selected>35</option> } else { <option value="35">35</option> }
+                @if (Model.PageSize == 45) { <option value="45" selected>45</option> } else { <option value="45">45</option> }
+            </select>
+        </label>
+        <input type="hidden" name="page" value="@Model.CurrentPage" id="employeePageHidden" />
+        <div class="firma-form-actions" style="grid-column: 1 / -1; justify-content: flex-end;">
+            <a class="firma-btn-light" href="/panel/firma/calisanlar">Sıfırla</a>
+            <button type="submit" class="firma-btn-primary">Uygula</button>
+        </div>
+    </form>
+
+    <div class="firma-table-wrap" style="margin-top:14px;">
+        <table class="firma-table">
+            <thead>
+            <tr>
+                <th>Çalışan</th>
+                <th>Departman</th>
+                <th>Ünvan</th>
+                <th>Rol</th>
+                <th>Limit</th>
+                <th>Akış</th>
+                <th>Telefon</th>
+                <th style="text-align:right;">Rez.</th>
+                <th style="text-align:right;">Harcama</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var item in Model.Employees)
+            {
+                <tr>
+                    <td>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <span class="firma-employee-avatar" style="width:34px; height:34px; font-size:12px;">@item.Initials</span>
+                            <div>
+                                <strong>@item.FullName</strong><br />
+                                <small>@item.Email</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>@item.Department</td>
+                    <td>@item.Title</td>
+                    <td><span class="firma-pill @(item.IsManager ? "is-warning" : "secondary")">@item.RoleText</span></td>
+                    <td><span class="firma-pill">@item.LimitText</span></td>
+                    <td><span class="firma-pill @(item.ApprovalText.Contains("Onaylı") ? "is-warning" : "is-success")">@item.ApprovalText</span></td>
+                    <td><span class="firma-pill @item.PhoneVerificationToneClass">@item.PhoneVerificationText</span></td>
+                    <td style="text-align:right;"><b>@item.ReservationCountText</b></td>
+                    <td style="text-align:right;"><b>@item.SpendText</b></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        var prev = Math.Max(1, Model.CurrentPage - 1);
+        var next = Math.Min(Model.TotalPages, Model.CurrentPage + 1);
+        <div class="firma-pagination" style="display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:14px;">
+            <div class="firma-inline-note">Sayfa <b>@Model.CurrentPage</b> / <b>@Model.TotalPages</b> · Toplam <b>@Model.TotalCount</b> kayıt</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <a class="firma-btn-light" href="@BuildEmployeesUrl(Model, 1)">İlk</a>
+                <a class="firma-btn-light" href="@BuildEmployeesUrl(Model, prev)">Önceki</a>
+                <a class="firma-btn-light" href="@BuildEmployeesUrl(Model, next)">Sonraki</a>
+                <a class="firma-btn-light" href="@BuildEmployeesUrl(Model, Model.TotalPages)">Son</a>
             </div>
         </div>
-    </article>
-}
+    }
 </section>
 
 @if (Model.Employees.Count == 0)
@@ -83,6 +151,19 @@
     var nonce = Context.Items["CspNonce"] as string;
 }
 <script nonce="@nonce">
+function buildUrl(page) {
+    const form = document.getElementById('employeeFilterForm');
+    const q = form.querySelector('input[name="q"]').value || '';
+    const departman = form.querySelector('select[name="departman"]').value || '';
+    const pageSize = form.querySelector('select[name="pageSize"]').value || '25';
+    const params = new URLSearchParams();
+    if (q.trim()) params.set('q', q.trim());
+    if (departman.trim()) params.set('departman', departman.trim());
+    params.set('pageSize', pageSize);
+    params.set('page', String(page || 1));
+    return '/panel/firma/calisanlar?' + params.toString();
+}
+
 document.querySelectorAll('[data-modal-open]').forEach(button => {
     button.addEventListener('click', () => {
         const target = document.getElementById(button.getAttribute('data-modal-open'));
@@ -100,4 +181,35 @@ document.querySelectorAll('.firma-modal-overlay').forEach(overlay => {
         if (event.target === overlay) overlay.classList.remove('is-visible');
     });
 });
+
+const searchInput = document.getElementById('employeeSearchInput');
+const depSelect = document.getElementById('employeeDepartmentSelect');
+const sizeSelect = document.getElementById('employeePageSizeSelect');
+let searchTimer = null;
+function autoApply() {
+    window.location.href = buildUrl(1);
+}
+if (searchInput) {
+    searchInput.addEventListener('input', () => {
+        if (searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(autoApply, 350);
+    });
+}
+if (depSelect) depSelect.addEventListener('change', autoApply);
+if (sizeSelect) sizeSelect.addEventListener('change', autoApply);
 </script>
+
+@functions
+{
+    private static string BuildEmployeesUrl(otelturizmnew.Models.Paneller.Firma.FirmaEmployeesPageViewModel model, int page)
+    {
+        var q = model.SearchTerm ?? string.Empty;
+        var dep = model.DepartmentFilter ?? string.Empty;
+        var qs = System.Web.HttpUtility.ParseQueryString(string.Empty);
+        if (!string.IsNullOrWhiteSpace(q)) qs["q"] = q;
+        if (!string.IsNullOrWhiteSpace(dep)) qs["departman"] = dep;
+        qs["pageSize"] = (model.PageSize <= 0 ? 25 : model.PageSize).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        qs["page"] = (page <= 0 ? 1 : page).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return "/panel/firma/calisanlar?" + qs.ToString();
+    }
+}

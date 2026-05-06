@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
 
 namespace otelturizmnew.Services.Health;
 
@@ -7,10 +8,12 @@ namespace otelturizmnew.Services.Health;
 public sealed class SqlConnectionHealthCheck : IHealthCheck
 {
     private readonly IConfiguration _configuration;
+    private readonly ILogger<SqlConnectionHealthCheck> _logger;
 
-    public SqlConnectionHealthCheck(IConfiguration configuration)
+    public SqlConnectionHealthCheck(IConfiguration configuration, ILogger<SqlConnectionHealthCheck> logger)
     {
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
@@ -31,7 +34,8 @@ public sealed class SqlConnectionHealthCheck : IHealthCheck
         }
         catch (Exception ex)
         {
-            return HealthCheckResult.Unhealthy("SQL ping basarisiz.", ex);
+            _logger.LogWarning(ex, "sql_health_check_failed");
+            return HealthCheckResult.Unhealthy("SQL ping basarisiz.");
         }
     }
 }

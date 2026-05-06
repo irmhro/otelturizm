@@ -201,6 +201,7 @@ public class OtellerController : Controller
 
         ViewData["Title"] = "Otel Detay";
         ViewData["PageCss"] = "otel-detay";
+        ViewData["PageCssMobile"] = "otel-detay.mobile";
         ViewData["SuppressGlobalDraftBanner"] = true;
         return View("~/Views/Oteller/OtelDetay.cshtml", model);
     }

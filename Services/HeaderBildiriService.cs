@@ -427,6 +427,47 @@ public class HeaderBildiriService : IHeaderBildiriService
                     timeUtc);
             }
         }
+
+        const string missingInvoiceSql = @"
+            IF OBJECT_ID(N'dbo.rezervasyon_faturalari', N'U') IS NULL
+            BEGIN
+                SELECT 0 AS missing_count, NULL AS last_time;
+                RETURN;
+            END
+
+            SELECT
+                COUNT(*) AS missing_count,
+                MAX(COALESCE(r.guncellenme_tarihi, r.check_out_tarihi, r.cikis_tarihi, r.olusturulma_tarihi)) AS last_time
+            FROM dbo.rezervasyonlar r
+            INNER JOIN dbo.otel_kullanici_sahiplikleri oks ON oks.otel_id = r.otel_id
+            LEFT JOIN dbo.rezervasyon_faturalari rf ON rf.rezervasyon_id = r.id
+            WHERE oks.user_id = @userId
+              AND oks.aktif_mi = 1
+              AND COALESCE(r.durum, '') = N'Tamamlandı'
+              AND rf.id IS NULL;";
+        await using (var command = new SqlCommand(missingInvoiceSql, connection))
+        {
+            command.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                var missingCount = reader.IsDBNull(0) ? 0 : Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture);
+                if (missingCount > 0)
+                {
+                    DateTime? timeUtc = reader.IsDBNull(1) ? null : reader.GetDateTime(1);
+                    Add(
+                        model,
+                        BuildItemKey("partner-missing-invoices", missingCount.ToString()),
+                        "fa-file-invoice",
+                        "Eksik misafir faturasi",
+                        $"{missingCount} tamamlanmis rezervasyon icin fatura yuklenmemis gorunuyor. Lutfen fatura yukleyin.",
+                        "warning",
+                        RelativeTime(timeUtc),
+                        "/panel/partner/finans/misafir-faturalari",
+                        timeUtc);
+                }
+            }
+        }
     }
 
     private async Task FillFirmaItemsAsync(SqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)

@@ -1,1 +1,10 @@
-@import url("./panel-admin-hotels.css");
+@media (max-width: 900px) {
+    .admin-hotels-table-card .admin-hotel-listing-head {
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .admin-hotels-table {
+        min-width: 980px;
+    }
+}

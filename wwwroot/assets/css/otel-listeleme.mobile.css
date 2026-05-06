@@ -26,9 +26,15 @@
         box-shadow: 0 -14px 40px rgba(2, 6, 23, 0.10);
     }
 
-    /* Mobilde alt dock iptal: sağdan kayan filtre kullanılacak */
+    /* Alt dock (WOW bar) kapalı: sağ alttaki filtre FAB + offcanvas filtre kullanılır */
     .mobile-filter-bar { display: none !important; }
-    .site-footer { padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important; }
+    /* Liste gövdesi: şablondaki 112px alt boşluk dock içindi; dock kapalı → kompakt */
+    .hotel-listing-shell {
+        overflow-x: clip;
+        padding-bottom: calc(36px + env(safe-area-inset-bottom)) !important;
+    }
+    /* Footer: alt sabit bar yok; sadece safe-area + hafif nefes */
+    .site-footer { padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important; }
 
     .mobile-filter-bar-inner {
         max-width: 720px;
@@ -227,11 +233,6 @@
     .hotel-listing-shell {
         /* Listing içi gereksiz boşluğu azalt (footer ayrı zaten) */
         padding-bottom: 24px;
-    }
-
-    /* Footer mobil alt dock yüzünden kesilmesin */
-    .site-footer {
-        padding-bottom: calc(92px + env(safe-area-inset-bottom));
     }
 
     /* Mobil filtre popup'ı: daha minimal başlık + butonlar */
@@ -783,5 +784,31 @@
     .hotel-card .card-star-badge i {
         font-size: 12px;
         color: #fbbf24;
+    }
+
+    /* Sunum / tek ekran: dokunma gecikmesi azaltma, güvenli alan, kısa ekran */
+    .hotel-card .btn-detail,
+    .listing-toolbar-filter-btn,
+    .listing-sortbox select,
+    .quick-filter-chip,
+    .listing-map-launch-btn,
+    .dock-btn {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .listing-yanbar-filter {
+        bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+
+    @media (max-height: 700px) {
+        .listing-hero-panel {
+            padding-top: 14px;
+            padding-bottom: 14px;
+        }
+
+        .hotel-card-media {
+            min-height: 180px;
+        }
     }
 }

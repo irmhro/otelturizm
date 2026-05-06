@@ -23,6 +23,20 @@
     var profileImageUrl = userId > 0 ? await UserPanelService.GetProfileImageUrlAsync(userId, Context.RequestAborted) : string.Empty;
     ViewData["UserProfileImageUrl"] = profileImageUrl;
 
+    if (userId > 0)
+    {
+        var needsFavorite = ViewData["FavoriteCount"] is not int;
+        var needsReservation = ViewData["ReservationCount"] is not int;
+        var needsMessage = ViewData["MessageCount"] is not int;
+        if (needsFavorite || needsReservation || needsMessage)
+        {
+            var badges = await UserPanelService.GetNavBadgeCountsAsync(userId, Context.RequestAborted);
+            if (needsFavorite) { ViewData["FavoriteCount"] = badges.FavoriteCount; }
+            if (needsReservation) { ViewData["ReservationCount"] = badges.TotalReservations; }
+            if (needsMessage) { ViewData["MessageCount"] = badges.MessageThreads; }
+        }
+    }
+
     var theme = userId > 0 ? await PanelThemeService.LoadAsync("user", userId, Context.RequestAborted) : new otelturizmnew.Models.Paneller.Partner.PanelThemeViewModel();
     var bsTheme = (theme?.BsTheme ?? "light").Trim().ToLowerInvariant();
     if (bsTheme is not ("light" or "dark" or "auto")) { bsTheme = "light"; }
@@ -53,6 +67,8 @@
     <link rel="stylesheet" href="~/assets/css/paneller/partner/tabler-bridge.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/panel-tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/panel-standards.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/paneller/user/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/user/shell.mobile.css" asp-append-version="true" media="(max-width: 991px)" />
     <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.css" asp-append-version="true" />
@@ -178,6 +194,13 @@
             </div>
         </div>
     </div>
+
+    @if (userId > 0)
+    {
+        <div class="d-lg-none user-mobile-nav-wrap" aria-label="Hızlı gezinme">
+            <partial name="~/Views/Paneller/User/_UserMobileNav.cshtml" />
+        </div>
+    }
 
     <script src="~/paneltematabler/dist/js/tabler.min.js" asp-append-version="true"></script>
     <script src="~/assets/js/panel-header-bildiri.js" asp-append-version="true"></script>

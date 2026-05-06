@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using otelturizmnew.Services;
 
 namespace otelturizmnew.Controllers.Api;
@@ -6,6 +7,7 @@ namespace otelturizmnew.Controllers.Api;
 /// <summary>Otel detay canlı görüntüleyici sayacı (heartbeat).</summary>
 [ApiController]
 [IgnoreAntiforgeryToken]
+[EnableRateLimiting("presence-beat")]
 public sealed class HotelPresenceController : ControllerBase
 {
     private readonly HotelPresenceTracker _tracker;

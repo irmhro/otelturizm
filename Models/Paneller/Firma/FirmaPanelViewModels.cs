@@ -129,6 +129,19 @@ public class FirmaDashboardPageViewModel
     public List<FirmaPanelDealRowViewModel> HighlightDeals { get; set; } = new();
     public List<FirmaPanelEmployeeRowViewModel> FeaturedEmployees { get; set; } = new();
     public List<FirmaPanelReservationRowViewModel> RecentReservations { get; set; } = new();
+
+    /// <summary>Bu ay etiketi (örn. Mayıs 2026).</summary>
+    public string CurrentMonthLabel { get; set; } = string.Empty;
+
+    public string MonthSpendTotalText { get; set; } = "₺0";
+    public string MonthSavingsText { get; set; } = "₺0";
+    public int MonthReservationCount { get; set; }
+
+    /// <summary>Son aylar için mini grafik (Harcama raporu ile aynı kaynak).</summary>
+    public List<FirmaMonthlySpendRowViewModel> SpendTrend { get; set; } = new();
+
+    /// <summary>Firma geneli aylık limit vb. uyarı metinleri.</summary>
+    public List<string> LimitAlerts { get; set; } = new();
 }
 
 public class FirmaDealsPageViewModel
@@ -190,6 +203,13 @@ public class FirmaEmployeesPageViewModel
     public FirmaEmployeeCreateModel CreateForm { get; set; } = new();
     public int TravelingEmployeeCount { get; set; }
     public string AverageLimitText { get; set; } = "₺0";
+    public int TotalCount { get; set; }
+    public int CurrentPage { get; set; } = 1;
+    public int PageSize { get; set; } = 25;
+    public int TotalPages { get; set; }
+    public string? SearchTerm { get; set; }
+    public string? DepartmentFilter { get; set; }
+    public List<string> Departments { get; set; } = new();
 }
 
 public class FirmaLimitsPageViewModel

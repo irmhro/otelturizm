@@ -1,16 +1,16 @@
 @{
-    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
 }
-<nav class="mobile-bottom-nav">
-    <a asp-action="Index" class="@(currentAction == "Index" ? "active" : "")"><i class="fas fa-home"></i><span>Panel</span></a>
-    <a asp-action="Reservations" class="@(currentAction == "Reservations" ? "active" : "")"><i class="fas fa-calendar"></i><span>Rezervasyon</span></a>
-    <a asp-action="Favorites" class="@(currentAction == "Favorites" ? "active" : "")"><i class="fas fa-heart"></i><span>Favori</span></a>
-    <a asp-action="Loyalty" class="@(currentAction == "Loyalty" ? "active" : "")"><i class="fas fa-star"></i><span>Puan</span></a>
-    <a asp-action="Profile" class="@(currentAction == "Profile" ? "active" : "")"><i class="fas fa-user"></i><span>Profil</span></a>
+<nav class="mobile-bottom-nav mobile-bottom-nav--scroll" aria-label="Alt menü">
+    <a asp-controller="UserPanel" asp-action="Dashboard" class="@(string.Equals(currentAction, "Dashboard", StringComparison.OrdinalIgnoreCase) ? "active" : null)"><i class="fas fa-home" aria-hidden="true"></i><span>Panel</span></a>
+    <a asp-controller="UserPanel" asp-action="Reservations" class="@(string.Equals(currentAction, "Reservations", StringComparison.OrdinalIgnoreCase) ? "active" : null)"><i class="fas fa-calendar" aria-hidden="true"></i><span>Rezervasyon</span></a>
+    <a asp-controller="UserPanel" asp-action="Favorites" class="@(string.Equals(currentAction, "Favorites", StringComparison.OrdinalIgnoreCase) ? "active" : null)"><i class="fas fa-heart" aria-hidden="true"></i><span>Favori</span></a>
+    <a asp-controller="UserPanel" asp-action="Messages" class="@(string.Equals(currentAction, "Messages", StringComparison.OrdinalIgnoreCase) ? "active" : null)"><i class="fas fa-comments" aria-hidden="true"></i><span>Mesaj</span></a>
+    <a asp-controller="UserPanel" asp-action="Reviews" class="@(string.Equals(currentAction, "Reviews", StringComparison.OrdinalIgnoreCase) || string.Equals(currentAction, "ReservationReview", StringComparison.OrdinalIgnoreCase) ? "active" : null)"><i class="fas fa-star-half-stroke" aria-hidden="true"></i><span>Yorum</span></a>
+    <a asp-controller="UserPanel" asp-action="Loyalty" class="@(string.Equals(currentAction, "Loyalty", StringComparison.OrdinalIgnoreCase) ? "active" : null)"><i class="fas fa-gift" aria-hidden="true"></i><span>Puan</span></a>
+    <a asp-controller="UserPanel" asp-action="Profile" class="@(string.Equals(currentAction, "Profile", StringComparison.OrdinalIgnoreCase) ? "active" : null)"><i class="fas fa-user" aria-hidden="true"></i><span>Profil</span></a>
     <form method="post" action="/cikis-yap" class="panel-mobile-logout-form">
         @Html.AntiForgeryToken()
-        <button type="submit"><i class="fas fa-right-from-bracket"></i><span>Cikis</span></button>
+        <button type="submit"><i class="fas fa-right-from-bracket" aria-hidden="true"></i><span>Çıkış</span></button>
     </form>
 </nav>
-
-

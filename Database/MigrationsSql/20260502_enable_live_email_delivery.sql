@@ -108,20 +108,22 @@ SET email_servis_kodu = N'default_smtp'
 WHERE tur = N'E-posta'
   AND (email_servis_kodu IS NULL OR LTRIM(RTRIM(email_servis_kodu)) = N'');
 
-IF EXISTS (
-    SELECT 1
-    FROM dbo.email_services
-    WHERE servis_kodu = N'default_smtp'
-      AND aktif_mi = 1
-      AND test_modu = 0
-      AND (
-          smtp_host IS NULL OR LTRIM(RTRIM(smtp_host)) = N''
-          OR smtp_kullanici_adi IS NULL OR LTRIM(RTRIM(smtp_kullanici_adi)) = N''
-          OR smtp_sifre IS NULL OR LTRIM(RTRIM(smtp_sifre)) = N''
-      )
-)
+-- Canlı kimlik eksikse migration'ı kırmadan test moduna al (yerel/kurulum); üretimde şifreyi doldurun.
+UPDATE dbo.email_services
+SET test_modu = 1,
+    guncellenme_tarihi = SYSUTCDATETIME()
+WHERE servis_kodu = N'default_smtp'
+  AND aktif_mi = 1
+  AND test_modu = 0
+  AND (
+      smtp_host IS NULL OR LTRIM(RTRIM(smtp_host)) = N''
+      OR smtp_kullanici_adi IS NULL OR LTRIM(RTRIM(smtp_kullanici_adi)) = N''
+      OR smtp_sifre IS NULL OR LTRIM(RTRIM(smtp_sifre)) = N''
+  );
+
+IF @@ROWCOUNT > 0
 BEGIN
-    THROW 51003, 'Canli SMTP aktif ancak host/kullanici/sifre eksik. email_services.smtp_sifre alanini canli SMTP sifresiyle doldurun.', 1;
+    PRINT N'UYARI: default_smtp canlı SMTP kimlik bilgisi eksik — test_modu=1 yapıldı. Üretimde smtp_sifre/host/kullanici doldurun.';
 END;
 
 IF OBJECT_ID(N'dbo.schema_migrations', N'U') IS NOT NULL

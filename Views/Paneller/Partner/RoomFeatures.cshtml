@@ -16,44 +16,13 @@
 </div>
 
 <div class="row row-cards">
-    <div class="col-12 col-xl-4">
-        <form method="post" action="/panel/partner/oda/ozellikler/ekle" class="card">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
-            <div class="card-header">
-                <h3 class="card-title mb-0">Yeni özellik ekle</h3>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label">Kategori</label>
-                    <input class="form-control" name="Category" value="@Model.AddForm.Category" placeholder="Genel" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Özellik adı</label>
-                    <input class="form-control" name="Name" value="@Model.AddForm.Name" required maxlength="100" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">İkon (FontAwesome class)</label>
-                    <input class="form-control" name="IconClass" value="@Model.AddForm.IconClass" placeholder="fa-wifi" maxlength="50" />
-                    <div class="form-hint">Sadece class yazın. Örn: <code>fa-wifi</code></div>
-                </div>
-                <div class="mb-0">
-                    <label class="form-label">Sıralama</label>
-                    <input class="form-control" type="number" name="Order" value="@Model.AddForm.Order" />
-                </div>
-            </div>
-            <div class="card-footer d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Ekle
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <div class="col-12 col-xl-8">
+    <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title mb-0">Mevcut özellikler</h3>
+                <div>
+                    <h3 class="card-title mb-0">Özellik sözlüğü</h3>
+                    <div class="text-muted small">Bu sözlükten seçtiğiniz özellikler `Oda Yönetimi` ekranında oda tiplerine atanır. Manuel özellik ekleme kaldırıldı.</div>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">

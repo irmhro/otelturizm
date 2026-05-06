@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using otelturizmnew.Constants;
+using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.Partner;
 using otelturizmnew.Services.Abstractions;
 
@@ -18,14 +19,16 @@ public class PartnerPanelController : Controller
     private readonly IUserPanelService _userPanelService;
     private readonly IOutputCacheStore _outputCacheStore;
     private readonly IPanelThemeService _panelThemeService;
+    private readonly ISecureFileService _secureFileService;
 
-    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IUserPanelService userPanelService, IOutputCacheStore outputCacheStore, IPanelThemeService panelThemeService)
+    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IUserPanelService userPanelService, IOutputCacheStore outputCacheStore, IPanelThemeService panelThemeService, ISecureFileService secureFileService)
     {
         _partnerService = partnerService;
         _authService = authService;
         _userPanelService = userPanelService;
         _outputCacheStore = outputCacheStore;
         _panelThemeService = panelThemeService;
+        _secureFileService = secureFileService;
     }
 
     private async Task EvictPublicOutputCacheAsync(CancellationToken cancellationToken)
@@ -287,6 +290,24 @@ public class PartnerPanelController : Controller
             return Redirect(request.ReturnUrl);
         }
         return Redirect($"/panel/partner/rezervasyonlar?otelId={request.HotelId}");
+    }
+
+    [HttpPost("rezervasyonlar/odeme-tamamlandi")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkPaymentCompleted(long hotelId, long reservationId, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.MarkReservationPaymentCompletedAsync(GetUserId(), hotelId, reservationId, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Ödeme tamamlandı işlemi yapılamadı: {ex.Message}";
+        }
+
+        return Redirect($"/panel/partner/rezervasyonlar?otelId={hotelId}");
     }
 
     [HttpPost("rezervasyonlar/misafire-mesaj")]
@@ -890,12 +911,12 @@ public class PartnerPanelController : Controller
     }
 
     [HttpGet("degerlendirmeler")]
-    public async Task<IActionResult> Reviews(long? otelId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Reviews(long? otelId, string? durum, string? yanit, int page = 1, int pageSize = 7, CancellationToken cancellationToken = default)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
         try
         {
-            var model = await _partnerService.GetReviewsAsync(GetUserId(), otelId, cancellationToken);
+            var model = await _partnerService.GetReviewsAsync(GetUserId(), otelId, durum, yanit, page, pageSize, cancellationToken);
             ViewData["Title"] = "Partner Değerlendirmeler";
             ViewData["PageCssPath"] = "paneller/partner/reviews";
             return View("~/Views/Paneller/Partner/Reviews.cshtml", model);
@@ -1029,15 +1050,15 @@ public class PartnerPanelController : Controller
         if (!IsPartnerUser()) return Redirect("/partner-giris");
         try
         {
-            var model = await _partnerService.GetPartnerSettingsPageAsync(GetUserId(), otelId, cancellationToken);
+            var model = await _partnerService.GetPartnerPreferencesAsync(GetUserId(), otelId, cancellationToken);
             ViewData["PartnerShell"] = model.Shell;
-            ViewData["Title"] = "Ayarlar";
+            ViewData["Title"] = "Tercihler";
             ViewData["PageCssPath"] = "paneller/partner/settings";
             return View("~/Views/Paneller/Partner/Settings.cshtml", model);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
         {
-            ViewData["Title"] = "Ayarlar";
+            ViewData["Title"] = "Tercihler";
             ViewData["PageCssPath"] = "paneller/partner/settings";
             return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
         }
@@ -1063,7 +1084,6 @@ public class PartnerPanelController : Controller
         }
     }
 
-    [HttpPost("tercihler/kaydet")]
     [HttpPost("basvuru-ve-evraklar/kaydet")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SavePreferences(PartnerApplicationProfileForm request, CancellationToken cancellationToken)
@@ -1079,6 +1099,23 @@ public class PartnerPanelController : Controller
             TempData["PartnerError"] = $"Başvuru bilgileri kaydedilemedi: {ex.Message}";
         }
         return Redirect($"/panel/partner/basvuru-ve-evraklar?otelId={request.HotelId}");
+    }
+
+    [HttpPost("tercihler/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SavePartnerPreferences(PartnerPreferencesForm form, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.SavePartnerPreferencesAsync(GetUserId(), form, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Tercihler kaydedilemedi: {ex.Message}";
+        }
+        return Redirect($"/panel/partner/tercihler?otelId={form.HotelId}");
     }
 
     [HttpPost("basvuru-ve-evraklar/evrak-yukle")]
@@ -1281,11 +1318,26 @@ public class PartnerPanelController : Controller
         }
     }
 
-    [HttpGet("fiyat/stok-kontenjan")]
-    [HttpGet("fiyat/super-fiyat")]
-    [HttpGet("fiyat/indirimler")]
-    [HttpGet("fiyat/kisitlamalar")]
-    [HttpGet("fiyat/gunluk-notlar")]
+    [HttpPost("hesap-bilgileri/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveAccountInfo(otelturizmnew.Models.Paneller.Partner.PartnerAccountInfoUpdateForm form, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.SaveAccountInfoAsync(GetUserId(), form, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+            var q = form.HotelId is > 0 ? $"?otelId={form.HotelId.Value}" : string.Empty;
+            return Redirect($"/panel/partner/hesap-bilgileri{q}");
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Kaydedilemedi: {ex.Message}";
+            var q = form.HotelId is > 0 ? $"?otelId={form.HotelId.Value}" : string.Empty;
+            return Redirect($"/panel/partner/hesap-bilgileri{q}");
+        }
+    }
+
     public async Task<IActionResult> PlannedModule(long? otelId, CancellationToken cancellationToken)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
@@ -1303,6 +1355,206 @@ public class PartnerPanelController : Controller
         {
             return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
         }
+    }
+
+    [HttpGet("fiyat/super-fiyat")]
+    public async Task<IActionResult> SuperPrice(long? otelId, long? roomId, string? month, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var model = await _partnerService.GetPricingAsync(GetUserId(), otelId, roomId, month, cancellationToken);
+            ViewData["Title"] = "Süper Fiyat";
+            ViewData["PageCssPath"] = "paneller/partner/super-price";
+            return View("~/Views/Paneller/Partner/SuperPrice.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Süper Fiyat";
+            ViewData["PageCssPath"] = "paneller/partner/super-price";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpPost("fiyat/super-fiyat/uygula")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApplySuperPrice(PartnerBulkPricingUpdateRequest request, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.ApplyBulkPricingAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Süper fiyat uygulanamadı: {ex.Message}";
+        }
+
+        var roomId = request.ViewRoomId ?? request.RoomId ?? request.SelectedRoomIds.FirstOrDefault();
+        var roomQuery = roomId > 0 ? $"&roomId={roomId}" : string.Empty;
+        var monthQuery = !string.IsNullOrWhiteSpace(request.ViewMonth) ? $"&month={Uri.EscapeDataString(request.ViewMonth)}" : string.Empty;
+        return Redirect($"/panel/partner/fiyat/super-fiyat?otelId={request.HotelId}{roomQuery}{monthQuery}");
+    }
+
+    [HttpGet("fiyat/indirimler")]
+    public async Task<IActionResult> Discounts(long? otelId, long? roomId, string? month, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var model = await _partnerService.GetPricingAsync(GetUserId(), otelId, roomId, month, cancellationToken);
+            ViewData["Title"] = "İndirimler";
+            ViewData["PageCssPath"] = "paneller/partner/discounts";
+            return View("~/Views/Paneller/Partner/Discounts.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "İndirimler";
+            ViewData["PageCssPath"] = "paneller/partner/discounts";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpGet("fiyat/kisitlamalar")]
+    public async Task<IActionResult> Restrictions(long? otelId, long? roomId, string? month, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var model = await _partnerService.GetPricingAsync(GetUserId(), otelId, roomId, month, cancellationToken);
+            ViewData["Title"] = "Kısıtlamalar";
+            ViewData["PageCssPath"] = "paneller/partner/restrictions";
+            return View("~/Views/Paneller/Partner/Restrictions.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Kısıtlamalar";
+            ViewData["PageCssPath"] = "paneller/partner/restrictions";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpPost("fiyat/kisitlamalar/uygula")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApplyRestrictions(PartnerBulkPricingUpdateRequest request, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.ApplyBulkPricingAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Kısıtlamalar uygulanamadı: {ex.Message}";
+        }
+
+        var roomId = request.ViewRoomId ?? request.RoomId ?? request.SelectedRoomIds.FirstOrDefault();
+        var roomQuery = roomId > 0 ? $"&roomId={roomId}" : string.Empty;
+        var monthQuery = !string.IsNullOrWhiteSpace(request.ViewMonth) ? $"&month={Uri.EscapeDataString(request.ViewMonth)}" : string.Empty;
+        return Redirect($"/panel/partner/fiyat/kisitlamalar?otelId={request.HotelId}{roomQuery}{monthQuery}");
+    }
+
+    [HttpGet("fiyat/gunluk-notlar")]
+    public async Task<IActionResult> DailyNotes(long? otelId, long? roomId, string? month, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var model = await _partnerService.GetPricingAsync(GetUserId(), otelId, roomId, month, cancellationToken);
+            ViewData["Title"] = "Günlük Notlar";
+            ViewData["PageCssPath"] = "paneller/partner/daily-notes";
+            return View("~/Views/Paneller/Partner/DailyNotes.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Günlük Notlar";
+            ViewData["PageCssPath"] = "paneller/partner/daily-notes";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpPost("fiyat/gunluk-notlar/uygula")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApplyDailyNotes(PartnerBulkPricingUpdateRequest request, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.ApplyBulkPricingAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Günlük notlar uygulanamadı: {ex.Message}";
+        }
+
+        var roomId = request.ViewRoomId ?? request.RoomId ?? request.SelectedRoomIds.FirstOrDefault();
+        var roomQuery = roomId > 0 ? $"&roomId={roomId}" : string.Empty;
+        var monthQuery = !string.IsNullOrWhiteSpace(request.ViewMonth) ? $"&month={Uri.EscapeDataString(request.ViewMonth)}" : string.Empty;
+        return Redirect($"/panel/partner/fiyat/gunluk-notlar?otelId={request.HotelId}{roomQuery}{monthQuery}");
+    }
+
+    [HttpPost("fiyat/indirimler/uygula")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApplyDiscounts(PartnerBulkPricingUpdateRequest request, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.ApplyBulkPricingAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"İndirim uygulanamadı: {ex.Message}";
+        }
+
+        var roomId = request.ViewRoomId ?? request.RoomId ?? request.SelectedRoomIds.FirstOrDefault();
+        var roomQuery = roomId > 0 ? $"&roomId={roomId}" : string.Empty;
+        var monthQuery = !string.IsNullOrWhiteSpace(request.ViewMonth) ? $"&month={Uri.EscapeDataString(request.ViewMonth)}" : string.Empty;
+        return Redirect($"/panel/partner/fiyat/indirimler?otelId={request.HotelId}{roomQuery}{monthQuery}");
+    }
+
+    [HttpGet("fiyat/stok-kontenjan")]
+    public async Task<IActionResult> StockQuota(long? otelId, long? roomId, string? month, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var model = await _partnerService.GetPricingAsync(GetUserId(), otelId, roomId, month, cancellationToken);
+            ViewData["Title"] = "Oda Kontenjanları";
+            ViewData["PageCssPath"] = "paneller/partner/stock-quota";
+            return View("~/Views/Paneller/Partner/StockQuota.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Oda Kontenjanları";
+            ViewData["PageCssPath"] = "paneller/partner/stock-quota";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpPost("fiyat/stok-kontenjan/uygula")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApplyStockQuota(PartnerBulkPricingUpdateRequest request, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var result = await _partnerService.ApplyBulkPricingAsync(GetUserId(), request, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Kontenjan güncelleme uygulanamadı: {ex.Message}";
+        }
+
+        var roomId = request.ViewRoomId ?? request.RoomId ?? request.SelectedRoomIds.FirstOrDefault();
+        var roomQuery = roomId > 0 ? $"&roomId={roomId}" : string.Empty;
+        var monthQuery = !string.IsNullOrWhiteSpace(request.ViewMonth) ? $"&month={Uri.EscapeDataString(request.ViewMonth)}" : string.Empty;
+        return Redirect($"/panel/partner/fiyat/stok-kontenjan?otelId={request.HotelId}{roomQuery}{monthQuery}");
     }
 
     [HttpGet("odeme/ayarlari")]
@@ -1337,6 +1589,75 @@ public class PartnerPanelController : Controller
         {
             return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
         }
+    }
+
+    [HttpGet("finans/misafir-faturalari")]
+    public async Task<IActionResult> GuestInvoices(long? otelId, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var model = await _partnerService.GetGuestInvoicesAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Misafir Faturaları";
+            ViewData["PageCssPath"] = "paneller/partner/finance";
+            return View("~/Views/Paneller/Partner/GuestInvoices.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpPost("finans/misafir-faturalari/yukle")]
+    [ValidateAntiForgeryToken]
+    [RequestFormLimits(MultipartBodyLengthLimit = 52428800)]
+    [RequestSizeLimit(52428800)]
+    public async Task<IActionResult> UploadGuestInvoice(long hotelId, long reservationId, IFormFile? invoiceFile, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        if (hotelId <= 0 || reservationId <= 0)
+        {
+            TempData["PartnerError"] = "Geçersiz istek.";
+            return Redirect($"/panel/partner/finans/misafir-faturalari?otelId={hotelId}");
+        }
+
+        if (invoiceFile is null || invoiceFile.Length <= 0)
+        {
+            TempData["PartnerError"] = "Yüklenecek bir dosya seçmelisiniz.";
+            return Redirect($"/panel/partner/finans/misafir-faturalari?otelId={hotelId}");
+        }
+
+        var ext = Path.GetExtension(invoiceFile.FileName);
+        var isPdf = string.Equals(invoiceFile.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase);
+        var isImage = invoiceFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+                      || new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(ext, StringComparer.OrdinalIgnoreCase);
+        if (!isPdf && !isImage)
+        {
+            TempData["PartnerError"] = "Sadece PDF veya görsel (JPG/PNG/WEBP) yükleyebilirsiniz.";
+            return Redirect($"/panel/partner/finans/misafir-faturalari?otelId={hotelId}");
+        }
+
+        try
+        {
+            var stored = await _secureFileService.SaveAsync(invoiceFile, new SecureFileSaveRequest
+            {
+                ContextTable = "rezervasyonlar",
+                ContextId = reservationId,
+                OwnerUserId = GetUserId(),
+                Category = "guest-invoice",
+                VisibilityScope = "private"
+            }, cancellationToken);
+
+            var result = await _partnerService.SaveGuestInvoiceAsync(GetUserId(), hotelId, reservationId, stored.FileId, invoiceFile.FileName, invoiceFile.ContentType, cancellationToken);
+            TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        }
+        catch (Exception ex)
+        {
+            TempData["PartnerError"] = $"Fatura yüklenemedi: {ex.Message}";
+        }
+
+        return Redirect($"/panel/partner/finans/misafir-faturalari?otelId={hotelId}");
     }
 
     [HttpGet("finans/komisyonlar")]
@@ -1374,14 +1695,14 @@ public class PartnerPanelController : Controller
     }
 
     [HttpGet("firmalar/rezervasyonlar")]
-    public async Task<IActionResult> CompanyReservations(long? otelId, DateTime? dateFrom, DateTime? dateTo, long? companyId, string? status, CancellationToken cancellationToken)
+    public async Task<IActionResult> CompanyReservations(long? otelId, DateTime? dateFrom, DateTime? dateTo, long? companyId, string? status, string? dateRangeMode, bool completedStaysOnly = false, CancellationToken cancellationToken = default)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
         try
         {
-            var model = await _partnerService.GetCompanyReservationsAsync(GetUserId(), otelId, dateFrom, dateTo, companyId, status, cancellationToken);
+            var model = await _partnerService.GetCompanyReservationsAsync(GetUserId(), otelId, dateFrom, dateTo, companyId, status, dateRangeMode, completedStaysOnly, cancellationToken);
             ViewData["Title"] = "Firma Rezervasyonları";
-            ViewData["PageCssPath"] = "paneller/partner/company-pricing";
+            ViewData["PageCssPath"] = "paneller/partner/company-reservations";
             return View("~/Views/Paneller/Partner/CompanyReservations.cshtml", model);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
@@ -1414,7 +1735,7 @@ public class PartnerPanelController : Controller
         try
         {
             var model = await _partnerService.GetCompanyRequestsAsync(GetUserId(), otelId, cancellationToken);
-            ViewData["Title"] = "Firma Talepleri";
+            ViewData["Title"] = "İlişkili Kurumsal Firmalar";
             ViewData["PageCssPath"] = "paneller/partner/company-pricing";
             return View("~/Views/Paneller/Partner/CompanyRequests.cshtml", model);
         }
@@ -1527,7 +1848,7 @@ public class PartnerPanelController : Controller
         if (!IsPartnerUser()) return Redirect("/partner-giris");
         try
         {
-            var model = await _partnerService.GetHotelInfoAsync(GetUserId(), otelId, cancellationToken);
+            var model = await _partnerService.GetHotelLocationAsync(GetUserId(), otelId, cancellationToken);
             ViewData["Title"] = "Konum ve Harita";
             ViewData["PageCssPath"] = "paneller/partner/hotel-info";
             return View("~/Views/Paneller/Partner/FacilityLocation.cshtml", model);
@@ -1538,6 +1859,22 @@ public class PartnerPanelController : Controller
             ViewData["PageCssPath"] = "paneller/partner/hotel-info";
             return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
         }
+    }
+
+    [HttpGet("tesis/konum/ilceler")]
+    public async Task<IActionResult> LocationDistricts(long cityId, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Unauthorized();
+        var rows = await _partnerService.GetDistrictOptionsAsync(cityId, cancellationToken);
+        return Json(rows);
+    }
+
+    [HttpGet("tesis/konum/mahalleler")]
+    public async Task<IActionResult> LocationNeighborhoods(long districtId, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Unauthorized();
+        var rows = await _partnerService.GetNeighborhoodOptionsAsync(districtId, cancellationToken);
+        return Json(rows);
     }
 
     [HttpPost("tesis/konum/kaydet")]
@@ -1687,7 +2024,7 @@ public class PartnerPanelController : Controller
             var p when p.Contains("finans/mutabakat") => "Mutabakat",
             var p when p.Contains("firmalar/rezervasyonlar") => "Firma Rezervasyonları",
             var p when p.Contains("firmalar/analiz") => "Firma Analizleri",
-            var p when p.Contains("firmalar/talepler") => "Firma Talepleri",
+            var p when p.Contains("firmalar/talepler") => "İlişkili Kurumsal Firmalar",
             var p when p.Contains("bildirim-tercihleri") => "Bildirim Tercihleri",
             var p when p.Contains("hesap-bilgileri") => "Hesap Bilgileri",
             _ => "Partner Modülü"

@@ -186,6 +186,7 @@ public class FirmaService : IFirmaService
         model.HighlightDeals = await LoadDealsAsync(connection, context.FirmaId, 4, null, null, null, null, null, cancellationToken);
         model.FeaturedEmployees = await LoadEmployeesAsync(connection, context.FirmaId, 4, cancellationToken);
         model.RecentReservations = await LoadReservationsAsync(connection, context.FirmaId, 6, cancellationToken);
+        await LoadDashboardExtrasAsync(connection, context.FirmaId, model, cancellationToken);
         return model;
     }
 
@@ -387,9 +388,9 @@ public class FirmaService : IFirmaService
               AND (@q IS NULL OR @q = '' OR otel_adi LIKE '%' + @q + '%' OR sehir LIKE '%' + @q + '%' OR ilce LIKE '%' + @q + '%' OR mahalle LIKE '%' + @q + '%')
             ORDER BY one_cikan_otel DESC, otel_adi ASC;";
         await using (var cmd = new SqlCommand(hotelsSql, connection))
-        await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
         {
             cmd.Parameters.AddWithValue("@q", string.IsNullOrWhiteSpace(search) ? (object)DBNull.Value : search.Trim());
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
                 model.Hotels.Add(new FirmaSelectOption { Value = reader.GetInt64(0), Label = reader.GetString(1) });
@@ -749,21 +750,165 @@ public class FirmaService : IFirmaService
         };
     }
 
-    public async Task<FirmaEmployeesPageViewModel> GetEmployeesAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<FirmaEmployeesPageViewModel> GetEmployeesAsync(
+        long userId,
+        string? q = null,
+        string? departman = null,
+        int? page = null,
+        int? pageSize = null,
+        CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Çalışanlar", "Firma kullanıcılarını, departmanlarını ve harcama yetkilerini yönetin.", "employees", cancellationToken);
-        var employees = await LoadEmployeesAsync(connection, context.FirmaId, 200, cancellationToken);
+        var resolvedPageSize = ResolveEmployeesPageSize(pageSize);
+        var resolvedPage = ResolveEmployeesPage(page);
+        var offset = (resolvedPage - 1) * resolvedPageSize;
+
+        var departments = await LoadEmployeeDepartmentsAsync(connection, context.FirmaId, cancellationToken);
+        var (employees, totalCount) = await LoadEmployeesPagedAsync(connection, context.FirmaId, q, departman, offset, resolvedPageSize, cancellationToken);
+        var totalPages = totalCount <= 0 ? 1 : (int)Math.Ceiling(totalCount / (double)resolvedPageSize);
+        resolvedPage = Math.Clamp(resolvedPage, 1, Math.Max(1, totalPages));
+
         return new FirmaEmployeesPageViewModel
         {
             Shell = context.Shell,
             Employees = employees,
+            TotalCount = totalCount,
+            CurrentPage = resolvedPage,
+            PageSize = resolvedPageSize,
+            TotalPages = totalPages,
+            SearchTerm = string.IsNullOrWhiteSpace(q) ? null : q.Trim(),
+            DepartmentFilter = string.IsNullOrWhiteSpace(departman) ? null : departman.Trim(),
+            Departments = departments,
             TravelingEmployeeCount = employees.Count(static x => x.ReservationCountText != "0"),
             AverageLimitText = employees.Count == 0
                 ? "₺0"
                 : FormatMoney(ParseMoneyAverage(employees.Select(static x => x.LimitText)))
         };
+    }
+
+    private static int ResolveEmployeesPageSize(int? pageSize)
+    {
+        return pageSize switch
+        {
+            25 => 25,
+            35 => 35,
+            45 => 45,
+            _ => 25
+        };
+    }
+
+    private static int ResolveEmployeesPage(int? page)
+    {
+        if (!page.HasValue) return 1;
+        if (page.Value < 1) return 1;
+        return Math.Min(page.Value, 10_000);
+    }
+
+    private async Task<List<string>> LoadEmployeeDepartmentsAsync(SqlConnection connection, long firmaId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT DISTINCT LTRIM(RTRIM(COALESCE(departman, N'Tanımsız'))) AS departman
+            FROM users
+            WHERE firma_id = @firmaId AND rol LIKE 'firma_%'
+            ORDER BY LTRIM(RTRIM(COALESCE(departman, N'Tanımsız'))) ASC;";
+
+        var items = new List<string>();
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@firmaId", firmaId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            if (reader.IsDBNull(0)) continue;
+            var dep = reader.GetString(0);
+            if (string.IsNullOrWhiteSpace(dep)) continue;
+            items.Add(dep);
+        }
+        return items;
+    }
+
+    private async Task<(List<FirmaPanelEmployeeRowViewModel> Items, int TotalCount)> LoadEmployeesPagedAsync(
+        SqlConnection connection,
+        long firmaId,
+        string? q,
+        string? departman,
+        int offset,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            DECLARE @qLike nvarchar(250) = NULL;
+            IF (@q IS NOT NULL AND LTRIM(RTRIM(@q)) <> N'') SET @qLike = N'%' + LTRIM(RTRIM(@q)) + N'%';
+
+            WITH base_users AS (
+                SELECT u.id
+                FROM users u
+                WHERE u.firma_id = @firmaId
+                  AND u.rol LIKE 'firma_%'
+                  AND (@qLike IS NULL OR u.ad_soyad LIKE @qLike OR u.eposta LIKE @qLike OR COALESCE(u.departman, N'Tanımsız') LIKE @qLike)
+                  AND (@departman IS NULL OR LTRIM(RTRIM(@departman)) = N'' OR LTRIM(RTRIM(COALESCE(u.departman, N'Tanımsız'))) = LTRIM(RTRIM(@departman)))
+            )
+            SELECT u.id, u.ad_soyad, COALESCE(u.departman, N'Tanımsız'), COALESCE(u.gorev_unvani, u.rol), u.eposta,
+                   u.harcama_limiti, u.onay_gereksinimi, u.rol, u.firma_yonetici_mi,
+                   u.telefon_dogrulama_tarihi, u.telefon_son_sahiplik_teyit_tarihi, COALESCE(u.telefon_dogrulama_durumu, N''),
+                   COUNT(r.id) AS rezervasyon_sayisi, COALESCE(SUM(r.toplam_tutar), 0) AS harcama_toplami,
+                   (SELECT COUNT(*) FROM base_users) AS total_count
+            FROM users u
+            INNER JOIN base_users bu ON bu.id = u.id
+            LEFT JOIN rezervasyonlar r ON r.firma_calisan_id = u.id
+            GROUP BY u.id, u.ad_soyad, u.departman, u.gorev_unvani, u.eposta, u.harcama_limiti, u.onay_gereksinimi, u.rol, u.firma_yonetici_mi,
+                     u.telefon_dogrulama_tarihi, u.telefon_son_sahiplik_teyit_tarihi, u.telefon_dogrulama_durumu
+            ORDER BY u.firma_yonetici_mi DESC, u.ad_soyad ASC
+            OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;";
+
+        var items = new List<FirmaPanelEmployeeRowViewModel>();
+        var totalCount = 0;
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@firmaId", firmaId);
+        command.Parameters.AddWithValue("@q", (object?)q ?? DBNull.Value);
+        command.Parameters.AddWithValue("@departman", (object?)departman ?? DBNull.Value);
+        command.Parameters.AddWithValue("@offset", Math.Max(0, offset));
+        command.Parameters.AddWithValue("@take", Math.Max(1, take));
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var fullName = reader.GetString(1);
+            var verifiedAt = reader.IsDBNull(9) ? (DateTime?)null : reader.GetDateTime(9);
+            var ownershipAt = reader.IsDBNull(10) ? (DateTime?)null : reader.GetDateTime(10);
+            var phoneStatus = reader.IsDBNull(11) ? string.Empty : reader.GetString(11);
+            var isPhoneVerified = verifiedAt.HasValue
+                && (!ownershipAt.HasValue || ownershipAt.Value >= DateTime.UtcNow.AddDays(-180));
+
+            if (totalCount == 0) totalCount = SafeInt(reader, 14);
+
+            items.Add(new FirmaPanelEmployeeRowViewModel
+            {
+                UserId = reader.GetInt64(0),
+                FullName = fullName,
+                Department = reader.GetString(2),
+                Title = reader.GetString(3),
+                Email = reader.GetString(4),
+                LimitText = reader.IsDBNull(5) ? "-" : FormatMoney(reader.GetDecimal(5)),
+                ApprovalText = SafeBool(reader, 6) ? "Onaylı akış" : "Serbest rezervasyon",
+                Initials = GetInitials(fullName),
+                RoleText = GetRoleLabel(reader.IsDBNull(7) ? string.Empty : reader.GetString(7)),
+                IsManager = SafeBool(reader, 8),
+                IsPhoneVerified = isPhoneVerified,
+                PhoneVerificationText = isPhoneVerified
+                    ? $"Telefon doğrulandı · {verifiedAt!.Value.ToLocalTime():dd.MM.yyyy}"
+                    : string.Equals(phoneStatus, "Beklemede", StringComparison.OrdinalIgnoreCase)
+                        ? "Telefon doğrulaması bekleniyor"
+                        : "Telefon doğrulanmadı",
+                PhoneVerificationToneClass = isPhoneVerified ? "success" : string.Equals(phoneStatus, "Beklemede", StringComparison.OrdinalIgnoreCase) ? "warning" : "secondary",
+                ReservationCountText = SafeInt(reader, 12).ToString(CultureInfo.InvariantCulture),
+                SpendText = FormatMoney(SafeDecimal(reader, 13))
+            });
+        }
+
+        return (items, totalCount);
     }
 
     public async Task<FirmaLimitsPageViewModel> GetLimitsAsync(long userId, CancellationToken cancellationToken = default)
@@ -1554,6 +1699,104 @@ public class FirmaService : IFirmaService
             });
         }
         return items;
+    }
+
+    private async Task LoadDashboardExtrasAsync(SqlConnection connection, long firmaId, FirmaDashboardPageViewModel model, CancellationToken cancellationToken)
+    {
+        var tr = CultureInfo.GetCultureInfo("tr-TR");
+        model.CurrentMonthLabel = DateTime.Now.ToString("MMMM yyyy", tr);
+
+        decimal monthSpend = 0m;
+        decimal monthSave = 0m;
+
+        const string monthSql = @"
+            SELECT
+                COALESCE(SUM(toplam_tutar), 0),
+                COALESCE(SUM(toplam_tasarruf), 0),
+                COUNT(*)
+            FROM rezervasyonlar
+            WHERE firma_id = @firmaId
+              AND olusturulma_tarihi >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+              AND olusturulma_tarihi < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1));";
+
+        await using (var cmd = new SqlCommand(monthSql, connection))
+        {
+            cmd.Parameters.AddWithValue("@firmaId", firmaId);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                monthSpend = SafeDecimal(reader, 0);
+                monthSave = SafeDecimal(reader, 1);
+                model.MonthReservationCount = SafeInt(reader, 2);
+            }
+        }
+
+        model.MonthSpendTotalText = FormatMoney(monthSpend);
+        model.MonthSavingsText = FormatMoney(monthSave);
+
+        const string trendSql = @"
+            SELECT FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR') AS ay, COALESCE(SUM(toplam_tutar), 0) AS toplam, COUNT(*) AS rezervasyon_sayisi
+            FROM rezervasyonlar
+            WHERE firma_id = @firmaId
+              AND olusturulma_tarihi >= DATEADD(MONTH, -5, CAST(SYSUTCDATETIME() AS date))
+            GROUP BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi), FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR')
+            ORDER BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi);";
+
+        await using (var trendCmd = new SqlCommand(trendSql, connection))
+        {
+            trendCmd.Parameters.AddWithValue("@firmaId", firmaId);
+            await using var reader = await trendCmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                model.SpendTrend.Add(new FirmaMonthlySpendRowViewModel
+                {
+                    Label = reader.GetString(0),
+                    Amount = SafeDecimal(reader, 1),
+                    ReservationCount = SafeInt(reader, 2)
+                });
+            }
+        }
+
+        var maxAmount = Math.Max(1m, model.SpendTrend.Count == 0 ? 0m : model.SpendTrend.Max(static x => x.Amount));
+        foreach (var item in model.SpendTrend)
+        {
+            item.HeightPercent = Math.Max(16, (int)Math.Round(item.Amount * 100m / maxAmount));
+        }
+
+        try
+        {
+            const string limitSql = @"
+                SELECT TOP (1) aylik_limit
+                FROM firma_harcama_limitleri
+                WHERE firma_id = @firmaId AND aktif_mi = 1
+                  AND kullanici_id IS NULL AND departman IS NULL AND aylik_limit IS NOT NULL
+                ORDER BY id ASC;";
+
+            await using var limCmd = new SqlCommand(limitSql, connection);
+            limCmd.Parameters.AddWithValue("@firmaId", firmaId);
+            var limObj = await limCmd.ExecuteScalarAsync(cancellationToken);
+            if (limObj is not null && limObj != DBNull.Value)
+            {
+                var lim = Convert.ToDecimal(limObj, CultureInfo.InvariantCulture);
+                if (lim > 0m)
+                {
+                    if (monthSpend > lim)
+                    {
+                        model.LimitAlerts.Add(
+                            $"Bu ay kurumsal harcamanız ({FormatMoney(monthSpend)}), firma geneli aylık limitinizi ({FormatMoney(lim)}) aştı. Limitler & Onaylar üzerinden güncelleyebilirsiniz.");
+                    }
+                    else if (monthSpend >= lim * 0.9m)
+                    {
+                        model.LimitAlerts.Add(
+                            $"Bu ay harcama ({FormatMoney(monthSpend)}), aylık limitinize ({FormatMoney(lim)}) yaklaştı (%90 üzeri).");
+                    }
+                }
+            }
+        }
+        catch (SqlException ex) when (IsMissingTableOrColumn(ex))
+        {
+            // Şema yoksa sessiz
+        }
     }
 
     private static decimal ParseMoneyAverage(IEnumerable<string> moneyValues)

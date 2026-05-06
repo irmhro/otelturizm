@@ -9,8 +9,17 @@
     <div class="row g-2 align-items-center">
         <div class="col">
             <div class="page-pretitle">Firmalar</div>
-            <h2 class="page-title">Firma Talepleri</h2>
-            <div class="text-muted mt-1">Firma başvuruları ve durum hareketleri.</div>
+            <h2 class="page-title">İlişkili kurumsal firmalar</h2>
+            <div class="text-muted mt-1">Bu otelle kurumsal rezervasyon veya firma oda fiyatı üzerinden bağlantılı firmaların kart kayıtları ve (varsa) başvuru süreç hareketleri.</div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info mb-3" role="status">
+    <div class="d-flex gap-2 align-items-start">
+        <i class="fas fa-circle-info mt-1"></i>
+        <div>
+            <strong>Yönetim notu:</strong> Platforma yeni kurumsal üyelik başvurularının onayı <strong>yönetim paneli</strong> üzerinden yapılır; bu sayfa yalnızca <strong>seçili otelinizle iş ilişkisi olan</strong> kurumsal müşterileri gösterir.
         </div>
     </div>
 </div>
@@ -36,7 +45,7 @@
                     <tbody>
                         @if (Model.Companies.Count == 0)
                         {
-                            <tr><td colspan="6" class="text-muted p-3">Firma kaydı bulunamadı.</td></tr>
+                            <tr><td colspan="6" class="text-muted p-3">Bu otelle ilişkili kurumsal firma kaydı bulunamadı (kurumsal rezervasyon veya firma oda fiyatı tanımı gerekir).</td></tr>
                         }
                         else
                         {

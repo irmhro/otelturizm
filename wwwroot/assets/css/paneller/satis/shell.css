@@ -132,3 +132,73 @@ a { text-decoration: none; }
 @media (max-width: 1280px) { .sales-grid.cards-4, .sales-grid.cards-3 { grid-template-columns: repeat(2, minmax(0,1fr)); } .sales-grid.cols-2 { grid-template-columns: 1fr; } .sales-search-card .search-grid { grid-template-columns: repeat(3, minmax(0,1fr)); } .sales-header-badges { width:100%; justify-content:flex-start; } .panel-header-logout-btn { width:100%; justify-content:center; } }
 @media (max-width: 980px) { .sales-sidebar { display: none; } .sales-panel-main { padding: 18px; } .sales-page-header { flex-direction: column; } .sales-mobile-nav { position: fixed; left: 12px; right: 12px; bottom: 12px; display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; padding: 10px; background: rgba(15,23,42,.92); backdrop-filter: blur(16px); border-radius: 24px; box-shadow: var(--sales-shadow); } .sales-mobile-nav a, .sales-mobile-nav .panel-mobile-logout-form button { color: rgba(255,255,255,.7); display: grid; justify-items: center; gap: 6px; padding: 10px 6px; font-size: 11px; border: none; background: transparent; font: inherit; cursor: pointer; } .sales-mobile-nav .panel-mobile-logout-form { margin: 0; } .sales-mobile-nav a.active { color: #fff; background: rgba(245,158,11,.22); border-radius: 16px; } .sales-desktop-only { display: none; } .sales-mobile-only { display: block; } body { padding-bottom: 100px; } }
 @media (max-width: 720px) { .sales-grid.cards-4, .sales-grid.cards-3, .sales-form-grid, .sales-search-card .search-grid, .sales-calendar-grid, .sales-mini-card-grid { grid-template-columns: 1fr; } .sales-search-inline { flex-direction: column; } .sales-list-row, .sales-guide-card, .sales-customer-card, .sales-hotel-card, .sales-card-head, .sales-calendar-toolbar { flex-direction: column; } .sales-hotel-card-side, .sales-guide-meta, .sales-list-meta { text-align: left; justify-items: start; } .sales-panel-footer, .sales-inline-badges { flex-direction: column; } .sales-filter-actions { align-items: stretch; } .sales-page-header h1 { font-size: 28px; } }
+
+/* Satış shell layout lock: partner/admin ile aynı sidebar davranışı. */
+@media (min-width: 981px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .sales-panel-shell {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-height: 100vh;
+        padding-left: 280px;
+        background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
+    }
+
+    .sales-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 1030;
+        width: 280px;
+        height: 100vh;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .sales-sidebar-header,
+    .sales-profile-card,
+    .sales-sidebar-meta {
+        flex: 0 0 auto;
+    }
+
+    .sales-nav {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-bottom: 16px;
+        scrollbar-width: thin;
+    }
+
+    .sales-sidebar-meta {
+        position: static;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        margin-top: 12px;
+    }
+
+    .sales-panel-main {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        padding: 24px 30px 90px;
+    }
+
+    .sales-page-header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        margin: -24px -30px 24px;
+        padding: 20px 30px;
+        border-bottom: 1px solid var(--sales-border);
+        background: rgba(255,255,255,.92);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+}

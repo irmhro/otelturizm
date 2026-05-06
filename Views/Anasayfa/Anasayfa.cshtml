@@ -4,10 +4,17 @@
 
 @{
     Layout = null;
-    ViewData["Title"] = "Anasayfa";
+    ViewData["Title"] ??= "Anasayfa";
     ViewData["HeaderContext"] = "home";
     var pageCss = ViewData["PageCss"] as string;
     var nonce = Context.Items["CspNonce"] as string;
+    var cfg = Context.RequestServices.GetService(typeof(Microsoft.Extensions.Configuration.IConfiguration)) as Microsoft.Extensions.Configuration.IConfiguration;
+    var publicBaseUrl = cfg?["App:PublicBaseUrl"]?.TrimEnd('/') ?? $"{Context.Request.Scheme}://{Context.Request.Host}";
+    var metaDesc = ViewData["MetaDescription"] as string ?? "Otelturizm ile otelleri karşılaştırın, kampanyaları keşfedin ve güvenle rezervasyon oluşturun.";
+    var canonical = ViewData["Canonical"] as string ?? $"{publicBaseUrl}/";
+    var ogImage = ViewData["OgImage"] as string ?? $"{publicBaseUrl}/uploads/logo/logo.png";
+    var pageTitle = ViewData["Title"] as string ?? "Anasayfa";
+    var jsonLd = ViewData["HomeJsonLd"] as string;
     var hostEnv = Context.RequestServices.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
     var requestHost = Context.Request.Host.Host ?? string.Empty;
     var isLoopbackHost =
@@ -23,7 +30,23 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
-    <title>@ViewData["Title"] - Otelturizm</title>
+    <meta name="description" content="@metaDesc" />
+    <link rel="canonical" href="@canonical" />
+    <meta property="og:site_name" content="Otelturizm" />
+    <meta property="og:title" content="@pageTitle" />
+    <meta property="og:description" content="@metaDesc" />
+    <meta property="og:url" content="@canonical" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="@ogImage" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@pageTitle" />
+    <meta name="twitter:description" content="@metaDesc" />
+    <meta name="twitter:image" content="@ogImage" />
+    @if (!string.IsNullOrWhiteSpace(jsonLd))
+    {
+        <script type="application/ld+json" nonce="@nonce">@Html.Raw(jsonLd)</script>
+    }
+    <title>@pageTitle - Otelturizm</title>
     <script type="importmap" nonce="@nonce"></script>
 
             <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
@@ -70,6 +93,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/assets/vendor/swiper/swiper-bundle.min.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/assets/js/client-error-reporter.js" asp-append-version="true"></script>
     <script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
     <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
     <script nonce="@nonce">

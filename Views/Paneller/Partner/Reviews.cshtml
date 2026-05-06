@@ -1,53 +1,179 @@
 @model otelturizmnew.Models.Paneller.Partner.PartnerReviewsPageViewModel
-@{ Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml"; ViewData["PartnerShell"] = Model.Shell; }
-<section class="partner-grid">
-@foreach (var card in Model.SummaryCards)
-{
-    <article class="partner-stat-card @card.ToneClass"><i class="fas @card.IconClass"></i><strong>@card.Value</strong><span>@card.Label</span><p>@card.Description</p></article>
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    var hotelId = Model.Shell.SelectedHotelId;
+    var pageSizeOptions = new[] { 5, 7, 10, 15, 25 };
+    var statusOptions = new[] { "Onaylandı", "Beklemede", "Reddedildi" };
 }
-</section>
-<section class="partner-section-card">
-    <h2>Yorumlar</h2>
-    <div class="partner-review-stack">
-    @foreach (var review in Model.Reviews)
+
+<section class="partner-grid partner-review-stats">
+    @foreach (var card in Model.SummaryCards)
     {
-        <article class="partner-review-card">
-            <div class="partner-review-head">
-                <div>
-                    <strong>@review.GuestName</strong>
-                    <span>@review.ScoreText</span>
-                </div>
-                <small>@review.CreatedText · @review.StatusText</small>
-            </div>
-            <p>@review.Comment</p>
-            <form method="post" action="/panel/partner/degerlendirmeler/yanitla" class="partner-inline-form">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
-                <input type="hidden" name="ReviewId" value="@review.ReviewId" />
-                <input type="text" name="ResponseText" value="@review.ResponseText" placeholder="Yanit yazin" />
-                <button type="submit">Kaydet</button>
-            </form>
-            <form method="post" action="/panel/partner/degerlendirmeler/raporla" class="partner-review-report-form">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
-                <input type="hidden" name="ReviewId" value="@review.ReviewId" />
-                <button type="submit" class="partner-secondary-btn partner-inline-btn">
-                    <i class="fas fa-flag"></i>
-                    Incelemeye gonder
-                </button>
-            </form>
-            <form method="post" action="/panel/partner/degerlendirmeler/kaldirma-talebi" class="partner-review-report-form">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="hotelId" value="@Model.Shell.SelectedHotelId" />
-                <input type="hidden" name="reviewId" value="@review.ReviewId" />
-                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                <input type="hidden" name="reason" value="Partner kaldırma talebi: içerik ihlali şüphesi." />
-                <button type="submit" class="partner-secondary-btn partner-inline-btn">
-                    <i class="fas fa-circle-xmark"></i>
-                    Kaldırma talebi
-                </button>
-            </form>
+        <article class="partner-stat-card @card.ToneClass">
+            <i class="fas @card.IconClass"></i>
+            <strong>@card.Value</strong>
+            <span>@card.Label</span>
+            <p>@card.Description</p>
         </article>
     }
+</section>
+
+<section class="partner-section-card partner-review-panel">
+    <div class="partner-review-toolbar">
+        <div>
+            <span class="partner-eyebrow">Misafir değerlendirmeleri</span>
+            <h2>Yorum Yönetimi</h2>
+            <p>Yorumları filtreleyin, yanıtlayın ve moderasyon taleplerini tek tablodan yönetin.</p>
+        </div>
+        <a class="partner-secondary-btn" href="/panel/partner/degerlendirmeler?otelId=@hotelId">
+            <i class="fas fa-rotate-left"></i>
+            Temizle
+        </a>
+    </div>
+
+    <form class="partner-review-filter" method="get" action="/panel/partner/degerlendirmeler">
+        <input type="hidden" name="otelId" value="@hotelId" />
+        <label>
+            <span>Durum</span>
+            <select name="durum">
+                <option value="">Tüm durumlar</option>
+                @foreach (var option in statusOptions)
+                {
+                    <option value="@option" selected="@(string.Equals(Model.StatusFilter, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                }
+            </select>
+        </label>
+        <label>
+            <span>Yanıt</span>
+            <select name="yanit">
+                <option value="">Tümü</option>
+                <option value="unanswered" selected="@(Model.ReplyStateFilter == "unanswered")">Yanıtsız</option>
+                <option value="answered" selected="@(Model.ReplyStateFilter == "answered")">Yanıtlandı</option>
+            </select>
+        </label>
+        <label>
+            <span>Sayfa başı</span>
+            <select name="pageSize">
+                @foreach (var option in pageSizeOptions)
+                {
+                    <option value="@option" selected="@(Model.PageSize == option)">@option</option>
+                }
+            </select>
+        </label>
+        <button class="partner-primary-btn" type="submit">
+            <i class="fas fa-filter"></i>
+            Filtrele
+        </button>
+    </form>
+
+    <div class="partner-review-table-wrap">
+        <table class="partner-review-table">
+            <thead>
+                <tr>
+                    <th>Misafir / Yorum</th>
+                    <th>Puan</th>
+                    <th>Durum</th>
+                    <th>Tarih</th>
+                    <th>SLA</th>
+                    <th>Yanıt</th>
+                    <th>Aksiyon</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Reviews.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="partner-empty-state">
+                                <i class="fas fa-comments"></i>
+                                <strong>Kayıt bulunamadı</strong>
+                                <span>Seçili filtrelerle eşleşen yorum yok.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @foreach (var review in Model.Reviews)
+                {
+                    var statusClass = review.StatusText.Contains("Onay", StringComparison.OrdinalIgnoreCase) ? "is-approved"
+                        : review.StatusText.Contains("Red", StringComparison.OrdinalIgnoreCase) ? "is-rejected"
+                        : "is-waiting";
+                    var hasResponse = !string.IsNullOrWhiteSpace(review.ResponseText);
+                    <tr>
+                        <td data-label="Misafir / Yorum">
+                            <div class="partner-review-main">
+                                <strong>@review.GuestName</strong>
+                                <span>@review.Title</span>
+                                <p>@review.Comment</p>
+                            </div>
+                        </td>
+                        <td data-label="Puan">
+                            <span class="partner-score-pill">@review.ScoreText</span>
+                        </td>
+                        <td data-label="Durum">
+                            <span class="partner-status-pill @statusClass">@review.StatusText</span>
+                        </td>
+                        <td data-label="Tarih">@review.CreatedText</td>
+                        <td data-label="SLA">
+                            @{
+                                var now = DateTime.UtcNow;
+                                var created = review.CreatedAtUtc ?? now;
+                                var ageDays = Math.Max(0, (int)Math.Floor((now - created).TotalDays));
+                                var slaTone = hasResponse ? "bg-green-lt text-green"
+                                    : ageDays >= 3 ? "bg-red-lt text-red"
+                                    : ageDays >= 1 ? "bg-yellow-lt text-yellow"
+                                    : "bg-azure-lt text-azure";
+                                var slaText = hasResponse ? "Yanıtlandı" : $"{ageDays}g";
+                            }
+                            <span class="badge @slaTone">@slaText</span>
+                        </td>
+                        <td data-label="Yanıt">
+                            <form method="post" action="/panel/partner/degerlendirmeler/yanitla" class="partner-review-reply-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="HotelId" value="@hotelId" />
+                                <input type="hidden" name="ReviewId" value="@review.ReviewId" />
+                                <textarea name="ResponseText" rows="2" placeholder="Misafire kurumsal yanıt yazın">@review.ResponseText</textarea>
+                                <button type="submit" class="partner-primary-btn partner-compact-btn">
+                                    <i class="fas fa-reply"></i>
+                                    @(hasResponse ? "Güncelle" : "Yanıtla")
+                                </button>
+                            </form>
+                        </td>
+                        <td data-label="Aksiyon">
+                            <div class="partner-review-actions">
+                                <form method="post" action="/panel/partner/degerlendirmeler/raporla">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="HotelId" value="@hotelId" />
+                                    <input type="hidden" name="ReviewId" value="@review.ReviewId" />
+                                    <button type="submit" class="partner-secondary-btn partner-compact-btn">
+                                        <i class="fas fa-flag"></i>
+                                        İnceleme
+                                    </button>
+                                </form>
+                                <form method="post" action="/panel/partner/degerlendirmeler/kaldirma-talebi">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="hotelId" value="@hotelId" />
+                                    <input type="hidden" name="reviewId" value="@review.ReviewId" />
+                                    <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                    <input type="hidden" name="reason" value="Partner kaldırma talebi: içerik ihlali şüphesi." />
+                                    <button type="submit" class="partner-danger-btn partner-compact-btn">
+                                        <i class="fas fa-circle-xmark"></i>
+                                        Kaldırma
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="partner-table-footer">
+        <span>@Model.TotalCount kayıt · Sayfa @Model.Page / @Model.TotalPages</span>
+        <div class="partner-pager">
+            <a class="partner-secondary-btn @(Model.HasPreviousPage ? string.Empty : "is-disabled")" href="/panel/partner/degerlendirmeler?otelId=@hotelId&durum=@Model.StatusFilter&yanit=@Model.ReplyStateFilter&page=@(Model.Page - 1)&pageSize=@Model.PageSize">Önceki</a>
+            <a class="partner-secondary-btn @(Model.HasNextPage ? string.Empty : "is-disabled")" href="/panel/partner/degerlendirmeler?otelId=@hotelId&durum=@Model.StatusFilter&yanit=@Model.ReplyStateFilter&page=@(Model.Page + 1)&pageSize=@Model.PageSize">Sonraki</a>
+        </div>
     </div>
 </section>

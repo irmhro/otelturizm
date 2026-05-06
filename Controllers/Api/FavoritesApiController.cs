@@ -14,11 +14,16 @@ public class FavoritesApiController : Controller
 {
     private readonly IConfiguration _configuration;
     private readonly IUserFavoriteService _userFavoriteService;
+    private readonly ILogger<FavoritesApiController> _logger;
 
-    public FavoritesApiController(IConfiguration configuration, IUserFavoriteService userFavoriteService)
+    public FavoritesApiController(
+        IConfiguration configuration,
+        IUserFavoriteService userFavoriteService,
+        ILogger<FavoritesApiController> logger)
     {
         _configuration = configuration;
         _userFavoriteService = userFavoriteService;
+        _logger = logger;
     }
 
     [HttpPost("toggle")]
@@ -66,10 +71,11 @@ public class FavoritesApiController : Controller
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "favori_toggle_basarisiz hotelId={HotelId}", request.HotelId);
             return StatusCode(StatusCodes.Status500InternalServerError, new HotelFavoriteToggleResponse
             {
                 Success = false,
-                Message = $"Favori kaydı oluşturulamadı: {ex.Message}"
+                Message = "Favori kaydı şu anda güncellenemedi. Lütfen kısa süre sonra tekrar deneyin."
             });
         }
     }

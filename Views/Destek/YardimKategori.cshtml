@@ -1,0 +1,87 @@
+@model otelturizmnew.Models.Destek.YardimMerkeziKategoriDetaySayfaViewModel
+@{
+    ViewData["Title"] = Model.Category.Name;
+}
+
+<section class="ym-page" aria-labelledby="ym-heading">
+    <div class="ym-page__aurora" aria-hidden="true"></div>
+    <div class="container-xl ym-page__inner">
+        <header class="ym-hero">
+            <div class="ym-hero__glass">
+                <p class="ym-hero__eyebrow"><i class="fas @Model.Category.IconClass me-2" aria-hidden="true"></i>Yardım Merkezi</p>
+                <h1 id="ym-heading" class="ym-hero__title">@(!string.IsNullOrWhiteSpace(Model.Category.HeroTitle) ? Model.Category.HeroTitle : Model.Category.Name)</h1>
+                <p class="ym-hero__lead">@(!string.IsNullOrWhiteSpace(Model.Category.HeroSubtitle) ? Model.Category.HeroSubtitle : Model.Category.Description)</p>
+                <form method="get" action="/yardim-merkezi/kategori/@Model.Category.Slug" class="ym-search" role="search" aria-label="Kategori içi arama">
+                    <div class="ym-search__wrap">
+                        <span class="ym-search__icon" aria-hidden="true"><i class="fas fa-search"></i></span>
+                        <input class="form-control ym-search__input"
+                               type="search"
+                               name="ara"
+                               value="@Model.SearchTerm"
+                               placeholder="Bu kategoride ara (örn: iptal, ödeme, güvenlik)"
+                               autocomplete="off"
+                               enterkeyhint="search" />
+                    </div>
+                    <button type="submit" class="btn btn-primary ym-search__btn">Ara</button>
+                </form>
+            </div>
+        </header>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Category.FullContentHtml))
+        {
+            <article class="card">
+                <div class="card-body">
+                    @Html.Raw(Model.Category.FullContentHtml)
+                </div>
+            </article>
+        }
+
+        @if (Model.Category.FaqItems.Count > 0)
+        {
+            <h2 class="ym-section-title mt-4"><span class="ym-section-title__icon"><i class="fas fa-circle-question" aria-hidden="true"></i></span>Soru &amp; Cevap</h2>
+            <div class="accordion" id="ymFaq">
+                @{
+                    var idx = 0;
+                    foreach (var item in Model.Category.FaqItems)
+                    {
+                        var collapseId = "faq-" + idx;
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="h-@collapseId">
+                                <button class="accordion-button @(idx == 0 ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="@(idx==0 ? "true" : "false")">
+                                    @item.Question
+                                </button>
+                            </h2>
+                            <div id="@collapseId" class="accordion-collapse collapse @(idx==0 ? "show" : "")" data-bs-parent="#ymFaq">
+                                <div class="accordion-body">
+                                    @Html.Raw(item.AnswerHtml)
+                                </div>
+                            </div>
+                        </div>
+                        idx++;
+                    }
+                }
+            </div>
+        }
+
+        @if (Model.RelatedArticles.Count > 0)
+        {
+            <h2 class="ym-section-title mt-4"><span class="ym-section-title__icon"><i class="fas fa-book-open" aria-hidden="true"></i></span>İlgili Dökümanlar</h2>
+            <div class="row row-cols-1 row-cols-lg-2 g-3 ym-stack">
+                @foreach (var topic in Model.RelatedArticles)
+                {
+                    <div class="col">
+                        <a href="@topic.LinkUrl" class="ym-tile ym-tile--topic h-100">
+                            <div class="ym-tile__bullet" aria-hidden="true"><i class="fas @topic.IconClass"></i></div>
+                            <div class="ym-tile__body">
+                                <h3 class="ym-tile__title">@topic.Title</h3>
+                                <p class="ym-tile__text">@topic.Summary</p>
+                            </div>
+                            <span class="ym-tile__chevron" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+

@@ -7,6 +7,10 @@
         width: 100%;
     }
 
+    .admin-approval-page .admin-section-head {
+        flex-direction: column;
+    }
+
     .admin-action-pills .btn {
         flex: 1 1 140px;
     }
@@ -19,5 +23,14 @@
 
     .approval-actions {
         justify-content: flex-end;
+    }
+
+    .admin-approval-kpis .admin-kpi-card {
+        min-height: 0;
+        padding: 14px;
+    }
+
+    .admin-approval-page .admin-section-head {
+        padding: 15px;
     }
 }

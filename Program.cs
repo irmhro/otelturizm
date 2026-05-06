@@ -22,6 +22,7 @@ using otelturizmnew.Services;
 using otelturizmnew.Services.Abstractions;
 using otelturizmnew.Services.Health;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using otelturizmnew.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -153,6 +154,8 @@ builder.Services.AddScoped<SqlMigrationRunner>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAddressLookupService, AddressLookupService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IAdminEmailRoutingService, AdminEmailRoutingService>();
+builder.Services.AddScoped<IAdminRbacService, AdminRbacService>();
 builder.Services.AddScoped<IDepartmentPanelService, DepartmentPanelService>();
 builder.Services.AddScoped<ICurrencyFormatter, CurrencyFormatter>();
 builder.Services.AddScoped<IUserPreferenceService, UserPreferenceService>();
@@ -334,6 +337,28 @@ static bool IsLoopbackRequest(HttpContext context)
         || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
 }
 
+/// <summary>Genel otel/kampanya sayfaları indekslenebilir kalsın; panel ve giriş yollarında noindex.</summary>
+static bool ShouldSendNoRobotsHeader(PathString path)
+{
+    var p = path.Value ?? string.Empty;
+    if (string.IsNullOrEmpty(p))
+    {
+        return false;
+    }
+
+    return p.StartsWith("/panel", StringComparison.OrdinalIgnoreCase)
+           || p.StartsWith("/admin", StringComparison.OrdinalIgnoreCase)
+           || p.StartsWith("/gelisim", StringComparison.OrdinalIgnoreCase)
+           || p.StartsWith("/secure-files", StringComparison.OrdinalIgnoreCase)
+           || p.StartsWith("/paneltema", StringComparison.OrdinalIgnoreCase)
+           || p.StartsWith("/development", StringComparison.OrdinalIgnoreCase)
+           || string.Equals(p, "/cikis-yap", StringComparison.OrdinalIgnoreCase)
+           || p.StartsWith("/kullanici-giris", StringComparison.OrdinalIgnoreCase)
+           || p.StartsWith("/partner-giris", StringComparison.OrdinalIgnoreCase)
+           || p.StartsWith("/firma-giris", StringComparison.OrdinalIgnoreCase)
+           || string.Equals(p, "/admin-giris", StringComparison.OrdinalIgnoreCase);
+}
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -427,6 +452,54 @@ builder.Services.AddRateLimiter(options =>
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 8,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    // Otel detay presence heartbeat — abuse / bellek şişmesine karşı sıkı tavan
+    options.AddPolicy("presence-beat", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 90,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    // CSP rapor uç noktası — log şişmesi / spam
+    options.AddPolicy("csp-ingest", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 45,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    // Sağlık uçları — probe spam / DoS yüzeyini daralt
+    options.AddPolicy("health-probe", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 180,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+
+    // Tarayıcı JS hata raporu — spam ve payload şişmesine karşı sıkı
+    options.AddPolicy("client-error-ingest", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 24,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -551,14 +624,13 @@ if (runMigrations)
 }
 
 // Configure the HTTP request pipeline.
+app.UseForwardedHeaders();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
-    app.UseHttpsRedirection();
 }
-
-app.UseForwardedHeaders();
+app.UseHttpsRedirection();
 app.UseResponseCompression();
 app.UseRequestLocalization(app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<RequestLocalizationOptions>>().Value);
 app.UseCookiePolicy();
@@ -597,13 +669,31 @@ app.Use((context, next) =>
 });
 
 // p51: Correlation ID (X-Correlation-Id) üretimi + response header'a yazma
+// Güvenlik: yalnızca güvenli karakterler (log/header injection riskini azaltır).
+static string ResolveCorrelationIdHeader(string? headerValue)
+{
+    var t = (headerValue ?? string.Empty).Trim();
+    if (t.Length is 0 or > 128)
+    {
+        return Guid.NewGuid().ToString("N");
+    }
+
+    foreach (var c in t)
+    {
+        if (!(char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or ':' or '-'))
+        {
+            return Guid.NewGuid().ToString("N");
+        }
+    }
+
+    return t;
+}
+
 app.Use(async (context, next) =>
 {
     const string headerName = "X-Correlation-Id";
-    var incoming = context.Request.Headers.TryGetValue(headerName, out var values) ? values.ToString() : string.Empty;
-    var correlationId = !string.IsNullOrWhiteSpace(incoming) && incoming.Length <= 128
-        ? incoming.Trim()
-        : Guid.NewGuid().ToString("N");
+    var incoming = context.Request.Headers.TryGetValue(headerName, out var values) ? values.ToString() : null;
+    var correlationId = ResolveCorrelationIdHeader(incoming);
 
     context.Items["CorrelationId"] = correlationId;
     context.TraceIdentifier = correlationId;
@@ -646,7 +736,11 @@ app.Use(async (context, next) =>
         context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
         context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
         context.Response.Headers["Permissions-Policy"] = "geolocation=(self), camera=(), microphone=()";
-        context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate";
+        if (ShouldSendNoRobotsHeader(context.Request.Path))
+        {
+            context.Response.Headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate";
+        }
+
         var cspReportDirectives = cspReportEnabled ? " report-uri /csp/report; report-to csp-endpoint;" : string.Empty;
         if (cspReportEnabled)
         {
@@ -790,17 +884,23 @@ app.Use(async (context, next) =>
 
 app.MapStaticAssets();
 
-app.MapHealthChecks("/health/platform")
+app.MapHealthChecks("/health/platform", new HealthCheckOptions
+    {
+        ResponseWriter = HealthReportJsonWriter.WriteAsync
+    })
     .AllowAnonymous()
+    .RequireRateLimiting("health-probe")
     .ExcludeFromDescription();
 
 // p55: Health endpoints
 app.MapGet("/health/live", () => Results.Json(new { status = "live" }))
    .AllowAnonymous()
+   .RequireRateLimiting("health-probe")
    .ExcludeFromDescription();
 
-app.MapGet("/health/ready", async (IConfiguration cfg, CancellationToken ct) =>
+app.MapGet("/health/ready", async (IConfiguration cfg, IHostEnvironment env, ILoggerFactory logFactory, CancellationToken ct) =>
 {
+    var log = logFactory.CreateLogger("HealthReady");
     var cs = cfg.GetConnectionString("DefaultConnection");
     if (string.IsNullOrWhiteSpace(cs))
     {
@@ -818,11 +918,20 @@ app.MapGet("/health/ready", async (IConfiguration cfg, CancellationToken ct) =>
     }
     catch (Exception ex)
     {
-        return Results.Json(new { status = "not_ready", checks = new { db = "fail", error = ex.Message } }, statusCode: 503);
+        log.LogWarning(ex, "health_ready_db_check_failed");
+        if (env.IsDevelopment())
+        {
+            return Results.Json(new { status = "not_ready", checks = new { db = "fail", error = ex.Message } }, statusCode: 503);
+        }
+
+        return Results.Json(new { status = "not_ready", checks = new { db = "fail" } }, statusCode: 503);
     }
 })
    .AllowAnonymous()
+   .RequireRateLimiting("health-probe")
    .ExcludeFromDescription();
+
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "areas",

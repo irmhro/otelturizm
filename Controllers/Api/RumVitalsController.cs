@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using otelturizmnew.Services;
 
 namespace otelturizmnew.Controllers.Api;
 
 [ApiController]
+[EnableRateLimiting("growth-ingest")]
 public sealed class RumVitalsController : ControllerBase
 {
     private readonly ILogger<RumVitalsController> _logger;

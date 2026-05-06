@@ -48,7 +48,9 @@
         gap: 6px;
     }
 }
-@import url("./otel-detay.css");
+
+/* not: otel-detay.css _Layout üzerinden her görünümde ayrı yüklenir; burada @import kullanılmaz
+   (CSS’te @import yalnızca stil sayfasının en başında geçerli; aksi tekrarlı/öngörülemez cascade üretir). */
 
 /* ===========================================================
    OTEL DETAY – MOBİL OVERRIDE (≤900 px)
@@ -651,10 +653,7 @@ html, body {
     }
 }
 
-/* === 9. Footer boşluk giderme (PDF p12) === */
-.site-footer {
-    padding-bottom: 4rem
-}
+/* === 9. Footer: alt CTA / safe-area → dosya sonundaki @media (max-width:900px) bloğu === */
 
 @media(max-width:560px) {
     .otel-detail-template-v41 .detail-breadcrumb,
@@ -953,5 +952,26 @@ html, body {
 
     .otel-detail-template-v41 .detail-header.hotel-title-section .rating-summary {
         grid-column: 1;
+    }
+}
+
+/* Mobil vitrin: galeri yüksekliği, alt CTA ile footer nefesi, dokunma */
+@media (max-width: 900px) {
+    .otel-detail-template-v41 .gallery-main-image {
+        min-height: min(50vh, 400px);
+    }
+
+    .mobile-booking-bar button,
+    .mobile-booking-bar a,
+    .otel-detail-template-v41 .select-room-btn,
+    .otel-detail-template-v41 .room-detail-btn,
+    .otel-detail-template-v41 .details-toggle-btn {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Sabit rezervasyon çubuğu + iPhone home indicator */
+    .site-footer {
+        padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));
     }
 }

@@ -21,6 +21,8 @@ namespace otelturizmnew.Controllers.Paneller.Admin;
 public class AdminPanelController : Controller
 {
     private readonly IAdminService _adminService;
+    private readonly IAdminEmailRoutingService _adminEmailRoutingService;
+    private readonly IAdminRbacService _adminRbacService;
     private readonly IAdminHotelManagementService _adminHotelManagementService;
     private readonly IContractContentService _contractContentService;
     private readonly IDevelopmentRequestService _developmentRequestService;
@@ -36,9 +38,11 @@ public class AdminPanelController : Controller
     private readonly IGrowthGovernanceService _growthGovernance;
     private readonly IPanelThemeService _panelThemeService;
 
-    public AdminPanelController(IAdminService adminService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance, IPanelThemeService panelThemeService)
+    public AdminPanelController(IAdminService adminService, IAdminEmailRoutingService adminEmailRoutingService, IAdminRbacService adminRbacService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance, IPanelThemeService panelThemeService)
     {
         _adminService = adminService;
+        _adminEmailRoutingService = adminEmailRoutingService;
+        _adminRbacService = adminRbacService;
         _adminHotelManagementService = adminHotelManagementService;
         _contractContentService = contractContentService;
         _developmentRequestService = developmentRequestService;
@@ -53,6 +57,469 @@ public class AdminPanelController : Controller
         _secureFileService = secureFileService;
         _growthGovernance = growthGovernance;
         _panelThemeService = panelThemeService;
+    }
+
+    [HttpGet("ekibimiz")]
+    public async Task<IActionResult> Team([FromQuery] long? editId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.notifications", cancellationToken) is { } deniedTeam)
+        {
+            return deniedTeam;
+        }
+
+        var model = await _adminService.GetPlatformTeamAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        if (editId.HasValue && editId.Value > 0)
+        {
+            var row = model.Members.FirstOrDefault(item => item.Id == editId.Value);
+            if (row is not null)
+            {
+                model.Form = new AdminPlatformTeamForm
+                {
+                    Id = row.Id,
+                    Name = row.Name,
+                    Title = row.Title,
+                    Email = row.Email,
+                    Description = row.Description,
+                    OrderNo = row.OrderNo,
+                    IsActive = row.IsActive
+                };
+            }
+        }
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "paneller/admin/notifications";
+        return View("~/Views/Paneller/Admin/Team.cshtml", model);
+    }
+
+    [HttpPost("ekibimiz/kaydet")]
+    [ValidateAntiForgeryToken]
+    [RequestFormLimits(MultipartBodyLengthLimit = 10485760)]
+    [RequestSizeLimit(10485760)]
+    public async Task<IActionResult> SaveTeam([FromForm] AdminPlatformTeamForm form, IFormFile? avatarFile, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.notifications", cancellationToken) is { } deniedSave)
+        {
+            return deniedSave;
+        }
+
+        string? avatarUrl = null;
+        try
+        {
+            if (avatarFile is not null && avatarFile.Length > 0)
+            {
+                var result = await _imageStorageService.SaveAsWebpAsync(avatarFile, new otelturizmnew.Services.Abstractions.ImageSaveRequest(
+                    TargetDirectory: Path.Combine(_environment.WebRootPath, "uploads", "team"),
+                    FilePrefix: $"team-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                    Category: "platform-team",
+                    OwnerUserId: GetUserId(),
+                    QualityProfile: otelturizmnew.Services.Abstractions.ImageQualityProfile.Avatar,
+                    GenerateThumbnails: true
+                ), cancellationToken);
+
+                avatarUrl = "/uploads/team/" + result.FileName;
+            }
+        }
+        catch (Exception ex)
+        {
+            TempData["AdminError"] = "Avatar kaydedilemedi: " + ex.Message;
+            return RedirectToAction(nameof(Team));
+        }
+
+        var save = await _adminService.SavePlatformTeamMemberAsync(GetUserId(), form, avatarUrl, cancellationToken);
+        TempData[save.Success ? "AdminMessage" : "AdminError"] = save.Message;
+        return RedirectToAction(nameof(Team));
+    }
+
+    [HttpPost("ekibimiz/sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteTeam(long id, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.notifications", cancellationToken) is { } deniedDelete)
+        {
+            return deniedDelete;
+        }
+
+        var result = await _adminService.DeletePlatformTeamMemberAsync(GetUserId(), id, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(Team));
+    }
+
+    [HttpGet("yardim-merkezi-yonetim")]
+    public async Task<IActionResult> HelpCenter([FromQuery] string? tab, [FromQuery] long? editCategoryId, [FromQuery] long? editFaqId, [FromQuery] long? editContentId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.support_articles", cancellationToken) is { } deniedHelp)
+        {
+            return deniedHelp;
+        }
+
+        var section = await _adminService.GetSectionPageAsync("faq", GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        section.Shell.PanelTitle = "Yardım Merkezi Yönetimi";
+        section.Shell.PanelSubtitle = "Kategoriler, kategori detayları, SSS ve Hakkımızda/Kariyer/Basın/Blog içeriklerini tek yerden yönetin.";
+
+        var model = new AdminHelpCenterPageViewModel { Shell = section.Shell };
+        await using var connection = new Microsoft.Data.SqlClient.SqlConnection(HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection"));
+        await connection.OpenAsync(cancellationToken);
+
+        // Categories + details
+        const string catSql = @"
+            SELECT k.id, k.kategori_adi, k.seo_slug, COALESCE(k.kategori_ikon, N''), COALESCE(k.kisa_aciklama, N''),
+                   COALESCE(d.hero_baslik, N''), COALESCE(d.hero_alt_baslik, N''), COALESCE(d.hero_gorsel_url, N''), COALESCE(d.tam_aciklama, N'')
+            FROM dbo.destek_kategorileri k
+            LEFT JOIN dbo.yardim_merkezi_kategori_detaylari d ON d.destek_kategori_id = k.id
+            WHERE k.durum = 1
+            ORDER BY k.siralama, k.id;";
+        try
+        {
+            await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(catSql, connection);
+            await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await r.ReadAsync(cancellationToken))
+            {
+                model.Categories.Add(new AdminHelpCenterCategoryRowViewModel
+                {
+                    CategoryId = r.GetInt64(0),
+                    Name = r.GetString(1),
+                    Slug = r.GetString(2),
+                    IconClass = r.IsDBNull(3) ? string.Empty : r.GetString(3),
+                    ShortDescription = r.IsDBNull(4) ? string.Empty : r.GetString(4),
+                    HeroTitle = r.IsDBNull(5) ? null : r.GetString(5),
+                    HeroSubtitle = r.IsDBNull(6) ? null : r.GetString(6),
+                    HeroImageUrl = r.IsDBNull(7) ? null : r.GetString(7),
+                    FullHtml = r.IsDBNull(8) ? null : r.GetString(8)
+                });
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+
+        // FAQ
+        try
+        {
+            const string faqSql = @"
+                SELECT TOP (200) f.id, f.destek_kategori_id, k.kategori_adi, COALESCE(f.siralama, 0), COALESCE(f.aktif_mi, 1), f.soru, f.cevap
+                FROM dbo.yardim_merkezi_kategori_sss f
+                INNER JOIN dbo.destek_kategorileri k ON k.id = f.destek_kategori_id
+                ORDER BY k.siralama, f.siralama, f.id DESC;";
+            await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(faqSql, connection);
+            await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await r.ReadAsync(cancellationToken))
+            {
+                model.FaqItems.Add(new AdminHelpCenterFaqRowViewModel
+                {
+                    Id = r.GetInt64(0),
+                    CategoryId = r.GetInt64(1),
+                    CategoryName = r.GetString(2),
+                    OrderNo = r.IsDBNull(3) ? 0 : Convert.ToInt32(r.GetValue(3)),
+                    IsActive = !r.IsDBNull(4) && Convert.ToInt32(r.GetValue(4)) == 1,
+                    Question = r.GetString(5),
+                    AnswerHtml = r.GetString(6)
+                });
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+
+        // Contents
+        try
+        {
+            const string cSql = @"
+                SELECT TOP (200) id, icerik_turu, baslik, seo_slug, COALESCE(aktif_mi,1), COALESCE(siralama,0), COALESCE(one_cikan_mi,0)
+                FROM dbo.yardim_merkezi_icerikler
+                ORDER BY icerik_turu, one_cikan_mi DESC, siralama, id DESC;";
+            await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(cSql, connection);
+            await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await r.ReadAsync(cancellationToken))
+            {
+                model.Contents.Add(new AdminHelpCenterContentRowViewModel
+                {
+                    Id = r.GetInt64(0),
+                    Type = r.GetString(1),
+                    Title = r.GetString(2),
+                    Slug = r.GetString(3),
+                    IsActive = !r.IsDBNull(4) && Convert.ToInt32(r.GetValue(4)) == 1,
+                    OrderNo = r.IsDBNull(5) ? 0 : Convert.ToInt32(r.GetValue(5)),
+                    IsFeatured = !r.IsDBNull(6) && Convert.ToInt32(r.GetValue(6)) == 1
+                });
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+
+        // Prefill forms for editing
+        if (editCategoryId.HasValue)
+        {
+            var row = model.Categories.FirstOrDefault(x => x.CategoryId == editCategoryId.Value);
+            if (row is not null)
+            {
+                model.CategoryForm = new AdminHelpCenterCategoryForm
+                {
+                    CategoryId = row.CategoryId,
+                    HeroTitle = row.HeroTitle,
+                    HeroSubtitle = row.HeroSubtitle,
+                    HeroImageUrl = row.HeroImageUrl,
+                    FullHtml = row.FullHtml
+                };
+            }
+        }
+        if (editFaqId.HasValue)
+        {
+            var row = model.FaqItems.FirstOrDefault(x => x.Id == editFaqId.Value);
+            if (row is not null)
+            {
+                model.FaqForm = new AdminHelpCenterFaqForm
+                {
+                    Id = row.Id,
+                    CategoryId = row.CategoryId,
+                    Question = row.Question,
+                    AnswerHtml = row.AnswerHtml,
+                    OrderNo = row.OrderNo,
+                    IsActive = row.IsActive
+                };
+            }
+        }
+        if (editContentId.HasValue)
+        {
+            try
+            {
+                const string oneSql = @"
+                    SELECT TOP (1) id, icerik_turu, baslik, seo_slug, COALESCE(ozet,N''), COALESCE(hero_baslik,N''), COALESCE(hero_alt_baslik,N''), COALESCE(hero_gorsel_url,N''), icerik,
+                                   COALESCE(siralama,0), COALESCE(one_cikan_mi,0), COALESCE(aktif_mi,1)
+                    FROM dbo.yardim_merkezi_icerikler WHERE id=@id;";
+                await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(oneSql, connection);
+                cmd.Parameters.AddWithValue("@id", editContentId.Value);
+                await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
+                if (await r.ReadAsync(cancellationToken))
+                {
+                    model.ContentForm = new AdminHelpCenterContentForm
+                    {
+                        Id = r.GetInt64(0),
+                        Type = r.GetString(1),
+                        Title = r.GetString(2),
+                        Slug = r.GetString(3),
+                        Summary = r.IsDBNull(4) ? null : r.GetString(4),
+                        HeroTitle = r.IsDBNull(5) ? null : r.GetString(5),
+                        HeroSubtitle = r.IsDBNull(6) ? null : r.GetString(6),
+                        HeroImageUrl = r.IsDBNull(7) ? null : r.GetString(7),
+                        Html = r.GetString(8),
+                        OrderNo = r.IsDBNull(9) ? 0 : Convert.ToInt32(r.GetValue(9)),
+                        IsFeatured = !r.IsDBNull(10) && Convert.ToInt32(r.GetValue(10)) == 1,
+                        IsActive = !r.IsDBNull(11) && Convert.ToInt32(r.GetValue(11)) == 1
+                    };
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        ViewData["Title"] = section.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["AdminShell"] = section.Shell;
+        ViewData["HelpCenterTab"] = string.IsNullOrWhiteSpace(tab) ? "categories" : tab;
+        return View("~/Views/Paneller/Admin/HelpCenter.cshtml", model);
+    }
+
+    [HttpPost("yardim-merkezi-yonetim/kategori-kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveHelpCategory(AdminHelpCenterCategoryForm form, IFormFile? heroFile, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.support_articles", cancellationToken) is { } denied) return denied;
+
+        string? heroUrl = null;
+        if (heroFile is not null && heroFile.Length > 0)
+        {
+            var saved = await _imageStorageService.SaveAsWebpAsync(heroFile, new otelturizmnew.Services.Abstractions.ImageSaveRequest(
+                TargetDirectory: Path.Combine(_environment.WebRootPath, "uploads", "helpcenter"),
+                FilePrefix: $"hc-hero-{form.CategoryId}",
+                Category: "helpcenter-hero",
+                OwnerUserId: GetUserId(),
+                QualityProfile: otelturizmnew.Services.Abstractions.ImageQualityProfile.RequestVisual,
+                GenerateThumbnails: true
+            ), cancellationToken);
+            heroUrl = "/uploads/helpcenter/" + saved.FileName;
+        }
+
+        await using var connection = new Microsoft.Data.SqlClient.SqlConnection(HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection"));
+        await connection.OpenAsync(cancellationToken);
+        var sql = @"
+            IF OBJECT_ID(N'dbo.yardim_merkezi_kategori_detaylari', N'U') IS NULL
+            BEGIN
+                RAISERROR('yardim_merkezi_kategori_detaylari tablosu yok.', 16, 1);
+                RETURN;
+            END
+
+            IF EXISTS (SELECT 1 FROM dbo.yardim_merkezi_kategori_detaylari WHERE destek_kategori_id=@cid)
+            BEGIN
+                UPDATE dbo.yardim_merkezi_kategori_detaylari
+                SET hero_baslik=@ht,
+                    hero_alt_baslik=@hs,
+                    hero_gorsel_url=COALESCE(NULLIF(@hu,N''), hero_gorsel_url),
+                    tam_aciklama=@html,
+                    aktif_mi=1,
+                    guncellenme_tarihi=SYSUTCDATETIME()
+                WHERE destek_kategori_id=@cid;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO dbo.yardim_merkezi_kategori_detaylari(destek_kategori_id, hero_baslik, hero_alt_baslik, hero_gorsel_url, tam_aciklama, aktif_mi, guncellenme_tarihi)
+                VALUES(@cid,@ht,@hs,@hu,@html,1,SYSUTCDATETIME());
+            END";
+        try
+        {
+            await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@cid", form.CategoryId);
+            cmd.Parameters.AddWithValue("@ht", string.IsNullOrWhiteSpace(form.HeroTitle) ? DBNull.Value : form.HeroTitle.Trim());
+            cmd.Parameters.AddWithValue("@hs", string.IsNullOrWhiteSpace(form.HeroSubtitle) ? DBNull.Value : form.HeroSubtitle.Trim());
+            cmd.Parameters.AddWithValue("@hu", string.IsNullOrWhiteSpace(heroUrl) ? (object)DBNull.Value : heroUrl);
+            cmd.Parameters.AddWithValue("@html", string.IsNullOrWhiteSpace(form.FullHtml) ? DBNull.Value : form.FullHtml);
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
+            TempData["AdminMessage"] = "Kategori detayları kaydedildi.";
+        }
+        catch (Exception ex)
+        {
+            TempData["AdminError"] = "Kaydedilemedi: " + ex.Message;
+        }
+        return Redirect("/admin/yardim-merkezi-yonetim?tab=categories&editCategoryId=" + form.CategoryId);
+    }
+
+    [HttpPost("yardim-merkezi-yonetim/sss-kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveHelpFaq(AdminHelpCenterFaqForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.support_articles", cancellationToken) is { } denied) return denied;
+
+        await using var connection = new Microsoft.Data.SqlClient.SqlConnection(HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection"));
+        await connection.OpenAsync(cancellationToken);
+        var sql = @"
+            IF OBJECT_ID(N'dbo.yardim_merkezi_kategori_sss', N'U') IS NULL
+            BEGIN
+                RAISERROR('yardim_merkezi_kategori_sss tablosu yok.', 16, 1);
+                RETURN;
+            END
+
+            IF (@id IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.yardim_merkezi_kategori_sss WHERE id=@id))
+            BEGIN
+                UPDATE dbo.yardim_merkezi_kategori_sss
+                SET destek_kategori_id=@cid, soru=@q, cevap=@a, siralama=@o, aktif_mi=@active
+                WHERE id=@id;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO dbo.yardim_merkezi_kategori_sss(destek_kategori_id, soru, cevap, siralama, aktif_mi)
+                VALUES(@cid,@q,@a,@o,@active);
+            END";
+        try
+        {
+            await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@id", form.Id.HasValue ? form.Id.Value : DBNull.Value);
+            cmd.Parameters.AddWithValue("@cid", form.CategoryId);
+            cmd.Parameters.AddWithValue("@q", form.Question.Trim());
+            cmd.Parameters.AddWithValue("@a", form.AnswerHtml.Trim());
+            cmd.Parameters.AddWithValue("@o", form.OrderNo);
+            cmd.Parameters.AddWithValue("@active", form.IsActive ? 1 : 0);
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
+            TempData["AdminMessage"] = "SSS kaydedildi.";
+        }
+        catch (Exception ex)
+        {
+            TempData["AdminError"] = "Kaydedilemedi: " + ex.Message;
+        }
+        return Redirect("/admin/yardim-merkezi-yonetim?tab=faq");
+    }
+
+    [HttpPost("yardim-merkezi-yonetim/icerik-kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveHelpContent(AdminHelpCenterContentForm form, IFormFile? heroFile, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.support_articles", cancellationToken) is { } denied) return denied;
+
+        string? heroUrl = null;
+        if (heroFile is not null && heroFile.Length > 0)
+        {
+            var saved = await _imageStorageService.SaveAsWebpAsync(heroFile, new otelturizmnew.Services.Abstractions.ImageSaveRequest(
+                TargetDirectory: Path.Combine(_environment.WebRootPath, "uploads", "helpcenter"),
+                FilePrefix: $"hc-page-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                Category: "helpcenter-hero",
+                OwnerUserId: GetUserId(),
+                QualityProfile: otelturizmnew.Services.Abstractions.ImageQualityProfile.RequestVisual,
+                GenerateThumbnails: true
+            ), cancellationToken);
+            heroUrl = "/uploads/helpcenter/" + saved.FileName;
+        }
+
+        await using var connection = new Microsoft.Data.SqlClient.SqlConnection(HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection"));
+        await connection.OpenAsync(cancellationToken);
+        var sql = @"
+            IF OBJECT_ID(N'dbo.yardim_merkezi_icerikler', N'U') IS NULL
+            BEGIN
+                RAISERROR('yardim_merkezi_icerikler tablosu yok.', 16, 1);
+                RETURN;
+            END
+
+            IF (@id IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.yardim_merkezi_icerikler WHERE id=@id))
+            BEGIN
+                UPDATE dbo.yardim_merkezi_icerikler
+                SET icerik_turu=@t, baslik=@title, seo_slug=@slug, ozet=@sum,
+                    hero_baslik=@ht, hero_alt_baslik=@hs, hero_gorsel_url=COALESCE(NULLIF(@hu,N''), hero_gorsel_url),
+                    icerik=@html, siralama=@o, one_cikan_mi=@f, aktif_mi=@active, guncellenme_tarihi=SYSUTCDATETIME()
+                WHERE id=@id;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO dbo.yardim_merkezi_icerikler(icerik_turu, baslik, seo_slug, ozet, hero_baslik, hero_alt_baslik, hero_gorsel_url, icerik, siralama, one_cikan_mi, aktif_mi)
+                VALUES(@t,@title,@slug,@sum,@ht,@hs,@hu,@html,@o,@f,@active);
+            END";
+        try
+        {
+            await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@id", form.Id.HasValue ? form.Id.Value : DBNull.Value);
+            cmd.Parameters.AddWithValue("@t", form.Type.Trim().ToLowerInvariant());
+            cmd.Parameters.AddWithValue("@title", form.Title.Trim());
+            cmd.Parameters.AddWithValue("@slug", form.Slug.Trim().ToLowerInvariant());
+            cmd.Parameters.AddWithValue("@sum", string.IsNullOrWhiteSpace(form.Summary) ? DBNull.Value : form.Summary.Trim());
+            cmd.Parameters.AddWithValue("@ht", string.IsNullOrWhiteSpace(form.HeroTitle) ? DBNull.Value : form.HeroTitle.Trim());
+            cmd.Parameters.AddWithValue("@hs", string.IsNullOrWhiteSpace(form.HeroSubtitle) ? DBNull.Value : form.HeroSubtitle.Trim());
+            cmd.Parameters.AddWithValue("@hu", string.IsNullOrWhiteSpace(heroUrl) ? (object)DBNull.Value : heroUrl);
+            cmd.Parameters.AddWithValue("@html", form.Html);
+            cmd.Parameters.AddWithValue("@o", form.OrderNo);
+            cmd.Parameters.AddWithValue("@f", form.IsFeatured ? 1 : 0);
+            cmd.Parameters.AddWithValue("@active", form.IsActive ? 1 : 0);
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
+            TempData["AdminMessage"] = "İçerik kaydedildi.";
+        }
+        catch (Exception ex)
+        {
+            TempData["AdminError"] = "Kaydedilemedi: " + ex.Message;
+        }
+        return Redirect("/admin/yardim-merkezi-yonetim?tab=pages");
     }
 
     private async Task EvictPublicOutputCacheAsync(CancellationToken cancellationToken)
@@ -92,6 +559,10 @@ public class AdminPanelController : Controller
         {
             return RedirectToAction("UserLogin", "Auth");
         }
+        if (!await CanAccessAsync("admin.dashboard", cancellationToken))
+        {
+            return Forbid();
+        }
 
         var model = await _adminService.GetDashboardAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = "Admin Dashboard";
@@ -108,6 +579,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.settings", cancellationToken) is { } deniedTheme)
+        {
+            return deniedTheme;
+        }
+
         var userId = GetUserId();
         var result = await _panelThemeService.SaveAsync("admin", userId, theme, cancellationToken);
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
@@ -120,6 +596,10 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!await CanAccessAsync("admin.system_health", cancellationToken))
+        {
+            return Forbid();
         }
 
         var model = await _adminService.GetSystemHealthAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
@@ -136,6 +616,10 @@ public class AdminPanelController : Controller
         {
             return RedirectToAction("UserLogin", "Auth");
         }
+        if (!await CanAccessAsync("admin.platform_checkup", cancellationToken))
+        {
+            return Forbid();
+        }
 
         var model = await _adminService.GetPlatformCheckupAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
@@ -149,6 +633,10 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!await CanAccessAsync("admin.approval_center", cancellationToken))
+        {
+            return Forbid();
         }
 
         var model = await _adminService.GetApprovalCenterAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
@@ -164,6 +652,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.system_health", cancellationToken) is { } deniedLink)
+        {
+            return deniedLink;
         }
 
         var model = await _adminService.GetSystemHealthAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
@@ -369,11 +862,16 @@ public class AdminPanelController : Controller
     }
 
     [HttpGet("sistem-sagligi/slow-sql")]
-    public IActionResult SlowSql([FromServices] otelturizmnew.Services.Abstractions.ISlowSqlTracker slowSqlTracker, [FromQuery] int take = 20)
+    public async Task<IActionResult> SlowSql([FromServices] otelturizmnew.Services.Abstractions.ISlowSqlTracker slowSqlTracker, [FromQuery] int take = 20, CancellationToken cancellationToken = default)
     {
         if (!CanAccessAdminPanel())
         {
             return Unauthorized(new { ok = false });
+        }
+
+        if (!await CanAccessAsync("admin.system_health", cancellationToken))
+        {
+            return Forbid();
         }
 
         var rows = slowSqlTracker.GetTop(take);
@@ -387,6 +885,10 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!await CanAccessAsync("admin.admin_action_logs", cancellationToken))
+        {
+            return Forbid();
         }
 
         var filter = new AdminActionLogFilter
@@ -415,6 +917,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.admin_action_logs", cancellationToken) is { } deniedCsv)
+        {
+            return deniedCsv;
+        }
+
         var filter = new AdminActionLogFilter
         {
             AdminUserId = adminUserId,
@@ -439,6 +946,10 @@ public class AdminPanelController : Controller
         {
             return RedirectToAction("UserLogin", "Auth");
         }
+        if (!await CanAccessAsync("admin.unified_reservations", cancellationToken))
+        {
+            return Forbid();
+        }
 
         var model = await _adminService.GetUnifiedReservationsAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, page, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
@@ -454,6 +965,10 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!await CanAccessAsync("admin.email_queue", cancellationToken))
+        {
+            return Forbid();
         }
 
         var filter = new AdminEmailQueueFilter { Status = status, Query = q, Page = page <= 0 ? 1 : page, PageSize = pageSize <= 0 ? 50 : pageSize };
@@ -472,6 +987,12 @@ public class AdminPanelController : Controller
         {
             return RedirectToAction("UserLogin", "Auth");
         }
+
+        if (await RequirePermissionOrForbidAsync("admin.email_queue", cancellationToken) is { } deniedRetry)
+        {
+            return deniedRetry;
+        }
+
         if (!TryValidateCriticalReason(reason, out var err))
         {
             TempData["AdminError"] = err;
@@ -513,6 +1034,13 @@ public class AdminPanelController : Controller
         {
             return RedirectToAction("UserLogin", "Auth");
         }
+
+        var evictPerm = string.Equals(returnTo, "commerce", StringComparison.OrdinalIgnoreCase) ? "admin.commerce_insight" : "admin.system_health";
+        if (await RequirePermissionOrForbidAsync(evictPerm, cancellationToken) is { } deniedEvict)
+        {
+            return deniedEvict;
+        }
+
         if (!TryValidateCriticalReason(reason, out var err))
         {
             TempData["AdminError"] = err;
@@ -538,6 +1066,12 @@ public class AdminPanelController : Controller
         {
             return RedirectToAction("UserLogin", "Auth");
         }
+
+        if (await RequirePermissionOrForbidAsync("admin.sitemap", cancellationToken) is { } deniedSitemapRefresh)
+        {
+            return deniedSitemapRefresh;
+        }
+
         if (!TryValidateCriticalReason(reason, out var err))
         {
             TempData["AdminError"] = err;
@@ -557,6 +1091,10 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!await CanAccessAsync("admin.rate_limit", cancellationToken))
+        {
+            return Forbid();
         }
 
         var model = await _adminService.GetRateLimitStatsAsync(GetFullName(), GetEmail(), GetUserRole(), windowHours <= 0 ? 24 : windowHours, cancellationToken);
@@ -580,6 +1118,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+        var requiredPermission = eventType == "UPLOAD_AUDIT" ? "admin.upload_history" : "admin.security_events";
+        if (!await CanAccessAsync(requiredPermission, cancellationToken))
+        {
+            return Forbid();
         }
 
         var shell = (await _adminService.GetSectionPageAsync("security", GetFullName(), GetEmail(), GetUserRole(), cancellationToken)).Shell;
@@ -669,6 +1212,10 @@ public class AdminPanelController : Controller
         {
             return RedirectToAction("UserLogin", "Auth");
         }
+        if (!await CanAccessAsync("admin.settings_monitor", cancellationToken))
+        {
+            return Forbid();
+        }
 
         var model = await _adminService.GetSettingsMonitorAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
@@ -683,6 +1230,10 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!await CanAccessAsync("admin.commerce_insight", cancellationToken))
+        {
+            return Forbid();
         }
 
         var model = await _adminService.GetCommerceInsightPageAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, cancellationToken);
@@ -699,6 +1250,10 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!await CanAccessAsync("admin.commerce_insight", cancellationToken))
+        {
+            return Forbid();
         }
 
         if (!TryValidateCriticalReason(reason, out var err))
@@ -775,6 +1330,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.sitemap", cancellationToken) is { } deniedSitemap)
+        {
+            return deniedSitemap;
+        }
+
         var section = await _adminService.GetSectionPageAsync("settings", GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         var model = await _sitemapService.GetDiagnosticsAsync(cancellationToken);
         ViewData["AdminShell"] = section.Shell;
@@ -792,6 +1352,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.sitemap", cancellationToken) is { } deniedSitemapUpdate)
+        {
+            return deniedSitemapUpdate;
+        }
+
         await _sitemapService.EnsureFreshSitemapAsync(true, cancellationToken);
         TempData["AdminMessage"] = "Sitemap ve il/ilçe XML dosyaları güncellendi.";
         return RedirectToAction(nameof(Sitemap));
@@ -804,14 +1369,19 @@ public class AdminPanelController : Controller
     public Task<IActionResult> Managers(CancellationToken cancellationToken) => RenderSectionAsync("managers", "Managers", cancellationToken);
 
     [HttpGet("oteller")]
-    public async Task<IActionResult> Hotels([FromQuery] string? q, CancellationToken cancellationToken)
+    public async Task<IActionResult> Hotels([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? district, [FromQuery] string? neighborhood, [FromQuery] string? publishStatus, [FromQuery] string? approvalStatus, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
         }
 
-        var model = await _adminHotelManagementService.GetHotelsPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, cancellationToken);
+        if (!await CanAccessAsync("admin.hotels", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var model = await _adminHotelManagementService.GetHotelsPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, city, district, neighborhood, publishStatus, approvalStatus, page, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "panel-admin-hotels";
         return View("~/Views/Paneller/Admin/Hotels.cshtml", model);
@@ -825,9 +1395,14 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (!await CanAccessAsync("admin.hotels", cancellationToken))
+        {
+            return Forbid();
+        }
+
         if (!id.HasValue)
         {
-            TempData["AdminHotelError"] = "Duzenlemek icin bir otel secmelisiniz.";
+            TempData["AdminHotelError"] = "Düzenlemek için bir otel seçmelisiniz.";
             return RedirectToAction(nameof(Hotels));
         }
 
@@ -851,12 +1426,24 @@ public class AdminPanelController : Controller
         {
             return RedirectToAction("UserLogin", "Auth");
         }
+        if (!await CanAccessAsync("admin.hotels", cancellationToken))
+        {
+            return Forbid();
+        }
 
         var result = await _adminHotelManagementService.SaveHotelAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
         if (result.Success)
         {
             await EvictPublicOutputCacheAsync(cancellationToken);
+            await _auditLogService.TryLogAdminActionAsync(
+                GetUserId(),
+                "hotel_update",
+                "oteller",
+                request.HotelId.ToString(),
+                result.Message,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                cancellationToken);
         }
         return RedirectToAction(nameof(HotelDetail), new { id = request.HotelId });
     }
@@ -868,6 +1455,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.hotels", cancellationToken) is { } deniedSaveRoom)
+        {
+            return deniedSaveRoom;
         }
 
         var result = await _adminHotelManagementService.SaveRoomAsync(request, cancellationToken);
@@ -888,6 +1480,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.hotels", cancellationToken) is { } deniedDeactRoom)
+        {
+            return deniedDeactRoom;
+        }
+
         var result = await _adminHotelManagementService.DeactivateRoomAsync(hotelId, roomId, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
         if (result.Success)
@@ -899,11 +1496,15 @@ public class AdminPanelController : Controller
 
     [HttpPost("oteller/pasife-al")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeactivateHotel(long hotelId, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeactivateHotel(long hotelId, [FromForm] string? returnUrl, CancellationToken cancellationToken)
     {
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!await CanAccessAsync("admin.hotels", cancellationToken))
+        {
+            return Forbid();
         }
 
         if (!CanPerformCriticalAdminActions())
@@ -917,17 +1518,31 @@ public class AdminPanelController : Controller
         if (result.Success)
         {
             await EvictPublicOutputCacheAsync(cancellationToken);
+            await _auditLogService.TryLogAdminActionAsync(
+                GetUserId(),
+                "hotel_deactivate",
+                "oteller",
+                hotelId.ToString(),
+                result.Message,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                cancellationToken);
         }
-        return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? LocalRedirect(returnUrl)
+            : RedirectToAction(nameof(HotelDetail), new { id = hotelId });
     }
 
     [HttpPost("oteller/aktive-et")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ActivateHotel(long hotelId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ActivateHotel(long hotelId, [FromForm] string? returnUrl, CancellationToken cancellationToken)
     {
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!await CanAccessAsync("admin.hotels", cancellationToken))
+        {
+            return Forbid();
         }
 
         if (!CanPerformCriticalAdminActions())
@@ -941,8 +1556,18 @@ public class AdminPanelController : Controller
         if (result.Success)
         {
             await EvictPublicOutputCacheAsync(cancellationToken);
+            await _auditLogService.TryLogAdminActionAsync(
+                GetUserId(),
+                "hotel_activate",
+                "oteller",
+                hotelId.ToString(),
+                result.Message,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                cancellationToken);
         }
-        return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? LocalRedirect(returnUrl)
+            : RedirectToAction(nameof(HotelDetail), new { id = hotelId });
     }
 
     [HttpPost("oteller/otel-fotograf-yukle")]
@@ -954,6 +1579,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.hotels", cancellationToken) is { } deniedHotelPh)
+        {
+            return deniedHotelPh;
         }
 
         var result = await _adminHotelManagementService.UploadHotelPhotosAsync(GetUserId(), request, cancellationToken);
@@ -974,6 +1604,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.hotels", cancellationToken) is { } deniedHotelPhUp)
+        {
+            return deniedHotelPhUp;
+        }
+
         var result = await _adminHotelManagementService.UpdateHotelPhotoAsync(request, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
         if (result.Success)
@@ -990,6 +1625,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.hotels", cancellationToken) is { } deniedHotelCover)
+        {
+            return deniedHotelCover;
         }
 
         var result = await _adminHotelManagementService.SetHotelCoverAsync(hotelId, photoId, cancellationToken);
@@ -1010,6 +1650,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.hotels", cancellationToken) is { } deniedHotelPhDel)
+        {
+            return deniedHotelPhDel;
+        }
+
         var result = await _adminHotelManagementService.DeleteHotelPhotoAsync(hotelId, photoId, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
         if (result.Success)
@@ -1028,6 +1673,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.hotels", cancellationToken) is { } deniedRoomPh)
+        {
+            return deniedRoomPh;
         }
 
         var result = await _adminHotelManagementService.UploadRoomPhotosAsync(GetUserId(), request, cancellationToken);
@@ -1066,6 +1716,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.hotels", cancellationToken) is { } deniedRoomCover)
+        {
+            return deniedRoomCover;
+        }
+
         var result = await _adminHotelManagementService.SetRoomCoverAsync(hotelId, roomId, photoId, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
         if (result.Success)
@@ -1084,6 +1739,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.hotels", cancellationToken) is { } deniedRoomPhDel)
+        {
+            return deniedRoomPhDel;
+        }
+
         var result = await _adminHotelManagementService.DeleteRoomPhotoAsync(hotelId, roomId, photoId, cancellationToken);
         TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
         if (result.Success)
@@ -1094,23 +1754,76 @@ public class AdminPanelController : Controller
     }
 
     [HttpGet("rezervasyonlar")]
-    public Task<IActionResult> Reservations(CancellationToken cancellationToken) => RenderSectionAsync("reservations", "Reservations", cancellationToken);
-
-    [HttpGet("odemeler")]
-    public Task<IActionResult> Payments(CancellationToken cancellationToken) => RenderSectionAsync("payments", "Payments", cancellationToken);
-
-    [HttpGet("faturalar")]
-    public Task<IActionResult> Invoices(CancellationToken cancellationToken) => RenderSectionAsync("invoices", "Invoices", cancellationToken);
-
-    [HttpGet("komisyonlar")]
-    public async Task<IActionResult> Commissions([FromQuery] long? hotelId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Reservations([FromQuery] string? q, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
     {
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
         }
 
-        var model = await _adminService.GetCommissionManagementAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, cancellationToken);
+        if (!await CanAccessAsync("admin.reservations", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var model = await _adminService.GetUnifiedReservationsAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, page, pageSize, cancellationToken);
+        model.Shell.PanelTitle = "Rezervasyonlar";
+        model.Shell.PanelSubtitle = "Bireysel, firma ve satış kaynaklı rezervasyonları tek operasyon tablosunda yönetin.";
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "paneller/admin/unified-reservations";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/UnifiedReservations.cshtml", model);
+    }
+
+    [HttpGet("odemeler")]
+    public async Task<IActionResult> Payments([FromQuery] string? q, [FromQuery] string? status, [FromQuery] string? paymentType, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!await CanAccessAsync("admin.payments", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var model = await _adminService.GetPaymentsAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, paymentType, page, pageSize, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "paneller/admin/payments";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/Payments.cshtml", model);
+    }
+
+    [HttpGet("faturalar")]
+    public async Task<IActionResult> Invoices([FromQuery] string? q, [FromQuery] string? status, [FromQuery] string? invoiceType, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!await CanAccessAsync("admin.invoices", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var model = await _adminService.GetInvoicesAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, invoiceType, page, pageSize, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "paneller/admin/invoices";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/Invoices.cshtml", model);
+    }
+
+    [HttpGet("komisyonlar")]
+    public async Task<IActionResult> Commissions([FromQuery] long? hotelId, [FromQuery] DateTime? dateFrom, [FromQuery] DateTime? dateTo, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _adminService.GetCommissionManagementAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, dateFrom, dateTo, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "paneller/admin/commissions";
         return View("~/Views/Paneller/Admin/Commissions.cshtml", model);
@@ -1122,6 +1835,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.contracts", cancellationToken) is { } deniedContract)
+        {
+            return deniedContract;
         }
 
         var model = await _contractContentService.GetAdminContractManagementAsync(GetFullName(), GetEmail(), GetUserRole(), contractId, cancellationToken);
@@ -1139,6 +1857,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.contracts", cancellationToken) is { } deniedSaveContract)
+        {
+            return deniedSaveContract;
+        }
+
         var result = await _contractContentService.SaveContractAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
         return RedirectToAction(nameof(Contracts), new { contractId = request.ContractId });
@@ -1151,6 +1874,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.contracts", cancellationToken) is { } deniedResend)
+        {
+            return deniedResend;
         }
 
         var result = await _contractContentService.ResendContractBundleAsync(GetUserId(), contractId, cancellationToken);
@@ -1184,6 +1912,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.contracts", cancellationToken) is { } deniedPdf)
+        {
+            return deniedPdf;
         }
 
         if (contractId <= 0)
@@ -1257,6 +1990,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.commissions", cancellationToken) is { } deniedRule)
+        {
+            return deniedRule;
+        }
+
         var result = await _adminService.SaveCommissionRuleAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
         return RedirectToAction(nameof(Commissions), new { hotelId = request.HotelId });
@@ -1268,6 +2006,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.partner_applications", cancellationToken) is { } deniedPartner)
+        {
+            return deniedPartner;
         }
 
         var model = await _adminService.GetPartnerApplicationsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
@@ -1285,6 +2028,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.partner_applications", cancellationToken) is { } deniedPartnerUp)
+        {
+            return deniedPartnerUp;
+        }
+
         var result = await _adminService.ReviewPartnerApplicationAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
         return RedirectToAction(nameof(PartnerApplications));
@@ -1297,6 +2045,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.partner_applications", cancellationToken) is { } deniedPartnerMail)
+        {
+            return deniedPartnerMail;
         }
 
         var result = await _adminService.SetPartnerEmailLoginApprovalAsync(GetUserId(), request, cancellationToken);
@@ -1327,6 +2080,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.company_applications", cancellationToken) is { } deniedCompanyUp)
+        {
+            return deniedCompanyUp;
+        }
+
         var result = await _adminService.ReviewCompanyApplicationAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "AdminCompanyMessage" : "AdminCompanyError"] = result.Message;
         return RedirectToAction(nameof(CompanyApplications));
@@ -1338,6 +2096,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.listing_subscriptions", cancellationToken) is { } deniedListing)
+        {
+            return deniedListing;
         }
 
         var model = await _adminService.GetListingSubscriptionsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
@@ -1353,6 +2116,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.listing_subscriptions", cancellationToken) is { } deniedListingUp)
+        {
+            return deniedListingUp;
         }
 
         var result = await _adminService.ReviewListingSubscriptionAsync(GetUserId(), request, cancellationToken);
@@ -1386,6 +2154,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.development_requests", cancellationToken) is { } deniedDev)
+        {
+            return deniedDev;
+        }
+
         var model = await _developmentRequestService.GetAdminPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, priority, developerUserId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "panel-admin-development";
@@ -1401,6 +2174,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.development_requests", cancellationToken) is { } deniedDevSave)
+        {
+            return deniedDevSave;
         }
 
         string? imageUrl = null;
@@ -1426,6 +2204,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.development_requests", cancellationToken) is { } deniedDevDel)
+        {
+            return deniedDevDel;
+        }
+
         var result = await _developmentRequestService.DeleteRequestAsync(GetUserId(), requestId, note, cancellationToken);
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
         return RedirectToAction(nameof(DevelopmentRequests));
@@ -1435,10 +2218,46 @@ public class AdminPanelController : Controller
     public Task<IActionResult> PlatformOfficials(CancellationToken cancellationToken) => RenderSectionAsync("platform-officials", "PlatformOfficials", cancellationToken);
 
     [HttpGet("acik-oteller")]
-    public Task<IActionResult> ActiveHotels(CancellationToken cancellationToken) => RenderSectionAsync("active-hotels", "ActiveHotels", cancellationToken);
+    public async Task<IActionResult> ActiveHotels([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? district, [FromQuery] string? neighborhood, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!await CanAccessAsync("admin.hotels", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var model = await _adminHotelManagementService.GetHotelsPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, city, district, neighborhood, "Yayında", "Onaylandı", page, pageSize, cancellationToken);
+        model.Shell.PanelTitle = "Açık Oteller";
+        model.Shell.PanelSubtitle = "Yayında ve admin onaylı tesisleri; yayın kapatma, detay ve komisyon takibi için yönetin.";
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-hotels";
+        return View("~/Views/Paneller/Admin/Hotels.cshtml", model);
+    }
 
     [HttpGet("bekleyen-oteller")]
-    public Task<IActionResult> PendingHotels(CancellationToken cancellationToken) => RenderSectionAsync("pending-hotels", "PendingHotels", cancellationToken);
+    public async Task<IActionResult> PendingHotels([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? district, [FromQuery] string? neighborhood, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!await CanAccessAsync("admin.hotels", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var model = await _adminHotelManagementService.GetHotelsPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, city, district, neighborhood, string.Empty, "Beklemede", page, pageSize, cancellationToken);
+        model.Shell.PanelTitle = "Bekleyen Oteller";
+        model.Shell.PanelSubtitle = "Evrak, otel bilgisi, komisyon ve yayın kararı bekleyen tesisleri tek tabloda inceleyin.";
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-hotels";
+        return View("~/Views/Paneller/Admin/Hotels.cshtml", model);
+    }
 
     [HttpGet("degerlendirmeler")]
     public async Task<IActionResult> Reviews(string? q = null, string? city = null, string? hotel = null, int take = 20, CancellationToken cancellationToken = default)
@@ -1446,6 +2265,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.reviews", cancellationToken) is { } deniedRev)
+        {
+            return deniedRev;
         }
 
         var model = await _adminService.GetReviewModerationPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, city, hotel, take, cancellationToken);
@@ -1462,6 +2286,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.reviews", cancellationToken) is { } deniedRevAct)
+        {
+            return deniedRevAct;
         }
 
         var result = await _adminService.ApplyReviewModerationActionAsync(GetUserId(), form, cancellationToken);
@@ -1500,6 +2329,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.reviews", cancellationToken) is { } deniedRevNtf)
+        {
+            return deniedRevNtf;
+        }
+
         var result = await _adminService.NotifyReviewViolationAsync(GetUserId(), form, cancellationToken);
         TempData[result.Success ? "AdminSuccess" : "AdminError"] = result.Message;
         if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
@@ -1516,6 +2350,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.reviews", cancellationToken) is { } deniedBwAdd)
+        {
+            return deniedBwAdd;
         }
 
         var result = await _adminService.AddBlockedWordAsync(GetUserId(), form, cancellationToken);
@@ -1536,6 +2375,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.reviews", cancellationToken) is { } deniedBwTgl)
+        {
+            return deniedBwTgl;
+        }
+
         var result = await _adminService.ToggleBlockedWordAsync(GetUserId(), form, cancellationToken);
         TempData[result.Success ? "AdminSuccess" : "AdminError"] = result.Message;
         if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
@@ -1546,7 +2390,47 @@ public class AdminPanelController : Controller
     }
 
     [HttpGet("raporlar")]
-    public Task<IActionResult> Reports(CancellationToken cancellationToken) => RenderSectionAsync("reports", "Reports", cancellationToken);
+    public async Task<IActionResult> Reports([FromQuery] long? hotelId, [FromQuery] DateTime? dateFrom, [FromQuery] DateTime? dateTo, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!await CanAccessAsync("admin.reports", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var model = await _adminService.GetReportsAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, dateFrom, dateTo, page, pageSize, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "paneller/admin/reports";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/Reports.cshtml", model);
+    }
+
+    [HttpGet("raporlar/aylik-ciro-komisyon.csv")]
+    public async Task<IActionResult> ExportMonthlyRevenueCommissionCsv(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!await CanAccessAsync("admin.reports", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var csv = await _adminService.ExportMonthlyHotelRevenueCommissionCsvAsync(cancellationToken);
+        var preamble = System.Text.Encoding.UTF8.GetPreamble();
+        var body = System.Text.Encoding.UTF8.GetBytes(csv);
+        var bytes = new byte[preamble.Length + body.Length];
+        Buffer.BlockCopy(preamble, 0, bytes, 0, preamble.Length);
+        Buffer.BlockCopy(body, 0, bytes, preamble.Length, body.Length);
+        var fileName = $"aylik-otel-ciro-komisyon-{DateTime.UtcNow:yyyyMMdd-HHmm}.csv";
+        return File(bytes, "text/csv; charset=utf-8", fileName);
+    }
 
     [HttpGet("kampanyalar")]
     public Task<IActionResult> Campaigns(CancellationToken cancellationToken) => RenderSectionAsync("campaigns", "Campaigns", cancellationToken);
@@ -1565,6 +2449,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.whatsapp", cancellationToken) is { } deniedWa)
+        {
+            return deniedWa;
+        }
+
         var shell = await _adminService.GetSectionPageAsync("settings", GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         var model = await _phoneVerificationService.GetAdminSettingsPageAsync(shell.Shell, cancellationToken);
         ViewData["Title"] = "WhatsApp Cloud API";
@@ -1580,6 +2469,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.whatsapp", cancellationToken) is { } deniedWaSave)
+        {
+            return deniedWaSave;
+        }
+
         var result = await _phoneVerificationService.SaveAdminSettingsAsync(GetUserId(), form, cancellationToken);
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
         return RedirectToAction(nameof(WhatsAppCloudApi));
@@ -1592,6 +2486,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.whatsapp", cancellationToken) is { } deniedWaTest)
+        {
+            return deniedWaTest;
         }
 
         var result = await _phoneVerificationService.SendAdminTestMessageAsync(GetUserId(), phoneNumber, cancellationToken);
@@ -1613,6 +2512,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.email_templates", cancellationToken) is { } deniedTpl)
+        {
+            return deniedTpl;
+        }
+
         var model = await _adminService.GetEmailSettingsPageAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "panel-admin-section";
@@ -1629,6 +2533,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.email_templates", cancellationToken) is { } deniedTplTest)
+        {
+            return deniedTplTest;
+        }
+
         var result = await _adminService.QueueTemplateTestBatchAsync(GetUserId(), recipientEmail, cancellationToken);
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
         return RedirectToAction(nameof(EmailTemplates));
@@ -1642,11 +2551,55 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.mail_center", cancellationToken) is { } deniedMailCenter)
+        {
+            return deniedMailCenter;
+        }
+
         var model = await _adminService.GetMailCenterAsync(GetFullName(), GetEmail(), GetUserRole(), accountId, sync, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "panel-admin-mail-center";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/MailCenter.cshtml", model);
+    }
+
+    [HttpGet("eposta-yonlendirmeleri")]
+    public async Task<IActionResult> EmailRouting(CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.email_routing", cancellationToken) is { } deniedRoute)
+        {
+            return deniedRoute;
+        }
+
+        var model = await _adminEmailRoutingService.GetPageAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-email-routing";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/EmailRouting.cshtml", model);
+    }
+
+    [HttpPost("eposta-yonlendirmeleri/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveEmailRouting(AdminEmailRoutingSaveForm form, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.email_routing", cancellationToken) is { } deniedRouteSave)
+        {
+            return deniedRouteSave;
+        }
+
+        var result = await _adminEmailRoutingService.SaveAsync(GetUserId(), form, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(EmailRouting));
     }
 
     [HttpPost("mail-merkezi/hesap-kaydet")]
@@ -1656,6 +2609,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.mail_center", cancellationToken) is { } deniedMcSave)
+        {
+            return deniedMcSave;
         }
 
         var result = await _adminService.SaveMailAccountAsync(GetUserId(), form, cancellationToken);
@@ -1672,6 +2630,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.mail_center", cancellationToken) is { } deniedMcDel)
+        {
+            return deniedMcDel;
+        }
+
         var result = await _adminService.DeleteMailAccountAsync(GetUserId(), id, cancellationToken);
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
         return RedirectToAction(nameof(MailCenter));
@@ -1684,6 +2647,11 @@ public class AdminPanelController : Controller
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.mail_center", cancellationToken) is { } deniedMcSync)
+        {
+            return deniedMcSync;
         }
 
         var result = await _adminService.SyncMailAccountAsync(GetUserId(), accountId, cancellationToken);
@@ -1725,6 +2693,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.support_articles", cancellationToken) is { } deniedSa)
+        {
+            return deniedSa;
+        }
+
         var section = await _adminService.GetSectionPageAsync("faq", GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         section.Shell.PanelTitle = "Destek Makaleleri";
         section.Shell.PanelSubtitle = "Yardım merkezi içeriklerini tek yerden ekleyin, güncelleyin ve kaldırın.";
@@ -1759,6 +2732,11 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        if (await RequirePermissionOrForbidAsync("admin.support_articles", cancellationToken) is { } deniedSaDel)
+        {
+            return deniedSaDel;
+        }
+
         var result = await _adminSupportArticleService.DeleteAsync(GetUserId(), articleId, cancellationToken);
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
         return RedirectToAction(nameof(SupportArticles));
@@ -1789,11 +2767,51 @@ public class AdminPanelController : Controller
             return RedirectToAction("UserLogin", "Auth");
         }
 
+        // RBAC (menü + endpoint): sectionKey -> permission mapping
+        var permission = sectionKey switch
+        {
+            "users" => "admin.users",
+            "managers" => "admin.managers",
+            "platform-officials" => "admin.platform_officials",
+            "reservations" => "admin.reservations",
+            "payments" => "admin.payments",
+            "invoices" => "admin.invoices",
+            "active-hotels" => "admin.hotels",
+            "pending-hotels" => "admin.hotels",
+            "reports" => "admin.reports",
+            "campaigns" => "admin.hotels",
+            "notifications" => "admin.notifications",
+            "settings" => "admin.settings",
+            "security" => "admin.security",
+            "blog" => "admin.blog",
+            "faq" => "admin.faq",
+            "complaints" => "admin.complaints",
+            "logs" => "admin.logs",
+            "geo-search-logs" => "admin.geo_search_logs",
+            "hotel-coordinate-changes" => "admin.hotel_coord_changes",
+            "company-reservations" => "admin.company_reservations",
+            "backups" => "admin.backups",
+            _ => string.Empty
+        };
+        if (string.IsNullOrWhiteSpace(permission))
+        {
+            return Forbid();
+        }
+        if (!await CanAccessAsync(permission, cancellationToken))
+        {
+            return Forbid();
+        }
+
         var model = await _adminService.GetSectionPageAsync(sectionKey, GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = string.Equals(sectionKey, "users", StringComparison.OrdinalIgnoreCase)
             ? "panel-admin-users"
             : "panel-admin-section";
+        if (string.Equals(sectionKey, "reports", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["MonthlyCsvExportUrl"] = Url.Action(nameof(ExportMonthlyRevenueCommissionCsv), "AdminPanel");
+        }
+
         return View($"~/Views/Paneller/Admin/{viewName}.cshtml", model);
     }
 
@@ -1807,6 +2825,32 @@ public class AdminPanelController : Controller
             || User.IsInRole("admin");
     }
 
+    private async Task<bool> CanAccessAsync(string permissionCode, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return false;
+        }
+
+        var uid = GetUserId();
+        if (uid <= 0)
+        {
+            return false;
+        }
+
+        return await _adminRbacService.HasPermissionAsync(uid, GetUserRole(), permissionCode, cancellationToken);
+    }
+
+    private async Task<IActionResult?> RequirePermissionOrForbidAsync(string permissionCode, CancellationToken cancellationToken)
+    {
+        if (!await CanAccessAsync(permissionCode, cancellationToken))
+        {
+            return Forbid();
+        }
+
+        return null;
+    }
+
     private bool CanPerformCriticalAdminActions()
     {
         var userRole = User.FindFirstValue(AuthClaimTypes.UserRole);
@@ -1818,7 +2862,7 @@ public class AdminPanelController : Controller
 
     private string GetFullName()
     {
-        return User.FindFirstValue(AuthClaimTypes.FullName) ?? User.Identity?.Name ?? "Admin Kullanici";
+        return User.FindFirstValue(AuthClaimTypes.FullName) ?? User.Identity?.Name ?? "Admin kullanıcı";
     }
 
     private string GetEmail()

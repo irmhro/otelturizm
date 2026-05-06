@@ -1,7 +1,19 @@
 @model otelturizmnew.Models.Paneller.Partner.PartnerFinancePageViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
     Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
     ViewData["PartnerShell"] = Model.Shell;
+    var commissionPolicyNote = Configuration["Business:CommissionPolicyNoteTr"];
+}
+
+@if (!string.IsNullOrWhiteSpace(commissionPolicyNote))
+{
+    <section class="partner-section-card partner-finance-policy-note" aria-label="Komisyon politikası özeti">
+        <div class="partner-finance-callout">
+            <i class="fas fa-circle-info" aria-hidden="true"></i>
+            <span>@commissionPolicyNote</span>
+        </div>
+    </section>
 }
 
 <section class="partner-grid">

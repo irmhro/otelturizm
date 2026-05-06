@@ -26,26 +26,55 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         _imageStorageService = imageStorageService;
     }
 
-    public async Task<AdminHotelsPageViewModel> GetHotelsPageAsync(string fullName, string email, string userRole, string? searchTerm = null, CancellationToken cancellationToken = default)
+    public async Task<AdminHotelsPageViewModel> GetHotelsPageAsync(string fullName, string email, string userRole, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, string? publishStatus = null, string? approvalStatus = null, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var shell = await BuildShellAsync(connection, "Oteller", "Otel kayitlarini, odalari ve medya varliklarini admin tarafindan hizli sekilde yonetin.", fullName, email, userRole, cancellationToken);
+        var safePageSize = Math.Clamp(pageSize, 7, 100);
+        var safePage = Math.Max(1, page);
         var model = new AdminHotelsPageViewModel
         {
             Shell = shell,
-            SearchTerm = searchTerm?.Trim() ?? string.Empty
+            SearchTerm = searchTerm?.Trim() ?? string.Empty,
+            CityFilter = city?.Trim() ?? string.Empty,
+            DistrictFilter = district?.Trim() ?? string.Empty,
+            NeighborhoodFilter = neighborhood?.Trim() ?? string.Empty,
+            PublishStatusFilter = publishStatus?.Trim() ?? string.Empty,
+            ApprovalStatusFilter = approvalStatus?.Trim() ?? string.Empty,
+            Page = safePage,
+            PageSize = safePageSize
         };
 
         model.SummaryCards.AddRange(await LoadHotelSummaryCardsAsync(connection, cancellationToken));
+        await LoadHotelFilterOptionsAsync(connection, model, cancellationToken);
 
-        const string sql = @"
-            SELECT TOP (120) o.id,
+        const string whereSql = @"
+            WHERE (@search = '' OR o.otel_adi LIKE '%' + @search + '%' OR o.otel_kodu LIKE '%' + @search + '%' OR o.sehir LIKE '%' + @search + '%' OR o.ilce LIKE '%' + @search + '%' OR COALESCE(o.mahalle, '') LIKE '%' + @search + '%')
+              AND (@city = '' OR o.sehir = @city)
+              AND (@district = '' OR o.ilce = @district)
+              AND (@neighborhood = '' OR COALESCE(o.mahalle, '') = @neighborhood)
+              AND (@publishStatus = '' OR o.yayin_durumu = @publishStatus)
+              AND (@approvalStatus = '' OR o.onay_durumu = @approvalStatus)";
+
+        await using (var countCommand = new SqlCommand($"SELECT COUNT(*) FROM oteller o {whereSql};", connection))
+        {
+            BindHotelListFilters(countCommand, model);
+            model.TotalCount = Convert.ToInt32(await countCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
+        }
+
+        if (model.TotalCount > 0 && model.Page > model.TotalPages)
+        {
+            model.Page = model.TotalPages;
+        }
+
+        const string selectSql = @"
+            SELECT o.id,
                    o.otel_kodu,
                    o.otel_adi,
                    o.otel_turu,
-                   CONCAT(o.ilce, ', ', o.sehir) AS konum,
+                   CONCAT(COALESCE(NULLIF(o.mahalle, ''), o.ilce), ', ', o.ilce, ', ', o.sehir) AS konum,
                    o.yayin_durumu,
                    o.onay_durumu,
                    o.ortalama_puan,
@@ -69,12 +98,18 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 FROM oda_tipleri od
                 LEFT JOIN oda_gorselleri og ON og.oda_tip_id = od.id
                 GROUP BY od.otel_id
-            ) roomPhotos ON roomPhotos.otel_id = o.id
-            WHERE (@search = '' OR o.otel_adi LIKE '%' + @search + '%' OR o.otel_kodu LIKE '%' + @search + '%' OR o.sehir LIKE '%' + @search + '%' OR o.ilce LIKE '%' + @search + '%')
-            ORDER BY o.id DESC;";
+            ) roomPhotos ON roomPhotos.otel_id = o.id";
+
+        var sql = $@"
+            {selectSql}
+            {whereSql}
+            ORDER BY o.id DESC
+            OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;";
 
         await using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@search", model.SearchTerm);
+        BindHotelListFilters(command, model);
+        command.Parameters.AddWithValue("@offset", (model.Page - 1) * model.PageSize);
+        command.Parameters.AddWithValue("@pageSize", model.PageSize);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -953,6 +988,53 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         return cards;
+    }
+
+    private static async Task LoadHotelFilterOptionsAsync(SqlConnection connection, AdminHotelsPageViewModel model, CancellationToken cancellationToken)
+    {
+        model.CityOptions.AddRange(await LoadDistinctHotelColumnAsync(connection, "sehir", cancellationToken));
+        model.DistrictOptions.AddRange(await LoadDistinctHotelColumnAsync(connection, "ilce", cancellationToken));
+        model.NeighborhoodOptions.AddRange(await LoadDistinctHotelColumnAsync(connection, "mahalle", cancellationToken));
+        model.PublishStatusOptions.AddRange(await LoadDistinctHotelColumnAsync(connection, "yayin_durumu", cancellationToken));
+        model.ApprovalStatusOptions.AddRange(await LoadDistinctHotelColumnAsync(connection, "onay_durumu", cancellationToken));
+    }
+
+    private static async Task<List<string>> LoadDistinctHotelColumnAsync(SqlConnection connection, string columnName, CancellationToken cancellationToken)
+    {
+        var safeColumn = columnName switch
+        {
+            "sehir" => "sehir",
+            "ilce" => "ilce",
+            "mahalle" => "mahalle",
+            "yayin_durumu" => "yayin_durumu",
+            "onay_durumu" => "onay_durumu",
+            _ => throw new ArgumentOutOfRangeException(nameof(columnName), columnName, "Desteklenmeyen otel filtre kolonu.")
+        };
+
+        var values = new List<string>();
+        await using var command = new SqlCommand($"""
+            SELECT DISTINCT LTRIM(RTRIM({safeColumn}))
+            FROM oteller
+            WHERE NULLIF(LTRIM(RTRIM(COALESCE({safeColumn}, ''))), '') IS NOT NULL
+            ORDER BY LTRIM(RTRIM({safeColumn}));
+            """, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            values.Add(reader.GetString(0));
+        }
+
+        return values;
+    }
+
+    private static void BindHotelListFilters(SqlCommand command, AdminHotelsPageViewModel model)
+    {
+        command.Parameters.AddWithValue("@search", model.SearchTerm);
+        command.Parameters.AddWithValue("@city", model.CityFilter);
+        command.Parameters.AddWithValue("@district", model.DistrictFilter);
+        command.Parameters.AddWithValue("@neighborhood", model.NeighborhoodFilter);
+        command.Parameters.AddWithValue("@publishStatus", model.PublishStatusFilter);
+        command.Parameters.AddWithValue("@approvalStatus", model.ApprovalStatusFilter);
     }
 
     private static async Task<List<AdminSummaryCardViewModel>> LoadHotelManagementCardsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)

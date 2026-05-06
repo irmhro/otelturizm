@@ -37,6 +37,8 @@
     <link rel="stylesheet" href="~/paneltematabler/dist/css/tabler-vendors.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/panel-tokens.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/panel-standards.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/paneller/departman/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/departman/shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     @if (!string.IsNullOrWhiteSpace(pageCssPath))
@@ -73,6 +75,7 @@
                     </form>
                 </header>
             }
+            <partial name="~/Views/Paneller/Common/_PanelToasts.cshtml" />
             @RenderBody()
             @if (shell is not null)
             {
@@ -119,6 +122,7 @@
         </div>
     }
     <script src="~/paneltematabler/dist/js/tabler.min.js" asp-append-version="true"></script>
+    <script src="~/assets/js/panel-toasts.js" asp-append-version="true"></script>
     <script nonce="@(Context.Items["CspNonce"] as string)">
     (() => {
         const primaryInput = document.getElementById('departmentThemePrimaryHex');

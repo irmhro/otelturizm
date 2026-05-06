@@ -1,9 +1,9 @@
 .payment-hero,
 .payment-panel {
-    border: 1px solid #dbe5f2;
+    border: 1px solid var(--user-line);
     border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 12px 28px rgba(15, 37, 64, .06);
+    background: var(--user-surface);
+    box-shadow: var(--user-shadow);
 }
 
 .payment-hero {
@@ -13,11 +13,11 @@
     gap: 20px;
     padding: 24px;
     margin-bottom: 18px;
-    background: linear-gradient(135deg, #fff 0%, #eef6ff 100%);
+    background: linear-gradient(135deg, var(--user-surface) 0%, var(--user-surface-2) 100%);
 }
 
 .panel-eyebrow {
-    color: #0b72d9;
+    color: var(--user-accent);
     font-size: 12px;
     font-weight: 850;
     letter-spacing: .06em;
@@ -27,7 +27,7 @@
 .payment-hero h1,
 .payment-panel-head h2 {
     margin: 4px 0 8px;
-    color: #152238;
+    color: var(--user-text);
     font-weight: 850;
 }
 
@@ -38,22 +38,22 @@
 .toggle-row p,
 .payment-empty span {
     margin: 0;
-    color: #64748b;
+    color: var(--user-muted);
 }
 
 .payment-hero-metric {
     min-width: 150px;
     padding: 16px;
-    border: 1px solid #dbe5f2;
+    border: 1px solid color-mix(in srgb, var(--user-line) 86%, transparent);
     border-radius: 8px;
-    background: #fff;
+    background: var(--user-surface);
     text-align: center;
 }
 
 .payment-hero-metric strong {
     display: block;
     font-size: 32px;
-    color: #152238;
+    color: var(--user-text);
 }
 
 .payment-grid {
@@ -73,8 +73,8 @@
     justify-content: space-between;
     gap: 14px;
     padding: 18px 20px;
-    border-bottom: 1px solid #e6edf6;
-    background: linear-gradient(135deg, #fff 0%, #f7fbff 100%);
+    border-bottom: 1px solid color-mix(in srgb, var(--user-line) 86%, transparent);
+    background: linear-gradient(135deg, var(--user-surface) 0%, var(--user-surface-2) 100%);
 }
 
 .payment-count-pill,
@@ -83,8 +83,8 @@
     width: fit-content;
     padding: 7px 11px;
     border-radius: 999px;
-    background: #e8f2ff;
-    color: #0b62c7;
+    background: color-mix(in srgb, var(--user-accent) 14%, var(--user-surface));
+    color: var(--user-accent);
     font-size: 12px;
     font-weight: 850;
 }
@@ -112,9 +112,9 @@
     gap: 14px;
     align-items: center;
     padding: 14px;
-    border: 1px solid #e2ebf6;
+    border: 1px solid color-mix(in srgb, var(--user-line) 86%, transparent);
     border-radius: 8px;
-    background: #f8fbff;
+    background: var(--user-surface-2);
 }
 
 .payment-card-icon,
@@ -124,15 +124,15 @@
     width: 46px;
     height: 46px;
     border-radius: 8px;
-    background: #e8f2ff;
-    color: #0b62c7;
+    background: color-mix(in srgb, var(--user-accent) 14%, var(--user-surface));
+    color: var(--user-accent);
 }
 
 .payment-method-row h3,
 .toggle-row h3,
 .info-list strong {
     margin: 0 0 4px;
-    color: #152238;
+    color: var(--user-text);
     font-size: 16px;
     font-weight: 850;
 }
@@ -157,13 +157,13 @@
 
 .btn-primary-solid {
     border: 0;
-    background: #0b72d9;
+    background: var(--user-accent);
     color: #fff;
 }
 
 .btn-danger-soft {
     border: 1px solid #fecaca;
-    background: #fff;
+    background: var(--user-surface);
     color: #dc2626;
 }
 
@@ -176,15 +176,17 @@
 .form-grid label {
     display: grid;
     gap: 8px;
-    color: #1c2b43;
+    color: var(--user-text);
     font-weight: 750;
 }
 
 .form-grid input {
     width: 100%;
-    border: 1px solid #d5e0ee;
+    border: 1px solid color-mix(in srgb, var(--user-line) 86%, transparent);
     border-radius: 8px;
     padding: 12px 13px;
+    background: var(--user-surface);
+    color: var(--user-text);
 }
 
 .toggle-row {
@@ -194,15 +196,15 @@
     gap: 16px;
     margin: 0 20px 18px;
     padding: 14px;
-    border: 1px solid #e2ebf6;
+    border: 1px solid color-mix(in srgb, var(--user-line) 86%, transparent);
     border-radius: 8px;
-    background: #f8fbff;
+    background: var(--user-surface-2);
 }
 
 .toggle-row input[type="checkbox"] {
     width: 50px;
     height: 28px;
-    accent-color: #0b72d9;
+    accent-color: var(--user-accent);
 }
 
 .info-list div {
@@ -210,9 +212,9 @@
     grid-template-columns: 180px minmax(0, 1fr);
     gap: 14px;
     padding: 13px;
-    border: 1px solid #e2ebf6;
+    border: 1px solid color-mix(in srgb, var(--user-line) 86%, transparent);
     border-radius: 8px;
-    background: #f8fbff;
+    background: var(--user-surface-2);
 }
 
 .payment-empty {
@@ -225,7 +227,7 @@
 }
 
 .payment-empty i {
-    color: #9db1c8;
+    color: color-mix(in srgb, var(--user-muted) 76%, #9db1c8);
     font-size: 30px;
 }
 

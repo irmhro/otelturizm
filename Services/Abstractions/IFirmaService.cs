@@ -12,7 +12,7 @@ public interface IFirmaService
     Task<FirmaDealsComparePageViewModel> GetDealsCompareAsync(long userId, IReadOnlyList<long> hotelIds, int roomCount, CancellationToken cancellationToken = default);
     Task<FirmaReservationsPageViewModel> GetReservationsAsync(long userId, CancellationToken cancellationToken = default);
     Task<FirmaMessagesPageViewModel> GetMessagesAsync(long userId, long? conversationId, CancellationToken cancellationToken = default);
-    Task<FirmaEmployeesPageViewModel> GetEmployeesAsync(long userId, CancellationToken cancellationToken = default);
+    Task<FirmaEmployeesPageViewModel> GetEmployeesAsync(long userId, string? q = null, string? departman = null, int? page = null, int? pageSize = null, CancellationToken cancellationToken = default);
     Task<FirmaLimitsPageViewModel> GetLimitsAsync(long userId, CancellationToken cancellationToken = default);
     Task<FirmaInvoicesPageViewModel> GetInvoicesAsync(long userId, CancellationToken cancellationToken = default);
     Task<FirmaSpendingReportsPageViewModel> GetSpendingReportsAsync(long userId, CancellationToken cancellationToken = default);

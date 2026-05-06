@@ -446,7 +446,7 @@ public class HotelService : IHotelService
                 {
                     CampaignName = campaignReader.GetString(0),
                     Slogan = campaignReader.IsDBNull(2)
-                        ? "Secili otellerde canli fiyat ve kampanya avantaji sizi bekliyor."
+                        ? "Seçili otellerde güncel fiyat ve kampanya avantajı sizi bekliyor."
                         : campaignReader.GetString(2),
                     ImageUrl = NormalizeImageUrl(imageUrl),
                     TargetUrl = $"/oteller?kampanya={Uri.EscapeDataString(campaignSlug)}",

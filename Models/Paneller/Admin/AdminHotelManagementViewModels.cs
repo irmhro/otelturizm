@@ -6,6 +6,22 @@ public class AdminHotelsPageViewModel
 {
     public AdminShellViewModel Shell { get; set; } = new();
     public string SearchTerm { get; set; } = string.Empty;
+    public string CityFilter { get; set; } = string.Empty;
+    public string DistrictFilter { get; set; } = string.Empty;
+    public string NeighborhoodFilter { get; set; } = string.Empty;
+    public string PublishStatusFilter { get; set; } = string.Empty;
+    public string ApprovalStatusFilter { get; set; } = string.Empty;
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public int TotalCount { get; set; }
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)Math.Max(PageSize, 1)));
+    public bool HasPreviousPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
+    public List<string> CityOptions { get; set; } = new();
+    public List<string> DistrictOptions { get; set; } = new();
+    public List<string> NeighborhoodOptions { get; set; } = new();
+    public List<string> PublishStatusOptions { get; set; } = new();
+    public List<string> ApprovalStatusOptions { get; set; } = new();
     public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
     public List<AdminHotelListItemViewModel> Hotels { get; set; } = new();
 }

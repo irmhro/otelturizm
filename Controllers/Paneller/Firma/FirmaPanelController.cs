@@ -47,7 +47,7 @@ public class FirmaPanelController : Controller
         ViewData["FirmaShell"] = dashboard.Shell;
         var model = await _authService.GetTwoFactorSecurityAsync(GetUserId(), "firma", cancellationToken);
         ViewData["Title"] = "Güvenlik";
-        ViewData["PageCssPath"] = "panel-user-security";
+        ViewData["PageCssPath"] = "paneller/firma/security";
         return View("~/Views/Paneller/Firma/Security.cshtml", model);
     }
 
@@ -132,15 +132,20 @@ public class FirmaPanelController : Controller
         var model = await _firmaService.GetMessagesAsync(GetUserId(), conversationId, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Firma Mesajları";
-        ViewData["PageCssPath"] = "panel-user-messages";
+        ViewData["PageCssPath"] = "paneller/firma/messages";
         return View("~/Views/Paneller/Firma/Messages.cshtml", model);
     }
 
     [HttpGet("calisanlar")]
-    public async Task<IActionResult> Employees(CancellationToken cancellationToken)
+    public async Task<IActionResult> Employees(
+        [FromQuery] string? q,
+        [FromQuery] string? departman,
+        [FromQuery] int? page,
+        [FromQuery] int? pageSize,
+        CancellationToken cancellationToken)
     {
         if (!IsFirmaUser()) return Redirect("/kullanici-giris");
-        var model = await _firmaService.GetEmployeesAsync(GetUserId(), cancellationToken);
+        var model = await _firmaService.GetEmployeesAsync(GetUserId(), q, departman, page, pageSize, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Çalışanlar";
         ViewData["PageCssPath"] = "paneller/firma/employees";

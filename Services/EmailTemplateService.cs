@@ -38,6 +38,19 @@ public class EmailTemplateService : IEmailTemplateService
 
         if (!File.Exists(absolutePath))
         {
+            var compactViewPath = RemoveFileNameSpaces(localizedViewPath);
+            if (!string.Equals(compactViewPath, localizedViewPath, StringComparison.Ordinal))
+            {
+                var compactAbsolutePath = Path.Combine(_environment.ContentRootPath, compactViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar));
+                if (File.Exists(compactAbsolutePath))
+                {
+                    absolutePath = compactAbsolutePath;
+                }
+            }
+        }
+
+        if (!File.Exists(absolutePath))
+        {
             var fallbackViewPath = ResolveNeutralViewPath(localizedViewPath);
             if (!string.Equals(fallbackViewPath, localizedViewPath, StringComparison.OrdinalIgnoreCase))
             {
@@ -92,6 +105,23 @@ public class EmailTemplateService : IEmailTemplateService
             .Replace('ü', 'u').Replace('Ü', 'U')
             .Replace('ö', 'o').Replace('Ö', 'O')
             .Replace('ç', 'c').Replace('Ç', 'C');
+    }
+
+    private static string RemoveFileNameSpaces(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        var normalized = value.Replace('\\', '/');
+        var slashIndex = normalized.LastIndexOf('/');
+        if (slashIndex < 0)
+        {
+            return normalized.Replace(" ", string.Empty, StringComparison.Ordinal);
+        }
+
+        return normalized[..(slashIndex + 1)] + normalized[(slashIndex + 1)..].Replace(" ", string.Empty, StringComparison.Ordinal);
     }
 
     private static string ResolveLocalizedViewPath(string relativeViewPath, IReadOnlyDictionary<string, string> tokens)

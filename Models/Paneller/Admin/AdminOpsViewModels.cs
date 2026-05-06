@@ -222,6 +222,116 @@ public sealed class AdminUnifiedReservationsPageViewModel
     public List<AdminUnifiedReservationRowViewModel> Rows { get; set; } = new();
 }
 
+public sealed class AdminPaymentRowViewModel
+{
+    public long PaymentId { get; set; }
+    public string TransactionNo { get; set; } = string.Empty;
+    public string ReservationNo { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string CustomerName { get; set; } = string.Empty;
+    public string PaymentType { get; set; } = string.Empty;
+    public string PaymentMethod { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public decimal CommissionAmount { get; set; }
+    public decimal TaxAmount { get; set; }
+    public decimal TotalCollected { get; set; }
+    public string Currency { get; set; } = "TRY";
+    public string Provider { get; set; } = string.Empty;
+    public int RiskScore { get; set; }
+    public bool ManualApprovalRequired { get; set; }
+    public DateTimeOffset? StartedAtUtc { get; set; }
+    public DateTimeOffset? CompletedAtUtc { get; set; }
+}
+
+public sealed class AdminPaymentsPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public string? Query { get; set; }
+    public string? Status { get; set; }
+    public string? PaymentType { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 25;
+    public int Total { get; set; }
+    public List<string> StatusOptions { get; set; } = new();
+    public List<string> TypeOptions { get; set; } = new();
+    public List<AdminPaymentRowViewModel> Rows { get; set; } = new();
+}
+
+public sealed class AdminInvoiceRowViewModel
+{
+    public long InvoiceId { get; set; }
+    public string InvoiceNo { get; set; } = string.Empty;
+    public string InvoiceType { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string BuyerTitle { get; set; } = string.Empty;
+    public string BuyerEmail { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string EInvoiceStatus { get; set; } = string.Empty;
+    public decimal SubTotal { get; set; }
+    public decimal TaxAmount { get; set; }
+    public decimal AccommodationTaxAmount { get; set; }
+    public decimal GrandTotal { get; set; }
+    public string Currency { get; set; } = "TRY";
+    public DateTime? InvoiceDate { get; set; }
+    public DateTime? DueDate { get; set; }
+    public DateTime? PaymentDate { get; set; }
+    public string PdfPath { get; set; } = string.Empty;
+}
+
+public sealed class AdminInvoicesPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public string? Query { get; set; }
+    public string? Status { get; set; }
+    public string? InvoiceType { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 25;
+    public int Total { get; set; }
+    public List<string> StatusOptions { get; set; } = new();
+    public List<string> TypeOptions { get; set; } = new();
+    public List<AdminInvoiceRowViewModel> Rows { get; set; } = new();
+}
+
+public sealed class AdminReportHotelOptionViewModel
+{
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+}
+
+public sealed class AdminRevenueReportRowViewModel
+{
+    public string MonthText { get; set; } = string.Empty;
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public string CityLabel { get; set; } = string.Empty;
+    public int ReservationCount { get; set; }
+    public int CompletedCount { get; set; }
+    public int CancelledCount { get; set; }
+    public decimal GrossRevenue { get; set; }
+    public decimal GrossCommission { get; set; }
+    public decimal NetCommission { get; set; }
+    public decimal AccommodationTax { get; set; }
+    public decimal KdvAmount { get; set; }
+    public decimal AverageNightAmount => ReservationCount <= 0 ? 0m : GrossRevenue / ReservationCount;
+}
+
+public sealed class AdminReportsPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public List<AdminReportHotelOptionViewModel> HotelOptions { get; set; } = new();
+    public long? HotelId { get; set; }
+    public DateTime? DateFrom { get; set; }
+    public DateTime? DateTo { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 25;
+    public int Total { get; set; }
+    public List<AdminRevenueReportRowViewModel> Rows { get; set; } = new();
+}
+
 public sealed class AdminRateLimitEndpointStatViewModel
 {
     public string Endpoint { get; set; } = string.Empty;

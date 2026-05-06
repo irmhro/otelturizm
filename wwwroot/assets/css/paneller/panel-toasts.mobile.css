@@ -1,0 +1,27 @@
+/* Tamamlayıcı kurallar — `panel-toasts.css` aynı layout’ta önce yüklenmeli */
+
+@media (max-width: 900px) {
+  #ot-panel-toast-stack.ot-toast-stack,
+  .ot-toast-stack {
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    right: 8px;
+    width: calc(100vw - 16px);
+    max-width: none;
+  }
+
+  html[dir="rtl"] #ot-panel-toast-stack.ot-toast-stack,
+  html[dir="rtl"] .ot-toast-stack {
+    left: 8px;
+    right: auto;
+  }
+
+  .ot-toast {
+    padding: 12px 14px;
+  }
+
+  .ot-toast__glyph {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+}

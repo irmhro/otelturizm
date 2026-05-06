@@ -4,16 +4,6 @@
     ViewData["Title"] = "Developer Paneli";
 }
 
-@if (TempData["DeveloperSuccess"] is string successMessage)
-{
-    <div class="panel-inline-status success">@successMessage</div>
-}
-
-@if (TempData["DeveloperError"] is string errorMessage)
-{
-    <div class="panel-inline-status error">@errorMessage</div>
-}
-
 <section class="developer-dashboard-grid">
     <div class="developer-content-stack">
         <section class="developer-stat-grid">
