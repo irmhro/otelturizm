@@ -111,7 +111,7 @@
 <section class="firma-section-card firma-section-card--lift">
     <h2>Son rezervasyonlar</h2>
     <div class="firma-table-wrap">
-        <table class="firma-table">
+        <table class="firma-table firma-table--cards">
             <thead>
                 <tr>
                     <th>No</th>
@@ -126,12 +126,12 @@
                 @foreach (var item in Model.RecentReservations)
                 {
                     <tr>
-                        <td>@item.ReservationNo</td>
-                        <td>@item.EmployeeName</td>
-                        <td>@item.HotelName</td>
-                        <td>@item.StayText</td>
-                        <td>@item.ApprovalText</td>
-                        <td>@item.TotalText</td>
+                        <td data-label="No">@item.ReservationNo</td>
+                        <td data-label="Çalışan">@item.EmployeeName</td>
+                        <td data-label="Otel">@item.HotelName</td>
+                        <td data-label="Konaklama">@item.StayText</td>
+                        <td data-label="Durum">@item.ApprovalText</td>
+                        <td data-label="Tutar">@item.TotalText</td>
                     </tr>
                 }
             </tbody>

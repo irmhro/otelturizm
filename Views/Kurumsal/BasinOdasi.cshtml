@@ -1,0 +1,58 @@
+@{
+    ViewData["Title"] = SharedLocalizer["Company.Press.Title"].Value;
+    ViewData["MetaDescription"] = SharedLocalizer["Company.Press.MetaDescription"].Value;
+    ViewData["HeroTitleKey"] = "Company.Press.Title";
+    ViewData["HeroLeadKey"] = "Company.Press.HeroLead";
+    ViewData["HeroEyebrowKey"] = "Footer.Press";
+    ViewData["HeroIcon"] = "fa-newspaper";
+}
+
+<partial name="~/Views/Kurumsal/_SirketPageHero.cshtml" />
+
+        <div class="corp-grid corp-grid--2">
+            <article class="corp-card corp-card--press">
+                <div class="corp-card__icon"><i class="fas fa-download" aria-hidden="true"></i></div>
+                <h2 class="corp-card__title">@SharedLocalizer["Company.Press.KitTitle"]</h2>
+                <p class="corp-card__text">@SharedLocalizer["Company.Press.KitText"]</p>
+                <a class="corp-btn corp-btn--ghost fe-world-touch-target" href="mailto:basin@otelturizm.com?subject=Basin%20Kit%20Talebi">@SharedLocalizer["Company.Press.KitButton"]</a>
+            </article>
+            <article class="corp-card corp-card--press">
+                <div class="corp-card__icon"><i class="fas fa-envelope-open-text" aria-hidden="true"></i></div>
+                <h2 class="corp-card__title">@SharedLocalizer["Company.Press.ContactTitle"]</h2>
+                <p class="corp-card__text">@SharedLocalizer["Company.Press.ContactText"]</p>
+                <a class="corp-btn corp-btn--primary fe-world-touch-target" href="mailto:basin@otelturizm.com">basin@otelturizm.com</a>
+            </article>
+        </div>
+
+        <section class="corp-news" aria-labelledby="corp-news-title">
+            <h2 id="corp-news-title" class="corp-section-title">@SharedLocalizer["Company.Press.NewsTitle"]</h2>
+            <div class="corp-news-list">
+                <article class="corp-news-item">
+                    <time datetime="2026-05-01">Mayıs 2026</time>
+                    <h3>@SharedLocalizer["Company.Press.News1Title"]</h3>
+                    <p>@SharedLocalizer["Company.Press.News1Text"]</p>
+                </article>
+                <article class="corp-news-item">
+                    <time datetime="2026-03-15">Mart 2026</time>
+                    <h3>@SharedLocalizer["Company.Press.News2Title"]</h3>
+                    <p>@SharedLocalizer["Company.Press.News2Text"]</p>
+                </article>
+                <article class="corp-news-item">
+                    <time datetime="2026-01-20">Ocak 2026</time>
+                    <h3>@SharedLocalizer["Company.Press.News3Title"]</h3>
+                    <p>@SharedLocalizer["Company.Press.News3Text"]</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="corp-cta" aria-label="@SharedLocalizer["Company.Press.CtaLabel"]">
+            <div class="corp-cta__inner">
+                <div>
+                    <h2 class="corp-cta__title">@SharedLocalizer["Company.Press.CtaTitle"]</h2>
+                    <p class="corp-cta__text">@SharedLocalizer["Company.Press.CtaText"]</p>
+                </div>
+                <a class="corp-btn corp-btn--primary fe-world-touch-target" href="/blog">@SharedLocalizer["Footer.Blog"]</a>
+            </div>
+        </section>
+    </div>
+</section>

@@ -1,5 +1,10 @@
 @model otelturizmnew.Models.Paneller.Firma.FirmaEmployeesPageViewModel
-@{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
+@{
+    Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml";
+    ViewData["FirmaShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/firma/employees";
+    ViewData["PageCssMobile"] = "paneller/firma/employees.mobile";
+}
 <section class="firma-mini-stats">
     <article class="firma-mini-stat"><strong>@Model.TotalCount</strong><span>Toplam Çalışan</span></article>
     <article class="firma-mini-stat"><strong>@Model.TravelingEmployeeCount</strong><span>Rezervasyon Açan</span></article>
@@ -8,7 +13,7 @@
 </section>
 
 <section class="firma-card">
-    <form method="get" action="/panel/firma/calisanlar" class="firma-form-grid" id="employeeFilterForm">
+    <form method="get" action="/panel/firma/calisanlar" class="firma-form-grid panel-form-ux" id="employeeFilterForm">
         <label>
             <span>Arama</span>
             <input type="text" name="q" value="@(Model.SearchTerm ?? string.Empty)" placeholder="İsim / e-posta / departman" autocomplete="off" id="employeeSearchInput" />
@@ -46,7 +51,7 @@
     </form>
 
     <div class="firma-table-wrap" style="margin-top:14px;">
-        <table class="firma-table">
+        <table class="firma-table firma-table--cards">
             <thead>
             <tr>
                 <th>Çalışan</th>
@@ -64,8 +69,8 @@
             @foreach (var item in Model.Employees)
             {
                 <tr>
-                    <td>
-                        <div style="display:flex; gap:10px; align-items:center;">
+                    <td data-label="Çalışan">
+                        <div class="firma-employee-cell">
                             <span class="firma-employee-avatar" style="width:34px; height:34px; font-size:12px;">@item.Initials</span>
                             <div>
                                 <strong>@item.FullName</strong><br />
@@ -73,14 +78,14 @@
                             </div>
                         </div>
                     </td>
-                    <td>@item.Department</td>
-                    <td>@item.Title</td>
-                    <td><span class="firma-pill @(item.IsManager ? "is-warning" : "secondary")">@item.RoleText</span></td>
-                    <td><span class="firma-pill">@item.LimitText</span></td>
-                    <td><span class="firma-pill @(item.ApprovalText.Contains("Onaylı") ? "is-warning" : "is-success")">@item.ApprovalText</span></td>
-                    <td><span class="firma-pill @item.PhoneVerificationToneClass">@item.PhoneVerificationText</span></td>
-                    <td style="text-align:right;"><b>@item.ReservationCountText</b></td>
-                    <td style="text-align:right;"><b>@item.SpendText</b></td>
+                    <td data-label="Departman">@item.Department</td>
+                    <td data-label="Ünvan">@item.Title</td>
+                    <td data-label="Rol"><span class="firma-pill @(item.IsManager ? "is-warning" : "secondary")">@item.RoleText</span></td>
+                    <td data-label="Limit"><span class="firma-pill">@item.LimitText</span></td>
+                    <td data-label="Akış"><span class="firma-pill @(item.ApprovalText.Contains("Onaylı") ? "is-warning" : "is-success")">@item.ApprovalText</span></td>
+                    <td data-label="Telefon"><span class="firma-pill @item.PhoneVerificationToneClass">@item.PhoneVerificationText</span></td>
+                    <td data-label="Rez." style="text-align:right;"><b>@item.ReservationCountText</b></td>
+                    <td data-label="Harcama" style="text-align:right;"><b>@item.SpendText</b></td>
                 </tr>
             }
             </tbody>
@@ -121,7 +126,7 @@
             </div>
             <button type="button" class="firma-icon-btn" data-modal-close="employee-modal"><i class="fas fa-times"></i></button>
         </div>
-        <form method="post" action="/panel/firma/calisan-ekle" class="firma-form-grid">
+        <form method="post" action="/panel/firma/calisan-ekle" class="firma-form-grid panel-form-ux">
             @Html.AntiForgeryToken()
             <label><span>Ad Soyad</span><input type="text" name="FullName" value="@Model.CreateForm.FullName" required /></label>
             <label><span>E-posta</span><input type="email" name="Email" value="@Model.CreateForm.Email" required /></label>

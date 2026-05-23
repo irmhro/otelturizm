@@ -1356,10 +1356,18 @@ body.listing-modal-open {
 
 .listing-template-v41 .hotel-name {
     margin: 0;
-    font-size: 24px;
-    line-height: 1.2;
-    font-weight: 700;
+    font-size: clamp(1.125rem, 1.4vw, 1.5rem);
+    line-height: 1.25;
+    font-weight: 800;
+    letter-spacing: -0.015em;
     color: var(--listing-text);
+}
+
+.listing-template-v41 .hotel-location {
+    margin-top: 6px;
+    color: var(--listing-muted);
+    font-size: clamp(0.8125rem, 0.95vw, 0.875rem);
+    font-weight: 600;
 }
 
 .listing-template-v41 .hotel-rating {
@@ -1375,12 +1383,6 @@ body.listing-modal-open {
     padding: 0 10px;
     font-size: 14px;
     font-weight: 700;
-}
-
-.listing-template-v41 .hotel-location {
-    margin-top: 6px;
-    color: var(--listing-muted);
-    font-size: 14px;
 }
 
 .listing-template-v41 .features {
@@ -3218,6 +3220,19 @@ body.listing-modal-open {
         transform: translateY(-2px);
         box-shadow: var(--listing-shadow-md);
     }
+
+    .listing-hotel-card.hotel-card:hover .card-main-image {
+        transform: scale(1.04);
+    }
+}
+
+.listing-hotel-card .card-image {
+    overflow: hidden;
+}
+
+.listing-hotel-card .card-main-image {
+    transform: scale(1);
+    transform-origin: center center;
 }
 
 .listing-hotel-card .card-main-image,

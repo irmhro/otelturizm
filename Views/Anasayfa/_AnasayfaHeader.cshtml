@@ -18,12 +18,12 @@
     };
     var homePanelLabel = homeAccountType.ToLowerInvariant() switch
     {
-        "partner" => "Partner Paneli",
-        "firma" => "Firma Paneli",
-        "admin" => "Admin Paneli",
-        "developer" => "Developer Paneli",
-        "sales" => "Satış Paneli",
-        _ => "Hesabım"
+        "partner" => SharedLocalizer["Nav.Panel.Partner"].Value,
+        "firma" => SharedLocalizer["Nav.Panel.Firma"].Value,
+        "admin" => SharedLocalizer["Nav.Panel.Admin"].Value,
+        "developer" => SharedLocalizer["Nav.Panel.Developer"].Value,
+        "sales" => SharedLocalizer["Nav.Panel.Sales"].Value,
+        _ => SharedLocalizer["Nav.Account"].Value
     };
     var currentLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     var pathHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(Context.Request.Path.Value ?? "/");
@@ -101,28 +101,28 @@
 
     @if (headerContext == "home")
     {
-        <div class="home-header-quick-links" aria-label="Öne çıkan bağlantılar">
+        <div class="home-header-quick-links" aria-label="@SharedLocalizer["Nav.FeaturedLinks"]">
             <div class="quick-links-container">
             <div class="quick-links-pills" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
                 <a href="@(hotelsListingPath)?etiket=ay-sonu-ozel" class="quick-link-pill hot-pill">
                     <i class="fas fa-bolt"></i>
-                    <span class="rose-gradient-text">Ay Sonu Özel</span>
+                    <span class="rose-gradient-text">@SharedLocalizer["Nav.QuickLink.EndOfMonth"]</span>
                 </a>
                 <a href="@(hotelsListingPath)?etiket=flash-indirim" class="quick-link-pill">
                     <i class="fas fa-tag"></i>
-                    <span>Flash İndirim</span>
+                    <span>@SharedLocalizer["Nav.QuickLink.FlashDiscount"]</span>
                 </a>
                 <a href="@(hotelsListingPath)?etiket=hafta-sonu-firsatlari" class="quick-link-pill">
                     <i class="fas fa-calendar-week"></i>
-                    <span>Hafta Sonu Fırsatları</span>
+                    <span>@SharedLocalizer["Nav.QuickLink.WeekendDeals"]</span>
                 </a>
                 <a href="@(hotelsListingPath)?etiket=erken-rezervasyon" class="quick-link-pill">
                     <i class="fas fa-clock"></i>
-                    <span>Erken Rezervasyon</span>
+                    <span>@SharedLocalizer["Footer.EarlyBooking"]</span>
                 </a>
                 <a href="@(hotelsListingPath)?etiket=akilli-fiyat" class="quick-link-pill">
                     <i class="fas fa-wand-magic-sparkles"></i>
-                    <span>Akıllı Fiyat</span>
+                    <span>@SharedLocalizer["Nav.QuickLink.SmartPrice"]</span>
                 </a>
                 <a href="mailto:destek@otelturizm.com" class="quick-link-pill subtle-pill">
                     <i class="fas fa-headset"></i>
@@ -691,7 +691,7 @@
             </a>
             <a href="/oteller?etiket=butik-oteller" class="feature-tile">
                 <i class="fas fa-city"></i>
-                <span>Butik Seçimler</span>
+                <span>@SharedLocalizer["Nav.QuickLink.Boutique"]</span>
             </a>
             <a href="/yardim-merkezi#destek-kanallari" class="feature-tile">
                 <i class="fas fa-headset"></i>
@@ -700,24 +700,24 @@
         </div>
 
         <div class="drawer-section">
-            <div class="drawer-section-title">Öne Çıkan Fırsatlar</div>
+            <div class="drawer-section-title">@SharedLocalizer["Nav.FeaturedDeals"]</div>
             <div class="drawer-promo-grid">
-                <a href="@(hotelsListingPath)?etiket=ay-sonu-ozel" class="drawer-link promo-link"><i class="fas fa-bolt"></i> Ay Sonu Özel</a>
-                <a href="@(hotelsListingPath)?etiket=flash-indirim" class="drawer-link promo-link"><i class="fas fa-tag"></i> Flash İndirim</a>
-                <a href="@(hotelsListingPath)?etiket=hafta-sonu-firsatlari" class="drawer-link promo-link"><i class="fas fa-calendar-week"></i> Hafta Sonu Fırsatları</a>
-                <a href="@(hotelsListingPath)?etiket=erken-rezervasyon" class="drawer-link promo-link"><i class="fas fa-clock"></i> Erken Rezervasyon</a>
-                <a href="@(hotelsListingPath)?etiket=akilli-fiyat" class="drawer-link promo-link"><i class="fas fa-wand-magic-sparkles"></i> Akıllı Fiyat</a>
+                <a href="@(hotelsListingPath)?etiket=ay-sonu-ozel" class="drawer-link promo-link"><i class="fas fa-bolt"></i> @SharedLocalizer["Nav.QuickLink.EndOfMonth"]</a>
+                <a href="@(hotelsListingPath)?etiket=flash-indirim" class="drawer-link promo-link"><i class="fas fa-tag"></i> @SharedLocalizer["Nav.QuickLink.FlashDiscount"]</a>
+                <a href="@(hotelsListingPath)?etiket=hafta-sonu-firsatlari" class="drawer-link promo-link"><i class="fas fa-calendar-week"></i> @SharedLocalizer["Nav.QuickLink.WeekendDeals"]</a>
+                <a href="@(hotelsListingPath)?etiket=erken-rezervasyon" class="drawer-link promo-link"><i class="fas fa-clock"></i> @SharedLocalizer["Footer.EarlyBooking"]</a>
+                <a href="@(hotelsListingPath)?etiket=akilli-fiyat" class="drawer-link promo-link"><i class="fas fa-wand-magic-sparkles"></i> @SharedLocalizer["Nav.QuickLink.SmartPrice"]</a>
                 <a href="/yardim-merkezi#destek-kanallari" class="drawer-link promo-link"><i class="fas fa-headset"></i> @SharedLocalizer["Nav.Help"]</a>
             </div>
         </div>
 
         <div class="drawer-corp-row">
             <a asp-controller="Home" asp-action="Kurumsal" class="drawer-action ghost"><i class="fas fa-building"></i> @SharedLocalizer["Nav.Corporate"]</a>
-            <a href="/firma" class="drawer-action ghost"><i class="fas fa-briefcase"></i> Firma</a>
+            <a href="/firma" class="drawer-action ghost"><i class="fas fa-briefcase"></i> @SharedLocalizer["Nav.Firma"]</a>
         </div>
 
         <div class="drawer-language-section">
-            <div class="drawer-section-title">Dil Seçimi</div>
+            <div class="drawer-section-title">@SharedLocalizer["Nav.LanguageSelection"]</div>
             <div class="drawer-language-list">
                 <button type="button" class="drawer-language-btn" data-mobile-language-value="tr" aria-pressed="false">
                     <span class="flag-icon flag-icon-tr"></span><span>Türkçe</span>

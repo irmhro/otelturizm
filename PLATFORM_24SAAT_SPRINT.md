@@ -2,6 +2,7 @@
 
 **Başlangıç:** 2026-05-23  
 **Bitiş hedefi:** +24 saat — kullanıcı full build doğrulaması  
+**Uzatma (2026-05-24):** Sprint **1 aya** genişletildi → [`PLATFORM_1AY_ORKESTRA_PLAN.md`](PLATFORM_1AY_ORKESTRA_PLAN.md) · sprint: `sprint-1ay-orkestra-20260523`  
 **Koordinatör:** Platform Coordinator · Orkestra H1–H14
 
 ---
@@ -10,11 +11,14 @@
 
 Tüm platform emanet: **en gelişmiş, eksiksiz, şık tasarım** — geçiş animasyonları, kullanıcı bağlılığı, kolaylık, mobil-first.
 
+> **Not:** 24 saatlik sprint kapanış hedefi korunur; gerçek dünya standardı yörüngesi **30 gün / 1440 × 10 dk** ile [`PLATFORM_1AY_ORKESTRA_PLAN.md`](PLATFORM_1AY_ORKESTRA_PLAN.md) üzerinden sürdürülür. Canlı özet: [`geliştirme.md`](geliştirme.md).
+
 | Ritim | Job | Görev |
 |-------|-----|--------|
 | **10 dk** | `AGENT_LOOP_TICK_platform_coord` | Audit → plan → execute → verify |
 | **1 saat** | `AGENT_LOOP_HOURLY_git_sync` | Commit + `git push origin HEAD` |
-| **24 saat** | Sprint kapanış | Kullanıcı `dotnet build` + smoke |
+| **24 saat** | Sprint kapanış (ilk pencere) | Kullanıcı `dotnet build` + smoke |
+| **30 gün** | 1 ay orkestra | W1 45% → W4 75% milestone |
 
 ---
 
@@ -41,5 +45,6 @@ Tüm platform emanet: **en gelişmiş, eksiksiz, şık tasarım** — geçiş an
 ## İzleme
 
 - Canlı özet: [`geliştirme.md`](geliştirme.md)
+- 1 ay plan: [`PLATFORM_1AY_ORKESTRA_PLAN.md`](PLATFORM_1AY_ORKESTRA_PLAN.md)
 - Sıralı log: [`geliştrme-orkestra.md`](geliştrme-orkestra.md)
 - KPI: `ORKESTRA_DURUM_KONTROL.md`

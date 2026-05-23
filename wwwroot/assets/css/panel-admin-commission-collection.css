@@ -30,6 +30,39 @@
     gap: 10px;
 }
 
+.commission-lifecycle-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 16px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.commission-lifecycle-step {
+    font-size: 12px;
+    font-weight: 850;
+    color: #64748b;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+}
+
+.commission-lifecycle-step.is-active {
+    color: #0f766e;
+    border-color: #99f6e4;
+    background: #ecfdf5;
+}
+
+.commission-lifecycle-hint {
+    margin-left: auto;
+    font-size: 11px;
+    color: #64748b;
+}
+
 .commission-collection-filter-grid {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));

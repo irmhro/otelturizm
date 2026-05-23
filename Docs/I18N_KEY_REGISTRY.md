@@ -18,7 +18,20 @@
 | Nav.SkipToContent | İçeriğe atla | Skip to content | Zum Inhalt springen | Aller au contenu | Ir al contenido |
 | Search.* / Booking.* / Filter.* / Btn.* / Footer.* | (49 keys — see `.resx` files) | | | | |
 
-**Toplam:** 49 anahtar (tüm kültürlerde aynı yapı)
+**Toplam:** 49 anahtar (Faz 1) + **42 Wave-XVIII** = **91 anahtar**
+
+## Wave-XVIII (H15_fe_world_standard)
+
+| Key grubu | Dosyalar | Not |
+|-----------|----------|-----|
+| `Listing.*` | `OtelListeleme.cshtml` | Hero search summary, concept bar, kart CTA |
+| `Campaign.*` | `Kampanyalar/Index.cshtml` | Hero timer, stats, empty state |
+| `Detail.ReviewTeaser.*` | `OtelDetay.cshtml` | Yorum teaser bloğu |
+| `Nav.QuickLink.*`, `Nav.Panel.*`, `Nav.Featured*` | `_AnasayfaHeader.cshtml` | Nav pills + drawer |
+| `Footer.*` (ek) | `_AnasayfaFooter.cshtml` | Açıklama, otelci, destek |
+| `Btn.ViewDetails`, `Booking.MobileSummary` | Liste + detay | CTA / sticky bar |
+
+Yeni anahtarlar: `Listing.SearchFound`, `Listing.EditSearch`, `Listing.MapView`, `Listing.ConceptTitle`, `Listing.AllCampaigns`, `Listing.LoyaltyBadge`, `Listing.RatingExcellent`, `Listing.RatingGood`, `Btn.ViewDetails`, `Nav.QuickLink.*` (4), `Nav.FeaturedLinks`, `Nav.FeaturedDeals`, `Nav.LanguageSelection`, `Nav.Panel.*` (5), `Footer.Description`, `Footer.Career`, `Footer.Press`, `Footer.Blog`, `Footer.ForHotels`, `Footer.ExtranetLogin`, `Footer.PartnerProgram`, `Footer.CommissionRates`, `Footer.TrainingSupport`, `Footer.CancelRefund`, `Footer.Faq`, `Footer.TrustCommitments`, `Campaign.Hero.*`, `Campaign.Stat.*`, `Campaign.Timer.*`, `Campaign.Empty.*`, `Campaign.ListHotels`, `Campaign.ViewDetail`, `Detail.ReviewTeaser.*`, `Booking.MobileSummary`.
 
 ## Faz 2 kablolama (Wave-XI / H13)
 

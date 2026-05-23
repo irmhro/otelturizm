@@ -1,15 +1,18 @@
 @model otelturizmnew.Models.Kampanyalar.CampaignListingPageViewModel
 
 @{
-    ViewData["Title"] = "Kampanyalar";
+    ViewData["Title"] = SharedLocalizer["Nav.Campaigns"].Value;
     ViewData["PageCss"] = "kampanyalar";
     ViewData["PageCssMobile"] = "kampanyalar.mobile";
+    ViewData["IncludeFeWorldTokens"] = true;
     ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.PageDescription)
-        ? "Otelturizm kampanyalarını keşfedin. Sezon fırsatları ve özel indirimleri görüntüleyin."
+        ? SharedLocalizer["Campaign.Hero.Description"].Value
         : Model.PageDescription;
     var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
                   ?? "https://otelturizm.com";
     ViewData["Canonical"] = $"{baseUrl}/kampanyalar";
+    var timerEnd = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month), 23, 59, 59);
+    var timerEndIso = timerEnd.ToString("yyyy-MM-ddTHH:mm:ss");
     try
     {
         var breadcrumbJsonLd = new Dictionary<string, object?>
@@ -18,7 +21,7 @@
             ["@type"] = "BreadcrumbList",
             ["itemListElement"] = new object[]
             {
-                new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Kampanyalar", ["item"] = $"{baseUrl}/kampanyalar" }
+                new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = SharedLocalizer["Nav.Campaigns"].Value, ["item"] = $"{baseUrl}/kampanyalar" }
             }
         };
         ViewData["JsonLd"] = System.Text.Json.JsonSerializer.Serialize(breadcrumbJsonLd);
@@ -26,24 +29,50 @@
     catch { }
 }
 
-<header class="campaign-index-hero" aria-label="Kampanyalar">
-    <div class="campaign-index-hero__copy">
-        <span class="campaign-index-hero__badge"><i class="fas fa-tags" aria-hidden="true"></i> Kampanyalar</span>
-        <h1>Kampanyalı oteller ve sezon fırsatları</h1>
-        <p>Yayında olan kampanyaları keşfedin; katılan tesisleri listeleyin veya detay sayfasından koşulları inceleyin.</p>
+<section class="campaign-index-shell" aria-label="@SharedLocalizer["Nav.Campaigns"]">
+    <div class="campaign-hero campaign-index-hero-v2">
+        <div class="campaign-hero__content">
+            <div class="campaign-hero__text">
+                <span class="campaign-hero__badge"><i class="fas fa-tags" aria-hidden="true"></i> @SharedLocalizer["Nav.Campaigns"]</span>
+                <h1>@SharedLocalizer["Campaign.Hero.Title"]</h1>
+                <p>@SharedLocalizer["Campaign.Hero.Description"]</p>
+            </div>
+            <div class="campaign-hero__timer" aria-live="polite">
+                <div class="campaign-hero__timer-label"><i class="far fa-clock" aria-hidden="true"></i> @SharedLocalizer["Campaign.Timer.Label"]</div>
+                <div class="campaign-hero__timer-numbers" id="campaignIndexTimer" data-end="@timerEndIso">
+                    <div class="campaign-hero__timer-block">
+                        <div class="campaign-hero__timer-number" id="campaignTimerDays">--</div>
+                        <div class="campaign-hero__timer-unit">@SharedLocalizer["Campaign.Timer.Days"]</div>
+                    </div>
+                    <div class="campaign-hero__timer-block">
+                        <div class="campaign-hero__timer-number" id="campaignTimerHours">--</div>
+                        <div class="campaign-hero__timer-unit">@SharedLocalizer["Campaign.Timer.Hours"]</div>
+                    </div>
+                    <div class="campaign-hero__timer-block">
+                        <div class="campaign-hero__timer-number" id="campaignTimerMinutes">--</div>
+                        <div class="campaign-hero__timer-unit">@SharedLocalizer["Campaign.Timer.Minutes"]</div>
+                    </div>
+                    <div class="campaign-hero__timer-block">
+                        <div class="campaign-hero__timer-number" id="campaignTimerSeconds">--</div>
+                        <div class="campaign-hero__timer-unit">@SharedLocalizer["Campaign.Timer.Seconds"]</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="campaign-index-hero__stats" aria-label="Özet">
-        <span class="campaign-stat-chip"><i class="fas fa-hotel" aria-hidden="true"></i> <strong>@Model.Campaigns.Count</strong> aktif kampanya</span>
-        <a class="campaign-stat-chip campaign-stat-chip--link" href="/oteller?etiket=kampanyaya-dahil-oteller"><i class="fas fa-percent" aria-hidden="true"></i> Kampanyalı oteller</a>
+
+    <div class="campaign-index-stats" aria-label="@SharedLocalizer["Campaign.Stat.Active"]">
+        <span class="campaign-stat-chip"><i class="fas fa-hotel" aria-hidden="true"></i> <strong>@Model.Campaigns.Count</strong> @SharedLocalizer["Campaign.Stat.Active"]</span>
+        <a class="campaign-stat-chip campaign-stat-chip--link" href="/oteller?etiket=kampanyaya-dahil-oteller"><i class="fas fa-percent" aria-hidden="true"></i> @SharedLocalizer["Campaign.Stat.DiscountedHotels"]</a>
     </div>
-</header>
+</section>
 
 <section class="campaign-index-grid">
     @if (Model.Campaigns.Count == 0)
     {
         <div class="campaign-empty-state">
-            <strong>Şu an yayında aktif kampanya görünmüyor.</strong>
-            <p>Kampanya başlangıç ve bitiş tarihleri aktif olduğunda bu ekran otomatik dolacaktır.</p>
+            <strong>@SharedLocalizer["Campaign.Empty.Title"]</strong>
+            <p>@SharedLocalizer["Campaign.Empty.Description"]</p>
         </div>
     }
     else
@@ -52,7 +81,7 @@
         {
             var listingUrl = $"/oteller?kampanya={Uri.EscapeDataString(campaign.Slug ?? string.Empty)}";
             <article class="campaign-card" style="--campaign-accent:@campaign.ColorCode;">
-                <a class="campaign-card__tap" href="@listingUrl" aria-label="@campaign.CampaignName kampanyasına katılan otelleri listele">
+                <a class="campaign-card__tap" href="@listingUrl" aria-label="@campaign.CampaignName @SharedLocalizer["Campaign.ListHotels"]">
                     <div class="campaign-card__media @(string.IsNullOrWhiteSpace(campaign.HeroImageUrl) ? string.Empty : "has-image")">
                         @if (!string.IsNullOrWhiteSpace(campaign.HeroImageUrl))
                         {
@@ -74,15 +103,46 @@
                             <span><i class="fas fa-tag"></i> @campaign.CampaignType</span>
                         </div>
                         <span class="campaign-card__date"><i class="fas fa-calendar-check"></i> @campaign.EndDateText</span>
-                        <span class="campaign-card__link">Otelleri Listele</span>
+                        <span class="campaign-card__link">@SharedLocalizer["Campaign.ListHotels"]</span>
                     </div>
                 </a>
                 <div class="campaign-card__footer">
-                    <a class="campaign-card__secondary" href="@campaign.Url" aria-label="@campaign.CampaignName kampanya detayını aç">
-                        Kampanya detayı <i class="fas fa-arrow-right"></i>
+                    <a class="campaign-card__secondary" href="@campaign.Url" aria-label="@campaign.CampaignName @SharedLocalizer["Campaign.ViewDetail"]">
+                        @SharedLocalizer["Campaign.ViewDetail"] <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
             </article>
         }
     }
 </section>
+
+@section Scripts {
+<script nonce="@(Context.Items["CspNonce"])">
+(function () {
+    var root = document.getElementById('campaignIndexTimer');
+    if (!root) return;
+    var endRaw = root.getAttribute('data-end');
+    var end = endRaw ? new Date(endRaw) : null;
+    if (!end || isNaN(end.getTime())) return;
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function tick() {
+        var diff = Math.max(0, end.getTime() - Date.now());
+        var totalSec = Math.floor(diff / 1000);
+        var days = Math.floor(totalSec / 86400);
+        var hours = Math.floor((totalSec % 86400) / 3600);
+        var mins = Math.floor((totalSec % 3600) / 60);
+        var secs = totalSec % 60;
+        var d = document.getElementById('campaignTimerDays');
+        var h = document.getElementById('campaignTimerHours');
+        var m = document.getElementById('campaignTimerMinutes');
+        var s = document.getElementById('campaignTimerSeconds');
+        if (d) d.textContent = pad(days);
+        if (h) h.textContent = pad(hours);
+        if (m) m.textContent = pad(mins);
+        if (s) s.textContent = pad(secs);
+    }
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
+}

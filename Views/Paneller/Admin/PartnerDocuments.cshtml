@@ -1,0 +1,137 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminPartnerDocumentsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+    var statusFilter = Model.StatusFilter ?? string.Empty;
+}
+
+<section class="admin-partner-documents-page">
+    <div class="admin-kpi-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            var tone = string.IsNullOrWhiteSpace(card.ToneClass) ? "info" : card.ToneClass;
+            <article class="admin-kpi-card @tone">
+                <span class="kpi-icon"><i class="fas @card.IconClass"></i></span>
+                <div>
+                    <p>@card.Label</p>
+                    <h2>@card.Value</h2>
+                    <span>@card.Description</span>
+                </div>
+            </article>
+        }
+    </div>
+
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">PARTNER UYUMLULUK</p>
+                <h2>Evrak inceleme kuyruğu</h2>
+                <span>Zorunlu belgeler: vergi levhası, ticaret sicil, imza sirküleri, IBAN, turizm belgesi, kimlik.</span>
+            </div>
+            <div class="admin-action-pills panel-form-ux-bulk-actions">
+                <a class="btn btn-outline-primary btn-sm @(string.IsNullOrWhiteSpace(statusFilter) ? "active" : null)" href="/admin/partner-evraklari">Tümü</a>
+                <a class="btn btn-outline-warning btn-sm @(statusFilter == "Beklemede" ? "active" : null)" href="/admin/partner-evraklari?status=Beklemede">Beklemede</a>
+                <a class="btn btn-outline-success btn-sm @(statusFilter == "Onaylandi" ? "active" : null)" href="/admin/partner-evraklari?status=Onaylandi">Onaylı</a>
+                <a class="btn btn-outline-danger btn-sm @(statusFilter == "Reddedildi" ? "active" : null)" href="/admin/partner-evraklari?status=Reddedildi">Reddedilen</a>
+                <a class="btn btn-primary btn-sm" href="/admin/partner-basvurulari">Başvurular</a>
+            </div>
+        </div>
+
+        @if (Model.Queue.Count == 0)
+        {
+            <div class="admin-empty-panel">Seçili filtreye uygun evrak kuyruğu kaydı bulunamadı.</div>
+        }
+        else
+        {
+            <div class="admin-partner-document-queue">
+                @foreach (var row in Model.Queue)
+                {
+                    <article class="admin-partner-document-card" id="partner-@row.PartnerId">
+                        <div class="admin-partner-document-card-head">
+                            <div>
+                                <p class="mini-caption">#@row.PartnerId · @row.PartnerStatus</p>
+                                <h3>@row.CompanyName</h3>
+                                <span>@row.HotelName</span>
+                            </div>
+                            <div class="admin-partner-document-stats">
+                                <span class="table-status @row.PartnerStatusTone">@row.PartnerStatus</span>
+                                <span class="partner-doc-stat"><strong>@row.ApprovedDocumentCount</strong>/ @row.RequiredDocumentCount onaylı</span>
+                                <span class="partner-doc-stat warning">@row.PendingReviewCount inceleme</span>
+                            </div>
+                        </div>
+
+                        <div class="admin-partner-checklist panel-form-ux-checklist">
+                            @foreach (var item in row.Checklist)
+                            {
+                                <span class="partner-doc-chip @item.ToneClass">@item.DocumentType · @item.StatusText</span>
+                            }
+                        </div>
+
+                        @if (row.Documents.Count == 0)
+                        {
+                            <p class="text-muted mb-0">Henüz yüklenmiş evrak yok.</p>
+                        }
+                        else
+                        {
+                            <div class="admin-table-wrap">
+                                <table class="admin-table admin-table--cards partner-doc-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Belge</th>
+                                            <th>Tür</th>
+                                            <th>Durum</th>
+                                            <th>Yükleme</th>
+                                            <th>Aksiyon</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var doc in row.Documents)
+                                        {
+                                            <tr>
+                                                <td data-label="Belge">
+                                                    <strong>@doc.Title</strong>
+                                                    <small class="d-block text-muted">@doc.FileName</small>
+                                                    @if (!string.IsNullOrWhiteSpace(doc.ReviewNote))
+                                                    {
+                                                        <em class="small d-block mt-1">@doc.ReviewNote</em>
+                                                    }
+                                                </td>
+                                                <td data-label="Tür">@doc.DocumentType</td>
+                                                <td data-label="Durum"><span class="table-status @doc.StatusToneClass">@doc.StatusText</span></td>
+                                                <td data-label="Yükleme">@doc.UploadedAtText</td>
+                                                <td data-label="Aksiyon" class="partner-doc-actions">
+                                                    @if (!string.IsNullOrWhiteSpace(doc.AccessUrl))
+                                                    {
+                                                        <a class="btn btn-outline-secondary btn-sm" href="@doc.AccessUrl" target="_blank" rel="noopener">Görüntüle</a>
+                                                    }
+                                                    @if (string.Equals(doc.StatusText, "Beklemede", StringComparison.OrdinalIgnoreCase))
+                                                    {
+                                                        <form method="post" action="/admin/partner-evraklari/durum" class="partner-doc-review-form panel-form-ux-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="DocumentId" value="@doc.DocumentId" />
+                                                            <input type="hidden" name="PartnerId" value="@row.PartnerId" />
+                                                            <input type="hidden" name="TargetStatus" value="Onaylandi" />
+                                                            <button type="submit" class="btn btn-success btn-sm">Onayla</button>
+                                                        </form>
+                                                        <form method="post" action="/admin/partner-evraklari/durum" class="partner-doc-review-form panel-form-ux-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="DocumentId" value="@doc.DocumentId" />
+                                                            <input type="hidden" name="PartnerId" value="@row.PartnerId" />
+                                                            <input type="hidden" name="TargetStatus" value="Reddedildi" />
+                                                            <input type="text" name="Note" class="form-control form-control-sm" placeholder="Red gerekçesi" required />
+                                                            <button type="submit" class="btn btn-outline-danger btn-sm">Reddet</button>
+                                                        </form>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </article>
+                }
+            </div>
+        }
+    </article>
+</section>

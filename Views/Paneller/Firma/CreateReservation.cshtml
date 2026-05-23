@@ -1,124 +1,300 @@
 @model otelturizmnew.Models.Paneller.Firma.FirmaCreateReservationPageViewModel
+
 @{
+
     Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml";
+
     ViewData["FirmaShell"] = Model.Shell;
+
     ViewData["PageCssPath"] ??= "paneller/firma/create-reservation";
+
     ViewData["PageCssMobile"] ??= "paneller/firma/create-reservation.mobile";
-    var filterQuery = $"search={Uri.EscapeDataString(Model.HotelSearch ?? string.Empty)}&checkIn={Model.Form.CheckInDate:yyyy-MM-dd}&checkOut={Model.Form.CheckOutDate:yyyy-MM-dd}&roomCount={Model.Form.RoomCount}";
+
+    string NavQuery()
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(Model.HotelSearch)) parts.Add($"search={Uri.EscapeDataString(Model.HotelSearch)}");
+        parts.Add($"checkIn={Model.Form.CheckInDate:yyyy-MM-dd}");
+        parts.Add($"checkOut={Model.Form.CheckOutDate:yyyy-MM-dd}");
+        parts.Add($"roomCount={Model.Form.RoomCount}");
+        parts.Add($"adultCount={Model.Form.AdultCount}");
+        parts.Add($"childCount={Model.Form.ChildCount}");
+        if (Model.Form.EmployeeUserId.HasValue && Model.Form.EmployeeUserId.Value > 0)
+        {
+            parts.Add($"employeeUserId={Model.Form.EmployeeUserId.Value}");
+        }
+        return string.Join("&", parts);
+    }
+    var navQuery = NavQuery();
+
 }
 
-<section class="firma-section-card">
+
+
+<section class="firma-section-card panel-form-ux">
+
     <div class="firma-row-between">
+
         <div>
+
             <h2>Yeni Rezervasyon Oluştur</h2>
-            <p class="firma-muted">Otel seç, oda/tarih belirle, normal fiyat ile firma fiyatını karşılaştır ve kurumsal rezervasyonu oluştur.</p>
+
+            <p class="firma-muted">Otel seç, oda/tarih belirle, standart fiyat ile kurumsal firma fiyatını karşılaştırıp rezervasyonu tamamlayın.</p>
+
         </div>
-        <a class="firma-btn-light ot-btn ot-btn--ghost" href="/panel/firma/firma-fiyatlari"><i class="fas fa-tags"></i> Firma Fiyatları</a>
+
+        <a class="firma-btn-light ot-btn ot-btn--ghost panel-form-ux-edit" href="/panel/firma/firma-fiyatlari"><i class="fas fa-tags"></i> Firma Fiyatları</a>
+
     </div>
 
-    <form method="get" action="/panel/firma/yeni-rezervasyon" class="firma-form-grid" style="margin-top:12px">
+
+
+    <form method="get" action="/panel/firma/yeni-rezervasyon" class="firma-form-grid panel-form-ux" style="margin-top:12px">
+
         <div class="span-2">
+
             <label>Otel Ara (İl / İlçe / Mahalle / Otel Adı)</label>
-            <div style="display:flex; gap:10px; align-items:center">
-                <input type="text" name="search" value="@Model.HotelSearch" placeholder="örn. İstanbul, Maltepe, Cevizli, Eagle Palace" />
-                <button type="submit" class="firma-btn-light ot-btn ot-btn--ghost"><i class="fas fa-magnifying-glass"></i> Ara</button>
+
+            <div class="firma-inline-search">
+
+                <input type="text" name="search" value="@Model.HotelSearch" placeholder="örn. İstanbul, Maltepe, Eagle Palace" class="panel-form-ux-edit" />
+
+                <button type="submit" class="firma-btn-light ot-btn ot-btn--ghost panel-form-ux-edit"><i class="fas fa-magnifying-glass"></i> Ara</button>
+
             </div>
-            <small class="firma-muted">Arama, otel listesi ve konum alanlarını filtreler.</small>
+
+            <small class="firma-muted">Arama otel listesi ve konum alanlarını filtreler.</small>
+
         </div>
+
     </form>
 
-    <form method="post" action="/panel/firma/yeni-rezervasyon" class="firma-form-grid">
+
+
+    <form method="post" action="/panel/firma/yeni-rezervasyon" class="firma-form-grid panel-form-ux" id="firmaCreateReservationForm">
+
         @Html.AntiForgeryToken()
+
         <div class="span-2">
+
             <label>Otel</label>
-            <select name="HotelId" required onchange="window.location='/panel/firma/yeni-rezervasyon?@filterQuery&hotelId='+this.value">
+
+            <select name="HotelId" required class="panel-form-ux-edit" onchange="window.location='/panel/firma/yeni-rezervasyon?@navQuery&amp;hotelId='+this.value">
+
                 @foreach (var opt in Model.Hotels)
+
                 {
+
                     <option value="@opt.Value" selected="@(opt.Value == Model.Form.HotelId ? "selected" : null)">@opt.Label</option>
+
                 }
+
             </select>
+
         </div>
+
         <div>
+
             <label>Oda Tipi</label>
-            <select name="RoomTypeId" required onchange="window.location='/panel/firma/yeni-rezervasyon?@filterQuery&hotelId=@Model.Form.HotelId&roomTypeId='+this.value">
+
+            <select name="RoomTypeId" required class="panel-form-ux-edit" onchange="window.location='/panel/firma/yeni-rezervasyon?@navQuery&amp;hotelId=@Model.Form.HotelId&amp;roomTypeId='+this.value">
+
                 @foreach (var opt in Model.RoomTypes)
+
                 {
+
                     <option value="@opt.Value" selected="@(opt.Value == Model.Form.RoomTypeId ? "selected" : null)">@opt.Label</option>
+
                 }
+
             </select>
+
         </div>
+
         <div>
+
             <label>Oda Sayısı</label>
-            <input type="number" name="RoomCount" min="1" value="@Model.Form.RoomCount" required />
-            <small class="firma-muted">Firma fiyatı çoğu otelde min oda şartına bağlı olabilir.</small>
+
+            <input type="number" name="RoomCount" min="1" max="50" value="@Model.Form.RoomCount" required class="panel-form-ux-edit" />
+
+            <small class="firma-muted">Kurumsal fiyatlar çoğu otelde minimum oda şartına bağlı olabilir.</small>
+
         </div>
+
         <div>
+
             <label>Giriş</label>
-            <input type="date" name="CheckInDate" value="@Model.Form.CheckInDate.ToString("yyyy-MM-dd")" required />
+
+            <input type="date" name="CheckInDate" value="@Model.Form.CheckInDate.ToString("yyyy-MM-dd")" required class="panel-form-ux-edit" />
+
         </div>
+
         <div>
+
             <label>Çıkış</label>
-            <input type="date" name="CheckOutDate" value="@Model.Form.CheckOutDate.ToString("yyyy-MM-dd")" required />
+
+            <input type="date" name="CheckOutDate" value="@Model.Form.CheckOutDate.ToString("yyyy-MM-dd")" required class="panel-form-ux-edit" />
+
         </div>
+
         <div>
+
             <label>Yetişkin</label>
-            <input type="number" name="AdultCount" min="1" value="@Model.Form.AdultCount" />
+
+            <input type="number" name="AdultCount" min="1" value="@Model.Form.AdultCount" class="panel-form-ux-edit" aria-describedby="firmaGuestPolicyHint" />
+
         </div>
+
         <div>
+
             <label>Çocuk</label>
-            <input type="number" name="ChildCount" min="0" value="@Model.Form.ChildCount" />
+
+            <input type="number" name="ChildCount" min="0" value="@Model.Form.ChildCount" class="panel-form-ux-edit" aria-describedby="firmaGuestPolicyHint" />
+
         </div>
 
-        <div class="span-2">
-            <label>Personel (opsiyonel)</label>
-            <select name="EmployeeUserId">
-                <option value="">Firma personeli seç (opsiyonel)</option>
-                @foreach (var emp in Model.Employees)
-                {
-                    <option value="@emp.UserId" selected="@(emp.IsSelected ? "selected" : null)">@emp.FullName · @emp.Department · @emp.Email</option>
-                }
-            </select>
-            <small class="firma-muted">Seçilirse rezervasyon “firma personeli” adına işlenir.</small>
-        </div>
 
-        <div class="span-2">
-            <label>Personel E-postaları (opsiyonel)</label>
-            <input type="text" name="EmployeeEmailsCsv" value="@Model.Form.EmployeeEmailsCsv" placeholder="ornek1@firma.com, ornek2@firma.com" />
-            <small class="firma-muted">Rezervasyon bilgisi firma ve personel e-postalarına bildirilebilir.</small>
-        </div>
 
-        <div class="span-2">
-            <label>Not</label>
-            <textarea name="Note" rows="3" placeholder="Toplu konaklama notu / özel istek">@Model.Form.Note</textarea>
-        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.GuestPolicy.HintText))
 
-        <div class="span-2">
-            <div class="firma-price-compare">
-                <div>
-                    <small>@Model.Compare.NightCountText</small>
-                    <h3>Fiyat Karşılaştırma</h3>
-                    <p class="firma-muted">@Model.Compare.Note</p>
-                </div>
-                <div class="compare-grid">
-                    <div class="compare-box">
-                        <label>Standart Toplam</label>
-                        <strong>@Model.Compare.StandardTotalText</strong>
-                    </div>
-                    <div class="compare-box is-primary">
-                        <label>Firma Toplam</label>
-                        <strong>@Model.Compare.CompanyTotalText</strong>
-                    </div>
-                    <div class="compare-box is-success">
-                        <label>Tasarruf</label>
-                        <strong>@Model.Compare.SavingsText</strong>
-                    </div>
-                </div>
+        {
+
+            <div class="span-2 firma-policy-banner" id="firmaGuestPolicyHint" role="status">
+
+                <i class="fas fa-users" aria-hidden="true"></i>
+
+                <p>@Model.GuestPolicy.HintText</p>
+
             </div>
+
+        }
+
+
+
+        <div class="span-2 firma-employee-block">
+
+            <label>Personel (kurumsal misafir)</label>
+
+            <select name="EmployeeUserId" class="panel-form-ux-edit">
+
+                <option value="">Firma geneli / personel seçmeden devam</option>
+
+                @foreach (var emp in Model.Employees)
+
+                {
+
+                    <option value="@emp.UserId" selected="@(emp.IsSelected ? "selected" : null)">@emp.FullName · @emp.Department · @emp.Email</option>
+
+                }
+
+            </select>
+
+            @if (Model.Employees.Count == 0)
+
+            {
+
+                <p class="firma-muted">Henüz çalışan yok. <a href="/panel/firma/calisanlar">Çalışan ekleyin</a> veya rezervasyonu firma adına oluşturun.</p>
+
+            }
+
+            else
+
+            {
+
+                <small class="firma-muted">Seçilirse rezervasyon ilgili personel adına işlenir ve bildirim e-postası personele gider.</small>
+
+            }
+
         </div>
 
-        <div class="span-2 firma-form-actions">
-            <button type="submit" class="firma-btn-primary ot-btn ot-btn--primary"><i class="fas fa-check"></i> Rezervasyonu Oluştur</button>
+
+
+        <div class="span-2">
+
+            <label>Ek personel e-postaları (opsiyonel)</label>
+
+            <input type="text" name="EmployeeEmailsCsv" value="@Model.Form.EmployeeEmailsCsv" placeholder="ornek1@firma.com, ornek2@firma.com" class="panel-form-ux-edit" />
+
         </div>
+
+
+
+        <div class="span-2">
+
+            <label>Not</label>
+
+            <textarea name="Note" rows="3" placeholder="Toplu konaklama notu / özel istek" class="panel-form-ux-edit">@Model.Form.Note</textarea>
+
+        </div>
+
+
+
+        <div class="span-2">
+
+            <div class="firma-price-compare @(Model.Compare.HasCompanyPrice ? "has-company-price" : string.Empty)">
+
+                <div>
+
+                    @if (Model.Compare.HasCompanyPrice)
+
+                    {
+
+                        <span class="firma-pill is-success ot-badge ot-badge--success">Kurumsal fiyat aktif</span>
+
+                    }
+
+                    <small>@Model.Compare.NightCountText</small>
+
+                    <h3>Fiyat Karşılaştırma</h3>
+
+                    <p class="firma-muted">@Model.Compare.Note</p>
+
+                </div>
+
+                <div class="compare-grid">
+
+                    <div class="compare-box">
+
+                        <label>Standart Toplam</label>
+
+                        <strong>@Model.Compare.StandardTotalText</strong>
+
+                    </div>
+
+                    <div class="compare-box is-primary">
+
+                        <label>Firma Toplam</label>
+
+                        <strong>@Model.Compare.CompanyTotalText</strong>
+
+                    </div>
+
+                    <div class="compare-box is-success">
+
+                        <label>Tasarruf</label>
+
+                        <strong>@Model.Compare.SavingsText</strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="span-2 firma-form-actions panel-form-ux-actions">
+
+            <a class="firma-btn-light ot-btn ot-btn--ghost panel-form-ux-edit" href="/panel/firma/rezervasyonlar">Rezervasyonlarım</a>
+
+            <button type="submit" class="firma-btn-primary ot-btn ot-btn--primary panel-form-ux-edit"><i class="fas fa-check"></i> Rezervasyonu Oluştur</button>
+
+        </div>
+
     </form>
+
 </section>
+
 

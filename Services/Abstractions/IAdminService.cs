@@ -8,6 +8,8 @@ public interface IAdminService
     Task<AdminSectionPageViewModel> GetSectionPageAsync(string sectionKey, string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<AdminSystemHealthPageViewModel> GetSystemHealthAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<AdminPartnerApplicationsPageViewModel> GetPartnerApplicationsAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
+    Task<AdminPartnerDocumentsPageViewModel> GetPartnerDocumentsReviewQueueAsync(string fullName, string email, string userRole, string? statusFilter, long adminUserId, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> ReviewPartnerDocumentAsync(long adminUserId, AdminPartnerDocumentReviewRequest request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ReviewPartnerApplicationAsync(long adminUserId, AdminPartnerApplicationDecisionRequest request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SetPartnerEmailLoginApprovalAsync(long adminUserId, AdminPartnerEmailLoginApprovalRequest request, CancellationToken cancellationToken = default);
     Task<AdminCompanyApplicationsPageViewModel> GetCompanyApplicationsAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);

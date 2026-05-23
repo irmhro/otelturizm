@@ -1,0 +1,38 @@
+@model otelturizmnew.Models.Destek.YardimMerkeziIcerikSayfaViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.Summary) ? Model.Title : Model.Summary;
+    ViewData["HeroTitleKey"] = null;
+}
+
+<section class="corp-page corp-page--article" aria-labelledby="corp-article-title">
+    <div class="corp-page__aurora" aria-hidden="true"></div>
+    <div class="corp-page__inner">
+        <nav class="corp-breadcrumb" aria-label="Breadcrumb">
+            <a href="/">@SharedLocalizer["Nav.Home"]</a>
+            <span aria-hidden="true">/</span>
+            <a href="/blog">@SharedLocalizer["Footer.Blog"]</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">@Model.Title</span>
+        </nav>
+
+        <header class="corp-article-hero">
+            <p class="corp-hero__eyebrow"><i class="fas fa-pen-nib me-2" aria-hidden="true"></i>@SharedLocalizer["Footer.Blog"]</p>
+            <h1 id="corp-article-title" class="corp-hero__title">@(!string.IsNullOrWhiteSpace(Model.HeroTitle) ? Model.HeroTitle : Model.Title)</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.HeroSubtitle) || !string.IsNullOrWhiteSpace(Model.Summary))
+            {
+                <p class="corp-hero__lead">@(!string.IsNullOrWhiteSpace(Model.HeroSubtitle) ? Model.HeroSubtitle : Model.Summary)</p>
+            }
+        </header>
+
+        <article class="corp-article card">
+            <div class="card-body corp-article__body">
+                @Html.Raw(Model.Html)
+            </div>
+        </article>
+
+        <div class="corp-article-back">
+            <a class="corp-btn corp-btn--ghost fe-world-touch-target" href="/blog"><i class="fas fa-arrow-left" aria-hidden="true"></i> @SharedLocalizer["Company.Blog.BackToList"]</a>
+        </div>
+    </div>
+</section>

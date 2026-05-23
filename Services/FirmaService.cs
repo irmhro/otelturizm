@@ -460,6 +460,7 @@ public class FirmaService : IFirmaService
             model.Form.RoomTypeId = model.RoomTypes.FirstOrDefault()?.Value ?? 0;
         }
 
+        model.GuestPolicy = await LoadGuestPolicyAsync(connection, model.Form.RoomTypeId, model.Form.RoomCount, cancellationToken);
         model.Compare = await BuildPriceCompareAsync(connection, context.FirmaId, model.Form, cancellationToken);
         return model;
     }
@@ -478,10 +479,30 @@ public class FirmaService : IFirmaService
         {
             return (false, "Oda sayısı 1 veya daha büyük olmalıdır.", null);
         }
+        if (model.AdultCount <= 0)
+        {
+            return (false, "En az 1 yetişkin girilmelidir.", null);
+        }
 
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, string.Empty, string.Empty, "create-reservation", cancellationToken);
+
+        var guestPolicy = await LoadGuestPolicyAsync(connection, model.RoomTypeId, model.RoomCount, cancellationToken);
+        var guestValidation = ValidateGuestCounts(model, guestPolicy);
+        if (!string.IsNullOrWhiteSpace(guestValidation))
+        {
+            return (false, guestValidation, null);
+        }
+
+        if (model.EmployeeUserId.HasValue && model.EmployeeUserId.Value > 0)
+        {
+            var employeeOk = await EmployeeBelongsToFirmaAsync(connection, context.FirmaId, model.EmployeeUserId.Value, cancellationToken);
+            if (!employeeOk)
+            {
+                return (false, "Seçilen personel bu firmaya ait değil.", null);
+            }
+        }
 
         var compare = await BuildPriceCompareAsync(connection, context.FirmaId, model, cancellationToken);
         if (compare.CompanyTotal <= 0m)
@@ -617,6 +638,85 @@ public class FirmaService : IFirmaService
             await tx.RollbackAsync(cancellationToken);
             return (false, "Rezervasyon oluşturulamadı: " + ex.Message, null);
         }
+    }
+
+    private static async Task<FirmaReservationGuestPolicyViewModel> LoadGuestPolicyAsync(SqlConnection connection, long roomTypeId, int roomCount, CancellationToken cancellationToken)
+    {
+        var policy = new FirmaReservationGuestPolicyViewModel { RoomCount = Math.Max(1, roomCount) };
+        if (roomTypeId <= 0)
+        {
+            policy.HintText = "Oda tipi seçildiğinde kapasite kuralları gösterilir.";
+            return policy;
+        }
+
+        const string sql = @"
+            SELECT COALESCE([MAKSIMUM_KISI_SAYISI], 0),
+                   COALESCE([MAKSIMUM_YETISKIN_SAYISI], 0),
+                   COALESCE([MAKSIMUM_COCUK_SAYISI], 0)
+            FROM [dbo].[ODA_TIPLERI]
+            WHERE id = @roomTypeId AND [AKTIF_MI] = 1;";
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@roomTypeId", roomTypeId);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            policy.HintText = "Seçilen oda tipi için kapasite bilgisi bulunamadı.";
+            return policy;
+        }
+
+        policy.MaxGuestPerRoom = reader.GetInt32(0);
+        policy.MaxAdultPerRoom = reader.GetInt32(1);
+        policy.MaxChildPerRoom = reader.GetInt32(2);
+        policy.HasCapacityLimit = policy.MaxGuestPerRoom > 0;
+        if (!policy.HasCapacityLimit)
+        {
+            policy.HintText = "Bu oda tipi için üst misafir limiti tanımlı değil; otel onayı sırasında kontrol edilir.";
+            return policy;
+        }
+
+        var adultPart = policy.MaxAdultPerRoom > 0 ? $"en fazla {policy.MaxAdultPerRoom} yetişkin" : "yetişkin";
+        var childPart = policy.MaxChildPerRoom > 0 ? $", {policy.MaxChildPerRoom} çocuk" : string.Empty;
+        policy.HintText = $"Oda başına {policy.MaxGuestPerRoom} kişi ({adultPart}{childPart}). {policy.RoomCount} oda için toplam en fazla {policy.TotalMaxGuests} misafir.";
+        return policy;
+    }
+
+    private static string? ValidateGuestCounts(FirmaReservationCreateModel model, FirmaReservationGuestPolicyViewModel policy)
+    {
+        if (!policy.HasCapacityLimit)
+        {
+            return null;
+        }
+
+        var totalGuests = model.AdultCount + model.ChildCount;
+        if (totalGuests > policy.TotalMaxGuests)
+        {
+            return $"Toplam misafir sayısı ({totalGuests}) seçilen {policy.RoomCount} oda için üst sınırı ({policy.TotalMaxGuests}) aşıyor.";
+        }
+
+        if (policy.MaxAdultPerRoom > 0 && model.AdultCount > policy.MaxAdultPerRoom * Math.Max(1, model.RoomCount))
+        {
+            return $"Yetişkin sayısı oda kapasitesini aşıyor (oda başına en fazla {policy.MaxAdultPerRoom}).";
+        }
+
+        if (policy.MaxChildPerRoom > 0 && model.ChildCount > policy.MaxChildPerRoom * Math.Max(1, model.RoomCount))
+        {
+            return $"Çocuk sayısı oda kapasitesini aşıyor (oda başına en fazla {policy.MaxChildPerRoom}).";
+        }
+
+        return null;
+    }
+
+    private static async Task<bool> EmployeeBelongsToFirmaAsync(SqlConnection connection, long firmaId, long employeeUserId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP (1) 1
+            FROM [dbo].[KULLANICILAR]
+            WHERE id = @userId AND [FIRMA_ID] = @firmaId AND [ROL] LIKE 'firma_%';";
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@userId", employeeUserId);
+        cmd.Parameters.AddWithValue("@firmaId", firmaId);
+        var raw = await cmd.ExecuteScalarAsync(cancellationToken);
+        return raw is not null and not DBNull;
     }
 
     private async Task<FirmaReservationPriceCompareViewModel> BuildPriceCompareAsync(SqlConnection connection, long firmaId, FirmaReservationCreateModel model, CancellationToken cancellationToken)
@@ -1516,6 +1616,7 @@ public class FirmaService : IFirmaService
             SELECT TOP (@take)
                    ROW_NUMBER() OVER (ORDER BY ot.[OTEL_ADI] ASC, od.[ODA_ADI] ASC) AS deal_id,
                    ot.id AS hotel_id,
+                   x.[ODA_TIP_ID] AS room_type_id,
                    ot.[OTEL_ADI],
                    COALESCE(od.[ODA_ADI], N'') AS [ODA_ADI],
                    CONCAT(COALESCE(ot.[ILCE], N''), CASE WHEN COALESCE(ot.[ILCE], N'') <> '' THEN N', ' ELSE N'' END, COALESCE(ot.[SEHIR], N'')) AS city_text,
@@ -1576,12 +1677,12 @@ public class FirmaService : IFirmaService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            var maxGuest = SafeInt(reader, 5);
-            var maxAdult = SafeInt(reader, 6);
-            var maxChild = SafeInt(reader, 7);
-            var totalRoomCount = SafeInt(reader, 8);
-            var standardPrice = SafeDecimal(reader, 9);
-            var corporatePrice = SafeDecimal(reader, 10);
+            var maxGuest = SafeInt(reader, 6);
+            var maxAdult = SafeInt(reader, 7);
+            var maxChild = SafeInt(reader, 8);
+            var totalRoomCount = SafeInt(reader, 9);
+            var standardPrice = SafeDecimal(reader, 10);
+            var corporatePrice = SafeDecimal(reader, 11);
             var capacityText = maxGuest > 0
                 ? $"{maxGuest} kişi (Y{Math.Max(0, maxAdult)} / Ç{Math.Max(0, maxChild)})"
                 : "-";
@@ -1591,9 +1692,10 @@ public class FirmaService : IFirmaService
             {
                 DealId = reader.GetInt64(0),
                 HotelId = reader.GetInt64(1),
-                HotelName = reader.GetString(2),
-                RoomName = reader.IsDBNull(3) || string.IsNullOrWhiteSpace(reader.GetString(3)) ? "Oda" : reader.GetString(3),
-                CityText = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                RoomTypeId = reader.GetInt64(2),
+                HotelName = reader.GetString(3),
+                RoomName = reader.IsDBNull(4) || string.IsNullOrWhiteSpace(reader.GetString(4)) ? "Oda" : reader.GetString(4),
+                CityText = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
                 CapacityText = capacityText,
                 StockText = stockText,
                 StandardPriceText = FormatMoney(standardPrice),
@@ -1602,9 +1704,9 @@ public class FirmaService : IFirmaService
                     ? $"%{Math.Clamp((int)Math.Round(((standardPrice - corporatePrice) / standardPrice) * 100m, MidpointRounding.AwayFromZero), 1, 95)}"
                     : "-",
                 MinimumRoomText = "Kurumsal",
-                ValidityText = reader.IsDBNull(11) || reader.IsDBNull(12)
+                ValidityText = reader.IsDBNull(12) || reader.IsDBNull(13)
                     ? "Tarih aralığı tanımlı"
-                    : $"{reader.GetDateTime(11):dd.MM.yyyy} - {reader.GetDateTime(12):dd.MM.yyyy}",
+                    : $"{reader.GetDateTime(12):dd.MM.yyyy} - {reader.GetDateTime(13):dd.MM.yyyy}",
                 SavingsText = FormatMoney(Math.Max(0m, standardPrice - corporatePrice))
             });
         }

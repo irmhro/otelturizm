@@ -31,6 +31,17 @@ public class AdminService : IAdminService
     private readonly CommerceMetricsAccumulator _commerceMetrics;
     private readonly IGrowthGovernanceService _growthGovernance;
     private readonly HealthCheckService _healthCheckService;
+    private readonly ISecureFileService _secureFileService;
+
+    private static readonly string[] PartnerRequiredDocumentTypes =
+    [
+        "Vergi Levhasi",
+        "Ticaret Sicil Gazetesi",
+        "Imza Sirkuleri",
+        "IBAN Belgesi",
+        "Turizm Belgesi",
+        "Kimlik Belgesi"
+    ];
 
     public AdminService(
         IConfiguration configuration,
@@ -40,7 +51,8 @@ public class AdminService : IAdminService
         IHttpContextAccessor httpContextAccessor,
         CommerceMetricsAccumulator commerceMetrics,
         IGrowthGovernanceService growthGovernance,
-        HealthCheckService healthCheckService)
+        HealthCheckService healthCheckService,
+        ISecureFileService secureFileService)
     {
         _configuration = configuration;
         _mailAccountProtector = dataProtectionProvider.CreateProtector("Admin.PlatformMailAccounts.v1");
@@ -50,6 +62,7 @@ public class AdminService : IAdminService
         _commerceMetrics = commerceMetrics;
         _growthGovernance = growthGovernance;
         _healthCheckService = healthCheckService;
+        _secureFileService = secureFileService;
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
     }
@@ -3061,6 +3074,232 @@ public class AdminService : IAdminService
         return model;
     }
 
+    public async Task<AdminPartnerDocumentsPageViewModel> GetPartnerDocumentsReviewQueueAsync(string fullName, string email, string userRole, string? statusFilter, long adminUserId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var model = new AdminPartnerDocumentsPageViewModel
+        {
+            StatusFilter = statusFilter ?? string.Empty,
+            Shell = await GetShellAsync(connection, "Partner Evrak İnceleme", "Zorunlu evrak checklist, yükleme durumu ve admin onay kuyruğu.", fullName, email, userRole, cancellationToken)
+        };
+
+        var summaryDefinitions = new[]
+        {
+            ("Toplam Evrak", "SELECT COUNT(*) FROM [dbo].[PARTNER_BASVURU_EVRAKLARI]", "Yüklenen tüm belgeler", "info", "fa-folder-open"),
+            ("İnceleme Bekleyen", "SELECT COUNT(*) FROM [dbo].[PARTNER_BASVURU_EVRAKLARI] WHERE COALESCE([DURUM], N'Beklemede') = N'Beklemede'", "Admin kararı bekleyen", "warning", "fa-hourglass-half"),
+            ("Onaylı", "SELECT COUNT(*) FROM [dbo].[PARTNER_BASVURU_EVRAKLARI] WHERE COALESCE([DURUM], N'') IN (N'Onaylandi', N'Onaylandı')", "Uygun bulunan belgeler", "success", "fa-circle-check"),
+            ("Reddedilen", "SELECT COUNT(*) FROM [dbo].[PARTNER_BASVURU_EVRAKLARI] WHERE COALESCE([DURUM], N'') = N'Reddedildi'", "Eksik/hatalı belgeler", "danger", "fa-circle-xmark")
+        };
+
+        foreach (var (label, sql, description, tone, icon) in summaryDefinitions)
+        {
+            await using var command = new SqlCommand(sql, connection);
+            var raw = await command.ExecuteScalarAsync(cancellationToken);
+            model.SummaryCards.Add(new AdminSummaryCardViewModel
+            {
+                Label = label,
+                Value = FormatScalar(raw),
+                Description = description,
+                ToneClass = tone,
+                IconClass = icon
+            });
+        }
+
+        if (!await TableExistsAsync(connection, "partner_basvuru_evraklari", cancellationToken))
+        {
+            return model;
+        }
+
+        const string partnersSql = @"
+            SELECT p.id, o.id AS hotel_id, p.[FIRMA_UNVANI], COALESCE(o.[OTEL_ADI], p.[FIRMA_UNVANI]),
+                   COALESCE(p.[ONAY_DURUMU], N'Beklemede')
+            FROM [dbo].[PARTNER_DETAYLARI] p
+            LEFT JOIN [dbo].[OTELLER] o ON o.[PARTNER_ID] = p.id
+            WHERE EXISTS (
+                SELECT 1 FROM [dbo].[PARTNER_BASVURU_EVRAKLARI] ped
+                WHERE ped.[PARTNER_ID] = p.id
+                  AND (@statusFilter = N'' OR COALESCE(ped.[DURUM], N'Beklemede') = @statusFilter)
+            )
+               OR (
+                    @statusFilter = N''
+                    AND COALESCE(p.[ONAY_DURUMU], N'Beklemede') IN (N'Beklemede', N'Askida')
+                    AND (
+                        SELECT COUNT(*) FROM [dbo].[PARTNER_BASVURU_EVRAKLARI] ped2 WHERE ped2.[PARTNER_ID] = p.id
+                    ) < @requiredCount
+               )
+            ORDER BY
+                CASE COALESCE(p.[ONAY_DURUMU], N'Beklemede') WHEN N'Beklemede' THEN 0 WHEN N'Askida' THEN 1 ELSE 2 END,
+                p.[OLUSTURULMA_TARIHI] DESC;";
+
+        var partners = new List<(long PartnerId, long? HotelId, string Company, string Hotel, string Status)>();
+        await using (var partnersCommand = new SqlCommand(partnersSql, connection))
+        {
+            partnersCommand.Parameters.AddWithValue("@statusFilter", model.StatusFilter);
+            partnersCommand.Parameters.AddWithValue("@requiredCount", PartnerRequiredDocumentTypes.Length);
+            await using var reader = await partnersCommand.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                partners.Add((reader.GetInt64(0), reader.IsDBNull(1) ? null : reader.GetInt64(1), reader.GetString(2), reader.GetString(3), reader.GetString(4)));
+            }
+        }
+
+        foreach (var partner in partners)
+        {
+            var documents = new List<AdminPartnerDocumentItemViewModel>();
+            const string docsSql = @"
+                SELECT ped.id, ped.[GUVENLI_DOSYA_ID], ped.[EVRAK_TIPI], COALESCE(ped.[BELGE_BASLIGI], ped.[EVRAK_TIPI]),
+                       COALESCE(gfv.[ORIJINAL_DOSYA_ADI], N'Belge'), ped.[DURUM], ped.[OLUSTURULMA_TARIHI], COALESCE(ped.[RED_NEDENI], N'')
+                FROM [dbo].[PARTNER_BASVURU_EVRAKLARI] ped
+                INNER JOIN [dbo].[GUVENLI_DOSYA_VARLIKLARI] gfv ON gfv.id = ped.[GUVENLI_DOSYA_ID]
+                WHERE ped.[PARTNER_ID] = @partnerId
+                  AND (@statusFilter = N'' OR COALESCE(ped.[DURUM], N'Beklemede') = @statusFilter)
+                ORDER BY ped.[OLUSTURULMA_TARIHI] DESC;";
+
+            await using var docsCommand = new SqlCommand(docsSql, connection);
+            docsCommand.Parameters.AddWithValue("@partnerId", partner.PartnerId);
+            docsCommand.Parameters.AddWithValue("@statusFilter", model.StatusFilter);
+            await using var docsReader = await docsCommand.ExecuteReaderAsync(cancellationToken);
+            while (await docsReader.ReadAsync(cancellationToken))
+            {
+                var fileId = docsReader.GetInt64(1);
+                var status = docsReader.GetString(5);
+                documents.Add(new AdminPartnerDocumentItemViewModel
+                {
+                    DocumentId = docsReader.GetInt64(0),
+                    DocumentType = docsReader.GetString(2),
+                    Title = docsReader.GetString(3),
+                    FileName = docsReader.GetString(4),
+                    StatusText = status,
+                    StatusToneClass = MapPartnerDocumentTone(status),
+                    UploadedAtText = docsReader.GetDateTime(6).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                    ReviewNote = EmptyToNull(docsReader.GetString(7)),
+                    AccessUrl = await _secureFileService.CreateAccessUrlAsync(fileId, adminUserId, "admin", cancellationToken)
+                });
+            }
+
+            var checklist = BuildPartnerDocumentChecklist(documents);
+            var pendingReview = documents.Count(d => string.Equals(d.StatusText, "Beklemede", StringComparison.OrdinalIgnoreCase));
+            var approved = documents.Count(d => string.Equals(d.StatusText, "Onaylandi", StringComparison.OrdinalIgnoreCase) || string.Equals(d.StatusText, "Onaylandı", StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(model.StatusFilter) && documents.Count == 0)
+            {
+                continue;
+            }
+
+            model.Queue.Add(new AdminPartnerDocumentQueueRowViewModel
+            {
+                PartnerId = partner.PartnerId,
+                HotelId = partner.HotelId,
+                CompanyName = partner.Company,
+                HotelName = partner.Hotel,
+                PartnerStatus = partner.Status,
+                PartnerStatusTone = MapPartnerDocumentTone(partner.Status),
+                RequiredDocumentCount = PartnerRequiredDocumentTypes.Length,
+                UploadedDocumentCount = documents.Count,
+                PendingReviewCount = pendingReview,
+                ApprovedDocumentCount = approved,
+                Checklist = checklist,
+                Documents = documents
+            });
+        }
+
+        return model;
+    }
+
+    public async Task<(bool Success, string Message)> ReviewPartnerDocumentAsync(long adminUserId, AdminPartnerDocumentReviewRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.DocumentId <= 0)
+        {
+            return (false, "Geçersiz evrak kaydı.");
+        }
+
+        var status = request.TargetStatus?.Trim() ?? string.Empty;
+        if (!string.Equals(status, "Onaylandi", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(status, "Reddedildi", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, "Geçersiz hedef durum.");
+        }
+
+        if (string.Equals(status, "Reddedildi", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(request.Note))
+        {
+            return (false, "Red gerekçesi zorunludur.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = @"
+            UPDATE [dbo].[PARTNER_BASVURU_EVRAKLARI]
+            SET [DURUM] = @status,
+                [RED_NEDENI] = @note,
+                [INCELEYEN_ADMIN_ID] = @adminId,
+                [INCELENME_TARIHI] = SYSUTCDATETIME(),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+            WHERE [ID] = @documentId AND [PARTNER_ID] = @partnerId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@status", string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase) ? "Onaylandi" : status);
+        command.Parameters.AddWithValue("@note", (object?)EmptyToNull(request.Note) ?? DBNull.Value);
+        command.Parameters.AddWithValue("@adminId", adminUserId);
+        command.Parameters.AddWithValue("@documentId", request.DocumentId);
+        command.Parameters.AddWithValue("@partnerId", request.PartnerId);
+        var affected = await command.ExecuteNonQueryAsync(cancellationToken);
+        return affected > 0
+            ? (true, "Evrak inceleme kararı kaydedildi.")
+            : (false, "Evrak bulunamadı veya güncellenemedi.");
+    }
+
+    private static List<AdminPartnerDocumentChecklistItemViewModel> BuildPartnerDocumentChecklist(IReadOnlyList<AdminPartnerDocumentItemViewModel> documents)
+    {
+        var checklist = new List<AdminPartnerDocumentChecklistItemViewModel>();
+        foreach (var requiredType in PartnerRequiredDocumentTypes)
+        {
+            var match = documents
+                .Where(d => string.Equals(d.DocumentType, requiredType, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(d => d.UploadedAtText)
+                .FirstOrDefault();
+
+            if (match is null)
+            {
+                checklist.Add(new AdminPartnerDocumentChecklistItemViewModel
+                {
+                    DocumentType = requiredType,
+                    StatusText = "Eksik",
+                    ToneClass = "danger"
+                });
+                continue;
+            }
+
+            var tone = MapPartnerDocumentTone(match.StatusText);
+            var statusText = match.StatusText switch
+            {
+                var s when string.Equals(s, "Onaylandi", StringComparison.OrdinalIgnoreCase) || string.Equals(s, "Onaylandı", StringComparison.OrdinalIgnoreCase) => "Onaylı",
+                var s when string.Equals(s, "Reddedildi", StringComparison.OrdinalIgnoreCase) => "Reddedildi",
+                _ => "İncelemede"
+            };
+
+            checklist.Add(new AdminPartnerDocumentChecklistItemViewModel
+            {
+                DocumentType = requiredType,
+                StatusText = statusText,
+                ToneClass = tone
+            });
+        }
+
+        return checklist;
+    }
+
+    private static string MapPartnerDocumentTone(string status) => status switch
+    {
+        var s when string.Equals(s, "Onaylandi", StringComparison.OrdinalIgnoreCase) || string.Equals(s, "Onaylandı", StringComparison.OrdinalIgnoreCase) => "success",
+        var s when string.Equals(s, "Reddedildi", StringComparison.OrdinalIgnoreCase) => "danger",
+        var s when string.Equals(s, "Beklemede", StringComparison.OrdinalIgnoreCase) => "warning",
+        _ => "info"
+    };
+
     public async Task<AdminCompanyApplicationsPageViewModel> GetCompanyApplicationsAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
@@ -3177,7 +3416,7 @@ public class AdminService : IAdminService
                        CONCAT(COALESCE(o.[OTEL_ADI], N'Otel bağlantısı yok'), N' · ', COALESCE(p.[YETKILI_EPOSTA], N'')) AS detail,
                        COALESCE(p.[ONAY_DURUMU], N'Beklemede') AS status_text,
                        COALESCE(p.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()) AS created_at,
-                       N'/admin/partner-basvurulari' AS action_url
+                       CONCAT(N'/admin/partner-evraklari?partnerId=', p.id) AS action_url
                 FROM [dbo].[PARTNER_DETAYLARI] p
                 LEFT JOIN [dbo].[OTELLER] o ON o.[PARTNER_ID] = p.id
                 WHERE COALESCE(p.[ONAY_DURUMU], N'Beklemede') <> N'Onaylandi'
@@ -5618,5 +5857,8 @@ ORDER BY y.[OLUSTURULMA_TARIHI] DESC, y.id DESC;";
             command.Parameters.AddWithValue(pair.Key, pair.Value ?? DBNull.Value);
         }
     }
+
+    private static string? EmptyToNull(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
 

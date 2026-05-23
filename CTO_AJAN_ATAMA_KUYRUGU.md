@@ -2,7 +2,7 @@
 
 ```yaml
 sprint_id: sprint-continuous-infinite-20260523
-updated: 2026-05-26T10:40:00+03:00
+updated: 2026-05-24T14:00:00+03:00
 cycle_interval: 10m
 delegation_policy: kullanici_onaysiz_10dk_wave_assign
 active_wave: Wave-X-20260526-integrasyon
@@ -14,11 +14,14 @@ continuous_cycle: PLATFORM_SUREKLI_GELISTIRME_DONGUSU.md
 plan_template: PLATFORM_10DK_PLAN_SABLONU.md
 gap_analysis: Docs/PLATFORM_OZELLIK_GAP_ANALIZI.md
 admin_roadmap: Docs/ADMIN_PANEL_MASTER_ROADMAP.md
+admin_full_config: Docs/ADMIN_PANEL_TAM_YAPILANDIRMA.md
+legal_orchestra: Docs/PLATFORM_SOZLESME_HUKUK_ORKESTRA.md
 active_wave: Wave-X-20260526-integrasyon
-queue_active_parallel: [H13_i18n_ui, H9_ork_seo, H14_email_ork, H4_fe_user, H11_finans_komisyon]
+queue_active_parallel: [H15_fe_world_standard, H13_i18n_ui, H9_ork_seo, H14_email_ork, H4_fe_user, H11_finans_komisyon]
 next_wave: Wave-VI-20260526-1050
 build_status: pass
-build_note: "2026-05-26 10:40: dotnet build -o .coord-build — 0 hata, 0 uyarı (Wave-V cycle #1)"
+build_note: "2026-05-24 Wave-A1: dotnet build -o .coord-build-admin — 0 hata, 0 uyarı"
+admin_wave_cadence: "Her 10dk: gap matrisinden 1 P0 → implement → build gate → geliştrme-orkestra #NNN"
 fe_cto_approved: "6/151"
 canliya_hazir: hayir
 delegation_policy: kullanici_onaysiz_10dk_wave_assign
@@ -33,15 +36,27 @@ corner_audit_wave_v:
 parallel_streams:
   H1_fe_otel_public: { lead: Frontend-Ork-Kamu, status: done, tasks: [T005,T006,T007,T306,T307,T304], note: "2026-05-23 build .build-h1 pass; pill etiket URLs; paneller/otel CSS; Lighthouse hints" }
   H2_fe_partner: { lead: Partner-FE-Ork, status: assigned, tasks: [T311], note: "T102,T200,T201,T202,T309,T321 done; T311 batch-1 → Docs/ORKESTRA_PANEL_SS_BATCH.md (10 sayfa route+view)" }
-  H3_admin_master: { lead: Admin-FE-Ork, status: in_progress, tasks: [T101,T108,T111,T112,T113,T114,T115,T210,T310,T322,T327,T329,T330,T353,T354,T355,T356,T357], note: "Infinite loop P0 admin master roadmap; bulk + fraud views (T350 Revenue Center done)" }
+  H3_admin_master:
+    lead: Admin-FE-Ork
+    status: in_progress
+    priority: P0
+    tasks: [T101,T108,T111,T112,T113,T114,T115,T210,T310,T322,T327,T329,T330,T353,T354,T355,T356,T357,T371,T372,T373]
+    note: "P0 expanded: komisyon tahsilat+mutabakat, otel onay/toplu yayın T356, partner evrak admin, oda/fiyat admin görünürlük; 10dk wave cadence"
+    deliverables:
+      - /admin/partner-evraklari (Wave-A1)
+      - /admin/komisyon-tahsilat lifecycle
+      - ApprovalCenter + Hotels bulk publish UX
+      - Docs/ADMIN_PANEL_TAM_YAPILANDIRMA.md gap matrix
+  H16_ork_hukuk: { lead: Legal-Contract-Ork, status: assigned, tasks: [H16-01,H16-02,H16-03], note: "Avukat-CTO: platform sözleşme seed + placeholder şablonlar; canlı öncesi hukuk review zorunlu" }
   H3_fe_admin: { lead: Admin-FE-Ork, alias: H3_admin_master, status: in_progress, tasks: [T101,T108,T111,T112,T113,T114,T115,T210,T310,T322] }
   H4_fe_user: { lead: User-FE-Ork, status: done, tasks: [T103,T120,T121,T122,T230], note: "profile+reservations safe-area; Invoices PageCssMobile; build .build-h4 pass" }
   H5_fe_satis: { lead: Satis-FE-Ork, status: done, tasks: [T104,T130,T131,T132], evidence: "shell.mobile safe-area; dashboard PageCssMobile; build pass" }
-  H6_fe_firma: { lead: Firma-FE-Ork, status: done, tasks: [T220,T140,T141], evidence: "shell.mobile safe-area; CreateReservation CompanyTotal query E2E; build pass" }
+  H6_fe_firma: { lead: Firma-FE-Ork, status: in_progress, priority: P0, tasks: [T220,T140,T141,T466,T467], note: "Wave-F1: FIRMA_PANEL_MASTER_PLAN; mobile table cards; CreateReservation employee+guest policy; panel-form-ux; dashboard KPI" }
   H7_ork_guvenlik: { lead: Security-Ork, status: done, tasks: [T004,T301,T302,T149,T320] }
   H8_ork_backend: { lead: DB-Services-Ork, status: done, tasks: [T308,T313,T107,T303,T341,T342,T343,T344,T345], note: "Istanbul 39 ilce demo seed T341-T345 tamam; localdb verify OK" }
   H9_ork_seo: { lead: SEO-Ork, status: done, tasks: [T148,T305] }
   H10_master_cto: { lead: Master-CTO, status: assigned, tasks: [T150,T250,T314,T325], run: after_H1-H9 }
+  H15_fe_world_standard: { lead: fe-world-ork, status: active, tasks: [T460,T461,T462,T463,T464], note: "Wave-XVIII: 151 sayfa world-class CSHTML+CSS+i18n; W1 kamu P0 liste/detay/kampanya/header" }
 
 waves:
   wave_a:

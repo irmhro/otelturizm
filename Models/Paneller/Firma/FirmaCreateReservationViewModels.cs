@@ -10,7 +10,19 @@ public class FirmaCreateReservationPageViewModel
     public List<FirmaSelectOption> Hotels { get; set; } = new();
     public List<FirmaSelectOption> RoomTypes { get; set; } = new();
     public FirmaReservationPriceCompareViewModel Compare { get; set; } = new();
+    public FirmaReservationGuestPolicyViewModel GuestPolicy { get; set; } = new();
     public List<FirmaEmployeeOptionViewModel> Employees { get; set; } = new();
+}
+
+public class FirmaReservationGuestPolicyViewModel
+{
+    public int MaxGuestPerRoom { get; set; }
+    public int MaxAdultPerRoom { get; set; }
+    public int MaxChildPerRoom { get; set; }
+    public int RoomCount { get; set; } = 1;
+    public int TotalMaxGuests => MaxGuestPerRoom > 0 ? MaxGuestPerRoom * Math.Max(1, RoomCount) : 0;
+    public bool HasCapacityLimit { get; set; }
+    public string HintText { get; set; } = string.Empty;
 }
 
 public class FirmaReservationCreateModel

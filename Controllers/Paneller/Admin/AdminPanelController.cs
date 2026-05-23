@@ -2238,6 +2238,51 @@ public class AdminPanelController : Controller
         return RedirectToAction(nameof(PartnerApplications));
     }
 
+    [HttpGet("partner-evraklari")]
+    public async Task<IActionResult> PartnerDocuments([FromQuery] string? status, [FromQuery] long? partnerId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.partner_applications", cancellationToken) is { } deniedDocs)
+        {
+            return deniedDocs;
+        }
+
+        var model = await _adminService.GetPartnerDocumentsReviewQueueAsync(GetFullName(), GetEmail(), GetUserRole(), status, GetUserId(), cancellationToken);
+        if (partnerId is > 0)
+        {
+            model.Queue = model.Queue.Where(q => q.PartnerId == partnerId.Value).ToList();
+        }
+
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "paneller/admin/partner-documents";
+        ViewData["PageCssMobile"] = "paneller/admin/partner-documents.mobile";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/PartnerDocuments.cshtml", model);
+    }
+
+    [HttpPost("partner-evraklari/durum")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReviewPartnerDocument(AdminPartnerDocumentReviewRequest request, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.partner_applications", cancellationToken) is { } deniedReview)
+        {
+            return deniedReview;
+        }
+
+        var result = await _adminService.ReviewPartnerDocumentAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(PartnerDocuments), new { partnerId = request.PartnerId });
+    }
+
     [HttpPost("partner-basvurulari/eposta-giris-onayi")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetPartnerEmailLoginApproval(AdminPartnerEmailLoginApprovalRequest request, CancellationToken cancellationToken)

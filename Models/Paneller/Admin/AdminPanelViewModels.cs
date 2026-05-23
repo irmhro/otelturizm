@@ -138,6 +138,59 @@ public class AdminPartnerEmailLoginApprovalRequest
     public string? Note { get; set; }
 }
 
+public sealed class AdminPartnerDocumentsPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public string StatusFilter { get; set; } = string.Empty;
+    public List<AdminPartnerDocumentQueueRowViewModel> Queue { get; set; } = new();
+}
+
+public sealed class AdminPartnerDocumentQueueRowViewModel
+{
+    public long PartnerId { get; set; }
+    public long? HotelId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string PartnerStatus { get; set; } = string.Empty;
+    public string PartnerStatusTone { get; set; } = "info";
+    public int RequiredDocumentCount { get; set; }
+    public int UploadedDocumentCount { get; set; }
+    public int PendingReviewCount { get; set; }
+    public int ApprovedDocumentCount { get; set; }
+    public List<AdminPartnerDocumentChecklistItemViewModel> Checklist { get; set; } = new();
+    public List<AdminPartnerDocumentItemViewModel> Documents { get; set; } = new();
+}
+
+public sealed class AdminPartnerDocumentChecklistItemViewModel
+{
+    public string DocumentType { get; set; } = string.Empty;
+    public bool IsRequired { get; set; } = true;
+    public string StatusText { get; set; } = "Eksik";
+    public string ToneClass { get; set; } = "danger";
+}
+
+public sealed class AdminPartnerDocumentItemViewModel
+{
+    public long DocumentId { get; set; }
+    public string DocumentType { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string StatusToneClass { get; set; } = "info";
+    public string UploadedAtText { get; set; } = string.Empty;
+    public string? ReviewNote { get; set; }
+    public string? AccessUrl { get; set; }
+}
+
+public sealed class AdminPartnerDocumentReviewRequest
+{
+    public long DocumentId { get; set; }
+    public long PartnerId { get; set; }
+    public string TargetStatus { get; set; } = "Onaylandi";
+    public string? Note { get; set; }
+}
+
 public class AdminPartnerApplicationDecisionRequest
 {
     public long PartnerId { get; set; }

@@ -1,0 +1,56 @@
+@model otelturizmnew.Models.Kurumsal.KurumsalBlogListingViewModel
+@{
+    ViewData["Title"] = SharedLocalizer["Company.Blog.Title"].Value;
+    ViewData["MetaDescription"] = SharedLocalizer["Company.Blog.MetaDescription"].Value;
+    ViewData["HeroTitleKey"] = "Company.Blog.Title";
+    ViewData["HeroLeadKey"] = "Company.Blog.HeroLead";
+    ViewData["HeroEyebrowKey"] = "Footer.Blog";
+    ViewData["HeroIcon"] = "fa-pen-nib";
+    var posts = Model.Posts;
+    if (posts.Count == 0)
+    {
+        posts = new List<otelturizmnew.Models.Kurumsal.KurumsalBlogCardViewModel>
+        {
+            new() { Title = SharedLocalizer["Company.Blog.Teaser1Title"].Value, Summary = SharedLocalizer["Company.Blog.Teaser1Text"].Value, LinkUrl = "/yardim-merkezi", Slug = "teaser-1" },
+            new() { Title = SharedLocalizer["Company.Blog.Teaser2Title"].Value, Summary = SharedLocalizer["Company.Blog.Teaser2Text"].Value, LinkUrl = "/kampanyalar", Slug = "teaser-2" },
+            new() { Title = SharedLocalizer["Company.Blog.Teaser3Title"].Value, Summary = SharedLocalizer["Company.Blog.Teaser3Text"].Value, LinkUrl = "/oteller", Slug = "teaser-3" }
+        };
+    }
+}
+
+<partial name="~/Views/Kurumsal/_SirketPageHero.cshtml" />
+
+        @if (posts.Count == 0)
+        {
+            <div class="corp-empty">
+                <strong>@SharedLocalizer["Company.Blog.EmptyTitle"]</strong>
+                <p>@SharedLocalizer["Company.Blog.EmptyDescription"]</p>
+            </div>
+        }
+        else
+        {
+            <div class="corp-blog-grid" aria-label="@SharedLocalizer["Company.Blog.GridLabel"]">
+                @foreach (var post in posts)
+                {
+                    var imageUrl = string.IsNullOrWhiteSpace(post.HeroImageUrl)
+                        ? "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80"
+                        : post.HeroImageUrl;
+                    <article class="corp-blog-card">
+                        <a class="corp-blog-card__media" href="@post.LinkUrl" aria-hidden="true" tabindex="-1">
+                            <img src="@imageUrl" alt="" loading="lazy" width="400" height="240" />
+                        </a>
+                        <div class="corp-blog-card__body">
+                            <h2 class="corp-blog-card__title">
+                                <a href="@post.LinkUrl">@post.Title</a>
+                            </h2>
+                            <p class="corp-blog-card__summary">@post.Summary</p>
+                            <a class="corp-blog-card__link fe-world-touch-target" href="@post.LinkUrl">
+                                @SharedLocalizer["Company.Blog.ReadMore"] <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>

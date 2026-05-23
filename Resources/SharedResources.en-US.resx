@@ -121,4 +121,131 @@
   <data name="Nav.Invoices" xml:space="preserve"><value>Invoices</value></data>
   <data name="Map.BackToList" xml:space="preserve"><value>Back to list</value></data>
   <data name="Map.BackToAllHotels" xml:space="preserve"><value>Back to all hotels</value></data>
+  <data name="Listing.SearchFound" xml:space="preserve"><value>{0}: {1} hotels found</value></data>
+  <data name="Listing.EditSearch" xml:space="preserve"><value>Edit search</value></data>
+  <data name="Listing.MapView" xml:space="preserve"><value>Map</value></data>
+  <data name="Listing.ConceptTitle" xml:space="preserve"><value>Concept filters · Quick pick</value></data>
+  <data name="Listing.AllCampaigns" xml:space="preserve"><value>All campaigns</value></data>
+  <data name="Listing.LoyaltyBadge" xml:space="preserve"><value>Guest favorite</value></data>
+  <data name="Listing.RatingExcellent" xml:space="preserve"><value>Excellent</value></data>
+  <data name="Listing.RatingGood" xml:space="preserve"><value>Good</value></data>
+  <data name="Btn.ViewDetails" xml:space="preserve"><value>View details</value></data>
+  <data name="Nav.QuickLink.EndOfMonth" xml:space="preserve"><value>End of month special</value></data>
+  <data name="Nav.QuickLink.FlashDiscount" xml:space="preserve"><value>Flash deal</value></data>
+  <data name="Nav.QuickLink.WeekendDeals" xml:space="preserve"><value>Weekend deals</value></data>
+  <data name="Nav.QuickLink.SmartPrice" xml:space="preserve"><value>Smart price</value></data>
+  <data name="Nav.QuickLink.Boutique" xml:space="preserve"><value>Boutique picks</value></data>
+  <data name="Nav.FeaturedLinks" xml:space="preserve"><value>Featured links</value></data>
+  <data name="Nav.FeaturedDeals" xml:space="preserve"><value>Featured deals</value></data>
+  <data name="Nav.LanguageSelection" xml:space="preserve"><value>Language</value></data>
+  <data name="Nav.Panel.Partner" xml:space="preserve"><value>Partner panel</value></data>
+  <data name="Nav.Panel.Firma" xml:space="preserve"><value>Company panel</value></data>
+  <data name="Nav.Panel.Admin" xml:space="preserve"><value>Admin panel</value></data>
+  <data name="Nav.Panel.Developer" xml:space="preserve"><value>Developer panel</value></data>
+  <data name="Nav.Panel.Sales" xml:space="preserve"><value>Sales panel</value></data>
+  <data name="Footer.Description" xml:space="preserve"><value>Search and book hotels across Türkiye securely; track summaries and cancellation terms in your account.</value></data>
+  <data name="Footer.Career" xml:space="preserve"><value>Careers</value></data>
+  <data name="Footer.Press" xml:space="preserve"><value>Press room</value></data>
+  <data name="Footer.Blog" xml:space="preserve"><value>Blog</value></data>
+  <data name="Footer.ForHotels" xml:space="preserve"><value>For hoteliers</value></data>
+  <data name="Footer.ExtranetLogin" xml:space="preserve"><value>Extranet login</value></data>
+  <data name="Footer.PartnerProgram" xml:space="preserve"><value>Partner program</value></data>
+  <data name="Footer.CommissionRates" xml:space="preserve"><value>Commission rates</value></data>
+  <data name="Footer.TrainingSupport" xml:space="preserve"><value>Training &amp; support</value></data>
+  <data name="Footer.CancelRefund" xml:space="preserve"><value>Cancellation &amp; refund</value></data>
+  <data name="Footer.Faq" xml:space="preserve"><value>FAQ</value></data>
+  <data name="Footer.TrustCommitments" xml:space="preserve"><value>Trust commitments</value></data>
+  <data name="Campaign.Hero.Title" xml:space="preserve"><value>Campaign hotels and seasonal deals</value></data>
+  <data name="Campaign.Hero.Description" xml:space="preserve"><value>Explore live campaigns, browse participating properties, or read terms on the detail page.</value></data>
+  <data name="Campaign.Stat.Active" xml:space="preserve"><value>active campaigns</value></data>
+  <data name="Campaign.Stat.DiscountedHotels" xml:space="preserve"><value>Campaign hotels</value></data>
+  <data name="Campaign.Timer.Label" xml:space="preserve"><value>Time left until campaign ends</value></data>
+  <data name="Campaign.Timer.Days" xml:space="preserve"><value>Days</value></data>
+  <data name="Campaign.Timer.Hours" xml:space="preserve"><value>Hours</value></data>
+  <data name="Campaign.Timer.Minutes" xml:space="preserve"><value>Minutes</value></data>
+  <data name="Campaign.Timer.Seconds" xml:space="preserve"><value>Seconds</value></data>
+  <data name="Campaign.Empty.Title" xml:space="preserve"><value>No active campaigns right now.</value></data>
+  <data name="Campaign.Empty.Description" xml:space="preserve"><value>This page fills automatically when campaign dates become active.</value></data>
+  <data name="Campaign.ListHotels" xml:space="preserve"><value>List hotels</value></data>
+  <data name="Campaign.ViewDetail" xml:space="preserve"><value>Campaign details</value></data>
+  <data name="Detail.ReviewTeaser.Title" xml:space="preserve"><value>Guest reviews</value></data>
+  <data name="Detail.ReviewTeaser.SeeAll" xml:space="preserve"><value>See all reviews</value></data>
+  <data name="Detail.ReviewTeaser.None" xml:space="preserve"><value>No reviews yet — be the first.</value></data>
+  <data name="Detail.ReviewTeaser.Count" xml:space="preserve"><value>{0} reviews · average {1}/10</value></data>
+  <data name="Booking.MobileSummary" xml:space="preserve"><value>Mobile booking summary</value></data>
+  <data name="Company.Hero.DefaultLead" xml:space="preserve"><value>We make stays transparent, secure, and accessible with Otelturizm.</value></data>
+  <data name="Company.About.Title" xml:space="preserve"><value>About us</value></data>
+  <data name="Company.About.MetaDescription" xml:space="preserve"><value>Otelturizm mission, vision, and values — secure hotel search and booking across Türkiye.</value></data>
+  <data name="Company.About.HeroLead" xml:space="preserve"><value>One transparent booking experience for travelers, hoteliers, and corporate teams.</value></data>
+  <data name="Company.About.StatsLabel" xml:space="preserve"><value>Platform highlights</value></data>
+  <data name="Company.About.StatDistricts" xml:space="preserve"><value>District coverage</value></data>
+  <data name="Company.About.StatLanguages" xml:space="preserve"><value>Language support</value></data>
+  <data name="Company.About.StatSupport" xml:space="preserve"><value>Help center access</value></data>
+  <data name="Company.About.MissionTitle" xml:space="preserve"><value>Our mission</value></data>
+  <data name="Company.About.MissionText" xml:space="preserve"><value>Simplify stay decisions with price, cancellation terms, and trust signals on one screen.</value></data>
+  <data name="Company.About.VisionTitle" xml:space="preserve"><value>Our vision</value></data>
+  <data name="Company.About.VisionText" xml:space="preserve"><value>Become Türkiye's most trusted digital stays platform with sustainable growth for hotels and guests.</value></data>
+  <data name="Company.About.ValuesTitle" xml:space="preserve"><value>Our values</value></data>
+  <data name="Company.About.ValueTrustTitle" xml:space="preserve"><value>Transparency</value></data>
+  <data name="Company.About.ValueTrustText" xml:space="preserve"><value>Reservation summary, cancellation terms, and privacy notices in your account.</value></data>
+  <data name="Company.About.ValueSpeedTitle" xml:space="preserve"><value>Speed</value></data>
+  <data name="Company.About.ValueSpeedText" xml:space="preserve"><value>Mobile-first, touch-friendly listing, map, and campaign experiences.</value></data>
+  <data name="Company.About.ValuePartnerTitle" xml:space="preserve"><value>Partnership</value></data>
+  <data name="Company.About.ValuePartnerText" xml:space="preserve"><value>Partner extranet and corporate panels that support hotel operations.</value></data>
+  <data name="Company.About.CtaLabel" xml:space="preserve"><value>Contact call to action</value></data>
+  <data name="Company.About.CtaTitle" xml:space="preserve"><value>Questions?</value></data>
+  <data name="Company.About.CtaText" xml:space="preserve"><value>Reach us through the help center and support channels.</value></data>
+  <data name="Company.Career.Title" xml:space="preserve"><value>Careers</value></data>
+  <data name="Company.Career.MetaDescription" xml:space="preserve"><value>Otelturizm careers — join product, engineering, and partner success teams.</value></data>
+  <data name="Company.Career.HeroLead" xml:space="preserve"><value>Build travel technology with impact; hybrid work and growth-focused culture.</value></data>
+  <data name="Company.Career.PerkHybridTitle" xml:space="preserve"><value>Hybrid work</value></data>
+  <data name="Company.Career.PerkHybridText" xml:space="preserve"><value>Istanbul-based team with balanced office and remote rhythm.</value></data>
+  <data name="Company.Career.PerkGrowthTitle" xml:space="preserve"><value>Growth</value></data>
+  <data name="Company.Career.PerkGrowthText" xml:space="preserve"><value>Mentorship, learning budget, and product-led sprint cadence.</value></data>
+  <data name="Company.Career.PerkWellnessTitle" xml:space="preserve"><value>Well-being</value></data>
+  <data name="Company.Career.PerkWellnessText" xml:space="preserve"><value>Flexible hours and team events for a sustainable pace.</value></data>
+  <data name="Company.Career.OpenRolesTitle" xml:space="preserve"><value>Open roles</value></data>
+  <data name="Company.Career.RoleProduct" xml:space="preserve"><value>Product</value></data>
+  <data name="Company.Career.RoleProductText" xml:space="preserve"><value>Design system and accessibility on public and panel experiences.</value></data>
+  <data name="Company.Career.RoleEngineering" xml:space="preserve"><value>Engineering</value></data>
+  <data name="Company.Career.RoleEngineeringText" xml:space="preserve"><value>ASP.NET Core, SQL Server, and high-traffic booking flows.</value></data>
+  <data name="Company.Career.RolePartner" xml:space="preserve"><value>Partner</value></data>
+  <data name="Company.Career.RolePartnerText" xml:space="preserve"><value>Extranet adoption and revenue optimization for hotel partners.</value></data>
+  <data name="Company.Career.Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Company.Career.CtaLabel" xml:space="preserve"><value>General application</value></data>
+  <data name="Company.Career.CtaTitle" xml:space="preserve"><value>Don't see your role?</value></data>
+  <data name="Company.Career.CtaText" xml:space="preserve"><value>Send your CV; we'll reach out when a matching role opens.</value></data>
+  <data name="Company.Career.CtaButton" xml:space="preserve"><value>careers@otelturizm.com</value></data>
+  <data name="Company.Press.Title" xml:space="preserve"><value>Press room</value></data>
+  <data name="Company.Press.MetaDescription" xml:space="preserve"><value>Otelturizm press room — media kit, contact, and company news.</value></data>
+  <data name="Company.Press.HeroLead" xml:space="preserve"><value>Logos, visuals, and platform news for media representatives.</value></data>
+  <data name="Company.Press.KitTitle" xml:space="preserve"><value>Media kit</value></data>
+  <data name="Company.Press.KitText" xml:space="preserve"><value>Logo, color palette, and short platform overview on request.</value></data>
+  <data name="Company.Press.KitButton" xml:space="preserve"><value>Request kit</value></data>
+  <data name="Company.Press.ContactTitle" xml:space="preserve"><value>Press contact</value></data>
+  <data name="Company.Press.ContactText" xml:space="preserve"><value>Contact our press team for interviews, data, and image usage.</value></data>
+  <data name="Company.Press.NewsTitle" xml:space="preserve"><value>News</value></data>
+  <data name="Company.Press.News1Title" xml:space="preserve"><value>Multilingual hotel listing live</value></data>
+  <data name="Company.Press.News1Text" xml:space="preserve"><value>Path-based SEO and hreflang across seven languages on public hotel pages.</value></data>
+  <data name="Company.Press.News2Title" xml:space="preserve"><value>Partner extranet mobile update</value></data>
+  <data name="Company.Press.News2Text" xml:space="preserve"><value>Photo upload and guest invoice flows refreshed with mobile-first panel UX.</value></data>
+  <data name="Company.Press.News3Title" xml:space="preserve"><value>Corporate panel expansion</value></data>
+  <data name="Company.Press.News3Text" xml:space="preserve"><value>Business travel budget and invoice tracking in one corporate panel.</value></data>
+  <data name="Company.Press.CtaLabel" xml:space="preserve"><value>Blog redirect</value></data>
+  <data name="Company.Press.CtaTitle" xml:space="preserve"><value>Long reads on the blog</value></data>
+  <data name="Company.Press.CtaText" xml:space="preserve"><value>Visit our blog for guides and travel tips.</value></data>
+  <data name="Company.Blog.Title" xml:space="preserve"><value>Blog</value></data>
+  <data name="Company.Blog.MetaDescription" xml:space="preserve"><value>Otelturizm blog — stay tips, campaigns, and platform updates.</value></data>
+  <data name="Company.Blog.HeroLead" xml:space="preserve"><value>Travel guides, early booking tips, and news from the platform.</value></data>
+  <data name="Company.Blog.GridLabel" xml:space="preserve"><value>Blog post list</value></data>
+  <data name="Company.Blog.ReadMore" xml:space="preserve"><value>Read more</value></data>
+  <data name="Company.Blog.BackToList" xml:space="preserve"><value>Back to blog</value></data>
+  <data name="Company.Blog.EmptyTitle" xml:space="preserve"><value>No posts yet</value></data>
+  <data name="Company.Blog.EmptyDescription" xml:space="preserve"><value>New content is coming soon. You can also visit the help center.</value></data>
+  <data name="Company.Blog.Teaser1Title" xml:space="preserve"><value>Track your reservation summary in account</value></data>
+  <data name="Company.Blog.Teaser1Text" xml:space="preserve"><value>Cancellation terms and payment status on one screen — detailed guide in help center.</value></data>
+  <data name="Company.Blog.Teaser2Title" xml:space="preserve"><value>Discover campaign hotels</value></data>
+  <data name="Company.Blog.Teaser2Text" xml:space="preserve"><value>Current discounts and early booking deals on the campaigns page.</value></data>
+  <data name="Company.Blog.Teaser3Title" xml:space="preserve"><value>Pick hotels on the map</value></data>
+  <data name="Company.Blog.Teaser3Text" xml:space="preserve"><value>Search in list or map view with region and price filters.</value></data>
 </root>

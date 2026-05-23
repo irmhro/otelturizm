@@ -1,21 +1,29 @@
 @model otelturizmnew.Models.Paneller.Firma.FirmaReservationsPageViewModel
-@{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
+@{
+    Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml";
+    ViewData["FirmaShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/firma/reservations";
+    ViewData["PageCssMobile"] = "paneller/firma/reservations.mobile";
+}
 <section class="firma-section-card ot-card">
-    <h2>Firma Rezervasyonları</h2>
+    <div class="firma-row-between" style="margin-bottom:14px;">
+        <h2>Firma Rezervasyonları</h2>
+        <a class="firma-btn-primary ot-btn ot-btn--primary panel-form-ux-edit" href="/panel/firma/yeni-rezervasyon"><i class="fas fa-plus-circle"></i> Yeni Rezervasyon</a>
+    </div>
     <div class="firma-table-wrap">
-        <table class="firma-table">
+        <table class="firma-table firma-table--cards">
             <thead><tr><th>No</th><th>Çalışan</th><th>Otel</th><th>Konaklama</th><th>Rezervasyon Durumu</th><th>Firma Onayı</th><th>Tutar</th></tr></thead>
             <tbody>
             @foreach (var item in Model.Reservations)
             {
                 <tr>
-                    <td>@item.ReservationNo</td>
-                    <td>@item.EmployeeName</td>
-                    <td><strong>@item.HotelName</strong><br /><small>@item.HotelCityText</small></td>
-                    <td>@item.StayText</td>
-                    <td><span class="ot-badge">@item.StatusText</span></td>
-                    <td><span class="ot-badge ot-badge--info">@item.ApprovalText</span></td>
-                    <td>@item.TotalText</td>
+                    <td data-label="No">@item.ReservationNo</td>
+                    <td data-label="Çalışan">@item.EmployeeName</td>
+                    <td data-label="Otel"><strong>@item.HotelName</strong><br /><small>@item.HotelCityText</small></td>
+                    <td data-label="Konaklama">@item.StayText</td>
+                    <td data-label="Durum"><span class="ot-badge">@item.StatusText</span></td>
+                    <td data-label="Firma Onayı"><span class="ot-badge ot-badge--info">@item.ApprovalText</span></td>
+                    <td data-label="Tutar">@item.TotalText</td>
                 </tr>
             }
             </tbody>
@@ -23,6 +31,6 @@
     </div>
     @if (Model.Reservations.Count == 0)
     {
-        <div class="firma-empty-inline">Firma adına açılmış rezervasyon bulunmuyor.</div>
+        <div class="firma-empty-inline">Firma adına açılmış rezervasyon bulunmuyor. <a href="/panel/firma/yeni-rezervasyon">İlk rezervasyonu oluşturun</a>.</div>
     }
 </section>

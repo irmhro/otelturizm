@@ -1,1 +1,7 @@
 @import url("./invoices.css");
+
+@media (max-width: 900px) {
+    .firma-section-card .firma-btn-primary {
+        min-height: 44px;
+    }
+}

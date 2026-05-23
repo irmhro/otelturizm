@@ -1,0 +1,5 @@
+@import url("kurumsal-hakkimizda.css");
+
+.corp-page--article .corp-page__inner {
+    max-width: 860px;
+}

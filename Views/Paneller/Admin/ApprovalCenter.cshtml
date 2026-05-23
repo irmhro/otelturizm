@@ -27,10 +27,11 @@
                 <h2>Bekleyen Onaylar</h2>
                 <span>Partner, firma ve otel yayın onayları admin kararı olmadan yayına çıkmaz.</span>
             </div>
-            <div class="admin-action-pills">
+            <div class="admin-action-pills panel-form-ux-bulk-actions">
                 <a class="btn btn-outline-primary btn-sm" href="/admin/partner-basvurulari">Partnerler</a>
+                <a class="btn btn-outline-primary btn-sm" href="/admin/partner-evraklari">Evraklar</a>
                 <a class="btn btn-outline-primary btn-sm" href="/admin/firma-basvurulari">Firmalar</a>
-                <a class="btn btn-primary btn-sm" href="/admin/oteller">Oteller</a>
+                <a class="btn btn-primary btn-sm" href="/admin/oteller">Oteller · toplu yayın</a>
             </div>
         </div>
 
@@ -70,13 +71,17 @@
                 <h2>Partner Otelleri</h2>
                 <span>Liste kart değil tablo mantığında; yayın, askı, onay, ciro ve komisyon takibi aynı satırda.</span>
             </div>
-            <a class="btn btn-outline-primary btn-sm" href="/admin/komisyonlar">Komisyon Kuralı</a>
+            <div class="admin-action-pills panel-form-ux-bulk-actions">
+                <a class="btn btn-outline-primary btn-sm" href="/admin/komisyonlar">Komisyon Kuralı</a>
+                <a class="btn btn-outline-success btn-sm" href="/admin/oteller?approvalStatus=Beklemede">Toplu yayın (T356)</a>
+            </div>
         </div>
 
         <div class="admin-table-wrap">
             <table class="admin-table approval-table admin-table--cards">
                 <thead>
                     <tr>
+                        <th class="admin-hotels-select-head" scope="col" aria-label="Toplu seçim için oteller sayfasına gidin"></th>
                         <th>Otel</th>
                         <th>Partner</th>
                         <th>Konum</th>
@@ -92,6 +97,9 @@
                     @foreach (var row in Model.Hotels)
                     {
                         <tr>
+                            <td data-label="Seç" class="admin-hotels-select-cell">
+                                <a class="btn btn-outline-secondary btn-sm" href="/admin/oteller#hotel-@row.HotelId" title="Oteller listesinde düzenle">↗</a>
+                            </td>
                             <td data-label="Otel"><strong>@row.HotelName</strong><small>#@row.HotelId</small></td>
                             <td data-label="Partner">@row.PartnerName</td>
                             <td data-label="Konum">@row.CityLabel</td>

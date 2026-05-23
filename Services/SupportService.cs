@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Data.SqlClient;
 using otelturizmnew.Models.Destek;
+using otelturizmnew.Models.Kurumsal;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -523,6 +524,47 @@ public class SupportService : ISupportService
                     Tone = reader.IsDBNull(6) ? "primary" : reader.GetString(6)
                 };
             }
+        }
+
+        return model;
+    }
+
+    public async Task<KurumsalBlogListingViewModel> GetCompanyBlogListingAsync(CancellationToken cancellationToken = default)
+    {
+        var model = new KurumsalBlogListingViewModel();
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        try
+        {
+            const string sql = @"
+                SELECT [BASLIK], COALESCE([OZET], N''), [SEO_SLUG], COALESCE([HERO_GORSEL_URL], N'')
+                FROM [dbo].[YARDIM_MERKEZI_ICERIKLER]
+                WHERE [AKTIF_MI] = 1 AND [ICERIK_TURU] = N'blog'
+                ORDER BY [ONE_CIKAN_MI] DESC, [SIRALAMA] ASC, [ID] DESC;";
+            await using var cmd = new SqlCommand(sql, connection);
+            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var slug = reader.GetString(2).Trim();
+                if (string.IsNullOrWhiteSpace(slug))
+                {
+                    continue;
+                }
+
+                model.Posts.Add(new KurumsalBlogCardViewModel
+                {
+                    Title = FixMojibake(reader.GetString(0)),
+                    Summary = FixMojibake(reader.GetString(1)),
+                    Slug = slug,
+                    HeroImageUrl = reader.IsDBNull(3) ? null : reader.GetString(3),
+                    LinkUrl = $"/blog/{Uri.EscapeDataString(slug)}"
+                });
+            }
+        }
+        catch (SqlException ex) when (IsMissingTableOrColumn(ex))
+        {
+            // tablo yoksa statik teaser kartları view tarafında gösterilir
         }
 
         return model;

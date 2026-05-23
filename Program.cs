@@ -26,6 +26,7 @@ using otelturizmnew.Services.Health;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using otelturizmnew.Infrastructure;
+using otelturizmnew.Resources;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,15 +93,23 @@ var mvcBuilder = builder.Services.AddControllersWithViews(options =>
 })
 .AddViewLocalization(Microsoft.AspNetCore.Mvc.Razor.LanguageViewLocationExpanderFormat.Suffix);
 
-if (builder.Environment.IsDevelopment())
+// Runtime view compile only in local Development — Production must use build-time Razor views.
+if (builder.Environment.IsDevelopment() && !builder.Environment.IsProduction())
 {
-    mvcBuilder.AddRazorRuntimeCompilation();
+    mvcBuilder.AddRazorRuntimeCompilation(options =>
+    {
+        var mainAssembly = typeof(SharedResources).Assembly;
+        if (!string.IsNullOrWhiteSpace(mainAssembly.Location))
+        {
+            options.AdditionalReferencePaths.Add(mainAssembly.Location);
+        }
+    });
 }
 
 builder.Services.AddHttpContextAccessor();
 
-// Marker type: otelturizmnew.Resources.SharedResources → embedded as otelturizmnew.Resources.SharedResources.resources
-builder.Services.AddLocalization();
+// Marker type: SharedResources (.resx under Resources/)
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 var supportedCultures = new[]
 {
     new CultureInfo("tr-TR"),
@@ -655,6 +664,34 @@ if (runMigrations)
 
 // Configure the HTTP request pipeline.
 app.UseForwardedHeaders();
+
+// Canonical lowercase paths for Turkish SEO routes (e.g. /Oteller → /oteller).
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value;
+    if (!string.IsNullOrEmpty(path))
+    {
+        string? redirectTarget = null;
+        if (path.StartsWith("/Oteller", StringComparison.Ordinal))
+        {
+            redirectTarget = "/oteller" + path["/Oteller".Length..];
+        }
+        else if (path.StartsWith("/Kampanyalar", StringComparison.Ordinal))
+        {
+            redirectTarget = "/kampanyalar" + path["/Kampanyalar".Length..];
+        }
+
+        if (redirectTarget is not null)
+        {
+            var query = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : string.Empty;
+            context.Response.Redirect(redirectTarget + query, permanent: true);
+            return;
+        }
+    }
+
+    await next();
+});
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");

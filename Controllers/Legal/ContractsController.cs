@@ -23,7 +23,8 @@ public class ContractsController : Controller
         }
 
         ViewData["Title"] = model.Title;
-        ViewData["PageCss"] = "legal-contract";
+        ViewData["PageCss"] = "sozlesme";
+        ViewData["PageCssMobile"] = "sozlesme.mobile";
         return View("~/Views/Legal/ContractDetail.cshtml", model);
     }
 }

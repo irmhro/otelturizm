@@ -37,9 +37,36 @@ public class DestekController : Controller
     [HttpGet("/yardim-merkezi/sayfa/{type}/{slug}")]
     public async Task<IActionResult> Sayfa(string type, string slug, CancellationToken cancellationToken)
     {
+        var t = (type ?? string.Empty).Trim().ToLowerInvariant();
+        var s = (slug ?? string.Empty).Trim().ToLowerInvariant();
+        if (t == "about" && s == "hakkimizda")
+        {
+            return RedirectPermanent("/hakkimizda");
+        }
+
+        if (t == "career" && s == "kariyer")
+        {
+            return RedirectPermanent("/kariyer");
+        }
+
+        if (t == "press" && s == "basin-odasi")
+        {
+            return RedirectPermanent("/basin-odasi");
+        }
+
+        if (t == "blog" && s == "blog")
+        {
+            return RedirectPermanent("/blog");
+        }
+
+        if (t == "blog" && !string.IsNullOrWhiteSpace(s) && !string.IsNullOrWhiteSpace(slug))
+        {
+            return RedirectPermanent($"/blog/{Uri.EscapeDataString(slug.Trim())}");
+        }
+
         ViewData["Title"] = "Yardım Merkezi";
         ViewData["PageCss"] = "yardim-merkezi";
-        var model = await _supportService.GetHelpContentPageAsync(type, slug, cancellationToken);
+        var model = await _supportService.GetHelpContentPageAsync(t, s, cancellationToken);
         if (model is null)
         {
             return NotFound();

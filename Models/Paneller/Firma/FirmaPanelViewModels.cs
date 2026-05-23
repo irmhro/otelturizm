@@ -49,6 +49,7 @@ public class FirmaPanelDealRowViewModel
 {
     public long DealId { get; set; }
     public long HotelId { get; set; }
+    public long RoomTypeId { get; set; }
     public string HotelName { get; set; } = string.Empty;
     public string RoomName { get; set; } = string.Empty;
     public string CityText { get; set; } = string.Empty;

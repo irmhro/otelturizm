@@ -1,6 +1,5 @@
 @using otelturizmnew.Services
 @{
-    // Path-based listing links; SharedLocalizer uses fixed Resources lookup (no ResourcesPath prefix).
     var footerLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     var footerHotelsPath = InternationalSeoPaths.BuildPublicPath(footerLang, InternationalSeoPaths.PageKindListing, null, null);
 }
@@ -12,22 +11,22 @@
                 <div class="footer-logo">
                     <img src="~/uploads/logo/altlogo.png" alt="Otelturizm" class="footer-logo-image" />
                 </div>
-                <p class="footer-description">Türkiye genelinde güvenli bağlantı ile otel arayıp rezervasyon oluşturabileceğiniz platform; özet ve iptal koşullarını hesabınızdan takip edebilirsiniz.</p>
+                <p class="footer-description">@SharedLocalizer["Footer.Description"]</p>
                 <div class="footer-social">
-                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="Instagram iletişim"><i class="fab fa-instagram"></i></a>
-                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="Facebook iletişim"><i class="fab fa-facebook-f"></i></a>
-                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="X iletişim"><i class="fab fa-x-twitter"></i></a>
-                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="YouTube iletişim"><i class="fab fa-youtube"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="X"><i class="fab fa-x-twitter"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                 </div>
             </div>
 
             <div class="footer-col">
                 <h4 class="footer-title">@SharedLocalizer["Footer.Company"]</h4>
                 <ul class="footer-links">
-                    <li><a href="/yardim-merkezi/sayfa/about/hakkimizda"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.About"]</a></li>
-                    <li><a href="/yardim-merkezi/sayfa/career/kariyer"><i class="fas fa-chevron-right"></i> Kariyer</a></li>
-                    <li><a href="/yardim-merkezi/sayfa/press/basin-odasi"><i class="fas fa-chevron-right"></i> Basın Odası</a></li>
-                    <li><a href="/yardim-merkezi/sayfa/blog/blog"><i class="fas fa-chevron-right"></i> Blog</a></li>
+                    <li><a href="/hakkimizda"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.About"]</a></li>
+                    <li><a href="/kariyer"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Career"]</a></li>
+                    <li><a href="/basin-odasi"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Press"]</a></li>
+                    <li><a href="/blog"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Blog"]</a></li>
                 </ul>
             </div>
 
@@ -42,12 +41,12 @@
             </div>
 
             <div class="footer-col">
-                <h4 class="footer-title">Otelciler İçin</h4>
+                <h4 class="footer-title">@SharedLocalizer["Footer.ForHotels"]</h4>
                 <ul class="footer-links">
-                    <li><a href="/partner-giris"><i class="fas fa-chevron-right"></i> Extranet Girişi</a></li>
-                    <li><a href="/kurumsal"><i class="fas fa-chevron-right"></i> Partner Programı</a></li>
-                    <li><a href="/kurumsal"><i class="fas fa-chevron-right"></i> Komisyon Oranları</a></li>
-                    <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> Eğitim ve Destek</a></li>
+                    <li><a href="/partner-giris"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.ExtranetLogin"]</a></li>
+                    <li><a href="/kurumsal"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.PartnerProgram"]</a></li>
+                    <li><a href="/kurumsal"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.CommissionRates"]</a></li>
+                    <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.TrainingSupport"]</a></li>
                 </ul>
             </div>
 
@@ -55,8 +54,8 @@
                 <h4 class="footer-title">@SharedLocalizer["Footer.Support"]</h4>
                 <ul class="footer-links">
                     <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Help"]</a></li>
-                    <li><a href="/sss?kategori=iptal-iade"><i class="fas fa-chevron-right"></i> İptal ve İade</a></li>
-                    <li><a href="/sss"><i class="fas fa-chevron-right"></i> SSS</a></li>
+                    <li><a href="/sss?kategori=iptal-iade"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.CancelRefund"]</a></li>
+                    <li><a href="/sss"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Faq"]</a></li>
                     <li><a href="/yardim-merkezi#destek-kanallari"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Contact"]</a></li>
                 </ul>
             </div>
@@ -66,10 +65,10 @@
             <div class="footer-bottom-top">
                 <div class="footer-copyright">&copy; @DateTime.Now.Year Otelturizm. @SharedLocalizer["Footer.Copyright"]</div>
                 <div class="footer-agency-wrap">
-                    <div class="trust-badges" role="group" aria-label="Güven taahhütleri">
-                        <a class="trust-badge" href="/" title="HTTPS güvenliği"><i class="fas fa-lock" aria-hidden="true"></i> @SharedLocalizer["Footer.Https"]</a>
-                        <a class="trust-badge" href="/panel/user/rezervasyonlarim" title="Rezervasyon özetine git"><i class="fas fa-user-check" aria-hidden="true"></i> @SharedLocalizer["Footer.ReservationSummary"]</a>
-                        <a class="trust-badge" href="/sozlesmeler/kullanici-kvkk-aydinlatma" title="KVKK aydınlatma metni"><i class="fas fa-scale-balanced" aria-hidden="true"></i> @SharedLocalizer["Footer.KvkkProcessing"]</a>
+                    <div class="trust-badges" role="group" aria-label="@SharedLocalizer["Footer.TrustCommitments"]">
+                        <a class="trust-badge" href="/" title="HTTPS"><i class="fas fa-lock" aria-hidden="true"></i> @SharedLocalizer["Footer.Https"]</a>
+                        <a class="trust-badge" href="/panel/user/rezervasyonlarim" title="@SharedLocalizer["Footer.ReservationSummary"]"><i class="fas fa-user-check" aria-hidden="true"></i> @SharedLocalizer["Footer.ReservationSummary"]</a>
+                        <a class="trust-badge" href="/sozlesmeler/kullanici-kvkk-aydinlatma" title="@SharedLocalizer["Footer.Kvkk"]"><i class="fas fa-scale-balanced" aria-hidden="true"></i> @SharedLocalizer["Footer.KvkkProcessing"]</a>
                     </div>
                 </div>
             </div>
@@ -110,14 +109,10 @@
                     localStorage.setItem(storageKey, String(now));
                 }
             }).catch(function () {
-                // sessiz
             });
         } catch (_) {
-            // sessiz
         }
     })();
 </script>
 
 <script src="~/assets/js/konum-kordinat.js" asp-append-version="true"></script>
-
-

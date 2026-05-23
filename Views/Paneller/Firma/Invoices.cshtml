@@ -1,3 +1,32 @@
 @model otelturizmnew.Models.Paneller.Firma.FirmaInvoicesPageViewModel
-@{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
-<section class="firma-section-card"><h2>Faturalar</h2><div class="firma-table-wrap"><table class="firma-table"><thead><tr><th>Fatura No</th><th>Tarih</th><th>Tür</th><th>Alıcı</th><th>Tutar</th><th>Durum</th></tr></thead><tbody>@foreach (var item in Model.Invoices) { <tr><td>@item.InvoiceNo</td><td>@item.InvoiceDateText</td><td>@item.InvoiceType</td><td>@item.RecipientName</td><td>@item.TotalText</td><td>@item.StatusText</td></tr> }</tbody></table></div></section>
+@{
+    Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml";
+    ViewData["FirmaShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/firma/invoices";
+    ViewData["PageCssMobile"] = "paneller/firma/invoices.mobile";
+}
+<section class="firma-section-card">
+    <h2>Faturalar</h2>
+    <div class="firma-table-wrap">
+        <table class="firma-table firma-table--cards">
+            <thead><tr><th>Fatura No</th><th>Tarih</th><th>Tür</th><th>Alıcı</th><th>Tutar</th><th>Durum</th></tr></thead>
+            <tbody>
+            @foreach (var item in Model.Invoices)
+            {
+                <tr>
+                    <td data-label="Fatura No">@item.InvoiceNo</td>
+                    <td data-label="Tarih">@item.InvoiceDateText</td>
+                    <td data-label="Tür">@item.InvoiceType</td>
+                    <td data-label="Alıcı">@item.RecipientName</td>
+                    <td data-label="Tutar">@item.TotalText</td>
+                    <td data-label="Durum">@item.StatusText</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Invoices.Count == 0)
+    {
+        <div class="firma-empty-inline">Henüz fatura kaydı yok.</div>
+    }
+</section>

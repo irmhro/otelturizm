@@ -1,17 +1,24 @@
 @import url("./employees.css");
 
 @media (max-width: 900px) {
-    .firma-table-wrap {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+    .firma-mini-stats {
+        grid-template-columns: 1fr 1fr;
     }
 
-    .firma-table {
-        min-width: 560px;
+    .firma-action-btn {
+        grid-column: 1 / -1;
+        min-height: 44px;
     }
 
-    .firma-section-card .btn,
-    .firma-filter-actions .btn {
+    .firma-employee-cell {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .firma-form-actions .btn,
+    .firma-btn-primary,
+    .firma-btn-light {
         min-height: 44px;
     }
 }

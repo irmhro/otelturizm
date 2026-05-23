@@ -8,6 +8,7 @@
     ViewData["Title"] = Model.Name;
     ViewData["PageCss"] = "otel-detay";
     ViewData["PageCssMobile"] = "otel-detay.mobile";
+    ViewData["IncludeFeWorldTokens"] = true;
     ViewData["SuppressGlobalDraftBanner"] = true;
     var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
                   ?? "https://otelturizm.com";
@@ -293,7 +294,7 @@
     </div>
 </section>
 
-<section class="gallery-grid">
+<section class="gallery-grid" id="hotelGalleryRoot" data-slayt-lightbox="hotel-gallery" aria-label="Otel fotoğraf galerisi">
     <div class="gallery-main-image" style="--hotel-main-ambient: url('@mainImage');">
         @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
         {
@@ -313,9 +314,21 @@
             <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
             <span class="sr-only" data-favorite-label>@(Model.IsFavorite ? "Favoride" : "Favoriye Ekle")</span>
         </button>
-        <button type="button" class="gallery-main-trigger" data-gallery-index="0" aria-label="Galeriyi ac">
+        <button type="button" class="gallery-main-trigger" data-gallery-index="0" data-slayt-trigger="hotel-gallery" aria-label="Galeriyi ac">
             <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" fetchpriority="high" decoding="async" />
         </button>
+
+        @if (gallery.Count > 1)
+        {
+            <div class="gallery-nav" aria-label="Galeri ok gezinme">
+                <button type="button" class="gallery-nav-btn gallery-nav-prev" data-gallery-nav="prev" aria-label="Onceki gorsel">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="gallery-nav-btn gallery-nav-next" data-gallery-nav="next" aria-label="Sonraki gorsel">
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        }
 
         @if (gallery.Count > 0)
         {
@@ -325,7 +338,7 @@
                 <span class="gallery-count-badge__total">@gallery.Count</span>
             </div>
 
-            <button type="button" class="gallery-all-photos-btn" data-gallery-index="0" aria-label="Tüm fotoğrafları aç">
+            <button type="button" class="gallery-all-photos-btn" data-gallery-index="0" data-slayt-trigger="hotel-gallery" aria-label="Tüm fotoğrafları aç">
                 <i class="far fa-images" aria-hidden="true"></i>
                 Tüm Fotoğraflar (@gallery.Count)
             </button>
@@ -376,7 +389,7 @@
  }
     @if (gallery.Count > 1)
     {
-        <section class="gallery-mobile-strip" id="galleryMobileStrip" aria-label="Mobil galeri slider">
+        <section class="gallery-mobile-strip" id="galleryMobileStrip" data-slayt-lightbox="hotel-gallery" aria-label="Mobil galeri slider">
             @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
             {
                 <div class="gallery-star-badge gallery-star-badge-mobile" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
@@ -386,6 +399,7 @@
                     }
                 </div>
             }
+            <p class="gallery-swipe-hint" aria-hidden="true"><i class="fas fa-hand-pointer"></i> Kaydirarak gezin · dokunarak tam ekran</p>
             <div class="gallery-mobile-track" id="galleryMobileTrack">
                 @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
                 {
@@ -758,6 +772,34 @@
                         }
                     </div>
                 </details>
+            }
+        </article>
+
+        <article class="content-card review-teaser-block" id="reviewsTeaser">
+            <div class="review-teaser-block__head">
+                <div>
+                    <h2>@SharedLocalizer["Detail.ReviewTeaser.Title"]</h2>
+                    @if (Model.ReviewCount <= 0)
+                    {
+                        <p>@SharedLocalizer["Detail.ReviewTeaser.None"]</p>
+                    }
+                    else
+                    {
+                        <p>@SharedLocalizer["Detail.ReviewTeaser.Count", Model.ReviewCount, Model.Rating.ToString("0.0")]</p>
+                    }
+                </div>
+                <a class="review-teaser-block__cta fe-world-touch-target" href="#reviewsSection">@SharedLocalizer["Detail.ReviewTeaser.SeeAll"] <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+            </div>
+            @if (Model.ReviewCount > 0 && sortedReviews.Count > 0)
+            {
+                var teaserReview = sortedReviews.First();
+                <blockquote class="review-teaser-block__quote">
+                    <div class="review-teaser-block__score" aria-label="@SharedLocalizer["Filter.Rating"]">
+                        <strong>@teaserReview.Score.ToString("0.0")</strong><span>/10</span>
+                    </div>
+                    <p>@FixMojibake(teaserReview.Text)</p>
+                    <footer>— @MaskName(teaserReview.Name) · @teaserReview.DateText</footer>
+                </blockquote>
             }
         </article>
 
@@ -1464,7 +1506,7 @@
         </div>
     </aside>
 
-    <div class="mobile-booking-bar mob-sticky-cta" id="mobileBookingBar" role="region" aria-label="Mobil rezervasyon özeti">
+    <div class="mobile-booking-bar mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"]">
         <div class="mobile-booking-summary">
             <span class="mobile-booking-label">Toplam</span>
             <strong id="mobileBookingPrice">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
@@ -2399,13 +2441,50 @@
                 });
             });
 
-            document.querySelectorAll('.gallery-main-trigger, .gallery-mobile-slide').forEach(function (button) {
+            document.querySelectorAll('.gallery-main-trigger, .gallery-mobile-slide, .gallery-all-photos-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
                     const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
                     syncMainImage(index);
                     scrollMobileTrackTo(index);
                     openSlayt(galleryImages, '@Model.Name', index);
                 });
+            });
+
+            document.querySelectorAll('[data-gallery-nav]').forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    if (!Array.isArray(galleryImages) || galleryImages.length < 2) {
+                        return;
+                    }
+
+                    const direction = button.getAttribute('data-gallery-nav');
+                    const delta = direction === 'prev' ? -1 : 1;
+                    const nextIndex = (activeGalleryIndex + delta + galleryImages.length) % galleryImages.length;
+                    syncMainImage(nextIndex);
+                    scrollMobileTrackTo(nextIndex);
+                });
+            });
+
+            document.addEventListener('keydown', function (event) {
+                const galleryRoot = document.getElementById('hotelGalleryRoot');
+                if (!galleryRoot || !Array.isArray(galleryImages) || galleryImages.length < 2) {
+                    return;
+                }
+
+                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+                    return;
+                }
+
+                const target = event.target;
+                if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
+                    return;
+                }
+
+                event.preventDefault();
+                const delta = event.key === 'ArrowLeft' ? -1 : 1;
+                const nextIndex = (activeGalleryIndex + delta + galleryImages.length) % galleryImages.length;
+                syncMainImage(nextIndex);
+                scrollMobileTrackTo(nextIndex);
             });
 
             // Oda kartı görselleri: ortak slayt gösterim

@@ -1,6 +1,8 @@
 @using System.Security.Claims
 @using otelturizmnew.Constants
 @using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.Hosting
 @inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
 @inject otelturizmnew.Services.Abstractions.IDevelopmentAccessService DevelopmentAccessService
 @inject otelturizmnew.Services.InternationalSeoService InternationalSeo
@@ -17,7 +19,11 @@
         || string.Equals(requestHost, "::1", StringComparison.OrdinalIgnoreCase)
         || requestHost.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
     var isLocalDevelopment = hostEnv?.IsDevelopment() == true || isLoopbackHost;
-    var isDevelopmentUnlocked = isLocalDevelopment || DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
+    var appConfig = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration;
+    var developmentGateEnabled = appConfig?.GetValue("DevelopmentGate:Enabled", false) == true;
+    var isDevelopmentUnlocked = !developmentGateEnabled
+        || isLocalDevelopment
+        || DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
 
     var publicBaseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
                         ?? "https://otelturizm.com";
@@ -124,10 +130,18 @@
     <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/slaytgorsel.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/yanbar.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/development-gate.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/development-gate.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    @if (developmentGateEnabled)
+    {
+        <link rel="stylesheet" href="~/assets/css/development-gate.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/assets/css/development-gate.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    }
     @{
         var pageCss = ViewData["PageCss"] as string;
+        var includeFeWorldTokens = ViewData["IncludeFeWorldTokens"] as bool? ?? !string.IsNullOrWhiteSpace(pageCss);
+    }
+    @if (includeFeWorldTokens)
+    {
+        <link rel="stylesheet" href="~/assets/css/fe-world-tokens.css" asp-append-version="true" />
     }
     @if (!string.IsNullOrWhiteSpace(pageCss))
     {
@@ -161,12 +175,20 @@
 <script src="~/assets/js/layout/sw-cleanup.js" asp-append-version="true"></script>
 
 @{
-    var publicDraftRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-    long? publicDraftUserId = long.TryParse(publicDraftRaw, out var parsedPublicDraftUserId) ? parsedPublicDraftUserId : null;
-    var publicDraftSessionKey = Context.Request.Cookies.TryGetValue(otelturizmnew.Services.ReservationDraftService.DraftCookieName, out var publicDraftCookieValue)
-        ? publicDraftCookieValue
-        : null;
-    var publicActiveDraft = await ReservationDraftService.GetActiveDraftAsync(publicDraftUserId, publicDraftSessionKey, Context.RequestAborted);
+    otelturizmnew.Models.Reservations.ReservationDraftSummaryViewModel? publicActiveDraft = null;
+    try
+    {
+        var publicDraftRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        long? publicDraftUserId = long.TryParse(publicDraftRaw, out var parsedPublicDraftUserId) ? parsedPublicDraftUserId : null;
+        var publicDraftSessionKey = Context.Request.Cookies.TryGetValue(otelturizmnew.Services.ReservationDraftService.DraftCookieName, out var publicDraftCookieValue)
+            ? publicDraftCookieValue
+            : null;
+        publicActiveDraft = await ReservationDraftService.GetActiveDraftAsync(publicDraftUserId, publicDraftSessionKey, Context.RequestAborted);
+    }
+    catch
+    {
+        // fail-safe: layout must not 500 when draft table/DB is unavailable
+    }
 }
 
 @if (publicActiveDraft is not null
@@ -176,7 +198,10 @@
     <partial name="~/Views/Shared/_ActiveReservationDraftBanner.cshtml" model="publicActiveDraft" />
 }
 
-<partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
+@if (developmentGateEnabled)
+{
+    <partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
+}
 
 <main class="site-main" id="mainContent">@RenderBody()</main>
 
@@ -188,7 +213,10 @@
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 <script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
-<script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
+@if (developmentGateEnabled)
+{
+    <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
+}
 <script src="~/assets/js/rum-webvitals.js" asp-append-version="true"></script>
 <script src="~/assets/js/client-error-reporter.js" asp-append-version="true"></script>
 <script src="~/assets/js/growth-analytics.js" asp-append-version="true"></script>

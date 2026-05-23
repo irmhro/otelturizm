@@ -10,7 +10,7 @@
 
     var hotelOpen = IsOpen("Hotels", "HotelDetail", "ActiveHotels", "PendingHotels", "Campaigns", "Reviews");
     var commerceOpen = IsOpen("Reservations", "UnifiedReservations", "CompanyReservations", "ListingSubscriptions", "Payments", "Invoices", "Commissions", "CommissionCollection", "Contracts", "Reports", "CommerceInsight", "RevenueCommandCenter");
-    var userOpen = IsOpen("Users", "Managers", "PlatformOfficials", "ApprovalCenter", "PartnerApplications", "CompanyApplications", "DevelopmentRequests");
+    var userOpen = IsOpen("Users", "Managers", "PlatformOfficials", "ApprovalCenter", "PartnerApplications", "PartnerDocuments", "CompanyApplications", "DevelopmentRequests");
     var contentOpen = IsOpen("Notifications", "MailCenter", "EmailQueue", "EmailRouting", "EmailTemplates", "WhatsAppCloudApi", "Blog", "Faq", "SupportArticles", "HelpCenter", "Team");
     var systemOpen = IsOpen("PlatformCheckup", "Settings", "SettingsMonitor", "Sitemap", "Security", "SecurityEvents", "UploadHistory", "Complaints", "Backups", "Logs", "GeoSearchLogs", "HotelCoordinateChanges", "AdminActionLogs", "RateLimitStats", "SlowSqlMonitor");
 }
@@ -129,6 +129,7 @@
                                 <a class="@Active("ApprovalCenter") @(Can("admin.approval_center") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="ApprovalCenter">Onay Merkezi</a>
                                 <a class="@Active("DevelopmentRequests") @(Can("admin.development_requests") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="DevelopmentRequests">Geliştirme Talepleri</a>
                                 <a class="@Active("PartnerApplications") @(Can("admin.partner_applications") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="PartnerApplications">Partner Başvuruları <span class="badge bg-danger-lt text-danger ms-1">@Badge(Model.PendingPartnerApplications)</span></a>
+                                <a class="@Active("PartnerDocuments") @(Can("admin.partner_applications") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="PartnerDocuments">Partner Evrakları</a>
                                 <a class="@Active("CompanyApplications") @(Can("admin.company_applications") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="CompanyApplications">Firma Başvuruları <span class="badge bg-danger-lt text-danger ms-1">@Badge(Model.PendingCompanyApplications)</span></a>
                             </div>
                         </div>

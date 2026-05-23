@@ -137,6 +137,7 @@ html, body {
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    touch-action: pan-x;
 }
 
 .gallery-mobile-track::-webkit-scrollbar {
@@ -146,10 +147,13 @@ html, body {
 .gallery-mobile-slide {
     flex: 0 0 100%;
     height: clamp(232px, 36vh, 300px);
-    scroll-snap-align: start;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
     padding: 0;
     border: 0;
     background: transparent;
+    touch-action: manipulation;
+    cursor: pointer;
 }
 
 .gallery-mobile-slide img {
@@ -157,6 +161,27 @@ html, body {
     height: 100%;
     object-fit: cover;
     display: block;
+}
+
+.gallery-swipe-hint {
+    margin: 0;
+    padding: 8px 14px 0;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.01em;
+}
+
+.gallery-swipe-hint i {
+    margin-right: 6px;
+    color: #2563eb;
+}
+
+@media (min-width: 901px) {
+    .gallery-swipe-hint {
+        display: none;
+    }
 }
 
 .gallery-mobile-dots {

@@ -17,17 +17,31 @@
 
 /* OtelDetay tipografi + buton ölçeği (marka bağımsız) */
 :root {
-    --detail-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    --detail-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     --detail-text: #222222;
     --detail-muted: #6a6a6a;
     --detail-border: rgba(34, 34, 34, 0.14);
     --detail-radius-lg: 20px;
     --detail-radius-pill: 999px;
-    --detail-h1: clamp(28px, 2.6vw, 40px);
+    --detail-h1: clamp(1.75rem, 2.6vw, 2.5rem);
+    --detail-h2: clamp(1.25rem, 1.8vw, 1.5rem);
     --detail-body: 16px;
     --detail-small: 14px;
     --detail-btn: 16px;
     --detail-btn-h: 48px;
+}
+
+.otel-detail-template-v41 {
+    font-family: var(--detail-font-sans);
+    color: var(--detail-text);
+}
+
+.otel-detail-template-v41 .detail-header .hotel-name h1 {
+    font-family: var(--detail-font-sans);
+    font-size: var(--detail-h1);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
 }
 
 .detail-breadcrumb {
@@ -544,8 +558,61 @@
     object-fit: cover;
     object-position: center;
     display: block;
-    transform: none;
+    transform: scale(1);
     background: transparent;
+    transition: transform var(--transition-base, 0.25s cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .gallery-main-trigger:hover img,
+    .gallery-thumb:hover img {
+        transform: scale(1.03);
+    }
+}
+
+.gallery-nav {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    pointer-events: none;
+}
+
+.gallery-nav-btn {
+    pointer-events: auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid rgba(226, 232, 240, 0.35);
+    background: rgba(2, 6, 23, 0.42);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 12px 24px rgba(2, 6, 23, 0.22);
+    transition: transform var(--transition-base, 0.25s ease), background var(--transition-base, 0.25s ease);
+}
+
+.gallery-nav-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(2, 6, 23, 0.58);
+}
+
+.gallery-nav-btn:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.35);
+    outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+    .gallery-nav {
+        display: none;
+    }
 }
 
 .gallery-proof-badge {
@@ -5771,6 +5838,8 @@ body.room-gallery-open {
     padding: 6px 4px 2px;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    touch-action: pan-x;
 }
 .gallery-filmstrip::-webkit-scrollbar { display: none; }
 
@@ -5783,6 +5852,7 @@ body.room-gallery-open {
     padding: 0;
     background: #fff;
     cursor: pointer;
+    scroll-snap-align: start;
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
     opacity: 0.82;
 }
@@ -8555,4 +8625,64 @@ body.room-gallery-open {
     .otel-detail-template-v41 .amenities-expand__grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+}
+
+/* Wave-XVIII: review teaser block */
+.review-teaser-block__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.review-teaser-block__head h2 {
+    margin: 0 0 6px;
+    font-size: 1.35rem;
+}
+
+.review-teaser-block__head p {
+    margin: 0;
+    color: var(--text-gray, #64748b);
+}
+
+.review-teaser-block__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--touch-min, 44px);
+    padding: 10px 18px;
+    border-radius: var(--radius-full, 9999px);
+    border: 1.5px solid var(--border-light, #e2e8f0);
+    color: var(--primary, #003b95);
+    font-weight: 700;
+    text-decoration: none;
+    transition: var(--transition-base, 0.25s ease);
+}
+
+.review-teaser-block__quote {
+    margin: 0;
+    padding: 18px 20px;
+    border-radius: var(--radius-lg, 20px);
+    background: var(--bg-light, #f8fafc);
+    border: 1px solid var(--border-light, #e2e8f0);
+}
+
+.review-teaser-block__score {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 10px;
+    color: var(--primary, #003b95);
+}
+
+.review-teaser-block__score strong {
+    font-size: 1.5rem;
+}
+
+.review-teaser-block__quote footer {
+    margin-top: 12px;
+    font-size: 0.875rem;
+    color: var(--text-gray, #64748b);
 }

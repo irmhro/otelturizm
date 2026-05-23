@@ -1,0 +1,25 @@
+.corp-page__inner {
+    padding: 18px var(--space-5, 20px) calc(28px + var(--safe-area-bottom, 0px));
+}
+
+.corp-stats,
+.corp-grid--2,
+.corp-grid--3,
+.corp-blog-grid {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.corp-cta__inner {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.corp-btn,
+.corp-blog-card__link {
+    width: 100%;
+    touch-action: manipulation;
+}
+
+.corp-hero__glass {
+    padding: 1.5rem 1.25rem;
+}

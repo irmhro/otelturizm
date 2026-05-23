@@ -1,6 +1,8 @@
 @model otelturizmnew.Models.Anasayfa.AnasayfaViewModel
 @inject otelturizmnew.Services.Abstractions.IDevelopmentAccessService DevelopmentAccessService
 @using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.Hosting
 
 @{
     Layout = null;
@@ -8,7 +10,7 @@
     ViewData["HeaderContext"] = "home";
     var pageCss = ViewData["PageCss"] as string;
     var nonce = Context.Items["CspNonce"] as string;
-    var cfg = Context.RequestServices.GetService(typeof(Microsoft.Extensions.Configuration.IConfiguration)) as Microsoft.Extensions.Configuration.IConfiguration;
+    var cfg = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration;
     var publicBaseUrl = cfg?["App:PublicBaseUrl"]?.TrimEnd('/') ?? $"{Context.Request.Scheme}://{Context.Request.Host}";
     var metaDesc = ViewData["MetaDescription"] as string ?? "Otelturizm ile otelleri karşılaştırın, kampanyaları keşfedin ve güvenle rezervasyon oluşturun.";
     var canonical = ViewData["Canonical"] as string ?? $"{publicBaseUrl}/";
@@ -23,7 +25,10 @@
         || string.Equals(requestHost, "::1", StringComparison.OrdinalIgnoreCase)
         || requestHost.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
     var isLocalDevelopment = hostEnv?.IsDevelopment() == true || isLoopbackHost;
-    var isDevelopmentUnlocked = isLocalDevelopment || DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
+    var developmentGateEnabled = cfg?.GetValue("DevelopmentGate:Enabled", false) == true;
+    var isDevelopmentUnlocked = !developmentGateEnabled
+        || isLocalDevelopment
+        || DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -57,8 +62,11 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    <link rel="stylesheet" href="~/assets/css/development-gate.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/development-gate.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    @if (developmentGateEnabled)
+    {
+        <link rel="stylesheet" href="~/assets/css/development-gate.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/assets/css/development-gate.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    }
     @if (!string.IsNullOrWhiteSpace(pageCss))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
@@ -78,7 +86,10 @@
 <body class="@(isDevelopmentUnlocked ? "development-unlocked anasayfa-page" : "development-locked anasayfa-page")">
     <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
 
-    <partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
+    @if (developmentGateEnabled)
+    {
+        <partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
+    }
 
     <script src="~/assets/js/sw-asset-guard.js" asp-append-version="true"></script>
     <script src="~/assets/js/layout/sw-cleanup.js" asp-append-version="true"></script>
@@ -95,7 +106,10 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/assets/js/client-error-reporter.js" asp-append-version="true"></script>
     <script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
-    <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
+    @if (developmentGateEnabled)
+    {
+        <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
+    }
     <script nonce="@nonce">
     (function(){
         if(window.Swiper){

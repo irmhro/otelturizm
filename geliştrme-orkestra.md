@@ -1,6 +1,6 @@
 # Geliştirme Orkestra Günlüğü
 
-**Sprint:** `sprint-continuous-infinite-20260523`  
+**Sprint:** `sprint-1ay-orkestra-20260523` (+1 ay · 1440×10dk)  
 **Koordinatör:** Platform Coordinator · **CTO orkestralar:** H1–H14  
 **Döngü:** 10 dk · **Politika:** onaysız atama · commit/deploy yok  
 
@@ -64,12 +64,33 @@
 | 050 | 2026-05-23 | Wave-XVI | H10 | Orkestra dokümanları (#050+) + köşe audit satırı güncellendi | ✅ |
 | 051 | 2026-05-23 | Wave-XVII | H8 | Yerel DB tam migration (sqlcmd): 179 script OK · 2 idempotent fail · 39 yayında otel | ✅ |
 | 053 | 2026-05-23 | P0 | H9+H13+H1 | **urgent-fix:** path-locked culture (no cookie/Accept-Language ar drift); `AddLocalization()` ResourcesPath düzeltmesi (`Nav.Hotels` → Oteller); dil değiştirici path prefix; liste/harita kart URL path-based; firma/kurumsal header menü | ✅ |
+| 054 | 2026-05-24 | P0 | H10 | **Geçici erişim perdesi kaldırıldı:** `DevelopmentGate:Enabled=false` (appsettings); overlay/CSS/JS yalnızca flag açıkken yüklenir; `/gelisim` dev sayfası korundu | ✅ |
+| 055 | 2026-05-24 | Wave-XVII | H1 | OtelDetay galeri: ok gezinme, klavye ←/→, `data-slayt-lightbox`, mobil swipe hint, Inter/clamp tipografi | ✅ |
+| 056 | 2026-05-24 | Wave-XVII | H1 | Otel listeleme: kart görsel hover zoom + `clamp()` font hiyerarşisi (`otel-listeleme.css`) | ✅ |
+| 057 | 2026-05-24 | Wave-XVII | H1 | `/hafta-sonu-firsatlari` + `/evcil-hayvan-dostu-oteller` kalıcı yönlendirme (`KonseptOtelLandingController`) | ✅ |
+| 058 | 2026-05-24 | Wave-XVII | H4+H10 | `panel-form-ux` partner Photos upload zone pilot + `dotnet build -o .coord-build-xvii` gate | ✅ |
+| 065 | 2026-05-24 | P0 | H10+H13 | **Canlı HTTP 500:** Razor `_ViewImports`/`_Layout`/`Anasayfa` eksik using + SharedLocalizer tip; footer yasal seed + `gizlilik`/`sozlesme` CSS · `Docs/CANLI_500_KOK_NEDEN.md` | ✅ |
+| 066 | 2026-05-24 | Wave-XVIII | H1 | Şirket footer sayfaları: `/hakkimizda`, `/kariyer`, `/basin-odasi`, `/blog` + CSS çiftleri + i18n + yardım-merkezi 301 | ✅ |
+| 067 | 2026-05-24 | Wave-A1 | H3 | `Docs/ADMIN_PANEL_TAM_YAPILANDIRMA.md` — admin route/gap matris + komisyon/otel/evrak akışları | ✅ |
+| 068 | 2026-05-24 | Wave-A1 | H16 | `Docs/PLATFORM_SOZLESME_HUKUK_ORKESTRA.md` + `20260524_seed_platform_sozlesmeler.sql` | ✅ |
+| 069 | 2026-05-24 | Wave-A1 | H3 | Admin `/admin/partner-evraklari` — evrak kuyruğu, checklist, onay/red, mobil CSS | ✅ |
+| 070 | 2026-05-24 | Wave-A1 | H3 | Onay Merkezi T356 CTA + evrak link + mobil aksiyon UX | ✅ |
+| 071 | 2026-05-24 | Wave-A1 | H3 | Komisyon tahsilat yaşam döngüsü bar + mutabakat rapor linki | ✅ |
+| 072 | 2026-05-24 | Wave-A1 | H10 | `dotnet build -o .coord-build-admin` gate | ⏳ |
 
-**Toplam tamamlanan teslimat:** **52** (Wave-I → Wave-XVII + #053)
+**Toplam tamamlanan teslimat:** **64** (Wave-I → Wave-A1 + #053–#058, #065–#071; #072 build bekliyor)
 
 ---
 
 ## Dalga detayları (son 5)
+
+### Wave-XVII — Galeri polish + konsept landing + panel upload (2026-05-24)
+
+- **H1:** OtelDetay galeri ok/klavye/swipe/lightbox hook; liste kart hover + tipografi  
+- **H1:** `/hafta-sonu-firsatlari`, `/evcil-hayvan-dostu-oteller` SEO URL  
+- **H4:** Partner Photos `panel-form-ux-upload*` pilot  
+- **H10:** `.coord-build-xvii` build gate  
+- **Plan:** [`PLATFORM_1AY_ORKESTRA_PLAN.md`](PLATFORM_1AY_ORKESTRA_PLAN.md) oluşturuldu  
 
 ### Wave-XVI — Panel form + konsept landing + e-posta Faz2 (2026-05-23)
 
@@ -142,7 +163,7 @@
 | H3 | fe-admin | done — T350/T356 |
 | H4 | fe-user | assigned — FE-CTO PNG |
 | H5 | fe-satis | done |
-| H6 | fe-firma | done |
+| H6 | fe-firma | in_progress — Wave-F1 P0 (`FIRMA_PANEL_MASTER_PLAN`) |
 | H7 | ork-guvenlik | done — E2E pending |
 | H8 | ork-backend | verify — runbook doc ✅ |
 | H9 | ork-seo | done — Faz2 route |
@@ -151,6 +172,7 @@
 | H12 | fatura | done Faz1 |
 | H13 | i18n | Faz3 ar/ru done — panel string backlog |
 | H14 | email | verify — Faz2: 6/∞ master (tr rezervasyon×3 + fatura×2 + şifre) |
+| H15 | fe-world-standard | active — Wave-XVIII kamu P0 ✅ |
 
 ---
 
@@ -162,7 +184,45 @@ Her 10 dk dalga bitince:
 2. [`geliştirme.md`](geliştirme.md) KPI tablosunu güncelle  
 3. `ORKESTRA_DURUM_KONTROL.md` snapshot  
 
-*Son otomatik dalga: #053 P0 urgent-fix (locale/header) · Sonraki: #052 e-posta Faz2 devam*
+*Son otomatik dalga: #066 H6 firma Wave-F1 · Sonraki: H6 Wave-F2*
+
+### #066 — H6 firma panel Wave-F1 (2026-05-24)
+
+- **Doc:** `Docs/FIRMA_PANEL_MASTER_PLAN.md` — route envanteri, rezervasyon E2E, F1–F5
+- **Kuyruk:** `H6_fe_firma` → `in_progress`, priority P0
+- **FE:** `firma-table--cards` + `data-label`; `panel-form-ux` (layout + çalışan/rezervasyon formları); CreateReservation personel + misafir kapasitesi + kurumsal fiyat rozeti; Deals `roomTypeId` deep link; tema offcanvas
+- **Build:** `dotnet build -o .coord-build-firma` — 0 hata
+
+### #063 — prod-500-fix (2026-05-24)
+
+- **Kök neden:** `_Layout` + Razor runtime i18n (`SharedLocalizer`); anasayfa `Layout=null` olduğu için 200, `/oteller` ve giriş sayfaları 500
+- **Fix:** Production’da runtime compile kapalı; `ResourcesPath`; culture provider fail-safe; `/Oteller`→`/oteller` 301; layout draft SQL try/catch
+- **Doc:** `Docs/CANLI_500_KOK_NEDEN.md` deploy checklist
+- **Build:** `dotnet build -o .coord-build-prodfix` 0 hata hedef
+
+### #059 — fe-world-orchestra charter (2026-05-24)
+
+- **Doc:** `ORKESTRA_FE_DUNYA_STANDARDI.md` — 151 sayfa mission, H15 stream, i18n checklist, 30-day waves, quality gate
+- **Kuyruk:** `CTO_AJAN_ATAMA_KUYRUGU.md` — `H15_fe_world_standard` active, parallel H1–H14
+- **KPI:** `geliştirme.md` — FE Dünya Standardı Orkestrası bölümü, Wave-XVIII aktif dalga
+
+### #060 — Wave-XVIII kamu P0 CSHTML (2026-05-24)
+
+- **Liste:** `OtelListeleme.cshtml` — hero search summary bar, 16/10 kart görseli, rating row, loyalty badge, price-actions-row
+- **Detay:** `OtelDetay.cshtml` — review teaser block, sticky booking bar safe-area + i18n
+- **Kampanya:** `Kampanyalar/Index.cshtml` — template hero + countdown timer + stats bar
+- **CSS:** `fe-world-tokens.css` + `_Layout.cshtml` import; `kampanyalar.css` hero timer
+
+### #061 — Wave-XVIII i18n (2026-05-24)
+
+- **Header/Footer:** `_AnasayfaHeader`, `_AnasayfaFooter` — SharedLocalizer tüm görünür nav metinleri
+- **Resx:** 42 yeni anahtar × 7 kültür (`SharedResources*.resx`)
+- **Registry:** `Docs/I18N_KEY_REGISTRY.md` Wave-XVIII tablosu
+
+### #062 — Wave-XVIII build gate (2026-05-24)
+
+- **Build:** `dotnet build -o .coord-build-xviii` — 0 hata hedef
+- **Olgunluk:** Kamu otel 58%→62%, kampanya 52%→56% (`geliştirme.md`)
 
 ### #051 — demo-full-stack (2026-05-23)
 

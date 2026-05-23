@@ -59,7 +59,7 @@
                         <p>Görseller WebP formatına çevrilir; kapak seçimi aktifse ilk görsel otomatik kapak olur.</p>
                     </div>
                 </div>
-                <form id="partner-photo-upload-form" method="post" action="/panel/partner/fotograflar/yukle" enctype="multipart/form-data">
+                <form id="partner-photo-upload-form" class="panel-form-ux-upload-form" method="post" action="/panel/partner/fotograflar/yukle" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
                     <div class="partner-upload-grid">
@@ -80,9 +80,10 @@
                             <span>Sıralama</span>
                             <input class="form-control" type="number" name="DisplayOrder" value="@Model.UploadForm.DisplayOrder" min="0" />
                         </label>
-                        <label class="partner-upload-file">
+                        <label class="partner-upload-file panel-form-ux-upload">
                             <span>Dosyalar</span>
-                            <input id="partner-photo-files" class="form-control" type="file" name="Files" multiple accept="image/*" />
+                            <input id="partner-photo-files" class="form-control panel-form-ux-upload-file" type="file" name="Files" multiple accept="image/*" />
+                            <p class="panel-form-ux-upload-help">Sürükleyip bırakın veya tıklayın · JPG/PNG/WebP · çoklu seçim</p>
                         </label>
                         <label class="partner-upload-description">
                             <span>Açıklama</span>
@@ -103,7 +104,7 @@
                         </div>
                         <p class="partner-upload-help" id="partner-upload-help">Seçilen görseller yüklenmeye hazır.</p>
                     </div>
-                    <button type="submit" class="btn btn-primary partner-upload-submit" id="partner-upload-submit">
+                    <button type="submit" class="btn btn-primary partner-upload-submit panel-form-ux-upload-btn" id="partner-upload-submit">
                         <i class="fas fa-cloud-arrow-up me-2"></i>Yükle
                     </button>
                 </form>

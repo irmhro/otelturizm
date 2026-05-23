@@ -14,20 +14,37 @@ public sealed class RoutePrefixRequestCultureProvider : IRequestCultureProvider
 
     public Task<ProviderCultureResult?> DetermineProviderCultureResult(HttpContext httpContext)
     {
-        var path = httpContext.Request.Path.Value ?? "/";
-        var pathCulture = InternationalSeoPaths.ResolveCultureFromPath(path);
-
-        if (!string.Equals(pathCulture, "tr", StringComparison.OrdinalIgnoreCase))
+        try
         {
-            return Task.FromResult<ProviderCultureResult?>(ToResult(pathCulture));
-        }
+            if (httpContext?.Request is null)
+            {
+                return Task.FromResult<ProviderCultureResult?>(ToResult("tr"));
+            }
 
-        if (TryGetQueryCulture(httpContext, out var queryCulture))
+            var path = httpContext.Request.Path.Value;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = "/";
+            }
+
+            var pathCulture = InternationalSeoPaths.ResolveCultureFromPath(path);
+
+            if (!string.Equals(pathCulture, "tr", StringComparison.OrdinalIgnoreCase))
+            {
+                return Task.FromResult<ProviderCultureResult?>(ToResult(pathCulture));
+            }
+
+            if (TryGetQueryCulture(httpContext, out var queryCulture))
+            {
+                return Task.FromResult<ProviderCultureResult?>(ToResult(queryCulture));
+            }
+
+            return Task.FromResult<ProviderCultureResult?>(ToResult("tr"));
+        }
+        catch
         {
-            return Task.FromResult<ProviderCultureResult?>(ToResult(queryCulture));
+            return Task.FromResult<ProviderCultureResult?>(ToResult("tr"));
         }
-
-        return Task.FromResult<ProviderCultureResult?>(ToResult("tr"));
     }
 
     private static bool TryGetQueryCulture(HttpContext httpContext, out string cultureCode)

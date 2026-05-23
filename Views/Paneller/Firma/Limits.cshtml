@@ -1,26 +1,31 @@
 @model otelturizmnew.Models.Paneller.Firma.FirmaLimitsPageViewModel
-@{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
+@{
+    Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml";
+    ViewData["FirmaShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/firma/limits";
+    ViewData["PageCssMobile"] = "paneller/firma/limits.mobile";
+}
 <section class="firma-two-column">
     <article class="firma-section-card">
         <h2>Harcama Limitleri</h2>
         <div class="firma-table-wrap">
-            <table class="firma-table">
+            <table class="firma-table firma-table--cards">
                 <thead><tr><th>Kapsam</th><th>Gecelik</th><th>Rez. Başı</th><th>Aylık</th><th>Akış</th></tr></thead>
                 <tbody>
                 @foreach (var item in Model.Limits)
                 {
                     <tr>
-                        <td>@item.ScopeText</td>
-                        <td>@item.NightlyLimitText</td>
-                        <td>@item.ReservationLimitText</td>
-                        <td>@item.MonthlyLimitText</td>
-                        <td>@item.ApprovalText</td>
+                        <td data-label="Kapsam">@item.ScopeText</td>
+                        <td data-label="Gecelik">@item.NightlyLimitText</td>
+                        <td data-label="Rez. Başı">@item.ReservationLimitText</td>
+                        <td data-label="Aylık">@item.MonthlyLimitText</td>
+                        <td data-label="Akış">@item.ApprovalText</td>
                     </tr>
                 }
                 </tbody>
             </table>
         </div>
-        <form method="post" action="/panel/firma/limit-kaydet" class="firma-form-grid firma-form-compact">
+        <form method="post" action="/panel/firma/limit-kaydet" class="firma-form-grid firma-form-compact panel-form-ux">
             @Html.AntiForgeryToken()
             <label>
                 <span>Çalışan</span>

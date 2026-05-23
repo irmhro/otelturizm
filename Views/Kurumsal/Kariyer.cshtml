@@ -1,0 +1,73 @@
+@{
+    ViewData["Title"] = SharedLocalizer["Company.Career.Title"].Value;
+    ViewData["MetaDescription"] = SharedLocalizer["Company.Career.MetaDescription"].Value;
+    ViewData["HeroTitleKey"] = "Company.Career.Title";
+    ViewData["HeroLeadKey"] = "Company.Career.HeroLead";
+    ViewData["HeroEyebrowKey"] = "Footer.Career";
+    ViewData["HeroIcon"] = "fa-briefcase";
+}
+
+<partial name="~/Views/Kurumsal/_SirketPageHero.cshtml" />
+
+        <div class="corp-grid corp-grid--3">
+            <article class="corp-perk">
+                <i class="fas fa-laptop-house" aria-hidden="true"></i>
+                <h2>@SharedLocalizer["Company.Career.PerkHybridTitle"]</h2>
+                <p>@SharedLocalizer["Company.Career.PerkHybridText"]</p>
+            </article>
+            <article class="corp-perk">
+                <i class="fas fa-chart-line" aria-hidden="true"></i>
+                <h2>@SharedLocalizer["Company.Career.PerkGrowthTitle"]</h2>
+                <p>@SharedLocalizer["Company.Career.PerkGrowthText"]</p>
+            </article>
+            <article class="corp-perk">
+                <i class="fas fa-heart-pulse" aria-hidden="true"></i>
+                <h2>@SharedLocalizer["Company.Career.PerkWellnessTitle"]</h2>
+                <p>@SharedLocalizer["Company.Career.PerkWellnessText"]</p>
+            </article>
+        </div>
+
+        <section class="corp-jobs" aria-labelledby="corp-jobs-title">
+            <h2 id="corp-jobs-title" class="corp-section-title">@SharedLocalizer["Company.Career.OpenRolesTitle"]</h2>
+            <div class="corp-job-list">
+                <article class="corp-job">
+                    <div class="corp-job__meta">
+                        <span class="corp-job__tag">@SharedLocalizer["Company.Career.RoleProduct"]</span>
+                        <span class="corp-job__location">İstanbul · Hibrit</span>
+                    </div>
+                    <h3 class="corp-job__title">Senior Product Designer</h3>
+                    <p class="corp-job__text">@SharedLocalizer["Company.Career.RoleProductText"]</p>
+                    <a class="corp-btn corp-btn--primary fe-world-touch-target" href="mailto:kariyer@otelturizm.com?subject=Senior%20Product%20Designer">@SharedLocalizer["Company.Career.Apply"]</a>
+                </article>
+                <article class="corp-job">
+                    <div class="corp-job__meta">
+                        <span class="corp-job__tag">@SharedLocalizer["Company.Career.RoleEngineering"]</span>
+                        <span class="corp-job__location">İstanbul · Uzaktan</span>
+                    </div>
+                    <h3 class="corp-job__title">.NET Backend Engineer</h3>
+                    <p class="corp-job__text">@SharedLocalizer["Company.Career.RoleEngineeringText"]</p>
+                    <a class="corp-btn corp-btn--primary fe-world-touch-target" href="mailto:kariyer@otelturizm.com?subject=.NET%20Backend%20Engineer">@SharedLocalizer["Company.Career.Apply"]</a>
+                </article>
+                <article class="corp-job">
+                    <div class="corp-job__meta">
+                        <span class="corp-job__tag">@SharedLocalizer["Company.Career.RolePartner"]</span>
+                        <span class="corp-job__location">Türkiye · Saha</span>
+                    </div>
+                    <h3 class="corp-job__title">Partner Success Specialist</h3>
+                    <p class="corp-job__text">@SharedLocalizer["Company.Career.RolePartnerText"]</p>
+                    <a class="corp-btn corp-btn--primary fe-world-touch-target" href="mailto:kariyer@otelturizm.com?subject=Partner%20Success%20Specialist">@SharedLocalizer["Company.Career.Apply"]</a>
+                </article>
+            </div>
+        </section>
+
+        <section class="corp-cta corp-cta--accent" aria-label="@SharedLocalizer["Company.Career.CtaLabel"]">
+            <div class="corp-cta__inner">
+                <div>
+                    <h2 class="corp-cta__title">@SharedLocalizer["Company.Career.CtaTitle"]</h2>
+                    <p class="corp-cta__text">@SharedLocalizer["Company.Career.CtaText"]</p>
+                </div>
+                <a class="corp-btn corp-btn--light fe-world-touch-target" href="mailto:kariyer@otelturizm.com">@SharedLocalizer["Company.Career.CtaButton"]</a>
+            </div>
+        </section>
+    </div>
+</section>

@@ -1,0 +1,74 @@
+@{
+    ViewData["Title"] = SharedLocalizer["Company.About.Title"].Value;
+    ViewData["MetaDescription"] = SharedLocalizer["Company.About.MetaDescription"].Value;
+    ViewData["HeroTitleKey"] = "Company.About.Title";
+    ViewData["HeroLeadKey"] = "Company.About.HeroLead";
+    ViewData["HeroEyebrowKey"] = "Footer.Company";
+    ViewData["HeroIcon"] = "fa-compass";
+}
+
+<partial name="~/Views/Kurumsal/_SirketPageHero.cshtml" />
+
+        <div class="corp-stats" aria-label="@SharedLocalizer["Company.About.StatsLabel"]">
+            <div class="corp-stat">
+                <strong>39+</strong>
+                <span>@SharedLocalizer["Company.About.StatDistricts"]</span>
+            </div>
+            <div class="corp-stat">
+                <strong>7</strong>
+                <span>@SharedLocalizer["Company.About.StatLanguages"]</span>
+            </div>
+            <div class="corp-stat">
+                <strong>24/7</strong>
+                <span>@SharedLocalizer["Company.About.StatSupport"]</span>
+            </div>
+        </div>
+
+        <div class="corp-grid corp-grid--2">
+            <article class="corp-card">
+                <div class="corp-card__icon"><i class="fas fa-bullseye" aria-hidden="true"></i></div>
+                <h2 class="corp-card__title">@SharedLocalizer["Company.About.MissionTitle"]</h2>
+                <p class="corp-card__text">@SharedLocalizer["Company.About.MissionText"]</p>
+            </article>
+            <article class="corp-card">
+                <div class="corp-card__icon"><i class="fas fa-eye" aria-hidden="true"></i></div>
+                <h2 class="corp-card__title">@SharedLocalizer["Company.About.VisionTitle"]</h2>
+                <p class="corp-card__text">@SharedLocalizer["Company.About.VisionText"]</p>
+            </article>
+        </div>
+
+        <section class="corp-values" aria-labelledby="corp-values-title">
+            <h2 id="corp-values-title" class="corp-section-title">@SharedLocalizer["Company.About.ValuesTitle"]</h2>
+            <div class="corp-grid corp-grid--3">
+                <article class="corp-value">
+                    <i class="fas fa-shield-halved" aria-hidden="true"></i>
+                    <h3>@SharedLocalizer["Company.About.ValueTrustTitle"]</h3>
+                    <p>@SharedLocalizer["Company.About.ValueTrustText"]</p>
+                </article>
+                <article class="corp-value">
+                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                    <h3>@SharedLocalizer["Company.About.ValueSpeedTitle"]</h3>
+                    <p>@SharedLocalizer["Company.About.ValueSpeedText"]</p>
+                </article>
+                <article class="corp-value">
+                    <i class="fas fa-handshake" aria-hidden="true"></i>
+                    <h3>@SharedLocalizer["Company.About.ValuePartnerTitle"]</h3>
+                    <p>@SharedLocalizer["Company.About.ValuePartnerText"]</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="corp-cta" aria-label="@SharedLocalizer["Company.About.CtaLabel"]">
+            <div class="corp-cta__inner">
+                <div>
+                    <h2 class="corp-cta__title">@SharedLocalizer["Company.About.CtaTitle"]</h2>
+                    <p class="corp-cta__text">@SharedLocalizer["Company.About.CtaText"]</p>
+                </div>
+                <div class="corp-cta__actions">
+                    <a class="corp-btn corp-btn--primary fe-world-touch-target" href="/yardim-merkezi">@SharedLocalizer["Nav.Help"]</a>
+                    <a class="corp-btn corp-btn--ghost fe-world-touch-target" href="/kurumsal">@SharedLocalizer["Nav.Corporate"]</a>
+                </div>
+            </div>
+        </section>
+    </div>
+</section>

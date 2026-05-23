@@ -1,0 +1,16 @@
+@{
+    var heroTitleKey = ViewData["HeroTitleKey"] as string ?? ViewData["Title"] as string ?? "Footer.Company";
+    var heroLeadKey = ViewData["HeroLeadKey"] as string ?? "Company.Hero.DefaultLead";
+    var heroEyebrowKey = ViewData["HeroEyebrowKey"] as string ?? "Footer.Company";
+    var heroIcon = ViewData["HeroIcon"] as string ?? "fa-building";
+}
+<section class="corp-page" aria-labelledby="corp-hero-title">
+    <div class="corp-page__aurora" aria-hidden="true"></div>
+    <div class="corp-page__inner">
+        <header class="corp-hero">
+            <div class="corp-hero__glass">
+                <p class="corp-hero__eyebrow"><i class="fas @heroIcon me-2" aria-hidden="true"></i>@SharedLocalizer[heroEyebrowKey]</p>
+                <h1 id="corp-hero-title" class="corp-hero__title">@SharedLocalizer[heroTitleKey]</h1>
+                <p class="corp-hero__lead">@SharedLocalizer[heroLeadKey]</p>
+            </div>
+        </header>

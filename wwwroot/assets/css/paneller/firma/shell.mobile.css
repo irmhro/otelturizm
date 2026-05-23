@@ -21,4 +21,50 @@
     .firma-panel-footer {
         padding-bottom: calc(88px + env(safe-area-inset-bottom));
     }
+
+    .firma-panel-v2 table.firma-table--cards thead {
+        display: none;
+    }
+
+    .firma-panel-v2 table.firma-table--cards tbody {
+        display: grid;
+        gap: 12px;
+    }
+
+    .firma-panel-v2 table.firma-table--cards tr {
+        display: grid;
+        gap: 8px;
+        padding: 14px;
+        border: 1px solid var(--firma-panel-border, #dbe6f3);
+        border-radius: 14px;
+        background: var(--firma-panel-surface, #fff);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .firma-panel-v2 table.firma-table--cards td {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        border: 0;
+        padding: 4px 0;
+    }
+
+    .firma-panel-v2 table.firma-table--cards td::before {
+        content: attr(data-label);
+        flex: 0 0 42%;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: var(--firma-panel-muted, #66768c);
+    }
+
+    .firma-panel-v2 table.firma-table--cards .firma-table-wrap {
+        overflow: visible;
+    }
+
+    .firma-panel-v2 .firma-table-wrap:has(table.firma-table--cards) {
+        overflow: visible;
+    }
 }

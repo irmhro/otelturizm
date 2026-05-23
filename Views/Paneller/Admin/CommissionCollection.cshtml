@@ -37,9 +37,17 @@
         </div>
         <div class="commission-collection-hero-actions">
             <a class="btn btn-outline-secondary" href="/admin/komisyonlar"><i class="fas fa-percent"></i> Komisyon oranları</a>
+            <a class="btn btn-outline-secondary" href="/admin/raporlar"><i class="fas fa-scale-balanced"></i> Mutabakat raporu</a>
             <a class="btn btn-outline-primary" href="@ExportUrl()"><i class="fas fa-file-csv"></i> CSV indir</a>
         </div>
     </div>
+
+    <nav class="commission-lifecycle-bar panel-form-ux-bulk-bar" aria-label="Komisyon yaşam döngüsü">
+        <span class="commission-lifecycle-step">1. Tahakkuk</span>
+        <span class="commission-lifecycle-step is-active">2. Tahsilat</span>
+        <span class="commission-lifecycle-step">3. Mutabakat</span>
+        <span class="commission-lifecycle-hint">Partner paneli mutabakat: <code>/panel/partner/finans/mutabakat</code></span>
+    </nav>
 
     <article class="admin-section-card">
         <form method="get" action="/admin/komisyon-tahsilat" class="admin-form-grid commission-collection-filter-grid">

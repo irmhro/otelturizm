@@ -23,6 +23,23 @@
   }
 
   .firma-kpi-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+  }
+
+  .firma-kpi-tile {
+    border-left: 4px solid var(--firma-panel-primary, #003b95);
+  }
+
+  .firma-kpi-tile.is-savings,
+  .firma-kpi-tile__value.is-savings {
+    border-left-color: var(--firma-panel-success, #00a86b);
+  }
+
+  .firma-dash-identity__title {
+    color: var(--firma-panel-primary, #003b95);
+  }
+
+  .firma-two-column {
+    grid-template-columns: 1fr;
   }
 }
