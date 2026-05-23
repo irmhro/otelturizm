@@ -1,6 +1,6 @@
 @using otelturizmnew.Services
 @{
-    var footerLang = (System.Globalization.CultureInfo.CurrentUICulture?.TwoLetterISOLanguageName ?? "tr").ToLowerInvariant();
+    var footerLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     var footerHotelsPath = InternationalSeoPaths.BuildPublicPath(footerLang, InternationalSeoPaths.PageKindListing, null, null);
 }
 <footer class="site-footer">
@@ -31,12 +31,12 @@
             </div>
 
             <div class="footer-col">
-                <h4 class="footer-title">Keşfet</h4>
+                <h4 class="footer-title">@SharedLocalizer["Footer.Explore"]</h4>
                 <ul class="footer-links">
                     <li><a href="@footerHotelsPath"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Hotels"]</a></li>
                     <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Campaigns"]</a></li>
-                    <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> Erken Rezervasyon</a></li>
-                    <li><a href="/firma"><i class="fas fa-chevron-right"></i> İş Seyahatleri</a></li>
+                    <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.EarlyBooking"]</a></li>
+                    <li><a href="/firma"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.BusinessTravel"]</a></li>
                 </ul>
             </div>
 
@@ -66,16 +66,16 @@
                 <div class="footer-copyright">&copy; @DateTime.Now.Year Otelturizm. @SharedLocalizer["Footer.Copyright"]</div>
                 <div class="footer-agency-wrap">
                     <div class="trust-badges" role="group" aria-label="Güven taahhütleri">
-                        <a class="trust-badge" href="/" title="HTTPS güvenliği"><i class="fas fa-lock" aria-hidden="true"></i> Şifreli bağlantı (HTTPS)</a>
-                        <a class="trust-badge" href="/panel/user/rezervasyonlarim" title="Rezervasyon özetine git"><i class="fas fa-user-check" aria-hidden="true"></i> Hesaptan rezervasyon özeti</a>
-                        <a class="trust-badge" href="/sozlesmeler/kullanici-kvkk-aydinlatma" title="KVKK aydınlatma metni"><i class="fas fa-scale-balanced" aria-hidden="true"></i> KVKK kapsamında veri işleme</a>
+                        <a class="trust-badge" href="/" title="HTTPS güvenliği"><i class="fas fa-lock" aria-hidden="true"></i> @SharedLocalizer["Footer.Https"]</a>
+                        <a class="trust-badge" href="/panel/user/rezervasyonlarim" title="Rezervasyon özetine git"><i class="fas fa-user-check" aria-hidden="true"></i> @SharedLocalizer["Footer.ReservationSummary"]</a>
+                        <a class="trust-badge" href="/sozlesmeler/kullanici-kvkk-aydinlatma" title="KVKK aydınlatma metni"><i class="fas fa-scale-balanced" aria-hidden="true"></i> @SharedLocalizer["Footer.KvkkProcessing"]</a>
                     </div>
                 </div>
             </div>
             <div class="footer-bottom-links">
                 <a asp-controller="Home" asp-action="Privacy">@SharedLocalizer["Footer.Privacy"]</a>
                 <a href="/sozlesmeler/kullanici-kullanim-kosullari">@SharedLocalizer["Footer.Terms"]</a>
-                <a href="/sozlesmeler/kullanici-kvkk-aydinlatma">KVKK</a>
+                <a href="/sozlesmeler/kullanici-kvkk-aydinlatma">@SharedLocalizer["Footer.Kvkk"]</a>
             </div>
         </div>
     </div>

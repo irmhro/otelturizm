@@ -10,10 +10,6 @@ public sealed class RoutePrefixRequestCultureProvider : IRequestCultureProvider
     {
         var path = httpContext.Request.Path.Value ?? "/";
         var cultureCode = InternationalSeoPaths.ResolveCultureFromPath(path);
-        if (string.Equals(cultureCode, "tr", StringComparison.OrdinalIgnoreCase))
-        {
-            return Task.FromResult<ProviderCultureResult?>(null);
-        }
 
         var culture = cultureCode switch
         {

@@ -107,4 +107,18 @@
   <data name="Footer.Copyright" xml:space="preserve"><value>جميع الحقوق محفوظة.</value></data>
   <data name="Footer.Company" xml:space="preserve"><value>الشركة</value></data>
   <data name="Footer.Support" xml:space="preserve"><value>الدعم</value></data>
+  <data name="Footer.Explore" xml:space="preserve"><value>استكشف</value></data>
+  <data name="Footer.EarlyBooking" xml:space="preserve"><value>حجز مبكر</value></data>
+  <data name="Footer.BusinessTravel" xml:space="preserve"><value>سفر الأعمال</value></data>
+  <data name="Footer.Https" xml:space="preserve"><value>اتصال آمن (HTTPS)</value></data>
+  <data name="Footer.ReservationSummary" xml:space="preserve"><value>ملخص الحجز في الحساب</value></data>
+  <data name="Footer.KvkkProcessing" xml:space="preserve"><value>معالجة البيانات بموجب KVKK</value></data>
+  <data name="Footer.Kvkk" xml:space="preserve"><value>KVKK</value></data>
+  <data name="Nav.Firma" xml:space="preserve"><value>الشركات</value></data>
+  <data name="Nav.FirmaLogin" xml:space="preserve"><value>دخول الشركات</value></data>
+  <data name="Nav.FirmaRegister" xml:space="preserve"><value>تسجيل الشركات</value></data>
+  <data name="Nav.Reservations" xml:space="preserve"><value>الحجوزات</value></data>
+  <data name="Nav.Invoices" xml:space="preserve"><value>الفواتير</value></data>
+  <data name="Map.BackToList" xml:space="preserve"><value>العودة للقائمة</value></data>
+  <data name="Map.BackToAllHotels" xml:space="preserve"><value>جميع الفنادق</value></data>
 </root>

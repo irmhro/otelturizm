@@ -107,4 +107,18 @@
   <data name="Footer.Copyright" xml:space="preserve"><value>Tous droits réservés.</value></data>
   <data name="Footer.Company" xml:space="preserve"><value>Entreprise</value></data>
   <data name="Footer.Support" xml:space="preserve"><value>Assistance</value></data>
+  <data name="Footer.Explore" xml:space="preserve"><value>Explorer</value></data>
+  <data name="Footer.EarlyBooking" xml:space="preserve"><value>Réservation anticipée</value></data>
+  <data name="Footer.BusinessTravel" xml:space="preserve"><value>Voyages d'affaires</value></data>
+  <data name="Footer.Https" xml:space="preserve"><value>Connexion sécurisée (HTTPS)</value></data>
+  <data name="Footer.ReservationSummary" xml:space="preserve"><value>Résumé des réservations dans le compte</value></data>
+  <data name="Footer.KvkkProcessing" xml:space="preserve"><value>Traitement des données (KVKK)</value></data>
+  <data name="Footer.Kvkk" xml:space="preserve"><value>KVKK</value></data>
+  <data name="Nav.Firma" xml:space="preserve"><value>Entreprise</value></data>
+  <data name="Nav.FirmaLogin" xml:space="preserve"><value>Connexion entreprise</value></data>
+  <data name="Nav.FirmaRegister" xml:space="preserve"><value>Inscription entreprise</value></data>
+  <data name="Nav.Reservations" xml:space="preserve"><value>Réservations</value></data>
+  <data name="Nav.Invoices" xml:space="preserve"><value>Factures</value></data>
+  <data name="Map.BackToList" xml:space="preserve"><value>Retour à la liste</value></data>
+  <data name="Map.BackToAllHotels" xml:space="preserve"><value>Tous les hôtels</value></data>
 </root>

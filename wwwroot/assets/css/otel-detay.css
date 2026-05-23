@@ -8,6 +8,7 @@
 
 /* Wave-XIII — kamu detay marka tokenları (şablon #003B95) */
 .otel-detail-template-v41 {
+    --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     --detail-brand: #003b95;
     --detail-brand-dark: #002a6b;
     --detail-accent: #ff385c;

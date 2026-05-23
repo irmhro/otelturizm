@@ -33,3 +33,9 @@ Uygulama: `.listing-card-discount-corner` + `.old-price` + `.listing-discount-ra
 ## Tasarım tokenları
 
 `--primary #003B95`, `--secondary #FF385C`, `--success #00A86B` — `otel-listeleme.css` `:root` / `--listing-*` ile hizalı.
+
+## Wave-XIV ekleri
+
+- Geçiş: `--transition-base` (`site-layout.css` ile aynı eğri) — liste kartları, kampanya hero/stat chip, harita geri linki.
+- Sadakat: liste fiyat bloğunda `listing-loyalty-earn` (+N puan) veya `data-loyalty-hook` giriş placeholder.
+- Panel form: `paneller/panel-form-ux.css` — sil/düzenle/yükle (pilot: partner misafir faturaları).

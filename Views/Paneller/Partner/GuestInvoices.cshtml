@@ -80,27 +80,29 @@
                                     <span class="badge bg-warning">Eksik</span>
                                 }
                             </td>
-                            <td class="text-end guest-invoices-actions" data-label="İşlem">
+                            <td class="text-end guest-invoices-actions panel-form-ux-actions" data-label="İşlem">
                                 @if (row.HasInvoice && !string.IsNullOrWhiteSpace(row.DownloadUrl))
                                 {
-                                    <a class="btn btn-outline-primary btn-sm" href="@row.DownloadUrl" target="_blank" rel="noopener">İndir</a>
+                                    <a class="btn btn-outline-primary btn-sm panel-form-ux-edit" href="@row.DownloadUrl" target="_blank" rel="noopener">İndir</a>
                                 }
                                 else if (!row.HasInvoice && row.ReservationId > 0)
                                 {
-                                    <form method="post" action="/panel/partner/finans/misafir-faturalari/yukle" enctype="multipart/form-data" class="guest-invoice-upload-form">
+                                    <form method="post" action="/panel/partner/finans/misafir-faturalari/yukle" enctype="multipart/form-data" class="guest-invoice-upload-form panel-form-ux-upload-form">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="hotelId" value="@Model.Shell.SelectedHotelId" />
                                         <input type="hidden" name="reservationId" value="@row.ReservationId" />
-                                        <div class="guest-invoice-upload">
+                                        <div class="guest-invoice-upload panel-form-ux-upload">
                                             <input type="file"
                                                    name="invoiceFile"
-                                                   class="form-control form-control-sm guest-invoice-file"
+                                                   class="form-control form-control-sm guest-invoice-file panel-form-ux-upload-file"
                                                    accept="application/pdf,image/*,.pdf,.jpg,.jpeg,.png,.webp"
                                                    capture="environment"
-                                                   required />
-                                            <button type="submit" class="btn btn-primary btn-sm guest-invoice-upload-btn">
+                                                   required
+                                                   aria-describedby="guest-invoice-upload-hint-@row.ReservationId" />
+                                            <button type="submit" class="btn btn-primary btn-sm guest-invoice-upload-btn panel-form-ux-upload-btn">
                                                 <i class="fas fa-cloud-arrow-up me-1"></i>Yükle
                                             </button>
+                                            <p class="panel-form-ux-upload-help" id="guest-invoice-upload-hint-@row.ReservationId">PDF veya görsel, en fazla 10 MB</p>
                                         </div>
                                     </form>
                                 }

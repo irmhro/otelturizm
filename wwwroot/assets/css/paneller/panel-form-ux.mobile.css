@@ -1,0 +1,21 @@
+@media (max-width: 900px) {
+    .panel-form-ux-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .panel-form-ux-upload {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .panel-form-ux-upload .form-control,
+    .panel-form-ux-upload-file,
+    .panel-form-ux-upload-btn,
+    .panel-form-ux-edit.btn,
+    .panel-form-ux-delete .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+}

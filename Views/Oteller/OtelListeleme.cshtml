@@ -1554,6 +1554,27 @@
                                         }
                                     </div>
                                     <span class="price-tax-note">Vergiler dahil</span>
+                                    @if (Model.ShowLoyaltyTouchpoints)
+                                    {
+                                        if (Model.LoyaltyUserSignedIn && hotel.EstimatedLoyaltyPoints is int loyaltyPts && loyaltyPts > 0)
+                                        {
+                                            <span class="listing-loyalty-earn" title="Tahmini sadakat puanı (gecelik)">
+                                                <i class="fas fa-gem" aria-hidden="true"></i>
+                                                +@loyaltyPts.ToString("N0", CultureInfo.GetCultureInfo("tr-TR")) puan
+                                            </span>
+                                        }
+                                        else if (!Model.LoyaltyUserSignedIn)
+                                        {
+                                            var loyaltyReturn = Context.Request.Path + Context.Request.QueryString;
+                                            <span class="listing-loyalty-earn listing-loyalty-earn--placeholder"
+                                                  data-loyalty-hook="earn"
+                                                  data-loyalty-price="@(price > 0m ? price.ToString(CultureInfo.InvariantCulture) : null)">
+                                                <i class="fas fa-gem" aria-hidden="true"></i>
+                                                <a class="listing-loyalty-earn__link"
+                                                   href="/giris?returnUrl=@Uri.EscapeDataString(loyaltyReturn)">Giriş yapın, puan kazanın</a>
+                                            </span>
+                                        }
+                                    }
                                     <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="btn-detail">İncele</a>
                                 </div>
                             </div>

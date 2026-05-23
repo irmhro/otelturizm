@@ -89,7 +89,8 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
 var mvcBuilder = builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
-});
+})
+.AddViewLocalization(Microsoft.AspNetCore.Mvc.Razor.LanguageViewLocationExpanderFormat.Suffix);
 
 if (builder.Environment.IsDevelopment())
 {
@@ -116,11 +117,11 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
 
-    // Öncelik: path prefix -> ?lang= -> Cookie -> Accept-Language
+    // Öncelik: ?lang= -> path prefix -> Cookie -> Accept-Language
     options.RequestCultureProviders = new IRequestCultureProvider[]
     {
-        new otelturizmnew.Infrastructure.RoutePrefixRequestCultureProvider(),
         new QueryStringRequestCultureProvider { QueryStringKey = "lang", UIQueryStringKey = "lang" },
+        new otelturizmnew.Infrastructure.RoutePrefixRequestCultureProvider(),
         new CookieRequestCultureProvider(),
         new AcceptLanguageHeaderRequestCultureProvider()
     };

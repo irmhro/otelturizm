@@ -8,7 +8,7 @@
 
 ---
 
-## Sıralı log (#001–#034)
+## Sıralı log (#001–#043)
 
 | # | Tarih | Wave | Owner | Geliştirme | Durum |
 |---|--------|------|-------|------------|--------|
@@ -50,12 +50,23 @@
 | 036 | 2026-05-23 | Wave-XIII | H1 | Liste kartı indirim köşe rozeti + mobil fiyat strikethrough (köşe audit) | ✅ |
 | 037 | 2026-05-23 | Wave-XIII | H1 | Harita/detay/kampanya mobil+desktop CSS · `PageCss` wiring · `Docs/H1_SABLON_REFERANS.md` | ✅ |
 | 038 | 2026-05-23 | Wave-XIII | H1 | Mobil harita FAB, filtre drawer safe-area, kampanya index hero/stat chips | ✅ |
+| 039 | 2026-05-23 | Wave-XIV | H1 | Kamu kart geçişleri `--transition-base` (liste, kampanya hero, harita geri, detay token) | ✅ |
+| 040 | 2026-05-23 | Wave-XIV | H4 | `panel-form-ux.css` — sil/düzenle/yükle ortak desen; partner misafir faturaları pilot | ✅ |
+| 041 | 2026-05-23 | Wave-XIV | H1 | Liste sadakat rozeti (`EstimatedLoyaltyPoints`) + `data-loyalty-hook` placeholder | ✅ |
+| 042 | 2026-05-23 | Wave-XIV | H1 | `LoyaltyPointsEstimator` + `ApplyListingLoyaltyTouchpoints` controller wiring | ✅ |
+| 043 | 2026-05-23 | Wave-XIV | H10 | `dotnet build -o .coord-build-xiv` — 0 hata gate | ✅ |
 
-**Toplam tamamlanan teslimat:** **38** (Wave-I → Wave-XIII)
+**Toplam tamamlanan teslimat:** **43** (Wave-I → Wave-XIV)
 
 ---
 
 ## Dalga detayları (son 5)
+
+### Wave-XIV — Geçişler + sadakat + panel form UX (2026-05-23)
+
+- **H1:** `--transition-base` liste/kampanya/harita/detay; liste `+N puan` / giriş hook  
+- **H4:** `panel-form-ux.css` partner misafir faturaları pilot + admin/partner layout link  
+- **H10:** `.coord-build-xiv` build gate  
 
 ### Wave-XII — Komisyon runbook + i18n Faz3 (2026-05-23)
 
@@ -91,15 +102,15 @@
 
 ---
 
-## Sırada (Wave-XII+ kuyruk)
+## Sırada (Wave-XIII+ kuyruk)
 
 | # | Planlanan | Owner | Hedef |
 |---|-----------|-------|--------|
-| 035 | E-posta Faz2 kalan şablonlar | H14 | Master layout’a taşıma |
-| 036 | FE-CTO PNG batch-1 | H4 | 4 user desktop/mobil SS |
-| 037 | Partner SS batch-1 PNG | H2 | T311 10 sayfa |
-| 038 | Auth E2E smoke tablosu | H7 | Tüm paneller PASS |
-| 039 | Kampanya indirim kartı | H1 | Köşe audit PASS |
+| 039 | E-posta Faz2 kalan şablonlar | H14 | Master layout’a taşıma |
+| 040 | FE-CTO PNG batch-1 | H4 | 4 user desktop/mobil SS |
+| 041 | Partner SS batch-1 PNG | H2 | T311 10 sayfa |
+| 042 | Auth E2E smoke tablosu | H7 | Tüm paneller PASS |
+| 043 | Eksik konsept landing HTML | H1 | `eksik sayfalar kodlanacak` |
 
 ---
 
@@ -132,4 +143,4 @@ Her 10 dk dalga bitince:
 2. [`geliştirme.md`](geliştirme.md) KPI tablosunu güncelle  
 3. `ORKESTRA_DURUM_KONTROL.md` snapshot  
 
-*Son otomatik dalga: Wave-XIII (#035–#038) · Sonraki: #039 e-posta Faz2*
+*Son otomatik dalga: Wave-XIV (#039–#043) · Sonraki: #044 e-posta Faz2*

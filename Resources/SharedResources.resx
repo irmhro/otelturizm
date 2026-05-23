@@ -107,4 +107,18 @@
   <data name="Footer.Copyright" xml:space="preserve"><value>Tüm hakları saklıdır.</value></data>
   <data name="Footer.Company" xml:space="preserve"><value>Şirket</value></data>
   <data name="Footer.Support" xml:space="preserve"><value>Destek</value></data>
+  <data name="Footer.Explore" xml:space="preserve"><value>Keşfet</value></data>
+  <data name="Footer.EarlyBooking" xml:space="preserve"><value>Erken Rezervasyon</value></data>
+  <data name="Footer.BusinessTravel" xml:space="preserve"><value>İş Seyahatleri</value></data>
+  <data name="Footer.Https" xml:space="preserve"><value>Şifreli bağlantı (HTTPS)</value></data>
+  <data name="Footer.ReservationSummary" xml:space="preserve"><value>Hesaptan rezervasyon özeti</value></data>
+  <data name="Footer.KvkkProcessing" xml:space="preserve"><value>KVKK kapsamında veri işleme</value></data>
+  <data name="Footer.Kvkk" xml:space="preserve"><value>KVKK</value></data>
+  <data name="Nav.Firma" xml:space="preserve"><value>Firma</value></data>
+  <data name="Nav.FirmaLogin" xml:space="preserve"><value>Firma Girişi</value></data>
+  <data name="Nav.FirmaRegister" xml:space="preserve"><value>Firma Kaydı</value></data>
+  <data name="Nav.Reservations" xml:space="preserve"><value>Rezervasyonlar</value></data>
+  <data name="Nav.Invoices" xml:space="preserve"><value>Faturalar</value></data>
+  <data name="Map.BackToList" xml:space="preserve"><value>Listeye Dön</value></data>
+  <data name="Map.BackToAllHotels" xml:space="preserve"><value>Tüm otellere dön</value></data>
 </root>

@@ -26,7 +26,7 @@
         _ => "Hesabım"
     };
     var currentCulture = System.Globalization.CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
-    var currentLang = (System.Globalization.CultureInfo.CurrentUICulture?.TwoLetterISOLanguageName ?? "tr").ToLowerInvariant();
+    var currentLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     var currentFlag = currentLang switch { "en" => "gb", "fr" => "fr", "de" => "de", "es" => "es", "ru" => "ru", "ar" => "sa", _ => "tr" };
     var currentCurrency = (Context.Request.Cookies["ot_currency"] ?? "TRY").Trim().ToUpperInvariant();
     var hotelsListingPath = InternationalSeoPaths.BuildPublicPath(currentLang, InternationalSeoPaths.PageKindListing, null, null);
@@ -79,17 +79,17 @@
         <div class="header-actions">
             @if (homeAuthenticated && headerContext == "corporate")
             {
-                <a asp-controller="Oteller" asp-action="Index" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
-                <a href="/firma" class="action-btn primary">Firma</a>
+                <a asp-controller="Oteller" asp-action="OtelListeleme" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
+                <a href="/firma" class="action-btn primary">@SharedLocalizer["Nav.Firma"]</a>
             }
             else if (homeAuthenticated && headerContext == "firma")
             {
-                <a asp-controller="Oteller" asp-action="Index" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
-                <a href="/firma" class="action-btn primary">Firma</a>
+                <a asp-controller="Oteller" asp-action="OtelListeleme" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
+                <a href="/firma" class="action-btn primary">@SharedLocalizer["Nav.Firma"]</a>
             }
             else if (homeAuthenticated)
             {
-                <a asp-controller="Oteller" asp-action="Index" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
+                <a asp-controller="Oteller" asp-action="OtelListeleme" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
                 <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">@SharedLocalizer["Nav.Corporate"]</a>
             }
             <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />

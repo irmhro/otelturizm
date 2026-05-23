@@ -402,3 +402,7 @@ yayinlanacakderlenmisdosyalar/
 .coord-build-*/
 .build-*/
 .tmp.driveupload/
+
+# Tarihli yerel yedek snapshot (git'e alinmaz)
+23.05.2026/
+**/23.05.2026/

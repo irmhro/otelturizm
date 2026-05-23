@@ -15,8 +15,8 @@
 | **Job (10dk)** | `AGENT_LOOP_TICK_platform_coord` (600 sn) — **çalışıyor** |
 | **Job (1sa)** | `AGENT_LOOP_HOURLY_git_sync` (3600 sn) — **aktif** |
 | **Politika** | Onaysız orkestra CTO · **saatlik commit+push açık** · canlı deploy yok |
-| **Build** | ✅ `dotnet build -o .coord-build` — 0 hata |
-| **Platform olgunluk** | ~**38–42%** (gap analizi) |
+| **Build** | ✅ `dotnet build -o .coord-build-xiv` — 0 hata |
+| **Platform olgunluk** | ~**40–44%** (gap analizi) |
 | **Canlıya hazır** | **Hayır** (K1–K8 kapıları tam değil) |
 | **FE-CTO** | **6/151** onaylı · **14** hedef SS path (PNG bekliyor) |
 
@@ -28,8 +28,8 @@
 
 | Alan | Wave | Odak |
 |------|------|------|
-| **Şu an** | Wave-XIII+ | Eksik konsept landing · panel form UX · FE-CTO PNG |
-| **Az önce** | Wave-XIII | **H1 kamu UI** — konsept bar, indirim köşe, liste/harita/detay/kampanya CSS ✅ |
+| **Şu an** | Wave-XIV+ | E-posta Faz2 · konsept landing · FE-CTO PNG |
+| **Az önce** | Wave-XIV | **H1+H4** — kart geçişleri, sadakat rozeti, `panel-form-ux` pilot ✅ |
 
 Kaynak: `ORKESTRA_DURUM_KONTROL.md` · `CTO_AJAN_ATAMA_KUYRUGU.md`
 
@@ -37,7 +37,7 @@ Kaynak: `ORKESTRA_DURUM_KONTROL.md` · `CTO_AJAN_ATAMA_KUYRUGU.md`
 
 ## Tamamlanan ana başlıklar (özet)
 
-1. **Kamu otel UI (H1)** — Wave-XIII: konsept bar, indirim kartı, harita FAB, kampanya hero; detay `PageCss` wiring  
+1. **Kamu otel UI (H1)** — Wave-XIV: `--transition-base` kart/hero, liste sadakat rozeti + hook; Wave-XIII konsept/harita/kampanya CSS  
 2. **Admin (H3)** — gelir merkezi, toplu yayın, yavaş SQL, dashboard widget’ları  
 3. **Auth / satış (H7)** — SalesPanel, ReturnUrl, demo kullanıcı  
 4. **Komisyon (H11)** — tahsilat merkezi Faz 1 (admin + partner + export)  
@@ -56,7 +56,7 @@ Kaynak: `ORKESTRA_DURUM_KONTROL.md` · `CTO_AJAN_ATAMA_KUYRUGU.md`
 | Metrik | Sayı |
 |--------|------|
 | **Planlanan 10 dk tur** (10 saatte) | **60 tur** |
-| **Tamamlanan kod/doküman teslimi** (Wave-I → XIII) | **~38 madde** — ayrıntı [`geliştrme-orkestra.md`](geliştrme-orkestra.md) § Sıralı log |
+| **Tamamlanan kod/doküman teslimi** (Wave-I → XIV) | **~43 madde** — ayrıntı [`geliştrme-orkestra.md`](geliştrme-orkestra.md) § Sıralı log |
 | **Migration SQL** (idempotent) | **12+** script |
 | **Yeni/güncellenen route/ekran** | **15+** |
 | **i18n anahtar** | **49** × 7 dil dosyası (tr, en, de, fr, es, ar, ru) |
@@ -68,8 +68,7 @@ Kaynak: `ORKESTRA_DURUM_KONTROL.md` · `CTO_AJAN_ATAMA_KUYRUGU.md`
 ## Sıradaki P0
 
 1. **Şablon eksikleri:** `proje verileri/eksik sayfalar kodlanacak` — ayrı konsept landing sayfaları (liste `?etiket=` hazır)
-2. **Panel form UX:** silme/düzenleme/yükleme alanları — pro seviye (admin/partner)
-3. **Panel form UX:** silme/düzenleme/yükleme alanları — pro seviye (admin/partner dalgaları)
+2. **Panel form UX:** `panel-form-ux` diğer admin/partner sayfalarına yayılım
 4. FE-CTO PNG · e-posta Faz2 · auth E2E smoke
 
 

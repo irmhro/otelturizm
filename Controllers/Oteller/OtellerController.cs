@@ -89,6 +89,7 @@ public class OtellerController : Controller
         var ctxBoost = Request.Cookies.TryGetValue("Otelturizm.SearchCtx", out var cx) ? cx.ToString() : null;
         var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, page <= 0 ? 1 : page, ctxBoost, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
+        ApplyListingLoyaltyTouchpoints(model);
         var listingMeta = _internationalSeo.BuildListingMeta(
             listingCulture,
             ResolveListingCitySlug(searchTerm, model.City, model.SearchLabel),
@@ -705,6 +706,17 @@ public class OtellerController : Controller
         foreach (var hotel in model.Hotels)
         {
             hotel.IsFavorite = favoriteIds.Contains(hotel.Id);
+        }
+    }
+
+    private void ApplyListingLoyaltyTouchpoints(otelturizmnew.Models.Oteller.HotelListingPageViewModel model)
+    {
+        model.LoyaltyUserSignedIn = GetCurrentUserId() > 0;
+        model.ShowLoyaltyTouchpoints = true;
+        foreach (var hotel in model.Hotels)
+        {
+            var nightly = hotel.DiscountedPrice ?? hotel.StartingPrice;
+            hotel.EstimatedLoyaltyPoints = otelturizmnew.Utils.LoyaltyPointsEstimator.EstimateFromNightlyPrice(nightly);
         }
     }
 

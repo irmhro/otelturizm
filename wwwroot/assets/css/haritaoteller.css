@@ -1,4 +1,5 @@
 .hotel-map-page {
+    --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     background:
         radial-gradient(circle at 12% 8%, rgba(13, 148, 136, 0.13), transparent 28%),
         radial-gradient(circle at 88% 10%, rgba(37, 99, 235, 0.14), transparent 26%),
@@ -77,6 +78,14 @@
     font-weight: 800;
     text-decoration: none;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .hotel-map-page__back:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 28px rgba(37, 99, 235, 0.16);
+    }
 }
 
 .hotel-map-page__eyebrow {

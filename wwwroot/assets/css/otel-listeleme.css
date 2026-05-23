@@ -1,4 +1,5 @@
 .hotel-listing-shell {
+    --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     --listing-container-max: 1280px;
     --listing-primary: #003b95;
     --listing-primary-dark: #002a6b;
@@ -3202,4 +3203,75 @@ body.listing-modal-open {
 
 .listing-map-fab {
     display: none;
+}
+
+/* Wave-XIV — kart geçişleri (şablon --transition-base) */
+.listing-hotel-card.hotel-card {
+    transition:
+        transform var(--transition-base),
+        box-shadow var(--transition-base),
+        border-color var(--transition-base);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .listing-hotel-card.hotel-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--listing-shadow-md);
+    }
+}
+
+.listing-hotel-card .card-main-image,
+.listing-hotel-card .favorite-btn,
+.listing-hotel-card .btn-detail {
+    transition:
+        transform var(--transition-base),
+        opacity var(--transition-base),
+        background var(--transition-base),
+        color var(--transition-base),
+        box-shadow var(--transition-base);
+}
+
+.listing-concept-btn {
+    transition:
+        background var(--transition-base),
+        color var(--transition-base),
+        transform var(--transition-base),
+        box-shadow var(--transition-base);
+}
+
+.listing-loyalty-earn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(0, 168, 107, 0.12), rgba(0, 59, 149, 0.08));
+    border: 1px solid rgba(0, 168, 107, 0.28);
+    color: #047857;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.listing-loyalty-earn i {
+    color: #00a86b;
+    font-size: 0.72rem;
+}
+
+.listing-loyalty-earn--placeholder {
+    background: rgba(248, 250, 252, 0.95);
+    border-color: rgba(100, 116, 139, 0.22);
+    color: #475569;
+}
+
+.listing-loyalty-earn__link {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 800;
+}
+
+.listing-loyalty-earn__link:hover {
+    color: var(--listing-primary);
+    text-decoration: underline;
 }

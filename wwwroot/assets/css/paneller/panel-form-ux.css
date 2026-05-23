@@ -1,0 +1,86 @@
+/* Wave-XIV — ortak panel form UX: sil / düzenle / yükle (partner + admin) */
+
+.panel-form-ux-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.panel-form-ux-edit.btn,
+.panel-form-ux-edit {
+    min-height: 40px;
+    border-radius: 12px;
+    font-weight: 700;
+}
+
+.panel-form-ux-delete,
+form.panel-form-ux-delete-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.panel-form-ux-delete .btn,
+.panel-form-ux-delete-btn {
+    min-height: 40px;
+    border-radius: 12px;
+    font-weight: 700;
+    border: 1px solid rgba(220, 38, 38, 0.35);
+    color: var(--ot-danger-strong, #b91c1c);
+    background: rgba(254, 242, 242, 0.9);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.panel-form-ux-delete .btn:hover,
+.panel-form-ux-delete-btn:hover {
+    background: #fee2e2;
+    border-color: rgba(220, 38, 38, 0.55);
+}
+
+.panel-form-ux-upload-form {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    min-width: min(100%, 280px);
+}
+
+.panel-form-ux-upload {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-form-ux-upload .form-control,
+.panel-form-ux-upload-file {
+    flex: 1 1 140px;
+    min-height: 40px;
+    border-radius: 12px;
+}
+
+.panel-form-ux-upload-btn {
+    min-height: 40px;
+    min-width: 44px;
+    border-radius: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.panel-form-ux-upload-btn i {
+    pointer-events: none;
+}
+
+.panel-form-ux-upload-help {
+    flex: 1 1 100%;
+    margin: 0;
+    font-size: 12px;
+    color: var(--ot-muted, #64748b);
+    line-height: 1.45;
+}
+
+.panel-form-ux-upload.is-dragover {
+    outline: 2px dashed rgba(37, 99, 235, 0.45);
+    outline-offset: 4px;
+    border-radius: 14px;
+}

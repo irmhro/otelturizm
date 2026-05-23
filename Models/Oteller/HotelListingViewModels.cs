@@ -28,6 +28,11 @@ public class HotelListingPageViewModel
     public List<string> PropertyTypes { get; set; } = new();
     public List<HotelListingCampaignFilterViewModel> Campaigns { get; set; } = new();
     public List<HotelListingQuickLinkViewModel> QuickLinks { get; set; } = new();
+
+    /// <summary>Wave-XIV: liste kartlarında sadakat rozeti veya placeholder göster.</summary>
+    public bool ShowLoyaltyTouchpoints { get; set; } = true;
+
+    public bool LoyaltyUserSignedIn { get; set; }
 }
 
 public class HotelSearchSuggestionViewModel
@@ -102,6 +107,9 @@ public class HotelListingCardViewModel
 
     /// <summary>Liste kartında ücretsiz iptal rozeti (T381).</summary>
     public bool HasFreeCancellation { get; set; }
+
+    /// <summary>Tahmini gecelik sadakat puanı (giriş yapmış kullanıcı rozeti).</summary>
+    public int? EstimatedLoyaltyPoints { get; set; }
 }
 
 public class HotelDetailPageViewModel

@@ -1,5 +1,10 @@
+:root {
+    --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .campaign-index-hero {
     max-width: var(--page-max-width);
+    transition: opacity var(--transition-base);
     margin: 0 auto;
     padding: 28px var(--space-8) 8px;
     display: grid;
@@ -32,6 +37,14 @@
     color: #fff;
     font-size: 13px;
     font-weight: 800;
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .campaign-index-hero:hover .campaign-index-hero__badge {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(255, 56, 92, 0.28);
+    }
 }
 
 .campaign-index-hero__stats {
@@ -54,6 +67,7 @@
     font-size: 14px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     text-decoration: none;
+    transition: border-color var(--transition-base), color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .campaign-stat-chip i {
@@ -81,7 +95,7 @@
     overflow: hidden;
     border: 1px solid rgba(15, 23, 42, 0.06);
     box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
 }
 
 .campaign-card:hover {

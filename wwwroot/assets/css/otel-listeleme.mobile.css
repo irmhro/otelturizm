@@ -755,10 +755,29 @@
         grid-template-columns: minmax(0, 1fr) auto;
         grid-template-areas:
             "info btn"
+            "loyalty btn"
             "tax  btn";
         align-items: end;
         column-gap: 12px;
         row-gap: 2px;
+    }
+
+    .hotel-card .price-section .listing-loyalty-earn {
+        grid-area: loyalty;
+        justify-self: start;
+        margin-top: 0;
+        max-width: 100%;
+        font-size: 0.7rem;
+        padding: 3px 8px;
+    }
+
+    .hotel-card .price-section .listing-loyalty-earn__link {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: min(100%, 200px);
+        display: inline-block;
+        vertical-align: bottom;
     }
 
     .hotel-card .price-section .price-info {

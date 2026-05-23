@@ -15,7 +15,7 @@ function Write-SyncLog([string]$Message) {
 Write-SyncLog 'start'
 
 # Untracked + modified (exclude junk)
-git add -A -- . ':!.tmp.driveupload' ':!.coord-build' ':!.coord-build-*' ':!.build-*' 2>$null
+git add -A -- . ':!.tmp.driveupload' ':!.coord-build' ':!.coord-build-*' ':!.build-*' ':!23.05.2026' 2>$null
 if ($LASTEXITCODE -ne 0) {
     git add -A
 }

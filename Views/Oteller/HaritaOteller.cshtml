@@ -1,11 +1,19 @@
 @using System.Globalization
 @using System.Text.Json
+@using otelturizmnew.Services
 @model otelturizmnew.Models.Oteller.HotelListingPageViewModel
 
 @{
     ViewData["Title"] = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Haritada Oteller" : $"{Model.SearchLabel} haritası";
     ViewData["PageCss"] = "haritaoteller";
     ViewData["PageCssMobile"] = "haritaoteller.mobile";
+    var mapLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
+    var listingBackPath = InternationalSeoPaths.BuildPublicPath(mapLang, InternationalSeoPaths.PageKindListing, null, null);
+    var listingBackUrl = listingBackPath;
+    if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
+    {
+        listingBackUrl += "?q=" + Uri.EscapeDataString(Model.SearchTerm);
+    }
     var mapHotels = (Model.MapHotels ?? new()).Where(x => x.Latitude.HasValue && x.Longitude.HasValue).ToList();
     var mapPayload = mapHotels.Select(x => new
     {
@@ -41,9 +49,9 @@
 <section class="hotel-map-page">
     <div class="hotel-map-page__shell">
         <header class="hotel-map-page__topline">
-            <a class="hotel-map-page__back" href="@Url.Action("OtelListeleme", "Oteller")">
+            <a class="hotel-map-page__back" href="@listingBackUrl">
                 <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                <span>Listeye Dön</span>
+                <span>@SharedLocalizer["Map.BackToList"]</span>
             </a>
             <div class="hotel-map-page__title">
                 <span>Harita görünümü</span>
@@ -78,7 +86,7 @@
                          aria-live="polite"
                          @(mapHotels.Count > 0 ? "hidden" : null)>
                         <p>Haritada gösterilecek tesis bulunamadı. Aramayı genişletin veya tüm otelleri listeleyin.</p>
-                        <a class="hotel-map-page__empty-cta" href="@Url.Action("OtelListeleme", "Oteller")">Tüm otellere dön</a>
+                        <a class="hotel-map-page__empty-cta" href="@listingBackUrl">@SharedLocalizer["Map.BackToAllHotels"]</a>
                     </div>
                 </div>
             </section>
