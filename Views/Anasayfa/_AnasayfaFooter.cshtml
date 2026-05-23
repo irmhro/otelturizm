@@ -1,5 +1,6 @@
 @using otelturizmnew.Services
 @{
+    // Path-based listing links; SharedLocalizer uses fixed Resources lookup (no ResourcesPath prefix).
     var footerLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     var footerHotelsPath = InternationalSeoPaths.BuildPublicPath(footerLang, InternationalSeoPaths.PageKindListing, null, null);
 }

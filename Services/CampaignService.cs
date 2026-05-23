@@ -13,6 +13,10 @@ namespace otelturizmnew.Services;
 
 public class CampaignService : ICampaignService
 {
+    private const string PublishStatusSql = "LOWER(REPLACE(LTRIM(RTRIM(o.[YAYIN_DURUMU])), NCHAR(0x0131), N'i')) = N'yayinda'";
+    private const string ApprovalStatusSql = "LOWER(REPLACE(LTRIM(RTRIM(o.[ONAY_DURUMU])), NCHAR(0x0131), N'i')) IN (N'onaylandi', N'onaylanmis', N'onayli')";
+    private const string CampaignParticipationSql = "LOWER(REPLACE(LTRIM(RTRIM(ko.[KATILIM_DURUMU])), NCHAR(0x0131), N'i')) IN (N'aktif', N'onaylandi', N'onaylanmis')";
+
     private readonly string _connectionString;
 
     public CampaignService(IConfiguration configuration)
@@ -27,7 +31,7 @@ public class CampaignService : ICampaignService
 
         await using var connection = await CreateOpenConnectionAsync(cancellationToken);
 
-        const string sql = @"
+        var sql = $@"
             SELECT
                 k.id,
                 k.[KAMPANYA_KODU],
@@ -48,15 +52,9 @@ public class CampaignService : ICampaignService
                     FROM [dbo].[KAMPANYA_OTELLER] ko
                     JOIN [dbo].[OTELLER] o ON o.id = ko.[OTEL_ID]
                     WHERE ko.[KAMPANYA_ID] = k.id
-                      AND ko.[KATILIM_DURUMU] = 'Aktif'
-                      AND (
-                            o.[YAYIN_DURUMU] IS NULL
-                            OR LOWER(REPLACE(LTRIM(RTRIM(o.[YAYIN_DURUMU])), N'ı', N'i')) IN (N'yayinda', N'yayında')
-                          )
-                      AND (
-                            o.[ONAY_DURUMU] IS NULL
-                            OR LOWER(REPLACE(LTRIM(RTRIM(o.[ONAY_DURUMU])), N'ı', N'i')) IN (N'onaylandi', N'onaylandı')
-                          )
+                      AND {CampaignParticipationSql}
+                      AND {PublishStatusSql}
+                      AND {ApprovalStatusSql}
                 ) AS hotel_count
             FROM [dbo].[KAMPANYALAR] k
             WHERE k.[AKTIF_MI] = 1
@@ -199,7 +197,7 @@ public class CampaignService : ICampaignService
             return null;
         }
 
-        const string hotelsSql = @"
+        var hotelsSql = $@"
             SELECT
                 o.id,
                 o.[OTEL_KODU],
@@ -261,10 +259,10 @@ public class CampaignService : ICampaignService
                 GROUP BY oi.[OTEL_ID]
             ) oz ON oz.[OTEL_ID] = o.id
             WHERE ko.[KAMPANYA_ID] = @campaignId
-              AND ko.[KATILIM_DURUMU] = 'Aktif'
+              AND {CampaignParticipationSql}
               AND SYSUTCDATETIME() BETWEEN ko.[BASLANGIC_TARIHI] AND ko.[BITIS_TARIHI]
-              AND o.[YAYIN_DURUMU] = 'Yayında'
-              AND o.[ONAY_DURUMU] = 'Onaylandı'
+              AND {PublishStatusSql}
+              AND {ApprovalStatusSql}
             ORDER BY ko.[ONE_CIKAN] DESC, ko.[SIRALAMA] ASC, o.[ONE_CIKAN_OTEL] DESC, o.[ORTALAMA_PUAN] DESC, o.id DESC;";
 
         await using (var command = CreateCommand(connection, hotelsSql))

@@ -99,7 +99,8 @@ if (builder.Environment.IsDevelopment())
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+// Marker type: otelturizmnew.Resources.SharedResources → embedded as otelturizmnew.Resources.SharedResources.resources
+builder.Services.AddLocalization();
 var supportedCultures = new[]
 {
     new CultureInfo("tr-TR"),
@@ -117,13 +118,10 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
 
-    // Öncelik: ?lang= -> path prefix -> Cookie -> Accept-Language
+    // Path prefix (+ ?lang= on Turkish canonical routes only). Cookie/Accept-Language disabled.
     options.RequestCultureProviders = new IRequestCultureProvider[]
     {
-        new QueryStringRequestCultureProvider { QueryStringKey = "lang", UIQueryStringKey = "lang" },
-        new otelturizmnew.Infrastructure.RoutePrefixRequestCultureProvider(),
-        new CookieRequestCultureProvider(),
-        new AcceptLanguageHeaderRequestCultureProvider()
+        new RoutePrefixRequestCultureProvider()
     };
 });
 

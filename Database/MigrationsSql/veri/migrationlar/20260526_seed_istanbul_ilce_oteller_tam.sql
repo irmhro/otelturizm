@@ -331,12 +331,12 @@ BEGIN
                 [BASLANGIC_TARIHI],[BITIS_TARIHI],[ADMIN_ONAY_TARIHI],[PARTNER_ONAY_TARIHI],[OLUSTURULMA_TARIHI]
             )
             VALUES(
-                @KampanyaId, @HotelId, @PartnerId, N'Onaylandi', N'OrkestraSeed',
+                @KampanyaId, @HotelId, @PartnerId, N'Aktif', N'OrkestraSeed',
                 @KampanyaBas, @KampanyaBit, SYSUTCDATETIME(), SYSUTCDATETIME(), SYSUTCDATETIME()
             );
         ELSE
             UPDATE [dbo].[KAMPANYA_OTELLER]
-            SET [KATILIM_DURUMU] = N'Onaylandi', [PARTNER_ID] = @PartnerId, [ADMIN_ONAY_TARIHI] = COALESCE([ADMIN_ONAY_TARIHI], SYSUTCDATETIME())
+            SET [KATILIM_DURUMU] = N'Aktif', [PARTNER_ID] = @PartnerId, [ADMIN_ONAY_TARIHI] = COALESCE([ADMIN_ONAY_TARIHI], SYSUTCDATETIME())
             WHERE [KAMPANYA_ID] = @KampanyaId AND [OTEL_ID] = @HotelId;
     END;
 
@@ -398,7 +398,7 @@ BEGIN
         [BASLANGIC_TARIHI],[BITIS_TARIHI],[ADMIN_ONAY_TARIHI],[PARTNER_ONAY_TARIHI],[OLUSTURULMA_TARIHI]
     )
     SELECT
-        @KampanyaId, o.[ID], o.[PARTNER_ID], N'Onaylandi', N'OrkestraSeed',
+        @KampanyaId, o.[ID], o.[PARTNER_ID], N'Aktif', N'OrkestraSeed',
         @KampanyaBas, @KampanyaBit, SYSUTCDATETIME(), SYSUTCDATETIME(), SYSUTCDATETIME()
     FROM [dbo].[OTELLER] o
     INNER JOIN [dbo].[ILCELER] c ON c.[ID] = o.[ILCE_ID]

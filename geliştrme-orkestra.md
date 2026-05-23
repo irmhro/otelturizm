@@ -55,12 +55,28 @@
 | 041 | 2026-05-23 | Wave-XIV | H1 | Liste sadakat rozeti (`EstimatedLoyaltyPoints`) + `data-loyalty-hook` placeholder | ✅ |
 | 042 | 2026-05-23 | Wave-XIV | H1 | `LoyaltyPointsEstimator` + `ApplyListingLoyaltyTouchpoints` controller wiring | ✅ |
 | 043 | 2026-05-23 | Wave-XIV | H10 | `dotnet build -o .coord-build-xiv` — 0 hata gate | ✅ |
+| 044 | 2026-05-23 | Wave-XVI | H4 | `panel-form-ux` — Admin Kampanyalar aktif/pasif toggle deseni | ✅ |
+| 045 | 2026-05-23 | Wave-XVI | H4 | `panel-form-ux` — Admin Oteller toplu yayın + satır düzenle/yayın aksiyonları | ✅ |
+| 046 | 2026-05-23 | Wave-XVI | H1 | `/havuzlu-oteller` → `?etiket=havuzlu-oteller` (`KonseptOtelLandingController`) | ✅ |
+| 047 | 2026-05-23 | Wave-XVI | H14 | E-posta Faz2: `tr/Rezervasyon_Talebi_Alindi` → `_EmailMaster` | ✅ |
+| 048 | 2026-05-23 | Wave-XVI | H14 | E-posta Faz2: `tr/Sifre_Sifirlama_Talebi` → `_EmailMaster` | ✅ |
+| 049 | 2026-05-23 | Wave-XVI | H10 | `dotnet build -o .coord-build-xvi` — 0 hata gate | ✅ |
+| 050 | 2026-05-23 | Wave-XVI | H10 | Orkestra dokümanları (#050+) + köşe audit satırı güncellendi | ✅ |
+| 051 | 2026-05-23 | Wave-XVII | H8 | Yerel DB tam migration (sqlcmd): 179 script OK · 2 idempotent fail · 39 yayında otel | ✅ |
+| 053 | 2026-05-23 | P0 | H9+H13+H1 | **urgent-fix:** path-locked culture (no cookie/Accept-Language ar drift); `AddLocalization()` ResourcesPath düzeltmesi (`Nav.Hotels` → Oteller); dil değiştirici path prefix; liste/harita kart URL path-based; firma/kurumsal header menü | ✅ |
 
-**Toplam tamamlanan teslimat:** **43** (Wave-I → Wave-XIV)
+**Toplam tamamlanan teslimat:** **52** (Wave-I → Wave-XVII + #053)
 
 ---
 
 ## Dalga detayları (son 5)
+
+### Wave-XVI — Panel form + konsept landing + e-posta Faz2 (2026-05-23)
+
+- **H4:** `panel-form-ux` admin Kampanyalar + Oteller (bulk bar, düzenle/sil toggle)  
+- **H1:** `/havuzlu-oteller` kalıcı yönlendirme  
+- **H14:** 2 tr şablon master layout (`Rezervasyon_Talebi_Alindi`, `Sifre_Sifirlama_Talebi`)  
+- **H10:** `.coord-build-xvi` build gate  
 
 ### Wave-XIV — Geçişler + sadakat + panel form UX (2026-05-23)
 
@@ -110,7 +126,10 @@
 | 040 | FE-CTO PNG batch-1 | H4 | 4 user desktop/mobil SS |
 | 041 | Partner SS batch-1 PNG | H2 | T311 10 sayfa |
 | 042 | Auth E2E smoke tablosu | H7 | Tüm paneller PASS |
-| 043 | Eksik konsept landing HTML | H1 | `eksik sayfalar kodlanacak` |
+| 043 | Eksik konsept landing HTML | H1 | `eksik sayfalar kodlanacak` — havuzlu ✅; hafta sonu/evcil sırada |
+| 051 | E-posta Faz2 kalan şablonlar (7 dil) | H14 | `Rezervasyon_Reddedildi`, `Giris_Guvenlik_Kodu`, … |
+| 052 | `panel-form-ux` partner upload sayfaları | H4/H8 | fotograflar, oda medya |
+| 053 | SEO sitemap fr/es/ar/ru | H9 | `sitemap-*.xml` + hreflang doğrulama |
 
 ---
 
@@ -131,7 +150,7 @@
 | H11 | finans | done — apply runbook ✅ |
 | H12 | fatura | done Faz1 |
 | H13 | i18n | Faz3 ar/ru done — panel string backlog |
-| H14 | email | assigned — Faz2 |
+| H14 | email | verify — Faz2: 6/∞ master (tr rezervasyon×3 + fatura×2 + şifre) |
 
 ---
 
@@ -143,4 +162,18 @@ Her 10 dk dalga bitince:
 2. [`geliştirme.md`](geliştirme.md) KPI tablosunu güncelle  
 3. `ORKESTRA_DURUM_KONTROL.md` snapshot  
 
-*Son otomatik dalga: Wave-XIV (#039–#043) · Sonraki: #044 e-posta Faz2*
+*Son otomatik dalga: #053 P0 urgent-fix (locale/header) · Sonraki: #052 e-posta Faz2 devam*
+
+### #051 — demo-full-stack (2026-05-23)
+
+- **DB:** `20260526_fix_yayin_onay_unicode.sql` (`Yayında` = `Yay`+U+0131+`nda`), `20260523_ensure_demo_hotels_published.sql`, `20260523_seed_demo_oda_fiyat_kampanya.sql` (90 gun fiyat, 2 oda, havuz/wifi/kahvalti, kampanya `Aktif`)
+- **Kod:** `CampaignService` — `PublishStatusSql` / `ApprovalStatusSql` / `KATILIM_DURUMU` (`Aktif`|`Onaylandi`) HotelService ile hizalandi
+- **Dogrulama:** 39 yayinda ORK otel, kampanya `/kampanyalar` otel sayaci > 0 (`KMP-2026-SEHIR`)
+- **Doc:** `Docs/ISTANBUL_ILCE_DEMO_KURULUM.md` verify sorgulari guncellendi
+
+### #052 - publish+images local (2026-05-23)
+
+- **SQL:** 20260523_ensure_demo_hotels_published.sql, 20260526_fix_yayin_onay_unicode.sql, 20260523_fix_orkestra_demo_yayin_onay.sql (sqlcmd -I); ek UPDATE ILCE/ORK-SEED/irmhro0 demo -> Yayinda+Onaylandi (10 satir)
+- **Gorsel:** Install-IstanbulIlceDemo.ps1, Install-DemoHotelMedia.ps1, DemoImageSeed (--root); 39 otel, 312 gorsel indir/guncelle; wwwroot ~366 dosya
+- **Dogrulama (LocalDB otelturizm_2026db):** 39 yayinda otel, 39 otel_gorsel; ornek https://localhost:7223/uploads/images/13/hotel/demo-cover.webp
+- **Not:** --run-sql-migrations bir scriptte ILCE/ILLER FK DELETE hatasi (mevcut otel verisi); publish scriptleri uygulandi

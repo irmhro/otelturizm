@@ -23,11 +23,22 @@ sqlcmd -S $srv -d $db -b -i "$base\20260526_seed_istanbul_ilce_oteller_tam.sql"
 sqlcmd -S $srv -d $db -b -i "$base\20260526_seed_istanbul_ilce_medya_ozellik.sql"
 ```
 
-Dogrulama:
+Dogrulama (Unicode-normalize — `HotelService` / `CampaignService` ile ayni):
 
 ```powershell
-sqlcmd -S $srv -d $db -Q "SELECT COUNT(*) AS IstanbulYayinda FROM OTELLER o INNER JOIN ILCELER c ON c.ID=o.ILCE_ID INNER JOIN ILLER i ON i.ID=c.IL_ID WHERE i.IL_ADI LIKE N'%stanbul%' AND o.YAYIN_DURUMU=N'Yayında'"
+$q = @"
+SET NOCOUNT ON;
+SELECT 'yayinda' AS m, COUNT(*) c FROM OTELLER WHERE LOWER(REPLACE(LTRIM(RTRIM(yayin_durumu)), NCHAR(0x0131), N'i')) = N'yayinda';
+SELECT 'oda_tipleri' AS m, COUNT(*) c FROM ODA_TIPLERI ot JOIN OTELLER h ON ot.otel_id=h.id WHERE LOWER(REPLACE(LTRIM(RTRIM(h.yayin_durumu)), NCHAR(0x0131), N'i')) = N'yayinda';
+SELECT 'fiyat_satir' AS m, COUNT(*) c FROM ODA_FIYAT_MUSAITLIK ofm JOIN OTELLER h ON ofm.otel_id=h.id WHERE h.otel_kodu LIKE N'ORK-%';
+SELECT 'kampanya_otel_aktif' AS m, COUNT(*) c FROM kampanya_oteller ko JOIN OTELLER h ON ko.otel_id=h.id WHERE ko.katilim_durumu=N'Aktif' AND h.otel_kodu LIKE N'ORK-%';
+"@
+sqlcmd -S $srv -d $db -E -W -h -1 -Q $q
 ```
+
+Ek gap-fill (90 gun fiyat, eksik oda, havuz/wifi/kahvalti, `KATILIM_DURUMU=Aktif`):
+
+`20260523_seed_demo_oda_fiyat_kampanya.sql`
 
 ## Partner giris bilgileri
 

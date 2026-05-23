@@ -1,4 +1,5 @@
 @using System.Globalization
+@using otelturizmnew.Services
 @model otelturizmnew.Models.Oteller.HotelListingPageViewModel
 
 @{
@@ -92,7 +93,10 @@
         ("havuzlu-oteller", "Havuzlu", "fa-person-swimming", "pool"),
         ("kampanyaya-dahil-oteller", "Kampanyalı", "fa-tag", "campaign")
     };
-    var mapListingUrl = $"/oteller/harita?q={Uri.EscapeDataString(Model.SearchTerm ?? string.Empty)}";
+    var listingPathLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
+    string HotelDetailUrl(string slug) => InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindDetail, null, slug);
+    var mapListingUrl = InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindMap, null, null)
+        + "?q=" + Uri.EscapeDataString(Model.SearchTerm ?? string.Empty);
 
     string NormalizeToken(string value)
     {
@@ -1318,9 +1322,7 @@
                                         mosaicImages.Add(mosaicImages[0]);
                                     }
                                 }
-                                <a asp-controller="Oteller"
-                                   asp-action="OtelDetay"
-                                   asp-route-slug="@hotel.Slug"
+                                <a href="@HotelDetailUrl(hotel.Slug)"
                                    class="card-image-link"
                                    aria-label="@hotel.Name detay sayfasına git">
                                     <img class="card-main-image"
@@ -1575,7 +1577,7 @@
                                             </span>
                                         }
                                     }
-                                    <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@hotel.Slug" class="btn-detail">İncele</a>
+                                    <a href="@HotelDetailUrl(hotel.Slug)" class="btn-detail">İncele</a>
                                 </div>
                             </div>
                         </article>
@@ -1685,6 +1687,11 @@
     }
     <script nonce="@nonce">
         (function () {
+            const hotelDetailPathPattern = @System.Text.Json.JsonSerializer.Serialize(InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindDetail, null, "{slug}"));
+            function buildHotelDetailUrl(slug) {
+                return hotelDetailPathPattern.replace('{slug}', encodeURIComponent(String(slug || '').trim()));
+            }
+
             const listView = document.getElementById('hotelListView');
             const sortSelect = document.getElementById('listingSortSelect');
             const keywordInput = document.getElementById('listingKeywordInput');
@@ -2910,7 +2917,7 @@
                 hideKeywordSuggestions();
 
                 if (selectedType === 'otel' && selectedSlug.length > 0) {
-                    window.location.href = '/oteller/' + encodeURIComponent(selectedSlug);
+                    window.location.href = buildHotelDetailUrl(selectedSlug);
                     return;
                 }
 

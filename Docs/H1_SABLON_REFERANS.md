@@ -39,3 +39,11 @@ Uygulama: `.listing-card-discount-corner` + `.old-price` + `.listing-discount-ra
 - Geçiş: `--transition-base` (`site-layout.css` ile aynı eğri) — liste kartları, kampanya hero/stat chip, harita geri linki.
 - Sadakat: liste fiyat bloğunda `listing-loyalty-earn` (+N puan) veya `data-loyalty-hook` giriş placeholder.
 - Panel form: `paneller/panel-form-ux.css` — sil/düzenle/yükle (pilot: partner misafir faturaları).
+
+## Wave-XVI — konsept landing URL
+
+| Şablon (eksik sayfalar) | SEO landing | Liste filtresi |
+|-------------------------|-------------|----------------|
+| HAVUZLU OTELLER | `/havuzlu-oteller` (301) | `?etiket=havuzlu-oteller` |
+
+Controller: `Controllers/Oteller/KonseptOtelLandingController.cs`

@@ -1,4 +1,5 @@
 @using System.Globalization
+@using otelturizmnew.Services
 @{
     var supportedCultures = new (string Code, string FlagCode, string Label)[]
     {
@@ -12,8 +13,18 @@
         ("ar-SA", "sa", "العربية")
     };
 
-    var currentCulture = CultureInfo.CurrentUICulture.Name;
-    var currentEntry = supportedCultures.FirstOrDefault(c => string.Equals(c.Code, currentCulture, StringComparison.OrdinalIgnoreCase));
+    var pathLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
+    var pathCulture = pathLang switch
+    {
+        "en" => "en-US",
+        "de" => "de-DE",
+        "fr" => "fr-FR",
+        "es" => "es-ES",
+        "ru" => "ru-RU",
+        "ar" => "ar-SA",
+        _ => "tr-TR"
+    };
+    var currentEntry = supportedCultures.FirstOrDefault(c => string.Equals(c.Code, pathCulture, StringComparison.OrdinalIgnoreCase));
     if (string.IsNullOrEmpty(currentEntry.Code))
     {
         currentEntry = supportedCultures[0];
@@ -21,23 +32,28 @@
 
     string BuildLangUrl(string cultureCode)
     {
+        var two = cultureCode.Length >= 2 ? cultureCode[..2].ToLowerInvariant() : cultureCode.ToLowerInvariant();
         var path = Context.Request.Path.HasValue ? Context.Request.Path.Value! : "/";
+        var localizedPath = InternationalSeoPaths.LocalizePath(path, two);
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(Context.Request.QueryString.Value);
-        var dict = query.ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
-        dict["lang"] = cultureCode;
-        return Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(path, dict!);
+        var dict = query
+            .Where(kvp => !string.Equals(kvp.Key, "lang", StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+        return dict.Count == 0
+            ? localizedPath
+            : Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(localizedPath, dict!);
     }
 }
 
 <div class="dropdown language-dropdown" id="languageDropdown">
     <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false" data-language-id="@currentEntry.Code">
         <span class="toggle-flag flag-icon flag-icon-@currentEntry.FlagCode" aria-hidden="true"></span>
-        <span class="dropdown-label">@currentCulture.Split('-')[0].ToUpperInvariant()</span>
+        <span class="dropdown-label">@currentEntry.Code.Split('-')[0].ToUpperInvariant()</span>
     </button>
     <ul class="dropdown-menu" role="menu">
         @foreach (var culture in supportedCultures)
         {
-            var isActive = string.Equals(culture.Code, currentCulture, StringComparison.OrdinalIgnoreCase);
+            var isActive = string.Equals(culture.Code, pathCulture, StringComparison.OrdinalIgnoreCase);
             <li class="dropdown-item@(isActive ? " active" : "")" data-value="@culture.Code.Split('-')[0]" data-culture="@culture.Code">
                 <a class="language-switch-link" href="@BuildLangUrl(culture.Code)" hreflang="@culture.Code" lang="@culture.Code.Split('-')[0]" aria-current="@(isActive ? "true" : null)">
                     <span class="flag-icon flag-icon-@culture.FlagCode" aria-hidden="true"></span>

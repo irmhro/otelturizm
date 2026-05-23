@@ -44,6 +44,22 @@ public static class InternationalSeoPaths
         return root;
     }
 
+    public static bool HasLocalePathPrefix(string path)
+    {
+        var segments = (path ?? "/").Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length < 2)
+        {
+            return false;
+        }
+
+        if (!CultureRoutes.TryGetValue(segments[0], out var route) || string.Equals(segments[0], "tr", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return string.Equals(route.ListSegment, segments[1], StringComparison.OrdinalIgnoreCase);
+    }
+
     public static string ResolveCultureFromPath(string path)
     {
         var segments = (path ?? "/").Split('/', StringSplitOptions.RemoveEmptyEntries);

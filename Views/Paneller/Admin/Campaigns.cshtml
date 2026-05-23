@@ -142,13 +142,13 @@
                             <td>
                                 <span class="status-pill status-pill--@Tone(row.PartnerJoinOpen)">@(row.PartnerJoinOpen ? "Açık" : "Kapalı")</span>
                             </td>
-                            <td>
-                                <form method="post" action="/admin/kampanyalar/aktiflik" class="admin-inline-form">
+                            <td class="panel-form-ux-actions" data-label="Aksiyon">
+                                <form method="post" action="/admin/kampanyalar/aktiflik" class="admin-inline-form panel-form-ux-toggle-form @(row.IsActive ? "panel-form-ux-delete" : "")">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="campaignId" value="@row.CampaignId" />
                                     <input type="hidden" name="active" value="@(row.IsActive ? "false" : "true")" />
                                     <input type="hidden" name="returnUrl" value="@returnUrl" />
-                                    <button type="submit" class="btn btn-sm @(row.IsActive ? "btn-outline-danger" : "btn-success")">
+                                    <button type="submit" class="btn btn-sm panel-form-ux-delete-btn @(row.IsActive ? "btn-outline-danger" : "btn-success panel-form-ux-edit")">
                                         <i class="fas @(row.IsActive ? "fa-pause" : "fa-play") me-1"></i>@(row.IsActive ? "Pasife al" : "Aktif et")
                                     </button>
                                 </form>

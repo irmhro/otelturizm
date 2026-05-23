@@ -25,11 +25,12 @@
         "sales" => "Satış Paneli",
         _ => "Hesabım"
     };
-    var currentCulture = System.Globalization.CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
     var currentLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
+    var pathHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(Context.Request.Path.Value ?? "/");
     var currentFlag = currentLang switch { "en" => "gb", "fr" => "fr", "de" => "de", "es" => "es", "ru" => "ru", "ar" => "sa", _ => "tr" };
     var currentCurrency = (Context.Request.Cookies["ot_currency"] ?? "TRY").Trim().ToUpperInvariant();
     var hotelsListingPath = InternationalSeoPaths.BuildPublicPath(currentLang, InternationalSeoPaths.PageKindListing, null, null);
+    var hotelDetailPathPattern = InternationalSeoPaths.BuildPublicPath(currentLang, InternationalSeoPaths.PageKindDetail, null, "{slug}");
 }
 
 <header class="site-header" id="mainHeader">
@@ -79,18 +80,19 @@
         <div class="header-actions">
             @if (homeAuthenticated && headerContext == "corporate")
             {
-                <a asp-controller="Oteller" asp-action="OtelListeleme" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
-                <a href="/firma" class="action-btn primary">@SharedLocalizer["Nav.Firma"]</a>
+                <a href="@hotelsListingPath" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
+                <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">@SharedLocalizer["Nav.Corporate"].Value</a>
             }
             else if (homeAuthenticated && headerContext == "firma")
             {
-                <a asp-controller="Oteller" asp-action="OtelListeleme" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
-                <a href="/firma" class="action-btn primary">@SharedLocalizer["Nav.Firma"]</a>
+                <a href="@hotelsListingPath" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
+                <a href="/panel/firma/rezervasyonlar" class="action-btn">@SharedLocalizer["Nav.Reservations"].Value</a>
+                <a href="/panel/firma/faturalar" class="action-btn">@SharedLocalizer["Nav.Invoices"].Value</a>
             }
             else if (homeAuthenticated)
             {
-                <a asp-controller="Oteller" asp-action="OtelListeleme" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
-                <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">@SharedLocalizer["Nav.Corporate"]</a>
+                <a href="@hotelsListingPath" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
+                <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">@SharedLocalizer["Nav.Corporate"].Value</a>
             }
             <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
             <button class="action-btn mobile-nav-toggle" id="mobileMenuToggle" type="button"><i class="fas fa-bars"></i></button>
@@ -152,6 +154,14 @@
 
         ensureFlagIconStylesheet();
 
+        const pathLangFromServer = '@currentLang';
+        const pathHasLocalePrefix = @(pathHasLocalePrefix ? "true" : "false");
+        const hotelDetailPathPattern = @System.Text.Json.JsonSerializer.Serialize(hotelDetailPathPattern);
+
+        function buildHotelDetailUrl(slug) {
+            return hotelDetailPathPattern.replace('{slug}', encodeURIComponent(String(slug || '').trim()));
+        }
+
         const languageStorageKey = 'site:language:v1';
         const legacyLanguageStorageKey = 'site:language';
         const languageSessionKey = 'site:language:session:v1';
@@ -209,12 +219,17 @@
         }
 
         function getPreferredLanguage() {
+            if (pathHasLocalePrefix) {
+                return normalizeLanguage(pathLangFromServer);
+            }
+            if (!hasExplicitSelection()) {
+                return defaultLanguage;
+            }
             const fromLocal = localStorage.getItem(languageStorageKey);
             const fromLegacy = localStorage.getItem(legacyLanguageStorageKey);
             const fromSession = sessionStorage.getItem(languageSessionKey);
             const fromCookie = getCookie(languageCookieKey);
-            const resolved = normalizeLanguage(fromLocal || fromSession || fromCookie || fromLegacy || defaultLanguage);
-            return hasExplicitSelection() ? resolved : defaultLanguage;
+            return normalizeLanguage(fromLocal || fromSession || fromCookie || fromLegacy || defaultLanguage);
         }
 
         function setGoogleTranslateCookie(lang) {
@@ -394,13 +409,19 @@
         };
 
         // Apply preference as early as possible on every page.
-        const startupLanguage = persistLanguagePreference(getPreferredLanguage());
-        if (hasExplicitSelection()) {
-            setGoogleTranslateCookie(startupLanguage);
+        const startupLanguage = pathHasLocalePrefix
+            ? normalizeLanguage(pathLangFromServer)
+            : persistLanguagePreference(getPreferredLanguage());
+        if (pathHasLocalePrefix || hasExplicitSelection()) {
+            if (startupLanguage !== defaultLanguage) {
+                setGoogleTranslateCookie(startupLanguage);
+            } else {
+                clearGoogleTranslateCookie();
+            }
         } else {
             clearGoogleTranslateCookie();
         }
-        document.documentElement.lang = startupLanguage;
+        document.documentElement.lang = pathHasLocalePrefix ? pathLangFromServer : startupLanguage;
         clearGoogleTranslateHashIfNeeded(startupLanguage);
 
         function setupDropdown(id, storageKey){
@@ -448,6 +469,11 @@
                             toggleFlag.className = 'toggle-flag flag-icon flag-icon-' + code;
                         }
                         setLanguage(value, true, true);
+                        const switchLink = item.querySelector('a.language-switch-link');
+                        if (switchLink && switchLink.href) {
+                            window.location.href = switchLink.href;
+                            return;
+                        }
                     }
                     if(id === 'currencyDropdown'){
                         // update currency badge on toggle
@@ -604,7 +630,7 @@
                 }
                 hideHeaderSuggestions();
                 if ((button.dataset.type || '').toLowerCase() === 'otel' && (button.dataset.slug || '').trim().length > 0) {
-                    window.location.href = '/oteller/' + encodeURIComponent(button.dataset.slug || '');
+                    window.location.href = buildHotelDetailUrl(button.dataset.slug || '');
                     return;
                 }
                 searchForm?.requestSubmit();
@@ -615,7 +641,7 @@
                 const selectedSlug = (selectedSlugInput?.value || '').trim();
                 if (selectedType === 'otel' && selectedSlug.length > 0) {
                     event.preventDefault();
-                    window.location.href = '/oteller/' + encodeURIComponent(selectedSlug);
+                    window.location.href = buildHotelDetailUrl(selectedSlug);
                 }
             });
 

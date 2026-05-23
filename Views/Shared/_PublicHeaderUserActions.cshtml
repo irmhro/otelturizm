@@ -143,25 +143,25 @@ else
 {
     if (headerContext == "corporate")
     {
-        <a asp-controller="Oteller" asp-action="OtelListeleme" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
-        <a href="/partner-giris" class="action-btn">@SharedLocalizer["Nav.Login"]</a>
-        <a href="/partner-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.Register"]</a>
-        <a href="/firma" class="action-btn primary">@SharedLocalizer["Nav.Firma"]</a>
+        <a href="/oteller" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
+        <a href="/partner-giris" class="action-btn">@SharedLocalizer["Nav.Login"].Value</a>
+        <a href="/partner-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.Register"].Value</a>
+        <a href="/firma" class="action-btn primary">@SharedLocalizer["Nav.Firma"].Value</a>
     }
     else if (headerContext == "firma")
     {
-        <a asp-controller="Oteller" asp-action="OtelListeleme" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
-        <a href="/firma-giris" class="action-btn">@SharedLocalizer["Nav.FirmaLogin"]</a>
-        <a href="/firma-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.FirmaRegister"]</a>
-        <a href="/panel/firma/rezervasyonlar" class="action-btn">@SharedLocalizer["Nav.Reservations"]</a>
-        <a href="/panel/firma/faturalar" class="action-btn">@SharedLocalizer["Nav.Invoices"]</a>
+        <a href="/oteller" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
+        <a href="/firma-giris" class="action-btn">@SharedLocalizer["Nav.FirmaLogin"].Value</a>
+        <a href="/firma-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.FirmaRegister"].Value</a>
+        <a href="/panel/firma/rezervasyonlar" class="action-btn">@SharedLocalizer["Nav.Reservations"].Value</a>
+        <a href="/panel/firma/faturalar" class="action-btn">@SharedLocalizer["Nav.Invoices"].Value</a>
     }
     else
     {
-        <a asp-controller="Oteller" asp-action="OtelListeleme" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
-        <a href="/kullanici-giris" class="action-btn">@SharedLocalizer["Nav.Login"]</a>
-        <a href="/kullanici-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.Register"]</a>
-        <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">@SharedLocalizer["Nav.Corporate"]</a>
+        <a href="/oteller" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
+        <a href="/kullanici-giris" class="action-btn">@SharedLocalizer["Nav.Login"].Value</a>
+        <a href="/kullanici-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.Register"].Value</a>
+        <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">@SharedLocalizer["Nav.Corporate"].Value</a>
     }
 }
 

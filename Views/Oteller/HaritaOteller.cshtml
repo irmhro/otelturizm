@@ -9,6 +9,7 @@
     ViewData["PageCssMobile"] = "haritaoteller.mobile";
     var mapLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     var listingBackPath = InternationalSeoPaths.BuildPublicPath(mapLang, InternationalSeoPaths.PageKindListing, null, null);
+    var mapHotelDetailPathPattern = InternationalSeoPaths.BuildPublicPath(mapLang, InternationalSeoPaths.PageKindDetail, null, "{slug}");
     var listingBackUrl = listingBackPath;
     if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
     {
@@ -216,6 +217,11 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin="anonymous"></script>
     <script>
         (function () {
+            const hotelDetailPathPattern = @System.Text.Json.JsonSerializer.Serialize(mapHotelDetailPathPattern);
+            function buildHotelDetailUrl(slug) {
+                return hotelDetailPathPattern.replace('{slug}', encodeURIComponent(String(slug || '').trim()));
+            }
+
             const mapCanvas = document.getElementById('hotelMapCanvas');
             const fitBtn = document.getElementById('fitHotelMapBtn');
             const payload = document.getElementById('hotelMapPayload');
@@ -326,7 +332,7 @@
                                 '<b>' + escapeHtml(priceText) + '</b>' +
                                 '<em>' + escapeHtml(Number(hotel.rating || 0).toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })) + '</em>' +
                             '</div>' +
-                            '<a class="hotel-map-popup__cta" href="/oteller/' + encodeURIComponent(String(hotel.slug || '')) + '">Oteli İncele</a>' +
+                            '<a class="hotel-map-popup__cta" href="' + buildHotelDetailUrl(hotel.slug || '') + '">Oteli İncele</a>' +
                         '</div>' +
                     '</article>';
 

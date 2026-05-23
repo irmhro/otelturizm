@@ -15,7 +15,7 @@
 | **Job (10dk)** | `AGENT_LOOP_TICK_platform_coord` (600 sn) — **çalışıyor** |
 | **Job (1sa)** | `AGENT_LOOP_HOURLY_git_sync` (3600 sn) — **aktif** |
 | **Politika** | Onaysız orkestra CTO · **saatlik commit+push açık** · canlı deploy yok |
-| **Build** | ✅ `dotnet build -o .coord-build-xiv` — 0 hata |
+| **Build** | ✅ `dotnet build -o .coord-build-xvi` — 0 hata |
 | **Platform olgunluk** | ~**40–44%** (gap analizi) |
 | **Canlıya hazır** | **Hayır** (K1–K8 kapıları tam değil) |
 | **FE-CTO** | **6/151** onaylı · **14** hedef SS path (PNG bekliyor) |
@@ -28,8 +28,8 @@
 
 | Alan | Wave | Odak |
 |------|------|------|
-| **Şu an** | Wave-XIV+ | E-posta Faz2 · konsept landing · FE-CTO PNG |
-| **Az önce** | Wave-XIV | **H1+H4** — kart geçişleri, sadakat rozeti, `panel-form-ux` pilot ✅ |
+| **Şu an** | Wave-XVI+ | E-posta Faz2 (7 dil) · kalan konsept landing · FE-CTO PNG |
+| **Az önce** | Wave-XVI | **H1+H4+H14** — `/havuzlu-oteller`, admin panel-form-ux×2, 2 e-posta master ✅ |
 
 Kaynak: `ORKESTRA_DURUM_KONTROL.md` · `CTO_AJAN_ATAMA_KUYRUGU.md`
 
@@ -67,9 +67,16 @@ Kaynak: `ORKESTRA_DURUM_KONTROL.md` · `CTO_AJAN_ATAMA_KUYRUGU.md`
 
 ## Sıradaki P0
 
-1. **Şablon eksikleri:** `proje verileri/eksik sayfalar kodlanacak` — ayrı konsept landing sayfaları (liste `?etiket=` hazır)
-2. **Panel form UX:** `panel-form-ux` diğer admin/partner sayfalarına yayılım
-4. FE-CTO PNG · e-posta Faz2 · auth E2E smoke
+| Alan | P0 | Durum |
+|------|-----|--------|
+| **Panels** | `panel-form-ux` partner foto/oda upload | 🟡 sırada |
+| **Landing (H1)** | hafta-sonu, evcil-hayvan SEO URL | 🟡 havuzlu ✅ |
+| **SEO (H9)** | fr/es/ar/ru sitemap + hreflang | 🔴 açık |
+| **Security (H7)** | Auth E2E smoke tüm paneller | 🟡 kısmi |
+| **Speed** | liste output cache / lazy load ipuçları | 🟡 backlog |
+| **Email (H14)** | Faz2 kalan şablonlar (7 dil) | 🟡 6 master |
+
+1. FE-CTO PNG batch · auth E2E tablo · hotel publish verify (migration subagent — yedek sonrası smoke only)
 
 
 ---

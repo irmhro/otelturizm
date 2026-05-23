@@ -52,16 +52,20 @@
 
 ---
 
-## Köşe audit (Wave-X)
+## Köşe audit (Wave-XVI)
 
 | Köşe | Sonuç | Kanıt / not |
 |------|--------|-------------|
 | Oteller anasayfa / liste / harita (39 seed) | ✅ **PASS** | `PublishStatusSql`; 39 ilçe seed; çok dilli path prefix |
+| Konsept landing `/havuzlu-oteller` | ✅ **PASS** | `KonseptOtelLandingController` → `?etiket=havuzlu-oteller` |
+| Admin panel-form-ux (kampanya + otel bulk) | ✅ **PASS** | `Campaigns.cshtml`, `Hotels.cshtml` + `panel-form-ux.css` |
+| E-posta master layout (Faz2 örnek) | 🟡 **kısmi** | 6 tr şablon master; 7 dil backlog |
 | Yemek filtre `?etiket=kahvalti-dahil` | ✅ **PASS** | `HotelService` + sidebar |
 | Auth / kayıt tüm paneller | 🟡 **kısmi** | T398 kod ✅; E2E tabloları smoke pending |
 | Rezervasyon ülke/il/ilçe/mahalle | 🟡 **kısmi** | `/api/adres/*`; ilce/mahalle 400 eksik |
 | Kampanya indirimli fiyat kart | 🟡 **kısmi** | Liste kartı `HasDiscount`; `?kampanya=` heuristic |
 | Admin + partner komisyon widget | ✅ **PASS** | H11 tahsilat + partner komisyon trend |
+| SEO fr/es/ar/ru sitemap | 🔴 **açık** | `sitemap-en` var; diğer diller pending |
 
 ---
 

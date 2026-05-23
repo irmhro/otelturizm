@@ -3,14 +3,58 @@ using otelturizmnew.Services;
 
 namespace otelturizmnew.Infrastructure;
 
-/// <summary>/en/hotels, /de/hotels, /fr/hotels, /es/hoteles path prefix ile UI kültürü (H9/H13).</summary>
+/// <summary>
+/// Path prefix is the source of truth for public SEO routes.
+/// Turkish canonical paths (/oteller, /kampanyalar, /) stay tr-TR unless ?lang= is present.
+/// Cookie and Accept-Language are ignored (no silent ar/en drift).
+/// </summary>
 public sealed class RoutePrefixRequestCultureProvider : IRequestCultureProvider
 {
+    private const string LangQueryKey = "lang";
+
     public Task<ProviderCultureResult?> DetermineProviderCultureResult(HttpContext httpContext)
     {
         var path = httpContext.Request.Path.Value ?? "/";
-        var cultureCode = InternationalSeoPaths.ResolveCultureFromPath(path);
+        var pathCulture = InternationalSeoPaths.ResolveCultureFromPath(path);
 
+        if (!string.Equals(pathCulture, "tr", StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.FromResult<ProviderCultureResult?>(ToResult(pathCulture));
+        }
+
+        if (TryGetQueryCulture(httpContext, out var queryCulture))
+        {
+            return Task.FromResult<ProviderCultureResult?>(ToResult(queryCulture));
+        }
+
+        return Task.FromResult<ProviderCultureResult?>(ToResult("tr"));
+    }
+
+    private static bool TryGetQueryCulture(HttpContext httpContext, out string cultureCode)
+    {
+        cultureCode = "tr";
+        if (!httpContext.Request.Query.TryGetValue(LangQueryKey, out var values))
+        {
+            return false;
+        }
+
+        var raw = values.ToString().Trim();
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return false;
+        }
+
+        var two = raw.Length >= 2 ? raw[..2].ToLowerInvariant() : raw.ToLowerInvariant();
+        cultureCode = two switch
+        {
+            "en" or "de" or "fr" or "es" or "ru" or "ar" or "tr" => two,
+            _ => "tr"
+        };
+        return true;
+    }
+
+    private static ProviderCultureResult ToResult(string cultureCode)
+    {
         var culture = cultureCode switch
         {
             "en" => "en-US",
@@ -22,6 +66,6 @@ public sealed class RoutePrefixRequestCultureProvider : IRequestCultureProvider
             _ => "tr-TR"
         };
 
-        return Task.FromResult<ProviderCultureResult?>(new ProviderCultureResult(culture, culture));
+        return new ProviderCultureResult(culture, culture);
     }
 }

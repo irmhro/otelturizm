@@ -2,26 +2,30 @@
 -- Önce: 20260526_fix_yayin_onay_unicode.sql (varsa)
 IF OBJECT_ID(N'dbo.OTELLER', N'U') IS NULL
 BEGIN
-    PRINT 'OTELLER tablosu yok — atlandı';
+    PRINT N'OTELLER tablosu yok — atlandı';
     RETURN;
 END;
 
+DECLARE @Yayinda nvarchar(20) = N'Yay' + NCHAR(0x0131) + N'nda';
+DECLARE @Onaylandi nvarchar(20) = N'Onayland' + NCHAR(0x0131);
+
 UPDATE o
 SET
-    yayin_durumu = N'Yayında',
-    onay_durumu = N'Onaylandı',
-    guncelleme_tarihi = SYSUTCDATETIME()
-FROM dbo.OTELLER o
+    [YAYIN_DURUMU] = @Yayinda,
+    [ONAY_DURUMU] = @Onaylandi,
+    [ONAY_TARIHI] = COALESCE(o.[ONAY_TARIHI], SYSUTCDATETIME())
+FROM [dbo].[OTELLER] o
 WHERE (
-        o.yayin_durumu IS NULL
-        OR LTRIM(RTRIM(o.yayin_durumu)) = N''
-        OR LOWER(REPLACE(LTRIM(RTRIM(o.yayin_durumu)), NCHAR(0x0131), N'i')) NOT IN (N'yayinda', N'yayında')
+        o.[YAYIN_DURUMU] IS NULL
+        OR LTRIM(RTRIM(o.[YAYIN_DURUMU])) = N''
+        OR LOWER(REPLACE(LTRIM(RTRIM(o.[YAYIN_DURUMU])), NCHAR(0x0131), N'i')) NOT IN (N'yayinda', N'yayında')
       )
   AND (
-        o.eposta LIKE N'%@demo.otelturizm.local'
-        OR o.eposta LIKE N'irmhro0+%@gmail.com'
-        OR o.otel_kodu LIKE N'ORK-SEED-%'
-        OR o.otel_kodu LIKE N'ILCE-%'
+        o.[EPOSTA] LIKE N'%@demo.otelturizm.local'
+        OR o.[EPOSTA] LIKE N'irmhro0+%@gmail.com'
+        OR o.[OTEL_KODU] LIKE N'ORK-SEED-%'
+        OR o.[OTEL_KODU] LIKE N'ORK-IST-%'
+        OR o.[OTEL_KODU] LIKE N'ILCE-%'
       );
 
 PRINT CONCAT(N'Yayına alınan demo otel sayısı: ', @@ROWCOUNT);
