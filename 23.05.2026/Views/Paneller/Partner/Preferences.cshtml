@@ -1,0 +1,174 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerApplicationPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+}
+
+<section class="partner-section-card partner-application-hero">
+    <div>
+        <span class="partner-eyebrow">PARTNER ONBOARDING</span>
+        <h2>Başvuru, evrak ve yayın durumu</h2>
+        <p>
+            Partner hesabiniz e-posta onayindan sonra panele girebilir. Admin onayi tamamlanana kadar tesisiniz
+            duzenlenebilir, oda ve gorsel eklenebilir; ancak yayina alinmaz.
+        </p>
+    </div>
+    <div class="partner-application-status @Model.Status.StatusToneClass">
+        <strong>@Model.Status.StatusText</strong>
+        <span>@Model.Status.PublicationHint</span>
+    </div>
+</section>
+
+<section class="partner-section-card partner-application-grid">
+    <article class="partner-application-summary">
+        <h3>@Model.Status.CompanyName</h3>
+        <p>@Model.Status.HotelName</p>
+        <ul>
+            <li><strong>Kayit:</strong> @Model.Status.RegistrationDateText</li>
+            <li><strong>E-posta Onayi:</strong> @(Model.Status.EmailVerified ? "Tamamlandi" : "Bekleniyor")</li>
+            <li><strong>Yayin Durumu:</strong> @(Model.Status.CanPublish ? "Yayina cikabilir" : "Admin onayi bekleniyor")</li>
+            @if (!string.IsNullOrWhiteSpace(Model.Status.ApprovalDateText))
+            {
+                <li><strong>Onay Tarihi:</strong> @Model.Status.ApprovalDateText</li>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Status.RejectionReason))
+            {
+                <li><strong>Açıklama:</strong> @Model.Status.RejectionReason</li>
+            }
+        </ul>
+    </article>
+
+    <article class="partner-application-documents">
+        <div class="section-heading">
+            <div>
+                <span class="partner-eyebrow">EVRAKLAR</span>
+                <h3>Yuklenen belgeler</h3>
+            </div>
+            <span class="partner-badge">@Model.Documents.Count belge</span>
+        </div>
+
+        <form method="post" action="/panel/partner/basvuru-ve-evraklar/evrak-yukle" enctype="multipart/form-data" class="partner-form-grid partner-doc-upload">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.UploadForm.HotelId" />
+            <input type="hidden" name="PartnerId" value="@Model.UploadForm.PartnerId" />
+            <label>
+                <span>Evrak Turu</span>
+                <select name="DocumentType">
+                    @{
+                        var documentTypes = new[] { "Vergi Levhasi", "Ticaret Sicil Gazetesi", "Imza Sirkuleri", "IBAN Belgesi", "Turizm Belgesi", "Kimlik Belgesi", "Sozlesme", "Diger" };
+                    }
+                    @foreach (var type in documentTypes)
+                    {
+                        <option value="@type">@type</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Belge Basligi</span>
+                <input type="text" name="DocumentTitle" placeholder="Orn: 2026 Vergi Levhasi" />
+            </label>
+            <label class="full-span">
+                <span>Dosya</span>
+                <input type="file" name="File" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+            </label>
+            <button type="submit" class="partner-primary-btn">Evrak Yukle</button>
+        </form>
+
+        <div class="partner-document-list">
+            @if (Model.Documents.Count == 0)
+            {
+                <div class="partner-empty-state">
+                    <strong>Henüz belge yüklenmedi</strong>
+                    <span>Vergi, banka ve yasal evraklarinizi yukleyerek inceleme surecini hizlandirin.</span>
+                </div>
+            }
+            else
+            {
+                @foreach (var document in Model.Documents)
+                {
+                    <article class="partner-document-card">
+                        <div>
+                            <strong>@document.Title</strong>
+                            <p>@document.DocumentType · @document.FileName</p>
+                            <small>@document.UploadedAtText</small>
+                            @if (!string.IsNullOrWhiteSpace(document.ReviewNote))
+                            {
+                                <em>@document.ReviewNote</em>
+                            }
+                        </div>
+                        <div class="partner-document-actions">
+                            <span class="partner-chip @document.StatusToneClass">@document.StatusText</span>
+                            @if (!string.IsNullOrWhiteSpace(document.AccessUrl))
+                            {
+                                <a class="secondary-link" href="@document.AccessUrl" target="_blank" rel="noopener">Görüntüle</a>
+                            }
+                            <form method="post" action="/panel/partner/basvuru-ve-evraklar/evrak-sil">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="hotelId" value="@Model.Form.HotelId" />
+                                <input type="hidden" name="documentId" value="@document.DocumentId" />
+                                <button type="submit" class="partner-icon-btn is-danger">Sil</button>
+                            </form>
+                        </div>
+                    </article>
+                }
+            }
+        </div>
+    </article>
+</section>
+
+<section class="partner-section-card">
+    <div class="section-heading">
+        <div>
+            <span class="partner-eyebrow">BAŞVURU DETAYLARI</span>
+            <h3>Partner bilgilerini güncelle</h3>
+        </div>
+    </div>
+
+    <form method="post" action="/panel/partner/basvuru-ve-evraklar/kaydet" class="partner-form-grid">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="HotelId" value="@Model.Form.HotelId" />
+        <input type="hidden" name="PartnerId" value="@Model.Form.PartnerId" />
+
+        <label><span>Tesis / Otel Adı</span><input type="text" name="HotelName" value="@Model.Form.HotelName" /></label>
+        <label>
+            <span>Otel Tipi</span>
+            <select name="HotelTypeId">
+                @foreach (var hotelType in Model.HotelTypes)
+                {
+                    <option value="@hotelType.HotelTypeId" selected="@(Model.Form.HotelTypeId == hotelType.HotelTypeId ? "selected" : null)">@hotelType.Name</option>
+                }
+            </select>
+        </label>
+        <label><span>Firma Unvanı</span><input type="text" name="CompanyName" value="@Model.Form.CompanyName" /></label>
+        <label>
+            <span>Firma Turu</span>
+            <select name="CompanyType">
+                @{
+                    var companyTypes = new[] { "Anonim Şirketi", "Limited Şirketi", "Şahıs Firması", "Adi Ortaklık", "Vakıf", "Dernek" };
+                }
+                @foreach (var type in companyTypes)
+                {
+                    <option value="@type" selected="@(Model.Form.CompanyType == type ? "selected" : null)">@type</option>
+                }
+            </select>
+        </label>
+        <label><span>Yetkili Ad Soyad</span><input type="text" name="ContactName" value="@Model.Form.ContactName" /></label>
+        <label><span>Yetkili Unvanı</span><input type="text" name="ContactTitle" value="@Model.Form.ContactTitle" /></label>
+        <label><span>E-posta</span><input type="email" name="Email" value="@Model.Form.Email" /></label>
+        <label><span>Telefon</span><input type="text" name="Phone" value="@Model.Form.Phone" /></label>
+        <label><span>Vergi Dairesi</span><input type="text" name="TaxOffice" value="@Model.Form.TaxOffice" /></label>
+        <label><span>Vergi Numarası</span><input type="text" name="TaxNumber" value="@Model.Form.TaxNumber" /></label>
+        <label><span>Yetkili TC No</span><input type="text" name="ContactTcNo" value="@Model.Form.ContactTcNo" /></label>
+        <label><span>Şehir</span><input type="text" name="City" value="@Model.Form.City" /></label>
+        <label><span>İlçe</span><input type="text" name="District" value="@Model.Form.District" /></label>
+        <label><span>Mahalle</span><input type="text" name="Neighborhood" value="@Model.Form.Neighborhood" /></label>
+        <label><span>Banka</span><input type="text" name="BankName" value="@Model.Form.BankName" /></label>
+        <label><span>Şube</span><input type="text" name="BankBranch" value="@Model.Form.BankBranch" /></label>
+        <label><span>IBAN</span><input type="text" name="Iban" value="@Model.Form.Iban" /></label>
+        <label><span>Web Sitesi</span><input type="text" name="Website" value="@Model.Form.Website" /></label>
+        <label class="full-span"><span>Açık Adres</span><textarea name="Address" rows="3">@Model.Form.Address</textarea></label>
+        <label class="full-span"><span>Açıklama</span><textarea name="Description" rows="4">@Model.Form.Description</textarea></label>
+
+        <button type="submit" class="partner-primary-btn">Başvuru Bilgilerini Kaydet</button>
+    </form>
+</section>

@@ -1,0 +1,18 @@
+-- Tablo: dbo.SIFRE_SIFIRLAMA_TOKENLARI
+IF OBJECT_ID(N'dbo.SIFRE_SIFIRLAMA_TOKENLARI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[SIFRE_SIFIRLAMA_TOKENLARI]
+    (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [KULLANICI_ID] bigint NOT NULL,
+        [EPOSTA] nvarchar(100) NOT NULL,
+        [TOKEN] nvarchar(96) NOT NULL,
+        [IP_ADRESI] nvarchar(45) NULL,
+        [KULLANICI_ARACISI] nvarchar(500) NULL,
+        [KULLANILDI_MI] bit CONSTRAINT [DF__sifre_sif__kulla__21D600EE] DEFAULT ((0)) NOT NULL,
+        [GECERLILIK_SURESI] datetime2(0) NOT NULL,
+        [KULLANILMA_TARIHI] datetime2(0) NULL,
+        [OLUSTURULMA_TARIHI] datetime2(0) CONSTRAINT [DF__sifre_sif__olust__22CA2527] DEFAULT (sysutcdatetime()) NOT NULL,
+        CONSTRAINT [PK_SIFRE_SIFIRLAMA_TOKENLARI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

@@ -124,7 +124,7 @@
         else
         {
             <div class="table-responsive reservation-table-wrap">
-                <table class="table reservation-table">
+                <table class="table reservation-table user-table--cards">
                     <thead>
                         <tr>
                             <th>Rezervasyon</th>
@@ -139,11 +139,11 @@
                     @foreach (var reservation in Model.Reservations)
                     {
                         <tr class="reservation-row reservation-row--@reservation.StatusTone">
-                            <td>
+                            <td data-label="Rezervasyon">
                                 <div class="fw-bold">@reservation.ReservationNo</div>
                                 <div class="text-muted small">#@reservation.ReservationId</div>
                             </td>
-                            <td>
+                            <td data-label="Otel">
                                 <a class="reservation-hotel" href="/oteller/@reservation.HotelSlug">
                                     @if (!string.IsNullOrWhiteSpace(reservation.ImageUrl))
                                     {
@@ -159,15 +159,15 @@
                                     </span>
                                 </a>
                             </td>
-                            <td>
+                            <td data-label="Konaklama">
                                 <div class="fw-bold">@reservation.StayDateText</div>
                                 <div class="text-muted small">@reservation.RoomName · @reservation.GuestText</div>
                             </td>
-                            <td>
+                            <td data-label="Durum">
                                 <span class="reservation-status reservation-status--@reservation.StatusTone">@reservation.StatusText</span>
                             </td>
-                            <td class="text-end fw-bold">@reservation.TotalText</td>
-                            <td class="text-end">
+                            <td class="text-end fw-bold" data-label="Tutar">@reservation.TotalText</td>
+                            <td class="text-end" data-label="Aksiyon">
                                 <div class="btn-list justify-content-end flex-nowrap">
                                     <button type="button"
                                             class="btn btn-outline-primary btn-sm"
@@ -189,9 +189,21 @@
                                             data-created="@reservation.CreatedAtText"
                                             data-guest-note="@reservation.GuestNote"
                                             data-request-note="@reservation.RequestNote"
-                                            data-cancel-reason="@(reservation.CancellationReason ?? string.Empty)"
+                                            data-cancel-reason="@System.Net.WebUtility.HtmlEncode(reservation.CancellationReason ?? string.Empty)"
                                             data-cancel-time="@(reservation.CancellationTimeText ?? string.Empty)">Detay</button>
                                     <a asp-action="Messages" class="btn btn-primary btn-sm">Mesaj</a>
+                                    @if (reservation.CanUpdateDates)
+                                    {
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm"
+                                                data-reservation-update
+                                                data-reservation-id="@reservation.ReservationId"
+                                                data-reservation-no="@reservation.ReservationNo"
+                                                data-hotel-name="@reservation.HotelName"
+                                                data-check-in="@reservation.CheckInDate.ToString("yyyy-MM-dd")"
+                                                data-check-out="@reservation.CheckOutDate.ToString("yyyy-MM-dd")"
+                                                data-total="@reservation.TotalText">Tarih Güncelle</button>
+                                    }
                                     <button type="button"
                                             class="btn btn-outline-secondary btn-sm"
                                             data-reservation-note
@@ -250,6 +262,10 @@
                                 <div class="reservation-mobile-actions">
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-reservation-detail data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName" data-room-name="@reservation.RoomName" data-stay="@reservation.StayDateText" data-guest="@reservation.GuestText" data-status="@reservation.StatusText" data-total="@reservation.TotalText" data-cancel-reason="@(reservation.CancellationReason ?? string.Empty)" data-cancel-time="@(reservation.CancellationTimeText ?? string.Empty)">Detay</button>
                                     <a asp-action="Messages" class="btn btn-primary btn-sm">Mesaj</a>
+                                    @if (reservation.CanUpdateDates)
+                                    {
+                                        <button type="button" class="btn btn-outline-primary btn-sm" data-reservation-update data-reservation-id="@reservation.ReservationId" data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName" data-check-in="@reservation.CheckInDate.ToString("yyyy-MM-dd")" data-check-out="@reservation.CheckOutDate.ToString("yyyy-MM-dd")" data-total="@reservation.TotalText">Tarih</button>
+                                    }
                                     @if (reservation.CanCancel)
                                     {
                                         <button type="button" class="btn btn-outline-danger btn-sm" data-reservation-cancel data-reservation-id="@reservation.ReservationId" data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName">İptal</button>
@@ -375,6 +391,32 @@
     </div>
 </dialog>
 
+<dialog id="user-reservation-update-dialog" class="reservation-dialog">
+    <div class="reservation-dialog-card">
+        <div class="reservation-dialog-head">
+            <div>
+                <p class="page-pretitle">TARİH GÜNCELLEME</p>
+                <h3 id="update-dialog-title">Rezervasyon tarihleri</h3>
+            </div>
+            <button type="button" class="btn btn-icon btn-outline-primary" data-close-user-dialog aria-label="Kapat"><i class="fas fa-xmark"></i></button>
+        </div>
+        <form method="post" asp-action="UpdateReservationDates" class="reservation-cancel-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ReservationId" id="update-reservation-id" value="0" />
+            <div class="reservation-update-current">
+                <span>Mevcut tutar</span>
+                <strong id="update-current-total">-</strong>
+                <small>Yeni tarih aralığında güncel oda takvimi fiyatı uygulanır ve partner onayına düşer.</small>
+            </div>
+            <div class="reservation-update-grid">
+                <label class="form-label" for="update-check-in">Giriş tarihi<input class="form-control" type="date" name="CheckInDate" id="update-check-in" required /></label>
+                <label class="form-label" for="update-check-out">Çıkış tarihi<input class="form-control" type="date" name="CheckOutDate" id="update-check-out" required /></label>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-calendar-check me-2"></i>Rezervasyonu Güncelle</button>
+        </form>
+    </div>
+</dialog>
+
 <dialog id="user-reservation-cancel-dialog" class="reservation-dialog">
     <div class="reservation-dialog-card">
         <div class="reservation-dialog-head">
@@ -403,6 +445,7 @@
     const detailDialog = document.getElementById('user-reservation-detail-dialog');
     const cancelDialog = document.getElementById('user-reservation-cancel-dialog');
     const noteDialog = document.getElementById('user-reservation-note-dialog');
+    const updateDialog = document.getElementById('user-reservation-update-dialog');
     const setText = (id, value) => {
         const el = document.getElementById(id);
         if (el) el.textContent = value || '-';
@@ -457,6 +500,21 @@
         });
     });
 
+    document.querySelectorAll('[data-reservation-update]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!updateDialog) return;
+            setText('update-dialog-title', `${button.dataset.reservationNo || 'Rezervasyon'} / ${button.dataset.hotelName || 'Otel'}`);
+            setText('update-current-total', button.dataset.total || '-');
+            const idInput = document.getElementById('update-reservation-id');
+            const checkIn = document.getElementById('update-check-in');
+            const checkOut = document.getElementById('update-check-out');
+            if (idInput) idInput.value = button.dataset.reservationId || '0';
+            if (checkIn) checkIn.value = button.dataset.checkIn || '';
+            if (checkOut) checkOut.value = button.dataset.checkOut || '';
+            updateDialog.showModal();
+        });
+    });
+
     document.querySelectorAll('[data-reservation-cancel]').forEach((button) => {
         button.addEventListener('click', () => {
             if (!cancelDialog) return;
@@ -471,7 +529,7 @@
         button.addEventListener('click', () => button.closest('dialog')?.close());
     });
 
-    [detailDialog, cancelDialog, noteDialog].forEach((dialog) => {
+    [detailDialog, cancelDialog, noteDialog, updateDialog].forEach((dialog) => {
         if (!dialog) return;
         dialog.addEventListener('click', (event) => {
             if (event.target === dialog) dialog.close();

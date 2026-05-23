@@ -5,6 +5,7 @@ using otelturizmnew.Services;
 namespace otelturizmnew.Controllers.Api;
 
 [ApiController]
+[IgnoreAntiforgeryToken]
 [EnableRateLimiting("growth-ingest")]
 public sealed class RumVitalsController : ControllerBase
 {

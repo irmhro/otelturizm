@@ -284,5 +284,8 @@ public class FirmaDealsFilterModel
     public string? City { get; set; }
     public string? District { get; set; }
     public string? Neighborhood { get; set; }
+    public long? IlId { get; set; }
+    public long? IlceId { get; set; }
+    public long? MahalleId { get; set; }
     public int? MinRoomCount { get; set; }
 }

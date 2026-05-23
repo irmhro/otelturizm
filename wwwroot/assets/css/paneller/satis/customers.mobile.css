@@ -1,1 +1,12 @@
 @import url("./customers.css");
+
+@media (max-width: 900px) {
+    .sales-customers-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-customer-card .btn,
+    .sales-panel-main .btn {
+        min-height: 44px;
+    }
+}

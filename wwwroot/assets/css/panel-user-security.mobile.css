@@ -1,1 +1,19 @@
 @import url("./panel-user-security.css");
+
+@media (max-width: 900px) {
+    .form-stack .btn,
+    .panel-card .btn,
+    .toggle-row input[type="checkbox"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .radio-option {
+        min-height: 44px;
+        padding: 12px 14px;
+    }
+
+    .radio-stack {
+        gap: 10px;
+    }
+}

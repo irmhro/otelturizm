@@ -3,21 +3,44 @@
 @{
     Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
     ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/pricing";
     var culture = CultureInfo.GetCultureInfo("tr-TR");
     var weekdays = new[] { "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz" };
     var hotelQuery = $"otelId={Model.SelectedHotelId}";
     var roomQuery = Model.SelectedRoomId.HasValue ? $"&roomId={Model.SelectedRoomId.Value}" : string.Empty;
     var nonce = Context.Items["CspNonce"] as string;
     var maxPricingDate = DateTime.Today.AddDays(365).ToString("yyyy-MM-dd");
+    var selectedRoom = Model.SelectedRoomId.HasValue ? Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId.Value) : null;
+    var selectedRoomName = selectedRoom?.RoomName ?? "Oda seçilmedi";
 }
 
-<div class="page-header d-print-none">
-    <div class="row g-2 align-items-center">
-        <div class="col">
-            <div class="page-pretitle">Fiyat Yönetimi</div>
-            <h2 class="page-title">Takvim üzerinden fiyat, indirim ve satış durumu yönetin</h2>
-            <div class="text-muted mt-1">Oda seçin, ayı değiştirin ve seçili tarih aralığında birden fazla oda tipi için tek seferde güncelleme yapın.</div>
-        </div>
+<div class="partner-pricing-hero">
+    <div>
+        <div class="page-pretitle">Fiyat Yönetimi</div>
+        <h2 class="page-title">Takvim ve Kontenjan</h2>
+        <p>Oda seçin; gün bazında fiyat, indirim, satış durumu ve kontenjanı FullCalendar düzeninde yönetin.</p>
+    </div>
+    <div class="partner-pricing-hero-actions">
+        <a class="btn btn-outline-primary" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.PreviousMonthKey">
+            <i class="fas fa-chevron-left me-2"></i>Önceki ay
+        </a>
+        <form method="get" action="/panel/partner/takvim-fiyatlar" class="partner-calendar-month-form">
+            <input type="hidden" name="otelId" value="@Model.SelectedHotelId" />
+            @if (Model.SelectedRoomId.HasValue)
+            {
+                <input type="hidden" name="roomId" value="@Model.SelectedRoomId" />
+            }
+            <label for="partnerHeroMonthPicker">Ay</label>
+            <select id="partnerHeroMonthPicker" name="month" onchange="this.form.submit()">
+                @foreach (var monthOption in Model.MonthOptions)
+                {
+                    <option value="@monthOption.MonthKey" selected="@(monthOption.IsCurrent ? "selected" : null)">@monthOption.Label</option>
+                }
+            </select>
+        </form>
+        <a class="btn btn-outline-primary" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.NextMonthKey">
+            Sonraki ay<i class="fas fa-chevron-right ms-2"></i>
+        </a>
     </div>
 </div>
 
@@ -197,8 +220,9 @@
         <div class="card partner-calendar-card">
             <div class="card-header partner-calendar-card-header">
                 <div>
-                    <h3 class="card-title">Aylık fiyat takvimi</h3>
-                    <div class="text-muted">@(Model.SelectedRoomId.HasValue ? Model.Rooms.FirstOrDefault(x => x.RoomId == Model.SelectedRoomId.Value)?.RoomName : "Oda seçiniz")</div>
+                    <div class="page-pretitle">Aylık fiyat takvimi</div>
+                    <h3 class="card-title partner-fc-title">@Model.MonthLabel</h3>
+                    <div class="text-muted">@selectedRoomName · fiyat, indirim ve kontenjan görünümü</div>
                 </div>
                 <div class="partner-calendar-toolbar">
                     <a class="btn btn-outline-primary btn-sm" href="/panel/partner/takvim-fiyatlar?@hotelQuery@roomQuery&month=@Model.PreviousMonthKey">
@@ -246,6 +270,7 @@
         }
         else
         {
+            <div class="partner-calendar-month-scroll">
             <div class="partner-calendar-weekdays">
                 @foreach (var day in weekdays)
                 {
@@ -253,9 +278,13 @@
                 }
             </div>
             <div class="partner-calendar-month-grid">
+                @{
+                    var today = DateOnly.FromDateTime(DateTime.Today);
+                }
                 @foreach (var day in Model.CalendarDays)
                 {
-                    <article class="partner-calendar-cell is-@day.ToneClass @(day.IsCurrentMonth ? string.Empty : "is-other-month") @(day.IsToday ? "is-today" : string.Empty) @(day.IsHighlighted ? "is-highlighted" : string.Empty) @(day.IsClosed ? "is-closed" : string.Empty)"
+                    var isPast = day.Date < today;
+                    <article class="partner-calendar-cell is-@day.ToneClass @(day.IsCurrentMonth ? string.Empty : "is-other-month") @(day.IsToday ? "is-today" : string.Empty) @(day.IsHighlighted ? "is-highlighted" : string.Empty) @(day.IsClosed ? "is-closed" : string.Empty) @(isPast ? "is-past" : string.Empty)"
                              data-date="@day.Date.ToString("yyyy-MM-dd")"
                              data-base-price="@day.BasePriceAmount.ToString(CultureInfo.InvariantCulture)"
                              data-discount-price="@(day.DiscountPriceAmount?.ToString(CultureInfo.InvariantCulture) ?? string.Empty)"
@@ -267,29 +296,36 @@
                              data-price-note="@day.PriceNote">
                         <div class="partner-calendar-cell-head">
                             <div>
-                                <strong>@day.Date.ToString("dd-MM-yyyy")</strong>
+                                <strong>@day.DayLabel</strong>
                                 <span>@day.WeekdayLabel</span>
                             </div>
                             <b class="partner-calendar-status ot-badge">@day.StatusText</b>
                         </div>
-                        <div class="partner-calendar-price-block">
-                            @if (day.HasDiscount)
-                            {
-                                <div class="partner-calendar-discount-line">
-                                    <small>@day.BasePriceText</small>
-                                    <span>@day.DiscountPercentText</span>
-                                </div>
-                                <strong>@day.DiscountPriceText</strong>
-                                <em>@(string.IsNullOrWhiteSpace(day.CampaignLabel) ? "İndirimli gün" : day.CampaignLabel)</em>
-                            }
-                            else
-                            {
-                                <strong>@day.PriceText</strong>
-                            }
-                        </div>
-                        <div class="partner-calendar-meta">
-                            <span>@day.AvailabilityText</span>
-                            <span>@day.SoldText</span>
+                        <div class="partner-calendar-date-text">@day.Date.ToString("dd.MM.yyyy")</div>
+                        <div class="partner-calendar-event">
+                            <div class="partner-calendar-room-line">
+                                <i class="fas fa-bed"></i>
+                                <span>@selectedRoomName</span>
+                            </div>
+                            <div class="partner-calendar-price-block">
+                                @if (day.HasDiscount)
+                                {
+                                    <div class="partner-calendar-discount-line">
+                                        <small>@day.BasePriceText</small>
+                                        <span>@day.DiscountPercentText</span>
+                                    </div>
+                                    <strong>@day.DiscountPriceText</strong>
+                                    <em>@(string.IsNullOrWhiteSpace(day.CampaignLabel) ? "İndirimli gün" : day.CampaignLabel)</em>
+                                }
+                                else
+                                {
+                                    <strong>@day.PriceText</strong>
+                                }
+                            </div>
+                            <div class="partner-calendar-capacity-line">
+                                <span><i class="fas fa-door-open"></i>@day.AvailabilityText</span>
+                                <span><i class="fas fa-receipt"></i>@day.SoldText</span>
+                            </div>
                         </div>
                         @if (!string.IsNullOrWhiteSpace(day.CampaignLabel))
                         {
@@ -299,7 +335,7 @@
                         {
                             <p class="partner-calendar-note">@day.PriceNote</p>
                         }
-                        @if (Model.SelectedRoomId.HasValue && day.IsCurrentMonth)
+                        @if (Model.SelectedRoomId.HasValue && day.IsCurrentMonth && !isPast)
                         {
                         <div class="partner-calendar-actions">
                                 <form method="post" action="/panel/partner/takvim-fiyatlar/gun-guncelle" class="partner-calendar-inline-form">
@@ -333,6 +369,7 @@
                         }
                     </article>
                 }
+            </div>
             </div>
         }
             </div>

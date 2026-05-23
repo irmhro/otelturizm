@@ -1,0 +1,204 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminSupportArticlePageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+    var success = TempData["AdminMessage"] as string;
+    var error = TempData["AdminError"] as string;
+}
+
+@if (!string.IsNullOrWhiteSpace(success))
+{
+    <div class="alert alert-success ot-card">@success</div>
+}
+@if (!string.IsNullOrWhiteSpace(error))
+{
+    <div class="alert alert-danger ot-card">@error</div>
+}
+
+<div class="row">
+    @foreach (var card in Model.SummaryCards)
+    {
+        var bg = card.ToneClass switch
+        {
+            "success" => "bg-success",
+            "warning" => "bg-warning",
+            "danger" => "bg-danger",
+            "secondary" => "bg-secondary",
+            "primary" => "bg-primary",
+            _ => "bg-info"
+        };
+        <div class="col-lg-3 col-md-6 col-12">
+            <div class="small-box @bg">
+                <div class="inner">
+                    <h3>@card.Value</h3>
+                    <p>@card.Label</p>
+                    <small>@card.Description</small>
+                </div>
+                <div class="icon"><i class="fas @card.IconClass"></i></div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">@(Model.Form.ArticleId.HasValue ? "Makale Düzenle" : "Yeni Makale Ekle")</h3>
+            </div>
+            <form method="post" action="/admin/destek-makaleleri/kaydet">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ArticleId" value="@Model.Form.ArticleId" />
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Kategori</label>
+                        <select name="CategoryId" required>
+                            @foreach (var category in Model.Categories)
+                            {
+                                <option value="@category.CategoryId" selected="@(Model.Form.CategoryId == category.CategoryId ? "selected" : null)">@category.CategoryName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Başlık</label>
+                        <input type="text" name="Title" value="@Model.Form.Title" maxlength="180" required />
+                    </div>
+                    <div class="form-group">
+                        <label>SEO Slug</label>
+                        <input type="text" name="SeoSlug" value="@Model.Form.SeoSlug" maxlength="180" placeholder="otomatik-uretilir" />
+                    </div>
+                    <div class="form-group">
+                        <label>Özet</label>
+                        <textarea name="Summary" rows="3" maxlength="300">@Model.Form.Summary</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>İçerik</label>
+                        <textarea name="Content" rows="8" required>@Model.Form.Content</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>İkon</label>
+                        <input type="text" name="IconClass" value="@Model.Form.IconClass" maxlength="80" placeholder="fa-circle-question" />
+                    </div>
+                    <div class="form-group">
+                        <label>Sıralama</label>
+                        <input type="number" name="SortOrder" value="@Model.Form.SortOrder" />
+                    </div>
+                    <div class="form-group mb-0">
+                        <div class="icheck-primary d-inline mr-3">
+                            <input type="hidden" name="IsFeatured" value="false" />
+                            <input type="checkbox" id="is-featured" name="IsFeatured" value="true" @(Model.Form.IsFeatured ? "checked" : null) />
+                            <label for="is-featured">Öne çıkan</label>
+                        </div>
+                        <div class="icheck-primary d-inline mr-3">
+                            <input type="hidden" name="ShowInHelpCenter" value="false" />
+                            <input type="checkbox" id="in-help-center" name="ShowInHelpCenter" value="true" @(Model.Form.ShowInHelpCenter ? "checked" : null) />
+                            <label for="in-help-center">Yardım merkezinde göster</label>
+                        </div>
+                        <div class="icheck-primary d-inline">
+                            <input type="hidden" name="IsActive" value="false" />
+                            <input type="checkbox" id="is-active" name="IsActive" value="true" @(Model.Form.IsActive ? "checked" : null) />
+                            <label for="is-active">Aktif</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary btn-sm">Kaydet</button>
+                    <a href="/admin/destek-makaleleri" class="btn btn-outline-secondary btn-sm">Yeni Form</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Destek Makale Listesi</h3>
+            </div>
+            <div class="card-body border-bottom">
+                <form method="get" action="/admin/destek-makaleleri">
+                    <div class="form-row">
+                        <div class="col-md-5">
+                            <input type="search" name="q" value="@Model.SearchText" placeholder="Başlık, slug, özet veya içerik ara" />
+                        </div>
+                        <div class="col-md-3">
+                            <select name="kategoriId">
+                                <option value="">Tüm kategoriler</option>
+                                @foreach (var category in Model.Categories)
+                                {
+                                    <option value="@category.CategoryId" selected="@(category.IsSelected ? "selected" : null)">@category.CategoryName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="durum">
+                                <option value="all" selected="@(Model.StatusFilter == "all" ? "selected" : null)">Tümü</option>
+                                <option value="active" selected="@(Model.StatusFilter == "active" ? "selected" : null)">Aktif</option>
+                                <option value="passive" selected="@(Model.StatusFilter == "passive" ? "selected" : null)">Pasif</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-sm btn-block">Filtrele</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover text-nowrap mb-0">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kategori</th>
+                        <th>Başlık</th>
+                        <th>Slug</th>
+                        <th>Sıralama</th>
+                        <th>Durum</th>
+                        <th>Güncelleme</th>
+                        <th>İşlem</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var row in Model.Articles)
+                    {
+                        var statusBadge = row.IsActive ? "badge-success" : "badge-secondary";
+                        <tr>
+                            <td>@row.ArticleId</td>
+                            <td>@row.CategoryName</td>
+                            <td>
+                                <strong>@row.Title</strong>
+                                <div class="text-muted">@row.Summary</div>
+                            </td>
+                            <td><code>@row.Slug</code></td>
+                            <td>@row.SortOrder</td>
+                            <td>
+                                <span class="badge @statusBadge">@(row.IsActive ? "Aktif" : "Pasif")</span>
+                                @if (row.IsFeatured)
+                                {
+                                    <span class="badge badge-warning ml-1">Öne Çıkan</span>
+                                }
+                                @if (row.ShowInHelpCenter)
+                                {
+                                    <span class="badge badge-info ml-1">Yardım Merkezi</span>
+                                }
+                            </td>
+                            <td>@row.UpdatedAtText</td>
+                            <td>
+                                <a href="/admin/destek-makaleleri?editId=@row.ArticleId" class="btn btn-outline-primary btn-xs">Düzenle</a>
+                                <form method="post" action="/admin/destek-makaleleri/sil" class="d-inline ml-1" onsubmit="return confirm('Makale silinsin mi?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="articleId" value="@row.ArticleId" />
+                                    <button type="submit" class="btn btn-outline-danger btn-xs">Sil</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+                @if (Model.Articles.Count == 0)
+                {
+                    <div class="p-3 text-muted">Filtreye uygun makale bulunamadı.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

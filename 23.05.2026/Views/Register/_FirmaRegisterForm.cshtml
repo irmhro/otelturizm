@@ -1,0 +1,257 @@
+<div class="info-banner">
+    <i class="fas fa-file-circle-check"></i>
+    <span>Firma hesabı başvurunuz alındığında kurumsal bilgileriniz incelemeye alınır. Onay tamamlanmadan firma paneline giriş açılamaz.</span>
+</div>
+
+@if (TempData["FirmaRegisterError"] is string firmaRegisterError)
+{
+    <div class="auth-alert">@firmaRegisterError</div>
+}
+
+<form class="auth-form" id="firmaRegisterForm" method="post" action="/firma-kayit">
+    @Html.AntiForgeryToken()
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaCompanyName">Firma Unvanı</label>
+            <div class="input-wrap">
+                <i class="fas fa-building"></i>
+                <input id="firmaCompanyName" name="CompanyName" type="text" class="form-control" placeholder="Örn: ABC Teknoloji A.Ş." required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaCompanyType">Firma Türü</label>
+            <div class="input-wrap">
+                <i class="fas fa-briefcase"></i>
+                <select id="firmaCompanyType" name="CompanyType" class="form-control" required>
+                    <option value="">Seçiniz</option>
+                    <option>Anonim Şirketi</option>
+                    <option>Limited Şirketi</option>
+                    <option>Şahıs Firması</option>
+                    <option>Holding</option>
+                    <option>Teknoloji Şirketi</option>
+                    <option>Turizm Şirketi</option>
+                    <option>Danışmanlık Şirketi</option>
+                    <option>Kamu Kurumu</option>
+                    <option>STK</option>
+                    <option>Dernek</option>
+                    <option>Vakıf</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaSector">Sektör</label>
+            <div class="input-wrap">
+                <i class="fas fa-industry"></i>
+                <input id="firmaSector" name="Sector" type="text" class="form-control" placeholder="Örn: Teknoloji" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaEmployeeCount">Çalışan Sayısı</label>
+            <div class="input-wrap">
+                <i class="fas fa-users"></i>
+                <input id="firmaEmployeeCount" name="EmployeeCount" type="number" min="1" class="form-control" placeholder="Örn: 120" required />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaTaxNumber">Vergi Numarası</label>
+            <div class="input-wrap">
+                <i class="fas fa-receipt"></i>
+                <input id="firmaTaxNumber" name="TaxNumber" type="text" class="form-control" placeholder="10 haneli vergi no" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaTaxOffice">Vergi Dairesi</label>
+            <div class="input-wrap">
+                <i class="fas fa-landmark"></i>
+                <input id="firmaTaxOffice" name="TaxOffice" type="text" class="form-control" placeholder="Örn: Maslak" required />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaTradeRegistry">Ticaret Sicil No</label>
+            <div class="input-wrap">
+                <i class="fas fa-folder-tree"></i>
+                <input id="firmaTradeRegistry" name="TradeRegistryNumber" type="text" class="form-control" placeholder="Varsa girin" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaMersis">MERSİS No</label>
+            <div class="input-wrap">
+                <i class="fas fa-hashtag"></i>
+                <input id="firmaMersis" name="MersisNumber" type="text" class="form-control" placeholder="Varsa girin" />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaCompanyEmail">Firma E-posta</label>
+            <div class="input-wrap">
+                <i class="fas fa-envelope"></i>
+                <input id="firmaCompanyEmail" name="CompanyEmail" type="email" class="form-control" placeholder="kurumsal@firma.com" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaCompanyPhone">Firma Telefon</label>
+            <div class="input-wrap">
+                <i class="fas fa-phone"></i>
+                <input id="firmaCompanyPhone" name="CompanyPhone" type="tel" class="form-control" placeholder="0(212) 000 00 00" required />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaWebsite">Web Sitesi</label>
+            <div class="input-wrap">
+                <i class="fas fa-globe"></i>
+                <input id="firmaWebsite" name="Website" type="url" class="form-control" placeholder="https://www.firma.com" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaMonthlyTravelBudget">Aylık Seyahat Bütçesi</label>
+            <div class="input-wrap">
+                <i class="fas fa-wallet"></i>
+                <input id="firmaMonthlyTravelBudget" name="MonthlyTravelBudget" type="number" min="0" step="0.01" class="form-control" placeholder="Örn: 250000" />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaContactName">Yetkili Ad Soyad</label>
+            <div class="input-wrap">
+                <i class="fas fa-user-tie"></i>
+                <input id="firmaContactName" name="ContactName" type="text" class="form-control" placeholder="Yetkili kişi" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaContactTitle">Yetkili Unvanı</label>
+            <div class="input-wrap">
+                <i class="fas fa-id-badge"></i>
+                <input id="firmaContactTitle" name="ContactTitle" type="text" class="form-control" placeholder="Satın Alma Müdürü" required />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaContactEmail">Yetkili Giriş E-postası</label>
+            <div class="input-wrap">
+                <i class="fas fa-at"></i>
+                <input id="firmaContactEmail" name="ContactEmail" type="email" class="form-control" placeholder="yetkili@firma.com" required />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaContactPhone">Yetkili Telefon</label>
+            <div class="input-wrap">
+                <i class="fas fa-mobile-screen-button"></i>
+                <input id="firmaContactPhone" name="ContactPhone" type="tel" class="form-control" placeholder="05XX XXX XX XX" required />
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaCity">İl</label>
+            <div class="input-wrap select-wrap">
+                <i class="fas fa-location-dot"></i>
+                <select id="firmaCity" name="City" class="form-control form-select" data-address-province required>
+                    <option value="">İl seçiniz</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaDistrict">İlçe</label>
+            <div class="input-wrap select-wrap">
+                <i class="fas fa-map-location-dot"></i>
+                <select id="firmaDistrict" name="District" class="form-control form-select" data-address-district required disabled>
+                    <option value="">Önce il seçiniz</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaNeighborhood">Mahalle</label>
+            <div class="input-wrap select-wrap">
+                <i class="fas fa-map"></i>
+                <select id="firmaNeighborhood" name="Neighborhood" class="form-control form-select" data-address-neighborhood disabled>
+                    <option value="">Önce ilçe seçiniz</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaPostalCode">Posta Kodu</label>
+            <div class="input-wrap">
+                <i class="fas fa-mail-bulk"></i>
+                <input id="firmaPostalCode" name="PostalCode" type="text" class="form-control" placeholder="34000" />
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="firmaAddress">Açık Adres</label>
+        <div class="input-wrap">
+            <i class="fas fa-map-pin"></i>
+            <input id="firmaAddress" name="Address" type="text" class="form-control" placeholder="Mahalle, cadde, bina no" required />
+        </div>
+    </div>
+
+    <div class="double-field">
+        <div class="form-group">
+            <label for="firmaPassword">Şifre</label>
+            <div class="input-wrap">
+                <i class="fas fa-lock"></i>
+                <input id="firmaPassword" name="Password" type="password" class="form-control" placeholder="En az 6 karakter (harf + rakam)" minlength="6" pattern="(?=.*[A-Za-z])(?=.*\d).{6,}" title="En az 6 karakter, en az 1 harf ve 1 rakam girin." required />
+                <button type="button" class="toggle-password" data-toggle-target="firmaPassword">
+                    <i class="far fa-eye"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="firmaConfirmPassword">Şifre Tekrar</label>
+            <div class="input-wrap">
+                <i class="fas fa-lock"></i>
+                <input id="firmaConfirmPassword" name="ConfirmPassword" type="password" class="form-control" placeholder="Şifrenizi tekrar girin" minlength="6" pattern="(?=.*[A-Za-z])(?=.*\d).{6,}" title="En az 6 karakter, en az 1 harf ve 1 rakam girin." required />
+                <button type="button" class="toggle-password" data-toggle-target="firmaConfirmPassword">
+                    <i class="far fa-eye"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-form-checks">
+        <label class="checkbox-stack">
+            <input type="checkbox" name="AcceptAgreement" value="true" required />
+            <span><a href="/sozlesmeler/firma-kurumsal-kullanim-kosullari" data-contract-popup data-contract-title="Firma Kurumsal Kullanim Kosullari">Firma sözleşmesi ve kurumsal kullanım koşullarını</a> kabul ediyorum.</span>
+        </label>
+        <label class="checkbox-stack">
+            <input type="checkbox" name="AcceptKvkk" value="true" required />
+            <span><a href="/sozlesmeler/firma-kvkk-aydinlatma" data-contract-popup data-contract-title="Firma KVKK Aydinlatma Metni">KVKK aydınlatma metnini</a> okuyup başvuru bilgilerimin incelenmesini onaylıyorum.</span>
+        </label>
+    </div>
+
+    <button type="submit" class="auth-submit-btn firma-submit-btn">Firma Hesabı Başvurusu Oluştur <i class="fas fa-arrow-right"></i></button>
+</form>
+<partial name="~/Views/Register/_ContractPopupModal.cshtml" />

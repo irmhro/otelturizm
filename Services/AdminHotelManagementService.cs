@@ -51,14 +51,14 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         await LoadHotelFilterOptionsAsync(connection, model, cancellationToken);
 
         const string whereSql = @"
-            WHERE (@search = '' OR o.otel_adi LIKE '%' + @search + '%' OR o.otel_kodu LIKE '%' + @search + '%' OR o.sehir LIKE '%' + @search + '%' OR o.ilce LIKE '%' + @search + '%' OR COALESCE(o.mahalle, '') LIKE '%' + @search + '%')
-              AND (@city = '' OR o.sehir = @city)
-              AND (@district = '' OR o.ilce = @district)
-              AND (@neighborhood = '' OR COALESCE(o.mahalle, '') = @neighborhood)
-              AND (@publishStatus = '' OR o.yayin_durumu = @publishStatus)
-              AND (@approvalStatus = '' OR o.onay_durumu = @approvalStatus)";
+            WHERE (@search = '' OR o.[OTEL_ADI] LIKE '%' + @search + '%' OR o.[OTEL_KODU] LIKE '%' + @search + '%' OR o.[SEHIR] LIKE '%' + @search + '%' OR o.[ILCE] LIKE '%' + @search + '%' OR COALESCE(o.[MAHALLE], '') LIKE '%' + @search + '%')
+              AND (@city = '' OR o.[SEHIR] = @city)
+              AND (@district = '' OR o.[ILCE] = @district)
+              AND (@neighborhood = '' OR COALESCE(o.[MAHALLE], '') = @neighborhood)
+              AND (@publishStatus = '' OR o.[YAYIN_DURUMU] = @publishStatus)
+              AND (@approvalStatus = '' OR o.[ONAY_DURUMU] = @approvalStatus)";
 
-        await using (var countCommand = new SqlCommand($"SELECT COUNT(*) FROM oteller o {whereSql};", connection))
+        await using (var countCommand = new SqlCommand($"SELECT COUNT(*) FROM [dbo].[OTELLER] o {whereSql};", connection))
         {
             BindHotelListFilters(countCommand, model);
             model.TotalCount = Convert.ToInt32(await countCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
@@ -71,34 +71,34 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         const string selectSql = @"
             SELECT o.id,
-                   o.otel_kodu,
-                   o.otel_adi,
-                   o.otel_turu,
-                   CONCAT(COALESCE(NULLIF(o.mahalle, ''), o.ilce), ', ', o.ilce, ', ', o.sehir) AS konum,
-                   o.yayin_durumu,
-                   o.onay_durumu,
-                   o.ortalama_puan,
+                   o.[OTEL_KODU],
+                   o.[OTEL_ADI],
+                   o.[OTEL_TURU],
+                   CONCAT(COALESCE(NULLIF(o.[MAHALLE], ''), o.[ILCE]), ', ', o.[ILCE], ', ', o.[SEHIR]) AS konum,
+                   o.[YAYIN_DURUMU],
+                   o.[ONAY_DURUMU],
+                   o.[ORTALAMA_PUAN],
                    COALESCE(rooms.room_count, 0) AS room_count,
                    COALESCE(hotelPhotos.hotel_photo_count, 0) AS hotel_photo_count,
                    COALESCE(roomPhotos.room_photo_count, 0) AS room_photo_count,
-                   o.one_cikan_otel
-            FROM oteller o
+                   o.[ONE_CIKAN_OTEL]
+            FROM [dbo].[OTELLER] o
             LEFT JOIN (
-                SELECT otel_id, COUNT(*) AS room_count
-                FROM oda_tipleri
-                GROUP BY otel_id
-            ) rooms ON rooms.otel_id = o.id
+                SELECT [OTEL_ID], COUNT(*) AS room_count
+                FROM [dbo].[ODA_TIPLERI]
+                GROUP BY [OTEL_ID]
+            ) rooms ON rooms.[OTEL_ID] = o.id
             LEFT JOIN (
-                SELECT otel_id, COUNT(*) AS hotel_photo_count
-                FROM otel_gorselleri
-                GROUP BY otel_id
-            ) hotelPhotos ON hotelPhotos.otel_id = o.id
+                SELECT [OTEL_ID], COUNT(*) AS hotel_photo_count
+                FROM [dbo].[OTEL_GORSELLERI]
+                GROUP BY [OTEL_ID]
+            ) hotelPhotos ON hotelPhotos.[OTEL_ID] = o.id
             LEFT JOIN (
-                SELECT od.otel_id, COUNT(og.id) AS room_photo_count
-                FROM oda_tipleri od
-                LEFT JOIN oda_gorselleri og ON og.oda_tip_id = od.id
-                GROUP BY od.otel_id
-            ) roomPhotos ON roomPhotos.otel_id = o.id";
+                SELECT od.[OTEL_ID], COUNT(og.id) AS room_photo_count
+                FROM [dbo].[ODA_TIPLERI] od
+                LEFT JOIN [dbo].[ODA_GORSELLERI] og ON og.[ODA_TIP_ID] = od.id
+                GROUP BY od.[OTEL_ID]
+            ) roomPhotos ON roomPhotos.[OTEL_ID] = o.id";
 
         var sql = $@"
             {selectSql}
@@ -187,76 +187,76 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         var (previousLatitude, previousLongitude) = await LoadHotelCoordinatesAsync(connection, request.HotelId, cancellationToken);
 
         const string sql = @"
-            UPDATE oteller
-            SET otel_kodu = @hotelCode,
-                partner_id = @partnerId,
-                user_id = @userId,
-                otel_adi = @hotelName,
-                otel_turu = @hotelType,
-                yildiz_sayisi = @starCount,
-                turizm_belge_no = @tourismDocumentNo,
-                turizm_belge_turu = @tourismDocumentType,
+            UPDATE [dbo].[OTELLER]
+            SET [OTEL_KODU] = @hotelCode,
+                [PARTNER_ID] = @partnerId,
+                [KULLANICI_ID] = @userId,
+                [OTEL_ADI] = @hotelName,
+                [OTEL_TURU] = @hotelType,
+                [YILDIZ_SAYISI] = @starCount,
+                [TURIZM_BELGE_NO] = @tourismDocumentNo,
+                [TURIZM_BELGE_TURU] = @tourismDocumentType,
                 ulke = @country,
-                sehir = @city,
+                [SEHIR] = @city,
                 ilce = @district,
-                mahalle = @neighborhood,
-                tam_adres = @address,
-                posta_kodu = @postalCode,
-                enlem = @latitude,
-                boylam = @longitude,
-                telefon_1 = @phone1,
-                telefon_2 = @phone2,
+                [MAHALLE] = @neighborhood,
+                [TAM_ADRES] = @address,
+                [POSTA_KODU] = @postalCode,
+                [ENLEM] = @latitude,
+                [BOYLAM] = @longitude,
+                [TELEFON_1] = @phone1,
+                [TELEFON_2] = @phone2,
                 faks = @fax,
-                eposta = @contactEmail,
-                web_sitesi = @website,
-                rezervasyon_telefonu = @reservationPhone,
-                satis_kontak_adi = @salesContactName,
-                satis_kontak_telefonu = @salesContactPhone,
-                satis_kontak_eposta = @salesContactEmail,
-                satis_notlari = @salesNotes,
-                check_in_saati = @checkInTime,
-                check_out_saati = @checkOutTime,
-                gec_check_out_mumkun_mu = @lateCheckoutAvailable,
-                gec_check_out_ucreti = @lateCheckoutFee,
-                erken_check_in_mumkun_mu = @earlyCheckInAvailable,
-                erken_check_in_ucreti = @earlyCheckInFee,
-                toplam_oda_sayisi = @totalRoomCount,
-                toplam_yatak_kapasitesi = @totalBedCapacity,
-                kat_sayisi = @floorCount,
-                asansor_var_mi = @elevatorAvailable,
-                asansor_sayisi = @elevatorCount,
-                kisa_aciklama = @shortDescription,
-                uzun_aciklama = @description,
-                konum_aciklamasi = @locationDescription,
-                komisyon_turu = @commissionType,
-                varsayilan_komisyon_orani = @defaultCommissionRate,
-                komisyon_hesaplama_tipi = @commissionCalculationType,
-                odeme_vadesi = @paymentTerm,
-                odeme_yontemi = @paymentMethod,
-                fatura_kesim_turu = @invoiceType,
-                depozito_tutari = @depositAmount,
-                depozito_iade_suresi = @depositReturnDays,
-                minimum_konaklama_gecesi = @minStay,
-                maksimum_konaklama_gecesi = @maxStay,
-                konusulan_diller = @spokenLanguages,
-                ortalama_puan = @averageScore,
-                toplam_yorum_sayisi = @totalReviewCount,
-                temizlik_puani = @cleanlinessScore,
-                konfor_puani = @comfortScore,
-                konum_puani = @locationScore,
-                personel_puani = @staffScore,
-                fiyat_performans_puani = @pricePerformanceScore,
-                kapak_fotografi = @coverPhotoPath,
-                video_url = @videoUrl,
-                sanal_tur_url = @virtualTourUrl,
-                yayin_durumu = @publishStatus,
-                onay_durumu = @approvalStatus,
-                onaylayan_admin_id = @adminUserId,
-                onay_tarihi = CASE WHEN @approvalStatus = 'Onaylandı' THEN SYSUTCDATETIME() ELSE onay_tarihi END,
-                populerlik_sirasi = @popularityOrder,
-                one_cikan_otel = @isFeatured,
-                tavsiye_edilen_otel = @isRecommended,
-                guncellenme_tarihi = SYSUTCDATETIME()
+                [EPOSTA] = @contactEmail,
+                [WEB_SITESI] = @website,
+                [REZERVASYON_TELEFONU] = @reservationPhone,
+                [SATIS_KONTAK_ADI] = @salesContactName,
+                [SATIS_KONTAK_TELEFONU] = @salesContactPhone,
+                [SATIS_KONTAK_EPOSTA] = @salesContactEmail,
+                [SATIS_NOTLARI] = @salesNotes,
+                [CHECK_IN_SAATI] = @checkInTime,
+                [CHECK_OUT_SAATI] = @checkOutTime,
+                [GEC_CHECK_OUT_MUMKUN_MU] = @lateCheckoutAvailable,
+                [GEC_CHECK_OUT_UCRETI] = @lateCheckoutFee,
+                [ERKEN_CHECK_IN_MUMKUN_MU] = @earlyCheckInAvailable,
+                [ERKEN_CHECK_IN_UCRETI] = @earlyCheckInFee,
+                [TOPLAM_ODA_SAYISI] = @totalRoomCount,
+                [TOPLAM_YATAK_KAPASITESI] = @totalBedCapacity,
+                [KAT_SAYISI] = @floorCount,
+                [ASANSOR_VAR_MI] = @elevatorAvailable,
+                [ASANSOR_SAYISI] = @elevatorCount,
+                [KISA_ACIKLAMA] = @shortDescription,
+                [UZUN_ACIKLAMA] = @description,
+                [KONUM_ACIKLAMASI] = @locationDescription,
+                [KOMISYON_TURU] = @commissionType,
+                [VARSAYILAN_KOMISYON_ORANI] = @defaultCommissionRate,
+                [KOMISYON_HESAPLAMA_TIPI] = @commissionCalculationType,
+                [ODEME_VADESI] = @paymentTerm,
+                [ODEME_YONTEMI] = @paymentMethod,
+                [FATURA_KESIM_TURU] = @invoiceType,
+                [DEPOZITO_TUTARI] = @depositAmount,
+                [DEPOZITO_IADE_SURESI] = @depositReturnDays,
+                [MINIMUM_KONAKLAMA_GECESI] = @minStay,
+                [MAKSIMUM_KONAKLAMA_GECESI] = @maxStay,
+                [KONUSULAN_DILLER] = @spokenLanguages,
+                [ORTALAMA_PUAN] = @averageScore,
+                [TOPLAM_YORUM_SAYISI] = @totalReviewCount,
+                [TEMIZLIK_PUANI] = @cleanlinessScore,
+                [KONFOR_PUANI] = @comfortScore,
+                [KONUM_PUANI] = @locationScore,
+                [PERSONEL_PUANI] = @staffScore,
+                [FIYAT_PERFORMANS_PUANI] = @pricePerformanceScore,
+                [KAPAK_FOTOGRAFI] = @coverPhotoPath,
+                [VIDEO_URL] = @videoUrl,
+                [SANAL_TUR_URL] = @virtualTourUrl,
+                [YAYIN_DURUMU] = @publishStatus,
+                [ONAY_DURUMU] = @approvalStatus,
+                [ONAYLAYAN_ADMIN_ID] = @adminUserId,
+                [ONAY_TARIHI] = CASE WHEN @approvalStatus = 'Onaylandı' THEN SYSUTCDATETIME() ELSE [ONAY_TARIHI] END,
+                [POPULERLIK_SIRASI] = @popularityOrder,
+                [ONE_CIKAN_OTEL] = @isFeatured,
+                [TAVSIYE_EDILEN_OTEL] = @isRecommended,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @hotelId;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -346,7 +346,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     private static async Task<(decimal? Latitude, decimal? Longitude)> LoadHotelCoordinatesAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT TOP (1) enlem, boylam FROM oteller WHERE id = @hotelId;";
+        const string sql = "SELECT TOP (1) [ENLEM], [BOYLAM] FROM [dbo].[OTELLER] WHERE id = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -376,7 +376,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             return;
         }
 
-        const string existsSql = "SELECT CASE WHEN OBJECT_ID(N'dbo.otel_koordinat_degisim_loglari', N'U') IS NULL THEN 0 ELSE 1 END;";
+        const string existsSql = "SELECT CASE WHEN OBJECT_ID(N'[dbo].[OTEL_KOORDINAT_DEGISIM_LOGLARI]', N'U') IS NULL THEN 0 ELSE 1 END;";
         await using (var existsCmd = new SqlCommand(existsSql, connection))
         {
             var existsObj = await existsCmd.ExecuteScalarAsync(cancellationToken);
@@ -387,7 +387,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             }
         }
 
-        const string adminNameSql = "SELECT TOP (1) COALESCE(NULLIF(ad_soyad,''), '-') FROM users WHERE id = @id;";
+        const string adminNameSql = "SELECT TOP (1) COALESCE(NULLIF([AD_SOYAD],''), '-') FROM [dbo].[KULLANICILAR] WHERE id = @id;";
         string adminName;
         await using (var adminCmd = new SqlCommand(adminNameSql, connection))
         {
@@ -397,11 +397,11 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         const string insertSql = @"
-            INSERT INTO dbo.otel_koordinat_degisim_loglari
+            INSERT INTO [dbo].[OTEL_KOORDINAT_DEGISIM_LOGLARI]
             (
-                admin_kullanici_id, admin_ad_soyad, otel_id, otel_adi,
-                onceki_enlem, onceki_boylam, yeni_enlem, yeni_boylam,
-                ip_adresi, notlar
+                [ADMIN_KULLANICI_ID], [ADMIN_AD_SOYAD], [OTEL_ID], [OTEL_ADI],
+                [ONCEKI_ENLEM], [ONCEKI_BOYLAM], [YENI_ENLEM], [YENI_BOYLAM],
+                [IP_ADRESI], [NOTLAR]
             )
             VALUES
             (
@@ -442,37 +442,37 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         if (request.RoomId.HasValue)
         {
             const string updateSql = @"
-                UPDATE oda_tipleri
-                SET oda_tip_kodu = @roomCode,
-                    oda_adi = @roomName,
-                    oda_kategorisi = @roomCategory,
-                    maksimum_kisi_sayisi = @maxPeople,
-                    maksimum_yetiskin_sayisi = @maxAdults,
-                    maksimum_cocuk_sayisi = @maxChildren,
-                    yatak_tipi = @bedType,
-                    yatak_sayisi = @bedCount,
-                    ek_yatak_eklenebilir_mi = @extraBedAvailable,
-                    oda_metrekare = @roomSize,
-                    balkon_var_mi = @balconyAvailable,
-                    balkon_metrekare = @balconySize,
-                    manzara_tipi = @viewType,
-                    ozel_banyo_var_mi = @privateBathroom,
-                    banyo_tipi = @bathroomType,
-                    standart_gecelik_fiyat = @basePrice,
-                    haftasonu_fark_orani = @weekendDifferenceRate,
-                    cocuk_indirim_orani = @childDiscountRate,
-                    bebek_ucretsiz_mi = @babyFree,
-                    bebek_yas_siniri = @babyAgeLimit,
-                    cocuk_yas_siniri = @childAgeLimit,
-                    toplam_oda_sayisi = @totalRooms,
-                    overbooking_limit = @overbookingLimit,
-                    kapak_fotografi = @coverPhotoPath,
-                    galeri = @galleryJson,
-                    ozellikler = @featuresJson,
-                    aktif_mi = @isActive,
-                    siralama = @sortOrder,
-                    guncellenme_tarihi = SYSUTCDATETIME()
-                WHERE id = @roomId AND otel_id = @hotelId;";
+                UPDATE [dbo].[ODA_TIPLERI]
+                SET [ODA_TIP_KODU] = @roomCode,
+                    [ODA_ADI] = @roomName,
+                    [ODA_KATEGORISI] = @roomCategory,
+                    [MAKSIMUM_KISI_SAYISI] = @maxPeople,
+                    [MAKSIMUM_YETISKIN_SAYISI] = @maxAdults,
+                    [MAKSIMUM_COCUK_SAYISI] = @maxChildren,
+                    [YATAK_TIPI] = @bedType,
+                    [YATAK_SAYISI] = @bedCount,
+                    [EK_YATAK_EKLENEBILIR_MI] = @extraBedAvailable,
+                    [ODA_METREKARE] = @roomSize,
+                    [BALKON_VAR_MI] = @balconyAvailable,
+                    [BALKON_METREKARE] = @balconySize,
+                    [MANZARA_TIPI] = @viewType,
+                    [OZEL_BANYO_VAR_MI] = @privateBathroom,
+                    [BANYO_TIPI] = @bathroomType,
+                    [STANDART_GECELIK_FIYAT] = @basePrice,
+                    [HAFTASONU_FARK_ORANI] = @weekendDifferenceRate,
+                    [COCUK_INDIRIM_ORANI] = @childDiscountRate,
+                    [BEBEK_UCRETSIZ_MI] = @babyFree,
+                    [BEBEK_YAS_SINIRI] = @babyAgeLimit,
+                    [COCUK_YAS_SINIRI] = @childAgeLimit,
+                    [TOPLAM_ODA_SAYISI] = @totalRooms,
+                    [OVERBOOKING_LIMIT] = @overbookingLimit,
+                    [KAPAK_FOTOGRAFI] = @coverPhotoPath,
+                    [GALERI] = @galleryJson,
+                    [OZELLIKLER] = @featuresJson,
+                    [AKTIF_MI] = @isActive,
+                    [SIRALAMA] = @sortOrder,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+                WHERE id = @roomId AND [OTEL_ID] = @hotelId;";
 
             await using var command = new SqlCommand(updateSql, connection);
             BindRoomCommand(command, request, hotel.HotelId, featuresJson);
@@ -482,8 +482,8 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         const string insertSql = @"
-            INSERT INTO oda_tipleri
-            (otel_id, oda_tip_kodu, oda_adi, oda_kategorisi, maksimum_kisi_sayisi, maksimum_yetiskin_sayisi, maksimum_cocuk_sayisi, yatak_tipi, yatak_sayisi, ek_yatak_eklenebilir_mi, oda_metrekare, balkon_var_mi, balkon_metrekare, manzara_tipi, ozel_banyo_var_mi, banyo_tipi, standart_gecelik_fiyat, haftasonu_fark_orani, cocuk_indirim_orani, bebek_ucretsiz_mi, bebek_yas_siniri, cocuk_yas_siniri, toplam_oda_sayisi, overbooking_limit, kapak_fotografi, galeri, ozellikler, aktif_mi, siralama)
+            INSERT INTO [dbo].[ODA_TIPLERI]
+            ([OTEL_ID], [ODA_TIP_KODU], [ODA_ADI], [ODA_KATEGORISI], [MAKSIMUM_KISI_SAYISI], [MAKSIMUM_YETISKIN_SAYISI], [MAKSIMUM_COCUK_SAYISI], [YATAK_TIPI], [YATAK_SAYISI], [EK_YATAK_EKLENEBILIR_MI], [ODA_METREKARE], [BALKON_VAR_MI], [BALKON_METREKARE], [MANZARA_TIPI], [OZEL_BANYO_VAR_MI], [BANYO_TIPI], [STANDART_GECELIK_FIYAT], [HAFTASONU_FARK_ORANI], [COCUK_INDIRIM_ORANI], [BEBEK_UCRETSIZ_MI], [BEBEK_YAS_SINIRI], [COCUK_YAS_SINIRI], [TOPLAM_ODA_SAYISI], [OVERBOOKING_LIMIT], [KAPAK_FOTOGRAFI], [GALERI], [OZELLIKLER], [AKTIF_MI], [SIRALAMA])
             VALUES
             (@hotelId, @roomCode, @roomName, @roomCategory, @maxPeople, @maxAdults, @maxChildren, @bedType, @bedCount, @extraBedAvailable, @roomSize, @balconyAvailable, @balconySize, @viewType, @privateBathroom, @bathroomType, @basePrice, @weekendDifferenceRate, @childDiscountRate, @babyFree, @babyAgeLimit, @childAgeLimit, @totalRooms, @overbookingLimit, @coverPhotoPath, @galleryJson, @featuresJson, @isActive, @sortOrder);";
 
@@ -500,10 +500,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
 
             const string sql = @"
-                UPDATE oteller
-                SET yayin_durumu = 'Kapatıldı',
-                    onaylayan_admin_id = @adminUserId,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[OTELLER]
+                SET [YAYIN_DURUMU] = 'Kapatıldı',
+                    [ONAYLAYAN_ADMIN_ID] = @adminUserId,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @hotelId;";
             await using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -521,13 +521,13 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
 
             const string sql = @"
-                UPDATE oteller
-                SET yayin_durumu = CASE
-                        WHEN onay_durumu IN ('Onaylandı', 'Onaylandi') THEN 'Yayında'
+                UPDATE [dbo].[OTELLER]
+                SET [YAYIN_DURUMU] = CASE
+                        WHEN [ONAY_DURUMU] IN ('Onaylandı', 'Onaylandi') THEN 'Yayında'
                         ELSE 'Taslak'
                     END,
-                    onaylayan_admin_id = @adminUserId,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                    [ONAYLAYAN_ADMIN_ID] = @adminUserId,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @hotelId;";
             await using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -538,13 +538,54 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 : (false, "Otel bulunamadi veya guncellenemedi.");
         }
 
+        public async Task<(bool Success, string Message, int UpdatedCount)> BulkUpdateHotelPublishStatusAsync(IReadOnlyList<long> hotelIds, bool publish, long adminUserId, CancellationToken cancellationToken = default)
+        {
+            var ids = (hotelIds ?? Array.Empty<long>()).Where(id => id > 0).Distinct().ToArray();
+            if (ids.Length == 0)
+            {
+                return (false, "En az bir otel secmelisiniz.", 0);
+            }
+
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            const string publishSql = @"
+                UPDATE [dbo].[OTELLER]
+                SET [YAYIN_DURUMU] = CASE
+                        WHEN [ONAY_DURUMU] IN (N'Onaylandı', N'Onaylandi') THEN N'Yayında'
+                        ELSE N'Taslak'
+                    END,
+                    [ONAYLAYAN_ADMIN_ID] = @adminUserId,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+                WHERE id IN (SELECT CAST(value AS bigint) FROM OPENJSON(@ids));";
+
+            const string unpublishSql = @"
+                UPDATE [dbo].[OTELLER]
+                SET [YAYIN_DURUMU] = N'Kapatıldı',
+                    [ONAYLAYAN_ADMIN_ID] = @adminUserId,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+                WHERE id IN (SELECT CAST(value AS bigint) FROM OPENJSON(@ids));";
+
+            await using var command = new SqlCommand(publish ? publishSql : unpublishSql, connection);
+            command.Parameters.AddWithValue("@ids", JsonSerializer.Serialize(ids));
+            command.Parameters.AddWithValue("@adminUserId", adminUserId);
+            var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+            if (affectedRows <= 0)
+            {
+                return (false, "Secilen oteller bulunamadi veya guncellenemedi.", 0);
+            }
+
+            var verb = publish ? "yayina alindi" : "yayini kapatildi";
+            return (true, $"{affectedRows} otel {verb}.", affectedRows);
+        }
+
         public async Task<(bool Success, string Message)> DeactivateRoomAsync(long hotelId, long roomId, CancellationToken cancellationToken = default)
         {
             await using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
             await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
 
-            const string sql = "UPDATE oda_tipleri SET aktif_mi = 0, guncellenme_tarihi = SYSUTCDATETIME() WHERE id = @roomId AND otel_id = @hotelId;";
+            const string sql = "UPDATE [dbo].[ODA_TIPLERI] SET [AKTIF_MI] = 0, [GUNCELLENME_TARIHI] = SYSUTCDATETIME() WHERE id = @roomId AND [OTEL_ID] = @hotelId;";
             await using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@roomId", roomId);
             command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -587,8 +628,8 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 savedPhysicalPaths.Add(Path.Combine(targetDirectory, storedImage.FileName));
 
                 const string insertSql = @"
-                    INSERT INTO otel_gorselleri
-                    (otel_id, gorsel_url, gorsel_turu, baslik, aciklama, kapak_fotografi_mi, one_cikan, siralama, boyut_kb, onay_durumu, onaylayan_admin_id, onay_tarihi, yukleyen_kullanici_id)
+                    INSERT INTO [dbo].[OTEL_GORSELLERI]
+                    ([OTEL_ID], [GORSEL_URL], [GORSEL_TURU], [BASLIK], [ACIKLAMA], [KAPAK_FOTOGRAFI_MI], [ONE_CIKAN], [SIRALAMA], [BOYUT_KB], [ONAY_DURUMU], [ONAYLAYAN_ADMIN_ID], [ONAY_TARIHI], [YUKLEYEN_KULLANICI_ID])
                     VALUES
                     (@hotelId, @url, @photoType, @title, @description, @isCover, @featured, @sortOrder, @sizeKb, 'Onaylandı', @adminUserId, SYSUTCDATETIME(), @adminUserId);";
                 await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
@@ -606,12 +647,12 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
                 if (shouldMakeCover)
                 {
-                    await using var resetCover = new SqlCommand("UPDATE otel_gorselleri SET kapak_fotografi_mi = CASE WHEN gorsel_url = @coverUrl THEN 1 ELSE 0 END WHERE otel_id = @hotelId;", connection, (SqlTransaction)transaction);
+                    await using var resetCover = new SqlCommand("UPDATE [dbo].[OTEL_GORSELLERI] SET [KAPAK_FOTOGRAFI_MI] = CASE WHEN [GORSEL_URL] = @coverUrl THEN 1 ELSE 0 END WHERE [OTEL_ID] = @hotelId;", connection, (SqlTransaction)transaction);
                     resetCover.Parameters.AddWithValue("@coverUrl", relativePath);
                     resetCover.Parameters.AddWithValue("@hotelId", hotel.HotelId);
                     await resetCover.ExecuteNonQueryAsync(cancellationToken);
 
-                    await using var updateHotel = new SqlCommand("UPDATE oteller SET kapak_fotografi = @coverUrl WHERE id = @hotelId;", connection, (SqlTransaction)transaction);
+                    await using var updateHotel = new SqlCommand("UPDATE [dbo].[OTELLER] SET [KAPAK_FOTOGRAFI] = @coverUrl WHERE id = @hotelId;", connection, (SqlTransaction)transaction);
                     updateHotel.Parameters.AddWithValue("@coverUrl", relativePath);
                     updateHotel.Parameters.AddWithValue("@hotelId", hotel.HotelId);
                     await updateHotel.ExecuteNonQueryAsync(cancellationToken);
@@ -647,13 +688,13 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         await EnsureHotelExistsAsync(connection, request.HotelId, cancellationToken);
 
         const string sql = @"
-            UPDATE otel_gorselleri
-            SET baslik = @title,
-                gorsel_turu = @photoType,
-                aciklama = @description,
-                siralama = @displayOrder,
-                one_cikan = @featured
-            WHERE id = @photoId AND otel_id = @hotelId;";
+            UPDATE [dbo].[OTEL_GORSELLERI]
+            SET [BASLIK] = @title,
+                [GORSEL_TURU] = @photoType,
+                [ACIKLAMA] = @description,
+                [SIRALAMA] = @displayOrder,
+                [ONE_CIKAN] = @featured
+            WHERE id = @photoId AND [OTEL_ID] = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@photoId", request.PhotoId.Value);
         command.Parameters.AddWithValue("@hotelId", request.HotelId);
@@ -672,7 +713,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         await connection.OpenAsync(cancellationToken);
         await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
 
-        const string selectSql = "SELECT TOP (1) gorsel_url FROM otel_gorselleri WHERE id = @photoId AND otel_id = @hotelId;";
+        const string selectSql = "SELECT TOP (1) [GORSEL_URL] FROM [dbo].[OTEL_GORSELLERI] WHERE id = @photoId AND [OTEL_ID] = @hotelId;";
         await using var selectCommand = new SqlCommand(selectSql, connection);
         selectCommand.Parameters.AddWithValue("@photoId", photoId);
         selectCommand.Parameters.AddWithValue("@hotelId", hotelId);
@@ -683,13 +724,13 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await using (var updatePhotos = new SqlCommand("UPDATE otel_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE otel_id = @hotelId;", connection, (SqlTransaction)transaction))
+        await using (var updatePhotos = new SqlCommand("UPDATE [dbo].[OTEL_GORSELLERI] SET [KAPAK_FOTOGRAFI_MI] = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE [OTEL_ID] = @hotelId;", connection, (SqlTransaction)transaction))
         {
             updatePhotos.Parameters.AddWithValue("@photoId", photoId);
             updatePhotos.Parameters.AddWithValue("@hotelId", hotelId);
             await updatePhotos.ExecuteNonQueryAsync(cancellationToken);
         }
-        await using (var updateHotel = new SqlCommand("UPDATE oteller SET kapak_fotografi = @coverUrl WHERE id = @hotelId;", connection, (SqlTransaction)transaction))
+        await using (var updateHotel = new SqlCommand("UPDATE [dbo].[OTELLER] SET [KAPAK_FOTOGRAFI] = @coverUrl WHERE id = @hotelId;", connection, (SqlTransaction)transaction))
         {
             updateHotel.Parameters.AddWithValue("@coverUrl", url);
             updateHotel.Parameters.AddWithValue("@hotelId", hotelId);
@@ -707,7 +748,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         string? relativePath = null;
         var wasCover = false;
-        const string selectSql = "SELECT TOP (1) gorsel_url, kapak_fotografi_mi FROM otel_gorselleri WHERE id = @photoId AND otel_id = @hotelId;";
+        const string selectSql = "SELECT TOP (1) [GORSEL_URL], [KAPAK_FOTOGRAFI_MI] FROM [dbo].[OTEL_GORSELLERI] WHERE id = @photoId AND [OTEL_ID] = @hotelId;";
         await using (var selectCommand = new SqlCommand(selectSql, connection))
         {
             selectCommand.Parameters.AddWithValue("@photoId", photoId);
@@ -726,7 +767,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await using (var deleteCommand = new SqlCommand("DELETE FROM otel_gorselleri WHERE id = @photoId AND otel_id = @hotelId;", connection, (SqlTransaction)transaction))
+        await using (var deleteCommand = new SqlCommand("DELETE FROM [dbo].[OTEL_GORSELLERI] WHERE id = @photoId AND [OTEL_ID] = @hotelId;", connection, (SqlTransaction)transaction))
         {
             deleteCommand.Parameters.AddWithValue("@photoId", photoId);
             deleteCommand.Parameters.AddWithValue("@hotelId", hotelId);
@@ -780,8 +821,8 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 savedPhysicalPaths.Add(Path.Combine(targetDirectory, storedImage.FileName));
 
                 const string insertSql = @"
-                    INSERT INTO oda_gorselleri
-                    (oda_tip_id, gorsel_url, baslik, aciklama, kapak_fotografi_mi, siralama, boyut_kb, onay_durumu, onaylayan_admin_id, onay_tarihi, yukleyen_kullanici_id)
+                    INSERT INTO [dbo].[ODA_GORSELLERI]
+                    ([ODA_TIP_ID], [GORSEL_URL], [BASLIK], [ACIKLAMA], [KAPAK_FOTOGRAFI_MI], [SIRALAMA], [BOYUT_KB], [ONAY_DURUMU], [ONAYLAYAN_ADMIN_ID], [ONAY_TARIHI], [YUKLEYEN_KULLANICI_ID])
                     VALUES
                     (@roomId, @url, @title, @description, @isCover, @sortOrder, @sizeKb, 'Onaylandı', @adminUserId, SYSUTCDATETIME(), @adminUserId);";
                 await using var insertCommand = new SqlCommand(insertSql, connection, (SqlTransaction)transaction);
@@ -797,12 +838,12 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
                 if (shouldMakeCover)
                 {
-                    await using var resetCover = new SqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN gorsel_url = @coverUrl THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, (SqlTransaction)transaction);
+                    await using var resetCover = new SqlCommand("UPDATE [dbo].[ODA_GORSELLERI] SET [KAPAK_FOTOGRAFI_MI] = CASE WHEN [GORSEL_URL] = @coverUrl THEN 1 ELSE 0 END WHERE [ODA_TIP_ID] = @roomId;", connection, (SqlTransaction)transaction);
                     resetCover.Parameters.AddWithValue("@coverUrl", relativePath);
                     resetCover.Parameters.AddWithValue("@roomId", request.RoomId);
                     await resetCover.ExecuteNonQueryAsync(cancellationToken);
 
-                    await using var updateRoom = new SqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, (SqlTransaction)transaction);
+                    await using var updateRoom = new SqlCommand("UPDATE [dbo].[ODA_TIPLERI] SET [KAPAK_FOTOGRAFI] = @coverUrl WHERE id = @roomId;", connection, (SqlTransaction)transaction);
                     updateRoom.Parameters.AddWithValue("@coverUrl", relativePath);
                     updateRoom.Parameters.AddWithValue("@roomId", request.RoomId);
                     await updateRoom.ExecuteNonQueryAsync(cancellationToken);
@@ -838,11 +879,11 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         await EnsureRoomExistsAsync(connection, request.HotelId, request.RoomId, cancellationToken);
 
         const string sql = @"
-            UPDATE oda_gorselleri
-            SET baslik = @title,
-                aciklama = @description,
-                siralama = @displayOrder
-            WHERE id = @photoId AND oda_tip_id = @roomId;";
+            UPDATE [dbo].[ODA_GORSELLERI]
+            SET [BASLIK] = @title,
+                [ACIKLAMA] = @description,
+                [SIRALAMA] = @displayOrder
+            WHERE id = @photoId AND [ODA_TIP_ID] = @roomId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@photoId", request.PhotoId.Value);
         command.Parameters.AddWithValue("@roomId", request.RoomId);
@@ -859,7 +900,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         await connection.OpenAsync(cancellationToken);
         await EnsureRoomExistsAsync(connection, hotelId, roomId, cancellationToken);
 
-        const string selectSql = "SELECT TOP (1) gorsel_url FROM oda_gorselleri WHERE id = @photoId AND oda_tip_id = @roomId;";
+        const string selectSql = "SELECT TOP (1) [GORSEL_URL] FROM [dbo].[ODA_GORSELLERI] WHERE id = @photoId AND [ODA_TIP_ID] = @roomId;";
         await using var selectCommand = new SqlCommand(selectSql, connection);
         selectCommand.Parameters.AddWithValue("@photoId", photoId);
         selectCommand.Parameters.AddWithValue("@roomId", roomId);
@@ -870,13 +911,13 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await using (var updatePhotos = new SqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, (SqlTransaction)transaction))
+        await using (var updatePhotos = new SqlCommand("UPDATE [dbo].[ODA_GORSELLERI] SET [KAPAK_FOTOGRAFI_MI] = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE [ODA_TIP_ID] = @roomId;", connection, (SqlTransaction)transaction))
         {
             updatePhotos.Parameters.AddWithValue("@photoId", photoId);
             updatePhotos.Parameters.AddWithValue("@roomId", roomId);
             await updatePhotos.ExecuteNonQueryAsync(cancellationToken);
         }
-        await using (var updateRoom = new SqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, (SqlTransaction)transaction))
+        await using (var updateRoom = new SqlCommand("UPDATE [dbo].[ODA_TIPLERI] SET [KAPAK_FOTOGRAFI] = @coverUrl WHERE id = @roomId;", connection, (SqlTransaction)transaction))
         {
             updateRoom.Parameters.AddWithValue("@coverUrl", url);
             updateRoom.Parameters.AddWithValue("@roomId", roomId);
@@ -894,7 +935,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         string? relativePath = null;
         var wasCover = false;
-        const string selectSql = "SELECT TOP (1) gorsel_url, kapak_fotografi_mi FROM oda_gorselleri WHERE id = @photoId AND oda_tip_id = @roomId;";
+        const string selectSql = "SELECT TOP (1) [GORSEL_URL], [KAPAK_FOTOGRAFI_MI] FROM [dbo].[ODA_GORSELLERI] WHERE id = @photoId AND [ODA_TIP_ID] = @roomId;";
         await using (var selectCommand = new SqlCommand(selectSql, connection))
         {
             selectCommand.Parameters.AddWithValue("@photoId", photoId);
@@ -913,7 +954,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         }
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        await using (var deleteCommand = new SqlCommand("DELETE FROM oda_gorselleri WHERE id = @photoId AND oda_tip_id = @roomId;", connection, (SqlTransaction)transaction))
+        await using (var deleteCommand = new SqlCommand("DELETE FROM [dbo].[ODA_GORSELLERI] WHERE id = @photoId AND [ODA_TIP_ID] = @roomId;", connection, (SqlTransaction)transaction))
         {
             deleteCommand.Parameters.AddWithValue("@photoId", photoId);
             deleteCommand.Parameters.AddWithValue("@roomId", roomId);
@@ -935,10 +976,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     {
         const string sql = @"
             SELECT
-                (SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Beklemede') AS pending_partner_applications,
-                (SELECT COUNT(*) FROM sistem_ici_bildirimler WHERE okundu_mu = 0) AS unread_notifications,
-                (SELECT COUNT(*) FROM sistem_hata_loglari WHERE hata_seviyesi IN ('CRITICAL','ALERT','EMERGENCY') AND cozuldu_mu = 0) AS critical_logs,
-                (SELECT COUNT(*) FROM yorumlar WHERE onay_durumu = 'Beklemede') AS pending_reviews;";
+                (SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU] = 'Beklemede') AS pending_partner_applications,
+                (SELECT COUNT(*) FROM [dbo].[SISTEM_ICI_BILDIRIMLER] WHERE [OKUNDU_MU] = 0) AS unread_notifications,
+                (SELECT COUNT(*) FROM [dbo].[SISTEM_HATA_LOGLARI] WHERE [HATA_SEVIYESI] IN ('CRITICAL','ALERT','EMERGENCY') AND [COZULDU_MU] = 0) AS critical_logs,
+                (SELECT COUNT(*) FROM [dbo].[YORUMLAR] WHERE [ONAY_DURUMU] = 'Beklemede') AS pending_reviews;";
 
         await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -967,10 +1008,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         var cards = new List<AdminSummaryCardViewModel>();
         var definitions = new[]
         {
-            ("Toplam Otel", "SELECT COUNT(*) FROM oteller", "Tum tesis kayitlari", "info", "fa-hotel"),
-            ("Yayinda", "SELECT COUNT(*) FROM oteller WHERE yayin_durumu = 'Yayında'", "Canli listelenen oteller", "success", "fa-tower-broadcast"),
-            ("Oda Tipi", "SELECT COUNT(*) FROM oda_tipleri", "Toplam oda tipi baglari", "warning", "fa-bed"),
-            ("Gorsel", "SELECT (SELECT COUNT(*) FROM otel_gorselleri) + (SELECT COUNT(*) FROM oda_gorselleri)", "Otel ve oda medya varliklari", "danger", "fa-images")
+            ("Toplam Otel", "SELECT COUNT(*) FROM [dbo].[OTELLER]", "Tum tesis kayitlari", "info", "fa-hotel"),
+            ("Yayinda", "SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE [YAYIN_DURUMU] = 'Yayında'", "Canli listelenen oteller", "success", "fa-tower-broadcast"),
+            ("Oda Tipi", "SELECT COUNT(*) FROM [dbo].[ODA_TIPLERI]", "Toplam oda tipi baglari", "warning", "fa-bed"),
+            ("Gorsel", "SELECT (SELECT COUNT(*) FROM [dbo].[OTEL_GORSELLERI]) + (SELECT COUNT(*) FROM [dbo].[ODA_GORSELLERI])", "Otel ve oda medya varliklari", "danger", "fa-images")
         };
 
         foreach (var definition in definitions)
@@ -1014,7 +1055,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         var values = new List<string>();
         await using var command = new SqlCommand($"""
             SELECT DISTINCT LTRIM(RTRIM({safeColumn}))
-            FROM oteller
+            FROM [dbo].[OTELLER]
             WHERE NULLIF(LTRIM(RTRIM(COALESCE({safeColumn}, ''))), '') IS NOT NULL
             ORDER BY LTRIM(RTRIM({safeColumn}));
             """, connection);
@@ -1041,10 +1082,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     {
         const string sql = @"
             SELECT
-                (SELECT COUNT(*) FROM oda_tipleri WHERE otel_id = @hotelId) AS room_count,
-                (SELECT COUNT(*) FROM otel_gorselleri WHERE otel_id = @hotelId) AS hotel_photo_count,
-                (SELECT COUNT(*) FROM oda_gorselleri og INNER JOIN oda_tipleri od ON od.id = og.oda_tip_id WHERE od.otel_id = @hotelId) AS room_photo_count,
-                (SELECT COUNT(*) FROM rezervasyonlar WHERE otel_id = @hotelId) AS reservation_count;";
+                (SELECT COUNT(*) FROM [dbo].[ODA_TIPLERI] WHERE [OTEL_ID] = @hotelId) AS room_count,
+                (SELECT COUNT(*) FROM [dbo].[OTEL_GORSELLERI] WHERE [OTEL_ID] = @hotelId) AS hotel_photo_count,
+                (SELECT COUNT(*) FROM [dbo].[ODA_GORSELLERI] og INNER JOIN [dbo].[ODA_TIPLERI] od ON od.id = og.[ODA_TIP_ID] WHERE od.[OTEL_ID] = @hotelId) AS room_photo_count,
+                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [OTEL_ID] = @hotelId) AS reservation_count;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -1062,7 +1103,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     private static async Task<(long HotelId, string HotelName)> EnsureHotelExistsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT TOP (1) id, otel_adi FROM oteller WHERE id = @hotelId;";
+        const string sql = "SELECT TOP (1) id, [OTEL_ADI] FROM [dbo].[OTELLER] WHERE id = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1076,7 +1117,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     private static async Task<(long RoomId, string RoomName)> EnsureRoomExistsAsync(SqlConnection connection, long hotelId, long roomId, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT TOP (1) id, oda_adi FROM oda_tipleri WHERE id = @roomId AND otel_id = @hotelId;";
+        const string sql = "SELECT TOP (1) id, [ODA_ADI] FROM [dbo].[ODA_TIPLERI] WHERE id = @roomId AND [OTEL_ID] = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@roomId", roomId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -1092,16 +1133,16 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     private static async Task<AdminHotelEditForm> LoadHotelFormAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, otel_kodu, partner_id, user_id, otel_adi, otel_turu, yildiz_sayisi, turizm_belge_no, turizm_belge_turu,
-                   ulke, sehir, ilce, mahalle, tam_adres, posta_kodu, enlem, boylam, telefon_1, telefon_2, faks, eposta, web_sitesi,
-                   rezervasyon_telefonu, satis_kontak_adi, satis_kontak_telefonu, satis_kontak_eposta, satis_notlari,
-                   check_in_saati, check_out_saati, gec_check_out_mumkun_mu, gec_check_out_ucreti, erken_check_in_mumkun_mu, erken_check_in_ucreti,
-                   toplam_oda_sayisi, toplam_yatak_kapasitesi, kat_sayisi, asansor_var_mi, asansor_sayisi, kisa_aciklama, uzun_aciklama,
-                   konum_aciklamasi, komisyon_turu, varsayilan_komisyon_orani, komisyon_hesaplama_tipi, odeme_vadesi, odeme_yontemi, fatura_kesim_turu,
-                   depozito_tutari, depozito_iade_suresi, minimum_konaklama_gecesi, maksimum_konaklama_gecesi, konusulan_diller,
-                   ortalama_puan, toplam_yorum_sayisi, temizlik_puani, konfor_puani, konum_puani, personel_puani, fiyat_performans_puani,
-                   kapak_fotografi, video_url, sanal_tur_url, yayin_durumu, onay_durumu, populerlik_sirasi, one_cikan_otel, tavsiye_edilen_otel
-            FROM oteller WHERE id = @hotelId;";
+            SELECT id, [OTEL_KODU], [PARTNER_ID], [KULLANICI_ID], [OTEL_ADI], [OTEL_TURU], [YILDIZ_SAYISI], [TURIZM_BELGE_NO], [TURIZM_BELGE_TURU],
+                   ulke, [SEHIR], ilce, [MAHALLE], [TAM_ADRES], [POSTA_KODU], [ENLEM], [BOYLAM], [TELEFON_1], [TELEFON_2], faks, [EPOSTA], [WEB_SITESI],
+                   [REZERVASYON_TELEFONU], [SATIS_KONTAK_ADI], [SATIS_KONTAK_TELEFONU], [SATIS_KONTAK_EPOSTA], [SATIS_NOTLARI],
+                   [CHECK_IN_SAATI], [CHECK_OUT_SAATI], [GEC_CHECK_OUT_MUMKUN_MU], [GEC_CHECK_OUT_UCRETI], [ERKEN_CHECK_IN_MUMKUN_MU], [ERKEN_CHECK_IN_UCRETI],
+                   [TOPLAM_ODA_SAYISI], [TOPLAM_YATAK_KAPASITESI], [KAT_SAYISI], [ASANSOR_VAR_MI], [ASANSOR_SAYISI], [KISA_ACIKLAMA], [UZUN_ACIKLAMA],
+                   [KONUM_ACIKLAMASI], [KOMISYON_TURU], [VARSAYILAN_KOMISYON_ORANI], [KOMISYON_HESAPLAMA_TIPI], [ODEME_VADESI], [ODEME_YONTEMI], [FATURA_KESIM_TURU],
+                   [DEPOZITO_TUTARI], [DEPOZITO_IADE_SURESI], [MINIMUM_KONAKLAMA_GECESI], [MAKSIMUM_KONAKLAMA_GECESI], [KONUSULAN_DILLER],
+                   [ORTALAMA_PUAN], [TOPLAM_YORUM_SAYISI], [TEMIZLIK_PUANI], [KONFOR_PUANI], [KONUM_PUANI], [PERSONEL_PUANI], [FIYAT_PERFORMANS_PUANI],
+                   [KAPAK_FOTOGRAFI], [VIDEO_URL], [SANAL_TUR_URL], [YAYIN_DURUMU], [ONAY_DURUMU], [POPULERLIK_SIRASI], [ONE_CIKAN_OTEL], [TAVSIYE_EDILEN_OTEL]
+            FROM [dbo].[OTELLER] WHERE id = @hotelId;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -1130,10 +1171,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     private static async Task<List<AdminRoomCardViewModel>> LoadRoomCardsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, oda_tip_kodu, oda_adi, oda_kategorisi, standart_gecelik_fiyat, maksimum_kisi_sayisi, toplam_oda_sayisi, kapak_fotografi, aktif_mi
-            FROM oda_tipleri
-            WHERE otel_id = @hotelId
-            ORDER BY aktif_mi DESC, siralama, id DESC;";
+            SELECT id, [ODA_TIP_KODU], [ODA_ADI], [ODA_KATEGORISI], [STANDART_GECELIK_FIYAT], [MAKSIMUM_KISI_SAYISI], [TOPLAM_ODA_SAYISI], [KAPAK_FOTOGRAFI], [AKTIF_MI]
+            FROM [dbo].[ODA_TIPLERI]
+            WHERE [OTEL_ID] = @hotelId
+            ORDER BY [AKTIF_MI] DESC, [SIRALAMA], id DESC;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1159,12 +1200,12 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     private static async Task<AdminRoomEditForm> LoadRoomFormAsync(SqlConnection connection, long hotelId, long roomId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, otel_id, oda_tip_kodu, oda_adi, oda_kategorisi, maksimum_kisi_sayisi, maksimum_yetiskin_sayisi, maksimum_cocuk_sayisi,
-                   yatak_tipi, yatak_sayisi, ek_yatak_eklenebilir_mi, oda_metrekare, balkon_var_mi, balkon_metrekare, manzara_tipi,
-                   ozel_banyo_var_mi, banyo_tipi, standart_gecelik_fiyat, haftasonu_fark_orani, cocuk_indirim_orani, bebek_ucretsiz_mi,
-                   bebek_yas_siniri, cocuk_yas_siniri, toplam_oda_sayisi, overbooking_limit, kapak_fotografi, galeri, ozellikler, aktif_mi, siralama
-            FROM oda_tipleri
-            WHERE id = @roomId AND otel_id = @hotelId;";
+            SELECT id, [OTEL_ID], [ODA_TIP_KODU], [ODA_ADI], [ODA_KATEGORISI], [MAKSIMUM_KISI_SAYISI], [MAKSIMUM_YETISKIN_SAYISI], [MAKSIMUM_COCUK_SAYISI],
+                   [YATAK_TIPI], [YATAK_SAYISI], [EK_YATAK_EKLENEBILIR_MI], [ODA_METREKARE], [BALKON_VAR_MI], [BALKON_METREKARE], [MANZARA_TIPI],
+                   [OZEL_BANYO_VAR_MI], [BANYO_TIPI], [STANDART_GECELIK_FIYAT], [HAFTASONU_FARK_ORANI], [COCUK_INDIRIM_ORANI], [BEBEK_UCRETSIZ_MI],
+                   [BEBEK_YAS_SINIRI], [COCUK_YAS_SINIRI], [TOPLAM_ODA_SAYISI], [OVERBOOKING_LIMIT], [KAPAK_FOTOGRAFI], [GALERI], [OZELLIKLER], [AKTIF_MI], [SIRALAMA]
+            FROM [dbo].[ODA_TIPLERI]
+            WHERE id = @roomId AND [OTEL_ID] = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@roomId", roomId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -1187,10 +1228,10 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     private static async Task<List<AdminPhotoCardViewModel>> LoadHotelPhotosAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, gorsel_url, COALESCE(baslik,''), COALESCE(aciklama,''), gorsel_turu, siralama, kapak_fotografi_mi, onay_durumu
-            FROM otel_gorselleri
-            WHERE otel_id = @hotelId
-            ORDER BY kapak_fotografi_mi DESC, siralama, id DESC;";
+            SELECT id, [GORSEL_URL], COALESCE([BASLIK],''), COALESCE([ACIKLAMA],''), [GORSEL_TURU], [SIRALAMA], [KAPAK_FOTOGRAFI_MI], [ONAY_DURUMU]
+            FROM [dbo].[OTEL_GORSELLERI]
+            WHERE [OTEL_ID] = @hotelId
+            ORDER BY [KAPAK_FOTOGRAFI_MI] DESC, [SIRALAMA], id DESC;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1208,9 +1249,9 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     private static async Task<AdminHotelPhotoEditForm> LoadHotelPhotoEditFormAsync(SqlConnection connection, long hotelId, long photoId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, COALESCE(baslik,''), gorsel_turu, COALESCE(aciklama,''), siralama, one_cikan
-            FROM otel_gorselleri
-            WHERE id = @photoId AND otel_id = @hotelId;";
+            SELECT id, COALESCE([BASLIK],''), [GORSEL_TURU], COALESCE([ACIKLAMA],''), [SIRALAMA], [ONE_CIKAN]
+            FROM [dbo].[OTEL_GORSELLERI]
+            WHERE id = @photoId AND [OTEL_ID] = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@photoId", photoId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -1235,11 +1276,11 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     private static async Task<List<AdminRoomPhotoCardViewModel>> LoadRoomPhotosAsync(SqlConnection connection, long roomId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT og.id, og.oda_tip_id, od.oda_adi, og.gorsel_url, COALESCE(og.baslik,''), COALESCE(og.aciklama,''), og.siralama, og.kapak_fotografi_mi, og.onay_durumu
-            FROM oda_gorselleri og
-            INNER JOIN oda_tipleri od ON od.id = og.oda_tip_id
-            WHERE og.oda_tip_id = @roomId
-            ORDER BY og.kapak_fotografi_mi DESC, og.siralama, og.id DESC;";
+            SELECT og.id, og.[ODA_TIP_ID], od.[ODA_ADI], og.[GORSEL_URL], COALESCE(og.[BASLIK],''), COALESCE(og.[ACIKLAMA],''), og.[SIRALAMA], og.[KAPAK_FOTOGRAFI_MI], og.[ONAY_DURUMU]
+            FROM [dbo].[ODA_GORSELLERI] og
+            INNER JOIN [dbo].[ODA_TIPLERI] od ON od.id = og.[ODA_TIP_ID]
+            WHERE og.[ODA_TIP_ID] = @roomId
+            ORDER BY og.[KAPAK_FOTOGRAFI_MI] DESC, og.[SIRALAMA], og.id DESC;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@roomId", roomId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1257,9 +1298,9 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     private static async Task<AdminRoomPhotoEditForm> LoadRoomPhotoEditFormAsync(SqlConnection connection, long roomId, long photoId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, oda_tip_id, COALESCE(baslik,''), COALESCE(aciklama,''), siralama
-            FROM oda_gorselleri
-            WHERE id = @photoId AND oda_tip_id = @roomId;";
+            SELECT id, [ODA_TIP_ID], COALESCE([BASLIK],''), COALESCE([ACIKLAMA],''), [SIRALAMA]
+            FROM [dbo].[ODA_GORSELLERI]
+            WHERE id = @photoId AND [ODA_TIP_ID] = @roomId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@photoId", photoId);
         command.Parameters.AddWithValue("@roomId", roomId);
@@ -1277,7 +1318,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     private static async Task PromoteNextHotelCoverAsync(SqlConnection connection, SqlTransaction transaction, long hotelId, CancellationToken cancellationToken)
     {
-        const string selectNextSql = "SELECT TOP (1) id, gorsel_url FROM otel_gorselleri WHERE otel_id = @hotelId ORDER BY siralama, id;";
+        const string selectNextSql = "SELECT TOP (1) id, [GORSEL_URL] FROM [dbo].[OTEL_GORSELLERI] WHERE [OTEL_ID] = @hotelId ORDER BY [SIRALAMA], id;";
         await using var selectCommand = new SqlCommand(selectNextSql, connection, (SqlTransaction)transaction);
         selectCommand.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await selectCommand.ExecuteReaderAsync(cancellationToken);
@@ -1292,13 +1333,13 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         if (nextPhotoId.HasValue)
         {
-            await using var updatePhotos = new SqlCommand("UPDATE otel_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE otel_id = @hotelId;", connection, (SqlTransaction)transaction);
+            await using var updatePhotos = new SqlCommand("UPDATE [dbo].[OTEL_GORSELLERI] SET [KAPAK_FOTOGRAFI_MI] = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE [OTEL_ID] = @hotelId;", connection, (SqlTransaction)transaction);
             updatePhotos.Parameters.AddWithValue("@photoId", nextPhotoId.Value);
             updatePhotos.Parameters.AddWithValue("@hotelId", hotelId);
             await updatePhotos.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await using var updateHotel = new SqlCommand("UPDATE oteller SET kapak_fotografi = @coverUrl WHERE id = @hotelId;", connection, (SqlTransaction)transaction);
+        await using var updateHotel = new SqlCommand("UPDATE [dbo].[OTELLER] SET [KAPAK_FOTOGRAFI] = @coverUrl WHERE id = @hotelId;", connection, (SqlTransaction)transaction);
         updateHotel.Parameters.AddWithValue("@coverUrl", (object?)nextUrl ?? DBNull.Value);
         updateHotel.Parameters.AddWithValue("@hotelId", hotelId);
         await updateHotel.ExecuteNonQueryAsync(cancellationToken);
@@ -1306,7 +1347,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
     private static async Task PromoteNextRoomCoverAsync(SqlConnection connection, SqlTransaction transaction, long roomId, CancellationToken cancellationToken)
     {
-        const string selectNextSql = "SELECT TOP (1) id, gorsel_url FROM oda_gorselleri WHERE oda_tip_id = @roomId ORDER BY siralama, id;";
+        const string selectNextSql = "SELECT TOP (1) id, [GORSEL_URL] FROM [dbo].[ODA_GORSELLERI] WHERE [ODA_TIP_ID] = @roomId ORDER BY [SIRALAMA], id;";
         await using var selectCommand = new SqlCommand(selectNextSql, connection, (SqlTransaction)transaction);
         selectCommand.Parameters.AddWithValue("@roomId", roomId);
         await using var reader = await selectCommand.ExecuteReaderAsync(cancellationToken);
@@ -1321,13 +1362,13 @@ public class AdminHotelManagementService : IAdminHotelManagementService
 
         if (nextPhotoId.HasValue)
         {
-            await using var updatePhotos = new SqlCommand("UPDATE oda_gorselleri SET kapak_fotografi_mi = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE oda_tip_id = @roomId;", connection, (SqlTransaction)transaction);
+            await using var updatePhotos = new SqlCommand("UPDATE [dbo].[ODA_GORSELLERI] SET [KAPAK_FOTOGRAFI_MI] = CASE WHEN id = @photoId THEN 1 ELSE 0 END WHERE [ODA_TIP_ID] = @roomId;", connection, (SqlTransaction)transaction);
             updatePhotos.Parameters.AddWithValue("@photoId", nextPhotoId.Value);
             updatePhotos.Parameters.AddWithValue("@roomId", roomId);
             await updatePhotos.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await using var updateRoom = new SqlCommand("UPDATE oda_tipleri SET kapak_fotografi = @coverUrl WHERE id = @roomId;", connection, (SqlTransaction)transaction);
+        await using var updateRoom = new SqlCommand("UPDATE [dbo].[ODA_TIPLERI] SET [KAPAK_FOTOGRAFI] = @coverUrl WHERE id = @roomId;", connection, (SqlTransaction)transaction);
         updateRoom.Parameters.AddWithValue("@coverUrl", (object?)nextUrl ?? DBNull.Value);
         updateRoom.Parameters.AddWithValue("@roomId", roomId);
         await updateRoom.ExecuteNonQueryAsync(cancellationToken);

@@ -1,0 +1,27 @@
+.partner-review-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.partner-review-head small {
+    color: var(--partner-muted);
+}
+
+.partner-review-card p {
+    margin: 10px 0 0;
+    color: #334a67;
+    line-height: 1.55;
+}
+
+.partner-review-report-form {
+    margin-top: 10px;
+}
+
+@media (max-width: 700px) {
+    .partner-review-head {
+        flex-direction: column;
+        gap: 8px;
+    }
+}

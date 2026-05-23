@@ -1,6 +1,8 @@
 @model otelturizmnew.Models.Kampanyalar.CampaignDetailPageViewModel
 
 @{
+    ViewData["PageCss"] = "kampanya-detay";
+    ViewData["PageCssMobile"] = "kampanya-detay.mobile";
     var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
                   ?? "https://otelturizm.com";
     ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.ShortDescription)

@@ -2,91 +2,118 @@
 @{
     Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
     ViewData["PartnerShell"] = Model.Shell;
-    ViewData["PageCssPath"] = "paneller/partner/finance";
+    ViewData["PageCssPath"] = "paneller/partner/guest-invoices";
+    var missingCount = Model.Rows.Count(r => !r.HasInvoice && r.ReservationId > 0);
 }
 
-<div class="page-header d-print-none">
-    <div class="row g-2 align-items-center">
-        <div class="col">
-            <div class="page-pretitle">Finans</div>
-            <h2 class="page-title">Misafir Faturaları</h2>
-            <div class="text-muted mt-1">Konaklaması tamamlanan rezervasyonlarda misafir faturası eksiklerini takip edip yükleyin.</div>
-        </div>
-        <div class="col-auto">
-            <a class="btn btn-outline-primary btn-sm" href="/panel/partner/finans?otelId=@Model.Shell.SelectedHotelId">Finans merkezine dön</a>
+<div class="partner-guest-invoices">
+    <div class="page-header d-print-none">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Finans</div>
+                <h2 class="page-title">Misafir Faturaları</h2>
+                <div class="text-muted mt-1">Konaklaması tamamlanan rezervasyonlarda misafir faturası eksiklerini takip edip yükleyin.</div>
+            </div>
+            <div class="col-auto">
+                <a class="btn btn-outline-primary btn-sm" href="/panel/partner/finans?otelId=@Model.Shell.SelectedHotelId">Finans merkezine dön</a>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title mb-0">Rezervasyon listesi</h3>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-vcenter card-table">
-            <thead>
-                <tr>
-                    <th>Rez. No</th>
-                    <th>Misafir</th>
-                    <th>Konaklama</th>
-                    <th>Toplam</th>
-                    <th>Durum</th>
-                    <th class="text-end">İşlem</th>
-                </tr>
-            </thead>
-            <tbody>
-            @if (Model.Rows.Count == 0)
-            {
-                <tr><td colspan="6" class="text-muted p-3">Tamamlanmış rezervasyon bulunmuyor.</td></tr>
-            }
-            else
-            {
-                foreach (var row in Model.Rows)
-                {
+    @if (TempData["PartnerError"] is string err && !string.IsNullOrWhiteSpace(err))
+    {
+        <div class="partner-alert is-danger" role="alert">@err</div>
+    }
+    @if (TempData["PartnerSuccess"] is string ok && !string.IsNullOrWhiteSpace(ok))
+    {
+        <div class="partner-alert is-success" role="alert">@ok</div>
+    }
+
+    @if (missingCount > 0)
+    {
+        <div class="partner-alert guest-invoices-hint" style="border-color: rgba(245, 158, 11, 0.35); background: rgba(255, 251, 235, 0.9); color: #92400e;">
+            <strong>@missingCount</strong> tamamlanmış rezervasyonda misafir faturası eksik. PDF veya fotoğraf yükleyebilirsiniz (en fazla 10 MB).
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Rezervasyon listesi</h3>
+        </div>
+        <div class="table-responsive guest-invoices-table-wrap">
+            <table class="table table-vcenter card-table guest-invoices-table guest-invoices-table--cards">
+                <thead>
                     <tr>
-                        <td class="fw-bold">@row.ReservationNo</td>
-                        <td>@row.GuestName</td>
-                        <td class="text-muted">@row.StayText</td>
-                        <td class="fw-bold">@row.TotalText</td>
-                        <td>
-                            @if (row.HasInvoice)
-                            {
-                                <span class="badge bg-success">Yüklendi</span>
-                                @if (!string.IsNullOrWhiteSpace(row.UploadedAtText))
-                                {
-                                    <div class="small text-muted">@row.UploadedAtText</div>
-                                }
-                            }
-                            else
-                            {
-                                <span class="badge bg-warning">Eksik</span>
-                            }
-                        </td>
-                        <td class="text-end">
-                            @if (row.HasInvoice && !string.IsNullOrWhiteSpace(row.DownloadUrl))
-                            {
-                                <a class="btn btn-outline-primary btn-sm" href="@row.DownloadUrl">İndir</a>
-                            }
-                            else if (!row.HasInvoice && row.ReservationId > 0)
-                            {
-                                <form method="post" action="/panel/partner/finans/misafir-faturalari/yukle" enctype="multipart/form-data" class="d-inline-flex gap-2 align-items-center justify-content-end">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="hotelId" value="@Model.Shell.SelectedHotelId" />
-                                    <input type="hidden" name="reservationId" value="@row.ReservationId" />
-                                    <input type="file" name="invoiceFile" accept=".pdf,image/*" class="form-control form-control-sm" style="max-width: 240px;" required />
-                                    <button type="submit" class="btn btn-primary btn-sm">Yükle</button>
-                                </form>
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </td>
+                        <th>Rez. No</th>
+                        <th>Misafir</th>
+                        <th>Konaklama</th>
+                        <th>Toplam</th>
+                        <th>Durum</th>
+                        <th class="text-end">İşlem</th>
                     </tr>
+                </thead>
+                <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-muted p-3">Tamamlanmış rezervasyon bulunmuyor.</td></tr>
                 }
-            }
-            </tbody>
-        </table>
+                else
+                {
+                    foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td class="fw-bold" data-label="Rez. No">@row.ReservationNo</td>
+                            <td data-label="Misafir">@row.GuestName</td>
+                            <td class="text-muted" data-label="Konaklama">@row.StayText</td>
+                            <td class="fw-bold" data-label="Toplam">@row.TotalText</td>
+                            <td data-label="Durum">
+                                @if (row.HasInvoice)
+                                {
+                                    <span class="badge bg-success">Yüklendi</span>
+                                    @if (!string.IsNullOrWhiteSpace(row.UploadedAtText))
+                                    {
+                                        <div class="small text-muted">@row.UploadedAtText</div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning">Eksik</span>
+                                }
+                            </td>
+                            <td class="text-end guest-invoices-actions" data-label="İşlem">
+                                @if (row.HasInvoice && !string.IsNullOrWhiteSpace(row.DownloadUrl))
+                                {
+                                    <a class="btn btn-outline-primary btn-sm" href="@row.DownloadUrl" target="_blank" rel="noopener">İndir</a>
+                                }
+                                else if (!row.HasInvoice && row.ReservationId > 0)
+                                {
+                                    <form method="post" action="/panel/partner/finans/misafir-faturalari/yukle" enctype="multipart/form-data" class="guest-invoice-upload-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="hotelId" value="@Model.Shell.SelectedHotelId" />
+                                        <input type="hidden" name="reservationId" value="@row.ReservationId" />
+                                        <div class="guest-invoice-upload">
+                                            <input type="file"
+                                                   name="invoiceFile"
+                                                   class="form-control form-control-sm guest-invoice-file"
+                                                   accept="application/pdf,image/*,.pdf,.jpg,.jpeg,.png,.webp"
+                                                   capture="environment"
+                                                   required />
+                                            <button type="submit" class="btn btn-primary btn-sm guest-invoice-upload-btn">
+                                                <i class="fas fa-cloud-arrow-up me-1"></i>Yükle
+                                            </button>
+                                        </div>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
-

@@ -113,10 +113,10 @@ public class PhoneVerificationService : IPhoneVerificationService
             if (phoneChanged && (!string.IsNullOrWhiteSpace(snapshot.PhoneNumber) || !string.IsNullOrWhiteSpace(snapshot.PhoneNumberE164)))
             {
                 const string historySql = """
-                    INSERT INTO kullanici_telefon_gecmisi
+                    INSERT INTO [dbo].[KULLANICI_TELEFON_GECMISI]
                     (
-                        kullanici_id, onceki_telefon_raw, onceki_telefon_e164, yeni_telefon_raw, yeni_telefon_e164,
-                        dogrulama_durumu, degisim_nedeni, olusturulma_tarihi
+                        [KULLANICI_ID], [ONCEKI_TELEFON_RAW], [ONCEKI_TELEFON_E164], [YENI_TELEFON_RAW], [YENI_TELEFON_E164],
+                        [DOGRULAMA_DURUMU], [DEGISIM_NEDENI], [OLUSTURULMA_TARIHI]
                     )
                     VALUES
                     (
@@ -135,16 +135,16 @@ public class PhoneVerificationService : IPhoneVerificationService
             }
 
             const string updateUserSql = """
-                UPDATE users
-                SET telefon = @phoneRaw,
-                    telefon_e164 = @phoneE164,
-                    telefon_dogrulama_kanali = 'whatsapp',
-                    telefon_dogrulama_durumu = 'Beklemede',
-                    telefon_son_dogrulama_istek_tarihi = SYSUTCDATETIME(),
-                    telefon_degistirilme_tarihi = CASE WHEN @phoneChanged = 1 THEN SYSUTCDATETIME() ELSE telefon_degistirilme_tarihi END,
-                    telefon_dogrulama_tarihi = CASE WHEN @phoneChanged = 1 THEN NULL ELSE telefon_dogrulama_tarihi END,
-                    telefon_son_sahiplik_teyit_tarihi = CASE WHEN @phoneChanged = 1 THEN NULL ELSE telefon_son_sahiplik_teyit_tarihi END,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[KULLANICILAR]
+                SET [TELEFON] = @phoneRaw,
+                    [TELEFON_E164] = @phoneE164,
+                    [TELEFON_DOGRULAMA_KANALI] = 'whatsapp',
+                    [TELEFON_DOGRULAMA_DURUMU] = 'Beklemede',
+                    [TELEFON_SON_DOGRULAMA_ISTEK_TARIHI] = SYSUTCDATETIME(),
+                    [TELEFON_DEGISTIRILME_TARIHI] = CASE WHEN @phoneChanged = 1 THEN SYSUTCDATETIME() ELSE [TELEFON_DEGISTIRILME_TARIHI] END,
+                    [TELEFON_DOGRULAMA_TARIHI] = CASE WHEN @phoneChanged = 1 THEN NULL ELSE [TELEFON_DOGRULAMA_TARIHI] END,
+                    [TELEFON_SON_SAHIPLIK_TEYIT_TARIHI] = CASE WHEN @phoneChanged = 1 THEN NULL ELSE [TELEFON_SON_SAHIPLIK_TEYIT_TARIHI] END,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @userId;
                 """;
             await using (var updateUserCommand = new SqlCommand(updateUserSql, connection, (SqlTransaction)transaction))
@@ -157,11 +157,11 @@ public class PhoneVerificationService : IPhoneVerificationService
             }
 
             const string tokenSql = """
-                INSERT INTO telefon_dogrulama_tokenlari
+                INSERT INTO [dbo].[TELEFON_DOGRULAMA_TOKENLARI]
                 (
-                    kullanici_id, telefon_raw, telefon_e164, dogrulama_kodu_hash, dogrulama_kanali,
-                    talep_durumu, deneme_sayisi, maksimum_deneme, gecerlilik_suresi, ip_adresi, user_agent,
-                    olusturulma_tarihi, guncellenme_tarihi
+                    [KULLANICI_ID], [TELEFON_RAW], [TELEFON_E164], [DOGRULAMA_KODU_HASH], [DOGRULAMA_KANALI],
+                    [TALEP_DURUMU], [DENEME_SAYISI], [MAKSIMUM_DENEME], [GECERLILIK_SURESI], [IP_ADRESI], [KULLANICI_ARACISI],
+                    [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
                 )
                 VALUES
                 (
@@ -185,10 +185,10 @@ public class PhoneVerificationService : IPhoneVerificationService
             }
 
             const string logSql = """
-                INSERT INTO whatsapp_mesaj_loglari
+                INSERT INTO [dbo].[WHATSAPP_MESAJ_LOGLARI]
                 (
-                    kullanici_id, telefon_e164, template_name, delivery_status, request_payload, response_payload,
-                    olusturulma_tarihi, guncellenme_tarihi
+                    [KULLANICI_ID], [TELEFON_E164], [SABLON_ADI], [TESLIMAT_DURUMU], [REQUEST_PAYLOAD], [YANIT_PAYLOAD],
+                    [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
                 )
                 VALUES
                 (
@@ -219,21 +219,21 @@ public class PhoneVerificationService : IPhoneVerificationService
         }, cancellationToken);
 
         const string updateAfterSendSql = """
-            UPDATE telefon_dogrulama_tokenlari
-            SET meta_mesaj_id = NULLIF(@messageId, ''),
-                talep_durumu = @requestStatus,
-                son_hata_mesaji = NULLIF(@errorMessage, ''),
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[TELEFON_DOGRULAMA_TOKENLARI]
+            SET [META_MESAJ_ID] = NULLIF(@messageId, ''),
+                [TALEP_DURUMU] = @requestStatus,
+                [SON_HATA_MESAJI] = NULLIF(@errorMessage, ''),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @tokenId;
 
-            UPDATE whatsapp_mesaj_loglari
-            SET meta_mesaj_id = NULLIF(@messageId, ''),
-                delivery_status = @requestStatus,
-                request_payload = @requestPayload,
-                response_payload = @responsePayload,
-                error_code = NULLIF(@errorCode, ''),
-                error_message = NULLIF(@errorMessage, ''),
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[WHATSAPP_MESAJ_LOGLARI]
+            SET [META_MESAJ_ID] = NULLIF(@messageId, ''),
+                [TESLIMAT_DURUMU] = @requestStatus,
+                [REQUEST_PAYLOAD] = @requestPayload,
+                [YANIT_PAYLOAD] = @responsePayload,
+                [HATA_KODU] = NULLIF(@errorCode, ''),
+                [HATA_MESAJI] = NULLIF(@errorMessage, ''),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @messageLogId;
             """;
         await using (var updateAfterSendCommand = new SqlCommand(updateAfterSendSql, connection))
@@ -264,10 +264,10 @@ public class PhoneVerificationService : IPhoneVerificationService
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = """
             SELECT TOP (1)
-                id, dogrulama_kodu_hash, deneme_sayisi, maksimum_deneme, gecerlilik_suresi, telefon_e164
-            FROM telefon_dogrulama_tokenlari
-            WHERE kullanici_id = @userId
-              AND kullanildi_mi = 0
+                id, [DOGRULAMA_KODU_HASH], [DENEME_SAYISI], [MAKSIMUM_DENEME], [GECERLILIK_SURESI], [TELEFON_E164]
+            FROM [dbo].[TELEFON_DOGRULAMA_TOKENLARI]
+            WHERE [KULLANICI_ID] = @userId
+              AND [KULLANILDI_MI] = 0
             ORDER BY id DESC;
             """;
 
@@ -309,10 +309,10 @@ public class PhoneVerificationService : IPhoneVerificationService
         if (!string.Equals(storedHash, incomingHash, StringComparison.OrdinalIgnoreCase))
         {
             const string attemptSql = """
-                UPDATE telefon_dogrulama_tokenlari
-                SET deneme_sayisi = deneme_sayisi + 1,
-                    son_hata_mesaji = 'Kod doğrulaması başarısız',
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[TELEFON_DOGRULAMA_TOKENLARI]
+                SET [DENEME_SAYISI] = [DENEME_SAYISI] + 1,
+                    [SON_HATA_MESAJI] = 'Kod doğrulaması başarısız',
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @tokenId;
                 """;
             await using var attemptCommand = new SqlCommand(attemptSql, connection);
@@ -323,11 +323,11 @@ public class PhoneVerificationService : IPhoneVerificationService
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         const string verifyTokenSql = """
-            UPDATE telefon_dogrulama_tokenlari
-            SET kullanildi_mi = 1,
-                kullanilma_tarihi = SYSUTCDATETIME(),
-                talep_durumu = 'Dogrulandi',
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[TELEFON_DOGRULAMA_TOKENLARI]
+            SET [KULLANILDI_MI] = 1,
+                [KULLANILMA_TARIHI] = SYSUTCDATETIME(),
+                [TALEP_DURUMU] = 'Dogrulandi',
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @tokenId;
             """;
         await using (var verifyTokenCommand = new SqlCommand(verifyTokenSql, connection, (SqlTransaction)transaction))
@@ -337,13 +337,13 @@ public class PhoneVerificationService : IPhoneVerificationService
         }
 
         const string verifyUserSql = """
-            UPDATE users
-            SET telefon_e164 = NULLIF(@phoneE164, ''),
-                telefon_dogrulama_kanali = 'whatsapp',
-                telefon_dogrulama_durumu = 'Dogrulandi',
-                telefon_dogrulama_tarihi = SYSUTCDATETIME(),
-                telefon_son_sahiplik_teyit_tarihi = SYSUTCDATETIME(),
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICILAR]
+            SET [TELEFON_E164] = NULLIF(@phoneE164, ''),
+                [TELEFON_DOGRULAMA_KANALI] = 'whatsapp',
+                [TELEFON_DOGRULAMA_DURUMU] = 'Dogrulandi',
+                [TELEFON_DOGRULAMA_TARIHI] = SYSUTCDATETIME(),
+                [TELEFON_SON_SAHIPLIK_TEYIT_TARIHI] = SYSUTCDATETIME(),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @userId;
             """;
         await using (var verifyUserCommand = new SqlCommand(verifyUserSql, connection, (SqlTransaction)transaction))
@@ -354,9 +354,9 @@ public class PhoneVerificationService : IPhoneVerificationService
         }
 
         const string logSql = """
-            INSERT INTO kullanici_aktivite_loglari
+            INSERT INTO [dbo].[KULLANICI_AKTIVITE_LOGLARI]
             (
-                kullanici_id, aktivite_turu, ip_adresi, user_agent, basarili_mi, olusma_tarihi
+                [KULLANICI_ID], [AKTIVITE_TURU], [IP_ADRESI], [KULLANICI_ARACISI], [BASARILI_MI], [OLUSMA_TARIHI]
             )
             VALUES
             (
@@ -412,8 +412,8 @@ public class PhoneVerificationService : IPhoneVerificationService
         }
 
         const string recentLogSql = """
-            SELECT TOP (20) telefon_e164, template_name, delivery_status, error_message, olusturulma_tarihi
-            FROM whatsapp_mesaj_loglari
+            SELECT TOP (20) [TELEFON_E164], [SABLON_ADI], [TESLIMAT_DURUMU], [HATA_MESAJI], [OLUSTURULMA_TARIHI]
+            FROM [dbo].[WHATSAPP_MESAJ_LOGLARI]
             ORDER BY id DESC;
             """;
         await using var command = new SqlCommand(recentLogSql, connection);
@@ -466,39 +466,39 @@ public class PhoneVerificationService : IPhoneVerificationService
         }
 
         const string sql = """
-            IF EXISTS (SELECT 1 FROM whatsapp_cloud_api_ayarlari WHERE id = 1)
+            IF EXISTS (SELECT 1 FROM [dbo].[WHATSAPP_CLOUD_API_AYARLARI] WHERE id = 1)
             BEGIN
-                UPDATE whatsapp_cloud_api_ayarlari
-                SET app_id = NULLIF(@appId, ''),
-                    app_secret_encrypted = NULLIF(@appSecretEncrypted, ''),
-                    business_account_id = NULLIF(@businessAccountId, ''),
-                    phone_number_id = NULLIF(@phoneNumberId, ''),
-                    permanent_access_token_encrypted = NULLIF(@accessTokenEncrypted, ''),
-                    webhook_verify_token_encrypted = NULLIF(@verifyTokenEncrypted, ''),
-                    verification_template_name = NULLIF(@templateName, ''),
-                    default_language_code = NULLIF(@languageCode, ''),
-                    otp_code_length = @codeLength,
-                    otp_ttl_seconds = @ttlSeconds,
-                    resend_cooldown_seconds = @cooldownSeconds,
-                    max_attempt_count = @maxAttemptCount,
-                    phone_reverify_after_days = @reverifyAfterDays,
-                    reservation_phone_verification_required = @reservationRequired,
-                    is_active = @isActive,
-                    test_recipient_phone_e164 = NULLIF(@testPhone, ''),
-                    updated_by_user_id = @adminUserId,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[WHATSAPP_CLOUD_API_AYARLARI]
+                SET [APP_ID] = NULLIF(@appId, ''),
+                    [APP_SECRET_ENCRYPTED] = NULLIF(@appSecretEncrypted, ''),
+                    [BUSINESS_ACCOUNT_ID] = NULLIF(@businessAccountId, ''),
+                    [TELEFON_NUMARASI_ID] = NULLIF(@phoneNumberId, ''),
+                    [PERMANENT_ACCESS_TOKEN_ENCRYPTED] = NULLIF(@accessTokenEncrypted, ''),
+                    [WEBHOOK_VERIFY_TOKEN_ENCRYPTED] = NULLIF(@verifyTokenEncrypted, ''),
+                    [DOGRULAMA_SABLON_ADI] = NULLIF(@templateName, ''),
+                    [VARSAYILAN_DIL_KODU] = NULLIF(@languageCode, ''),
+                    [OTP_KOD_LENGTH] = @codeLength,
+                    [OTP_TTL_SECONDS] = @ttlSeconds,
+                    [RESEND_COOLDOWN_SECONDS] = @cooldownSeconds,
+                    [MAX_ATTEMPT_COUNT] = @maxAttemptCount,
+                    [TELEFON_REVERIFY_AFTER_DAYS] = @reverifyAfterDays,
+                    [RESERVATION_TELEFON_VERIFICATION_REQUIRED] = @reservationRequired,
+                    [AKTIF_MI] = @isActive,
+                    [TEST_RECIPIENT_TELEFON_E164] = NULLIF(@testPhone, ''),
+                    [GUNCELLEYEN_KULLANICI_ID] = @adminUserId,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = 1;
             END
             ELSE
             BEGIN
-                INSERT INTO whatsapp_cloud_api_ayarlari
+                INSERT INTO [dbo].[WHATSAPP_CLOUD_API_AYARLARI]
                 (
-                    id, app_id, app_secret_encrypted, business_account_id, phone_number_id,
-                    permanent_access_token_encrypted, webhook_verify_token_encrypted,
-                    verification_template_name, default_language_code, otp_code_length, otp_ttl_seconds,
-                    resend_cooldown_seconds, max_attempt_count, phone_reverify_after_days,
-                    reservation_phone_verification_required, is_active, test_recipient_phone_e164,
-                    created_by_user_id, updated_by_user_id, olusturulma_tarihi, guncellenme_tarihi
+                    id, [APP_ID], [APP_SECRET_ENCRYPTED], [BUSINESS_ACCOUNT_ID], [TELEFON_NUMARASI_ID],
+                    [PERMANENT_ACCESS_TOKEN_ENCRYPTED], [WEBHOOK_VERIFY_TOKEN_ENCRYPTED],
+                    [DOGRULAMA_SABLON_ADI], [VARSAYILAN_DIL_KODU], [OTP_KOD_LENGTH], [OTP_TTL_SECONDS],
+                    [RESEND_COOLDOWN_SECONDS], [MAX_ATTEMPT_COUNT], [TELEFON_REVERIFY_AFTER_DAYS],
+                    [RESERVATION_TELEFON_VERIFICATION_REQUIRED], [AKTIF_MI], [TEST_RECIPIENT_TELEFON_E164],
+                    [OLUSTURAN_KULLANICI_ID], [GUNCELLEYEN_KULLANICI_ID], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
                 )
                 VALUES
                 (
@@ -561,21 +561,21 @@ public class PhoneVerificationService : IPhoneVerificationService
         }, cancellationToken);
 
         const string logSql = """
-            INSERT INTO whatsapp_mesaj_loglari
+            INSERT INTO [dbo].[WHATSAPP_MESAJ_LOGLARI]
             (
-                kullanici_id, telefon_e164, template_name, meta_mesaj_id, delivery_status, request_payload,
-                response_payload, error_code, error_message, olusturulma_tarihi, guncellenme_tarihi
+                [KULLANICI_ID], [TELEFON_E164], [SABLON_ADI], [META_MESAJ_ID], [TESLIMAT_DURUMU], [REQUEST_PAYLOAD],
+                [YANIT_PAYLOAD], [HATA_KODU], [HATA_MESAJI], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
             )
             VALUES
             (
                 @userId, @phoneE164, @templateName, NULLIF(@messageId, ''), @status, @requestPayload,
                 @responsePayload, NULLIF(@errorCode, ''), NULLIF(@errorMessage, ''), SYSUTCDATETIME(), SYSUTCDATETIME()
             );
-            UPDATE whatsapp_cloud_api_ayarlari
-            SET last_test_message_at = SYSUTCDATETIME(),
-                test_recipient_phone_e164 = @phoneE164,
-                updated_by_user_id = @userId,
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[WHATSAPP_CLOUD_API_AYARLARI]
+            SET [SON_TEST_MESAJ_TARIHI] = SYSUTCDATETIME(),
+                [TEST_RECIPIENT_TELEFON_E164] = @phoneE164,
+                [GUNCELLEYEN_KULLANICI_ID] = @userId,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = 1;
             """;
         await using var command = new SqlCommand(logSql, connection);
@@ -664,24 +664,24 @@ public class PhoneVerificationService : IPhoneVerificationService
                     }
 
                     const string updateSql = """
-                        UPDATE whatsapp_mesaj_loglari
-                        SET delivery_status = NULLIF(@deliveryStatus, ''),
-                            error_code = NULLIF(@errorCode, ''),
-                            error_message = NULLIF(@errorMessage, ''),
-                            guncellenme_tarihi = SYSUTCDATETIME()
-                        WHERE meta_mesaj_id = @messageId;
+                        UPDATE [dbo].[WHATSAPP_MESAJ_LOGLARI]
+                        SET [TESLIMAT_DURUMU] = NULLIF(@deliveryStatus, ''),
+                            [HATA_KODU] = NULLIF(@errorCode, ''),
+                            [HATA_MESAJI] = NULLIF(@errorMessage, ''),
+                            [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+                        WHERE [META_MESAJ_ID] = @messageId;
 
-                        UPDATE telefon_dogrulama_tokenlari
-                        SET talep_durumu = CASE
+                        UPDATE [dbo].[TELEFON_DOGRULAMA_TOKENLARI]
+                        SET [TALEP_DURUMU] = CASE
                                 WHEN @deliveryStatus = 'delivered' THEN 'TeslimEdildi'
                                 WHEN @deliveryStatus = 'read' THEN 'Okundu'
                                 WHEN @deliveryStatus = 'sent' THEN 'Gonderildi'
                                 WHEN @deliveryStatus = 'failed' THEN 'TeslimHatasi'
-                                ELSE talep_durumu
+                                ELSE [TALEP_DURUMU]
                             END,
-                            son_hata_mesaji = NULLIF(@errorMessage, ''),
-                            guncellenme_tarihi = SYSUTCDATETIME()
-                        WHERE meta_mesaj_id = @messageId;
+                            [SON_HATA_MESAJI] = NULLIF(@errorMessage, ''),
+                            [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+                        WHERE [META_MESAJ_ID] = @messageId;
                         """;
                     await using var command = new SqlCommand(updateSql, connection);
                     command.Parameters.AddWithValue("@messageId", messageId);
@@ -784,14 +784,14 @@ public class PhoneVerificationService : IPhoneVerificationService
     {
         const string sql = """
             SELECT TOP (1)
-                COALESCE(telefon, '') AS telefon,
-                COALESCE(telefon_e164, '') AS telefon_e164,
-                telefon_dogrulama_tarihi,
-                telefon_son_dogrulama_istek_tarihi,
-                telefon_son_sahiplik_teyit_tarihi,
-                COALESCE(telefon_dogrulama_durumu, '') AS telefon_dogrulama_durumu,
-                COALESCE(telefon_dogrulama_kanali, '') AS telefon_dogrulama_kanali
-            FROM users
+                COALESCE([TELEFON], '') AS [TELEFON],
+                COALESCE([TELEFON_E164], '') AS [TELEFON_E164],
+                [TELEFON_DOGRULAMA_TARIHI],
+                [TELEFON_SON_DOGRULAMA_ISTEK_TARIHI],
+                [TELEFON_SON_SAHIPLIK_TEYIT_TARIHI],
+                COALESCE([TELEFON_DOGRULAMA_DURUMU], '') AS [TELEFON_DOGRULAMA_DURUMU],
+                COALESCE([TELEFON_DOGRULAMA_KANALI], '') AS [TELEFON_DOGRULAMA_KANALI]
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;
             """;
         await using var command = new SqlCommand(sql, connection);
@@ -825,14 +825,14 @@ public class PhoneVerificationService : IPhoneVerificationService
 
         const string sql = """
             SELECT TOP (1)
-                id, COALESCE(app_id, ''), COALESCE(app_secret_encrypted, ''), COALESCE(business_account_id, ''),
-                COALESCE(phone_number_id, ''), COALESCE(permanent_access_token_encrypted, ''),
-                COALESCE(webhook_verify_token_encrypted, ''), COALESCE(verification_template_name, ''),
-                COALESCE(default_language_code, 'tr'), otp_code_length, otp_ttl_seconds, resend_cooldown_seconds,
-                max_attempt_count, phone_reverify_after_days, reservation_phone_verification_required, is_active,
-                COALESCE(test_recipient_phone_e164, '')
-            FROM whatsapp_cloud_api_ayarlari
-            ORDER BY is_active DESC, id ASC;
+                id, COALESCE([APP_ID], ''), COALESCE([APP_SECRET_ENCRYPTED], ''), COALESCE([BUSINESS_ACCOUNT_ID], ''),
+                COALESCE([TELEFON_NUMARASI_ID], ''), COALESCE([PERMANENT_ACCESS_TOKEN_ENCRYPTED], ''),
+                COALESCE([WEBHOOK_VERIFY_TOKEN_ENCRYPTED], ''), COALESCE([DOGRULAMA_SABLON_ADI], ''),
+                COALESCE([VARSAYILAN_DIL_KODU], 'tr'), [OTP_KOD_LENGTH], [OTP_TTL_SECONDS], [RESEND_COOLDOWN_SECONDS],
+                [MAX_ATTEMPT_COUNT], [TELEFON_REVERIFY_AFTER_DAYS], [RESERVATION_TELEFON_VERIFICATION_REQUIRED], [AKTIF_MI],
+                COALESCE([TEST_RECIPIENT_TELEFON_E164], '')
+            FROM [dbo].[WHATSAPP_CLOUD_API_AYARLARI]
+            ORDER BY [AKTIF_MI] DESC, id ASC;
             """;
         await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -873,10 +873,10 @@ public class PhoneVerificationService : IPhoneVerificationService
         const string sql = """
             SELECT
                 COUNT(*) AS total_count,
-                SUM(CASE WHEN delivery_status IN ('delivered', 'read', 'TeslimEdildi', 'Okundu') THEN 1 ELSE 0 END) AS delivered_count,
-                SUM(CASE WHEN delivery_status IN ('failed', 'GonderimHatasi', 'TeslimHatasi', 'TestHatasi') THEN 1 ELSE 0 END) AS failed_count
-            FROM whatsapp_mesaj_loglari
-            WHERE olusturulma_tarihi >= DATEADD(DAY, -7, SYSUTCDATETIME());
+                SUM(CASE WHEN [TESLIMAT_DURUMU] IN ('delivered', 'read', 'TeslimEdildi', 'Okundu') THEN 1 ELSE 0 END) AS delivered_count,
+                SUM(CASE WHEN [TESLIMAT_DURUMU] IN ('failed', 'GonderimHatasi', 'TeslimHatasi', 'TestHatasi') THEN 1 ELSE 0 END) AS failed_count
+            FROM [dbo].[WHATSAPP_MESAJ_LOGLARI]
+            WHERE [OLUSTURULMA_TARIHI] >= DATEADD(DAY, -7, SYSUTCDATETIME());
             """;
         await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -901,9 +901,9 @@ public class PhoneVerificationService : IPhoneVerificationService
         }
 
         const string sql = """
-            SELECT TOP (1) olusturulma_tarihi
-            FROM telefon_dogrulama_tokenlari
-            WHERE kullanici_id = @userId
+            SELECT TOP (1) [OLUSTURULMA_TARIHI]
+            FROM [dbo].[TELEFON_DOGRULAMA_TOKENLARI]
+            WHERE [KULLANICI_ID] = @userId
             ORDER BY id DESC;
             """;
         await using var command = new SqlCommand(sql, connection);
@@ -921,8 +921,8 @@ public class PhoneVerificationService : IPhoneVerificationService
     private async Task<string> ResolvePhoneVerificationRedirectUrlAsync(SqlConnection connection, long userId, string returnUrl, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT TOP (1) COALESCE(rol, ''), firma_id
-            FROM users
+            SELECT TOP (1) COALESCE(rol, ''), [FIRMA_ID]
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;
             """;
         await using var command = new SqlCommand(sql, connection);
@@ -947,9 +947,9 @@ public class PhoneVerificationService : IPhoneVerificationService
         }
 
         const string sql = """
-            UPDATE telefon_dogrulama_tokenlari
-            SET talep_durumu = 'SuresiDoldu',
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[TELEFON_DOGRULAMA_TOKENLARI]
+            SET [TALEP_DURUMU] = 'SuresiDoldu',
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @tokenId;
             """;
         await using var command = new SqlCommand(sql, connection);

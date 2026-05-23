@@ -44,17 +44,17 @@ public sealed class DeveloperFeedbackService : IDeveloperFeedbackService
         await connection.OpenAsync(cancellationToken);
         await EnsureSchemaAsync(connection, cancellationToken);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
-        var hasPageTitle = await ColumnExistsAsync(connection, transaction, "dbo.developer_bildirimleri", "sayfa_basligi", cancellationToken);
+        var hasPageTitle = await ColumnExistsAsync(connection, transaction, "[dbo].[DEVELOPER_BILDIRIMLERI]", "sayfa_basligi", cancellationToken);
 
         long feedbackId;
         var insertSql = hasPageTitle
             ? """
-            INSERT INTO dbo.developer_bildirimleri
+            INSERT INTO [dbo].[DEVELOPER_BILDIRIMLERI]
             (
-                kaynak_panel, kaynak_rol, kullanici_id, kullanici_eposta, ad_soyad,
-                bildirim_turu, baslik, icerik, sayfa_url, ip_adresi, user_agent,
-                ekran_bilgisi, cihaz_bilgisi, gorsel_url, sayfa_basligi, durum, oncelik,
-                olusturulma_tarihi, guncellenme_tarihi
+                [KAYNAK_PANEL], [KAYNAK_ROL], [KULLANICI_ID], [KULLANICI_EPOSTA], [AD_SOYAD],
+                [BILDIRIM_TURU], [BASLIK], [ICERIK], [SAYFA_URL], [IP_ADRESI], [KULLANICI_ARACISI],
+                [EKRAN_BILGISI], [CIHAZ_BILGISI], [GORSEL_URL], [SAYFA_BASLIGI], [DURUM], [ONCELIK],
+                [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
             )
             OUTPUT INSERTED.id
             VALUES
@@ -66,12 +66,12 @@ public sealed class DeveloperFeedbackService : IDeveloperFeedbackService
             );
             """
             : """
-            INSERT INTO dbo.developer_bildirimleri
+            INSERT INTO [dbo].[DEVELOPER_BILDIRIMLERI]
             (
-                kaynak_panel, kaynak_rol, kullanici_id, kullanici_eposta, ad_soyad,
-                bildirim_turu, baslik, icerik, sayfa_url, ip_adresi, user_agent,
-                ekran_bilgisi, cihaz_bilgisi, gorsel_url, durum, oncelik,
-                olusturulma_tarihi, guncellenme_tarihi
+                [KAYNAK_PANEL], [KAYNAK_ROL], [KULLANICI_ID], [KULLANICI_EPOSTA], [AD_SOYAD],
+                [BILDIRIM_TURU], [BASLIK], [ICERIK], [SAYFA_URL], [IP_ADRESI], [KULLANICI_ARACISI],
+                [EKRAN_BILGISI], [CIHAZ_BILGISI], [GORSEL_URL], [DURUM], [ONCELIK],
+                [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
             )
             OUTPUT INSERTED.id
             VALUES
@@ -140,8 +140,8 @@ public sealed class DeveloperFeedbackService : IDeveloperFeedbackService
             }, cancellationToken);
 
             await using var update = new SqlCommand("""
-                UPDATE dbo.developer_bildirimleri
-                SET email_kuyruga_alindi_mi = 1, guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[DEVELOPER_BILDIRIMLERI]
+                SET email_kuyruga_alindi_mi = 1, [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @id;
                 """, connection, transaction);
             update.Parameters.AddWithValue("@id", feedbackId);
@@ -150,9 +150,9 @@ public sealed class DeveloperFeedbackService : IDeveloperFeedbackService
         catch (Exception ex)
         {
             await using var update = new SqlCommand("""
-                UPDATE dbo.developer_bildirimleri
-                SET admin_notu = LEFT(CONCAT(COALESCE(admin_notu, N''), CASE WHEN COALESCE(admin_notu, N'') = N'' THEN N'' ELSE CHAR(10) END, N'E-posta kuyruğu hatası: ', @error), 4000),
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[DEVELOPER_BILDIRIMLERI]
+                SET [ADMIN_NOTU] = LEFT(CONCAT(COALESCE([ADMIN_NOTU], N''), CASE WHEN COALESCE([ADMIN_NOTU], N'') = N'' THEN N'' ELSE CHAR(10) END, N'E-posta kuyruğu hatası: ', @error), 4000),
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @id;
                 """, connection, transaction);
             update.Parameters.AddWithValue("@id", feedbackId);
@@ -163,9 +163,9 @@ public sealed class DeveloperFeedbackService : IDeveloperFeedbackService
         if (!string.IsNullOrWhiteSpace(screenshot.Warning))
         {
             await using var warn = new SqlCommand("""
-                UPDATE dbo.developer_bildirimleri
-                SET admin_notu = LEFT(CONCAT(COALESCE(admin_notu, N''), CASE WHEN COALESCE(admin_notu, N'') = N'' THEN N'' ELSE CHAR(10) END, @warning), 4000),
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[DEVELOPER_BILDIRIMLERI]
+                SET [ADMIN_NOTU] = LEFT(CONCAT(COALESCE([ADMIN_NOTU], N''), CASE WHEN COALESCE([ADMIN_NOTU], N'') = N'' THEN N'' ELSE CHAR(10) END, @warning), 4000),
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @id;
                 """, connection, transaction);
             warn.Parameters.AddWithValue("@id", feedbackId);
@@ -185,19 +185,19 @@ public sealed class DeveloperFeedbackService : IDeveloperFeedbackService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await EnsureSchemaAsync(connection, cancellationToken);
-        var hasPageTitle = await ColumnExistsAsync(connection, null, "dbo.developer_bildirimleri", "sayfa_basligi", cancellationToken);
+        var hasPageTitle = await ColumnExistsAsync(connection, null, "[dbo].[DEVELOPER_BILDIRIMLERI]", "sayfa_basligi", cancellationToken);
         var sql = hasPageTitle
             ? """
-            SELECT TOP (20) id,bildirim_turu,baslik,icerik,COALESCE(sayfa_basligi,sayfa_url,N'Bilinmeyen sayfa') AS sayfa,durum,admin_notu,olusturulma_tarihi
-            FROM dbo.developer_bildirimleri
-            WHERE kullanici_id = @userId
-            ORDER BY olusturulma_tarihi DESC, id DESC;
+            SELECT TOP (20) id,[BILDIRIM_TURU],[BASLIK],[ICERIK],COALESCE([SAYFA_BASLIGI],[SAYFA_URL],N'Bilinmeyen sayfa') AS sayfa,[DURUM],[ADMIN_NOTU],[OLUSTURULMA_TARIHI]
+            FROM [dbo].[DEVELOPER_BILDIRIMLERI]
+            WHERE [KULLANICI_ID] = @userId
+            ORDER BY [OLUSTURULMA_TARIHI] DESC, id DESC;
             """
             : """
-            SELECT TOP (20) id,bildirim_turu,baslik,icerik,COALESCE(sayfa_url,N'Bilinmeyen sayfa') AS sayfa,durum,admin_notu,olusturulma_tarihi
-            FROM dbo.developer_bildirimleri
-            WHERE kullanici_id = @userId
-            ORDER BY olusturulma_tarihi DESC, id DESC;
+            SELECT TOP (20) id,[BILDIRIM_TURU],[BASLIK],[ICERIK],COALESCE([SAYFA_URL],N'Bilinmeyen sayfa') AS sayfa,[DURUM],[ADMIN_NOTU],[OLUSTURULMA_TARIHI]
+            FROM [dbo].[DEVELOPER_BILDIRIMLERI]
+            WHERE [KULLANICI_ID] = @userId
+            ORDER BY [OLUSTURULMA_TARIHI] DESC, id DESC;
             """;
 
         await using var command = new SqlCommand(sql, connection);
@@ -264,32 +264,32 @@ public sealed class DeveloperFeedbackService : IDeveloperFeedbackService
             updateWarning = screenshot.Warning;
         }
 
-        var hasPageTitle = await ColumnExistsAsync(connection, null, "dbo.developer_bildirimleri", "sayfa_basligi", cancellationToken);
+        var hasPageTitle = await ColumnExistsAsync(connection, null, "[dbo].[DEVELOPER_BILDIRIMLERI]", "sayfa_basligi", cancellationToken);
         var sql = hasPageTitle
             ? """
-            UPDATE dbo.developer_bildirimleri
-            SET bildirim_turu = @type,
-                baslik = @title,
-                icerik = @content,
-                sayfa_url = NULLIF(@pageUrl, N''),
-                sayfa_basligi = NULLIF(@pageTitle, N''),
-                ekran_bilgisi = NULLIF(@viewport, N''),
-                cihaz_bilgisi = NULLIF(@deviceInfo, N''),
-                gorsel_url = NULLIF(@imageUrl, N''),
-                guncellenme_tarihi = SYSUTCDATETIME()
-            WHERE id = @id AND kullanici_id = @userId;
+            UPDATE [dbo].[DEVELOPER_BILDIRIMLERI]
+            SET [BILDIRIM_TURU] = @type,
+                [BASLIK] = @title,
+                [ICERIK] = @content,
+                [SAYFA_URL] = NULLIF(@pageUrl, N''),
+                [SAYFA_BASLIGI] = NULLIF(@pageTitle, N''),
+                [EKRAN_BILGISI] = NULLIF(@viewport, N''),
+                [CIHAZ_BILGISI] = NULLIF(@deviceInfo, N''),
+                [GORSEL_URL] = NULLIF(@imageUrl, N''),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+            WHERE id = @id AND [KULLANICI_ID] = @userId;
             """
             : """
-            UPDATE dbo.developer_bildirimleri
-            SET bildirim_turu = @type,
-                baslik = @title,
-                icerik = @content,
-                sayfa_url = NULLIF(@pageUrl, N''),
-                ekran_bilgisi = NULLIF(@viewport, N''),
-                cihaz_bilgisi = NULLIF(@deviceInfo, N''),
-                gorsel_url = NULLIF(@imageUrl, N''),
-                guncellenme_tarihi = SYSUTCDATETIME()
-            WHERE id = @id AND kullanici_id = @userId;
+            UPDATE [dbo].[DEVELOPER_BILDIRIMLERI]
+            SET [BILDIRIM_TURU] = @type,
+                [BASLIK] = @title,
+                [ICERIK] = @content,
+                [SAYFA_URL] = NULLIF(@pageUrl, N''),
+                [EKRAN_BILGISI] = NULLIF(@viewport, N''),
+                [CIHAZ_BILGISI] = NULLIF(@deviceInfo, N''),
+                [GORSEL_URL] = NULLIF(@imageUrl, N''),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+            WHERE id = @id AND [KULLANICI_ID] = @userId;
             """;
 
         await using var command = new SqlCommand(sql, connection);
@@ -320,8 +320,8 @@ public sealed class DeveloperFeedbackService : IDeveloperFeedbackService
         await connection.OpenAsync(cancellationToken);
         await EnsureSchemaAsync(connection, cancellationToken);
         await using var command = new SqlCommand("""
-            DELETE FROM dbo.developer_bildirimleri
-            WHERE id = @id AND kullanici_id = @userId;
+            DELETE FROM [dbo].[DEVELOPER_BILDIRIMLERI]
+            WHERE id = @id AND [KULLANICI_ID] = @userId;
             """, connection);
         command.Parameters.AddWithValue("@id", feedbackId);
         command.Parameters.AddWithValue("@userId", userId);
@@ -403,51 +403,51 @@ public sealed class DeveloperFeedbackService : IDeveloperFeedbackService
     private static async Task EnsureSchemaAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = """
-            IF OBJECT_ID(N'dbo.developer_bildirimleri', N'U') IS NULL
+            IF OBJECT_ID(N'[dbo].[DEVELOPER_BILDIRIMLERI]', N'U') IS NULL
             BEGIN
-                CREATE TABLE dbo.developer_bildirimleri
+                CREATE TABLE [dbo].[DEVELOPER_BILDIRIMLERI]
                 (
                     id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_developer_bildirimleri PRIMARY KEY,
-                    bildirim_kodu UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_developer_bildirimleri_kod DEFAULT NEWID(),
-                    kaynak_panel NVARCHAR(50) NOT NULL,
-                    kaynak_rol NVARCHAR(50) NULL,
-                    kullanici_id BIGINT NULL,
-                    kullanici_eposta NVARCHAR(256) NULL,
-                    ad_soyad NVARCHAR(200) NULL,
-                    bildirim_turu NVARCHAR(60) NOT NULL,
-                    baslik NVARCHAR(220) NOT NULL,
-                    icerik NVARCHAR(MAX) NOT NULL,
-                    sayfa_url NVARCHAR(1000) NULL,
-                    ip_adresi NVARCHAR(80) NULL,
-                    user_agent NVARCHAR(1000) NULL,
-                    ekran_bilgisi NVARCHAR(120) NULL,
-                    cihaz_bilgisi NVARCHAR(500) NULL,
-                    gorsel_url NVARCHAR(1000) NULL,
-                    durum NVARCHAR(60) NOT NULL CONSTRAINT DF_developer_bildirimleri_durum DEFAULT N'Yeni',
-                    oncelik NVARCHAR(40) NOT NULL CONSTRAINT DF_developer_bildirimleri_oncelik DEFAULT N'Orta',
+                    [BILDIRIM_KODU] UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_developer_bildirimleri_kod DEFAULT NEWID(),
+                    [KAYNAK_PANEL] NVARCHAR(50) NOT NULL,
+                    [KAYNAK_ROL] NVARCHAR(50) NULL,
+                    [KULLANICI_ID] BIGINT NULL,
+                    [KULLANICI_EPOSTA] NVARCHAR(256) NULL,
+                    [AD_SOYAD] NVARCHAR(200) NULL,
+                    [BILDIRIM_TURU] NVARCHAR(60) NOT NULL,
+                    [BASLIK] NVARCHAR(220) NOT NULL,
+                    [ICERIK] NVARCHAR(MAX) NOT NULL,
+                    [SAYFA_URL] NVARCHAR(1000) NULL,
+                    [IP_ADRESI] NVARCHAR(80) NULL,
+                    [KULLANICI_ARACISI] NVARCHAR(1000) NULL,
+                    [EKRAN_BILGISI] NVARCHAR(120) NULL,
+                    [CIHAZ_BILGISI] NVARCHAR(500) NULL,
+                    [GORSEL_URL] NVARCHAR(1000) NULL,
+                    [DURUM] NVARCHAR(60) NOT NULL CONSTRAINT DF_developer_bildirimleri_durum DEFAULT N'Yeni',
+                    [ONCELIK] NVARCHAR(40) NOT NULL CONSTRAINT DF_developer_bildirimleri_oncelik DEFAULT N'Orta',
                     email_kuyruga_alindi_mi BIT NOT NULL CONSTRAINT DF_developer_bildirimleri_email DEFAULT 0,
-                    admin_notu NVARCHAR(MAX) NULL,
-                    olusturulma_tarihi DATETIME2(7) NOT NULL CONSTRAINT DF_developer_bildirimleri_olusturma DEFAULT SYSUTCDATETIME(),
-                    guncellenme_tarihi DATETIME2(7) NOT NULL CONSTRAINT DF_developer_bildirimleri_guncelleme DEFAULT SYSUTCDATETIME()
+                    [ADMIN_NOTU] NVARCHAR(MAX) NULL,
+                    [OLUSTURULMA_TARIHI] DATETIME2(7) NOT NULL CONSTRAINT DF_developer_bildirimleri_olusturma DEFAULT SYSUTCDATETIME(),
+                    [GUNCELLENME_TARIHI] DATETIME2(7) NOT NULL CONSTRAINT DF_developer_bildirimleri_guncelleme DEFAULT SYSUTCDATETIME()
                 );
-                CREATE INDEX IX_developer_bildirimleri_kullanici ON dbo.developer_bildirimleri(kullanici_id, olusturulma_tarihi DESC);
+                CREATE INDEX IX_developer_bildirimleri_kullanici ON [dbo].[DEVELOPER_BILDIRIMLERI]([KULLANICI_ID], [OLUSTURULMA_TARIHI] DESC);
             END;
-            IF COL_LENGTH('dbo.developer_bildirimleri', 'sayfa_basligi') IS NULL
+            IF COL_LENGTH('[dbo].[DEVELOPER_BILDIRIMLERI]', 'sayfa_basligi') IS NULL
             BEGIN
-                ALTER TABLE dbo.developer_bildirimleri ADD sayfa_basligi NVARCHAR(220) NULL;
+                ALTER TABLE [dbo].[DEVELOPER_BILDIRIMLERI] ADD [SAYFA_BASLIGI] NVARCHAR(220) NULL;
             END;
             IF NOT EXISTS (
-                SELECT 1 FROM dbo.bildirim_sablonlari
-                WHERE sablon_kodu = N'developer_feedback' AND tur = N'E-posta' AND dil = N'tr'
+                SELECT 1 FROM [dbo].[BILDIRIM_SABLONLARI]
+                WHERE [SABLON_KODU] = N'developer_feedback' AND tur = N'E-posta' AND dil = N'tr'
             )
             BEGIN
-                INSERT INTO dbo.bildirim_sablonlari
-                (sablon_kodu, sablon_adi, tur, dil, konu, baslik, icerik, degiskenler, aktif_mi, olusturulma_tarihi)
+                INSERT INTO [dbo].[BILDIRIM_SABLONLARI]
+                ([SABLON_KODU], [SABLON_ADI], tur, dil, konu, [BASLIK], [ICERIK], [DEGISKENLER], [AKTIF_MI], [OLUSTURULMA_TARIHI])
                 VALUES
                 (
                     N'developer_feedback', N'Beta Geri Bildirim', N'E-posta', N'tr',
                     N'[BETA BİLDİRİM] {{title}}', N'Beta Geri Bildirim', N'Views/Email/tr/Developer Bildirim.cshtml',
-                    N'feedback_id,panel_key,feedback_type,title,content,page_url,page_title,user_full_name,user_email,account_type,ip_address,user_agent,viewport,device_info,image_url,created_at',
+                    N'feedback_id,panel_key,feedback_type,title,content,page_url,page_title,user_full_name,user_email,account_type,ip_address,[KULLANICI_ARACISI],viewport,device_info,image_url,created_at',
                     1, SYSUTCDATETIME()
                 );
             END;
@@ -476,9 +476,9 @@ public sealed class DeveloperFeedbackService : IDeveloperFeedbackService
     private static async Task<(string Status, string? ImageUrl)?> LoadOwnedFeedbackAsync(SqlConnection connection, long userId, long feedbackId, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            SELECT TOP (1) durum, gorsel_url
-            FROM dbo.developer_bildirimleri
-            WHERE id = @id AND kullanici_id = @userId;
+            SELECT TOP (1) [DURUM], [GORSEL_URL]
+            FROM [dbo].[DEVELOPER_BILDIRIMLERI]
+            WHERE id = @id AND [KULLANICI_ID] = @userId;
             """, connection);
         command.Parameters.AddWithValue("@id", feedbackId);
         command.Parameters.AddWithValue("@userId", userId);

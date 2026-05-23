@@ -55,7 +55,11 @@ public interface IPartnerService
     Task<(bool Success, string Message)> ReplyToReviewAsync(long userId, PartnerReviewReplyRequest request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ReportReviewAsync(long userId, PartnerReviewReportRequest request, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> RequestReviewTakedownAsync(long userId, long hotelId, long reviewId, string? reason, CancellationToken cancellationToken = default);
-    Task<PartnerFinancePageViewModel> GetFinanceAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
+    Task<PartnerFinancePageViewModel> GetFinanceAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default, bool includeCommissions = false, DateTime? dateFrom = null, DateTime? dateTo = null, string? paymentStatus = null, int commissionPageSize = 50, string? donem = null);
+
+    Task<string> ExportPartnerCommissionsCsvAsync(long userId, long? hotelId, string? donem, DateTime? dateFrom, DateTime? dateTo, string? paymentStatus, CancellationToken cancellationToken = default);
+    Task<PartnerFinancePageViewModel> GetPartnerCommissionsPageAsync(long userId, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, string? paymentStatus = null, int pageSize = 50, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> MarkCommissionPaidOnlineAsync(long userId, long hotelId, long commissionRecordId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveBankInfoAsync(long userId, PartnerBankInfoForm request, CancellationToken cancellationToken = default);
     Task<string> ExportFinanceCsvAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default);
     Task<(byte[] Content, string ContentType, string FileName)?> DownloadInvoiceAsync(long userId, long hotelId, long invoiceId, CancellationToken cancellationToken = default);

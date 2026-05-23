@@ -1,0 +1,211 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminSectionPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+
+    var rows = Model.Rows
+        .Where(row => row.Count >= 10)
+        .Select(row =>
+        {
+            var fullName = row[1];
+            var initials = string.Join(string.Empty, (fullName ?? string.Empty)
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Take(2)
+                .Select(part => char.ToUpperInvariant(part[0])));
+
+            return new
+            {
+                Id = row[0],
+                FullName = fullName,
+                Initials = string.IsNullOrWhiteSpace(initials) ? "OT" : initials,
+                Email = row[2],
+                Phone = row[3],
+                Tier = row[4],
+                ReservationCount = row[5],
+                Score = row[6],
+                Status = row[7],
+                Role = row[8],
+                CreatedAt = row[9]
+            };
+        })
+        .ToList();
+
+    var summaryLookup = Model.SummaryCards.ToDictionary(card => card.Label, card => card.Value);
+    var totalUsers = summaryLookup.GetValueOrDefault("Toplam Kullanici", "0");
+    var activeUsers = summaryLookup.GetValueOrDefault("Aktif Kullanici", "0");
+    var unverifiedUsers = summaryLookup.GetValueOrDefault("Onaysiz E-posta", "0");
+    var passiveUsers = summaryLookup.GetValueOrDefault("Pasif Kullanici", "0");
+    var goldUsers = rows.Count(user => string.Equals(user.Tier, "Gold", StringComparison.OrdinalIgnoreCase));
+
+    string TierClass(string tier) => tier switch
+    {
+        "Gold" => "tier-gold",
+        "Silver" => "tier-silver",
+        _ => "tier-bronze"
+    };
+
+    string StatusClass(string status) => status switch
+    {
+        "Aktif" => "status-active",
+        "Onaysiz" => "status-pending",
+        _ => "status-inactive"
+    };
+}
+
+<section class="admin-users-page">
+    <div class="admin-summary-grid admin-users-summary-grid">
+        <article class="admin-users-stat-card">
+            <span>Toplam Kullanıcı</span>
+            <strong>@totalUsers</strong>
+        </article>
+        <article class="admin-users-stat-card">
+            <span>Aktif Kullanıcı</span>
+            <strong class="text-success">@activeUsers</strong>
+        </article>
+        <article class="admin-users-stat-card">
+            <span>Onaysız E-posta</span>
+            <strong class="text-warning">@unverifiedUsers</strong>
+        </article>
+        <article class="admin-users-stat-card">
+            <span>Pasif Kullanıcı</span>
+            <strong class="text-danger">@passiveUsers</strong>
+        </article>
+    </div>
+
+    <div class="admin-users-filterbar">
+        <div class="admin-users-filter-tabs">
+            <button type="button" class="admin-users-filter-tab active" data-filter="all">Tümü (@totalUsers)</button>
+            <button type="button" class="admin-users-filter-tab" data-filter="Aktif">Aktif (@activeUsers)</button>
+            <button type="button" class="admin-users-filter-tab" data-filter="Onaysiz">Onaysız (@unverifiedUsers)</button>
+            <button type="button" class="admin-users-filter-tab" data-filter="Pasif">Pasif (@passiveUsers)</button>
+            <button type="button" class="admin-users-filter-tab" data-filter="Gold">Gold Üyeler (@goldUsers)</button>
+        </div>
+
+        <label class="admin-users-searchbox" aria-label="Kullanıcı ara">
+            <input type="search" id="adminUsersSearchInput" placeholder="İsim, e-posta..." />
+            <span><i class="fas fa-search"></i></span>
+        </label>
+    </div>
+
+    <div class="admin-section-card admin-users-table-card">
+        @if (rows.Count == 0)
+        {
+            <div class="admin-empty-state">@Model.EmptyStateMessage</div>
+        }
+        else
+        {
+            <div class="admin-table-wrap">
+                <table class="admin-table admin-users-table" id="adminUsersTable">
+                    <thead>
+                        <tr>
+                            <th>Kullanıcı</th>
+                            <th>E-posta</th>
+                            <th>Telefon</th>
+                            <th>Üyelik</th>
+                            <th>Rezervasyon</th>
+                            <th>Puan</th>
+                            <th>Durum</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in rows)
+                        {
+                            <tr data-search="@($"{user.FullName} {user.Email} {user.Phone} {user.Role}")" data-status="@user.Status" data-tier="@user.Tier">
+                                <td>
+                                    <div class="admin-users-usercell">
+                                        <span class="admin-users-avatar">@user.Initials</span>
+                                        <div>
+                                            <strong>@user.FullName</strong>
+                                            <small>@user.Role • @user.CreatedAt</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@user.Email</td>
+                                <td>@user.Phone</td>
+                                <td><span class="admin-users-tier @TierClass(user.Tier)">@user.Tier</span></td>
+                                <td>@user.ReservationCount</td>
+                                <td>@user.Score</td>
+                                <td><span class="admin-users-status @StatusClass(user.Status)">@user.Status</span></td>
+                                <td>
+                                    <div class="admin-users-actions">
+                                        <button type="button" class="admin-users-action" title="Kullanıcıyı görüntüle" aria-label="Kullanıcıyı görüntüle">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="admin-users-action" title="Kullanıcı düzenleme yakında" aria-label="Kullanıcı düzenle">
+                                            <i class="fas fa-pen-to-square"></i>
+                                        </button>
+                                        <button type="button" class="admin-users-action" title="Durum aksiyonu yakında" aria-label="Durum aksiyonu">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
+    }
+    <script nonce="@nonce">
+        (function () {
+            var tabs = document.querySelectorAll('.admin-users-filter-tab');
+            var searchInput = document.getElementById('adminUsersSearchInput');
+            var rows = document.querySelectorAll('#adminUsersTable tbody tr');
+            if (!tabs.length || !rows.length) {
+                return;
+            }
+
+            var activeFilter = 'all';
+
+            function matchesFilter(row) {
+                if (activeFilter === 'all') {
+                    return true;
+                }
+
+                if (activeFilter === 'Gold') {
+                    return (row.dataset.tier || '') === 'Gold';
+                }
+
+                return (row.dataset.status || '') === activeFilter;
+            }
+
+            function matchesSearch(row) {
+                var query = (searchInput && searchInput.value || '').trim().toLowerCase();
+                if (!query) {
+                    return true;
+                }
+
+                return ((row.dataset.search || '').toLowerCase()).indexOf(query) > -1;
+            }
+
+            function applyFilters() {
+                rows.forEach(function (row) {
+                    row.style.display = matchesFilter(row) && matchesSearch(row) ? '' : 'none';
+                });
+            }
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    tabs.forEach(function (item) { item.classList.remove('active'); });
+                    tab.classList.add('active');
+                    activeFilter = tab.dataset.filter || 'all';
+                    applyFilters();
+                });
+            });
+
+            if (searchInput) {
+                searchInput.addEventListener('input', applyFilters);
+            }
+        })();
+    </script>
+}
+
+

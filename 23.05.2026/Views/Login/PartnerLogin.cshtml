@@ -1,0 +1,266 @@
+@{
+    ViewData["Title"] = "Partner Giriş";
+    var showResendVerifyButton = string.Equals(TempData["ShowResendVerifyButton"] as string, "1", StringComparison.Ordinal);
+    var resendVerifyEmail = TempData["ResendVerifyEmail"] as string ?? string.Empty;
+}
+
+<section class="auth-shell partner-auth-shell">
+    <div class="auth-stage partner-stage">
+        <aside class="auth-sidebar partner-sidebar">
+            <div class="auth-sidebar-top">
+                <div class="auth-sidebar-logo"></div>
+                <span class="auth-sidebar-badge">Partner</span>
+            </div>
+
+            <div class="auth-sidebar-content">
+                <p class="auth-kicker">Extranet yönetimi</p>
+                <h1>Tesisinizi milyonlarca gezginle buluşturun</h1>
+                <p class="auth-lead">Partner paneline giriş yapın veya yeni tesis başvurunuzu oluşturun. Rezervasyon, fiyat ve operasyon akışını tek panelden yönetin.</p>
+
+                <ul class="auth-feature-list">
+                    <li><i class="fas fa-chart-line"></i> Doluluk ve performans takibi</li>
+                    <li><i class="fas fa-calendar-check"></i> Anlık rezervasyon yönetimi</li>
+                    <li><i class="fas fa-wallet"></i> Komisyon ve ödeme takibi</li>
+                    <li><i class="fas fa-headset"></i> 7/24 partner destek hattı</li>
+                </ul>
+
+            </div>
+
+            <div class="auth-sidebar-bottom">
+                <span><i class="fas fa-shield-alt"></i> TURSAB ve PCI DSS güvencesi</span>
+            </div>
+        </aside>
+
+        <div class="auth-panel-wrap partner-panel-wrap">
+            <div class="auth-tabs partner-tabs" data-auth-tabs>
+                <button type="button" class="auth-tab active" data-target="partnerLoginPanel">
+                    <i class="fas fa-sign-in-alt"></i> Extranet Girişi
+                </button>
+                <button type="button" class="auth-tab" data-target="partnerRegisterPanel">
+                    <i class="fas fa-hotel"></i> Partner Kaydı
+                </button>
+            </div>
+
+            <div class="auth-panel active" id="partnerLoginPanel">
+                <div class="info-banner">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Extranet üzerinden rezervasyon, fiyat, oda ve operasyon kayıtlarını yönetebilirsiniz.</span>
+                </div>
+
+                @if (TempData["PartnerLoginError"] is string partnerLoginError)
+                {
+                    <div class="auth-alert">@partnerLoginError</div>
+                    @if (showResendVerifyButton && !string.IsNullOrWhiteSpace(resendVerifyEmail))
+                    {
+                        <form method="post" action="/eposta-dogrula/tekrar-gonder" class="auth-resend-verify-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="email" value="@resendVerifyEmail" />
+                            <button type="submit" class="auth-resend-verify-btn">
+                                <i class="fas fa-paper-plane"></i> Onaylama E-postası Gönder
+                            </button>
+                        </form>
+                    }
+                }
+
+                <form class="auth-form" id="partnerLoginForm" method="post" asp-controller="Auth" asp-action="PartnerLogin">
+                    @Html.AntiForgeryToken()
+                    <div class="form-group">
+                        <label for="partnerIdentity">E-posta adresi ile giriş</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-hotel"></i>
+                            <input id="partnerIdentity" name="partnerIdentity" type="email" class="form-control" placeholder="Örn: email@otel.com" value="@resendVerifyEmail" autocomplete="email" inputmode="email" required />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="partnerPassword">Şifre</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-lock"></i>
+                            <input id="partnerPassword" name="partnerPassword" type="password" class="form-control" placeholder="••••••••" required />
+                            <button type="button" class="toggle-password" data-toggle-target="partnerPassword">
+                                <i class="far fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-row-meta">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" name="rememberMe" value="true" checked />
+                            <span>Beni hatırla</span>
+                        </label>
+                        <a href="/sifremi-unuttum" class="text-link">Şifremi unuttum</a>
+                    </div>
+
+                    <button type="submit" class="auth-submit-btn partner-submit-btn">Extranet'e Giriş Yap <i class="fas fa-arrow-right"></i></button>
+                </form>
+
+                <p class="auth-helper">Henüz partner değil misiniz? <button type="button" class="text-button" data-switch-tab="partnerRegisterPanel">Hemen başvurun</button></p>
+            </div>
+
+            <div class="auth-panel" id="partnerRegisterPanel">
+                <partial name="~/Views/Register/_PartnerRegisterForm.cshtml" />
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
+    }
+    <script nonce="@nonce">
+        (function () {
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 280) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
+
+            const scope = document.querySelector('.partner-auth-shell');
+            if (!scope) {
+                return;
+            }
+
+            const tabs = scope.querySelectorAll('[data-auth-tabs] .auth-tab');
+            const panels = scope.querySelectorAll('.auth-panel');
+
+            function switchPanel(id) {
+                tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.target === id));
+                panels.forEach(panel => panel.classList.toggle('active', panel.id === id));
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => switchPanel(tab.dataset.target));
+            });
+
+            scope.querySelectorAll('[data-switch-tab]').forEach(button => {
+                button.addEventListener('click', () => switchPanel(button.dataset.switchTab));
+            });
+
+            const query = new URLSearchParams(window.location.search);
+            const shouldOpenRegisterFromUrl = query.get('sekme') === 'kayit' || window.location.hash === '#partner-kayit';
+            if (shouldOpenRegisterFromUrl) {
+                switchPanel('partnerRegisterPanel');
+            }
+
+            scope.querySelectorAll('[data-toggle-target]').forEach(button => {
+                button.addEventListener('click', function () {
+                    const input = document.getElementById(this.dataset.toggleTarget);
+                    const icon = this.querySelector('i');
+                    if (!input || !icon) {
+                        return;
+                    }
+
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
+                    icon.className = isPassword ? 'far fa-eye-slash' : 'far fa-eye';
+                });
+            });
+
+            const loginForm = document.getElementById('partnerLoginForm');
+            loginForm?.addEventListener('submit', function () {
+                const submitButton = this.querySelector('.auth-submit-btn');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = 'Giriş yapılıyor <i class="fas fa-spinner fa-spin"></i>';
+                }
+            });
+
+            const registerForm = document.getElementById('partnerRegisterForm');
+            registerForm?.addEventListener('submit', function () {
+                const submitButton = this.querySelector('.auth-submit-btn');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = 'Partner hesabı oluşturuluyor <i class="fas fa-spinner fa-spin"></i>';
+                }
+            });
+
+            const shouldOpenRegister = '@(TempData["OpenPartnerRegisterTab"] as string ?? string.Empty)';
+            if (shouldOpenRegister === '1') {
+                switchPanel('partnerRegisterPanel');
+            }
+
+            async function initializeAddressLookup() {
+                const provinceSelect = document.getElementById('partnerCity');
+                const districtSelect = document.getElementById('partnerDistrict');
+                const neighborhoodSelect = document.getElementById('partnerNeighborhood');
+
+                if (!provinceSelect || !districtSelect || !neighborhoodSelect) {
+                    return;
+                }
+
+                const fillOptions = function (select, items, placeholder) {
+                    select.innerHTML = '';
+                    const placeholderOption = document.createElement('option');
+                    placeholderOption.value = '';
+                    placeholderOption.textContent = placeholder;
+                    select.appendChild(placeholderOption);
+
+                    items.forEach(function (item) {
+                        const option = document.createElement('option');
+                        option.value = item.name;
+                        option.textContent = item.name;
+                        option.dataset.id = item.id;
+                        if (item.postalCode) {
+                            option.dataset.postalCode = item.postalCode;
+                        }
+                        select.appendChild(option);
+                    });
+                };
+
+                const loadDistricts = async function () {
+                    const selected = provinceSelect.options[provinceSelect.selectedIndex];
+                    const provinceId = selected?.dataset.id;
+                    if (!provinceId) {
+                        districtSelect.disabled = true;
+                        neighborhoodSelect.disabled = true;
+                        fillOptions(districtSelect, [], 'Önce il seçiniz');
+                        fillOptions(neighborhoodSelect, [], 'Önce ilçe seçiniz');
+                        return;
+                    }
+
+                    const response = await fetch('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), { credentials: 'same-origin' });
+                    const items = await response.json();
+                    fillOptions(districtSelect, items, 'İlçe seçiniz');
+                    fillOptions(neighborhoodSelect, [], 'Önce ilçe seçiniz');
+                    districtSelect.disabled = false;
+                    neighborhoodSelect.disabled = true;
+                };
+
+                const loadNeighborhoods = async function () {
+                    const selected = districtSelect.options[districtSelect.selectedIndex];
+                    const districtId = selected?.dataset.id;
+                    if (!districtId) {
+                        neighborhoodSelect.disabled = true;
+                        fillOptions(neighborhoodSelect, [], 'Önce ilçe seçiniz');
+                        return;
+                    }
+
+                    const response = await fetch('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), { credentials: 'same-origin' });
+                    const items = await response.json();
+                    fillOptions(neighborhoodSelect, items, 'Mahalle seçiniz');
+                    neighborhoodSelect.disabled = false;
+                };
+
+                provinceSelect.addEventListener('change', loadDistricts);
+                districtSelect.addEventListener('change', loadNeighborhoods);
+
+                const countriesResponse = await fetch('/api/adres/ulkeler', { credentials: 'same-origin' });
+                const countries = countriesResponse.ok ? await countriesResponse.json() : [];
+                const trCountry = countries.find(function (c) { return (c.iso2 || '').toUpperCase() === 'TR'; }) || countries[0];
+                if (!trCountry || !trCountry.id) {
+                    fillOptions(provinceSelect, [], 'Ülke listesi yüklenemedi');
+                    return;
+                }
+                const provinceResponse = await fetch('/api/adres/iller?ulkeId=' + encodeURIComponent(trCountry.id), { credentials: 'same-origin' });
+                const provinces = provinceResponse.ok ? await provinceResponse.json() : [];
+                fillOptions(provinceSelect, provinces, 'İl seçiniz');
+            }
+
+            initializeAddressLookup().catch(console.error);
+        })();
+    </script>
+}

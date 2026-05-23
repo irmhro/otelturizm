@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Data.SqlClient;
+using otelturizmnew.Data;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -74,14 +75,14 @@ public sealed class UserPreferenceService : IUserPreferenceService
         await using var conn = new SqlConnection(cs);
         await conn.OpenAsync(cancellationToken);
 
-        if (!await ColumnExistsAsync(conn, "dbo.users", "tercih_para_birimi", cancellationToken))
+        if (!await ColumnExistsOnResolvedUserTableAsync(conn, "tercih_para_birimi", cancellationToken))
         {
             return;
         }
 
         await using var cmd = new SqlCommand("""
-            UPDATE users
-            SET tercih_para_birimi = @cur
+            UPDATE [dbo].[KULLANICILAR]
+            SET [TERCIH_PARA_BIRIMI] = @cur
             WHERE id = @id;
             """, conn);
         cmd.Parameters.AddWithValue("@cur", normalized);
@@ -101,14 +102,14 @@ public sealed class UserPreferenceService : IUserPreferenceService
         await using var conn = new SqlConnection(cs);
         await conn.OpenAsync(cancellationToken);
 
-        if (!await ColumnExistsAsync(conn, "dbo.users", "tercih_locale", cancellationToken))
+        if (!await ColumnExistsOnResolvedUserTableAsync(conn, "tercih_locale", cancellationToken))
         {
             return;
         }
 
         await using var cmd = new SqlCommand("""
-            UPDATE users
-            SET tercih_locale = @loc
+            UPDATE [dbo].[KULLANICILAR]
+            SET [TERCIH_LOCALE] = @loc
             WHERE id = @id;
             """, conn);
         cmd.Parameters.AddWithValue("@loc", normalized);
@@ -148,10 +149,16 @@ public sealed class UserPreferenceService : IUserPreferenceService
         };
     }
 
-    private static async Task<bool> ColumnExistsAsync(SqlConnection connection, string tableName, string columnName, CancellationToken cancellationToken)
+    private static async Task<bool> ColumnExistsOnResolvedUserTableAsync(SqlConnection connection, string columnName, CancellationToken cancellationToken)
     {
+        var table = await SchemaTableNames.ResolveExistingTableAsync(connection, "users", cancellationToken);
+        if (table is null)
+        {
+            return false;
+        }
+
         await using var command = new SqlCommand("SELECT COL_LENGTH(@tableName, @columnName);", connection);
-        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@tableName", $"dbo.{table}");
         command.Parameters.AddWithValue("@columnName", columnName);
         var scalar = await command.ExecuteScalarAsync(cancellationToken);
         return scalar is not null && scalar != DBNull.Value;

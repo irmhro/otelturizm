@@ -1,0 +1,12 @@
+-- Tablo: dbo.KULLANICI_ROLLERI
+IF OBJECT_ID(N'dbo.KULLANICI_ROLLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[KULLANICI_ROLLERI] (
+        [KULLANICI_ID] bigint NOT NULL,
+        [ROL_ID] smallint NOT NULL,
+        [ATAYAN_KULLANICI_ID] bigint NULL,
+        [ATAMA_TARIHI] datetime2(0) NULL CONSTRAINT [DF__kullanici__atama__1C873BEC] DEFAULT (sysutcdatetime()),
+        [BITIS_TARIHI] datetime2(0) NULL,
+        CONSTRAINT [PK_KULLANICI_ROLLERI] PRIMARY KEY CLUSTERED ([KULLANICI_ID], [ROL_ID] ASC)
+    );
+END

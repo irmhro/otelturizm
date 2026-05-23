@@ -1,22 +1,44 @@
-.user-security-page {
-  gap: 14px;
-}
+@import url("./user-mobile-bundle.css");
 
-.security-hero,
-.security-panel {
-  border-radius: 13px;
-  padding: 14px;
-}
+@media (max-width: 900px) {
+  .user-security-page {
+    gap: 14px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
 
-.security-hero h1 {
-  font-size: 23px;
-}
+  .security-hero,
+  .security-panel {
+    border-radius: 13px;
+    padding: 14px;
+  }
 
-.security-master-switch,
-.security-channel-card {
-  border-radius: 12px;
-}
+  .security-hero h1 {
+    font-size: 23px;
+  }
 
-.security-info-content {
-  padding: 18px;
+  .security-master-switch,
+  .security-channel-card {
+    border-radius: 12px;
+  }
+
+  .security-info-content {
+    padding: 18px;
+  }
+
+  .security-hero .btn,
+  .security-panel .btn,
+  .security-master-switch label,
+  .security-channel-card .btn,
+  .radio-option {
+    min-height: var(--user-mob-touch, 44px);
+  }
+
+  .security-channel-card .btn {
+    width: 100%;
+  }
+
+  .security-form .form-control {
+    min-height: var(--user-mob-touch, 44px);
+    width: 100%;
+  }
 }

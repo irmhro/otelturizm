@@ -1,0 +1,106 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerCompanyRequestsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/company-pricing";
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Firmalar</div>
+            <h2 class="page-title">İlişkili kurumsal firmalar</h2>
+            <div class="text-muted mt-1">Bu otelle kurumsal rezervasyon veya firma oda fiyatı üzerinden bağlantılı firmaların kart kayıtları ve (varsa) başvuru süreç hareketleri.</div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info mb-3" role="status">
+    <div class="d-flex gap-2 align-items-start">
+        <i class="fas fa-circle-info mt-1"></i>
+        <div>
+            <strong>Yönetim notu:</strong> Platforma yeni kurumsal üyelik başvurularının onayı <strong>yönetim paneli</strong> üzerinden yapılır; bu sayfa yalnızca <strong>seçili otelinizle iş ilişkisi olan</strong> kurumsal müşterileri gösterir.
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards">
+    <div class="col-12 col-xl-7">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Firmalar</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>Kod</th>
+                            <th>Firma</th>
+                            <th>Tür</th>
+                            <th>Durum</th>
+                            <th>Yetkili</th>
+                            <th>Başvuru</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Companies.Count == 0)
+                        {
+                            <tr><td colspan="6" class="text-muted p-3">Bu otelle ilişkili kurumsal firma kaydı bulunamadı (kurumsal rezervasyon veya firma oda fiyatı tanımı gerekir).</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var c in Model.Companies)
+                            {
+                                <tr>
+                                    <td><code>@c.Code</code></td>
+                                    <td class="fw-bold">@c.Name</td>
+                                    <td class="text-muted">@c.Type</td>
+                                    <td><span class="badge bg-azure-lt text-azure">@c.Status</span></td>
+                                    <td>
+                                        <div>@c.ContactText</div>
+                                        <div class="text-muted small">@c.Email @(!string.IsNullOrWhiteSpace(c.Phone) ? $" • {c.Phone}" : "")</div>
+                                    </td>
+                                    <td class="text-muted">@c.CreatedText</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-5">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Son durum hareketleri</h3>
+            </div>
+            <div class="list-group list-group-flush">
+                @if (Model.Activities.Count == 0)
+                {
+                    <div class="p-3 text-muted">Durum hareketi bulunamadı.</div>
+                }
+                else
+                {
+                    @foreach (var a in Model.Activities)
+                    {
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="fw-bold text-truncate">@a.CompanyName</div>
+                                    <div class="text-muted small">@a.Type • @a.StatusText</div>
+                                    @if (!string.IsNullOrWhiteSpace(a.Note))
+                                    {
+                                        <div class="text-muted small mt-1" style="white-space:pre-wrap;">@a.Note</div>
+                                    }
+                                </div>
+                                <div class="text-muted small">@a.TimeText</div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+

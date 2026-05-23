@@ -55,6 +55,10 @@ public class SalesCustomerCardViewModel
     public string? City { get; set; }
     public string? District { get; set; }
     public string? Neighborhood { get; set; }
+    public long? UlkeId { get; set; }
+    public long? IlId { get; set; }
+    public long? IlceId { get; set; }
+    public long? MahalleId { get; set; }
     public string? Address { get; set; }
 }
 
@@ -179,6 +183,10 @@ public class SalesReservationCreateModel
     public string? CustomerCity { get; set; }
     public string? CustomerDistrict { get; set; }
     public string? CustomerNeighborhood { get; set; }
+    public long? CustomerUlkeId { get; set; }
+    public long? CustomerIlId { get; set; }
+    public long? CustomerIlceId { get; set; }
+    public long? CustomerMahalleId { get; set; }
     public string? CustomerAddress { get; set; }
     public long HotelId { get; set; }
     public long RoomTypeId { get; set; }

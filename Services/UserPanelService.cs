@@ -47,9 +47,9 @@ public class UserPanelService : IUserPanelService
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = @"
             SELECT
-                (SELECT COUNT(*) FROM rezervasyonlar WHERE kullanici_id = @userId),
-                (SELECT COUNT(*) FROM user_favori_oteller WHERE user_id = @userId AND aktif_mi = 1),
-                (SELECT COUNT(*) FROM mesaj_konusmalari WHERE misafir_kullanici_id = @userId AND durum <> 'Arşivlendi');";
+                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [KULLANICI_ID] = @userId),
+                (SELECT COUNT(*) FROM [dbo].[KULLANICI_FAVORI_OTELLER] WHERE [KULLANICI_ID] = @userId AND [AKTIF_MI] = 1),
+                (SELECT COUNT(*) FROM [dbo].[MESAJ_KONUSMALARI] WHERE [MISAFIR_KULLANICI_ID] = @userId AND [DURUM] <> 'Arşivlendi');";
         await using var cmd = new SqlCommand(sql, connection);
         cmd.Parameters.AddWithValue("@userId", userId);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
@@ -86,11 +86,11 @@ public class UserPanelService : IUserPanelService
 
         const string summarySql = @"
             SELECT
-                (SELECT COUNT(*) FROM rezervasyonlar WHERE kullanici_id = @userId) AS total_count,
-                (SELECT COUNT(*) FROM rezervasyonlar WHERE kullanici_id = @userId AND durum <> 'İptal Edildi' AND cikis_tarihi >= CAST(GETDATE() AS date)) AS upcoming_count,
-                (SELECT COUNT(*) FROM user_favori_oteller WHERE user_id = @userId AND aktif_mi = 1) AS favorite_count,
-                (SELECT COUNT(*) FROM mesaj_konusmalari WHERE misafir_kullanici_id = @userId AND durum <> 'Arşivlendi') AS message_count,
-                (SELECT COALESCE(SUM(toplam_tasarruf), 0) FROM rezervasyonlar WHERE kullanici_id = @userId) AS total_discount;";
+                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [KULLANICI_ID] = @userId) AS total_count,
+                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [KULLANICI_ID] = @userId AND [DURUM] <> 'İptal Edildi' AND [CIKIS_TARIHI] >= CAST(GETDATE() AS date)) AS upcoming_count,
+                (SELECT COUNT(*) FROM [dbo].[KULLANICI_FAVORI_OTELLER] WHERE [KULLANICI_ID] = @userId AND [AKTIF_MI] = 1) AS favorite_count,
+                (SELECT COUNT(*) FROM [dbo].[MESAJ_KONUSMALARI] WHERE [MISAFIR_KULLANICI_ID] = @userId AND [DURUM] <> 'Arşivlendi') AS message_count,
+                (SELECT COALESCE(SUM([TOPLAM_TASARRUF]), 0) FROM [dbo].[REZERVASYONLAR] WHERE [KULLANICI_ID] = @userId) AS total_discount;";
 
         await using (var command = new SqlCommand(summarySql, connection))
         {
@@ -221,9 +221,9 @@ public class UserPanelService : IUserPanelService
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string selectSql = @"
-            SELECT TOP (1) durum, giris_tarihi
-            FROM rezervasyonlar
-            WHERE id = @reservationId AND kullanici_id = @userId;";
+            SELECT TOP (1) [DURUM], [GIRIS_TARIHI]
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE id = @reservationId AND [KULLANICI_ID] = @userId;";
 
         string? currentStatus = null;
         DateTime? checkInDate = null;
@@ -255,13 +255,13 @@ public class UserPanelService : IUserPanelService
         }
 
         const string updateSql = @"
-            UPDATE rezervasyonlar
-            SET durum = 'İptal Edildi',
-                otel_onay_durumu = 'Reddedildi',
-                iptal_nedeni = @reason,
-                iptal_eden = 'Misafir',
-                iptal_tarihi = CURRENT_TIMESTAMP
-            WHERE id = @reservationId AND kullanici_id = @userId;";
+            UPDATE [dbo].[REZERVASYONLAR]
+            SET [DURUM] = 'İptal Edildi',
+                [OTEL_ONAY_DURUMU] = 'Reddedildi',
+                [IPTAL_NEDENI] = @reason,
+                [IPTAL_EDEN] = 'Misafir',
+                [IPTAL_TARIHI] = CURRENT_TIMESTAMP
+            WHERE id = @reservationId AND [KULLANICI_ID] = @userId;";
         await using var updateCommand = new SqlCommand(updateSql, connection);
         updateCommand.Parameters.AddWithValue("@reservationId", reservationId);
         updateCommand.Parameters.AddWithValue("@userId", userId);
@@ -319,11 +319,11 @@ public class UserPanelService : IUserPanelService
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var command = new SqlCommand("""
-            UPDATE rezervasyonlar
-            SET musteri_talep_notu = NULLIF(@note, ''),
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[REZERVASYONLAR]
+            SET [MUSTERI_TALEP_NOTU] = NULLIF(@note, ''),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @reservationId
-              AND kullanici_id = @userId;
+              AND [KULLANICI_ID] = @userId;
             """, connection);
         command.Parameters.AddWithValue("@note", note);
         command.Parameters.AddWithValue("@reservationId", form.ReservationId);
@@ -343,23 +343,23 @@ public class UserPanelService : IUserPanelService
         const string sql = @"
             SELECT TOP (1)
                 r.id,
-                r.rezervasyon_no,
-                r.otel_id,
-                o.otel_adi,
-                COALESCE(o.ilce, ''),
-                COALESCE(o.sehir, ''),
-                COALESCE(ot.oda_adi, 'Oda'),
-                r.giris_tarihi,
-                r.cikis_tarihi,
-                r.durum,
-                COALESCE(r.otel_onay_durumu, ''),
+                r.[REZERVASYON_NO],
+                r.[OTEL_ID],
+                o.[OTEL_ADI],
+                COALESCE(o.[ILCE], ''),
+                COALESCE(o.[SEHIR], ''),
+                COALESCE(ot.[ODA_ADI], 'Oda'),
+                r.[GIRIS_TARIHI],
+                r.[CIKIS_TARIHI],
+                r.[DURUM],
+                COALESCE(r.[OTEL_ONAY_DURUMU], ''),
                 CAST(CASE WHEN EXISTS (
-                    SELECT 1 FROM yorumlar y WHERE y.rezervasyon_id = r.id AND y.kullanici_id = @userId
+                    SELECT 1 FROM [dbo].[YORUMLAR] y WHERE y.[REZERVASYON_ID] = r.id AND y.[KULLANICI_ID] = @userId
                 ) THEN 1 ELSE 0 END AS INT)
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
-            WHERE r.id = @reservationId AND r.kullanici_id = @userId;";
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            LEFT JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
+            WHERE r.id = @reservationId AND r.[KULLANICI_ID] = @userId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@reservationId", reservationId);
@@ -448,15 +448,15 @@ public class UserPanelService : IUserPanelService
         try
         {
             const string insertSql = @"
-                INSERT INTO yorumlar (
-                    otel_id, kullanici_id, rezervasyon_id, rezervasyon_no,
-                    genel_puan, temizlik_puani, konfor_puani, konum_puani, personel_puani, fiyat_performans_puani,
-                    yorum_metni,
-                    onay_durumu, onay_tarihi, dogrulanmis_konaklama, anonim_mi,
-                    seyahat_profili, memnuniyet_seviyesi,
-                    genel_puan_10, puan_oda_10, puan_konum_10, puan_fiyat_10, puan_personel_10,
-                    puan_temizlik_10, puan_sessizlik_10, puan_ulasim_10,
-                    olusturulma_tarihi
+                INSERT INTO [dbo].[YORUMLAR] (
+                    [OTEL_ID], [KULLANICI_ID], [REZERVASYON_ID], [REZERVASYON_NO],
+                    [GENEL_PUAN], [TEMIZLIK_PUANI], [KONFOR_PUANI], [KONUM_PUANI], [PERSONEL_PUANI], [FIYAT_PERFORMANS_PUANI],
+                    [YORUM_METNI],
+                    [ONAY_DURUMU], [ONAY_TARIHI], [DOGRULANMIS_KONAKLAMA], [ANONIM_MI],
+                    [SEYAHAT_PROFILI], [MEMNUNIYET_SEVIYESI],
+                    [GENEL_PUAN_10], [PUAN_ODA_10], [PUAN_KONUM_10], [PUAN_FIYAT_10], [PUAN_PERSONEL_10],
+                    [PUAN_TEMIZLIK_10], [PUAN_SESSIZLIK_10], [PUAN_ULASIM_10],
+                    [OLUSTURULMA_TARIHI]
                 )
                 VALUES (
                     @otelId, @userId, @rezId, @rezNo,
@@ -537,45 +537,45 @@ public class UserPanelService : IUserPanelService
         const string sql = @"
             SELECT
                 r.id,
-                COALESCE(r.rezervasyon_no, ''),
-                r.otel_id,
-                o.otel_adi,
-                o.otel_kodu,
-                COALESCE(o.ilce, ''),
-                COALESCE(o.sehir, ''),
-                COALESCE(ot.oda_adi, 'Oda'),
-                r.giris_tarihi,
-                r.cikis_tarihi,
-                r.durum,
-                COALESCE(r.otel_onay_durumu, ''),
+                COALESCE(r.[REZERVASYON_NO], ''),
+                r.[OTEL_ID],
+                o.[OTEL_ADI],
+                o.[OTEL_KODU],
+                COALESCE(o.[ILCE], ''),
+                COALESCE(o.[SEHIR], ''),
+                COALESCE(ot.[ODA_ADI], 'Oda'),
+                r.[GIRIS_TARIHI],
+                r.[CIKIS_TARIHI],
+                r.[DURUM],
+                COALESCE(r.[OTEL_ONAY_DURUMU], ''),
                 y.id AS yorum_id,
-                COALESCE(y.yorum_metni, '') AS yorum_metni,
-                y.olusturulma_tarihi,
-                y.guncellenme_tarihi,
-                COALESCE(y.onay_durumu, '') AS yorum_durumu,
-                COALESCE(CAST(y.genel_puan_10 AS DECIMAL(9,2)), CAST(y.genel_puan AS DECIMAL(9,2)) * 2) AS yorum_puani,
-                COALESCE(og.gorsel_url, '')
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
-            LEFT JOIN yorumlar y ON y.rezervasyon_id = r.id AND y.kullanici_id = @userId
+                COALESCE(y.[YORUM_METNI], '') AS [YORUM_METNI],
+                y.[OLUSTURULMA_TARIHI],
+                y.[GUNCELLENME_TARIHI],
+                COALESCE(y.[ONAY_DURUMU], '') AS yorum_durumu,
+                COALESCE(CAST(y.[GENEL_PUAN_10] AS DECIMAL(9,2)), CAST(y.[GENEL_PUAN] AS DECIMAL(9,2)) * 2) AS yorum_puani,
+                COALESCE(og.[GORSEL_URL], '')
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            LEFT JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
+            LEFT JOIN [dbo].[YORUMLAR] y ON y.[REZERVASYON_ID] = r.id AND y.[KULLANICI_ID] = @userId
             LEFT JOIN (
-                SELECT ranked.otel_id, ranked.gorsel_url
+                SELECT ranked.[OTEL_ID], ranked.[GORSEL_URL]
                 FROM (
                     SELECT
-                        g.otel_id,
-                        g.gorsel_url,
+                        g.[OTEL_ID],
+                        g.[GORSEL_URL],
                         ROW_NUMBER() OVER (
-                            PARTITION BY g.otel_id
-                            ORDER BY COALESCE(g.kapak_fotografi_mi, 0) DESC, COALESCE(g.siralama, 2147483647) ASC, g.id ASC
+                            PARTITION BY g.[OTEL_ID]
+                            ORDER BY COALESCE(g.[KAPAK_FOTOGRAFI_MI], 0) DESC, COALESCE(g.[SIRALAMA], 2147483647) ASC, g.id ASC
                         ) AS rn
-                    FROM otel_gorselleri g
-                    WHERE COALESCE(g.gorsel_url, '') <> ''
+                    FROM [dbo].[OTEL_GORSELLERI] g
+                    WHERE COALESCE(g.[GORSEL_URL], '') <> ''
                 ) ranked
                 WHERE ranked.rn = 1
-            ) og ON og.otel_id = o.id
-            WHERE r.kullanici_id = @userId
-            ORDER BY CASE WHEN y.id IS NULL THEN 0 ELSE 1 END, r.giris_tarihi DESC, r.id DESC;";
+            ) og ON og.[OTEL_ID] = o.id
+            WHERE r.[KULLANICI_ID] = @userId
+            ORDER BY CASE WHEN y.id IS NULL THEN 0 ELSE 1 END, r.[GIRIS_TARIHI] DESC, r.id DESC;";
 
         var all = new List<UserReviewReservationRowViewModel>();
         await using (var command = new SqlCommand(sql, connection))
@@ -657,13 +657,13 @@ public class UserPanelService : IUserPanelService
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = """
-            SELECT r.durum,
-                   COALESCE(r.otel_onay_durumu, ''),
+            SELECT r.[DURUM],
+                   COALESCE(r.[OTEL_ONAY_DURUMU], ''),
                    CAST(CASE WHEN EXISTS (
-                       SELECT 1 FROM yorumlar y WHERE y.rezervasyon_id = r.id AND y.kullanici_id = @userId
+                       SELECT 1 FROM [dbo].[YORUMLAR] y WHERE y.[REZERVASYON_ID] = r.id AND y.[KULLANICI_ID] = @userId
                    ) THEN 1 ELSE 0 END AS INT)
-            FROM rezervasyonlar r
-            WHERE r.id = @reservationId AND r.kullanici_id = @userId;
+            FROM [dbo].[REZERVASYONLAR] r
+            WHERE r.id = @reservationId AND r.[KULLANICI_ID] = @userId;
             """;
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@reservationId", reservationId);
@@ -696,23 +696,23 @@ public class UserPanelService : IUserPanelService
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = """
             SELECT r.id,
-                   r.giris_tarihi,
-                   r.cikis_tarihi,
-                   COALESCE(ot.oda_adi, N'Oda')
-            FROM rezervasyonlar r
-            LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
-            LEFT JOIN yorumlar y ON y.rezervasyon_id = r.id AND y.kullanici_id = @userId
-            WHERE r.kullanici_id = @userId
-              AND r.otel_id = @hotelId
+                   r.[GIRIS_TARIHI],
+                   r.[CIKIS_TARIHI],
+                   COALESCE(ot.[ODA_ADI], N'Oda')
+            FROM [dbo].[REZERVASYONLAR] r
+            LEFT JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
+            LEFT JOIN [dbo].[YORUMLAR] y ON y.[REZERVASYON_ID] = r.id AND y.[KULLANICI_ID] = @userId
+            WHERE r.[KULLANICI_ID] = @userId
+              AND r.[OTEL_ID] = @hotelId
               AND y.id IS NULL
-              AND r.durum NOT IN (N'İptal Edildi', N'Reddedildi')
-              AND CAST(r.cikis_tarihi AS date) < CAST(SYSUTCDATETIME() AS date)
-              AND r.durum IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı')
+              AND r.[DURUM] NOT IN (N'İptal Edildi', N'Reddedildi')
+              AND CAST(r.[CIKIS_TARIHI] AS date) < CAST(SYSUTCDATETIME() AS date)
+              AND r.[DURUM] IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı')
               AND (
-                  COALESCE(r.otel_onay_durumu, '') = N'Onaylandı'
-                  OR r.durum IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı')
+                  COALESCE(r.[OTEL_ONAY_DURUMU], '') = N'Onaylandı'
+                  OR r.[DURUM] IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı')
               )
-            ORDER BY r.cikis_tarihi DESC, r.id DESC;
+            ORDER BY r.[CIKIS_TARIHI] DESC, r.id DESC;
             """;
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -744,12 +744,12 @@ public class UserPanelService : IUserPanelService
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = @"
-            UPDATE yorumlar
-            SET yorum_metni = @comment,
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[YORUMLAR]
+            SET [YORUM_METNI] = @comment,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @reviewId
-              AND kullanici_id = @userId
-              AND olusturulma_tarihi >= DATEADD(DAY, -7, SYSUTCDATETIME());";
+              AND [KULLANICI_ID] = @userId
+              AND [OLUSTURULMA_TARIHI] >= DATEADD(DAY, -7, SYSUTCDATETIME());";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@comment", comment);
         command.Parameters.AddWithValue("@reviewId", form.ReviewId);
@@ -773,11 +773,11 @@ public class UserPanelService : IUserPanelService
         {
             long? hotelId = null;
             const string lookupSql = @"
-                SELECT otel_id
-                FROM yorumlar
+                SELECT [OTEL_ID]
+                FROM [dbo].[YORUMLAR]
                 WHERE id = @reviewId
-                  AND kullanici_id = @userId
-                  AND olusturulma_tarihi >= DATEADD(DAY, -7, SYSUTCDATETIME());";
+                  AND [KULLANICI_ID] = @userId
+                  AND [OLUSTURULMA_TARIHI] >= DATEADD(DAY, -7, SYSUTCDATETIME());";
             await using (var lookup = new SqlCommand(lookupSql, connection, (SqlTransaction)transaction))
             {
                 lookup.Parameters.AddWithValue("@reviewId", form.ReviewId);
@@ -795,7 +795,7 @@ public class UserPanelService : IUserPanelService
                 return (false, "Yorum silinemedi. 7 gunluk silme suresi dolmus olabilir.");
             }
 
-            await using (var delete = new SqlCommand("DELETE FROM yorumlar WHERE id = @reviewId AND kullanici_id = @userId;", connection, (SqlTransaction)transaction))
+            await using (var delete = new SqlCommand("DELETE FROM [dbo].[YORUMLAR] WHERE id = @reviewId AND [KULLANICI_ID] = @userId;", connection, (SqlTransaction)transaction))
             {
                 delete.Parameters.AddWithValue("@reviewId", form.ReviewId);
                 delete.Parameters.AddWithValue("@userId", userId);
@@ -848,48 +848,48 @@ public class UserPanelService : IUserPanelService
         const string sql = @"
 ;WITH agg AS (
     SELECT
-        y.otel_id,
+        y.[OTEL_ID],
         COUNT(*) AS cnt,
-        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.genel_puan_10 AS DECIMAL(9, 4)),
+        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.[GENEL_PUAN_10] AS DECIMAL(9, 4)),
             CASE
-                WHEN y.genel_puan <= 5 THEN CAST(y.genel_puan AS DECIMAL(9, 4)) * 2
-                WHEN y.genel_puan <= 10 THEN CAST(y.genel_puan AS DECIMAL(9, 4))
+                WHEN y.[GENEL_PUAN] <= 5 THEN CAST(y.[GENEL_PUAN] AS DECIMAL(9, 4)) * 2
+                WHEN y.[GENEL_PUAN] <= 10 THEN CAST(y.[GENEL_PUAN] AS DECIMAL(9, 4))
                 ELSE 10
             END) AS DECIMAL(9, 4))), 2) AS DECIMAL(5, 2)) AS avg_genel,
-        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.puan_konum_10 AS DECIMAL(9, 4)),
+        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.[PUAN_KONUM_10] AS DECIMAL(9, 4)),
             CASE
-                WHEN y.konum_puani <= 5 THEN CAST(y.konum_puani AS DECIMAL(9, 4)) * 2
-                WHEN y.konum_puani <= 10 THEN CAST(y.konum_puani AS DECIMAL(9, 4))
+                WHEN y.[KONUM_PUANI] <= 5 THEN CAST(y.[KONUM_PUANI] AS DECIMAL(9, 4)) * 2
+                WHEN y.[KONUM_PUANI] <= 10 THEN CAST(y.[KONUM_PUANI] AS DECIMAL(9, 4))
                 ELSE 10
             END) AS DECIMAL(9, 4))), 2) AS DECIMAL(5, 2)) AS avg_konum,
-        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.puan_temizlik_10 AS DECIMAL(9, 4)), CAST(y.puan_oda_10 AS DECIMAL(9, 4)),
+        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.[PUAN_TEMIZLIK_10] AS DECIMAL(9, 4)), CAST(y.[PUAN_ODA_10] AS DECIMAL(9, 4)),
             CASE
-                WHEN y.temizlik_puani <= 5 THEN CAST(y.temizlik_puani AS DECIMAL(9, 4)) * 2
-                WHEN y.temizlik_puani <= 10 THEN CAST(y.temizlik_puani AS DECIMAL(9, 4))
-                WHEN y.konfor_puani <= 5 THEN CAST(y.konfor_puani AS DECIMAL(9, 4)) * 2
-                WHEN y.konfor_puani <= 10 THEN CAST(y.konfor_puani AS DECIMAL(9, 4))
+                WHEN y.[TEMIZLIK_PUANI] <= 5 THEN CAST(y.[TEMIZLIK_PUANI] AS DECIMAL(9, 4)) * 2
+                WHEN y.[TEMIZLIK_PUANI] <= 10 THEN CAST(y.[TEMIZLIK_PUANI] AS DECIMAL(9, 4))
+                WHEN y.[KONFOR_PUANI] <= 5 THEN CAST(y.[KONFOR_PUANI] AS DECIMAL(9, 4)) * 2
+                WHEN y.[KONFOR_PUANI] <= 10 THEN CAST(y.[KONFOR_PUANI] AS DECIMAL(9, 4))
                 ELSE 10
             END) AS DECIMAL(9, 4))), 2) AS DECIMAL(5, 2)) AS avg_konfor,
-        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.puan_fiyat_10 AS DECIMAL(9, 4)),
+        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.[PUAN_FIYAT_10] AS DECIMAL(9, 4)),
             CASE
-                WHEN y.fiyat_performans_puani <= 5 THEN CAST(y.fiyat_performans_puani AS DECIMAL(9, 4)) * 2
-                WHEN y.fiyat_performans_puani <= 10 THEN CAST(y.fiyat_performans_puani AS DECIMAL(9, 4))
+                WHEN y.[FIYAT_PERFORMANS_PUANI] <= 5 THEN CAST(y.[FIYAT_PERFORMANS_PUANI] AS DECIMAL(9, 4)) * 2
+                WHEN y.[FIYAT_PERFORMANS_PUANI] <= 10 THEN CAST(y.[FIYAT_PERFORMANS_PUANI] AS DECIMAL(9, 4))
                 ELSE 10
             END) AS DECIMAL(9, 4))), 2) AS DECIMAL(5, 2)) AS avg_fp
-    FROM yorumlar AS y
-    WHERE y.otel_id = @hotelId
-      AND y.onay_durumu LIKE N'Onaylan%'
-    GROUP BY y.otel_id
+    FROM [dbo].[YORUMLAR] AS y
+    WHERE y.[OTEL_ID] = @hotelId
+      AND y.[ONAY_DURUMU] LIKE N'Onaylan%'
+    GROUP BY y.[OTEL_ID]
 )
 UPDATE o
 SET
-    o.toplam_yorum_sayisi = agg.cnt,
-    o.ortalama_puan = agg.avg_genel,
-    o.konum_puani = agg.avg_konum,
-    o.konfor_puani = agg.avg_konfor,
-    o.fiyat_performans_puani = agg.avg_fp
-FROM oteller AS o
-INNER JOIN agg ON agg.otel_id = o.id;";
+    o.[TOPLAM_YORUM_SAYISI] = agg.cnt,
+    o.[ORTALAMA_PUAN] = agg.avg_genel,
+    o.[KONUM_PUANI] = agg.avg_konum,
+    o.[KONFOR_PUANI] = agg.avg_konfor,
+    o.[FIYAT_PERFORMANS_PUANI] = agg.avg_fp
+FROM [dbo].[OTELLER] AS o
+INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         await using var cmd = new SqlCommand(sql, connection, transaction);
         cmd.Parameters.AddWithValue("@hotelId", hotelId);
         await cmd.ExecuteNonQueryAsync(cancellationToken);
@@ -917,12 +917,22 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     public async Task<UserProfilePageViewModel> GetProfileAsync(long userId, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        const string sql = @"
-            SELECT TOP (1) ad_soyad, eposta, COALESCE(telefon, ''), tc_kimlik_no, dogum_tarihi, cinsiyet, uyruk, adres, sehir, ilce, mahalle, posta_kodu,
-                   tercih_edilen_oda_tipi, yatak_tercihi, konusulan_diller, seyahat_amaci, ozel_istekler,
-                   email_dogrulama_tarihi,
-                   COALESCE(NULLIF(profil_resim_url, ''), '') AS profil_resim_url
-            FROM users
+        var hasGeoIds = await ColumnExistsAsync(connection, "KULLANICILAR", "ULKE_ID", cancellationToken);
+        var sql = hasGeoIds
+            ? @"
+            SELECT TOP (1) [AD_SOYAD], [EPOSTA], COALESCE([TELEFON], ''), [TC_KIMLIK_NO], [DOGUM_TARIHI], [CINSIYET], [UYRUK], [ADRES], [SEHIR], ilce, [MAHALLE], [POSTA_KODU],
+                   [TERCIH_EDILEN_ODA_TIPI], [YATAK_TERCIHI], [KONUSULAN_DILLER], [SEYAHAT_AMACI], [OZEL_ISTEKLER],
+                   [EPOSTA_DOGRULAMA_TARIHI],
+                   COALESCE(NULLIF([PROFIL_RESIM_URL], ''), '') AS [PROFIL_RESIM_URL],
+                   [ULKE_ID], [IL_ID], [ILCE_ID], [MAHALLE_ID]
+            FROM [dbo].[KULLANICILAR]
+            WHERE id = @userId;"
+            : @"
+            SELECT TOP (1) [AD_SOYAD], [EPOSTA], COALESCE([TELEFON], ''), [TC_KIMLIK_NO], [DOGUM_TARIHI], [CINSIYET], [UYRUK], [ADRES], [SEHIR], ilce, [MAHALLE], [POSTA_KODU],
+                   [TERCIH_EDILEN_ODA_TIPI], [YATAK_TERCIHI], [KONUSULAN_DILLER], [SEYAHAT_AMACI], [OZEL_ISTEKLER],
+                   [EPOSTA_DOGRULAMA_TARIHI],
+                   COALESCE(NULLIF([PROFIL_RESIM_URL], ''), '') AS [PROFIL_RESIM_URL]
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;";
 
         var model = new UserProfilePageViewModel();
@@ -955,6 +965,13 @@ INNER JOIN agg ON agg.otel_id = o.id;";
                 TravelPurpose = reader.IsDBNull(15) ? null : reader.GetString(15),
                 SpecialRequests = reader.IsDBNull(16) ? null : reader.GetString(16)
             };
+            if (hasGeoIds)
+            {
+                model.Form.UlkeId = reader.IsDBNull(19) ? null : reader.GetInt64(19);
+                model.Form.IlId = reader.IsDBNull(20) ? null : reader.GetInt64(20);
+                model.Form.IlceId = reader.IsDBNull(21) ? null : reader.GetInt64(21);
+                model.Form.MahalleId = reader.IsDBNull(22) ? null : reader.GetInt64(22);
+            }
 
             model.EmailVerified = emailVerifiedAt.HasValue;
             model.EmailVerifiedAtText = emailVerifiedAt.HasValue
@@ -965,16 +982,44 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         }
 
         model.Countries = (await _addressLookupService.GetCountriesAsync(cancellationToken)).ToList();
-        model.Provinces = (await _addressLookupService.GetProvincesAsync(cancellationToken)).ToList();
         model.PresetAvatarUrls = BuildPresetAvatarUrls();
         model.UploadedProfileAvatars = await LoadUploadedProfileAvatarsAsync(connection, userId, cancellationToken);
-        var selection = await _addressLookupService.ResolveSelectionAsync(model.Form.City, model.Form.District, model.Form.Neighborhood, model.Form.Nationality, cancellationToken);
-        if (selection is not null)
+        if (hasGeoIds && model.Form.IlId is > 0)
         {
-            model.SelectedCountryId = selection.CountryId;
-            model.SelectedProvinceId = selection.ProvinceId;
-            model.SelectedDistrictId = selection.DistrictId;
-            model.SelectedNeighborhoodId = selection.NeighborhoodId;
+            model.SelectedCountryId = model.Form.UlkeId ?? model.SelectedCountryId;
+            model.SelectedProvinceId = model.Form.IlId;
+            model.SelectedDistrictId = model.Form.IlceId;
+            model.SelectedNeighborhoodId = model.Form.MahalleId;
+        }
+        else
+        {
+            var selection = await _addressLookupService.ResolveSelectionAsync(model.Form.City, model.Form.District, model.Form.Neighborhood, model.Form.Nationality, cancellationToken);
+            if (selection is not null)
+            {
+                model.SelectedCountryId = selection.CountryId;
+                model.SelectedProvinceId = selection.ProvinceId;
+                model.SelectedDistrictId = selection.DistrictId;
+                model.SelectedNeighborhoodId = selection.NeighborhoodId;
+            }
+        }
+
+        if (model.SelectedCountryId is > 0)
+        {
+            model.Provinces = (await _addressLookupService.GetProvincesAsync(model.SelectedCountryId.Value, cancellationToken)).ToList();
+        }
+        else
+        {
+            var defaultCountry = model.Countries.FirstOrDefault(c => c.Iso2.Equals("TR", StringComparison.OrdinalIgnoreCase))
+                ?? model.Countries.FirstOrDefault();
+            if (defaultCountry is not null)
+            {
+                model.SelectedCountryId ??= defaultCountry.Id;
+                model.Provinces = (await _addressLookupService.GetProvincesAsync(defaultCountry.Id, cancellationToken)).ToList();
+            }
+            else
+            {
+                model.Provinces = new List<AddressProvinceOption>();
+            }
         }
 
         return model;
@@ -989,8 +1034,8 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var command = new SqlCommand("""
-            SELECT TOP (1) COALESCE(NULLIF(profil_resim_url, ''), '')
-            FROM users
+            SELECT TOP (1) COALESCE(NULLIF([PROFIL_RESIM_URL], ''), '')
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -1037,14 +1082,14 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         await using var command = new SqlCommand("""
             SELECT TOP (3)
                    g.id,
-                   COALESCE(g.orijinal_dosya_adi, 'Profil görseli') AS original_name,
-                   g.olusturulma_tarihi,
-                   CASE WHEN u.profil_resim_url = CONCAT('secure:', CONVERT(varchar(30), g.id)) THEN 1 ELSE 0 END AS is_current
-            FROM guvenli_dosya_varliklari g
-            INNER JOIN users u ON u.id = @userId
-            WHERE g.sahibi_kullanici_id = @userId
-              AND g.kategori = N'profile'
-              AND g.gorsel_mi = 1
+                   COALESCE(g.[ORIJINAL_DOSYA_ADI], 'Profil görseli') AS original_name,
+                   g.[OLUSTURULMA_TARIHI],
+                   CASE WHEN u.[PROFIL_RESIM_URL] = CONCAT('secure:', CONVERT(varchar(30), g.id)) THEN 1 ELSE 0 END AS is_current
+            FROM [dbo].[GUVENLI_DOSYA_VARLIKLARI] g
+            INNER JOIN [dbo].[KULLANICILAR] u ON u.id = @userId
+            WHERE g.[SAHIBI_KULLANICI_ID] = @userId
+              AND g.[KATEGORI] = N'profile'
+              AND g.[GORSEL_MI] = 1
             ORDER BY g.id DESC;
             """, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -1075,8 +1120,8 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         string existingEmail = string.Empty;
         var emailVerified = false;
         await using (var emailSnapshotCommand = new SqlCommand("""
-            SELECT TOP (1) COALESCE(eposta, ''), email_dogrulama_tarihi
-            FROM users
+            SELECT TOP (1) COALESCE([EPOSTA], ''), [EPOSTA_DOGRULAMA_TARIHI]
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;
             """, connection))
         {
@@ -1103,7 +1148,7 @@ INNER JOIN agg ON agg.otel_id = o.id;";
             return false;
         }
 
-        await using (var duplicateCheckCommand = new SqlCommand("SELECT COUNT(*) FROM users WHERE eposta = @email AND id <> @userId;", connection))
+        await using (var duplicateCheckCommand = new SqlCommand("SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE [EPOSTA] = @email AND id <> @userId;", connection))
         {
             duplicateCheckCommand.Parameters.AddWithValue("@email", email);
             duplicateCheckCommand.Parameters.AddWithValue("@userId", userId);
@@ -1116,7 +1161,7 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         string existingPhone = string.Empty;
         string existingPhoneE164 = string.Empty;
-        await using (var snapshotCommand = new SqlCommand("SELECT TOP (1) COALESCE(telefon, ''), COALESCE(telefon_e164, '') FROM users WHERE id = @userId;", connection))
+        await using (var snapshotCommand = new SqlCommand("SELECT TOP (1) COALESCE([TELEFON], ''), COALESCE([TELEFON_E164], '') FROM [dbo].[KULLANICILAR] WHERE id = @userId;", connection))
         {
             snapshotCommand.Parameters.AddWithValue("@userId", userId);
             await using var snapshotReader = await snapshotCommand.ExecuteReaderAsync(cancellationToken);
@@ -1130,40 +1175,54 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         var phoneChanged = !string.Equals(existingPhone, phone, StringComparison.Ordinal)
             || !string.Equals(existingPhoneE164, normalizedPhone ?? string.Empty, StringComparison.OrdinalIgnoreCase);
 
+        var hasGeoIds = await ColumnExistsAsync(connection, "KULLANICILAR", "ULKE_ID", cancellationToken);
+        if (hasGeoIds)
+        {
+            await SyncGeoTextFromIdsAsync(connection, form, cancellationToken);
+        }
+
+        var geoSetSql = hasGeoIds
+            ? @",
+                    [ULKE_ID] = @ulkeId,
+                    [IL_ID] = @ilId,
+                    [ILCE_ID] = @ilceId,
+                    [MAHALLE_ID] = @mahalleId"
+            : string.Empty;
+
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            await using var command = new SqlCommand(@"
-                UPDATE users
-                SET ad_soyad = @fullName,
-                    eposta = @email,
-                    telefon = NULLIF(@phone, ''),
-                    telefon_e164 = NULLIF(@phoneE164, ''),
-                    telefon_dogrulama_kanali = CASE WHEN NULLIF(@phoneE164, '') IS NULL THEN NULL ELSE 'whatsapp' END,
-                    telefon_dogrulama_durumu = CASE
+            await using var command = new SqlCommand($@"
+                UPDATE [dbo].[KULLANICILAR]
+                SET [AD_SOYAD] = @fullName,
+                    [EPOSTA] = @email,
+                    [TELEFON] = NULLIF(@phone, ''),
+                    [TELEFON_E164] = NULLIF(@phoneE164, ''),
+                    [TELEFON_DOGRULAMA_KANALI] = CASE WHEN NULLIF(@phoneE164, '') IS NULL THEN NULL ELSE 'whatsapp' END,
+                    [TELEFON_DOGRULAMA_DURUMU] = CASE
                         WHEN NULLIF(@phoneE164, '') IS NULL THEN NULL
                         WHEN @phoneChanged = 1 THEN 'Dogrulanmadi'
-                        ELSE telefon_dogrulama_durumu
+                        ELSE [TELEFON_DOGRULAMA_DURUMU]
                     END,
-                    telefon_degistirilme_tarihi = CASE WHEN @phoneChanged = 1 THEN SYSUTCDATETIME() ELSE telefon_degistirilme_tarihi END,
-                    telefon_dogrulama_tarihi = CASE WHEN @phoneChanged = 1 THEN NULL ELSE telefon_dogrulama_tarihi END,
-                    telefon_son_sahiplik_teyit_tarihi = CASE WHEN @phoneChanged = 1 THEN NULL ELSE telefon_son_sahiplik_teyit_tarihi END,
-                    tc_kimlik_no = NULLIF(@identityNumber, ''),
-                    dogum_tarihi = @birthDate,
-                    cinsiyet = NULLIF(@gender, ''),
-                    uyruk = NULLIF(@nationality, ''),
-                    adres = NULLIF(@address, ''),
-                    sehir = NULLIF(@city, ''),
+                    [TELEFON_DEGISTIRILME_TARIHI] = CASE WHEN @phoneChanged = 1 THEN SYSUTCDATETIME() ELSE [TELEFON_DEGISTIRILME_TARIHI] END,
+                    [TELEFON_DOGRULAMA_TARIHI] = CASE WHEN @phoneChanged = 1 THEN NULL ELSE [TELEFON_DOGRULAMA_TARIHI] END,
+                    [TELEFON_SON_SAHIPLIK_TEYIT_TARIHI] = CASE WHEN @phoneChanged = 1 THEN NULL ELSE [TELEFON_SON_SAHIPLIK_TEYIT_TARIHI] END,
+                    [TC_KIMLIK_NO] = NULLIF(@identityNumber, ''),
+                    [DOGUM_TARIHI] = @birthDate,
+                    [CINSIYET] = NULLIF(@gender, ''),
+                    [UYRUK] = NULLIF(@nationality, ''),
+                    [ADRES] = NULLIF(@address, ''),
+                    [SEHIR] = NULLIF(@city, ''),
                     ilce = NULLIF(@district, ''),
-                    mahalle = NULLIF(@neighborhood, ''),
-                    posta_kodu = NULLIF(@postalCode, ''),
-                    tercih_edilen_oda_tipi = NULLIF(@roomPreference, ''),
-                    yatak_tercihi = NULLIF(@bedPreference, ''),
-                    konusulan_diller = NULLIF(@spokenLanguages, ''),
-                    seyahat_amaci = NULLIF(@travelPurpose, ''),
-                    ozel_istekler = NULLIF(@specialRequests, ''),
-                    profil_tamamlanma_tarihi = CURRENT_TIMESTAMP,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                    [MAHALLE] = NULLIF(@neighborhood, ''),
+                    [POSTA_KODU] = NULLIF(@postalCode, ''),
+                    [TERCIH_EDILEN_ODA_TIPI] = NULLIF(@roomPreference, ''),
+                    [YATAK_TERCIHI] = NULLIF(@bedPreference, ''),
+                    [KONUSULAN_DILLER] = NULLIF(@spokenLanguages, ''),
+                    [SEYAHAT_AMACI] = NULLIF(@travelPurpose, ''),
+                    [OZEL_ISTEKLER] = NULLIF(@specialRequests, ''){geoSetSql},
+                    [PROFIL_TAMAMLANMA_TARIHI] = CURRENT_TIMESTAMP,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @userId;", connection, (SqlTransaction)transaction);
             command.Parameters.AddWithValue("@fullName", $"{form.FirstName} {form.LastName}".Trim());
             command.Parameters.AddWithValue("@email", email);
@@ -1184,21 +1243,29 @@ INNER JOIN agg ON agg.otel_id = o.id;";
             command.Parameters.AddWithValue("@spokenLanguages", form.SpokenLanguages?.Trim() ?? string.Empty);
             command.Parameters.AddWithValue("@travelPurpose", form.TravelPurpose?.Trim() ?? string.Empty);
             command.Parameters.AddWithValue("@specialRequests", form.SpecialRequests?.Trim() ?? string.Empty);
+            if (hasGeoIds)
+            {
+                command.Parameters.AddWithValue("@ulkeId", form.UlkeId.HasValue ? form.UlkeId.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@ilId", form.IlId.HasValue ? form.IlId.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@ilceId", form.IlceId.HasValue ? form.IlceId.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@mahalleId", form.MahalleId.HasValue ? form.MahalleId.Value : DBNull.Value);
+            }
+
             command.Parameters.AddWithValue("@userId", userId);
             var affected = await command.ExecuteNonQueryAsync(cancellationToken) > 0;
 
             if (affected && phoneChanged && (!string.IsNullOrWhiteSpace(existingPhone) || !string.IsNullOrWhiteSpace(existingPhoneE164)))
             {
                 await using var historyCommand = new SqlCommand(@"
-                    INSERT INTO kullanici_telefon_gecmisi
+                    INSERT INTO [dbo].[KULLANICI_TELEFON_GECMISI]
                     (
-                        kullanici_id, onceki_telefon_raw, onceki_telefon_e164, yeni_telefon_raw, yeni_telefon_e164,
-                        dogrulama_durumu, degisim_nedeni, olusturulma_tarihi
+                        [KULLANICI_ID], [ONCEKI_TELEFON_RAW], [ONCEKI_TELEFON_E164], [YENI_TELEFON_RAW], [YENI_TELEFON_E164],
+                        [DOGRULAMA_DURUMU], [DEGISIM_NEDENI], [OLUSTURULMA_TARIHI]
                     )
                     VALUES
                     (
                         @userId, NULLIF(@oldPhone, ''), NULLIF(@oldPhoneE164, ''), NULLIF(@newPhone, ''), NULLIF(@newPhoneE164, ''),
-                        @status, N'Profil ekranından telefon güncellendi', SYSUTCDATETIME()
+                        @status, N'Profil ekranından [TELEFON] güncellendi', SYSUTCDATETIME()
                     );", connection, (SqlTransaction)transaction);
                 historyCommand.Parameters.AddWithValue("@userId", userId);
                 historyCommand.Parameters.AddWithValue("@oldPhone", existingPhone);
@@ -1228,13 +1295,13 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var command = new SqlCommand("""
-            UPDATE users
-            SET tercih_edilen_oda_tipi = NULLIF(@roomPreference, ''),
-                yatak_tercihi = NULLIF(@bedPreference, ''),
-                konusulan_diller = NULLIF(@spokenLanguages, ''),
-                seyahat_amaci = NULLIF(@travelPurpose, ''),
-                ozel_istekler = NULLIF(@specialRequests, ''),
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICILAR]
+            SET [TERCIH_EDILEN_ODA_TIPI] = NULLIF(@roomPreference, ''),
+                [YATAK_TERCIHI] = NULLIF(@bedPreference, ''),
+                [KONUSULAN_DILLER] = NULLIF(@spokenLanguages, ''),
+                [SEYAHAT_AMACI] = NULLIF(@travelPurpose, ''),
+                [OZEL_ISTEKLER] = NULLIF(@specialRequests, ''),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@roomPreference", (form.RoomPreference ?? string.Empty).Trim());
@@ -1262,8 +1329,8 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         await using var connection = await OpenConnectionAsync(cancellationToken);
 
         const string snapshotSql = """
-            SELECT TOP (1) COALESCE(ad_soyad, ''), COALESCE(eposta, ''), email_dogrulama_tarihi
-            FROM users
+            SELECT TOP (1) COALESCE([AD_SOYAD], ''), COALESCE([EPOSTA], ''), [EPOSTA_DOGRULAMA_TARIHI]
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;
             """;
 
@@ -1294,7 +1361,7 @@ INNER JOIN agg ON agg.otel_id = o.id;";
             return (false, "Yeni e-posta mevcut e-posta ile aynı.");
         }
 
-        await using (var duplicateCheckCommand = new SqlCommand("SELECT COUNT(*) FROM users WHERE eposta = @email AND id <> @userId;", connection))
+        await using (var duplicateCheckCommand = new SqlCommand("SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE [EPOSTA] = @email AND id <> @userId;", connection))
         {
             duplicateCheckCommand.Parameters.AddWithValue("@email", newEmail);
             duplicateCheckCommand.Parameters.AddWithValue("@userId", userId);
@@ -1306,11 +1373,11 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         }
 
         await using (var rateLimitCommand = new SqlCommand("""
-            SELECT TOP (1) olusturulma_tarihi
+            SELECT TOP (1) [OLUSTURULMA_TARIHI]
             FROM email_dogrulama_tokenlari
-            WHERE kullanici_id = @userId
-              AND kullanildi_mi = 0
-            ORDER BY olusturulma_tarihi DESC;
+            WHERE [KULLANICI_ID] = @userId
+              AND [KULLANILDI_MI] = 0
+            ORDER BY [OLUSTURULMA_TARIHI] DESC;
             """, connection))
         {
             rateLimitCommand.Parameters.AddWithValue("@userId", userId);
@@ -1330,10 +1397,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         {
             await using (var invalidateCommand = new SqlCommand("""
                 UPDATE email_dogrulama_tokenlari
-                SET kullanildi_mi = 1,
-                    kullanilma_tarihi = SYSUTCDATETIME()
-                WHERE kullanici_id = @userId
-                  AND kullanildi_mi = 0;
+                SET [KULLANILDI_MI] = 1,
+                    [KULLANILMA_TARIHI] = SYSUTCDATETIME()
+                WHERE [KULLANICI_ID] = @userId
+                  AND [KULLANILDI_MI] = 0;
                 """, connection, (SqlTransaction)transaction))
             {
                 invalidateCommand.Parameters.AddWithValue("@userId", userId);
@@ -1342,7 +1409,7 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
             await using (var insertCommand = new SqlCommand("""
                 INSERT INTO email_dogrulama_tokenlari
-                (kullanici_id, eposta, token, dogrulama_kodu, kullanildi_mi, deneme_sayisi, maksimum_deneme, ip_adresi, user_agent, gecerlilik_suresi, olusturulma_tarihi)
+                ([KULLANICI_ID], [EPOSTA], [TOKEN], [DOGRULAMA_KODU], [KULLANILDI_MI], [DENEME_SAYISI], [MAKSIMUM_DENEME], [IP_ADRESI], [KULLANICI_ARACISI], [GECERLILIK_SURESI], [OLUSTURULMA_TARIHI])
                 VALUES
                 (@userId, @email, @token, @code, 0, 0, 5, @ipAddress, @userAgent, DATEADD(MINUTE, 30, SYSUTCDATETIME()), SYSUTCDATETIME());
                 """, connection, (SqlTransaction)transaction))
@@ -1364,7 +1431,7 @@ INNER JOIN agg ON agg.otel_id = o.id;";
                     UserId = userId,
                     RecipientEmail = newEmail,
                     TemplateCode = "email_verify",
-                    RelatedTable = "users",
+                    RelatedTable = "KULLANICILAR",
                     RelatedRecordId = userId,
                     Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
@@ -1407,12 +1474,12 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         const string tokenSql = """
-            SELECT TOP (1) id, gecerlilik_suresi, kullanildi_mi, deneme_sayisi, maksimum_deneme, token
+            SELECT TOP (1) id, [GECERLILIK_SURESI], [KULLANILDI_MI], [DENEME_SAYISI], [MAKSIMUM_DENEME], [TOKEN]
             FROM email_dogrulama_tokenlari
-            WHERE kullanici_id = @userId
-              AND eposta = @email
-              AND dogrulama_kodu = @code
-            ORDER BY olusturulma_tarihi DESC;
+            WHERE [KULLANICI_ID] = @userId
+              AND [EPOSTA] = @email
+              AND [DOGRULAMA_KODU] = @code
+            ORDER BY [OLUSTURULMA_TARIHI] DESC;
             """;
 
         long tokenId;
@@ -1462,7 +1529,7 @@ INNER JOIN agg ON agg.otel_id = o.id;";
             return (false, "Bu doğrulama kodu çok fazla denendiği için geçersiz hale geldi.");
         }
 
-        await using (var duplicateCheckCommand = new SqlCommand("SELECT COUNT(*) FROM users WHERE eposta = @email AND id <> @userId;", connection, (SqlTransaction)transaction))
+        await using (var duplicateCheckCommand = new SqlCommand("SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE [EPOSTA] = @email AND id <> @userId;", connection, (SqlTransaction)transaction))
         {
             duplicateCheckCommand.Parameters.AddWithValue("@email", newEmail);
             duplicateCheckCommand.Parameters.AddWithValue("@userId", userId);
@@ -1475,11 +1542,11 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await MarkEmailTokenUsedAsync(connection, (SqlTransaction)transaction, tokenId, cancellationToken);
         await using (var updateUserCommand = new SqlCommand("""
-            UPDATE users
-            SET eposta = @email,
-                email_dogrulama_tarihi = COALESCE(email_dogrulama_tarihi, SYSUTCDATETIME()),
-                email_dogrulama_son_gonderim_tarihi = SYSUTCDATETIME(),
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICILAR]
+            SET [EPOSTA] = @email,
+                [EPOSTA_DOGRULAMA_TARIHI] = COALESCE([EPOSTA_DOGRULAMA_TARIHI], SYSUTCDATETIME()),
+                [EPOSTA_DOGRULAMA_SON_GONDERIM_TARIHI] = SYSUTCDATETIME(),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @userId;
             """, connection, (SqlTransaction)transaction))
         {
@@ -1502,10 +1569,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var command = new SqlCommand("""
-            UPDATE users
-            SET profil_resim_url = @url,
-                profil_resim_kaynak = NULLIF(@source, ''),
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICILAR]
+            SET [PROFIL_RESIM_URL] = @url,
+                [PROFIL_RESIM_KAYNAK] = NULLIF(@source, ''),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -1529,12 +1596,12 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await using (var resetCommand = new SqlCommand("""
-            UPDATE users
-            SET profil_resim_url = NULL,
-                profil_resim_kaynak = NULL,
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICILAR]
+            SET [PROFIL_RESIM_URL] = NULL,
+                [PROFIL_RESIM_KAYNAK] = NULL,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @userId
-              AND profil_resim_url = @secureValue;
+              AND [PROFIL_RESIM_URL] = @secureValue;
             """, connection))
         {
             resetCommand.Parameters.AddWithValue("@userId", userId);
@@ -1553,10 +1620,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
             FROM (
                 SELECT g.id,
                        ROW_NUMBER() OVER (ORDER BY g.id DESC) AS rn
-                FROM guvenli_dosya_varliklari g
-                WHERE g.sahibi_kullanici_id = @userId
-                  AND g.kategori = N'profile'
-                  AND g.gorsel_mi = 1
+                FROM [dbo].[GUVENLI_DOSYA_VARLIKLARI] g
+                WHERE g.[SAHIBI_KULLANICI_ID] = @userId
+                  AND g.[KATEGORI] = N'profile'
+                  AND g.[GORSEL_MI] = 1
             ) ranked
             WHERE ranked.rn > 3;
             """, connection))
@@ -1579,8 +1646,8 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         await using var command = new SqlCommand("""
             UPDATE email_dogrulama_tokenlari
-            SET kullanildi_mi = 1,
-                kullanilma_tarihi = SYSUTCDATETIME()
+            SET [KULLANILDI_MI] = 1,
+                [KULLANILMA_TARIHI] = SYSUTCDATETIME()
             WHERE id = @tokenId;
             """, connection, transaction);
         command.Parameters.AddWithValue("@tokenId", tokenId);
@@ -1591,7 +1658,7 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         await using var command = new SqlCommand("""
             UPDATE email_dogrulama_tokenlari
-            SET deneme_sayisi = COALESCE(deneme_sayisi, 0) + 1
+            SET [DENEME_SAYISI] = COALESCE([DENEME_SAYISI], 0) + 1
             WHERE id = @tokenId;
             """, connection, transaction);
         command.Parameters.AddWithValue("@tokenId", tokenId);
@@ -1639,8 +1706,8 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         await EnsureNotificationPreferencesSchemaAsync(connection, cancellationToken);
 
         await using (var command = new SqlCommand(@"
-            SELECT rezervasyon_eposta, rezervasyon_push, checkin_hatirlatma, iptal_degisim, kampanya_eposta, kampanya_sms, sistem_bildirimi, COALESCE(giris_eposta, 0)
-            FROM kullanici_bildirim_tercihleri WHERE kullanici_id = @userId;", connection))
+            SELECT [REZERVASYON_EPOSTA], [REZERVASYON_PUSH], [CHECKIN_HATIRLATMA], [IPTAL_DEGISIM], [KAMPANYA_EPOSTA], [KAMPANYA_SMS], [SISTEM_BILDIRIMI], COALESCE(giris_eposta, 0)
+            FROM [dbo].[KULLANICI_BILDIRIM_TERCIHLERI] WHERE [KULLANICI_ID] = @userId;", connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1661,10 +1728,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         }
 
         await using (var command = new SqlCommand(@"
-            SELECT TOP (6) baslik, mesaj, bildirim_turu, olusturulma_tarihi
-            FROM sistem_ici_bildirimler
-            WHERE kullanici_id = @userId AND arsivlendi_mi = 0
-            ORDER BY olusturulma_tarihi DESC, id DESC;", connection))
+            SELECT TOP (6) [BASLIK], [MESAJ], [BILDIRIM_TURU], [OLUSTURULMA_TARIHI]
+            FROM [dbo].[SISTEM_ICI_BILDIRIMLER]
+            WHERE [KULLANICI_ID] = @userId AND [ARSIVLENDI_MI] = 0
+            ORDER BY [OLUSTURULMA_TARIHI] DESC, id DESC;", connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1688,24 +1755,24 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await EnsureNotificationPreferencesSchemaAsync(connection, cancellationToken);
         await using var command = new SqlCommand(@"
-            IF EXISTS (SELECT 1 FROM kullanici_bildirim_tercihleri WHERE kullanici_id = @userId)
+            IF EXISTS (SELECT 1 FROM [dbo].[KULLANICI_BILDIRIM_TERCIHLERI] WHERE [KULLANICI_ID] = @userId)
             BEGIN
-                UPDATE kullanici_bildirim_tercihleri
-                SET rezervasyon_eposta = @reservationEmail,
-                    rezervasyon_push = @reservationPush,
-                    checkin_hatirlatma = @checkInReminder,
-                    iptal_degisim = @cancellationChanges,
-                    kampanya_eposta = @campaignEmail,
-                    kampanya_sms = @campaignSms,
-                    sistem_bildirimi = @systemNotifications,
+                UPDATE [dbo].[KULLANICI_BILDIRIM_TERCIHLERI]
+                SET [REZERVASYON_EPOSTA] = @reservationEmail,
+                    [REZERVASYON_PUSH] = @reservationPush,
+                    [CHECKIN_HATIRLATMA] = @checkInReminder,
+                    [IPTAL_DEGISIM] = @cancellationChanges,
+                    [KAMPANYA_EPOSTA] = @campaignEmail,
+                    [KAMPANYA_SMS] = @campaignSms,
+                    [SISTEM_BILDIRIMI] = @systemNotifications,
                     giris_eposta = @loginEmail,
-                    guncellenme_tarihi = CURRENT_TIMESTAMP
-                WHERE kullanici_id = @userId;
+                    [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
+                WHERE [KULLANICI_ID] = @userId;
             END
             ELSE
             BEGIN
-                INSERT INTO kullanici_bildirim_tercihleri
-                (kullanici_id, rezervasyon_eposta, rezervasyon_push, checkin_hatirlatma, iptal_degisim, kampanya_eposta, kampanya_sms, sistem_bildirimi, giris_eposta, guncellenme_tarihi)
+                INSERT INTO [dbo].[KULLANICI_BILDIRIM_TERCIHLERI]
+                ([KULLANICI_ID], [REZERVASYON_EPOSTA], [REZERVASYON_PUSH], [CHECKIN_HATIRLATMA], [IPTAL_DEGISIM], [KAMPANYA_EPOSTA], [KAMPANYA_SMS], [SISTEM_BILDIRIMI], giris_eposta, [GUNCELLENME_TARIHI])
                 VALUES
                 (@userId, @reservationEmail, @reservationPush, @checkInReminder, @cancellationChanges, @campaignEmail, @campaignSms, @systemNotifications, @loginEmail, CURRENT_TIMESTAMP);
             END;", connection);
@@ -1724,10 +1791,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     private static async Task EnsureNotificationPreferencesSchemaAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            IF OBJECT_ID(N'dbo.kullanici_bildirim_tercihleri', N'U') IS NOT NULL
-               AND COL_LENGTH(N'dbo.kullanici_bildirim_tercihleri', N'giris_eposta') IS NULL
+            IF OBJECT_ID(N'[dbo].[KULLANICI_BILDIRIM_TERCIHLERI]', N'U') IS NOT NULL
+               AND COL_LENGTH(N'[dbo].[KULLANICI_BILDIRIM_TERCIHLERI]', N'giris_eposta') IS NULL
             BEGIN
-                ALTER TABLE dbo.kullanici_bildirim_tercihleri
+                ALTER TABLE [dbo].[KULLANICI_BILDIRIM_TERCIHLERI]
                 ADD giris_eposta bit NOT NULL CONSTRAINT DF_kullanici_bildirim_tercihleri_giris_eposta DEFAULT (0);
             END
             """, connection);
@@ -1741,13 +1808,13 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await using (var command = new SqlCommand("""
             SELECT TOP (1)
-                COALESCE(iki_asamali_dogrulama_aktif_mi, 0),
-                COALESCE(iki_asamali_dogrulama_kanali, 'email'),
-                COALESCE(eposta, ''),
-                email_dogrulama_tarihi,
-                COALESCE(telefon_e164, ''),
-                telefon_dogrulama_tarihi
-            FROM users
+                COALESCE([IKI_ASAMALI_DOGRULAMA_AKTIF_MI], 0),
+                COALESCE([IKI_ASAMALI_DOGRULAMA_KANALI], 'email'),
+                COALESCE([EPOSTA], ''),
+                [EPOSTA_DOGRULAMA_TARIHI],
+                COALESCE([TELEFON_E164], ''),
+                [TELEFON_DOGRULAMA_TARIHI]
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;
             """, connection))
         {
@@ -1768,24 +1835,24 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await using var sessionCommand = new SqlCommand(@"
             SELECT TOP (5)
-                COALESCE(s.cihaz_etiketi, 'Bilinmeyen cihaz') AS cihaz,
-                s.beni_hatirla_tercihi,
-                s.toplam_oturum_suresi_saniye,
-                s.son_aktivite_tarihi,
-                l.ip_adresi,
-                l.giris_tarihi
-            FROM kullanici_oturum_istatistikleri s
+                COALESCE(s.[CIHAZ_ETIKETI], 'Bilinmeyen cihaz') AS cihaz,
+                s.[BENI_HATIRLA_TERCIHI],
+                s.[TOPLAM_OTURUM_SURESI_SANIYE],
+                s.[SON_AKTIVITE_TARIHI],
+                l.[IP_ADRESI],
+                l.[GIRIS_TARIHI]
+            FROM [dbo].[KULLANICI_OTURUM_ISTATISTIKLERI] s
             OUTER APPLY
             (
-                SELECT TOP (1) ip_adresi, giris_tarihi
-                FROM kullanici_giris_loglari
-                WHERE kullanici_id = s.kullanici_id
-                  AND hesap_tipi = 'user'
-                ORDER BY giris_tarihi DESC
+                SELECT TOP (1) [IP_ADRESI], [GIRIS_TARIHI]
+                FROM [dbo].[KULLANICI_GIRIS_LOGLARI]
+                WHERE [KULLANICI_ID] = s.[KULLANICI_ID]
+                  AND [HESAP_TIPI] = 'user'
+                ORDER BY [GIRIS_TARIHI] DESC
             ) l
-            WHERE s.kullanici_id = @userId
-              AND s.hesap_tipi = 'user'
-            ORDER BY s.son_aktivite_tarihi DESC, s.id DESC;", connection);
+            WHERE s.[KULLANICI_ID] = @userId
+              AND s.[HESAP_TIPI] = 'user'
+            ORDER BY s.[SON_AKTIVITE_TARIHI] DESC, s.id DESC;", connection);
         sessionCommand.Parameters.AddWithValue("@userId", userId);
         await using var sessionReader = await sessionCommand.ExecuteReaderAsync(cancellationToken);
         while (await sessionReader.ReadAsync(cancellationToken))
@@ -1826,10 +1893,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var command = new SqlCommand(@"
-            UPDATE users
-            SET sifre = CONVERT(varchar(64), HASHBYTES('SHA2_256', @newPassword), 2)
+            UPDATE [dbo].[KULLANICILAR]
+            SET [SIFRE] = CONVERT(varchar(64), HASHBYTES('SHA2_256', @newPassword), 2)
             WHERE id = @userId
-              AND sifre = CONVERT(varchar(64), HASHBYTES('SHA2_256', @currentPassword), 2);", connection);
+              AND [SIFRE] = CONVERT(varchar(64), HASHBYTES('SHA2_256', @currentPassword), 2);", connection);
         command.Parameters.AddWithValue("@newPassword", form.NewPassword);
         command.Parameters.AddWithValue("@currentPassword", form.CurrentPassword);
         command.Parameters.AddWithValue("@userId", userId);
@@ -1857,11 +1924,11 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         {
             await using var validationCommand = new SqlCommand("""
                 SELECT TOP (1)
-                    COALESCE(eposta, ''),
-                    email_dogrulama_tarihi,
-                    COALESCE(telefon_e164, ''),
-                    telefon_dogrulama_tarihi
-                FROM users
+                    COALESCE([EPOSTA], ''),
+                    [EPOSTA_DOGRULAMA_TARIHI],
+                    COALESCE([TELEFON_E164], ''),
+                    [TELEFON_DOGRULAMA_TARIHI]
+                FROM [dbo].[KULLANICILAR]
                 WHERE id = @userId;
                 """, connection);
             validationCommand.Parameters.AddWithValue("@userId", userId);
@@ -1886,9 +1953,9 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         }
 
         await using var command = new SqlCommand("""
-            UPDATE users
-            SET iki_asamali_dogrulama_aktif_mi = @enabled,
-                iki_asamali_dogrulama_kanali = @channel
+            UPDATE [dbo].[KULLANICILAR]
+            SET [IKI_ASAMALI_DOGRULAMA_AKTIF_MI] = @enabled,
+                [IKI_ASAMALI_DOGRULAMA_KANALI] = @channel
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@enabled", form.Enabled ? 1 : 0);
@@ -1907,6 +1974,30 @@ INNER JOIN agg ON agg.otel_id = o.id;";
             "whatsapp" => "whatsapp",
             _ => "email"
         };
+    }
+
+    private static async Task SyncGeoTextFromIdsAsync(SqlConnection connection, UserProfileForm form, CancellationToken cancellationToken)
+    {
+        if (form.IlId is > 0 && string.IsNullOrWhiteSpace(form.City))
+        {
+            await using var ilCommand = new SqlCommand("SELECT TOP (1) [IL_ADI] FROM [dbo].[ILLER] WHERE [ID] = @id;", connection);
+            ilCommand.Parameters.AddWithValue("@id", form.IlId.Value);
+            form.City = Convert.ToString(await ilCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture)?.Trim();
+        }
+
+        if (form.IlceId is > 0 && string.IsNullOrWhiteSpace(form.District))
+        {
+            await using var ilceCommand = new SqlCommand("SELECT TOP (1) [ILCE_ADI] FROM [dbo].[ILCELER] WHERE [ID] = @id;", connection);
+            ilceCommand.Parameters.AddWithValue("@id", form.IlceId.Value);
+            form.District = Convert.ToString(await ilceCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture)?.Trim();
+        }
+
+        if (form.MahalleId is > 0 && string.IsNullOrWhiteSpace(form.Neighborhood))
+        {
+            await using var mahalleCommand = new SqlCommand("SELECT TOP (1) [MAHALLE_ADI] FROM [dbo].[MAHALLELER] WHERE [ID] = @id;", connection);
+            mahalleCommand.Parameters.AddWithValue("@id", form.MahalleId.Value);
+            form.Neighborhood = Convert.ToString(await mahalleCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture)?.Trim();
+        }
     }
 
     private static string MaskEmail(string? email)
@@ -1949,10 +2040,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         await using var connection = await OpenConnectionAsync(cancellationToken);
 
         await using (var command = new SqlCommand(@"
-            SELECT id, kart_etiketi, marka, son_dort_hane, son_kullanim_ay, son_kullanim_yil, varsayilan_mi
-            FROM kullanici_odeme_yontemleri
-            WHERE kullanici_id = @userId AND aktif_mi = 1
-            ORDER BY varsayilan_mi DESC, id DESC;", connection))
+            SELECT id, [KART_ETIKETI], [MARKA], [SON_DORT_HANE], [SON_KULLANIM_AY], [SON_KULLANIM_YIL], [VARSAYILAN_MI]
+            FROM [dbo].[KULLANICI_ODEME_YONTEMLERI]
+            WHERE [KULLANICI_ID] = @userId AND [AKTIF_MI] = 1
+            ORDER BY [VARSAYILAN_MI] DESC, id DESC;", connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1969,16 +2060,16 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         }
 
         await using var billingCommand = new SqlCommand(@"
-            SELECT TOP (1) ad_soyad,
+            SELECT TOP (1) [AD_SOYAD],
                    LTRIM(RTRIM(CONCAT(
-                       COALESCE(NULLIF(adres, ''), ''),
-                       CASE WHEN COALESCE(NULLIF(ilce, ''), '') <> '' AND COALESCE(NULLIF(adres, ''), '') <> '' THEN ', ' ELSE '' END,
+                       COALESCE(NULLIF([ADRES], ''), ''),
+                       CASE WHEN COALESCE(NULLIF(ilce, ''), '') <> '' AND COALESCE(NULLIF([ADRES], ''), '') <> '' THEN ', ' ELSE '' END,
                        COALESCE(NULLIF(ilce, ''), ''),
-                       CASE WHEN COALESCE(NULLIF(sehir, ''), '') <> '' AND (COALESCE(NULLIF(adres, ''), '') <> '' OR COALESCE(NULLIF(ilce, ''), '') <> '') THEN ', ' ELSE '' END,
-                       COALESCE(NULLIF(sehir, ''), '')
+                       CASE WHEN COALESCE(NULLIF([SEHIR], ''), '') <> '' AND (COALESCE(NULLIF([ADRES], ''), '') <> '' OR COALESCE(NULLIF(ilce, ''), '') <> '') THEN ', ' ELSE '' END,
+                       COALESCE(NULLIF([SEHIR], ''), '')
                    ))) AS full_address,
-                   eposta
-            FROM users
+                   [EPOSTA]
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;", connection);
         billingCommand.Parameters.AddWithValue("@userId", userId);
         await using var billingReader = await billingCommand.ExecuteReaderAsync(cancellationToken);
@@ -2006,14 +2097,14 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         if (form.SetAsDefault)
         {
-            await using var clear = new SqlCommand("UPDATE kullanici_odeme_yontemleri SET varsayilan_mi = 0 WHERE kullanici_id = @userId;", connection, (SqlTransaction)transaction);
+            await using var clear = new SqlCommand("UPDATE [dbo].[KULLANICI_ODEME_YONTEMLERI] SET [VARSAYILAN_MI] = 0 WHERE [KULLANICI_ID] = @userId;", connection, (SqlTransaction)transaction);
             clear.Parameters.AddWithValue("@userId", userId);
             await clear.ExecuteNonQueryAsync(cancellationToken);
         }
 
         await using var command = new SqlCommand(@"
-            INSERT INTO kullanici_odeme_yontemleri
-            (kullanici_id, kart_etiketi, kart_sahibi, marka, son_dort_hane, son_kullanim_ay, son_kullanim_yil, varsayilan_mi, aktif_mi)
+            INSERT INTO [dbo].[KULLANICI_ODEME_YONTEMLERI]
+            ([KULLANICI_ID], [KART_ETIKETI], [KART_SAHIBI], [MARKA], [SON_DORT_HANE], [SON_KULLANIM_AY], [SON_KULLANIM_YIL], [VARSAYILAN_MI], [AKTIF_MI])
             VALUES
             (@userId, @label, @holder, @brand, @lastFour, @month, @year, @isDefault, 1);", connection, (SqlTransaction)transaction);
         command.Parameters.AddWithValue("@userId", userId);
@@ -2032,7 +2123,7 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     public async Task<bool> DeletePaymentMethodAsync(long userId, long paymentMethodId, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new SqlCommand("UPDATE kullanici_odeme_yontemleri SET aktif_mi = 0, varsayilan_mi = 0 WHERE id = @paymentMethodId AND kullanici_id = @userId;", connection);
+        await using var command = new SqlCommand("UPDATE [dbo].[KULLANICI_ODEME_YONTEMLERI] SET [AKTIF_MI] = 0, [VARSAYILAN_MI] = 0 WHERE id = @paymentMethodId AND [KULLANICI_ID] = @userId;", connection);
         command.Parameters.AddWithValue("@paymentMethodId", paymentMethodId);
         command.Parameters.AddWithValue("@userId", userId);
         return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
@@ -2049,32 +2140,32 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await using (var summaryCommand = new SqlCommand(@"
             SELECT
-                COALESCE(u.ad_soyad, 'Misafir') AS ad_soyad,
-                COALESCE(h.toplam_puan, 0) AS toplam_puan,
-                COALESCE(h.kullanilabilir_puan, 0) AS kullanilabilir_puan,
-                COALESCE(h.bu_yil_kazanilan_puan, 0) AS bu_yil_kazanilan_puan,
-                COALESCE(h.bu_yil_kullanilan_puan, 0) AS bu_yil_kullanilan_puan,
-                COALESCE(h.puan_gecerlilik_tarihi, DATEADD(DAY, 365, CAST(GETDATE() AS date))) AS puan_gecerlilik_tarihi,
+                COALESCE(u.[AD_SOYAD], 'Misafir') AS [AD_SOYAD],
+                COALESCE(h.[TOPLAM_PUAN], 0) AS [TOPLAM_PUAN],
+                COALESCE(h.[KULLANILABILIR_PUAN], 0) AS [KULLANILABILIR_PUAN],
+                COALESCE(h.[BU_YIL_KAZANILAN_PUAN], 0) AS [BU_YIL_KAZANILAN_PUAN],
+                COALESCE(h.[BU_YIL_KULLANILAN_PUAN], 0) AS [BU_YIL_KULLANILAN_PUAN],
+                COALESCE(h.[PUAN_GECERLILIK_TARIHI], DATEADD(DAY, 365, CAST(GETDATE() AS date))) AS [PUAN_GECERLILIK_TARIHI],
                 COALESCE(ct.ad, 'Bronz') AS mevcut_seviye_adi,
-                COALESCE(ct.kod, 'B') AS mevcut_seviye_kodu,
-                COALESCE(ct.avantajlar_metin, 'Yuzde 5 indirim|Hos geldin puani') AS avantajlar_metin,
+                COALESCE(ct.[KOD], 'B') AS mevcut_seviye_kodu,
+                COALESCE(ct.[AVANTAJLAR_METIN], 'Yuzde 5 indirim|Hos geldin puani') AS [AVANTAJLAR_METIN],
                 COALESCE(nt.ad, '') AS sonraki_seviye_adi,
                 CASE
-                    WHEN COALESCE(nt.minimum_puan, COALESCE(h.kullanilabilir_puan, 0)) - COALESCE(h.kullanilabilir_puan, 0) > 0
-                        THEN COALESCE(nt.minimum_puan, COALESCE(h.kullanilabilir_puan, 0)) - COALESCE(h.kullanilabilir_puan, 0)
+                    WHEN COALESCE(nt.[MINIMUM_PUAN], COALESCE(h.[KULLANILABILIR_PUAN], 0)) - COALESCE(h.[KULLANILABILIR_PUAN], 0) > 0
+                        THEN COALESCE(nt.[MINIMUM_PUAN], COALESCE(h.[KULLANILABILIR_PUAN], 0)) - COALESCE(h.[KULLANILABILIR_PUAN], 0)
                     ELSE 0
                 END AS kalan_puan,
                 CASE
-                    WHEN COALESCE(nt.minimum_puan, 0) <= 0 THEN 100
+                    WHEN COALESCE(nt.[MINIMUM_PUAN], 0) <= 0 THEN 100
                     ELSE CASE
-                        WHEN ROUND((COALESCE(h.kullanilabilir_puan, 0) / nt.minimum_puan) * 100, 0) > 100 THEN 100
-                        ELSE ROUND((COALESCE(h.kullanilabilir_puan, 0) / nt.minimum_puan) * 100, 0)
+                        WHEN ROUND((COALESCE(h.[KULLANILABILIR_PUAN], 0) / nt.[MINIMUM_PUAN]) * 100, 0) > 100 THEN 100
+                        ELSE ROUND((COALESCE(h.[KULLANILABILIR_PUAN], 0) / nt.[MINIMUM_PUAN]) * 100, 0)
                     END
                 END AS ilerleme_yuzdesi
-            FROM users u
-            LEFT JOIN kullanici_sadakat_hesaplari h ON h.kullanici_id = u.id
-            LEFT JOIN sadakat_seviyeleri ct ON ct.id = h.mevcut_seviye_id
-            LEFT JOIN sadakat_seviyeleri nt ON nt.id = h.sonraki_seviye_id
+            FROM [dbo].[KULLANICILAR] u
+            LEFT JOIN [dbo].[KULLANICI_SADAKAT_HESAPLARI] h ON h.[KULLANICI_ID] = u.id
+            LEFT JOIN [dbo].[SADAKAT_SEVIYELERI] ct ON ct.id = h.[MEVCUT_SEVIYE_ID]
+            LEFT JOIN [dbo].[SADAKAT_SEVIYELERI] nt ON nt.id = h.[SONRAKI_SEVIYE_ID]
             WHERE u.id = @userId
             ;", connection))
         {
@@ -2155,8 +2246,8 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var command = new SqlCommand(@"
-            INSERT INTO kullanici_butce_planlari
-            (kullanici_id, hedef_sehir, hedef_butce, gece_sayisi, kisi_sayisi, para_birimi, notlar, olusturulma_tarihi, guncellenme_tarihi)
+            INSERT INTO [dbo].[KULLANICI_BUTCE_PLANLARI]
+            ([KULLANICI_ID], [HEDEF_SEHIR], [HEDEF_BUTCE], [GECE_SAYISI], [KISI_SAYISI], [PARA_BIRIMI], [NOTLAR], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI])
             VALUES
             (@userId, @city, @budget, @nightCount, @travelerCount, 'TRY', @note, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);", connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -2198,8 +2289,8 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         var planCode = $"PLAN-{userId:D4}-{DateTime.UtcNow:ddHHmmss}";
         var inviteCode = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
         await using var command = new SqlCommand(@"
-            INSERT INTO kullanici_seyahat_planlari
-            (olusturan_kullanici_id, plan_kodu, plan_adi, hedef_sehir, baslangic_tarihi, bitis_tarihi, butce_tutari, para_birimi, davet_kodu, durum, olusturulma_tarihi, guncellenme_tarihi)
+            INSERT INTO [dbo].[KULLANICI_SEYAHAT_PLANLARI]
+            ([OLUSTURAN_KULLANICI_ID], [PLAN_KODU], [PLAN_ADI], [HEDEF_SEHIR], [BASLANGIC_TARIHI], [BITIS_TARIHI], [BUTCE_TUTARI], [PARA_BIRIMI], [DAVET_KODU], [DURUM], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI])
             VALUES
             (@userId, @planCode, @planName, @city, @startDate, @endDate, @budget, 'TRY', @inviteCode, 'Taslak', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);", connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -2224,7 +2315,7 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
     private async Task EnsureLoyaltyAccountAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
-        const string existsSql = "SELECT COUNT(*) FROM kullanici_sadakat_hesaplari WHERE kullanici_id = @userId;";
+        const string existsSql = "SELECT COUNT(*) FROM [dbo].[KULLANICI_SADAKAT_HESAPLARI] WHERE [KULLANICI_ID] = @userId;";
         await using (var existsCommand = new SqlCommand(existsSql, connection))
         {
             existsCommand.Parameters.AddWithValue("@userId", userId);
@@ -2234,8 +2325,8 @@ INNER JOIN agg ON agg.otel_id = o.id;";
                 var bronzeTierId = await ResolveTierIdAsync(connection, "BRONZE", cancellationToken);
                 var silverTierId = await ResolveTierIdAsync(connection, "SILVER", cancellationToken);
                 await using var insertCommand = new SqlCommand(@"
-                    INSERT INTO kullanici_sadakat_hesaplari
-                    (kullanici_id, toplam_puan, kullanilabilir_puan, bu_yil_kazanilan_puan, bu_yil_kullanilan_puan, mevcut_seviye_id, sonraki_seviye_id, puan_gecerlilik_tarihi, olusturulma_tarihi, guncellenme_tarihi)
+                    INSERT INTO [dbo].[KULLANICI_SADAKAT_HESAPLARI]
+                    ([KULLANICI_ID], [TOPLAM_PUAN], [KULLANILABILIR_PUAN], [BU_YIL_KAZANILAN_PUAN], [BU_YIL_KULLANILAN_PUAN], [MEVCUT_SEVIYE_ID], [SONRAKI_SEVIYE_ID], [PUAN_GECERLILIK_TARIHI], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI])
                     VALUES
                     (@userId, 0, 0, 0, 0, @currentTierId, @nextTierId, DATEADD(DAY, 365, CAST(GETDATE() AS date)), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);", connection);
                 insertCommand.Parameters.AddWithValue("@userId", userId);
@@ -2247,52 +2338,52 @@ INNER JOIN agg ON agg.otel_id = o.id;";
 
         await using var syncCommand = new SqlCommand(@"
             UPDATE h
-            SET h.toplam_puan = agg.kazanilan,
-                h.kullanilabilir_puan = CASE WHEN agg.kazanilan - agg.kullanilan > 0 THEN agg.kazanilan - agg.kullanilan ELSE 0 END,
-                h.bu_yil_kazanilan_puan = yearly.yil_kazanilan,
-                h.bu_yil_kullanilan_puan = yearly.yil_kullanilan,
-                h.mevcut_seviye_id = COALESCE(current_tier.id, h.mevcut_seviye_id),
-                h.sonraki_seviye_id = next_tier.id,
-                h.son_seviye_guncelleme_tarihi = CURRENT_TIMESTAMP,
-                h.guncellenme_tarihi = CURRENT_TIMESTAMP
-            FROM kullanici_sadakat_hesaplari h
+            SET h.[TOPLAM_PUAN] = agg.kazanilan,
+                h.[KULLANILABILIR_PUAN] = CASE WHEN agg.kazanilan - agg.kullanilan > 0 THEN agg.kazanilan - agg.kullanilan ELSE 0 END,
+                h.[BU_YIL_KAZANILAN_PUAN] = yearly.yil_kazanilan,
+                h.[BU_YIL_KULLANILAN_PUAN] = yearly.yil_kullanilan,
+                h.[MEVCUT_SEVIYE_ID] = COALESCE(current_tier.id, h.[MEVCUT_SEVIYE_ID]),
+                h.[SONRAKI_SEVIYE_ID] = next_tier.id,
+                h.[SON_SEVIYE_GUNCELLEME_TARIHI] = CURRENT_TIMESTAMP,
+                h.[GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
+            FROM [dbo].[KULLANICI_SADAKAT_HESAPLARI] h
             CROSS APPLY (
                 SELECT
-                    COALESCE(SUM(CASE WHEN p.puan_degisim > 0 THEN p.puan_degisim ELSE 0 END), 0) AS kazanilan,
-                    COALESCE(ABS(SUM(CASE WHEN p.puan_degisim < 0 THEN p.puan_degisim ELSE 0 END)), 0) AS kullanilan
-                FROM kullanici_puan_hareketleri p
-                WHERE p.kullanici_id = @userId
-                  AND COALESCE(p.durum, 'Tamamlandi') <> 'Iptal'
+                    COALESCE(SUM(CASE WHEN p.[PUAN_DEGISIM] > 0 THEN p.[PUAN_DEGISIM] ELSE 0 END), 0) AS kazanilan,
+                    COALESCE(ABS(SUM(CASE WHEN p.[PUAN_DEGISIM] < 0 THEN p.[PUAN_DEGISIM] ELSE 0 END)), 0) AS kullanilan
+                FROM [dbo].[KULLANICI_PUAN_HAREKETLERI] p
+                WHERE p.[KULLANICI_ID] = @userId
+                  AND COALESCE(p.[DURUM], 'Tamamlandi') <> 'Iptal'
             ) agg
             CROSS APPLY (
                 SELECT
-                    COALESCE(SUM(CASE WHEN y.puan_degisim > 0 THEN y.puan_degisim ELSE 0 END), 0) AS yil_kazanilan,
-                    COALESCE(ABS(SUM(CASE WHEN y.puan_degisim < 0 THEN y.puan_degisim ELSE 0 END)), 0) AS yil_kullanilan
-                FROM kullanici_puan_hareketleri y
-                WHERE y.kullanici_id = @userId
-                  AND YEAR(COALESCE(y.islem_tarihi, CURRENT_TIMESTAMP)) = YEAR(CAST(GETDATE() AS date))
+                    COALESCE(SUM(CASE WHEN y.[PUAN_DEGISIM] > 0 THEN y.[PUAN_DEGISIM] ELSE 0 END), 0) AS yil_kazanilan,
+                    COALESCE(ABS(SUM(CASE WHEN y.[PUAN_DEGISIM] < 0 THEN y.[PUAN_DEGISIM] ELSE 0 END)), 0) AS yil_kullanilan
+                FROM [dbo].[KULLANICI_PUAN_HAREKETLERI] y
+                WHERE y.[KULLANICI_ID] = @userId
+                  AND YEAR(COALESCE(y.[ISLEM_TARIHI], CURRENT_TIMESTAMP)) = YEAR(CAST(GETDATE() AS date))
             ) yearly
             OUTER APPLY (
                 SELECT TOP (1) s.id
-                FROM sadakat_seviyeleri s
-                WHERE agg.kazanilan - agg.kullanilan >= s.minimum_puan
-                  AND (s.maximum_puan IS NULL OR agg.kazanilan - agg.kullanilan <= s.maximum_puan)
-                ORDER BY s.minimum_puan DESC
+                FROM [dbo].[SADAKAT_SEVIYELERI] s
+                WHERE agg.kazanilan - agg.kullanilan >= s.[MINIMUM_PUAN]
+                  AND (s.[MAXIMUM_PUAN] IS NULL OR agg.kazanilan - agg.kullanilan <= s.[MAXIMUM_PUAN])
+                ORDER BY s.[MINIMUM_PUAN] DESC
             ) current_tier
             OUTER APPLY (
                 SELECT TOP (1) s2.id
-                FROM sadakat_seviyeleri s2
-                WHERE s2.minimum_puan > agg.kazanilan - agg.kullanilan
-                ORDER BY s2.minimum_puan ASC
+                FROM [dbo].[SADAKAT_SEVIYELERI] s2
+                WHERE s2.[MINIMUM_PUAN] > agg.kazanilan - agg.kullanilan
+                ORDER BY s2.[MINIMUM_PUAN] ASC
             ) next_tier
-            WHERE h.kullanici_id = @userId;", connection);
+            WHERE h.[KULLANICI_ID] = @userId;", connection);
         syncCommand.Parameters.AddWithValue("@userId", userId);
         await syncCommand.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private async Task<long> ResolveTierIdAsync(SqlConnection connection, string code, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand("SELECT TOP (1) id FROM sadakat_seviyeleri WHERE kod = @code;", connection);
+        await using var command = new SqlCommand("SELECT TOP (1) id FROM [dbo].[SADAKAT_SEVIYELERI] WHERE kod = @code;", connection);
         command.Parameters.AddWithValue("@code", code);
         var value = await command.ExecuteScalarAsync(cancellationToken);
         return value is null ? 0L : Convert.ToInt64(value, CultureInfo.InvariantCulture);
@@ -2345,10 +2436,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserLoyaltyTierViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT id, kod, ad, minimum_puan, maximum_puan, COALESCE(avantajlar_metin, '')
-            FROM sadakat_seviyeleri
-            WHERE aktif_mi = 1
-            ORDER BY sira_no ASC, minimum_puan ASC;", connection);
+            SELECT id, kod, ad, [MINIMUM_PUAN], [MAXIMUM_PUAN], COALESCE([AVANTAJLAR_METIN], '')
+            FROM [dbo].[SADAKAT_SEVIYELERI]
+            WHERE [AKTIF_MI] = 1
+            ORDER BY [SIRA_NO] ASC, [MINIMUM_PUAN] ASC;", connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -2376,15 +2467,15 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserLoyaltyPointTransactionViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT CONVERT(varchar(10), COALESCE(islem_tarihi, olusturulma_tarihi), 104) AS tarih,
-                   COALESCE(hareket_tipi, 'Bilgi'),
-                   COALESCE(baslik, 'Puan hareketi'),
-                   COALESCE(aciklama, ''),
-                   COALESCE(puan_degisim, 0),
-                   COALESCE(durum, 'Tamamlandi')
-            FROM kullanici_puan_hareketleri
-            WHERE kullanici_id = @userId
-            ORDER BY COALESCE(islem_tarihi, olusturulma_tarihi) DESC, id DESC
+            SELECT CONVERT(varchar(10), COALESCE([ISLEM_TARIHI], [OLUSTURULMA_TARIHI]), 104) AS [TARIH],
+                   COALESCE([HAREKET_TIPI], 'Bilgi'),
+                   COALESCE([BASLIK], 'Puan hareketi'),
+                   COALESCE([ACIKLAMA], ''),
+                   COALESCE([PUAN_DEGISIM], 0),
+                   COALESCE([DURUM], 'Tamamlandi')
+            FROM [dbo].[KULLANICI_PUAN_HAREKETLERI]
+            WHERE [KULLANICI_ID] = @userId
+            ORDER BY COALESCE([ISLEM_TARIHI], [OLUSTURULMA_TARIHI]) DESC, id DESC
             OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -2412,10 +2503,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserLoyaltyRewardViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT TOP (8) id, ad, aciklama, gerekli_puan, COALESCE(ikon, 'fas fa-gift'), COALESCE(ton, 'primary')
-            FROM sadakat_odulleri
-            WHERE aktif_mi = 1
-            ORDER BY gerekli_puan ASC, id ASC;", connection);
+            SELECT TOP (8) id, ad, [ACIKLAMA], [GEREKLI_PUAN], COALESCE(ikon, 'fas fa-gift'), COALESCE(ton, 'primary')
+            FROM [dbo].[SADAKAT_ODULLERI]
+            WHERE [AKTIF_MI] = 1
+            ORDER BY [GEREKLI_PUAN] ASC, id ASC;", connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -2439,11 +2530,11 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserLoyaltyBadgeViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT TOP (8) r.ad, COALESCE(r.ikon, 'fas fa-award'), COALESCE(kr.durum, 'Kilitli'), COALESCE(kr.ilerleme_degeri, 0), COALESCE(r.hedef_deger, 1)
-            FROM rozet_tanimlari r
-            LEFT JOIN kullanici_rozetleri kr ON kr.rozet_id = r.id AND kr.kullanici_id = @userId
-            WHERE r.aktif_mi = 1
-            ORDER BY r.siralama ASC, r.id ASC;", connection);
+            SELECT TOP (8) r.ad, COALESCE(r.[IKON], 'fas fa-award'), COALESCE(kr.[DURUM], 'Kilitli'), COALESCE(kr.[ILERLEME_DEGERI], 0), COALESCE(r.[HEDEF_DEGER], 1)
+            FROM [dbo].[ROZET_TANIMLARI] r
+            LEFT JOIN [dbo].[KULLANICI_ROZETLERI] kr ON kr.[ROZET_ID] = r.id AND kr.[KULLANICI_ID] = @userId
+            WHERE r.[AKTIF_MI] = 1
+            ORDER BY r.[SIRALAMA] ASC, r.id ASC;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -2467,10 +2558,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserLoyaltyPassportCityViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT TOP (8) sehir, COALESCE(ulke, 'Türkiye'), toplam_konaklama_sayisi, ilk_konaklama_tarihi, son_konaklama_tarihi
-            FROM kullanici_dijital_pasaportlari
-            WHERE kullanici_id = @userId
-            ORDER BY son_konaklama_tarihi DESC, toplam_konaklama_sayisi DESC;", connection);
+            SELECT TOP (8) [SEHIR], COALESCE(ulke, 'Türkiye'), [TOPLAM_KONAKLAMA_SAYISI], [ILK_KONAKLAMA_TARIHI], [SON_KONAKLAMA_TARIHI]
+            FROM [dbo].[KULLANICI_DIJITAL_PASAPORTLARI]
+            WHERE [KULLANICI_ID] = @userId
+            ORDER BY [SON_KONAKLAMA_TARIHI] DESC, [TOPLAM_KONAKLAMA_SAYISI] DESC;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -2498,37 +2589,37 @@ INNER JOIN agg ON agg.otel_id = o.id;";
             USING
             (
                 SELECT
-                    @userId AS kullanici_id,
-                    LTRIM(RTRIM(COALESCE(o.sehir, ''))) AS sehir,
-                    CAST(MIN(r.giris_tarihi) AS date) AS ilk_konaklama_tarihi,
-                    CAST(MAX(r.cikis_tarihi) AS date) AS son_konaklama_tarihi,
-                    COUNT(*) AS toplam_konaklama_sayisi
-                FROM rezervasyonlar r
-                INNER JOIN oteller o ON o.id = r.otel_id
-                WHERE r.kullanici_id = @userId
-                  AND COALESCE(NULLIF(o.sehir, ''), '') <> ''
-                  AND COALESCE(NULLIF(r.durum, ''), '') <> 'İptal Edildi'
-                GROUP BY LTRIM(RTRIM(COALESCE(o.sehir, '')))
+                    @userId AS [KULLANICI_ID],
+                    LTRIM(RTRIM(COALESCE(o.[SEHIR], ''))) AS [SEHIR],
+                    CAST(MIN(r.[GIRIS_TARIHI]) AS date) AS [ILK_KONAKLAMA_TARIHI],
+                    CAST(MAX(r.[CIKIS_TARIHI]) AS date) AS [SON_KONAKLAMA_TARIHI],
+                    COUNT(*) AS [TOPLAM_KONAKLAMA_SAYISI]
+                FROM [dbo].[REZERVASYONLAR] r
+                INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+                WHERE r.[KULLANICI_ID] = @userId
+                  AND COALESCE(NULLIF(o.[SEHIR], ''), '') <> ''
+                  AND COALESCE(NULLIF(r.[DURUM], ''), '') <> 'İptal Edildi'
+                GROUP BY LTRIM(RTRIM(COALESCE(o.[SEHIR], '')))
             ) AS source
-            ON target.kullanici_id = source.kullanici_id
-               AND target.sehir = source.sehir
+            ON target.[KULLANICI_ID] = source.[KULLANICI_ID]
+               AND target.[SEHIR] = source.[SEHIR]
             WHEN MATCHED THEN
                 UPDATE SET
-                    ilk_konaklama_tarihi = CASE
-                        WHEN target.ilk_konaklama_tarihi IS NULL THEN source.ilk_konaklama_tarihi
-                        WHEN source.ilk_konaklama_tarihi < target.ilk_konaklama_tarihi THEN source.ilk_konaklama_tarihi
-                        ELSE target.ilk_konaklama_tarihi
+                    [ILK_KONAKLAMA_TARIHI] = CASE
+                        WHEN target.[ILK_KONAKLAMA_TARIHI] IS NULL THEN source.[ILK_KONAKLAMA_TARIHI]
+                        WHEN source.[ILK_KONAKLAMA_TARIHI] < target.[ILK_KONAKLAMA_TARIHI] THEN source.[ILK_KONAKLAMA_TARIHI]
+                        ELSE target.[ILK_KONAKLAMA_TARIHI]
                     END,
-                    son_konaklama_tarihi = CASE
-                        WHEN target.son_konaklama_tarihi IS NULL THEN source.son_konaklama_tarihi
-                        WHEN source.son_konaklama_tarihi > target.son_konaklama_tarihi THEN source.son_konaklama_tarihi
-                        ELSE target.son_konaklama_tarihi
+                    [SON_KONAKLAMA_TARIHI] = CASE
+                        WHEN target.[SON_KONAKLAMA_TARIHI] IS NULL THEN source.[SON_KONAKLAMA_TARIHI]
+                        WHEN source.[SON_KONAKLAMA_TARIHI] > target.[SON_KONAKLAMA_TARIHI] THEN source.[SON_KONAKLAMA_TARIHI]
+                        ELSE target.[SON_KONAKLAMA_TARIHI]
                     END,
-                    toplam_konaklama_sayisi = source.toplam_konaklama_sayisi,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                    [TOPLAM_KONAKLAMA_SAYISI] = source.[TOPLAM_KONAKLAMA_SAYISI],
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN
-                INSERT (kullanici_id, sehir, ulke, ilk_konaklama_tarihi, son_konaklama_tarihi, toplam_konaklama_sayisi, olusturulma_tarihi, guncellenme_tarihi)
-                VALUES (source.kullanici_id, source.sehir, N'Türkiye', source.ilk_konaklama_tarihi, source.son_konaklama_tarihi, source.toplam_konaklama_sayisi, SYSUTCDATETIME(), SYSUTCDATETIME());
+                INSERT ([KULLANICI_ID], [SEHIR], ulke, [ILK_KONAKLAMA_TARIHI], [SON_KONAKLAMA_TARIHI], [TOPLAM_KONAKLAMA_SAYISI], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI])
+                VALUES (source.[KULLANICI_ID], source.[SEHIR], N'Türkiye', source.[ILK_KONAKLAMA_TARIHI], source.[SON_KONAKLAMA_TARIHI], source.[TOPLAM_KONAKLAMA_SAYISI], SYSUTCDATETIME(), SYSUTCDATETIME());
             """;
 
         await using var command = new SqlCommand(sql, connection);
@@ -2541,13 +2632,13 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         var list = new List<UserLoyaltyRecentCityViewModel>();
         await using var command = new SqlCommand("""
             SELECT TOP (@take)
-                   COALESCE(NULLIF(o.sehir, ''), '') AS sehir,
-                   r.giris_tarihi
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            WHERE r.kullanici_id = @userId
-              AND COALESCE(NULLIF(o.sehir, ''), '') <> ''
-            ORDER BY r.giris_tarihi DESC, r.id DESC;
+                   COALESCE(NULLIF(o.[SEHIR], ''), '') AS [SEHIR],
+                   r.[GIRIS_TARIHI]
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            WHERE r.[KULLANICI_ID] = @userId
+              AND COALESCE(NULLIF(o.[SEHIR], ''), '') <> ''
+            ORDER BY r.[GIRIS_TARIHI] DESC, r.id DESC;
             """, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@take", Math.Clamp(take, 1, 10));
@@ -2569,14 +2660,14 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserLoyaltyTravelPlanViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT TOP (5) p.id, p.plan_adi, p.hedef_sehir, p.baslangic_tarihi, p.bitis_tarihi, COALESCE(p.butce_tutari, 0), COALESCE(p.durum, 'Taslak'),
+            SELECT TOP (5) p.id, p.[PLAN_ADI], p.[HEDEF_SEHIR], p.[BASLANGIC_TARIHI], p.[BITIS_TARIHI], COALESCE(p.[BUTCE_TUTARI], 0), COALESCE(p.[DURUM], 'Taslak'),
                    COALESCE(COUNT(ps.id), 0) AS secim_sayisi,
-                   MAX(p.guncellenme_tarihi) AS son_guncellenme_tarihi
-            FROM kullanici_seyahat_planlari p
-            LEFT JOIN kullanici_seyahat_plan_otel_secimleri ps ON ps.plan_id = p.id
-            WHERE p.olusturan_kullanici_id = @userId
-            GROUP BY p.id, p.plan_adi, p.hedef_sehir, p.baslangic_tarihi, p.bitis_tarihi, p.butce_tutari, p.durum
-            ORDER BY MAX(p.guncellenme_tarihi) DESC, p.id DESC;", connection);
+                   MAX(p.[GUNCELLENME_TARIHI]) AS son_guncellenme_tarihi
+            FROM [dbo].[KULLANICI_SEYAHAT_PLANLARI] p
+            LEFT JOIN [dbo].[KULLANICI_SEYAHAT_PLAN_OTEL_SECIMLERI] ps ON ps.[PLAN_ID] = p.id
+            WHERE p.[OLUSTURAN_KULLANICI_ID] = @userId
+            GROUP BY p.id, p.[PLAN_ADI], p.[HEDEF_SEHIR], p.[BASLANGIC_TARIHI], p.[BITIS_TARIHI], p.[BUTCE_TUTARI], p.[DURUM]
+            ORDER BY MAX(p.[GUNCELLENME_TARIHI]) DESC, p.id DESC;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -2602,12 +2693,12 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserLoyaltyOfferViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT TOP (4) baslik, aciklama, kampanya_kodu, COALESCE(buton_url, '/oteller'), gecerlilik_bitis
-            FROM kullanici_ozel_teklifleri
-            WHERE aktif_mi = 1
-              AND (kullanici_id = @userId OR kullanici_id IS NULL)
-              AND CAST(GETDATE() AS date) BETWEEN gecerlilik_baslangic AND gecerlilik_bitis
-            ORDER BY CASE WHEN kullanici_id = @userId THEN 0 ELSE 1 END, gecerlilik_bitis ASC, id DESC
+            SELECT TOP (4) [BASLIK], [ACIKLAMA], [KAMPANYA_KODU], COALESCE([BUTON_URL], '/oteller'), [GECERLILIK_BITIS]
+            FROM [dbo].[KULLANICI_OZEL_TEKLIFLERI]
+            WHERE [AKTIF_MI] = 1
+              AND ([KULLANICI_ID] = @userId OR [KULLANICI_ID] IS NULL)
+              AND CAST(GETDATE() AS date) BETWEEN [GECERLILIK_BASLANGIC] AND [GECERLILIK_BITIS]
+            ORDER BY CASE WHEN [KULLANICI_ID] = @userId THEN 0 ELSE 1 END, [GECERLILIK_BITIS] ASC, id DESC
             ;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -2630,10 +2721,10 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserLoyaltyBudgetPlanViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT TOP (4) hedef_sehir, hedef_butce, gece_sayisi, kisi_sayisi
-            FROM kullanici_butce_planlari
-            WHERE kullanici_id = @userId
-            ORDER BY guncellenme_tarihi DESC, id DESC;", connection);
+            SELECT TOP (4) [HEDEF_SEHIR], [HEDEF_BUTCE], [GECE_SAYISI], [KISI_SAYISI]
+            FROM [dbo].[KULLANICI_BUTCE_PLANLARI]
+            WHERE [KULLANICI_ID] = @userId
+            ORDER BY [GUNCELLENME_TARIHI] DESC, id DESC;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -2656,12 +2747,12 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserLoyaltyPriceAlertViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT TOP (4) a.otel_id, o.otel_adi, a.hedef_maksimum_fiyat
+            SELECT TOP (4) a.[OTEL_ID], o.[OTEL_ADI], a.[HEDEF_MAKSIMUM_FIYAT]
             FROM user_favorite_price_alerts a
-            INNER JOIN oteller o ON o.id = a.otel_id
-            WHERE a.user_id = @userId
-              AND COALESCE(a.aktif_mi, 1) = 1
-            ORDER BY a.guncellenme_tarihi DESC, a.id DESC;", connection);
+            INNER JOIN [dbo].[OTELLER] o ON o.id = a.[OTEL_ID]
+            WHERE a.[KULLANICI_ID] = @userId
+              AND COALESCE(a.[AKTIF_MI], 1) = 1
+            ORDER BY a.[GUNCELLENME_TARIHI] DESC, a.id DESC;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -2684,12 +2775,12 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserLoyaltyRecommendationViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT TOP (4) o.otel_adi, o.otel_kodu, COALESCE(o.ilce, ''), COALESCE(o.sehir, ''), COALESCE(o.ortalama_puan, 0), COALESCE(og.gorsel_url, '')
-            FROM oteller o
-            LEFT JOIN otel_gorselleri og ON og.otel_id = o.id AND (og.kapak_fotografi_mi = 1 OR og.siralama = 1)
-            WHERE o.yayin_durumu = 'Yayında'
-              AND o.onay_durumu = 'Onaylandı'
-            ORDER BY COALESCE(o.ortalama_puan, 0) DESC, COALESCE(o.toplam_yorum_sayisi, 0) DESC, o.id DESC;", connection);
+            SELECT TOP (4) o.[OTEL_ADI], o.[OTEL_KODU], COALESCE(o.[ILCE], ''), COALESCE(o.[SEHIR], ''), COALESCE(o.[ORTALAMA_PUAN], 0), COALESCE(og.[GORSEL_URL], '')
+            FROM [dbo].[OTELLER] o
+            LEFT JOIN [dbo].[OTEL_GORSELLERI] og ON og.[OTEL_ID] = o.id AND (og.[KAPAK_FOTOGRAFI_MI] = 1 OR og.[SIRALAMA] = 1)
+            WHERE o.[YAYIN_DURUMU] = 'Yayında'
+              AND o.[ONAY_DURUMU] = 'Onaylandı'
+            ORDER BY COALESCE(o.[ORTALAMA_PUAN], 0) DESC, COALESCE(o.[TOPLAM_YORUM_SAYISI], 0) DESC, o.id DESC;", connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -2748,57 +2839,57 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         const string sql = @"
             SELECT TOP (@take)
                    r.id,
-                   r.otel_id,
-                   r.rezervasyon_no,
-                   o.otel_adi,
-                   o.otel_kodu,
-                   COALESCE(o.ilce, ''),
-                   COALESCE(o.sehir, ''),
-                   COALESCE(ot.oda_adi, 'Oda'),
-                   COALESCE(NULLIF(r.misafir_ad_soyad, ''), ''),
-                   COALESCE(NULLIF(r.misafir_eposta, ''), ''),
-                   COALESCE(NULLIF(r.misafir_telefon, ''), ''),
-                   r.giris_tarihi,
-                   r.cikis_tarihi,
-                   r.yetiskin_sayisi,
-                   r.cocuk_sayisi,
-                   r.toplam_tutar,
-                   r.durum,
-                   COALESCE(og.gorsel_url, ''),
-                   COALESCE(r.otel_onay_durumu, ''),
-                   COALESCE(NULLIF(r.iptal_nedeni, ''), '') AS iptal_nedeni,
-                   r.iptal_tarihi,
-                   COALESCE(NULLIF(r.odeme_durumu, ''), '') AS odeme_durumu,
-                   COALESCE(NULLIF(r.odeme_yontemi, ''), '') AS odeme_yontemi,
-                   COALESCE(NULLIF(r.kaynak, ''), '') AS kaynak,
-                   COALESCE(NULLIF(r.rezervasyon_kanali, ''), '') AS rezervasyon_kanali,
-                   r.olusturulma_tarihi,
-                   COALESCE(NULLIF(r.misafir_notu, ''), '') AS misafir_notu,
-                   COALESCE(NULLIF(r.musteri_talep_notu, ''), '') AS musteri_talep_notu,
+                   r.[OTEL_ID],
+                   r.[REZERVASYON_NO],
+                   o.[OTEL_ADI],
+                   o.[OTEL_KODU],
+                   COALESCE(o.[ILCE], ''),
+                   COALESCE(o.[SEHIR], ''),
+                   COALESCE(ot.[ODA_ADI], 'Oda'),
+                   COALESCE(NULLIF(r.[MISAFIR_AD_SOYAD], ''), ''),
+                   COALESCE(NULLIF(r.[MISAFIR_EPOSTA], ''), ''),
+                   COALESCE(NULLIF(r.[MISAFIR_TELEFON], ''), ''),
+                   r.[GIRIS_TARIHI],
+                   r.[CIKIS_TARIHI],
+                   r.[YETISKIN_SAYISI],
+                   r.[COCUK_SAYISI],
+                   r.[TOPLAM_TUTAR],
+                   r.[DURUM],
+                   COALESCE(og.[GORSEL_URL], ''),
+                   COALESCE(r.[OTEL_ONAY_DURUMU], ''),
+                   COALESCE(NULLIF(r.[IPTAL_NEDENI], ''), '') AS [IPTAL_NEDENI],
+                   r.[IPTAL_TARIHI],
+                   COALESCE(NULLIF(r.[ODEME_DURUMU], ''), '') AS [ODEME_DURUMU],
+                   COALESCE(NULLIF(r.[ODEME_YONTEMI], ''), '') AS [ODEME_YONTEMI],
+                   COALESCE(NULLIF(r.[KAYNAK], ''), '') AS [KAYNAK],
+                   COALESCE(NULLIF(r.[REZERVASYON_KANALI], ''), '') AS [REZERVASYON_KANALI],
+                   r.[OLUSTURULMA_TARIHI],
+                   COALESCE(NULLIF(r.[MISAFIR_NOTU], ''), '') AS [MISAFIR_NOTU],
+                   COALESCE(NULLIF(r.[MUSTERI_TALEP_NOTU], ''), '') AS [MUSTERI_TALEP_NOTU],
                    CAST(CASE WHEN EXISTS (
-                       SELECT 1 FROM yorumlar y
-                       WHERE y.rezervasyon_id = r.id AND y.kullanici_id = @userId
+                       SELECT 1 FROM [dbo].[YORUMLAR] y
+                       WHERE y.[REZERVASYON_ID] = r.id AND y.[KULLANICI_ID] = @userId
                    ) THEN 1 ELSE 0 END AS INT) AS has_review
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            LEFT JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
             LEFT JOIN (
-                SELECT ranked.otel_id, ranked.gorsel_url
+                SELECT ranked.[OTEL_ID], ranked.[GORSEL_URL]
                 FROM (
                     SELECT
-                        g.otel_id,
-                        g.gorsel_url,
+                        g.[OTEL_ID],
+                        g.[GORSEL_URL],
                         ROW_NUMBER() OVER (
-                            PARTITION BY g.otel_id
-                            ORDER BY COALESCE(g.kapak_fotografi_mi, 0) DESC, COALESCE(g.siralama, 2147483647) ASC, g.id ASC
+                            PARTITION BY g.[OTEL_ID]
+                            ORDER BY COALESCE(g.[KAPAK_FOTOGRAFI_MI], 0) DESC, COALESCE(g.[SIRALAMA], 2147483647) ASC, g.id ASC
                         ) AS rn
-                    FROM otel_gorselleri g
-                    WHERE COALESCE(g.gorsel_url, '') <> ''
+                    FROM [dbo].[OTEL_GORSELLERI] g
+                    WHERE COALESCE(g.[GORSEL_URL], '') <> ''
                 ) ranked
                 WHERE ranked.rn = 1
-            ) og ON og.otel_id = o.id
-            WHERE r.kullanici_id = @userId
-            ORDER BY r.giris_tarihi DESC, r.id DESC;";
+            ) og ON og.[OTEL_ID] = o.id
+            WHERE r.[KULLANICI_ID] = @userId
+            ORDER BY r.[GIRIS_TARIHI] DESC, r.id DESC;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@take", take);
@@ -2873,53 +2964,53 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         var list = new List<UserReservationCardViewModel>();
         const string sql = @"
             SELECT r.id,
-                   r.otel_id,
-                   r.rezervasyon_no,
-                   o.otel_adi,
-                   o.otel_kodu,
-                   COALESCE(o.ilce, ''),
-                   COALESCE(o.sehir, ''),
-                   COALESCE(ot.oda_adi, 'Oda'),
-                   r.giris_tarihi,
-                   r.cikis_tarihi,
-                   r.yetiskin_sayisi,
-                   r.cocuk_sayisi,
-                   r.toplam_tutar,
-                   r.durum,
-                   COALESCE(og.gorsel_url, ''),
-                   COALESCE(r.otel_onay_durumu, ''),
-                   COALESCE(NULLIF(r.iptal_nedeni, ''), '') AS iptal_nedeni,
-                   r.iptal_tarihi,
+                   r.[OTEL_ID],
+                   r.[REZERVASYON_NO],
+                   o.[OTEL_ADI],
+                   o.[OTEL_KODU],
+                   COALESCE(o.[ILCE], ''),
+                   COALESCE(o.[SEHIR], ''),
+                   COALESCE(ot.[ODA_ADI], 'Oda'),
+                   r.[GIRIS_TARIHI],
+                   r.[CIKIS_TARIHI],
+                   r.[YETISKIN_SAYISI],
+                   r.[COCUK_SAYISI],
+                   r.[TOPLAM_TUTAR],
+                   r.[DURUM],
+                   COALESCE(og.[GORSEL_URL], ''),
+                   COALESCE(r.[OTEL_ONAY_DURUMU], ''),
+                   COALESCE(NULLIF(r.[IPTAL_NEDENI], ''), '') AS [IPTAL_NEDENI],
+                   r.[IPTAL_TARIHI],
                    CAST(CASE WHEN EXISTS (
-                       SELECT 1 FROM yorumlar y
-                       WHERE y.rezervasyon_id = r.id AND y.kullanici_id = @userId
+                       SELECT 1 FROM [dbo].[YORUMLAR] y
+                       WHERE y.[REZERVASYON_ID] = r.id AND y.[KULLANICI_ID] = @userId
                    ) THEN 1 ELSE 0 END AS INT) AS has_review
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            LEFT JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
             LEFT JOIN (
-                SELECT ranked.otel_id, ranked.gorsel_url
+                SELECT ranked.[OTEL_ID], ranked.[GORSEL_URL]
                 FROM (
                     SELECT
-                        g.otel_id,
-                        g.gorsel_url,
+                        g.[OTEL_ID],
+                        g.[GORSEL_URL],
                         ROW_NUMBER() OVER (
-                            PARTITION BY g.otel_id
-                            ORDER BY COALESCE(g.kapak_fotografi_mi, 0) DESC, COALESCE(g.siralama, 2147483647) ASC, g.id ASC
+                            PARTITION BY g.[OTEL_ID]
+                            ORDER BY COALESCE(g.[KAPAK_FOTOGRAFI_MI], 0) DESC, COALESCE(g.[SIRALAMA], 2147483647) ASC, g.id ASC
                         ) AS rn
-                    FROM otel_gorselleri g
-                    WHERE COALESCE(g.gorsel_url, '') <> ''
+                    FROM [dbo].[OTEL_GORSELLERI] g
+                    WHERE COALESCE(g.[GORSEL_URL], '') <> ''
                 ) ranked
                 WHERE ranked.rn = 1
-            ) og ON og.otel_id = o.id
-            WHERE r.kullanici_id = @userId
+            ) og ON og.[OTEL_ID] = o.id
+            WHERE r.[KULLANICI_ID] = @userId
               AND (@statusFilter = 'all'
-                   OR (@statusFilter = 'completed' AND r.durum IN ('Onaylandı', 'Tamamlandı'))
-                   OR (@statusFilter = 'pending' AND (COALESCE(r.otel_onay_durumu, '') = 'Beklemede' OR r.durum IN ('Onay Bekliyor', 'Değişiklik Bekliyor')))
-                   OR (@statusFilter = 'rejected' AND (COALESCE(r.otel_onay_durumu, '') = 'Reddedildi' OR r.durum IN ('İptal Edildi', 'Reddedildi'))))
-              AND (@startDate IS NULL OR CAST(r.giris_tarihi AS date) >= @startDate)
-              AND (@endDate IS NULL OR CAST(r.giris_tarihi AS date) <= @endDate)
-            ORDER BY r.giris_tarihi DESC, r.id DESC
+                   OR (@statusFilter = 'completed' AND r.[DURUM] IN ('Onaylandı', 'Tamamlandı'))
+                   OR (@statusFilter = 'pending' AND (COALESCE(r.[OTEL_ONAY_DURUMU], '') = 'Beklemede' OR r.[DURUM] IN ('Onay Bekliyor', 'Değişiklik Bekliyor')))
+                   OR (@statusFilter = 'rejected' AND (COALESCE(r.[OTEL_ONAY_DURUMU], '') = 'Reddedildi' OR r.[DURUM] IN ('İptal Edildi', 'Reddedildi'))))
+              AND (@startDate IS NULL OR CAST(r.[GIRIS_TARIHI] AS date) >= @startDate)
+              AND (@endDate IS NULL OR CAST(r.[GIRIS_TARIHI] AS date) <= @endDate)
+            ORDER BY r.[GIRIS_TARIHI] DESC, r.id DESC
             OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -2986,14 +3077,14 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         const string sql = @"
             SELECT COUNT(*)
-            FROM rezervasyonlar r
-            WHERE r.kullanici_id = @userId
+            FROM [dbo].[REZERVASYONLAR] r
+            WHERE r.[KULLANICI_ID] = @userId
               AND (@statusFilter = 'all'
-                   OR (@statusFilter = 'completed' AND r.durum IN ('Onaylandı', 'Tamamlandı'))
-                   OR (@statusFilter = 'pending' AND (COALESCE(r.otel_onay_durumu, '') = 'Beklemede' OR r.durum IN ('Onay Bekliyor', 'Değişiklik Bekliyor')))
-                   OR (@statusFilter = 'rejected' AND (COALESCE(r.otel_onay_durumu, '') = 'Reddedildi' OR r.durum IN ('İptal Edildi', 'Reddedildi'))))
-              AND (@startDate IS NULL OR CAST(r.giris_tarihi AS date) >= @startDate)
-              AND (@endDate IS NULL OR CAST(r.giris_tarihi AS date) <= @endDate);";
+                   OR (@statusFilter = 'completed' AND r.[DURUM] IN ('Onaylandı', 'Tamamlandı'))
+                   OR (@statusFilter = 'pending' AND (COALESCE(r.[OTEL_ONAY_DURUMU], '') = 'Beklemede' OR r.[DURUM] IN ('Onay Bekliyor', 'Değişiklik Bekliyor')))
+                   OR (@statusFilter = 'rejected' AND (COALESCE(r.[OTEL_ONAY_DURUMU], '') = 'Reddedildi' OR r.[DURUM] IN ('İptal Edildi', 'Reddedildi'))))
+              AND (@startDate IS NULL OR CAST(r.[GIRIS_TARIHI] AS date) >= @startDate)
+              AND (@endDate IS NULL OR CAST(r.[GIRIS_TARIHI] AS date) <= @endDate);";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@statusFilter", statusFilter);
@@ -3018,32 +3109,32 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         var list = new List<UserFavoriteSummaryViewModel>();
         const string sql = @"
-            SELECT o.otel_adi,
-                   COALESCE(o.otel_kodu, ''),
-                   COALESCE(o.ilce, ''),
-                   COALESCE(o.sehir, ''),
-                   COALESCE(o.ortalama_puan, 0),
-                   COALESCE(img.gorsel_url, ''),
+            SELECT o.[OTEL_ADI],
+                   COALESCE(o.[OTEL_KODU], ''),
+                   COALESCE(o.[ILCE], ''),
+                   COALESCE(o.[SEHIR], ''),
+                   COALESCE(o.[ORTALAMA_PUAN], 0),
+                   COALESCE(img.[GORSEL_URL], ''),
                    COALESCE(res.reservation_count, 0),
-                   uf.son_islem_tarihi
-            FROM user_favori_oteller uf
-            INNER JOIN oteller o ON o.id = uf.otel_id
+                   uf.[SON_ISLEM_TARIHI]
+            FROM [dbo].[KULLANICI_FAVORI_OTELLER] uf
+            INNER JOIN [dbo].[OTELLER] o ON o.id = uf.[OTEL_ID]
             OUTER APPLY (
-                SELECT TOP (1) og.gorsel_url
-                FROM otel_gorselleri og
-                WHERE og.otel_id = o.id
-                ORDER BY CASE WHEN og.kapak_fotografi_mi = 1 THEN 0 ELSE 1 END, og.siralama ASC, og.id ASC
+                SELECT TOP (1) og.[GORSEL_URL]
+                FROM [dbo].[OTEL_GORSELLERI] og
+                WHERE og.[OTEL_ID] = o.id
+                ORDER BY CASE WHEN og.[KAPAK_FOTOGRAFI_MI] = 1 THEN 0 ELSE 1 END, og.[SIRALAMA] ASC, og.id ASC
             ) img
             OUTER APPLY (
                 SELECT COUNT(*) AS reservation_count
-                FROM rezervasyonlar r
-                WHERE r.kullanici_id = @userId AND r.otel_id = o.id
+                FROM [dbo].[REZERVASYONLAR] r
+                WHERE r.[KULLANICI_ID] = @userId AND r.[OTEL_ID] = o.id
             ) res
-            WHERE uf.user_id = @userId AND uf.aktif_mi = 1
+            WHERE uf.[KULLANICI_ID] = @userId AND uf.[AKTIF_MI] = 1
             ORDER BY
                 CASE WHEN @sort = 'frequent' THEN COALESCE(res.reservation_count, 0) END DESC,
-                CASE WHEN @sort = 'oldest' THEN uf.son_islem_tarihi END ASC,
-                CASE WHEN @sort = 'newest' OR @sort = 'frequent' THEN uf.son_islem_tarihi END DESC,
+                CASE WHEN @sort = 'oldest' THEN uf.[SON_ISLEM_TARIHI] END ASC,
+                CASE WHEN @sort = 'newest' OR @sort = 'frequent' THEN uf.[SON_ISLEM_TARIHI] END DESC,
                 uf.id DESC
             OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY;";
         await using var command = new SqlCommand(sql, connection);
@@ -3215,19 +3306,19 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     {
         const string sql = @"
             SELECT TOP (1) r.id,
-                   r.otel_id,
-                   r.rezervasyon_no,
-                   COALESCE(NULLIF(r.misafir_ad_soyad, ''), 'Misafir') AS misafir_ad_soyad,
-                   r.giris_tarihi,
-                   r.cikis_tarihi,
-                   COALESCE(r.toplam_tutar, 0) AS toplam_tutar,
-                   COALESCE(NULLIF(ot.oda_adi, ''), 'Oda') AS oda_adi,
-                   COALESCE(NULLIF(o.otel_adi, ''), 'Otel') AS otel_adi
-            FROM rezervasyonlar r
-            LEFT JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
-            LEFT JOIN oteller o ON o.id = r.otel_id
+                   r.[OTEL_ID],
+                   r.[REZERVASYON_NO],
+                   COALESCE(NULLIF(r.[MISAFIR_AD_SOYAD], ''), 'Misafir') AS [MISAFIR_AD_SOYAD],
+                   r.[GIRIS_TARIHI],
+                   r.[CIKIS_TARIHI],
+                   COALESCE(r.[TOPLAM_TUTAR], 0) AS [TOPLAM_TUTAR],
+                   COALESCE(NULLIF(ot.[ODA_ADI], ''), 'Oda') AS [ODA_ADI],
+                   COALESCE(NULLIF(o.[OTEL_ADI], ''), 'Otel') AS [OTEL_ADI]
+            FROM [dbo].[REZERVASYONLAR] r
+            LEFT JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
             WHERE r.id = @reservationId
-              AND r.kullanici_id = @userId;";
+              AND r.[KULLANICI_ID] = @userId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@reservationId", reservationId);
         command.Parameters.AddWithValue("@userId", userId);
@@ -3252,14 +3343,14 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     private static async Task<(long UserId, string Email, string ManagerName)> ResolvePartnerRecipientAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT TOP (1) COALESCE(o.user_id, oks.user_id, 1),
-                   COALESCE(u.eposta, o.satis_kontak_eposta, o.eposta, 'partner@otelturizm.com'),
-                   COALESCE(u.ad_soyad, o.satis_kontak_adi, 'Partner Yetkilisi')
-            FROM oteller o
-            LEFT JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = o.id AND oks.aktif_mi = 1
-            LEFT JOIN users u ON u.id = COALESCE(o.user_id, oks.user_id)
+            SELECT TOP (1) COALESCE(o.[KULLANICI_ID], oks.[KULLANICI_ID], 1),
+                   COALESCE(u.[EPOSTA], o.[SATIS_KONTAK_EPOSTA], o.[EPOSTA], 'partner@otelturizm.com'),
+                   COALESCE(u.[AD_SOYAD], o.[SATIS_KONTAK_ADI], 'Partner Yetkilisi')
+            FROM [dbo].[OTELLER] o
+            LEFT JOIN [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oks ON oks.[OTEL_ID] = o.id AND oks.[AKTIF_MI] = 1
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = COALESCE(o.[KULLANICI_ID], oks.[KULLANICI_ID])
             WHERE o.id = @hotelId
-            ORDER BY oks.ana_sorumlu_mu DESC, oks.id ASC;";
+            ORDER BY oks.[ANA_SORUMLU_MU] DESC, oks.id ASC;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -3269,6 +3360,99 @@ INNER JOIN agg ON agg.otel_id = o.id;";
         }
 
         return (1L, "partner@otelturizm.com", "Partner Yetkilisi");
+    }
+
+    private static async Task<bool> ColumnExistsAsync(SqlConnection connection, string tableName, string columnName, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_CATALOG = DB_NAME()
+              AND TABLE_NAME = @tableName
+              AND COLUMN_NAME = @columnName;";
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@columnName", columnName);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result ?? 0, CultureInfo.InvariantCulture) > 0;
+    }
+
+    public async Task<UserInvoicesPageViewModel> GetInvoicesAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        var model = new UserInvoicesPageViewModel();
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+
+        const string tableCheckSql = @"
+            SELECT
+                CASE WHEN OBJECT_ID(N'dbo.REZERVASYON_FATURALARI', N'U') IS NOT NULL THEN 1 ELSE 0 END,
+                CASE WHEN OBJECT_ID(N'dbo.FATURALAR', N'U') IS NOT NULL THEN 1 ELSE 0 END;";
+        await using (var tableCmd = new SqlCommand(tableCheckSql, connection))
+        {
+            await using var tableReader = await tableCmd.ExecuteReaderAsync(cancellationToken);
+            if (!await tableReader.ReadAsync(cancellationToken))
+            {
+                model.TableMissing = true;
+                return model;
+            }
+
+            var hasGuestInvoiceTable = tableReader.GetInt32(0) == 1;
+            if (!hasGuestInvoiceTable)
+            {
+                model.TableMissing = true;
+                return model;
+            }
+        }
+
+        const string sql = @"
+            SELECT TOP (120)
+                r.id,
+                COALESCE(NULLIF(r.[REZERVASYON_NO], ''), CAST(r.id AS nvarchar(30))) AS [REZERVASYON_NO],
+                COALESCE(o.[OTEL_ADI], N'Otel') AS [OTEL_ADI],
+                r.[GIRIS_TARIHI],
+                r.[CIKIS_TARIHI],
+                COALESCE(r.[TOPLAM_TUTAR], 0) AS [TOPLAM_TUTAR],
+                COALESCE(r.[DURUM], N'') AS [DURUM],
+                rf.[GUVENLI_DOSYA_ID],
+                rf.[OLUSTURULMA_TARIHI],
+                rf.[MIME_TIPI]
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            LEFT JOIN [dbo].[REZERVASYON_FATURALARI] rf ON rf.[REZERVASYON_ID] = r.id
+            WHERE r.[KULLANICI_ID] = @userId
+              AND COALESCE(r.[DURUM], '') IN (N'Tamamlandı', N'Onaylandı', N'Konaklama Tamamlandı')
+            ORDER BY CASE WHEN rf.[ID] IS NULL THEN 0 ELSE 1 END ASC, r.[CIKIS_TARIHI] DESC, r.id DESC;";
+
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            long? fileId = reader.IsDBNull(7) ? null : Convert.ToInt64(reader.GetValue(7), CultureInfo.InvariantCulture);
+            string? downloadUrl = null;
+            if (fileId.HasValue && fileId.Value > 0)
+            {
+                downloadUrl = await _secureFileService.CreateAccessUrlAsync(fileId.Value, userId, "user", cancellationToken);
+            }
+
+            var status = reader.IsDBNull(6) ? string.Empty : reader.GetString(6);
+            var checkOut = reader.GetDateTime(4);
+            model.Rows.Add(new UserInvoiceRowViewModel
+            {
+                ReservationId = reader.GetInt64(0),
+                ReservationNo = reader.GetString(1),
+                HotelName = reader.GetString(2),
+                StayText = $"{reader.GetDateTime(3):dd.MM.yyyy} – {checkOut:dd.MM.yyyy}",
+                TotalText = FormatMoney(SafeDecimal(reader, 5)),
+                StatusText = status,
+                HasInvoice = fileId.HasValue && fileId.Value > 0,
+                DownloadUrl = downloadUrl,
+                UploadedAtText = reader.IsDBNull(8) ? null : reader.GetDateTime(8).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                MimeType = reader.IsDBNull(9) ? null : reader.GetString(9),
+                CheckOutDate = checkOut
+            });
+        }
+
+        return model;
     }
 
     private sealed record ReservationCancellationSnapshot(

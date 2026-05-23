@@ -4,7 +4,7 @@
     Visual Studio / CI gibi ortamlarda repo-ici bin/obj istenirse:
       - MSBuild property: DisableOtelturizmBuildCache=true
   -->
-  <PropertyGroup Condition="'$(OS)' == 'Windows_NT' AND '$(DisableOtelturizmBuildCache)' != 'true'">
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT' AND '$(DisableOtelturizmBuildCache)' != 'true' AND '$(BuildingInsideVisualStudio)' != 'true'">
     <OtelturizmBuildCacheRoot>$(LOCALAPPDATA)\OtelturizmBuildCache\</OtelturizmBuildCacheRoot>
     <BaseOutputPath>$(OtelturizmBuildCacheRoot)bin\</BaseOutputPath>
     <BaseIntermediateOutputPath>$(OtelturizmBuildCacheRoot)obj\</BaseIntermediateOutputPath>

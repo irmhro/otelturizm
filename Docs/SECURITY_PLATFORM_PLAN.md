@@ -66,4 +66,4 @@
 
 ## Doğrulama
 
-`dotnet build "D:\otelturizm\otelturizmnew.csproj" --no-restore`
+`dotnet build "D:\otelturizm\otelturizm.csproj" --no-restore`

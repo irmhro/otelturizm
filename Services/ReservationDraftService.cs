@@ -48,11 +48,11 @@ public class ReservationDraftService : IReservationDraftService
         {
             var resolvedUserId = userId.GetValueOrDefault();
             const string attachSql = @"
-                UPDATE rezervasyon_taslaklari
-                SET user_id = @userId
-                WHERE user_id IS NULL
-                  AND session_anahtari = @sessionKey
-                  AND durum IN ('Taslak','Profil Eksik','Giris Bekliyor');";
+                UPDATE [dbo].[REZERVASYON_TASLAKLARI]
+                SET [KULLANICI_ID] = @userId
+                WHERE [KULLANICI_ID] IS NULL
+                  AND [SESSION_ANAHTARI] = @sessionKey
+                  AND [DURUM] IN ('Taslak','Profil Eksik','Giris Bekliyor');";
             await using var attachCommand = new SqlCommand(attachSql, connection);
             attachCommand.Parameters.AddWithValue("@userId", resolvedUserId);
             attachCommand.Parameters.AddWithValue("@sessionKey", sessionKey.Trim());
@@ -62,29 +62,29 @@ public class ReservationDraftService : IReservationDraftService
         const string sql = @"
             SELECT
                 rt.id,
-                rt.otel_id,
-                rt.oda_tip_id,
-                o.otel_adi,
-                COALESCE(ot.oda_adi, 'Oda secimi bekleniyor'),
-                rt.durum,
-                rt.giris_tarihi,
-                rt.cikis_tarihi,
-                rt.yetiskin_sayisi,
-                rt.cocuk_sayisi,
-                rt.oda_sayisi,
-                COALESCE(rt.toplam_tutar, 0),
-                COALESCE(rt.net_oda_tutari, 0),
-                COALESCE(rt.kdv_orani, 0),
-                COALESCE(rt.kdv_tutari, 0),
-                COALESCE(rt.konaklama_vergisi_orani, 0),
-                COALESCE(rt.konaklama_vergisi_tutari, 0),
-                o.otel_kodu
-            FROM rezervasyon_taslaklari rt
-            INNER JOIN oteller o ON o.id = rt.otel_id
-            LEFT JOIN oda_tipleri ot ON ot.id = rt.oda_tip_id
-            WHERE rt.durum IN ('Taslak','Profil Eksik','Giris Bekliyor')
-              AND ((@userId > 0 AND rt.user_id = @userId) OR (@sessionKey <> '' AND rt.session_anahtari = @sessionKey))
-            ORDER BY rt.son_aktivite_tarihi DESC, rt.id DESC
+                rt.[OTEL_ID],
+                rt.[ODA_TIP_ID],
+                o.[OTEL_ADI],
+                COALESCE(ot.[ODA_ADI], 'Oda secimi bekleniyor'),
+                rt.[DURUM],
+                rt.[GIRIS_TARIHI],
+                rt.[CIKIS_TARIHI],
+                rt.[YETISKIN_SAYISI],
+                rt.[COCUK_SAYISI],
+                rt.[ODA_SAYISI],
+                COALESCE(rt.[TOPLAM_TUTAR], 0),
+                COALESCE(rt.[NET_ODA_TUTARI], 0),
+                COALESCE(rt.[KDV_ORANI], 0),
+                COALESCE(rt.[KDV_TUTARI], 0),
+                COALESCE(rt.[KONAKLAMA_VERGISI_ORANI], 0),
+                COALESCE(rt.[KONAKLAMA_VERGISI_TUTARI], 0),
+                o.[OTEL_KODU]
+            FROM [dbo].[REZERVASYON_TASLAKLARI] rt
+            INNER JOIN [dbo].[OTELLER] o ON o.id = rt.[OTEL_ID]
+            LEFT JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = rt.[ODA_TIP_ID]
+            WHERE rt.[DURUM] IN ('Taslak','Profil Eksik','Giris Bekliyor')
+              AND ((@userId > 0 AND rt.[KULLANICI_ID] = @userId) OR (@sessionKey <> '' AND rt.[SESSION_ANAHTARI] = @sessionKey))
+            ORDER BY rt.[SON_AKTIVITE_TARIHI] DESC, rt.id DESC
             OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -127,9 +127,9 @@ public class ReservationDraftService : IReservationDraftService
             if (!string.Equals(resolvedStatus, status, StringComparison.OrdinalIgnoreCase))
             {
                 const string updateSql = @"
-                    UPDATE rezervasyon_taslaklari
-                    SET durum = @status,
-                        son_aktivite_tarihi = SYSUTCDATETIME()
+                    UPDATE [dbo].[REZERVASYON_TASLAKLARI]
+                    SET [DURUM] = @status,
+                        [SON_AKTIVITE_TARIHI] = SYSUTCDATETIME()
                     WHERE id = @draftId;";
                 await using var updateCommand = new SqlCommand(updateSql, connection);
                 updateCommand.Parameters.AddWithValue("@status", resolvedStatus);
@@ -176,11 +176,11 @@ public class ReservationDraftService : IReservationDraftService
         if (request.UserId.GetValueOrDefault() > 0 && !string.IsNullOrWhiteSpace(request.SessionKey))
         {
             const string attachSql = @"
-                UPDATE rezervasyon_taslaklari
-                SET user_id = @userId
-                WHERE user_id IS NULL
-                  AND session_anahtari = @sessionKey
-                  AND durum IN ('Taslak','Profil Eksik','Giris Bekliyor');";
+                UPDATE [dbo].[REZERVASYON_TASLAKLARI]
+                SET [KULLANICI_ID] = @userId
+                WHERE [KULLANICI_ID] IS NULL
+                  AND [SESSION_ANAHTARI] = @sessionKey
+                  AND [DURUM] IN ('Taslak','Profil Eksik','Giris Bekliyor');";
             await using var attachCommand = new SqlCommand(attachSql, connection);
             attachCommand.Parameters.AddWithValue("@userId", request.UserId!.Value);
             attachCommand.Parameters.AddWithValue("@sessionKey", request.SessionKey!.Trim());
@@ -189,11 +189,11 @@ public class ReservationDraftService : IReservationDraftService
 
         const string findSql = @"
             SELECT id
-            FROM rezervasyon_taslaklari
-            WHERE otel_id = @hotelId
-              AND ((@userId > 0 AND user_id = @userId) OR (@sessionKey <> '' AND session_anahtari = @sessionKey))
-              AND durum IN ('Taslak','Profil Eksik','Giris Bekliyor')
-            ORDER BY son_aktivite_tarihi DESC, id DESC
+            FROM [dbo].[REZERVASYON_TASLAKLARI]
+            WHERE [OTEL_ID] = @hotelId
+              AND ((@userId > 0 AND [KULLANICI_ID] = @userId) OR (@sessionKey <> '' AND [SESSION_ANAHTARI] = @sessionKey))
+              AND [DURUM] IN ('Taslak','Profil Eksik','Giris Bekliyor')
+            ORDER BY [SON_AKTIVITE_TARIHI] DESC, id DESC
             OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
         long? existingId = null;
@@ -212,38 +212,42 @@ public class ReservationDraftService : IReservationDraftService
         if (existingId.HasValue)
         {
             const string updateSql = @"
-                UPDATE rezervasyon_taslaklari
-                SET user_id = @userId,
-                    session_anahtari = @sessionKey,
-                    kaynak = @source,
-                    durum = @status,
-                    oda_tip_id = @roomTypeId,
-                    misafir_ad_soyad = @guestFullName,
-                    misafir_eposta = @guestEmail,
-                    misafir_telefon = @guestPhone,
-                    misafir_sehir = @guestCity,
-                    misafir_ilce = @guestDistrict,
-                    misafir_mahalle = @guestNeighborhood,
-                    misafir_adres = @guestAddress,
-                    giris_tarihi = @checkIn,
-                    cikis_tarihi = @checkOut,
-                    yetiskin_sayisi = @adultCount,
-                    cocuk_sayisi = @childCount,
-                    oda_sayisi = @roomCount,
-                    gecelik_fiyat = @nightlyPrice,
-                    net_oda_tutari = @netRoomAmount,
-                    kdv_orani = @vatRate,
-                    kdv_tutari = @vatAmount,
-                    konaklama_vergisi_orani = @accommodationTaxRate,
-                    konaklama_vergisi_tutari = @accommodationTaxAmount,
-                    vergi_tutari = @taxAmount,
-                    toplam_tutar = @totalAmount,
-                    para_birimi = @currency,
-                    donus_url = @returnUrl,
-                    profil_tamamlanma_url = @profileCompletionUrl,
-                    notlar = @notes,
-                    gecerlilik_tarihi = DATEADD(DAY, 30, SYSUTCDATETIME()),
-                    son_aktivite_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[REZERVASYON_TASLAKLARI]
+                SET [KULLANICI_ID] = @userId,
+                    [SESSION_ANAHTARI] = @sessionKey,
+                    [KAYNAK] = @source,
+                    [DURUM] = @status,
+                    [ODA_TIP_ID] = @roomTypeId,
+                    [MISAFIR_AD_SOYAD] = @guestFullName,
+                    [MISAFIR_EPOSTA] = @guestEmail,
+                    [MISAFIR_TELEFON] = @guestPhone,
+                    [MISAFIR_SEHIR] = @guestCity,
+                    [MISAFIR_ILCE] = @guestDistrict,
+                    [MISAFIR_MAHALLE] = @guestNeighborhood,
+                    [MISAFIR_ADRES] = @guestAddress,
+                    [MISAFIR_ULKE_ID] = @guestUlkeId,
+                    [MISAFIR_IL_ID] = @guestIlId,
+                    [MISAFIR_ILCE_ID] = @guestIlceId,
+                    [MISAFIR_MAHALLE_ID] = @guestMahalleId,
+                    [GIRIS_TARIHI] = @checkIn,
+                    [CIKIS_TARIHI] = @checkOut,
+                    [YETISKIN_SAYISI] = @adultCount,
+                    [COCUK_SAYISI] = @childCount,
+                    [ODA_SAYISI] = @roomCount,
+                    [GECELIK_FIYAT] = @nightlyPrice,
+                    [NET_ODA_TUTARI] = @netRoomAmount,
+                    [KDV_ORANI] = @vatRate,
+                    [KDV_TUTARI] = @vatAmount,
+                    [KONAKLAMA_VERGISI_ORANI] = @accommodationTaxRate,
+                    [KONAKLAMA_VERGISI_TUTARI] = @accommodationTaxAmount,
+                    [VERGI_TUTARI] = @taxAmount,
+                    [TOPLAM_TUTAR] = @totalAmount,
+                    [PARA_BIRIMI] = @currency,
+                    [DONUS_URL] = @returnUrl,
+                    [PROFIL_TAMAMLANMA_URL] = @profileCompletionUrl,
+                    [NOTLAR] = @notes,
+                    [GECERLILIK_TARIHI] = DATEADD(DAY, 30, SYSUTCDATETIME()),
+                    [SON_AKTIVITE_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @draftId;";
             await using var updateCommand = new SqlCommand(updateSql, connection);
             BindDraftParameters(updateCommand, request);
@@ -253,19 +257,21 @@ public class ReservationDraftService : IReservationDraftService
         }
 
         const string insertSql = @"
-            INSERT INTO rezervasyon_taslaklari
+            INSERT INTO [dbo].[REZERVASYON_TASLAKLARI]
             (
-                taslak_kodu, user_id, session_anahtari, kaynak, durum, otel_id, oda_tip_id,
-                misafir_ad_soyad, misafir_eposta, misafir_telefon, misafir_sehir, misafir_ilce, misafir_mahalle, misafir_adres,
-                giris_tarihi, cikis_tarihi, yetiskin_sayisi, cocuk_sayisi, oda_sayisi,
-                gecelik_fiyat, net_oda_tutari, kdv_orani, kdv_tutari, konaklama_vergisi_orani, konaklama_vergisi_tutari,
-                vergi_tutari, toplam_tutar, para_birimi, donus_url, profil_tamamlanma_url, notlar,
-                gecerlilik_tarihi
+                [TASLAK_KODU], [KULLANICI_ID], [SESSION_ANAHTARI], [KAYNAK], [DURUM], [OTEL_ID], [ODA_TIP_ID],
+                [MISAFIR_AD_SOYAD], [MISAFIR_EPOSTA], [MISAFIR_TELEFON], [MISAFIR_SEHIR], [MISAFIR_ILCE], [MISAFIR_MAHALLE], [MISAFIR_ADRES],
+                [MISAFIR_ULKE_ID], [MISAFIR_IL_ID], [MISAFIR_ILCE_ID], [MISAFIR_MAHALLE_ID],
+                [GIRIS_TARIHI], [CIKIS_TARIHI], [YETISKIN_SAYISI], [COCUK_SAYISI], [ODA_SAYISI],
+                [GECELIK_FIYAT], [NET_ODA_TUTARI], [KDV_ORANI], [KDV_TUTARI], [KONAKLAMA_VERGISI_ORANI], [KONAKLAMA_VERGISI_TUTARI],
+                [VERGI_TUTARI], [TOPLAM_TUTAR], [PARA_BIRIMI], [DONUS_URL], [PROFIL_TAMAMLANMA_URL], [NOTLAR],
+                [GECERLILIK_TARIHI]
             )
             VALUES
             (
                 @draftCode, @userId, @sessionKey, @source, @status, @hotelId, @roomTypeId,
                 @guestFullName, @guestEmail, @guestPhone, @guestCity, @guestDistrict, @guestNeighborhood, @guestAddress,
+                @guestUlkeId, @guestIlId, @guestIlceId, @guestMahalleId,
                 @checkIn, @checkOut, @adultCount, @childCount, @roomCount,
                 @nightlyPrice, @netRoomAmount, @vatRate, @vatAmount, @accommodationTaxRate, @accommodationTaxAmount,
                 @taxAmount, @totalAmount, @currency, @returnUrl, @profileCompletionUrl, @notes,
@@ -283,7 +289,7 @@ public class ReservationDraftService : IReservationDraftService
         _ = reservationId;
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = @"
-            DELETE FROM rezervasyon_taslaklari
+            DELETE FROM [dbo].[REZERVASYON_TASLAKLARI]
             WHERE id = @draftId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@draftId", draftId);
@@ -297,12 +303,12 @@ public class ReservationDraftService : IReservationDraftService
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = @"
-            DELETE FROM rezervasyon_taslaklari
+            DELETE FROM [dbo].[REZERVASYON_TASLAKLARI]
             WHERE id = @draftId
-              AND durum IN ('Taslak','Profil Eksik','Giris Bekliyor')
+              AND [DURUM] IN ('Taslak','Profil Eksik','Giris Bekliyor')
               AND (
-                  (@userId > 0 AND user_id = @userId)
-                  OR (@sessionKey <> '' AND session_anahtari = @sessionKey)
+                  (@userId > 0 AND [KULLANICI_ID] = @userId)
+                  OR (@sessionKey <> '' AND [SESSION_ANAHTARI] = @sessionKey)
               );";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@draftId", draftId);
@@ -326,6 +332,10 @@ public class ReservationDraftService : IReservationDraftService
         command.Parameters.AddWithValue("@guestDistrict", NullIfWhiteSpace(request.GuestDistrict));
         command.Parameters.AddWithValue("@guestNeighborhood", NullIfWhiteSpace(request.GuestNeighborhood));
         command.Parameters.AddWithValue("@guestAddress", NullIfWhiteSpace(request.GuestAddress));
+        command.Parameters.AddWithValue("@guestUlkeId", request.GuestUlkeId.HasValue ? request.GuestUlkeId.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@guestIlId", request.GuestIlId.HasValue ? request.GuestIlId.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@guestIlceId", request.GuestIlceId.HasValue ? request.GuestIlceId.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@guestMahalleId", request.GuestMahalleId.HasValue ? request.GuestMahalleId.Value : DBNull.Value);
         command.Parameters.AddWithValue("@checkIn", request.CheckInDate.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@checkOut", request.CheckOutDate.ToDateTime(TimeOnly.MinValue));
         command.Parameters.AddWithValue("@adultCount", request.AdultCount);
@@ -392,13 +402,16 @@ public class ReservationDraftService : IReservationDraftService
     private static async Task<bool> HasRequiredReservationProfileAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT COALESCE(eposta, ''),
-                   dogum_tarihi,
-                   COALESCE(cinsiyet, ''),
-                   COALESCE(sehir, ''),
+            SELECT COALESCE([EPOSTA], ''),
+                   [DOGUM_TARIHI],
+                   COALESCE([CINSIYET], ''),
+                   COALESCE([SEHIR], ''),
                    COALESCE(ilce, ''),
-                   COALESCE(mahalle, '')
-            FROM users
+                   COALESCE([MAHALLE], ''),
+                   [IL_ID],
+                   [ILCE_ID],
+                   [MAHALLE_ID]
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId
             ORDER BY id
             OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
@@ -410,12 +423,15 @@ public class ReservationDraftService : IReservationDraftService
             return false;
         }
 
+        var hasTextLocation = !string.IsNullOrWhiteSpace(reader.GetString(3))
+                              && !string.IsNullOrWhiteSpace(reader.GetString(4))
+                              && !string.IsNullOrWhiteSpace(reader.GetString(5));
+        var hasGeoLocation = !reader.IsDBNull(6) && !reader.IsDBNull(7) && !reader.IsDBNull(8);
+
         return !string.IsNullOrWhiteSpace(reader.GetString(0))
                && !reader.IsDBNull(1)
                && !string.IsNullOrWhiteSpace(reader.GetString(2))
-               && !string.IsNullOrWhiteSpace(reader.GetString(3))
-               && !string.IsNullOrWhiteSpace(reader.GetString(4))
-               && !string.IsNullOrWhiteSpace(reader.GetString(5));
+               && (hasTextLocation || hasGeoLocation);
     }
 
     private async Task<SqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)

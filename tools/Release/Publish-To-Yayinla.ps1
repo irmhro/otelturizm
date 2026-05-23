@@ -2,7 +2,7 @@
 # Calistir (repo kokunden): powershell -ExecutionPolicy Bypass -File .\tools\Release\Publish-To-Yayinla.ps1
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$Csproj = Join-Path $ProjectRoot 'otelturizmnew.csproj'
+$Csproj = Join-Path $ProjectRoot 'otelturizm.csproj'
 if (-not (Test-Path $Csproj)) {
     throw "Proje bulunamadi: $Csproj"
 }
@@ -21,6 +21,22 @@ dotnet publish $Csproj `
     --verbosity minimal `
     -p:PublishTrimmed=false
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+$requiredFiles = @(
+    'otelturizm.dll',
+    'Views\Email\tr\RezervasyonOnaylandi.cshtml',
+    'Views\Email\tr\Rezervasyon Talebi Alindi.cshtml',
+    'Views\Email\tr\Partner Yeni Rezervasyon.cshtml',
+    'Views\Email\tr\Rezervasyon Reddedildi.cshtml',
+    'Views\Paneller\Partner\Dashboard.cshtml',
+    'Views\Paneller\Partner\_PartnerSidebar.cshtml',
+    'wwwroot\assets\css\paneller\partner\dashboard.css',
+    'wwwroot\assets\css\paneller\partner\shell.css'
+)
+$missing = @($requiredFiles | Where-Object { -not (Test-Path -LiteralPath (Join-Path $PublishDir $_)) })
+if ($missing.Count -gt 0) {
+    throw "Publish paketi eksik dosya uretti: $($missing -join ', ')"
+}
 
 $dtLocal = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
 $dtUtc = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')

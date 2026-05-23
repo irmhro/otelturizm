@@ -53,27 +53,27 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
         var parameters = string.Join(", ", ids.Select((_, index) => $"@hotelId{index}"));
         var sql = $@"
             SELECT
-                ot.otel_id,
+                ot.[OTEL_ID],
                 MIN(
                     CASE
-                        WHEN ofm.kapali_satis = 1 THEN NULL
-                        WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                        WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                        WHEN ofm.indirimli_fiyat IS NOT NULL
-                             AND ofm.indirimli_fiyat > 0
-                             AND ofm.indirimli_fiyat < ofm.gecelik_fiyat
-                            THEN ofm.indirimli_fiyat
-                        ELSE ofm.gecelik_fiyat
+                        WHEN ofm.[KAPALI_SATIS] = 1 THEN NULL
+                        WHEN (COALESCE(ofm.[TOPLAM_ODA_SAYISI], ot.[TOPLAM_ODA_SAYISI]) - COALESCE(ofm.[SATILAN_ODA_SAYISI], 0) - COALESCE(ofm.[BLOKE_ODA_SAYISI], 0)) <= 0 THEN NULL
+                        WHEN ofm.[GECELIK_FIYAT] IS NULL OR ofm.[GECELIK_FIYAT] <= 0 THEN NULL
+                        WHEN ofm.[INDIRIMLI_FIYAT] IS NOT NULL
+                             AND ofm.[INDIRIMLI_FIYAT] > 0
+                             AND ofm.[INDIRIMLI_FIYAT] < ofm.[GECELIK_FIYAT]
+                            THEN ofm.[INDIRIMLI_FIYAT]
+                        ELSE ofm.[GECELIK_FIYAT]
                     END
                 ) AS effective_price
-            FROM oda_tipleri ot
-            LEFT JOIN oda_fiyat_musaitlik ofm
-                ON ofm.oda_tip_id = ot.id
-               AND ofm.otel_id = ot.otel_id
-               AND ofm.tarih BETWEEN @startDate AND @endDate
-            WHERE ot.aktif_mi = 1
-              AND ot.otel_id IN ({parameters})
-            GROUP BY ot.otel_id;";
+            FROM [dbo].[ODA_TIPLERI] ot
+            LEFT JOIN [dbo].[ODA_FIYAT_MUSAITLIK] ofm
+                ON ofm.[ODA_TIP_ID] = ot.id
+               AND ofm.[OTEL_ID] = ot.[OTEL_ID]
+               AND ofm.[TARIH] BETWEEN @startDate AND @endDate
+            WHERE ot.[AKTIF_MI] = 1
+              AND ot.[OTEL_ID] IN ({parameters})
+            GROUP BY ot.[OTEL_ID];";
 
         var result = new Dictionary<long, decimal>();
         await using var connection = await CreateOpenConnectionAsync(cancellationToken);
@@ -144,21 +144,21 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
                 ot.id,
                 AVG(
                     CASE
-                        WHEN ofm.kapali_satis = 1 THEN NULL
-                        WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                        WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                        WHEN ofm.indirimli_fiyat IS NOT NULL
-                             AND ofm.indirimli_fiyat > 0
-                             AND ofm.indirimli_fiyat < ofm.gecelik_fiyat
-                            THEN ofm.indirimli_fiyat
-                        ELSE ofm.gecelik_fiyat
+                        WHEN ofm.[KAPALI_SATIS] = 1 THEN NULL
+                        WHEN (COALESCE(ofm.[TOPLAM_ODA_SAYISI], ot.[TOPLAM_ODA_SAYISI]) - COALESCE(ofm.[SATILAN_ODA_SAYISI], 0) - COALESCE(ofm.[BLOKE_ODA_SAYISI], 0)) <= 0 THEN NULL
+                        WHEN ofm.[GECELIK_FIYAT] IS NULL OR ofm.[GECELIK_FIYAT] <= 0 THEN NULL
+                        WHEN ofm.[INDIRIMLI_FIYAT] IS NOT NULL
+                             AND ofm.[INDIRIMLI_FIYAT] > 0
+                             AND ofm.[INDIRIMLI_FIYAT] < ofm.[GECELIK_FIYAT]
+                            THEN ofm.[INDIRIMLI_FIYAT]
+                        ELSE ofm.[GECELIK_FIYAT]
                     END
                 ) AS effective_nightly
-            FROM oda_tipleri ot
-            LEFT JOIN oda_fiyat_musaitlik ofm
-                ON ofm.oda_tip_id = ot.id
-               AND ofm.otel_id = ot.otel_id
-               AND ofm.tarih BETWEEN @startDate AND @endDate
+            FROM [dbo].[ODA_TIPLERI] ot
+            LEFT JOIN [dbo].[ODA_FIYAT_MUSAITLIK] ofm
+                ON ofm.[ODA_TIP_ID] = ot.id
+               AND ofm.[OTEL_ID] = ot.[OTEL_ID]
+               AND ofm.[TARIH] BETWEEN @startDate AND @endDate
             WHERE ot.id IN ({parameters})
             GROUP BY ot.id;";
 
@@ -202,8 +202,8 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
         await using var connection = await CreateOpenConnectionAsync(cancellationToken);
 
         const string roomSql = @"
-            SELECT TOP (1) otel_id, toplam_oda_sayisi
-            FROM oda_tipleri
+            SELECT TOP (1) [OTEL_ID], [TOPLAM_ODA_SAYISI]
+            FROM [dbo].[ODA_TIPLERI]
             WHERE id = @roomTypeId;";
 
         long roomHotelId;
@@ -224,19 +224,19 @@ public sealed class HotelPricingReadService : IHotelPricingReadService
         }
 
         const string pricingSql = @"
-            SELECT tarih,
-                   gecelik_fiyat,
-                   indirimli_fiyat,
-                   kampanya_id,
-                   toplam_oda_sayisi,
-                   satilan_oda_sayisi,
-                   bloke_oda_sayisi,
-                   kapali_satis
-            FROM oda_fiyat_musaitlik
-            WHERE oda_tip_id = @roomTypeId
-              AND otel_id = @hotelId
-              AND tarih BETWEEN @startDate AND @endDate
-            ORDER BY tarih ASC;";
+            SELECT [TARIH],
+                   [GECELIK_FIYAT],
+                   [INDIRIMLI_FIYAT],
+                   [KAMPANYA_ID],
+                   [TOPLAM_ODA_SAYISI],
+                   [SATILAN_ODA_SAYISI],
+                   [BLOKE_ODA_SAYISI],
+                   [KAPALI_SATIS]
+            FROM [dbo].[ODA_FIYAT_MUSAITLIK]
+            WHERE [ODA_TIP_ID] = @roomTypeId
+              AND [OTEL_ID] = @hotelId
+              AND [TARIH] BETWEEN @startDate AND @endDate
+            ORDER BY [TARIH] ASC;";
 
         var dailyOverrides = new Dictionary<DateOnly, (decimal BasePrice, decimal? DiscountPrice, long? DiscountId, short TotalRooms, short SoldRooms, short BlockedRooms, bool IsClosed)>();
         await using (var pricingCommand = CreateCommand(connection, pricingSql))

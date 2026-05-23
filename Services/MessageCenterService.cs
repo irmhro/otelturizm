@@ -66,12 +66,12 @@ public class MessageCenterService : IMessageCenterService
 
         const string existingSql = @"
             SELECT TOP (1) id
-            FROM mesaj_konusmalari
-            WHERE misafir_kullanici_id = @userId
-              AND otel_id = @hotelId
-              AND konusma_turu = 'Otel'
-              AND durum <> 'Arşivlendi'
-            ORDER BY COALESCE(son_mesaj_tarihi, olusturulma_tarihi) DESC, id DESC;";
+            FROM [dbo].[MESAJ_KONUSMALARI]
+            WHERE [MISAFIR_KULLANICI_ID] = @userId
+              AND [OTEL_ID] = @hotelId
+              AND [KONUSMA_TURU] = 'Otel'
+              AND [DURUM] <> 'Arşivlendi'
+            ORDER BY COALESCE([SON_MESAJ_TARIHI], [OLUSTURULMA_TARIHI]) DESC, id DESC;";
 
         await using (var existingCommand = new SqlCommand(existingSql, connection))
         {
@@ -89,11 +89,11 @@ public class MessageCenterService : IMessageCenterService
         try
         {
             const string insertConversationSql = @"
-                INSERT INTO mesaj_konusmalari
+                INSERT INTO [dbo].[MESAJ_KONUSMALARI]
                 (
-                    konusma_kodu, rezervasyon_id, otel_id, misafir_kullanici_id, otel_yetkilisi_kullanici_id,
-                    konu_basligi, konusma_turu, konu_kategorisi, durum, oncelik, son_mesaj_tarihi, son_mesaj_gonderen, son_mesaj_onizleme,
-                    otel_okunmamis_sayisi, misafir_okunmamis_sayisi
+                    [KONUSMA_KODU], [REZERVASYON_ID], [OTEL_ID], [MISAFIR_KULLANICI_ID], [OTEL_YETKILISI_KULLANICI_ID],
+                    [KONU_BASLIGI], [KONUSMA_TURU], [KONU_KATEGORISI], [DURUM], [ONCELIK], [SON_MESAJ_TARIHI], [SON_MESAJ_GONDEREN], [SON_MESAJ_ONIZLEME],
+                    [OTEL_OKUNMAMIS_SAYISI], [MISAFIR_OKUNMAMIS_SAYISI]
                 )
                 VALUES
                 (
@@ -117,9 +117,9 @@ public class MessageCenterService : IMessageCenterService
             }
 
             const string insertMessageSql = @"
-                INSERT INTO mesajlar
+                INSERT INTO [dbo].[MESAJLAR]
                 (
-                    konusma_id, gonderen_turu, gonderen_kullanici_id, mesaj_metni, mesaj_tipi, okundu_mu, durum, gonderim_tarihi
+                    [KONUSMA_ID], [GONDEREN_TURU], [GONDEREN_KULLANICI_ID], [MESAJ_METNI], [MESAJ_TIPI], [OKUNDU_MU], [DURUM], [GONDERIM_TARIHI]
                 )
                 VALUES
                 (
@@ -173,19 +173,19 @@ public class MessageCenterService : IMessageCenterService
         await using var connection = await OpenConnectionAsync(cancellationToken);
         const string sql = @"
             UPDATE m
-            SET m.durum = 'Silindi',
-                m.silinme_tarihi = CURRENT_TIMESTAMP,
-                m.silinme_nedeni = 'Kullanici tarafindan silindi',
-                m.silinme_gorunum_metni = 'Bu mesaj silindi.',
-                m.misafir_gizlendi_mi = 1
-            FROM mesajlar m
-            INNER JOIN mesaj_konusmalari mk ON mk.id = m.konusma_id
+            SET m.[DURUM] = 'Silindi',
+                m.[SILINME_TARIHI] = CURRENT_TIMESTAMP,
+                m.[SILINME_NEDENI] = 'Kullanici tarafindan silindi',
+                m.[SILINME_GORUNUM_METNI] = 'Bu [MESAJ] silindi.',
+                m.[MISAFIR_GIZLENDI_MI] = 1
+            FROM [dbo].[MESAJLAR] m
+            INNER JOIN [dbo].[MESAJ_KONUSMALARI] mk ON mk.id = m.[KONUSMA_ID]
             WHERE m.id = @messageId
-              AND m.konusma_id = @conversationId
-              AND mk.misafir_kullanici_id = @userId
-              AND m.gonderen_turu = 'Misafir'
-              AND m.gonderen_kullanici_id = @userId
-              AND m.durum <> 'Silindi';";
+              AND m.[KONUSMA_ID] = @conversationId
+              AND mk.[MISAFIR_KULLANICI_ID] = @userId
+              AND m.[GONDEREN_TURU] = 'Misafir'
+              AND m.[GONDEREN_KULLANICI_ID] = @userId
+              AND m.[DURUM] <> 'Silindi';";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@messageId", request.MessageId);
@@ -201,19 +201,19 @@ public class MessageCenterService : IMessageCenterService
         var firmaId = await ResolveFirmaIdAsync(connection, userId, cancellationToken);
         const string sql = @"
             UPDATE m
-            SET m.durum = 'Silindi',
-                m.silinme_tarihi = CURRENT_TIMESTAMP,
-                m.silinme_nedeni = 'Firma tarafindan silindi',
-                m.silinme_gorunum_metni = 'Bu mesaj silindi.',
-                m.firma_gizlendi_mi = 1
-            FROM mesajlar m
-            INNER JOIN mesaj_konusmalari mk ON mk.id = m.konusma_id
+            SET m.[DURUM] = 'Silindi',
+                m.[SILINME_TARIHI] = CURRENT_TIMESTAMP,
+                m.[SILINME_NEDENI] = 'Firma tarafindan silindi',
+                m.[SILINME_GORUNUM_METNI] = 'Bu [MESAJ] silindi.',
+                m.[FIRMA_GIZLENDI_MI] = 1
+            FROM [dbo].[MESAJLAR] m
+            INNER JOIN [dbo].[MESAJ_KONUSMALARI] mk ON mk.id = m.[KONUSMA_ID]
             WHERE m.id = @messageId
-              AND m.konusma_id = @conversationId
-              AND mk.firma_id = @firmaId
-              AND m.gonderen_turu = 'Firma'
-              AND m.gonderen_firma_id = @firmaId
-              AND m.durum <> 'Silindi';";
+              AND m.[KONUSMA_ID] = @conversationId
+              AND mk.[FIRMA_ID] = @firmaId
+              AND m.[GONDEREN_TURU] = 'Firma'
+              AND m.[GONDEREN_FIRMA_ID] = @firmaId
+              AND m.[DURUM] <> 'Silindi';";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@messageId", request.MessageId);
@@ -229,20 +229,20 @@ public class MessageCenterService : IMessageCenterService
 
         const string threadsSql = @"
             SELECT mk.id,
-                   COALESCE(f.firma_adi, o.otel_adi, 'Otelturizm') AS title_text,
-                   COALESCE(mk.konu_basligi, 'Mesajlar') AS subtitle_text,
-                   COALESCE(mk.son_mesaj_onizleme, 'Henüz mesaj yok') AS preview_text,
+                   COALESCE(f.[FIRMA_ADI], o.[OTEL_ADI], 'Otelturizm') AS title_text,
+                   COALESCE(mk.[KONU_BASLIGI], 'Mesajlar') AS subtitle_text,
+                   COALESCE(mk.[SON_MESAJ_ONIZLEME], 'Henüz [MESAJ] yok') AS preview_text,
                    CASE
-                       WHEN @viewerType = 'firma' THEN COALESCE(mk.firma_okunmamis_sayisi, 0)
-                       ELSE COALESCE(mk.misafir_okunmamis_sayisi, 0)
+                       WHEN @viewerType = 'firma' THEN COALESCE(mk.[FIRMA_OKUNMAMIS_SAYISI], 0)
+                       ELSE COALESCE(mk.[MISAFIR_OKUNMAMIS_SAYISI], 0)
                    END AS unread_count
-            FROM mesaj_konusmalari mk
-            LEFT JOIN oteller o ON o.id = mk.otel_id
-            LEFT JOIN firmalar f ON f.id = mk.firma_id
-            WHERE ((@viewerType = 'user' AND mk.misafir_kullanici_id = @userId)
-               OR  (@viewerType = 'firma' AND mk.firma_id = @firmaId))
-              AND mk.durum <> 'Arşivlendi'
-            ORDER BY COALESCE(mk.son_mesaj_tarihi, mk.olusturulma_tarihi) DESC, mk.id DESC;";
+            FROM [dbo].[MESAJ_KONUSMALARI] mk
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = mk.[OTEL_ID]
+            LEFT JOIN [dbo].[FIRMALAR] f ON f.id = mk.[FIRMA_ID]
+            WHERE ((@viewerType = 'user' AND mk.[MISAFIR_KULLANICI_ID] = @userId)
+               OR  (@viewerType = 'firma' AND mk.[FIRMA_ID] = @firmaId))
+              AND mk.[DURUM] <> 'Arşivlendi'
+            ORDER BY COALESCE(mk.[SON_MESAJ_TARIHI], mk.[OLUSTURULMA_TARIHI]) DESC, mk.id DESC;";
 
         await using (var command = new SqlCommand(threadsSql, connection))
         {
@@ -282,14 +282,14 @@ public class MessageCenterService : IMessageCenterService
         }
 
         const string titleSql = @"
-            SELECT TOP (1) COALESCE(f.firma_adi, o.otel_adi, 'Otelturizm') AS title_text,
-                   COALESCE(mk.konu_basligi, 'Mesaj detayı') AS subtitle_text
-            FROM mesaj_konusmalari mk
-            LEFT JOIN oteller o ON o.id = mk.otel_id
-            LEFT JOIN firmalar f ON f.id = mk.firma_id
+            SELECT TOP (1) COALESCE(f.[FIRMA_ADI], o.[OTEL_ADI], 'Otelturizm') AS title_text,
+                   COALESCE(mk.[KONU_BASLIGI], 'Mesaj detayı') AS subtitle_text
+            FROM [dbo].[MESAJ_KONUSMALARI] mk
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = mk.[OTEL_ID]
+            LEFT JOIN [dbo].[FIRMALAR] f ON f.id = mk.[FIRMA_ID]
             WHERE mk.id = @conversationId
-              AND ((@viewerType = 'user' AND mk.misafir_kullanici_id = @userId)
-               OR  (@viewerType = 'firma' AND mk.firma_id = @firmaId));";
+              AND ((@viewerType = 'user' AND mk.[MISAFIR_KULLANICI_ID] = @userId)
+               OR  (@viewerType = 'firma' AND mk.[FIRMA_ID] = @firmaId));";
 
         await using (var titleCommand = new SqlCommand(titleSql, connection))
         {
@@ -309,21 +309,21 @@ public class MessageCenterService : IMessageCenterService
 
         const string messagesSql = @"
             SELECT m.id,
-                   m.gonderen_turu,
-                   COALESCE(m.mesaj_metni, ''),
-                   m.gonderim_tarihi,
-                   COALESCE(m.durum, 'Gönderildi'),
-                   COALESCE(m.silinme_gorunum_metni, 'Bu mesaj silindi.'),
-                   COALESCE(u.ad_soyad, fu.ad_soyad, f.firma_adi, o.otel_adi, 'Otelturizm') AS sender_name,
-                   COALESCE(m.gonderen_kullanici_id, 0),
-                   COALESCE(m.gonderen_firma_id, 0)
-            FROM mesajlar m
-            LEFT JOIN users u ON u.id = m.gonderen_kullanici_id
-            LEFT JOIN firmalar f ON f.id = m.gonderen_firma_id
-            LEFT JOIN users fu ON fu.id = m.gonderen_firma_kullanici_id
-            LEFT JOIN oteller o ON o.id = m.gonderen_otel_id
-            WHERE m.konusma_id = @conversationId
-            ORDER BY m.gonderim_tarihi ASC, m.id ASC;";
+                   m.[GONDEREN_TURU],
+                   COALESCE(m.[MESAJ_METNI], ''),
+                   m.[GONDERIM_TARIHI],
+                   COALESCE(m.[DURUM], 'Gönderildi'),
+                   COALESCE(m.[SILINME_GORUNUM_METNI], 'Bu [MESAJ] silindi.'),
+                   COALESCE(u.[AD_SOYAD], fu.[AD_SOYAD], f.[FIRMA_ADI], o.[OTEL_ADI], 'Otelturizm') AS sender_name,
+                   COALESCE(m.[GONDEREN_KULLANICI_ID], 0),
+                   COALESCE(m.[GONDEREN_FIRMA_ID], 0)
+            FROM [dbo].[MESAJLAR] m
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = m.[GONDEREN_KULLANICI_ID]
+            LEFT JOIN [dbo].[FIRMALAR] f ON f.id = m.[GONDEREN_FIRMA_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] fu ON fu.id = m.[GONDEREN_FIRMA_KULLANICI_ID]
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = m.[GONDEREN_OTEL_ID]
+            WHERE m.[KONUSMA_ID] = @conversationId
+            ORDER BY m.[GONDERIM_TARIHI] ASC, m.id ASC;";
 
         await using (var messageCommand = new SqlCommand(messagesSql, connection))
         {
@@ -361,11 +361,11 @@ public class MessageCenterService : IMessageCenterService
     {
         const string sql = @"
             SELECT TOP (1) id
-            FROM rezervasyonlar
-            WHERE kullanici_id = @userId
-              AND otel_id = @hotelId
-              AND durum NOT IN ('İptal Edildi', 'Reddedildi')
-            ORDER BY COALESCE(cikis_tarihi, giris_tarihi) DESC, id DESC;";
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [KULLANICI_ID] = @userId
+              AND [OTEL_ID] = @hotelId
+              AND [DURUM] NOT IN ('İptal Edildi', 'Reddedildi')
+            ORDER BY COALESCE([CIKIS_TARIHI], [GIRIS_TARIHI]) DESC, id DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -380,13 +380,13 @@ public class MessageCenterService : IMessageCenterService
     {
         const string sql = @"
             SELECT TOP (1)
-                o.otel_adi,
-                COALESCE(oks.user_id, o.user_id, 0) AS manager_user_id
-            FROM oteller o
-            LEFT JOIN otel_kullanici_sahiplikleri oks
-                ON oks.otel_id = o.id
-               AND oks.aktif_mi = 1
-               AND oks.ana_sorumlu_mu = 1
+                o.[OTEL_ADI],
+                COALESCE(oks.[KULLANICI_ID], o.[KULLANICI_ID], 0) AS manager_user_id
+            FROM [dbo].[OTELLER] o
+            LEFT JOIN [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oks
+                ON oks.[OTEL_ID] = o.id
+               AND oks.[AKTIF_MI] = 1
+               AND oks.[ANA_SORUMLU_MU] = 1
             WHERE o.id = @hotelId
             ORDER BY oks.id ASC;";
 
@@ -405,14 +405,14 @@ public class MessageCenterService : IMessageCenterService
     {
         var result = new Dictionary<long, List<MessageAttachmentViewModel>>();
         const string sql = @"
-            SELECT md.mesaj_id, gfv.id, gfv.orijinal_dosya_adi, gfv.mime_tipi, gfv.dosya_boyutu, gfv.gorsel_mi
-            FROM mesaj_dosyalari md
-            INNER JOIN guvenli_dosya_varliklari gfv ON gfv.id = md.guvenli_dosya_id
-            INNER JOIN mesajlar m ON m.id = md.mesaj_id
-            WHERE m.konusma_id = @conversationId
-              AND md.aktif_mi = 1
-              AND gfv.aktif_mi = 1
-            ORDER BY md.siralama ASC, md.id ASC;";
+            SELECT md.[MESAJ_ID], gfv.id, gfv.[ORIJINAL_DOSYA_ADI], gfv.[MIME_TIPI], gfv.[DOSYA_BOYUTU], gfv.[GORSEL_MI]
+            FROM [dbo].[MESAJ_DOSYALARI] md
+            INNER JOIN [dbo].[GUVENLI_DOSYA_VARLIKLARI] gfv ON gfv.id = md.[GUVENLI_DOSYA_ID]
+            INNER JOIN [dbo].[MESAJLAR] m ON m.id = md.[MESAJ_ID]
+            WHERE m.[KONUSMA_ID] = @conversationId
+              AND md.[AKTIF_MI] = 1
+              AND gfv.[AKTIF_MI] = 1
+            ORDER BY md.[SIRALAMA] ASC, md.id ASC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@conversationId", conversationId);
@@ -462,10 +462,10 @@ public class MessageCenterService : IMessageCenterService
         try
         {
             const string insertSql = @"
-                INSERT INTO mesajlar
+                INSERT INTO [dbo].[MESAJLAR]
                 (
-                    konusma_id, gonderen_turu, gonderen_kullanici_id, gonderen_firma_id, gonderen_firma_kullanici_id,
-                    mesaj_metni, mesaj_tipi, okundu_mu, durum, ip_adresi, cihaz_bilgisi, gonderim_tarihi
+                    [KONUSMA_ID], [GONDEREN_TURU], [GONDEREN_KULLANICI_ID], [GONDEREN_FIRMA_ID], [GONDEREN_FIRMA_KULLANICI_ID],
+                    [MESAJ_METNI], [MESAJ_TIPI], [OKUNDU_MU], [DURUM], [IP_ADRESI], [CIHAZ_BILGISI], [GONDERIM_TARIHI]
                 )
                 VALUES
                 (
@@ -503,8 +503,8 @@ public class MessageCenterService : IMessageCenterService
                     }, cancellationToken);
 
                     await using var fileCommand = new SqlCommand(@"
-                        INSERT INTO mesaj_dosyalari
-                        (mesaj_id, guvenli_dosya_id, gosterim_adi, siralama, aktif_mi)
+                        INSERT INTO [dbo].[MESAJ_DOSYALARI]
+                        ([MESAJ_ID], [GUVENLI_DOSYA_ID], [GOSTERIM_ADI], [SIRALAMA], [AKTIF_MI])
                         VALUES
                         (@messageId, @fileId, @displayName, @orderNo, 1);", connection, (SqlTransaction)transaction);
                     fileCommand.Parameters.AddWithValue("@messageId", messageId);
@@ -516,14 +516,14 @@ public class MessageCenterService : IMessageCenterService
             }
 
             await using (var updateConversationCommand = new SqlCommand(@"
-                UPDATE mesaj_konusmalari
-                SET son_mesaj_tarihi = CURRENT_TIMESTAMP,
-                    son_mesaj_gonderen = @senderType,
-                    son_mesaj_onizleme = LEFT(@preview, 100),
-                    misafir_okunmamis_sayisi = CASE WHEN @senderType = 'Firma' THEN misafir_okunmamis_sayisi + 1 ELSE 0 END,
-                    firma_okunmamis_sayisi = CASE WHEN @senderType = 'Misafir' THEN firma_okunmamis_sayisi + 1 ELSE 0 END,
-                    misafir_son_okuma_tarihi = CASE WHEN @senderType = 'Misafir' THEN CURRENT_TIMESTAMP ELSE misafir_son_okuma_tarihi END,
-                    firma_son_okuma_tarihi = CASE WHEN @senderType = 'Firma' THEN CURRENT_TIMESTAMP ELSE firma_son_okuma_tarihi END
+                UPDATE [dbo].[MESAJ_KONUSMALARI]
+                SET [SON_MESAJ_TARIHI] = CURRENT_TIMESTAMP,
+                    [SON_MESAJ_GONDEREN] = @senderType,
+                    [SON_MESAJ_ONIZLEME] = LEFT(@preview, 100),
+                    [MISAFIR_OKUNMAMIS_SAYISI] = CASE WHEN @senderType = 'Firma' THEN [MISAFIR_OKUNMAMIS_SAYISI] + 1 ELSE 0 END,
+                    [FIRMA_OKUNMAMIS_SAYISI] = CASE WHEN @senderType = 'Misafir' THEN [FIRMA_OKUNMAMIS_SAYISI] + 1 ELSE 0 END,
+                    [MISAFIR_SON_OKUMA_TARIHI] = CASE WHEN @senderType = 'Misafir' THEN CURRENT_TIMESTAMP ELSE [MISAFIR_SON_OKUMA_TARIHI] END,
+                    [FIRMA_SON_OKUMA_TARIHI] = CASE WHEN @senderType = 'Firma' THEN CURRENT_TIMESTAMP ELSE [FIRMA_SON_OKUMA_TARIHI] END
                 WHERE id = @conversationId;", connection, (SqlTransaction)transaction))
             {
                 updateConversationCommand.Parameters.AddWithValue("@conversationId", request.ConversationId);
@@ -545,11 +545,11 @@ public class MessageCenterService : IMessageCenterService
     private static async Task MarkUserConversationAsReadAsync(SqlConnection connection, long conversationId, long userId, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand(@"
-            UPDATE mesaj_konusmalari
-            SET misafir_okunmamis_sayisi = 0,
-                misafir_son_okuma_tarihi = CURRENT_TIMESTAMP
+            UPDATE [dbo].[MESAJ_KONUSMALARI]
+            SET [MISAFIR_OKUNMAMIS_SAYISI] = 0,
+                [MISAFIR_SON_OKUMA_TARIHI] = CURRENT_TIMESTAMP
             WHERE id = @conversationId
-              AND misafir_kullanici_id = @userId;", connection);
+              AND [MISAFIR_KULLANICI_ID] = @userId;", connection);
         command.Parameters.AddWithValue("@conversationId", conversationId);
         command.Parameters.AddWithValue("@userId", userId);
         await command.ExecuteNonQueryAsync(cancellationToken);
@@ -558,11 +558,11 @@ public class MessageCenterService : IMessageCenterService
     private static async Task MarkFirmaConversationAsReadAsync(SqlConnection connection, long conversationId, long firmaId, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand(@"
-            UPDATE mesaj_konusmalari
-            SET firma_okunmamis_sayisi = 0,
-                firma_son_okuma_tarihi = CURRENT_TIMESTAMP
+            UPDATE [dbo].[MESAJ_KONUSMALARI]
+            SET [FIRMA_OKUNMAMIS_SAYISI] = 0,
+                [FIRMA_SON_OKUMA_TARIHI] = CURRENT_TIMESTAMP
             WHERE id = @conversationId
-              AND firma_id = @firmaId;", connection);
+              AND [FIRMA_ID] = @firmaId;", connection);
         command.Parameters.AddWithValue("@conversationId", conversationId);
         command.Parameters.AddWithValue("@firmaId", firmaId);
         await command.ExecuteNonQueryAsync(cancellationToken);
@@ -570,7 +570,7 @@ public class MessageCenterService : IMessageCenterService
 
     private static async Task<bool> AuthorizeConversationForUserAsync(SqlConnection connection, long conversationId, long userId, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand("SELECT COUNT(*) FROM mesaj_konusmalari WHERE id = @id AND misafir_kullanici_id = @userId;", connection);
+        await using var command = new SqlCommand("SELECT COUNT(*) FROM [dbo].[MESAJ_KONUSMALARI] WHERE id = @id AND [MISAFIR_KULLANICI_ID] = @userId;", connection);
         command.Parameters.AddWithValue("@id", conversationId);
         command.Parameters.AddWithValue("@userId", userId);
         var count = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
@@ -579,7 +579,7 @@ public class MessageCenterService : IMessageCenterService
 
     private static async Task<bool> AuthorizeConversationForFirmaAsync(SqlConnection connection, long conversationId, long firmaId, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand("SELECT COUNT(*) FROM mesaj_konusmalari WHERE id = @id AND firma_id = @firmaId;", connection);
+        await using var command = new SqlCommand("SELECT COUNT(*) FROM [dbo].[MESAJ_KONUSMALARI] WHERE id = @id AND [FIRMA_ID] = @firmaId;", connection);
         command.Parameters.AddWithValue("@id", conversationId);
         command.Parameters.AddWithValue("@firmaId", firmaId);
         var count = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
@@ -588,7 +588,7 @@ public class MessageCenterService : IMessageCenterService
 
     private static async Task<long> ResolveFirmaIdAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand("SELECT TOP (1) COALESCE(firma_id, 0) FROM users WHERE id = @userId;", connection);
+        await using var command = new SqlCommand("SELECT TOP (1) COALESCE([FIRMA_ID], 0) FROM [dbo].[KULLANICILAR] WHERE id = @userId;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         var scalar = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt64(scalar ?? 0L, CultureInfo.InvariantCulture);

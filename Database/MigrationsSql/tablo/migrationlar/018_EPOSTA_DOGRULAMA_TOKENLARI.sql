@@ -1,0 +1,20 @@
+-- Tablo: dbo.EPOSTA_DOGRULAMA_TOKENLARI
+IF OBJECT_ID(N'dbo.EPOSTA_DOGRULAMA_TOKENLARI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[EPOSTA_DOGRULAMA_TOKENLARI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [KULLANICI_ID] bigint NOT NULL,
+        [EPOSTA] nvarchar(100) NOT NULL,
+        [TOKEN] nvarchar(96) NOT NULL,
+        [DOGRULAMA_KODU] nvarchar(8) NOT NULL,
+        [KULLANILDI_MI] bit NOT NULL CONSTRAINT [DF__email_dog__kulla__19DFD96B] DEFAULT ((0)),
+        [DENEME_SAYISI] smallint NOT NULL CONSTRAINT [DF__email_dog__denem__1AD3FDA4] DEFAULT ((0)),
+        [MAKSIMUM_DENEME] smallint NOT NULL CONSTRAINT [DF__email_dog__maksi__1BC821DD] DEFAULT ((5)),
+        [IP_ADRESI] nvarchar(45) NULL,
+        [KULLANICI_ARACISI] nvarchar(500) NULL,
+        [GECERLILIK_SURESI] datetime2(0) NOT NULL,
+        [KULLANILMA_TARIHI] datetime2(0) NULL,
+        [OLUSTURULMA_TARIHI] datetime2(0) NOT NULL CONSTRAINT [DF__email_dog__olust__1CBC4616] DEFAULT (sysutcdatetime()),
+        CONSTRAINT [PK_EPOSTA_DOGRULAMA_TOKENLARI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

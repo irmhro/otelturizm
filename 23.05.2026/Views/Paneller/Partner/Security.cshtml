@@ -1,0 +1,257 @@
+@model otelturizmnew.Models.Paneller.User.UserSecurityPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PageCssPath"] = "paneller/partner/security";
+    ViewData["Title"] = "Güvenlik";
+}
+
+<section class="form-stack">
+    <form method="post" action="/panel/partner/guvenlik/iki-asamali" class="panel-card" id="twoFactorForm">
+        @Html.AntiForgeryToken()
+        <div class="section-head"><h2>İki Aşamalı Doğrulama</h2></div>
+        <div class="security-subhead">
+            <h3>Partner hesabı için 2FA</h3>
+            <p>Doğrulama kanalı üzerindeki Açık/Kapalı anahtarıyla ayarlarınız anında uygulanır.</p>
+        </div>
+        <label class="toggle-row no-border" hidden>
+            <div><h3>Partner hesabı için 2FA</h3><p>Yönetim hesabınıza ikinci doğrulama adımı ekleyin.</p></div>
+            <input name="Enabled" id="twoFactorEnabledInput" type="checkbox" value="true" @(Model.TwoFactorEnabled ? "checked" : null) />
+        </label>
+        <input type="hidden" name="Channel" id="twoFactorChannelInput" value="@Model.SelectedTwoFactorChannel" />
+        <input name="Enabled" type="hidden" value="false" />
+        <div class="security-block">
+            <div class="security-block-head">
+                <strong>Doğrulama kanalı</strong>
+                <span class="text-muted">Kanallar arttıkça bu ekran genişleyerek devam edecek.</span>
+            </div>
+
+            <div class="security-channel-grid" role="radiogroup" aria-label="Doğrulama kanalı seçimi">
+                <label class="security-channel-card @(!Model.EmailUsableForTwoFactor ? "is-disabled" : string.Empty)"
+                       data-twofactor-channel="email"
+                       data-twofactor-usable="@(Model.EmailUsableForTwoFactor ? "true" : "false")">
+                    <span class="security-channel-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
+                    <span class="security-channel-copy">
+                        <strong>E-posta güvenlik kodu</strong>
+                        <small>@(Model.EmailUsableForTwoFactor ? $"Aktif adres: {Model.MaskedEmailAddress}" : "Önce e-posta doğrulaması tamamlanmalı.")</small>
+                    </span>
+                    <button type="button"
+                            class="security-channel-pill security-channel-toggle @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "email" ? "on" : "off")"
+                            data-twofactor-toggle="email"
+                            aria-label="E-posta kanalını aç/kapat">
+                        <i class="fas @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "email" ? "fa-lock" : "fa-lock-open")"></i>
+                        <span data-twofactor-pill-text>@(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "email" ? "Açık" : "Kapalı")</span>
+                    </button>
+                </label>
+
+                <label class="security-channel-card @(!Model.PhoneUsableForTwoFactor ? "is-disabled" : string.Empty)"
+                       data-twofactor-channel="whatsapp"
+                       data-twofactor-usable="@(Model.PhoneUsableForTwoFactor ? "true" : "false")">
+                    <span class="security-channel-icon" aria-hidden="true"><i class="fas fa-mobile-screen"></i></span>
+                    <span class="security-channel-copy">
+                        <strong>Telefon / WhatsApp kodu</strong>
+                        <small>@(Model.PhoneUsableForTwoFactor ? $"Doğrulanmış numara: {Model.MaskedPhoneNumber}" : "Telefon / WhatsApp altyapısı geliştirilmekte. Doğrulanmış numara gerektirir.")</small>
+                    </span>
+                    <button type="button"
+                            class="security-channel-pill security-channel-toggle @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "whatsapp" ? "on" : "off")"
+                            data-twofactor-toggle="whatsapp"
+                            aria-label="Telefon / WhatsApp kanalını aç/kapat">
+                        <i class="fas @(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "whatsapp" ? "fa-lock" : "fa-lock-open")"></i>
+                        <span data-twofactor-pill-text>@(Model.TwoFactorEnabled && Model.SelectedTwoFactorChannel == "whatsapp" ? "Açık" : "Kapalı")</span>
+                    </button>
+                </label>
+
+                <div class="security-channel-card is-upcoming" aria-disabled="true">
+                    <span class="security-channel-icon" aria-hidden="true"><i class="fas fa-shield-halved"></i></span>
+                    <span class="security-channel-copy">
+                        <strong>Authenticator uygulaması</strong>
+                        <small>Google/Microsoft Authenticator ile kod üretimi.</small>
+                    </span>
+                    <span class="security-channel-pill upcoming">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        Yakında
+                    </span>
+                </div>
+
+                <div class="security-channel-card is-upcoming" aria-disabled="true">
+                    <span class="security-channel-icon" aria-hidden="true"><i class="fas fa-fingerprint"></i></span>
+                    <span class="security-channel-copy">
+                        <strong>Passkey</strong>
+                        <small>Biyometri / cihaz anahtarı ile giriş.</small>
+                    </span>
+                    <span class="security-channel-pill upcoming">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        Yakında
+                    </span>
+                </div>
+            </div>
+
+            <p class="auth-inline-hint security-hint">
+                E-posta kanalı en hızlı ve güvenli seçenek olarak önerilir. Telefon/WhatsApp kanalı beta destek olarak kalır.
+            </p>
+        </div>
+    </form>
+
+    <div class="panel-card">
+        <div class="section-head"><h2>Sözleşmeler</h2></div>
+        <div class="security-subhead" style="margin-bottom: 0;">
+            <h3>Kullanıcı sözleşmeleri</h3>
+            <p>Hesabınla ilgili sözleşme ve aydınlatma metinlerine buradan erişebilirsin.</p>
+        </div>
+        <div class="security-block" style="padding-top: 14px;">
+            <div class="security-channel-grid" style="grid-template-columns: 1fr; gap: 10px;">
+                <a class="security-channel-card" href="/sozlesmeler/kullanici-kullanim-kosullari" target="_blank" rel="noopener">
+                    <span class="security-channel-icon" aria-hidden="true"><i class="fas fa-file-signature"></i></span>
+                    <span class="security-channel-copy">
+                        <strong>Kullanıcı Kullanım Koşulları</strong>
+                        <small>Platform üyeliği ve rezervasyon kullanım kuralları.</small>
+                    </span>
+                    <span class="security-channel-pill upcoming">
+                        <i class="fas fa-arrow-up-right-from-square"></i>
+                        Aç
+                    </span>
+                </a>
+                <a class="security-channel-card" href="/sozlesmeler/kullanici-kvkk-aydinlatma" target="_blank" rel="noopener">
+                    <span class="security-channel-icon" aria-hidden="true"><i class="fas fa-shield-halved"></i></span>
+                    <span class="security-channel-copy">
+                        <strong>Kullanıcı KVKK Aydınlatma Metni</strong>
+                        <small>6698 sayılı Kanun kapsamında aydınlatma metni.</small>
+                    </span>
+                    <span class="security-channel-pill upcoming">
+                        <i class="fas fa-arrow-up-right-from-square"></i>
+                        Aç
+                    </span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="modal modal-blur fade" id="twoFactorEmailInfoModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-status bg-primary"></div>
+            <div class="modal-body">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="security-info-icon"><i class="fas fa-shield-halved" aria-hidden="true"></i></div>
+                    <div>
+                        <h3 class="mb-1">E‑posta ile 2FA aktif</h3>
+                        <p class="text-muted mb-3">Artık şifrenizden sonra e‑posta hesabınıza gelen güvenlik kodu ile giriş yapabilirsiniz.</p>
+                        <div class="security-info-steps">
+                            <div class="security-info-step"><span>1</span> Kullanıcı adı + şifre</div>
+                            <div class="security-info-step"><span>2</span> E‑posta kutusuna gelen kod</div>
+                            <div class="security-info-step"><span>3</span> Yönetim paneline güvenli giriş</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">Anladım</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
+    }
+    <script nonce="@nonce">
+        (function () {
+            const form = document.getElementById('twoFactorForm');
+            const token = form?.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            const enabledInput = document.getElementById('twoFactorEnabledInput');
+            const channelInput = document.getElementById('twoFactorChannelInput');
+            const toggleButtons = Array.from(document.querySelectorAll('[data-twofactor-toggle]'));
+            const channelCards = Array.from(document.querySelectorAll('[data-twofactor-channel]'));
+
+            const setBusy = (busy) => {
+                toggleButtons.forEach((btn) => btn.toggleAttribute('disabled', !!busy));
+            };
+
+            const applyUiState = (enabled, channel) => {
+                if (enabledInput) enabledInput.checked = !!enabled;
+                if (channelInput) channelInput.value = channel || 'email';
+                toggleButtons.forEach((btn) => {
+                    const ch = btn.getAttribute('data-twofactor-toggle');
+                    const isOn = !!enabled && ch === channel;
+                    btn.classList.toggle('on', isOn);
+                    btn.classList.toggle('off', !isOn);
+                    const icon = btn.querySelector('i');
+                    const text = btn.querySelector('[data-twofactor-pill-text]');
+                    if (icon) {
+                        icon.className = 'fas ' + (isOn ? 'fa-lock' : 'fa-lock-open');
+                    }
+                    if (text) text.textContent = isOn ? 'Açık' : 'Kapalı';
+                });
+                channelCards.forEach((card) => {
+                    const ch = card.getAttribute('data-twofactor-channel');
+                    card.classList.toggle('is-selected', !!enabled && ch === channel);
+                });
+            };
+
+            const showEmailInfoOnce = () => {
+                try {
+                    const key = 'partner_2fa_email_info_shown_v1';
+                    if (window.localStorage.getItem(key) === '1') return;
+                    window.localStorage.setItem(key, '1');
+                    const modalEl = document.getElementById('twoFactorEmailInfoModal');
+                    if (modalEl && window.bootstrap?.Modal) {
+                        new bootstrap.Modal(modalEl).show();
+                    }
+                } catch (_) { /* ignore */ }
+            };
+
+            const save = async (enabled, channel) => {
+                if (!form || !token) return;
+                setBusy(true);
+                try {
+                    const body = new URLSearchParams();
+                    body.set('__RequestVerificationToken', token);
+                    body.set('Enabled', enabled ? 'true' : 'false');
+                    body.set('Channel', channel || 'email');
+
+                    const res = await fetch('/panel/partner/guvenlik/iki-asamali/inline', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'RequestVerificationToken': token,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: body.toString()
+                    });
+                    const data = await res.json();
+                    if (data && data.success) {
+                        applyUiState(!!data.enabled, data.channel || channel);
+                        if (data.enabled && (data.channel || channel) === 'email') {
+                            showEmailInfoOnce();
+                        }
+                    } else {
+                        alert((data && data.message) ? data.message : 'Güvenlik tercihi kaydedilemedi.');
+                        // server rejects -> revert by reloading current state
+                        applyUiState(@(Model.TwoFactorEnabled ? "true" : "false"), '@Model.SelectedTwoFactorChannel');
+                    }
+                } catch (e) {
+                    alert('Güvenlik tercihi kaydedilemedi. Ağ bağlantısını kontrol edin.');
+                    applyUiState(@(Model.TwoFactorEnabled ? "true" : "false"), '@Model.SelectedTwoFactorChannel');
+                } finally {
+                    setBusy(false);
+                }
+            };
+
+            toggleButtons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const channel = btn.getAttribute('data-twofactor-toggle') || 'email';
+                    const usable = document.querySelector('[data-twofactor-channel="' + channel + '"]')?.getAttribute('data-twofactor-usable') === 'true';
+                    if (!usable) return;
+                    const currentlyOn = btn.classList.contains('on');
+                    // aynı kanalı tekrar tıklarsa kapat; farklı kanalı tıklarsa aç + kanalı değiştir
+                    const nextEnabled = currentlyOn ? false : true;
+                    save(nextEnabled, channel);
+                });
+            });
+
+            // initial selection highlight
+            applyUiState(@(Model.TwoFactorEnabled ? "true" : "false"), '@Model.SelectedTwoFactorChannel');
+        })();
+    </script>
+}

@@ -39,9 +39,9 @@ public class AdminSupportArticleService : IAdminSupportArticleService
         await connection.OpenAsync(cancellationToken);
 
         const string categorySql = @"
-            SELECT id, kategori_adi, seo_slug
-            FROM destek_kategorileri
-            ORDER BY siralama, kategori_adi, id;";
+            SELECT [ID], [KATEGORI_ADI], [SEO_SLUG]
+            FROM [dbo].[DESTEK_KATEGORILERI]
+            ORDER BY [SIRALAMA], [KATEGORI_ADI], [ID];";
 
         await using (var command = new SqlCommand(categorySql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -62,10 +62,10 @@ public class AdminSupportArticleService : IAdminSupportArticleService
         const string summarySql = @"
             SELECT
                 COUNT(*) AS toplam,
-                SUM(CASE WHEN durum = 1 THEN 1 ELSE 0 END) AS aktif,
-                SUM(CASE WHEN yardim_merkezinde_goster = 1 THEN 1 ELSE 0 END) AS yardim_merkezi,
-                SUM(CASE WHEN one_cikan_mi = 1 THEN 1 ELSE 0 END) AS one_cikan
-            FROM destek_makaleleri;";
+                SUM(CASE WHEN [DURUM] = 1 THEN 1 ELSE 0 END) AS aktif,
+                SUM(CASE WHEN [YARDIM_MERKEZINDE_GOSTER] = 1 THEN 1 ELSE 0 END) AS yardim_merkezi,
+                SUM(CASE WHEN [ONE_CIKAN_MI] = 1 THEN 1 ELSE 0 END) AS [ONE_CIKAN]
+            FROM [dbo].[DESTEK_MAKALELERI];";
 
         await using (var command = new SqlCommand(summarySql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -109,42 +109,42 @@ public class AdminSupportArticleService : IAdminSupportArticleService
 
         var listSql = @"
             SELECT TOP (500)
-                dm.id,
-                dm.destek_kategori_id,
-                dk.kategori_adi,
-                dm.baslik,
-                dm.seo_slug,
-                COALESCE(dm.ozet, '') AS ozet,
-                COALESCE(dm.ikon, 'fa-circle-question') AS ikon,
-                dm.one_cikan_mi,
-                dm.yardim_merkezinde_goster,
-                dm.siralama,
-                dm.durum,
-                COALESCE(dm.guncellenme_tarihi, dm.olusturulma_tarihi) AS guncel_tarih
-            FROM destek_makaleleri dm
-            INNER JOIN destek_kategorileri dk ON dk.id = dm.destek_kategori_id
+                dm.[ID],
+                dm.[DESTEK_KATEGORI_ID],
+                dk.[KATEGORI_ADI],
+                dm.[BASLIK],
+                dm.[SEO_SLUG],
+                COALESCE(dm.[OZET], '') AS ozet,
+                COALESCE(dm.[IKON], 'fa-circle-question') AS ikon,
+                dm.[ONE_CIKAN_MI],
+                dm.[YARDIM_MERKEZINDE_GOSTER],
+                dm.[SIRALAMA],
+                dm.[DURUM],
+                COALESCE(dm.[GUNCELLENME_TARIHI], dm.[OLUSTURULMA_TARIHI]) AS guncel_tarih
+            FROM [dbo].[DESTEK_MAKALELERI] dm
+            INNER JOIN [dbo].[DESTEK_KATEGORILERI] dk ON dk.[ID] = dm.[DESTEK_KATEGORI_ID]
             WHERE 1 = 1";
 
         if (!string.IsNullOrWhiteSpace(normalizedSearch))
         {
-            listSql += " AND (dm.baslik LIKE '%' + @search + '%' OR dm.seo_slug LIKE '%' + @search + '%' OR dm.ozet LIKE '%' + @search + '%' OR dm.icerik LIKE '%' + @search + '%')";
+            listSql += " AND (dm.[BASLIK] LIKE '%' + @search + '%' OR dm.[SEO_SLUG] LIKE '%' + @search + '%' OR dm.[OZET] LIKE '%' + @search + '%' OR dm.[ICERIK] LIKE '%' + @search + '%')";
         }
 
         if (categoryIdFilter.HasValue && categoryIdFilter.Value > 0)
         {
-            listSql += " AND dm.destek_kategori_id = @categoryId";
+            listSql += " AND dm.[DESTEK_KATEGORI_ID] = @categoryId";
         }
 
         if (normalizedStatus == "active")
         {
-            listSql += " AND dm.durum = 1";
+            listSql += " AND dm.[DURUM] = 1";
         }
         else if (normalizedStatus == "passive")
         {
-            listSql += " AND dm.durum = 0";
+            listSql += " AND dm.[DURUM] = 0";
         }
 
-        listSql += " ORDER BY dm.one_cikan_mi DESC, dm.siralama, dm.id DESC;";
+        listSql += " ORDER BY dm.[ONE_CIKAN_MI] DESC, dm.[SIRALAMA], dm.[ID] DESC;";
 
         await using (var command = new SqlCommand(listSql, connection))
         {
@@ -192,17 +192,17 @@ public class AdminSupportArticleService : IAdminSupportArticleService
             const string editSql = @"
                 SELECT TOP (1)
                     id,
-                    destek_kategori_id,
-                    baslik,
-                    seo_slug,
+                    [DESTEK_KATEGORI_ID],
+                    [BASLIK],
+                    [SEO_SLUG],
                     COALESCE(ozet, '') AS ozet,
-                    icerik,
+                    [ICERIK],
                     COALESCE(ikon, 'fa-circle-question') AS ikon,
-                    one_cikan_mi,
-                    yardim_merkezinde_goster,
-                    siralama,
-                    durum
-                FROM destek_makaleleri
+                    [ONE_CIKAN_MI],
+                    [YARDIM_MERKEZINDE_GOSTER],
+                    [SIRALAMA],
+                    [DURUM]
+                FROM [dbo].[DESTEK_MAKALELERI]
                 WHERE id = @id;";
 
             await using var editCommand = new SqlCommand(editSql, connection);
@@ -264,8 +264,8 @@ public class AdminSupportArticleService : IAdminSupportArticleService
 
         await using var ensureSlugCommand = new SqlCommand(@"
             SELECT COUNT(*)
-            FROM destek_makaleleri
-            WHERE seo_slug = @slug
+            FROM [dbo].[DESTEK_MAKALELERI]
+            WHERE [SEO_SLUG] = @slug
               AND (@articleId IS NULL OR id <> @articleId);", connection);
         ensureSlugCommand.Parameters.AddWithValue("@slug", slug);
         ensureSlugCommand.Parameters.AddWithValue("@articleId", form.ArticleId.HasValue ? form.ArticleId.Value : DBNull.Value);
@@ -278,19 +278,19 @@ public class AdminSupportArticleService : IAdminSupportArticleService
         if (form.ArticleId.HasValue && form.ArticleId.Value > 0)
         {
             await using var updateCommand = new SqlCommand(@"
-                UPDATE destek_makaleleri
+                UPDATE [dbo].[DESTEK_MAKALELERI]
                 SET
-                    destek_kategori_id = @categoryId,
-                    baslik = @title,
-                    seo_slug = @slug,
+                    [DESTEK_KATEGORI_ID] = @categoryId,
+                    [BASLIK] = @title,
+                    [SEO_SLUG] = @slug,
                     ozet = @summary,
-                    icerik = @content,
+                    [ICERIK] = @content,
                     ikon = @icon,
-                    one_cikan_mi = @featured,
-                    yardim_merkezinde_goster = @showInHelpCenter,
-                    siralama = @sortOrder,
-                    durum = @status,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                    [ONE_CIKAN_MI] = @featured,
+                    [YARDIM_MERKEZINDE_GOSTER] = @showInHelpCenter,
+                    [SIRALAMA] = @sortOrder,
+                    [DURUM] = @status,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @articleId;", connection);
 
             BindSaveParameters(updateCommand, form.ArticleId.Value, form.CategoryId, title, slug, summary, content, iconClass, form.IsFeatured, form.ShowInHelpCenter, form.SortOrder, form.IsActive);
@@ -305,20 +305,20 @@ public class AdminSupportArticleService : IAdminSupportArticleService
         else
         {
             await using var insertCommand = new SqlCommand(@"
-                INSERT INTO destek_makaleleri
+                INSERT INTO [dbo].[DESTEK_MAKALELERI]
                 (
-                    destek_kategori_id,
-                    baslik,
-                    seo_slug,
+                    [DESTEK_KATEGORI_ID],
+                    [BASLIK],
+                    [SEO_SLUG],
                     ozet,
-                    icerik,
+                    [ICERIK],
                     ikon,
-                    one_cikan_mi,
-                    yardim_merkezinde_goster,
-                    siralama,
-                    durum,
-                    olusturulma_tarihi,
-                    guncellenme_tarihi
+                    [ONE_CIKAN_MI],
+                    [YARDIM_MERKEZINDE_GOSTER],
+                    [SIRALAMA],
+                    [DURUM],
+                    [OLUSTURULMA_TARIHI],
+                    [GUNCELLENME_TARIHI]
                 )
                 OUTPUT INSERTED.id
                 VALUES
@@ -355,7 +355,7 @@ public class AdminSupportArticleService : IAdminSupportArticleService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        await using var command = new SqlCommand("DELETE FROM destek_makaleleri WHERE id = @id;", connection);
+        await using var command = new SqlCommand("DELETE FROM [dbo].[DESTEK_MAKALELERI] WHERE id = @id;", connection);
         command.Parameters.AddWithValue("@id", articleId);
         var affected = await command.ExecuteNonQueryAsync(cancellationToken);
         if (affected <= 0)

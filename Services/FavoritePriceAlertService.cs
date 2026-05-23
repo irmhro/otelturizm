@@ -36,7 +36,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
 
         const string insertSql = @"
             INSERT INTO user_favorite_price_alert_jobs
-            (otel_id, tarih_baslangic, tarih_bitis, tetikleyen_kullanici_id, durum, son_islenen_alert_id, islenen_kayit_sayisi, deneme_sayisi, planli_calisma_tarihi, olusturulma_tarihi, guncellenme_tarihi)
+            ([OTEL_ID], [TARIH_BASLANGIC], [TARIH_BITIS], [TETIKLEYEN_KULLANICI_ID], [DURUM], [SON_ISLENEN_ALARM_ID], [ISLENEN_KAYIT_SAYISI], [DENEME_SAYISI], [PLANLI_CALISMA_TARIHI], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI])
             VALUES
             (@hotelId, @startDate, @endDate, @triggeredByUserId, 'Pending', 0, 0, 0, SYSUTCDATETIME(), SYSUTCDATETIME(), SYSUTCDATETIME());";
         await using var command = new SqlCommand(insertSql, (SqlConnection)connection, (SqlTransaction?)transaction);
@@ -115,9 +115,9 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
 
             const string touchAlertSql = @"
                 UPDATE user_favorite_price_alerts
-                SET son_tetiklenen_tarih = SYSUTCDATETIME(),
-                    son_tetiklenen_fiyat = @price,
-                    guncellenme_tarihi = CURRENT_TIMESTAMP
+                SET [SON_TETIKLENEN_TARIH] = SYSUTCDATETIME(),
+                    [SON_TETIKLENEN_FIYAT] = @price,
+                    [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
                 WHERE id = @alertId;";
             await using var touchAlertCommand = new SqlCommand(touchAlertSql, connection);
             touchAlertCommand.Parameters.AddWithValue("@alertId", match.AlertId);
@@ -136,12 +136,12 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
 
         const string requeueSql = @"
             UPDATE user_favorite_price_alert_jobs
-            SET durum = 'Pending',
-                son_islenen_alert_id = @cursor,
-                islenen_kayit_sayisi = islenen_kayit_sayisi + @processedCount,
-                hata_mesaji = NULL,
-                planli_calisma_tarihi = DATEADD(SECOND, 2, SYSUTCDATETIME()),
-                guncellenme_tarihi = CURRENT_TIMESTAMP
+            SET [DURUM] = 'Pending',
+                [SON_ISLENEN_ALARM_ID] = @cursor,
+                [ISLENEN_KAYIT_SAYISI] = [ISLENEN_KAYIT_SAYISI] + @processedCount,
+                [HATA_MESAJI] = NULL,
+                [PLANLI_CALISMA_TARIHI] = DATEADD(SECOND, 2, SYSUTCDATETIME()),
+                [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
             WHERE id = @jobId;";
         await using var requeueCommand = new SqlCommand(requeueSql, connection);
         requeueCommand.Parameters.AddWithValue("@jobId", job.JobId);
@@ -153,12 +153,12 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
     private static async Task<List<PriceAlertJobRow>> LoadCandidateJobsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT TOP (8) id, otel_id, tarih_baslangic, tarih_bitis, son_islenen_alert_id, deneme_sayisi
+            SELECT TOP (8) id, [OTEL_ID], [TARIH_BASLANGIC], [TARIH_BITIS], [SON_ISLENEN_ALARM_ID], [DENEME_SAYISI]
             FROM user_favorite_price_alert_jobs
-            WHERE planli_calisma_tarihi <= SYSUTCDATETIME()
+            WHERE [PLANLI_CALISMA_TARIHI] <= SYSUTCDATETIME()
               AND (
-                    durum = 'Pending'
-                    OR (durum = 'Processing' AND guncellenme_tarihi <= DATEADD(MINUTE, -5, SYSUTCDATETIME()))
+                    [DURUM] = 'Pending'
+                    OR ([DURUM] = 'Processing' AND [GUNCELLENME_TARIHI] <= DATEADD(MINUTE, -5, SYSUTCDATETIME()))
                   )
             ORDER BY id ASC;";
 
@@ -183,13 +183,13 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
     {
         const string sql = @"
             UPDATE user_favorite_price_alert_jobs
-            SET durum = 'Processing',
-                deneme_sayisi = deneme_sayisi + 1,
-                guncellenme_tarihi = CURRENT_TIMESTAMP
+            SET [DURUM] = 'Processing',
+                [DENEME_SAYISI] = [DENEME_SAYISI] + 1,
+                [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
             WHERE id = @jobId
               AND (
-                    durum = 'Pending'
-                    OR (durum = 'Processing' AND guncellenme_tarihi <= DATEADD(MINUTE, -5, SYSUTCDATETIME()))
+                    [DURUM] = 'Pending'
+                    OR ([DURUM] = 'Processing' AND [GUNCELLENME_TARIHI] <= DATEADD(MINUTE, -5, SYSUTCDATETIME()))
                   );";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@jobId", jobId);
@@ -202,32 +202,32 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
         const string sql = @"
             SELECT TOP (@batchSize)
                 a.id AS alert_id,
-                a.user_id,
-                COALESCE(NULLIF(u.eposta, ''), '') AS user_email,
-                COALESCE(NULLIF(u.ad_soyad, ''), 'Degerli misafirimiz') AS user_name,
-                COALESCE(NULLIF(o.otel_adi, ''), 'Otel') AS hotel_name,
-                COALESCE(NULLIF(o.otel_kodu, ''), 'otel') AS hotel_code,
-                a.hedef_maksimum_fiyat,
-                MIN(COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))) AS matched_price,
-                MIN(ofm.tarih) AS matched_date
+                a.[KULLANICI_ID],
+                COALESCE(NULLIF(u.[EPOSTA], ''), '') AS user_email,
+                COALESCE(NULLIF(u.[AD_SOYAD], ''), 'Degerli misafirimiz') AS user_name,
+                COALESCE(NULLIF(o.[OTEL_ADI], ''), 'Otel') AS hotel_name,
+                COALESCE(NULLIF(o.[OTEL_KODU], ''), 'otel') AS hotel_code,
+                a.[HEDEF_MAKSIMUM_FIYAT],
+                MIN(COALESCE(NULLIF(ofm.[INDIRIMLI_FIYAT], 0), NULLIF(ofm.[GECELIK_FIYAT], 0))) AS matched_price,
+                MIN(ofm.[TARIH]) AS matched_date
             FROM user_favorite_price_alerts a
-            INNER JOIN user_favori_oteller f ON f.user_id = a.user_id AND f.otel_id = a.otel_id AND COALESCE(f.aktif_mi, 1) = 1
-            INNER JOIN users u ON u.id = a.user_id
-            INNER JOIN oteller o ON o.id = a.otel_id
-            INNER JOIN oda_tipleri ot ON ot.otel_id = a.otel_id AND ot.aktif_mi = 1
-            INNER JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id AND ofm.otel_id = a.otel_id
-            WHERE a.otel_id = @hotelId
-              AND COALESCE(a.aktif_mi, 1) = 1
+            INNER JOIN [dbo].[KULLANICI_FAVORI_OTELLER] f ON f.[KULLANICI_ID] = a.[KULLANICI_ID] AND f.[OTEL_ID] = a.[OTEL_ID] AND COALESCE(f.[AKTIF_MI], 1) = 1
+            INNER JOIN [dbo].[KULLANICILAR] u ON u.id = a.[KULLANICI_ID]
+            INNER JOIN [dbo].[OTELLER] o ON o.id = a.[OTEL_ID]
+            INNER JOIN [dbo].[ODA_TIPLERI] ot ON ot.[OTEL_ID] = a.[OTEL_ID] AND ot.[AKTIF_MI] = 1
+            INNER JOIN [dbo].[ODA_FIYAT_MUSAITLIK] ofm ON ofm.[ODA_TIP_ID] = ot.id AND ofm.[OTEL_ID] = a.[OTEL_ID]
+            WHERE a.[OTEL_ID] = @hotelId
+              AND COALESCE(a.[AKTIF_MI], 1) = 1
               AND a.id > @cursor
-              AND ofm.tarih BETWEEN
-                    (CASE WHEN CAST(a.baslangic_tarihi AS date) > CAST(@jobStart AS date) THEN CAST(a.baslangic_tarihi AS date) ELSE CAST(@jobStart AS date) END)
+              AND ofm.[TARIH] BETWEEN
+                    (CASE WHEN CAST(a.[BASLANGIC_TARIHI] AS date) > CAST(@jobStart AS date) THEN CAST(a.[BASLANGIC_TARIHI] AS date) ELSE CAST(@jobStart AS date) END)
                     AND
-                    (CASE WHEN CAST(a.bitis_tarihi AS date) < CAST(@jobEnd AS date) THEN CAST(a.bitis_tarihi AS date) ELSE CAST(@jobEnd AS date) END)
-              AND COALESCE(ofm.kapali_satis, 0) = 0
-              AND (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) > 0
-              AND COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0), 999999999.99) <= a.hedef_maksimum_fiyat
-              AND (a.son_tetiklenen_tarih IS NULL OR a.son_tetiklenen_tarih <= DATEADD(HOUR, -6, SYSUTCDATETIME()))
-            GROUP BY a.id, a.user_id, u.eposta, u.ad_soyad, o.otel_adi, o.otel_kodu, a.hedef_maksimum_fiyat
+                    (CASE WHEN CAST(a.[BITIS_TARIHI] AS date) < CAST(@jobEnd AS date) THEN CAST(a.[BITIS_TARIHI] AS date) ELSE CAST(@jobEnd AS date) END)
+              AND COALESCE(ofm.[KAPALI_SATIS], 0) = 0
+              AND (COALESCE(ofm.[TOPLAM_ODA_SAYISI], ot.[TOPLAM_ODA_SAYISI]) - COALESCE(ofm.[SATILAN_ODA_SAYISI], 0) - COALESCE(ofm.[BLOKE_ODA_SAYISI], 0)) > 0
+              AND COALESCE(NULLIF(ofm.[INDIRIMLI_FIYAT], 0), NULLIF(ofm.[GECELIK_FIYAT], 0), 999999999.99) <= a.[HEDEF_MAKSIMUM_FIYAT]
+              AND (a.[SON_TETIKLENEN_TARIH] IS NULL OR a.[SON_TETIKLENEN_TARIH] <= DATEADD(HOUR, -6, SYSUTCDATETIME()))
+            GROUP BY a.id, a.[KULLANICI_ID], u.[EPOSTA], u.[AD_SOYAD], o.[OTEL_ADI], o.[OTEL_KODU], a.[HEDEF_MAKSIMUM_FIYAT]
             ORDER BY a.id ASC;";
 
         var matches = new List<PriceAlertMatchRow>();
@@ -262,11 +262,11 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
     {
         const string sql = @"
             UPDATE user_favorite_price_alert_jobs
-            SET durum = 'Completed',
-                son_islenen_alert_id = @cursor,
-                islenen_kayit_sayisi = islenen_kayit_sayisi + @processedCount,
-                hata_mesaji = NULL,
-                guncellenme_tarihi = CURRENT_TIMESTAMP
+            SET [DURUM] = 'Completed',
+                [SON_ISLENEN_ALARM_ID] = @cursor,
+                [ISLENEN_KAYIT_SAYISI] = [ISLENEN_KAYIT_SAYISI] + @processedCount,
+                [HATA_MESAJI] = NULL,
+                [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
             WHERE id = @jobId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@jobId", jobId);
@@ -279,16 +279,16 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
     {
         const string sql = @"
             UPDATE user_favorite_price_alert_jobs
-            SET durum = 'Pending',
-                planli_calisma_tarihi = DATEADD(
+            SET [DURUM] = 'Pending',
+                [PLANLI_CALISMA_TARIHI] = DATEADD(
                     SECOND,
                     CASE
-                        WHEN POWER(CAST(2 AS bigint), deneme_sayisi) > 300 THEN 300
-                        ELSE CAST(POWER(CAST(2 AS bigint), deneme_sayisi) AS int)
+                        WHEN POWER(CAST(2 AS bigint), [DENEME_SAYISI]) > 300 THEN 300
+                        ELSE CAST(POWER(CAST(2 AS bigint), [DENEME_SAYISI]) AS int)
                     END,
                     SYSUTCDATETIME()),
-                hata_mesaji = @error,
-                guncellenme_tarihi = CURRENT_TIMESTAMP
+                [HATA_MESAJI] = @error,
+                [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
             WHERE id = @jobId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@jobId", jobId);

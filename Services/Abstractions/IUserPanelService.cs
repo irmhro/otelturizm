@@ -58,6 +58,7 @@ public interface IUserPanelService
     Task<UserSecurityPageViewModel> GetSecurityAsync(long userId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ChangePasswordAsync(long userId, UserChangePasswordForm form, CancellationToken cancellationToken = default);
     Task<bool> SaveTwoFactorAsync(long userId, UserTwoFactorForm form, CancellationToken cancellationToken = default);
+    Task<UserInvoicesPageViewModel> GetInvoicesAsync(long userId, CancellationToken cancellationToken = default);
     Task<UserPaymentMethodsPageViewModel> GetPaymentMethodsAsync(long userId, CancellationToken cancellationToken = default);
     Task<bool> SavePaymentMethodAsync(long userId, UserPaymentMethodForm form, CancellationToken cancellationToken = default);
     Task<bool> DeletePaymentMethodAsync(long userId, long paymentMethodId, CancellationToken cancellationToken = default);

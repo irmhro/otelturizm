@@ -46,9 +46,9 @@ public class AdminEmailRoutingService : IAdminEmailRoutingService
             await connection.OpenAsync(cancellationToken);
 
             const string sql = @"
-                SELECT olay_kodu, baslik, aciklama, hedef_epostalar, aktif_mi
-                FROM dbo.admin_eposta_yonlendirme
-                ORDER BY baslik;";
+                SELECT [OLAY_KODU], [BASLIK], [ACIKLAMA], [HEDEF_EPOSTALAR], [AKTIF_MI]
+                FROM [dbo].[ADMIN_EPOSTA_YONLENDIRME]
+                ORDER BY [BASLIK];";
 
             await using var cmd = new SqlCommand(sql, connection);
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
@@ -68,7 +68,7 @@ public class AdminEmailRoutingService : IAdminEmailRoutingService
         }
         catch (SqlException ex) when (IsMissingTable(ex))
         {
-            model.Shell.PanelSubtitle = "Veritabanında admin_eposta_yonlendirme tablosu bulunamadı. Migration dosyasını (20260504_admin_eposta_yonlendirme.sql) çalıştırın.";
+            model.Shell.PanelSubtitle = "Veritabanında ADMIN_EPOSTA_YONLENDIRME tablosu bulunamadı. Database/MigrationsSql/tablo/migrationlar/001_ADMIN_EPOSTA_YONLENDIRME.sql dosyasını çalıştırın.";
         }
 
         return model;
@@ -88,11 +88,11 @@ public class AdminEmailRoutingService : IAdminEmailRoutingService
             await using var tx = await connection.BeginTransactionAsync(cancellationToken);
 
             const string upd = @"
-                UPDATE dbo.admin_eposta_yonlendirme
-                SET hedef_epostalar = @emails,
-                    aktif_mi = @active,
-                    guncellenme_utc = SYSUTCDATETIME()
-                WHERE olay_kodu = @code;";
+                UPDATE [dbo].[ADMIN_EPOSTA_YONLENDIRME]
+                SET [HEDEF_EPOSTALAR] = @emails,
+                    [AKTIF_MI] = @active,
+                    [GUNCELLENME_UTC] = SYSUTCDATETIME()
+                WHERE [OLAY_KODU] = @code;";
 
             foreach (var row in form.Rows)
             {
@@ -259,9 +259,9 @@ public class AdminEmailRoutingService : IAdminEmailRoutingService
             await connection.OpenAsync(cancellationToken);
 
             const string sql = @"
-                SELECT hedef_epostalar, aktif_mi
-                FROM dbo.admin_eposta_yonlendirme
-                WHERE olay_kodu = @c;";
+                SELECT [HEDEF_EPOSTALAR], [AKTIF_MI]
+                FROM [dbo].[ADMIN_EPOSTA_YONLENDIRME]
+                WHERE [OLAY_KODU] = @c;";
 
             await using var cmd = new SqlCommand(sql, connection);
             cmd.Parameters.AddWithValue("@c", eventCode);
@@ -279,7 +279,7 @@ public class AdminEmailRoutingService : IAdminEmailRoutingService
         }
         catch (SqlException ex) when (IsMissingTable(ex))
         {
-            _logger.LogWarning("admin_eposta_yonlendirme tablosu yok; fallback e-posta kullanılacak.");
+            _logger.LogWarning("ADMIN_EPOSTA_YONLENDIRME tablosu yok; fallback e-posta kullanılacak.");
         }
 
         if (list.Count == 0 && !string.IsNullOrWhiteSpace(FallbackEmail))

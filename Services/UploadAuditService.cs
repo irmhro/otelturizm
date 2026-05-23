@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Utils;
 
 namespace otelturizmnew.Services;
 
@@ -23,13 +24,13 @@ public sealed class UploadAuditService : IUploadAuditService
             evt.ContentType,
             evt.Sha256,
             evt.StoredName,
-            evt.StoredPathOrUrl,
+            LogRedaction.RedactStoredPath(evt.StoredPathOrUrl),
             evt.OwnerUserId,
             evt.OwnerFirmaId,
             evt.ContextTable ?? string.Empty,
             evt.ContextId,
-            evt.RemoteIp ?? string.Empty,
-            evt.UserAgent ?? string.Empty);
+            LogRedaction.MaskIp(evt.RemoteIp),
+            LogRedaction.TruncateUserAgent(evt.UserAgent));
 
         return Task.CompletedTask;
     }

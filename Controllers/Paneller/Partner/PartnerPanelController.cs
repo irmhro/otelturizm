@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Messages;
+using otelturizmnew.Models.Paneller;
 using otelturizmnew.Models.Paneller.Partner;
 using otelturizmnew.Services.Abstractions;
 
@@ -20,8 +21,9 @@ public class PartnerPanelController : Controller
     private readonly IOutputCacheStore _outputCacheStore;
     private readonly IPanelThemeService _panelThemeService;
     private readonly ISecureFileService _secureFileService;
+    private readonly IPlatformPackageService _platformPackageService;
 
-    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IUserPanelService userPanelService, IOutputCacheStore outputCacheStore, IPanelThemeService panelThemeService, ISecureFileService secureFileService)
+    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IUserPanelService userPanelService, IOutputCacheStore outputCacheStore, IPanelThemeService panelThemeService, ISecureFileService secureFileService, IPlatformPackageService platformPackageService)
     {
         _partnerService = partnerService;
         _authService = authService;
@@ -29,6 +31,7 @@ public class PartnerPanelController : Controller
         _outputCacheStore = outputCacheStore;
         _panelThemeService = panelThemeService;
         _secureFileService = secureFileService;
+        _platformPackageService = platformPackageService;
     }
 
     private async Task EvictPublicOutputCacheAsync(CancellationToken cancellationToken)
@@ -416,6 +419,45 @@ public class PartnerPanelController : Controller
         }
 
         return Redirect($"/panel/partner/aboneliklerim?otelId={request.HotelId}");
+    }
+
+    [HttpGet("platform-paketleri")]
+    public async Task<IActionResult> PlatformPackages(long? otelId, string? kategori, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var model = await _platformPackageService.GetPartnerCatalogAsync(GetUserId(), otelId, kategori, cancellationToken);
+            ViewData["Title"] = "Platform Paketleri";
+            ViewData["PageCssPath"] = "paneller/partner/platform-packages";
+            return View("~/Views/Paneller/Partner/PlatformPackages.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Platform Paketleri";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpGet("platform-paketleri/detay/{paketId:long}")]
+    public async Task<IActionResult> PlatformPackageDetail(long paketId, long? otelId, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        var model = await _platformPackageService.GetPartnerPackageDetailAsync(GetUserId(), otelId, paketId, cancellationToken);
+        if (model is null) return RedirectToAction(nameof(PlatformPackages), new { otelId });
+        ViewData["Title"] = model.Package.Title;
+        ViewData["PageCssPath"] = "paneller/partner/platform-packages";
+        return View("~/Views/Paneller/Partner/PlatformPackageDetail.cshtml", model);
+    }
+
+    [HttpPost("platform-paketleri/basvuru-olustur")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreatePlatformPackageApplication(PartnerPlatformPackageApplicationFormModel request, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        var result = await _platformPackageService.CreatePartnerApplicationAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        return Redirect($"/panel/partner/platform-paketleri?otelId={request.HotelId}");
     }
 
     [HttpPost("firma-fiyatlari/toplu-guncelle")]
@@ -1599,7 +1641,7 @@ public class PartnerPanelController : Controller
         {
             var model = await _partnerService.GetGuestInvoicesAsync(GetUserId(), otelId, cancellationToken);
             ViewData["Title"] = "Misafir Faturaları";
-            ViewData["PageCssPath"] = "paneller/partner/finance";
+            ViewData["PageCssPath"] = "paneller/partner/guest-invoices";
             return View("~/Views/Paneller/Partner/GuestInvoices.cshtml", model);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
@@ -1661,12 +1703,12 @@ public class PartnerPanelController : Controller
     }
 
     [HttpGet("finans/komisyonlar")]
-    public async Task<IActionResult> Commissions(long? otelId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Commissions(long? otelId, string? donem, DateTime? dateFrom, DateTime? dateTo, string? paymentStatus, int pageSize = 50, CancellationToken cancellationToken = default)
     {
         if (!IsPartnerUser()) return Redirect("/partner-giris");
         try
         {
-            var model = await _partnerService.GetFinanceAsync(GetUserId(), otelId, cancellationToken);
+            var model = await _partnerService.GetFinanceAsync(GetUserId(), otelId, cancellationToken, includeCommissions: true, dateFrom, dateTo, paymentStatus, pageSize, donem);
             ViewData["Title"] = "Komisyonlar";
             ViewData["PageCssPath"] = "paneller/partner/finance";
             return View("~/Views/Paneller/Partner/Commissions.cshtml", model);
@@ -1675,6 +1717,37 @@ public class PartnerPanelController : Controller
         {
             return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
         }
+    }
+
+    [HttpGet("finans/komisyonlar/export.csv")]
+    public async Task<IActionResult> ExportPartnerCommissionsCsv(long? otelId, string? donem, DateTime? dateFrom, DateTime? dateTo, string? paymentStatus, CancellationToken cancellationToken = default)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var csv = await _partnerService.ExportPartnerCommissionsCsvAsync(GetUserId(), otelId, donem, dateFrom, dateTo, paymentStatus, cancellationToken);
+            var preamble = System.Text.Encoding.UTF8.GetPreamble();
+            var body = System.Text.Encoding.UTF8.GetBytes(csv);
+            var bytes = new byte[preamble.Length + body.Length];
+            Buffer.BlockCopy(preamble, 0, bytes, 0, preamble.Length);
+            Buffer.BlockCopy(body, 0, bytes, preamble.Length, body.Length);
+            var fileName = $"partner-komisyonlar-{DateTime.UtcNow:yyyyMMdd-HHmm}.csv";
+            return File(bytes, "text/csv; charset=utf-8", fileName);
+        }
+        catch (InvalidOperationException)
+        {
+            return Redirect("/panel/partner/finans/komisyonlar");
+        }
+    }
+
+    [HttpPost("finans/komisyonlar/odendi")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkCommissionPaidOnline([FromForm] PartnerCommissionMarkPaidRequest request, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        var (success, message) = await _partnerService.MarkCommissionPaidOnlineAsync(GetUserId(), request.HotelId, request.CommissionRecordId, cancellationToken);
+        TempData[success ? "PartnerSuccess" : "PartnerError"] = message;
+        return Redirect($"/panel/partner/finans/komisyonlar?otelId={request.HotelId}");
     }
 
     [HttpGet("finans/mutabakat")]

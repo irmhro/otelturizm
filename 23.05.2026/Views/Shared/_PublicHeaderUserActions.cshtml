@@ -1,0 +1,203 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@inject otelturizmnew.Services.Abstractions.IUserFavoriteService UserFavoriteService
+@{
+    var accountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
+    var headerContext = (ViewData["HeaderContext"] as string ?? "home").ToLowerInvariant();
+    var fullName = User.FindFirstValue(AuthClaimTypes.FullName) ?? User.Identity?.Name ?? "Hesabım";
+    var rawUserId = User.FindFirstValue(AuthClaimTypes.UserId) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var currentUserId = 0L;
+    var hasResolvedUserId = long.TryParse(rawUserId, out currentUserId) && currentUserId > 0;
+    var isAuthenticated = User.Identity?.IsAuthenticated == true && hasResolvedUserId;
+    var favoriteCount = 0;
+
+    if (string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase) && hasResolvedUserId)
+    {
+        favoriteCount = await UserFavoriteService.GetFavoriteCountAsync(currentUserId);
+    }
+
+    string GetPanelUrl() => accountType.ToLowerInvariant() switch
+    {
+        "partner" => "/panel/partner",
+        "firma" => "/panel/firma",
+        "admin" => "/admin/dashboard",
+        "developer" => "/panel/developer",
+        "sales" => "/panel/satis",
+        _ => "/panel/user"
+    };
+
+    string GetPanelLabel() => accountType.ToLowerInvariant() switch
+    {
+        "partner" => "Partner Paneli",
+        "firma" => "Firma Paneli",
+        "admin" => "Admin Paneli",
+        "developer" => "Developer Paneli",
+        "sales" => "Satış Paneli",
+        _ => "Hesabım"
+    };
+
+    var nonce = Context.Items["CspNonce"] as string;
+}
+
+@if (isAuthenticated)
+{
+    if (string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase))
+    {
+        <a href="/panel/user/favorilerim" class="action-btn action-btn-badge">
+            <i class="fas fa-heart"></i>
+            <span>Favorilerim</span>
+            @if (favoriteCount > 0)
+            {
+                <span class="action-badge">@favoriteCount</span>
+            }
+        </a>
+    }
+
+    <details class="public-account-menu" data-public-account-menu>
+        <summary class="public-account-toggle" title="@fullName">
+            <span class="public-account-status-dot"></span>
+            <span class="public-account-toggle-copy">
+                <strong>Hesabım</strong>
+                <small>@fullName</small>
+            </span>
+            <i class="fas fa-chevron-down"></i>
+        </summary>
+
+        <div class="public-account-dropdown">
+            @if (string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase))
+            {
+                <a href="/panel/user" class="public-account-link">
+                    <i class="fas fa-grid-2"></i>
+                    <span>Panelim</span>
+                </a>
+                <a href="/panel/user/profil-bilgilerim" class="public-account-link">
+                    <i class="fas fa-user"></i>
+                    <span>Hesabım</span>
+                </a>
+                <a href="/panel/user/rezervasyonlarim" class="public-account-link">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Rezervasyonlar</span>
+                </a>
+            }
+            else if (string.Equals(accountType, "partner", StringComparison.OrdinalIgnoreCase))
+            {
+                <a href="@GetPanelUrl()" class="public-account-link">
+                    <i class="fas fa-grid-2"></i>
+                    <span>Partner Paneli</span>
+                </a>
+                <a href="/panel/partner/rezervasyonlar" class="public-account-link">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Rezervasyonlar</span>
+                </a>
+                <a href="/kurumsal" class="public-account-link">
+                    <i class="fas fa-building"></i>
+                    <span>Kurumsal</span>
+                </a>
+            }
+            else
+            {
+                <a href="@GetPanelUrl()" class="public-account-link">
+                    <i class="fas fa-grid-2"></i>
+                    <span>@GetPanelLabel()</span>
+                </a>
+
+                <a href="/kurumsal" class="public-account-link">
+                    <i class="fas fa-building"></i>
+                    <span>Kurumsal</span>
+                </a>
+
+                @if (string.Equals(accountType, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    <a href="/admin/oteller" class="public-account-link">
+                        <i class="fas fa-hotel"></i>
+                        <span>Otel Yönetimi</span>
+                    </a>
+                }
+                else if (string.Equals(accountType, "sales", StringComparison.OrdinalIgnoreCase))
+                {
+                    <a href="/panel/satis/musaitlik-takvimi" class="public-account-link">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Müsaitlik</span>
+                    </a>
+                }
+                else if (string.Equals(accountType, "firma", StringComparison.OrdinalIgnoreCase))
+                {
+                    <a href="/panel/firma/dashboard" class="public-account-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Firma Özeti</span>
+                    </a>
+                }
+            }
+
+            <form method="post" action="/cikis-yap" class="public-account-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="public-account-link public-account-link-danger">
+                    <i class="fas fa-right-from-bracket"></i>
+                    <span>Güvenli Çıkış</span>
+                </button>
+            </form>
+        </div>
+    </details>
+}
+else
+{
+    if (headerContext == "corporate")
+    {
+        <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+        <a href="/partner-giris" class="action-btn">Partner Giriş</a>
+        <a href="/partner-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
+        <a href="/firma" class="action-btn primary">Firma</a>
+    }
+    else if (headerContext == "firma")
+    {
+        <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+        <a href="/firma-giris" class="action-btn">Firma Giriş</a>
+        <a href="/firma-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
+    }
+    else
+    {
+        <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+        <a href="/kullanici-giris" class="action-btn">Kullanıcı Giriş</a>
+        <a href="/kullanici-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
+        <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">Kurumsal</a>
+    }
+}
+
+<script nonce="@nonce">
+    (function () {
+        const menus = document.querySelectorAll('[data-public-account-menu]');
+        if (!menus.length) {
+            return;
+        }
+
+        function closeAll(exceptMenu) {
+            menus.forEach(function (menu) {
+                if (menu !== exceptMenu) {
+                    menu.removeAttribute('open');
+                }
+            });
+        }
+
+        menus.forEach(function (menu) {
+            menu.addEventListener('toggle', function () {
+                if (menu.open) {
+                    closeAll(menu);
+                }
+            });
+        });
+
+        document.addEventListener('click', function (event) {
+            menus.forEach(function (menu) {
+                if (!menu.contains(event.target)) {
+                    menu.removeAttribute('open');
+                }
+            });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeAll(null);
+            }
+        });
+    })();
+</script>

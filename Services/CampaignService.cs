@@ -30,49 +30,49 @@ public class CampaignService : ICampaignService
         const string sql = @"
             SELECT
                 k.id,
-                k.kampanya_kodu,
-                k.kampanya_adi,
-                COALESCE(NULLIF(k.tur, ''), N'Genel') AS tur,
-                k.seo_slug,
-                k.sayfa_url,
-                COALESCE(NULLIF(k.kisa_aciklama, ''), LEFT(k.kampanya_aciklamasi, 220)) AS kisa_aciklama,
-                k.baslangic_tarihi,
-                k.bitis_tarihi,
-                k.kampanya_etiketi,
-                k.promo_badge,
-                COALESCE(NULLIF(k.kampanya_renk_kodu, ''), '#003B95') AS kampanya_renk_kodu,
-                COALESCE(NULLIF(k.kart_gorseli, ''), NULLIF(k.hero_gorseli, ''), NULLIF(k.banner_gorseli, '')) AS gorsel_url,
-                COALESCE(k.one_cikan_kampanya, 0) AS one_cikan_kampanya,
+                k.[KAMPANYA_KODU],
+                k.[KAMPANYA_ADI],
+                COALESCE(NULLIF(k.[TUR], ''), N'Genel') AS tur,
+                k.[SEO_SLUG],
+                k.[SAYFA_URL],
+                COALESCE(NULLIF(k.[KISA_ACIKLAMA], ''), LEFT(k.[KAMPANYA_ACIKLAMASI], 220)) AS [KISA_ACIKLAMA],
+                k.[BASLANGIC_TARIHI],
+                k.[BITIS_TARIHI],
+                k.[KAMPANYA_ETIKETI],
+                k.[PROMO_BADGE],
+                COALESCE(NULLIF(k.[KAMPANYA_RENK_KODU], ''), '#003B95') AS [KAMPANYA_RENK_KODU],
+                COALESCE(NULLIF(k.[KART_GORSELI], ''), NULLIF(k.[HERO_GORSELI], ''), NULLIF(k.[BANNER_GORSELI], '')) AS [GORSEL_URL],
+                COALESCE(k.[ONE_CIKAN_KAMPANYA], 0) AS [ONE_CIKAN_KAMPANYA],
                 (
                     SELECT COUNT(*)
-                    FROM kampanya_oteller ko
-                    JOIN oteller o ON o.id = ko.otel_id
-                    WHERE ko.kampanya_id = k.id
-                      AND ko.katilim_durumu = 'Aktif'
+                    FROM [dbo].[KAMPANYA_OTELLER] ko
+                    JOIN [dbo].[OTELLER] o ON o.id = ko.[OTEL_ID]
+                    WHERE ko.[KAMPANYA_ID] = k.id
+                      AND ko.[KATILIM_DURUMU] = 'Aktif'
                       AND (
-                            o.yayin_durumu IS NULL
-                            OR LOWER(REPLACE(LTRIM(RTRIM(o.yayin_durumu)), N'ı', N'i')) IN (N'yayinda', N'yayında')
+                            o.[YAYIN_DURUMU] IS NULL
+                            OR LOWER(REPLACE(LTRIM(RTRIM(o.[YAYIN_DURUMU])), N'ı', N'i')) IN (N'yayinda', N'yayında')
                           )
                       AND (
-                            o.onay_durumu IS NULL
-                            OR LOWER(REPLACE(LTRIM(RTRIM(o.onay_durumu)), N'ı', N'i')) IN (N'onaylandi', N'onaylandı')
+                            o.[ONAY_DURUMU] IS NULL
+                            OR LOWER(REPLACE(LTRIM(RTRIM(o.[ONAY_DURUMU])), N'ı', N'i')) IN (N'onaylandi', N'onaylandı')
                           )
                 ) AS hotel_count
-            FROM kampanyalar k
-            WHERE k.aktif_mi = 1
+            FROM [dbo].[KAMPANYALAR] k
+            WHERE k.[AKTIF_MI] = 1
               AND (
-                    k.gorunurluk_durumu IS NULL
-                    OR LTRIM(RTRIM(k.gorunurluk_durumu)) = ''
-                    OR LOWER(REPLACE(LTRIM(RTRIM(k.gorunurluk_durumu)), N'ı', N'i')) IN (N'yayinda', N'yayında')
+                    k.[GORUNURLUK_DURUMU] IS NULL
+                    OR LTRIM(RTRIM(k.[GORUNURLUK_DURUMU])) = ''
+                    OR LOWER(REPLACE(LTRIM(RTRIM(k.[GORUNURLUK_DURUMU])), N'ı', N'i')) IN (N'yayinda', N'yayında')
                   )
               AND (
                     @preset = ''
-                    OR k.kampanya_etiketi LIKE '%' + @preset + '%'
-                    OR k.promo_badge LIKE '%' + @preset + '%'
-                    OR k.kampanya_adi LIKE '%' + @preset + '%'
-                    OR k.kampanya_kodu LIKE '%' + @preset + '%'
+                    OR k.[KAMPANYA_ETIKETI] LIKE '%' + @preset + '%'
+                    OR k.[PROMO_BADGE] LIKE '%' + @preset + '%'
+                    OR k.[KAMPANYA_ADI] LIKE '%' + @preset + '%'
+                    OR k.[KAMPANYA_KODU] LIKE '%' + @preset + '%'
                   )
-            ORDER BY k.one_cikan_kampanya DESC, k.aktif_sayfa_vitrini DESC, k.siralama ASC, k.id ASC;";
+            ORDER BY k.[ONE_CIKAN_KAMPANYA] DESC, k.[AKTIF_SAYFA_VITRINI] DESC, k.[SIRALAMA] ASC, k.id ASC;";
 
         await using var command = CreateCommand(connection, sql);
         AddParameter(command, "@preset", (preset ?? string.Empty).Trim());
@@ -130,34 +130,34 @@ public class CampaignService : ICampaignService
         const string campaignSql = @"
             SELECT
                 k.id,
-                k.kampanya_kodu,
-                k.kampanya_adi,
-                k.seo_slug,
-                COALESCE(NULLIF(k.canonical_url, ''), NULLIF(k.sayfa_url, ''), CONCAT('/kampanyalar/', k.seo_slug)) AS canonical_url,
-                COALESCE(NULLIF(k.kisa_aciklama, ''), LEFT(k.kampanya_aciklamasi, 220)) AS kisa_aciklama,
-                COALESCE(NULLIF(k.detay_aciklama, ''), k.kampanya_aciklamasi) AS detay_aciklama,
-                COALESCE(NULLIF(k.listeleme_basligi, ''), k.kampanya_adi) AS listeleme_basligi,
-                COALESCE(NULLIF(k.listeleme_aciklamasi, ''), COALESCE(NULLIF(k.kisa_aciklama, ''), LEFT(k.kampanya_aciklamasi, 220))) AS listeleme_aciklamasi,
-                k.baslangic_tarihi,
-                k.bitis_tarihi,
-                k.kullanim_kosullari,
-                k.kampanya_etiketi,
-                k.promo_badge,
-                COALESCE(NULLIF(k.hero_gorseli, ''), NULLIF(k.banner_gorseli, ''), NULLIF(k.kart_gorseli, '')) AS hero_gorseli,
-                COALESCE(NULLIF(k.kart_gorseli, ''), NULLIF(k.hero_gorseli, ''), NULLIF(k.banner_gorseli, '')) AS kart_gorseli,
-                COALESCE(NULLIF(k.kampanya_renk_kodu, ''), '#003B95') AS kampanya_renk_kodu,
-                COALESCE(k.one_cikan_kampanya, 0) AS one_cikan_kampanya
-            FROM kampanyalar k
-            WHERE k.aktif_mi = 1
+                k.[KAMPANYA_KODU],
+                k.[KAMPANYA_ADI],
+                k.[SEO_SLUG],
+                COALESCE(NULLIF(k.[CANONICAL_URL], ''), NULLIF(k.[SAYFA_URL], ''), CONCAT('/kampanyalar/', k.[SEO_SLUG])) AS [CANONICAL_URL],
+                COALESCE(NULLIF(k.[KISA_ACIKLAMA], ''), LEFT(k.[KAMPANYA_ACIKLAMASI], 220)) AS [KISA_ACIKLAMA],
+                COALESCE(NULLIF(k.[DETAY_ACIKLAMA], ''), k.[KAMPANYA_ACIKLAMASI]) AS [DETAY_ACIKLAMA],
+                COALESCE(NULLIF(k.[LISTELEME_BASLIGI], ''), k.[KAMPANYA_ADI]) AS [LISTELEME_BASLIGI],
+                COALESCE(NULLIF(k.[LISTELEME_ACIKLAMASI], ''), COALESCE(NULLIF(k.[KISA_ACIKLAMA], ''), LEFT(k.[KAMPANYA_ACIKLAMASI], 220))) AS [LISTELEME_ACIKLAMASI],
+                k.[BASLANGIC_TARIHI],
+                k.[BITIS_TARIHI],
+                k.[KULLANIM_KOSULLARI],
+                k.[KAMPANYA_ETIKETI],
+                k.[PROMO_BADGE],
+                COALESCE(NULLIF(k.[HERO_GORSELI], ''), NULLIF(k.[BANNER_GORSELI], ''), NULLIF(k.[KART_GORSELI], '')) AS [HERO_GORSELI],
+                COALESCE(NULLIF(k.[KART_GORSELI], ''), NULLIF(k.[HERO_GORSELI], ''), NULLIF(k.[BANNER_GORSELI], '')) AS [KART_GORSELI],
+                COALESCE(NULLIF(k.[KAMPANYA_RENK_KODU], ''), '#003B95') AS [KAMPANYA_RENK_KODU],
+                COALESCE(k.[ONE_CIKAN_KAMPANYA], 0) AS [ONE_CIKAN_KAMPANYA]
+            FROM [dbo].[KAMPANYALAR] k
+            WHERE k.[AKTIF_MI] = 1
               AND (
-                    k.gorunurluk_durumu IS NULL
-                    OR LTRIM(RTRIM(k.gorunurluk_durumu)) = ''
-                    OR LOWER(REPLACE(LTRIM(RTRIM(k.gorunurluk_durumu)), N'ı', N'i')) IN (N'yayinda', N'yayında')
+                    k.[GORUNURLUK_DURUMU] IS NULL
+                    OR LTRIM(RTRIM(k.[GORUNURLUK_DURUMU])) = ''
+                    OR LOWER(REPLACE(LTRIM(RTRIM(k.[GORUNURLUK_DURUMU])), N'ı', N'i')) IN (N'yayinda', N'yayında')
                   )
               AND (
-                    k.seo_slug = @slug
-                    OR k.sayfa_url = @slug
-                    OR k.sayfa_url LIKE '%' + @slashSlug
+                    k.[SEO_SLUG] = @slug
+                    OR k.[SAYFA_URL] = @slug
+                    OR k.[SAYFA_URL] LIKE '%' + @slashSlug
                   )
             ORDER BY k.id
             OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
@@ -202,70 +202,70 @@ public class CampaignService : ICampaignService
         const string hotelsSql = @"
             SELECT
                 o.id,
-                o.otel_kodu,
-                o.otel_adi,
-                o.sehir,
-                o.ilce,
-                COALESCE(o.ortalama_puan, 0) AS ortalama_puan,
-                COALESCE(o.toplam_yorum_sayisi, 0) AS toplam_yorum_sayisi,
-                COALESCE(ko.ozel_kampanyali_fiyat, pf.baslangic_fiyat) AS baslangic_fiyat,
-                COALESCE(NULLIF(o.kisa_aciklama, ''), @campaignName) AS kisa_aciklama,
-                COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
-                COALESCE(o.one_cikan_otel, 0) AS one_cikan_otel,
-                COALESCE(NULLIF(ko.kampanya_etiketi, ''), NULLIF(k.kampanya_etiketi, '')) AS kampanya_etiketi,
-                oz.ozellikler
-            FROM kampanya_oteller ko
-            JOIN kampanyalar k ON k.id = ko.kampanya_id
-            JOIN oteller o ON o.id = ko.otel_id
+                o.[OTEL_KODU],
+                o.[OTEL_ADI],
+                o.[SEHIR],
+                o.[ILCE],
+                COALESCE(o.[ORTALAMA_PUAN], 0) AS [ORTALAMA_PUAN],
+                COALESCE(o.[TOPLAM_YORUM_SAYISI], 0) AS [TOPLAM_YORUM_SAYISI],
+                COALESCE(ko.[OZEL_KAMPANYALI_FIYAT], pf.baslangic_fiyat) AS baslangic_fiyat,
+                COALESCE(NULLIF(o.[KISA_ACIKLAMA], ''), @campaignName) AS [KISA_ACIKLAMA],
+                COALESCE(NULLIF(o.[KAPAK_FOTOGRAFI], ''), NULLIF(og.[GORSEL_URL], '')) AS [GORSEL_URL],
+                COALESCE(o.[ONE_CIKAN_OTEL], 0) AS [ONE_CIKAN_OTEL],
+                COALESCE(NULLIF(ko.[KAMPANYA_ETIKETI], ''), NULLIF(k.[KAMPANYA_ETIKETI], '')) AS [KAMPANYA_ETIKETI],
+                oz.[OZELLIKLER]
+            FROM [dbo].[KAMPANYA_OTELLER] ko
+            JOIN [dbo].[KAMPANYALAR] k ON k.id = ko.[KAMPANYA_ID]
+            JOIN [dbo].[OTELLER] o ON o.id = ko.[OTEL_ID]
             LEFT JOIN (
                 SELECT
-                    ot.otel_id,
+                    ot.[OTEL_ID],
                     MIN(
                         CASE
-                            WHEN ofm.kapali_satis = 1 THEN NULL
-                            WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                            WHEN ofm.gecelik_fiyat IS NULL OR ofm.gecelik_fiyat <= 0 THEN NULL
-                            WHEN ofm.indirimli_fiyat IS NOT NULL
-                                 AND ofm.indirimli_fiyat > 0
-                                 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat
-                                THEN ofm.indirimli_fiyat
-                            ELSE ofm.gecelik_fiyat
+                            WHEN ofm.[KAPALI_SATIS] = 1 THEN NULL
+                            WHEN (COALESCE(ofm.[TOPLAM_ODA_SAYISI], ot.[TOPLAM_ODA_SAYISI]) - COALESCE(ofm.[SATILAN_ODA_SAYISI], 0) - COALESCE(ofm.[BLOKE_ODA_SAYISI], 0)) <= 0 THEN NULL
+                            WHEN ofm.[GECELIK_FIYAT] IS NULL OR ofm.[GECELIK_FIYAT] <= 0 THEN NULL
+                            WHEN ofm.[INDIRIMLI_FIYAT] IS NOT NULL
+                                 AND ofm.[INDIRIMLI_FIYAT] > 0
+                                 AND ofm.[INDIRIMLI_FIYAT] < ofm.[GECELIK_FIYAT]
+                                THEN ofm.[INDIRIMLI_FIYAT]
+                            ELSE ofm.[GECELIK_FIYAT]
                         END
                     ) AS baslangic_fiyat
-                FROM oda_tipleri ot
-                LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
-                    AND ofm.otel_id = ot.otel_id
-                    AND ofm.tarih BETWEEN CAST(SYSUTCDATETIME() AS date) AND DATEADD(DAY, 45, CAST(SYSUTCDATETIME() AS date))
-                WHERE ot.aktif_mi = 1
-                GROUP BY ot.otel_id
-            ) pf ON pf.otel_id = o.id
+                FROM [dbo].[ODA_TIPLERI] ot
+                LEFT JOIN [dbo].[ODA_FIYAT_MUSAITLIK] ofm ON ofm.[ODA_TIP_ID] = ot.id
+                    AND ofm.[OTEL_ID] = ot.[OTEL_ID]
+                    AND ofm.[TARIH] BETWEEN CAST(SYSUTCDATETIME() AS date) AND DATEADD(DAY, 45, CAST(SYSUTCDATETIME() AS date))
+                WHERE ot.[AKTIF_MI] = 1
+                GROUP BY ot.[OTEL_ID]
+            ) pf ON pf.[OTEL_ID] = o.id
             LEFT JOIN (
-                SELECT g1.otel_id, g1.gorsel_url
+                SELECT g1.[OTEL_ID], g1.[GORSEL_URL]
                 FROM (
                     SELECT
-                        g.otel_id,
-                        g.gorsel_url,
-                        ROW_NUMBER() OVER (PARTITION BY g.otel_id ORDER BY g.kapak_fotografi_mi DESC, g.one_cikan DESC, g.siralama ASC) AS rn
-                    FROM otel_gorselleri g
-                    WHERE g.onay_durumu = 'Onaylandı'
-                      AND g.gorsel_url NOT LIKE '/uploads/logo/%'
+                        g.[OTEL_ID],
+                        g.[GORSEL_URL],
+                        ROW_NUMBER() OVER (PARTITION BY g.[OTEL_ID] ORDER BY g.[KAPAK_FOTOGRAFI_MI] DESC, g.[ONE_CIKAN] DESC, g.[SIRALAMA] ASC) AS rn
+                    FROM [dbo].[OTEL_GORSELLERI] g
+                    WHERE g.[ONAY_DURUMU] = 'Onaylandı'
+                      AND g.[GORSEL_URL] NOT LIKE '/uploads/logo/%'
                 ) g1
                 WHERE g1.rn = 1
-            ) og ON og.otel_id = o.id
+            ) og ON og.[OTEL_ID] = o.id
             LEFT JOIN (
                 SELECT
-                    oi.otel_id,
-                    STRING_AGG(oo.ozellik_adi, '||') WITHIN GROUP (ORDER BY oo.one_cikan_ozellik DESC, oo.siralama ASC) AS ozellikler
-                FROM otel_ozellik_iliskileri oi
-                JOIN otel_ozellikleri oo ON oo.id = oi.ozellik_id AND oo.aktif_mi = 1
-                GROUP BY oi.otel_id
-            ) oz ON oz.otel_id = o.id
-            WHERE ko.kampanya_id = @campaignId
-              AND ko.katilim_durumu = 'Aktif'
-              AND SYSUTCDATETIME() BETWEEN ko.baslangic_tarihi AND ko.bitis_tarihi
-              AND o.yayin_durumu = 'Yayında'
-              AND o.onay_durumu = 'Onaylandı'
-            ORDER BY ko.one_cikan DESC, ko.siralama ASC, o.one_cikan_otel DESC, o.ortalama_puan DESC, o.id DESC;";
+                    oi.[OTEL_ID],
+                    STRING_AGG(oo.[OZELLIK_ADI], '||') WITHIN GROUP (ORDER BY oo.[ONE_CIKAN_OZELLIK] DESC, oo.[SIRALAMA] ASC) AS [OZELLIKLER]
+                FROM [dbo].[OTEL_OZELLIK_ILISKILERI] oi
+                JOIN [dbo].[OTEL_OZELLIKLERI] oo ON oo.id = oi.[OZELLIK_ID] AND oo.[AKTIF_MI] = 1
+                GROUP BY oi.[OTEL_ID]
+            ) oz ON oz.[OTEL_ID] = o.id
+            WHERE ko.[KAMPANYA_ID] = @campaignId
+              AND ko.[KATILIM_DURUMU] = 'Aktif'
+              AND SYSUTCDATETIME() BETWEEN ko.[BASLANGIC_TARIHI] AND ko.[BITIS_TARIHI]
+              AND o.[YAYIN_DURUMU] = 'Yayında'
+              AND o.[ONAY_DURUMU] = 'Onaylandı'
+            ORDER BY ko.[ONE_CIKAN] DESC, ko.[SIRALAMA] ASC, o.[ONE_CIKAN_OTEL] DESC, o.[ORTALAMA_PUAN] DESC, o.id DESC;";
 
         await using (var command = CreateCommand(connection, hotelsSql))
         {

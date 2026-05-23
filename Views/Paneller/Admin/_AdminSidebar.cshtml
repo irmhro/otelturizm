@@ -9,10 +9,10 @@
     bool Can(string code) => Model.Permissions.Contains("*") || Model.HasPermission(code);
 
     var hotelOpen = IsOpen("Hotels", "HotelDetail", "ActiveHotels", "PendingHotels", "Campaigns", "Reviews");
-    var commerceOpen = IsOpen("Reservations", "UnifiedReservations", "CompanyReservations", "ListingSubscriptions", "Payments", "Invoices", "Commissions", "Contracts", "Reports", "CommerceInsight");
+    var commerceOpen = IsOpen("Reservations", "UnifiedReservations", "CompanyReservations", "ListingSubscriptions", "Payments", "Invoices", "Commissions", "CommissionCollection", "Contracts", "Reports", "CommerceInsight", "RevenueCommandCenter");
     var userOpen = IsOpen("Users", "Managers", "PlatformOfficials", "ApprovalCenter", "PartnerApplications", "CompanyApplications", "DevelopmentRequests");
-    var contentOpen = IsOpen("Notifications", "MailCenter", "EmailQueue", "EmailRouting", "EmailTemplates", "WhatsAppCloudApi", "Blog", "Faq", "SupportArticles");
-    var systemOpen = IsOpen("PlatformCheckup", "Settings", "SettingsMonitor", "Sitemap", "Security", "SecurityEvents", "UploadHistory", "Complaints", "Backups", "Logs", "GeoSearchLogs", "HotelCoordinateChanges", "AdminActionLogs", "RateLimitStats");
+    var contentOpen = IsOpen("Notifications", "MailCenter", "EmailQueue", "EmailRouting", "EmailTemplates", "WhatsAppCloudApi", "Blog", "Faq", "SupportArticles", "HelpCenter", "Team");
+    var systemOpen = IsOpen("PlatformCheckup", "Settings", "SettingsMonitor", "Sitemap", "Security", "SecurityEvents", "UploadHistory", "Complaints", "Backups", "Logs", "GeoSearchLogs", "HotelCoordinateChanges", "AdminActionLogs", "RateLimitStats", "SlowSqlMonitor");
 }
 <aside class="navbar navbar-vertical navbar-expand-lg partner-sidebar admin-sidebar-alias" data-bs-theme="dark" aria-label="Admin menüsü">
     <div class="container-fluid">
@@ -74,7 +74,7 @@
                     <li class="nav-item text-uppercase text-secondary px-3 pt-2 pb-1 small fw-bold" style="font-size:0.68rem; letter-spacing:0.12em;">Yönetim</li>
 
                     <li class="nav-item partner-nav-group">
-                        <button class="nav-link partner-nav-toggle @(hotelOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavHotels" aria-expanded="@(hotelOpen ? "true" : "false")">
+                        <button class="nav-link partner-nav-toggle @(hotelOpen ? "" : "collapsed")" type="button" data-admin-nav-target="#adminNavHotels" aria-expanded="@(hotelOpen ? "true" : "false")">
                             <span class="nav-link-icon"><i class="fas fa-hotel"></i></span>
                             <span class="nav-link-title">Konaklama</span>
                             <i class="fas fa-chevron-right partner-nav-chevron"></i>
@@ -91,7 +91,7 @@
                     </li>
 
                     <li class="nav-item partner-nav-group">
-                        <button class="nav-link partner-nav-toggle @(commerceOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavCommerce" aria-expanded="@(commerceOpen ? "true" : "false")">
+                        <button class="nav-link partner-nav-toggle @(commerceOpen ? "" : "collapsed")" type="button" data-admin-nav-target="#adminNavCommerce" aria-expanded="@(commerceOpen ? "true" : "false")">
                             <span class="nav-link-icon"><i class="fas fa-wallet"></i></span>
                             <span class="nav-link-title">Ticari Operasyon</span>
                             <i class="fas fa-chevron-right partner-nav-chevron"></i>
@@ -102,10 +102,13 @@
                                 <a class="@Active("UnifiedReservations") @(Can("admin.unified_reservations") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="UnifiedReservations">Rezervasyonlar (Tek Liste)</a>
                                 <a class="@Active("CompanyReservations") @(Can("admin.company_reservations") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="CompanyReservations">Firma Rezervasyonları</a>
                                 <a class="@Active("ListingSubscriptions") @(Can("admin.listing_subscriptions") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="ListingSubscriptions">Otel Liste Abonelikleri</a>
+                                <a class="@Active("PlatformPackages") @(Can("admin.platform_packages") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="PlatformPackages">Platform Paket Satışı</a>
                                 <a class="@Active("Payments") @(Can("admin.payments") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="Payments">Ödemeler</a>
                                 <a class="@Active("Invoices") @(Can("admin.invoices") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="Invoices">Faturalar</a>
-                                <a class="@Active("Commissions") @(Can("admin.commissions") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="Commissions">Komisyonlar</a>
+                                <a class="@Active("Commissions") @(Can("admin.commissions") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="Commissions">Oteller Komisyon Oranları</a>
+                                <a class="@Active("CommissionCollection") @(Can("admin.commissions") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="CommissionCollection">Komisyon Tahsilat</a>
                                 <a class="@Active("Contracts") @(Can("admin.contracts") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="Contracts">Sözleşmeler</a>
+                                <a class="@Active("RevenueCommandCenter") @(Can("admin.reports") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="RevenueCommandCenter">Gelir Komuta Merkezi</a>
                                 <a class="@Active("Reports") @(Can("admin.reports") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="Reports">Gelir / Komisyon Raporu</a>
                                 <a class="@Active("CommerceInsight") @(Can("admin.commerce_insight") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="CommerceInsight">Ticari içgörü</a>
                             </div>
@@ -113,7 +116,7 @@
                     </li>
 
                     <li class="nav-item partner-nav-group">
-                        <button class="nav-link partner-nav-toggle @(userOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavUsers" aria-expanded="@(userOpen ? "true" : "false")">
+                        <button class="nav-link partner-nav-toggle @(userOpen ? "" : "collapsed")" type="button" data-admin-nav-target="#adminNavUsers" aria-expanded="@(userOpen ? "true" : "false")">
                             <span class="nav-link-icon"><i class="fas fa-users"></i></span>
                             <span class="nav-link-title">Kullanıcı ve Yetki</span>
                             <i class="fas fa-chevron-right partner-nav-chevron"></i>
@@ -134,7 +137,7 @@
                     <li class="nav-item text-uppercase text-secondary px-3 pt-3 pb-1 small fw-bold" style="font-size:0.68rem; letter-spacing:0.12em;">İçerik ve Sistem</li>
 
                     <li class="nav-item partner-nav-group">
-                        <button class="nav-link partner-nav-toggle @(contentOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavContent" aria-expanded="@(contentOpen ? "true" : "false")">
+                        <button class="nav-link partner-nav-toggle @(contentOpen ? "" : "collapsed")" type="button" data-admin-nav-target="#adminNavContent" aria-expanded="@(contentOpen ? "true" : "false")">
                             <span class="nav-link-icon"><i class="fas fa-bullhorn"></i></span>
                             <span class="nav-link-title">İletişim ve İçerik</span>
                             <i class="fas fa-chevron-right partner-nav-chevron"></i>
@@ -150,12 +153,14 @@
                                 <a class="@Active("Blog") @(Can("admin.blog") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="Blog">Blog Yönetimi</a>
                                 <a class="@Active("Faq") @(Can("admin.faq") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="Faq">SSS Yönetimi</a>
                                 <a class="@Active("SupportArticles") @(Can("admin.support_articles") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="SupportArticles">Destek Makaleleri</a>
+                                <a class="@Active("HelpCenter") @(Can("admin.support_articles") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="HelpCenter">Yardım Merkezi Yönetim</a>
+                                <a class="@Active("Team") @(Can("admin.notifications") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="Team">Platform Ekibi</a>
                             </div>
                         </div>
                     </li>
 
                     <li class="nav-item partner-nav-group">
-                        <button class="nav-link partner-nav-toggle @(systemOpen ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavSystem" aria-expanded="@(systemOpen ? "true" : "false")">
+                        <button class="nav-link partner-nav-toggle @(systemOpen ? "" : "collapsed")" type="button" data-admin-nav-target="#adminNavSystem" aria-expanded="@(systemOpen ? "true" : "false")">
                             <span class="nav-link-icon"><i class="fas fa-shield-halved"></i></span>
                             <span class="nav-link-title">Sistem ve Güvenlik</span>
                             <i class="fas fa-chevron-right partner-nav-chevron"></i>
@@ -175,6 +180,7 @@
                                 <a class="@Active("GeoSearchLogs") @(Can("admin.geo_search_logs") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="GeoSearchLogs">Konum Arama Logları</a>
                                 <a class="@Active("HotelCoordinateChanges") @(Can("admin.hotel_coord_changes") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="HotelCoordinateChanges">Otel Koordinat Değişimleri</a>
                                 <a class="@Active("RateLimitStats") @(Can("admin.rate_limit") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="RateLimitStats">Rate Limit</a>
+                                <a class="@Active("SlowSqlMonitor") @(Can("admin.system_health") ? "" : "d-none")" asp-controller="AdminPanel" asp-action="SlowSqlMonitor">Yavaş SQL</a>
                             </div>
                         </div>
                     </li>

@@ -1,0 +1,21 @@
+-- Tablo: dbo.KULLANICI_BILDIRIM_CIHAZLARI
+IF OBJECT_ID(N'dbo.KULLANICI_BILDIRIM_CIHAZLARI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[KULLANICI_BILDIRIM_CIHAZLARI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [KULLANICI_ID] bigint NOT NULL,
+        [CIHAZ_TURU] nvarchar(255) NOT NULL,
+        [CIHAZ_TOKEN] nvarchar(255) NOT NULL,
+        [CIHAZ_ADI] nvarchar(100) NULL,
+        [CIHAZ_MODELI] nvarchar(50) NULL,
+        [ISLETIM_SISTEMI_SURUMU] nvarchar(20) NULL,
+        [UYGULAMA_SURUMU] nvarchar(10) NULL,
+        [BILDIRIM_IZINLERI] nvarchar(max) NULL,
+        [SON_KULLANIM_TARIHI] datetime2(0) NULL,
+        [AKTIF_MI] bit NULL CONSTRAINT [DF__kullanici__aktif__6EC0713C] DEFAULT ((1)),
+        [OLUSTURULMA_TARIHI] datetime2(0) NULL CONSTRAINT [DF__kullanici__olust__6FB49575] DEFAULT (sysutcdatetime()),
+        [GUNCELLENME_TARIHI] datetime2(0) NULL,
+        [SON_BILDIRIM_TARIHI] datetime2(0) NULL,
+        CONSTRAINT [PK_KULLANICI_BILDIRIM_CIHAZLARI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

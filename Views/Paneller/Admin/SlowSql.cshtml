@@ -1,0 +1,59 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminSlowSqlPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+}
+
+<div class="card">
+    <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <h3 class="card-title mb-0">Yavaş SQL (Top @Model.Take)</h3>
+        <a class="btn btn-sm btn-outline-secondary" href="/admin/sistem-sagligi/slow-sql?take=@Model.Take" target="_blank" rel="noopener">JSON API</a>
+    </div>
+    <div class="card-body">
+        <form method="get" action="/admin/slow-sql" class="row g-2 mb-3">
+            <div class="col-md-3">
+                <label class="form-label">Kayıt sayısı</label>
+                <input class="form-control form-control-sm" name="take" type="number" min="10" max="100" value="@Model.Take" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-sm btn-primary w-100" type="submit">Yenile</button>
+            </div>
+        </form>
+
+        @if (Model.Rows.Count == 0)
+        {
+            <p class="text-muted mb-0">Henüz yavaş sorgu kaydı yok. Trafik oluştukça liste dolacaktır.</p>
+        }
+        else
+        {
+            <div class="table-responsive admin-slow-sql-table">
+                <table class="table table-striped table-sm">
+                    <thead>
+                    <tr>
+                        <th>Scope</th>
+                        <th>Adet</th>
+                        <th>Max (ms)</th>
+                        <th>Ort (ms)</th>
+                        <th>Son görülme (UTC)</th>
+                        <th>Örnek SQL</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td><span class="badge bg-secondary-lt">@row.Scope</span></td>
+                            <td>@row.Count</td>
+                            <td><span class="badge @(row.MaxMs >= 2000 ? "bg-danger" : row.MaxMs >= 500 ? "bg-warning" : "bg-success")">@row.MaxMs</span></td>
+                            <td>@row.AvgMs.ToString("0.#")</td>
+                            <td>@row.LastSeenUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td class="admin-slow-sql-sample"><code>@row.SampleSql</code></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

@@ -16,12 +16,15 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
 using System.Threading.RateLimiting;
+using System.Security.Claims;
+using otelturizmnew.Constants;
 using otelturizmnew.Data;
 using otelturizmnew.Middleware;
 using otelturizmnew.Services;
 using otelturizmnew.Services.Abstractions;
 using otelturizmnew.Services.Health;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.DependencyInjection;
 using otelturizmnew.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -83,14 +86,19 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
     options.Level = CompressionLevel.Fastest;
 });
 
-builder.Services.AddControllersWithViews(options =>
+var mvcBuilder = builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
 
+if (builder.Environment.IsDevelopment())
+{
+    mvcBuilder.AddRazorRuntimeCompilation();
+}
+
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddLocalization();
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 var supportedCultures = new[]
 {
     new CultureInfo("tr-TR"),
@@ -98,7 +106,9 @@ var supportedCultures = new[]
     new CultureInfo("en-GB"),
     new CultureInfo("de-DE"),
     new CultureInfo("fr-FR"),
-    new CultureInfo("es-ES")
+    new CultureInfo("es-ES"),
+    new CultureInfo("ru-RU"),
+    new CultureInfo("ar-SA")
 };
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
@@ -106,9 +116,10 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
 
-    // Öncelik: ?lang= -> Cookie -> Accept-Language
+    // Öncelik: path prefix -> ?lang= -> Cookie -> Accept-Language
     options.RequestCultureProviders = new IRequestCultureProvider[]
     {
+        new otelturizmnew.Infrastructure.RoutePrefixRequestCultureProvider(),
         new QueryStringRequestCultureProvider { QueryStringKey = "lang", UIQueryStringKey = "lang" },
         new CookieRequestCultureProvider(),
         new AcceptLanguageHeaderRequestCultureProvider()
@@ -188,10 +199,12 @@ builder.Services.AddScoped<ISecureFileService, SecureFileService>();
 builder.Services.AddScoped<IMessageCenterService, MessageCenterService>();
 builder.Services.AddScoped<ILocationLogService, LocationLogService>();
 builder.Services.AddScoped<IPartnerService, PartnerService>();
+builder.Services.AddScoped<IPlatformPackageService, PlatformPackageService>();
 builder.Services.AddScoped<IPublicReservationService, PublicReservationService>();
 builder.Services.AddScoped<IReservationDraftService, ReservationDraftService>();
 builder.Services.AddScoped<ISalesService, SalesService>();
 builder.Services.AddScoped<ISitemapService, SitemapService>();
+builder.Services.AddSingleton<InternationalSeoService>();
 builder.Services.AddScoped<IAdminSupportArticleService, AdminSupportArticleService>();
 builder.Services.AddScoped<IUserFavoriteService, UserFavoriteService>();
 builder.Services.AddScoped<IUserPanelService, UserPanelService>();
@@ -506,6 +519,17 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
+static string ResolvePanelLoginPath(PathString path) =>
+    path.StartsWithSegments("/panel/partner", StringComparison.OrdinalIgnoreCase)
+        ? "/partner-giris"
+        : path.StartsWithSegments("/panel/firma", StringComparison.OrdinalIgnoreCase)
+            ? "/firma-giris"
+            : path.StartsWithSegments("/panel/satis", StringComparison.OrdinalIgnoreCase)
+                ? "/kullanici-giris"
+                : path.StartsWithSegments("/admin", StringComparison.OrdinalIgnoreCase)
+                    ? "/admin-giris"
+                    : "/kullanici-giris";
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -523,35 +547,42 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         {
             OnRedirectToLogin = context =>
             {
-                var targetPath = context.Request.Path.StartsWithSegments("/panel/partner", StringComparison.OrdinalIgnoreCase)
-                    ? "/partner-giris"
-                    : context.Request.Path.StartsWithSegments("/panel/firma", StringComparison.OrdinalIgnoreCase)
-                        ? "/firma-giris"
-                        : context.Request.Path.StartsWithSegments("/panel/satis", StringComparison.OrdinalIgnoreCase)
-                            ? "/kullanici-giris"
-                            : context.Request.Path.StartsWithSegments("/admin", StringComparison.OrdinalIgnoreCase)
-                                ? "/admin-giris"
-                                : "/kullanici-giris";
-
-                context.Response.Redirect($"{targetPath}?ReturnUrl={Uri.EscapeDataString(context.Request.Path + context.Request.QueryString)}");
+                var targetPath = ResolvePanelLoginPath(context.Request.Path);
+                var returnUrl = Uri.EscapeDataString(context.Request.Path + context.Request.QueryString);
+                context.Response.Redirect($"{targetPath}?ReturnUrl={returnUrl}");
                 return Task.CompletedTask;
             },
             OnRedirectToAccessDenied = context =>
             {
-                var targetPath = context.Request.Path.StartsWithSegments("/panel/partner", StringComparison.OrdinalIgnoreCase)
-                    ? "/partner-giris"
-                    : context.Request.Path.StartsWithSegments("/panel/firma", StringComparison.OrdinalIgnoreCase)
-                        ? "/firma-giris"
-                    : context.Request.Path.StartsWithSegments("/admin", StringComparison.OrdinalIgnoreCase)
-                        ? "/admin-giris"
-                        : "/kullanici-giris";
+                var targetPath = ResolvePanelLoginPath(context.Request.Path);
+                if (context.Request.Path.StartsWithSegments("/panel/satis", StringComparison.OrdinalIgnoreCase))
+                {
+                    var returnUrl = Uri.EscapeDataString(context.Request.Path + context.Request.QueryString);
+                    context.Response.Redirect($"{targetPath}?ReturnUrl={returnUrl}");
+                }
+                else
+                {
+                    context.Response.Redirect(targetPath);
+                }
 
-                context.Response.Redirect(targetPath);
                 return Task.CompletedTask;
             }
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("SalesPanel", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
+        {
+            var accountType = context.User.FindFirstValue(AuthClaimTypes.AccountType);
+            var userRole = context.User.FindFirstValue(AuthClaimTypes.UserRole);
+            return string.Equals(accountType, "sales", StringComparison.OrdinalIgnoreCase)
+                || (!string.IsNullOrWhiteSpace(userRole) && userRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase));
+        });
+    });
+});
 var app = builder.Build();
 
 // One-shot: run SQL migrations and exit (local DB sync)
@@ -580,7 +611,7 @@ if (args.Any(static a => string.Equals(a, "--sync-local-schema", StringCompariso
     {
         Console.WriteLine("Local schema drift repair script uretiliyor...");
         var script = await app.Services.GenerateSchemaDriftRepairScriptAsync();
-        var outPath = Path.Combine(app.Environment.ContentRootPath, "Database", "MigrationsSql", $"{DateTime.UtcNow:yyyyMMdd}_sqlserver_local_schema_drift_repair_auto.sql");
+        var outPath = Path.Combine(app.Environment.ContentRootPath, "Database", "MigrationsSql", "tablo", "migrationlar", $"{DateTime.UtcNow:yyyyMMdd}_sqlserver_local_schema_drift_repair_auto.sql");
         await File.WriteAllTextAsync(outPath, script, Encoding.UTF8);
         Console.WriteLine($"Repair script yazildi: {outPath}");
 
@@ -729,8 +760,15 @@ app.Use(async (context, next) =>
         var nonce = Convert.ToBase64String(nonceBytes);
         context.Items["CspNonce"] = nonce;
 
-        var cspEnforce = context.RequestServices.GetRequiredService<IConfiguration>().GetValue("Security:CspEnforce", false);
-        var cspReportEnabled = context.RequestServices.GetRequiredService<IConfiguration>().GetValue("Security:CspReportEnabled", true);
+        // CSP enforce: appsettings Security:CspEnforce, ortam değişkeni Security__CspEnforce, veya prod rollout (tools/Security/CSP-ROLLOUT.md).
+        var securityConfig = context.RequestServices.GetRequiredService<IConfiguration>().GetSection("Security");
+        var cspEnforce = securityConfig.GetValue("CspEnforce", false);
+        if (!cspEnforce && string.Equals(Environment.GetEnvironmentVariable("OTELTURIZM_CSP_ENFORCE"), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            cspEnforce = true;
+        }
+
+        var cspReportEnabled = securityConfig.GetValue("CspReportEnabled", true);
 
         context.Response.Headers["X-Content-Type-Options"] = "nosniff";
         context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";

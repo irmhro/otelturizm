@@ -1,17 +1,23 @@
 @model otelturizmnew.Models.Oteller.HotelDetailPageViewModel
 @using System.Security.Claims
 @using otelturizmnew.Constants
+@using Microsoft.Extensions.Configuration
 @inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
 
 @{
     ViewData["Title"] = Model.Name;
+    ViewData["PageCss"] = "otel-detay";
+    ViewData["PageCssMobile"] = "otel-detay.mobile";
     ViewData["SuppressGlobalDraftBanner"] = true;
     var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
                   ?? "https://otelturizm.com";
+    var uiCulture = System.Globalization.CultureInfo.CurrentUICulture.Name;
     ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.ShortDescription)
         ? $"{Model.Name} · {Model.District}, {Model.City}. Oda seçeneklerini inceleyin ve güvenle rezervasyon oluşturun."
         : Model.ShortDescription;
     ViewData["Canonical"] = $"{baseUrl}/oteller/{Model.Slug}";
+    ViewData["OgLocale"] = uiCulture.Replace('-', '_');
+    ViewData["OgLocaleAlternate"] = "tr_TR,en_US,de_DE,fr_FR";
     ViewData["OgImage"] = Model.MainImageUrl;
 
     try
@@ -21,6 +27,7 @@
             ["@context"] = "https://schema.org",
             ["@type"] = "Hotel",
             ["name"] = Model.Name,
+            ["inLanguage"] = uiCulture,
             ["url"] = $"{baseUrl}/oteller/{Model.Slug}",
             ["image"] = string.IsNullOrWhiteSpace(Model.MainImageUrl) ? null : Model.MainImageUrl,
             ["address"] = new Dictionary<string, object?>
@@ -199,6 +206,10 @@
     }
 }
 
+@if (!string.IsNullOrWhiteSpace(mainImage))
+{
+    <link rel="preload" as="image" href="@mainImage" fetchpriority="high" />
+}
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       crossorigin="anonymous" />
@@ -313,6 +324,11 @@
                 <span class="gallery-count-badge__sep">/</span>
                 <span class="gallery-count-badge__total">@gallery.Count</span>
             </div>
+
+            <button type="button" class="gallery-all-photos-btn" data-gallery-index="0" aria-label="Tüm fotoğrafları aç">
+                <i class="far fa-images" aria-hidden="true"></i>
+                Tüm Fotoğraflar (@gallery.Count)
+            </button>
         }
 
         @if (Model.ActiveViewerBand > 0)
@@ -337,7 +353,7 @@
         {
             var image = gallery[imageIndex];
             <button type="button" class="gallery-thumb" data-image="@image" data-gallery-index="@imageIndex">
-                <img src="@image" alt="@Model.Name galeri @imageIndex" />
+                <img src="@image" alt="@Model.Name galeri @imageIndex" loading="lazy" decoding="async" />
             </button>
         }
     </div>
@@ -352,7 +368,7 @@
                         class="gallery-filmstrip-thumb @(imageIndex == 0 ? "active" : string.Empty)"
                         data-gallery-index="@imageIndex"
                         aria-label="Otel gorsel @(imageIndex + 1)">
-                    <img src="@gallery[imageIndex]" alt="@Model.Name gorsel @(imageIndex + 1)" />
+                    <img src="@gallery[imageIndex]" alt="@Model.Name gorsel @(imageIndex + 1)" loading="lazy" decoding="async" />
                 </button>
             }
         </div>
@@ -507,8 +523,16 @@
                     <span class="rating-max">/10</span>
                 </div>
                 <div class="rating-text">
-                    <strong>@Model.RatingText</strong><br />
-                    <span>@(Model.ReviewCount > 0 ? $"{Model.ReviewCount} yorum" : "Henuz yorum yok")</span>
+                    @if (Model.ReviewCount <= 0)
+                    {
+                        <strong>Yorum Bekleniyor</strong><br />
+                        <span>Henüz yorum yok</span>
+                    }
+                    else
+                    {
+                        <strong>@Model.RatingText</strong><br />
+                        <span>@($"{Model.ReviewCount} yorum")</span>
+                    }
                 </div>
             </div>
         </div>
@@ -737,7 +761,7 @@
             }
         </article>
 
-        <article class="content-card">
+        <article class="content-card" id="roomsCard">
             <div class="section-head tabler-section-head">
                 <div class="tabler-section-headrow">
                     <div class="tabler-section-titles">
@@ -1416,7 +1440,7 @@
                 @if (TempData["PublicReservationSuccess"] is string successMessage)
                 {
                     <div class="detail-inline-feedback success reservation-submit-feedback" data-reservation-success-redirect="/panel/user/rezervasyonlarim">
-                        @successMessage Rezervasyonlarım sayfasına yönlendiriliyorsunuz.
+                        @successMessage
                     </div>
                 }
 
@@ -1439,6 +1463,14 @@
             </details>
         </div>
     </aside>
+
+    <div class="mobile-booking-bar mob-sticky-cta" id="mobileBookingBar" role="region" aria-label="Mobil rezervasyon özeti">
+        <div class="mobile-booking-summary">
+            <span class="mobile-booking-label">Toplam</span>
+            <strong id="mobileBookingPrice">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
+        </div>
+        <button type="button" class="mobile-booking-cta" id="openBookingSheetBtn">Rezervasyona git</button>
+    </div>
 
     <article class="content-card detail-map-card">
         <div class="section-head tabler-section-head">
@@ -1468,6 +1500,11 @@
                      data-lon="@mapLongitude"
                      data-name="@Model.Name"
                      data-location="@locationText"
+                     data-address="@Model.Address"
+                     data-ulke-id="@(Model.UlkeId?.ToString() ?? "")"
+                     data-sehir-id="@(Model.SehirId?.ToString() ?? "")"
+                     data-ilce-id="@(Model.IlceId?.ToString() ?? "")"
+                     data-mahalle-id="@(Model.MahalleId?.ToString() ?? "")"
                      aria-label="Otel konum haritası"></div>
             }
             else
@@ -1489,10 +1526,23 @@
     var publicDraftSessionKey = Context.Request.Cookies.TryGetValue(otelturizmnew.Services.ReservationDraftService.DraftCookieName, out var publicDraftCookieValue)
         ? publicDraftCookieValue
         : null;
-    var localActiveDraft = await ReservationDraftService.GetActiveDraftAsync(publicDraftUserId, publicDraftSessionKey, Context.RequestAborted);
+    var suppressDraftBanner = ((ViewData["SuppressGlobalDraftBanner"] as bool?) ?? false);
+    otelturizmnew.Models.Reservations.ReservationDraftSummaryViewModel? localActiveDraft = null;
+    if (!suppressDraftBanner)
+    {
+        try
+        {
+            // View render sırasında bu sorgu gecikirse sayfa tamamen düşmesin.
+            localActiveDraft = await ReservationDraftService.GetActiveDraftAsync(publicDraftUserId, publicDraftSessionKey, Context.RequestAborted);
+        }
+        catch
+        {
+            localActiveDraft = null;
+        }
+    }
 }
 
-@if (localActiveDraft is not null)
+@if (localActiveDraft is not null && !suppressDraftBanner)
 {
     <aside class="detail-draft-toast" aria-label="Tamamlanmayan rezervasyon bildirimi">
         <div class="detail-draft-toast__icon" aria-hidden="true">
@@ -1946,6 +1996,8 @@
             let adults = parseInt(document.getElementById('adultCountInput')?.value || '2', 10);
             let children = parseInt(document.getElementById('childCountInput')?.value || '0', 10);
             const roomCountInput = document.getElementById('roomCountInput');
+            let adultsPerRoom = Math.max(1, adults);
+            let childrenPerRoom = Math.max(0, children);
             let latestQuoteRequest = null;
             let activeGalleryIndex = 0;
             let galleryScrollTicking = false;
@@ -2043,7 +2095,59 @@
                 return window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
             }
 
+            const rootShell = document.querySelector('.otel-detail-template-v41');
+            const roomsCard = document.getElementById('roomsCard');
+            const originalBookingParent = bookingSidebar?.parentElement || null;
+            const originalBookingNext = bookingSidebar?.nextSibling || null;
+            const originalBackdropParent = bookingModalBackdrop?.parentElement || null;
+            const originalBackdropNext = bookingModalBackdrop?.nextSibling || null;
+
+            function isInlineBookingMode() {
+                return !!(rootShell && rootShell.classList.contains('booking-inline-mobile'));
+            }
+
+            function applyInlineBookingMode() {
+                if (!roomsCard || !(bookingSidebar instanceof HTMLElement)) {
+                    return;
+                }
+
+                if (!isMobileBookingMode()) {
+                    rootShell?.classList.remove('booking-inline-mobile');
+                    // restore original DOM placement (desktop)
+                    if (originalBackdropParent && bookingModalBackdrop instanceof HTMLElement) {
+                        originalBackdropParent.insertBefore(bookingModalBackdrop, originalBackdropNext);
+                    }
+                    if (originalBookingParent) {
+                        originalBookingParent.insertBefore(bookingSidebar, originalBookingNext);
+                    }
+                    return;
+                }
+
+                // mobile: move booking right under rooms
+                rootShell?.classList.add('booking-inline-mobile');
+                bookingSidebar.classList.remove('is-open');
+                if (bookingModalBackdrop instanceof HTMLElement) {
+                    bookingModalBackdrop.hidden = true;
+                    bookingModalBackdrop.classList.remove('is-open');
+                }
+                document.documentElement.classList.remove('modal-open');
+                document.body.classList.remove('modal-open');
+
+                const insertAfter = roomsCard;
+                const parent = insertAfter.parentElement;
+                if (!parent) return;
+
+                if (bookingModalBackdrop instanceof HTMLElement && bookingModalBackdrop.parentElement !== parent) {
+                    parent.insertBefore(bookingModalBackdrop, insertAfter.nextSibling);
+                }
+                parent.insertBefore(bookingSidebar, bookingModalBackdrop instanceof HTMLElement ? bookingModalBackdrop.nextSibling : insertAfter.nextSibling);
+            }
+
             function openBookingSheet() {
+                if (isInlineBookingMode()) {
+                    scrollToBookingArea();
+                    return;
+                }
                 if (!bookingSidebar || !bookingModalBackdrop) {
                     return;
                 }
@@ -2064,6 +2168,9 @@
             }
 
             function closeBookingSheet() {
+                if (isInlineBookingMode()) {
+                    return;
+                }
                 if (!bookingSidebar || !bookingModalBackdrop) {
                     return;
                 }
@@ -2100,18 +2207,20 @@
                 const roomTypeSelect = item?.querySelector('[data-field="roomType"]');
                 const checkIn = item?.querySelector('[data-field="checkIn"]');
                 const checkOut = item?.querySelector('[data-field="checkOut"]');
+                const roomCountField = item?.querySelector('[data-field="roomCount"]');
                 const selectedOption = roomTypeSelect?.selectedOptions?.[0];
                 const roomTypeId = parseInt(roomTypeSelect?.value || '0', 10) || 0;
                 const roomName = selectedOption?.dataset.roomName || selectedOption?.textContent?.trim() || 'Seçilen oda';
                 const maxGuests = Math.max(1, parseInt(selectedOption?.dataset.maxGuests || '1', 10) || 1);
                 const maxAdults = Math.max(1, parseInt(selectedOption?.dataset.maxAdults || String(maxGuests), 10) || maxGuests);
                 const maxChildren = Math.max(0, parseInt(selectedOption?.dataset.maxChildren || '0', 10) || 0);
+                const roomCountValue = Math.max(1, parseInt(roomCountField?.value || '1', 10) || 1);
                 return {
                     roomTypeId,
                     roomName,
                     checkIn: checkIn?.value || '',
                     checkOut: checkOut?.value || '',
-                    roomCount: 1,
+                    roomCount: roomCountValue,
                     capacity: { roomName, maxGuests, maxAdults, maxChildren }
                 };
             }
@@ -2278,6 +2387,7 @@
                 button.addEventListener('click', function () {
                     const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
                     syncMainImage(index);
+                    openSlayt(galleryImages, '@Model.Name', index);
                 });
             });
 
@@ -2570,6 +2680,10 @@
                     scrollToBookingArea();
                     return;
                 }
+                if (isInlineBookingMode()) {
+                    scrollToBookingArea();
+                    return;
+                }
                 openBookingSheet();
                 setTimeout(scrollToBookingArea, 90);
             });
@@ -2582,6 +2696,15 @@
                 closeBookingSheet();
             });
 
+            // Relocate booking panel under rooms on mobile
+            try {
+                const mq = window.matchMedia ? window.matchMedia('(max-width: 900px)') : null;
+                mq?.addEventListener?.('change', applyInlineBookingMode);
+                applyInlineBookingMode();
+            } catch {
+                // no-op
+            }
+
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape' && bookingSidebar && bookingSidebar.classList.contains('is-open')) {
                     closeBookingSheet();
@@ -2592,20 +2715,26 @@
                 button.addEventListener('click', function () {
                     const target = button.getAttribute('data-target');
                     const action = button.getAttribute('data-action');
-                    const nextAdults = target === 'adult'
-                        ? (action === 'plus' ? Math.min(adults + 1, 6) : Math.max(adults - 1, 1))
-                        : adults;
-                    const nextChildren = target === 'child'
-                        ? (action === 'plus' ? Math.min(children + 1, 4) : Math.max(children - 1, 0))
-                        : children;
                     const items = getRoomItemNodes();
-                    const roomCountValue = Math.max(1, items.length);
-                    const totalCapacity = items
-                        .map(getRoomItemData)
+                    const itemsData = items.map(getRoomItemData);
+                    const totalRooms = itemsData.reduce(function (sum, x) { return sum + Math.max(1, parseInt(x.roomCount || 1, 10) || 1); }, 0);
+                    const roomCountValue = Math.max(1, totalRooms);
+
+                    const nextAdultsPerRoom = target === 'adult'
+                        ? (action === 'plus' ? Math.min(adultsPerRoom + 1, 6) : Math.max(adultsPerRoom - 1, 1))
+                        : adultsPerRoom;
+                    const nextChildrenPerRoom = target === 'child'
+                        ? (action === 'plus' ? Math.min(childrenPerRoom + 1, 4) : Math.max(childrenPerRoom - 1, 0))
+                        : childrenPerRoom;
+                    const nextAdults = Math.max(1, nextAdultsPerRoom) * roomCountValue;
+                    const nextChildren = Math.max(0, nextChildrenPerRoom) * roomCountValue;
+
+                    const totalCapacity = itemsData
                         .reduce(function (acc, item) {
-                            acc.maxGuests += item.capacity.maxGuests;
-                            acc.maxAdults += item.capacity.maxAdults;
-                            acc.maxChildren += item.capacity.maxChildren;
+                            const rc = Math.max(1, parseInt(item.roomCount || 1, 10) || 1);
+                            acc.maxGuests += item.capacity.maxGuests * rc;
+                            acc.maxAdults += item.capacity.maxAdults * rc;
+                            acc.maxChildren += item.capacity.maxChildren * rc;
                             acc.roomName = item.capacity.roomName;
                             return acc;
                         }, { roomName: 'Seçilen oda', maxGuests: 0, maxAdults: 0, maxChildren: 0 });
@@ -2616,10 +2745,12 @@
                     }
 
                     if (target === 'adult') {
-                        adults = nextAdults;
+                        adultsPerRoom = nextAdultsPerRoom;
                     } else {
-                        children = nextChildren;
+                        childrenPerRoom = nextChildrenPerRoom;
                     }
+                    adults = Math.max(1, adultsPerRoom) * roomCountValue;
+                    children = Math.max(0, childrenPerRoom) * roomCountValue;
 
                     syncGuestInputs();
                 });
@@ -3415,10 +3546,18 @@
                 // legacy hidden inputs: first item
                 syncLegacyHiddenInputsFromFirstItem();
 
-                // room count: item count
+                // room count: toplam oda adedi (multi-room + adet)
+                const totalRooms = items.reduce(function (sum, x) { return sum + Math.max(1, parseInt(x.roomCount || 1, 10) || 1); }, 0);
                 if (roomCountInput) {
-                    roomCountInput.value = String(Math.max(1, nodes.length));
+                    roomCountInput.value = String(Math.max(1, totalRooms));
                 }
+
+                // misafir sayıları: oda adedine göre çarp (per-room mantığı)
+                const nextAdults = Math.max(1, adultsPerRoom) * Math.max(1, totalRooms);
+                const nextChildren = Math.max(0, childrenPerRoom) * Math.max(1, totalRooms);
+                adults = nextAdults;
+                children = nextChildren;
+                syncGuestInputs();
 
                 // roomTypeId legacy: first item
                 if (roomTypeIdInput && items[0]) {
@@ -3431,7 +3570,7 @@
                             roomTypeId: x.roomTypeId,
                             checkInDate: x.checkIn,
                             checkOutDate: x.checkOut,
-                            roomCount: 1
+                            roomCount: Math.max(1, parseInt(x.roomCount || 1, 10) || 1)
                         };
                     }));
                 }
@@ -3483,7 +3622,8 @@
 
                 for (const item of items) {
                     try {
-                        const response = await fetch('/oteller/@Model.Slug/fiyat-teklifi?roomTypeId=' + encodeURIComponent(item.roomTypeId) + '&checkInDate=' + encodeURIComponent(item.checkIn) + '&checkOutDate=' + encodeURIComponent(item.checkOut) + '&roomCount=1', {
+                        const rc = Math.max(1, parseInt(item.roomCount || 1, 10) || 1);
+                        const response = await fetch('/oteller/@Model.Slug/fiyat-teklifi?roomTypeId=' + encodeURIComponent(item.roomTypeId) + '&checkInDate=' + encodeURIComponent(item.checkIn) + '&checkOutDate=' + encodeURIComponent(item.checkOut) + '&roomCount=' + encodeURIComponent(rc), {
                             credentials: 'same-origin',
                             headers: { 'X-Requested-With': 'XMLHttpRequest' }
                         });
@@ -3536,7 +3676,8 @@
                         const netNightly = parseFloat(opt?.dataset.price || '0');
                         const diffMs = new Date(item.checkOut).getTime() - new Date(item.checkIn).getTime();
                         const nights = Math.max(1, Math.round(diffMs / 86400000));
-                        const subtotal = netNightly * nights;
+                        const rc = Math.max(1, parseInt(item.roomCount || 1, 10) || 1);
+                        const subtotal = (netNightly * nights) * rc;
                         // Vergiler bilgilendirme icin "fiyatin icinden" hesaplanir; toplam tutara eklenmez.
                         const taxDivisor = 1 + detailVatFraction + detailAccommodationFraction;
                         const net = taxDivisor > 0 ? (subtotal / taxDivisor) : subtotal;
@@ -3927,6 +4068,9 @@
                     if (item.id) {
                         option.dataset.id = item.id;
                     }
+                    if (item.iso2) {
+                        option.dataset.iso2 = item.iso2;
+                    }
                     if (item.provinceId) {
                         option.dataset.provinceId = item.provinceId;
                     }
@@ -3952,9 +4096,34 @@
                 neighborhood: '@(Model.ProfilePrompt.Neighborhood ?? string.Empty)'
             };
 
+            function selectedCountryId() {
+                return countrySelect?.selectedOptions[0]?.dataset.id || '';
+            }
+
+            function isTurkeySelected() {
+                const iso2 = (countrySelect?.selectedOptions[0]?.dataset.iso2 || '').toUpperCase();
+                return iso2 === 'TR';
+            }
+
             async function hydrateProfileAddressSelectors() {
-                await loadSelectOptions('/api/adres/ulkeler', countrySelect, 'Uyruk seçiniz', profileAddressSeed.country);
-                await loadSelectOptions('/api/adres/iller', provinceSelect, 'İl seçiniz', profileAddressSeed.city);
+                const countries = await loadSelectOptions('/api/adres/ulkeler', countrySelect, 'Uyruk seçiniz', profileAddressSeed.country);
+                countries.forEach(function (item) {
+                    const opt = Array.from(countrySelect.options).find(function (o) { return o.value === item.name; });
+                    if (opt) {
+                        opt.dataset.iso2 = item.iso2 || '';
+                    }
+                });
+                const countryId = selectedCountryId();
+                if (!countryId) {
+                    return;
+                }
+                const regionLabel = isTurkeySelected() ? 'İl seçiniz' : 'Eyalet seçiniz';
+                await loadSelectOptions('/api/adres/iller?ulkeId=' + encodeURIComponent(countryId), provinceSelect, regionLabel, profileAddressSeed.city);
+                if (!isTurkeySelected()) {
+                    districtSelect.innerHTML = '<option value="">Türkiye dışı adreslerde ilçe seçilmez</option>';
+                    neighborhoodSelect.innerHTML = '<option value="">Türkiye dışı adreslerde mahalle seçilmez</option>';
+                    return;
+                }
                 const provinceId = provinceSelect?.selectedOptions[0]?.dataset.id || provinceSelect?.selectedOptions[0]?.dataset.provinceId;
                 if (provinceId) {
                     await loadSelectOptions('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), districtSelect, 'İlçe seçiniz', profileAddressSeed.district);
@@ -3965,7 +4134,23 @@
                 }
             }
 
+            countrySelect?.addEventListener('change', async function () {
+                const countryId = selectedCountryId();
+                const regionLabel = isTurkeySelected() ? 'İl seçiniz' : 'Eyalet seçiniz';
+                await loadSelectOptions('/api/adres/iller?ulkeId=' + encodeURIComponent(countryId), provinceSelect, regionLabel, '');
+                if (!isTurkeySelected()) {
+                    districtSelect.innerHTML = '<option value="">Türkiye dışı adreslerde ilçe seçilmez</option>';
+                    neighborhoodSelect.innerHTML = '<option value="">Türkiye dışı adreslerde mahalle seçilmez</option>';
+                    return;
+                }
+                districtSelect.innerHTML = '<option value="">Önce il seçiniz</option>';
+                neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+            });
+
             provinceSelect?.addEventListener('change', async function () {
+                if (!isTurkeySelected()) {
+                    return;
+                }
                 const provinceId = provinceSelect.selectedOptions[0]?.dataset.id || provinceSelect.selectedOptions[0]?.dataset.provinceId || '';
                 await loadSelectOptions('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), districtSelect, 'İlçe seçiniz', '');
                 neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';

@@ -1,6 +1,19 @@
-@import url("./kampanyalar.css");
-
 /* Bu dosya yalnızca (max-width: 900px) ile yüklenir; tek sütunu garanti et */
+.campaign-index-hero {
+    grid-template-columns: 1fr;
+    padding: 18px var(--space-5) 6px;
+    gap: 14px;
+}
+
+.campaign-index-hero__stats {
+    justify-content: flex-start;
+}
+
+.campaign-stat-chip {
+    min-height: 44px;
+    touch-action: manipulation;
+}
+
 .campaign-index-grid {
     grid-template-columns: minmax(0, 1fr) !important;
     width: 100%;

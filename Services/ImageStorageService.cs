@@ -14,7 +14,8 @@ public class ImageStorageService : IImageStorageService
     private readonly ILogger<ImageStorageService> _logger;
     private readonly IUploadAuditService _uploadAuditService;
 
-    private const long DefaultMaxUploadBytes = 15 * 1024 * 1024;
+    // T303: upload limits (input bytes before WebP). Partner otel/oda: HotelPhoto/RoomPhoto 15 MB (~15360 KB).
+    private const long DefaultMaxUploadBytes = 15 * 1024 * 1024; // 15360 KB
     private const int DefaultMaxDimension = 2560;
     private const int DefaultWebpQuality = 90;
     private const long MaxPixelCount = 35_000_000; // decompress-bomb guard (≈35 MP)
@@ -52,7 +53,9 @@ public class ImageStorageService : IImageStorageService
         var allowedBytes = Math.Min(DefaultMaxUploadBytes, maxBytes);
         if (file.Length > allowedBytes)
         {
-            throw new InvalidOperationException($"Tek bir gorsel en fazla {Math.Max(1, allowedBytes / (1024 * 1024))} MB olabilir.");
+            var maxKb = Math.Max(1, allowedBytes / 1024);
+            throw new InvalidOperationException(
+                $"Tek bir gorsel en fazla {maxKb} KB ({Math.Max(1, allowedBytes / (1024 * 1024))} MB) olabilir. JPG/PNG yuklenir; sunucu WebP'ye donusturur (otel/oda max 15360 KB).");
         }
 
         var extension = Path.GetExtension(file.FileName);
@@ -198,11 +201,14 @@ public class ImageStorageService : IImageStorageService
         return Task.CompletedTask;
     }
 
+    /// <summary>Max upload bytes, longest edge px, WebP quality, thumbnail widths.</summary>
     private static (long MaxBytes, int MaxDimension, int WebpQuality, int[] ThumbWidths) ResolveProfile(ImageQualityProfile profile)
     {
         return profile switch
         {
+            // 6144 KB input max; WebP ~88
             ImageQualityProfile.Avatar => (MaxBytes: 6 * 1024 * 1024, MaxDimension: 1024, WebpQuality: 88, ThumbWidths: new[] { 96, 192, 384 }),
+            // 15360 KB; 2560px edge; thumbs 480/960/1440
             ImageQualityProfile.HotelPhoto => (MaxBytes: 15 * 1024 * 1024, MaxDimension: 2560, WebpQuality: 90, ThumbWidths: new[] { 480, 960, 1440 }),
             ImageQualityProfile.RoomPhoto => (MaxBytes: 15 * 1024 * 1024, MaxDimension: 2560, WebpQuality: 90, ThumbWidths: new[] { 480, 960, 1440 }),
             ImageQualityProfile.RequestVisual => (MaxBytes: 12 * 1024 * 1024, MaxDimension: 2200, WebpQuality: 88, ThumbWidths: new[] { 480, 960 }),

@@ -23,4 +23,4 @@
 
 ## Doğrulama
 
-- Yerel: `dotnet build "D:\otelturizm\otelturizmnew.csproj" --no-restore`
+- Yerel: `dotnet build "D:\otelturizm\otelturizm.csproj" --no-restore`

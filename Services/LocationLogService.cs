@@ -26,27 +26,27 @@ public class LocationLogService : ILocationLogService
         await EnsureLocationLogTableAsync(connection, cancellationToken);
 
         const string sql = """
-            INSERT INTO kullanici_konum_loglari
+            INSERT INTO [dbo].[KULLANICI_KONUM_LOGLARI]
             (
-                user_id,
-                session_key,
-                enlem,
-                boylam,
-                yaricap_km,
-                gorunen_otel_sayisi,
-                listelenen_otel_idleri,
-                arama_metni,
-                arama_bolgesi,
-                kaynak,
-                kullanici_ajan,
-                ip_adresi,
-                cihaz_tipi,
-                cihaz_modeli,
-                platform,
-                tarayici,
-                telefon_ipucu,
-                sayfa_url,
-                kayit_tarihi
+                [KULLANICI_ID],
+                [SESSION_KEY],
+                [ENLEM],
+                [BOYLAM],
+                [YARICAP_KM],
+                [GORUNEN_OTEL_SAYISI],
+                [LISTELENEN_OTEL_IDLERI],
+                [ARAMA_METNI],
+                [ARAMA_BOLGESI],
+                [KAYNAK],
+                [KULLANICI_AJAN],
+                [IP_ADRESI],
+                [CIHAZ_TIPI],
+                [CIHAZ_MODELI],
+                [PLATFORM],
+                [TARAYICI],
+                [TELEFON_IPUCU],
+                [SAYFA_URL],
+                [KAYIT_TARIHI]
             )
             VALUES
             (
@@ -100,7 +100,7 @@ public class LocationLogService : ILocationLogService
     private static async Task EnsureLocationLogTableAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string existsSql = """
-            SELECT CASE WHEN OBJECT_ID(N'dbo.kullanici_konum_loglari', N'U') IS NULL THEN 0 ELSE 1 END;
+            SELECT CASE WHEN OBJECT_ID(N'[dbo].[KULLANICI_KONUM_LOGLARI]', N'U') IS NULL THEN 0 ELSE 1 END;
             """;
 
         await using (var existsCmd = new SqlCommand(existsSql, connection))
@@ -110,7 +110,7 @@ public class LocationLogService : ILocationLogService
             if (!exists)
             {
                 const string createSql = """
-                    CREATE TABLE dbo.kullanici_konum_loglari
+                    CREATE TABLE [dbo].[KULLANICI_KONUM_LOGLARI]
                     (
                         id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
                         user_id BIGINT NULL,
@@ -141,9 +141,9 @@ public class LocationLogService : ILocationLogService
         }
 
         const string ensureColumnSql = """
-            IF COL_LENGTH(N'dbo.kullanici_konum_loglari', N'listelenen_otel_idleri') IS NULL
+            IF COL_LENGTH(N'[dbo].[KULLANICI_KONUM_LOGLARI]', N'listelenen_otel_idleri') IS NULL
             BEGIN
-                ALTER TABLE dbo.kullanici_konum_loglari
+                ALTER TABLE [dbo].[KULLANICI_KONUM_LOGLARI]
                 ADD listelenen_otel_idleri NVARCHAR(MAX) NULL;
             END
             """;

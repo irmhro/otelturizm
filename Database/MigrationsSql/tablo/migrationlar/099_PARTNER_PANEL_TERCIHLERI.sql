@@ -1,0 +1,28 @@
+-- Tablo: dbo.PARTNER_PANEL_TERCIHLERI
+IF OBJECT_ID(N'dbo.PARTNER_PANEL_TERCIHLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PARTNER_PANEL_TERCIHLERI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [KULLANICI_ID] bigint NOT NULL,
+        [PARTNER_ID] bigint NOT NULL,
+        [VARSAYILAN_OTEL_ID] bigint NULL,
+        [DIL] nvarchar(10) NULL,
+        [PARA_BIRIMI] nvarchar(3) NULL,
+        [ZAMAN_DILIMI] nvarchar(64) NULL,
+        [TAKVIM_GORUNUMU] nvarchar(255) NULL,
+        [EPOSTA_BILDIRIMLERI] bit NULL CONSTRAINT [DF__partner_p__email__54968AE5] DEFAULT ((1)),
+        [SMS_BILDIRIMLERI] bit NULL CONSTRAINT [DF__partner_p__sms_b__558AAF1E] DEFAULT ((0)),
+        [PUSH_BILDIRIMLERI] bit NULL CONSTRAINT [DF__partner_p__push___567ED357] DEFAULT ((1)),
+        [MASAUSTU_BILDIRIMLERI] bit NULL CONSTRAINT [DF__partner_p__masau__5772F790] DEFAULT ((1)),
+        [YENI_REZERVASYON_BILDIRIMI] bit NULL CONSTRAINT [DF__partner_p__yeni___58671BC9] DEFAULT ((1)),
+        [IPTAL_BILDIRIMI] bit NULL CONSTRAINT [DF__partner_p__iptal__595B4002] DEFAULT ((1)),
+        [ODEME_BILDIRIMI] bit NULL CONSTRAINT [DF__partner_p__odeme__5A4F643B] DEFAULT ((1)),
+        [YORUM_BILDIRIMI] bit NULL CONSTRAINT [DF__partner_p__yorum__5B438874] DEFAULT ((1)),
+        [OTOMATIK_FIYAT_ONERILERI] bit NULL CONSTRAINT [DF__partner_p__otoma__5C37ACAD] DEFAULT ((1)),
+        [OTOMATIK_KAPALI_GUN_UYARISI] bit NULL CONSTRAINT [DF__partner_p__otoma__5D2BD0E6] DEFAULT ((1)),
+        [CIHAZI_HATIRLA] bit NULL CONSTRAINT [DF__partner_p__cihaz__5E1FF51F] DEFAULT ((1)),
+        [OLUSTURULMA_TARIHI] datetime2(0) NULL CONSTRAINT [DF__partner_p__olust__5F141958] DEFAULT (sysutcdatetime()),
+        [GUNCELLENME_TARIHI] datetime2(0) NULL,
+        CONSTRAINT [PK_PARTNER_PANEL_TERCIHLERI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

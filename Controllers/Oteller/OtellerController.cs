@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using System.Linq;
 using System.Security.Claims;
 using otelturizmnew.Constants;
@@ -16,6 +17,12 @@ using otelturizmnew.Utils;
 namespace otelturizmnew.Controllers.Oteller;
 
 [Route("oteller")]
+[Route("en/hotels")]
+[Route("de/hotels")]
+[Route("fr/hotels")]
+[Route("es/hoteles")]
+[Route("ru/oteli")]
+[Route("ar/oteller")]
 public class OtellerController : Controller
 {
     private const string ReservationDraftCookieName = "Otelturizm.ReservationDraftKey";
@@ -32,6 +39,7 @@ public class OtellerController : Controller
     private readonly IPublicGrowthSignalsService _growthSignals;
     private readonly IReservationVelocityGuard _velocityGuard;
     private readonly HotelPresenceTracker _presenceTracker;
+    private readonly InternationalSeoService _internationalSeo;
     private readonly ILogger<OtellerController> _logger;
 
     public OtellerController(
@@ -47,6 +55,7 @@ public class OtellerController : Controller
         IPublicGrowthSignalsService growthSignals,
         IReservationVelocityGuard velocityGuard,
         HotelPresenceTracker presenceTracker,
+        InternationalSeoService internationalSeo,
         ILogger<OtellerController> logger)
     {
         _hotelService = hotelService;
@@ -61,41 +70,54 @@ public class OtellerController : Controller
         _growthSignals = growthSignals;
         _velocityGuard = velocityGuard;
         _presenceTracker = presenceTracker;
+        _internationalSeo = internationalSeo;
         _logger = logger;
     }
 
     [HttpGet("")]
     [HttpGet("istanbul")]
     [OutputCache(PolicyName = "public-short")]
-    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? kampanya, [FromQuery] int page, CancellationToken cancellationToken)
+    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] int page, CancellationToken cancellationToken)
     {
+        var listingCulture = ApplyRouteListingCulture();
         ViewData["PageCss"] = "otel-listeleme";
         ViewData["PageCssMobile"] = "otel-listeleme.mobile";
         var searchTermRaw = !string.IsNullOrWhiteSpace(q) ? q : city;
         var searchTerm = SearchTextNormalizer.Normalize(searchTermRaw);
-        var etiketN = SearchTextNormalizer.Normalize(etiket);
+        var etiketN = HotelService.ResolveListingCampaignTag(etiket, filter);
         var kampanyaN = SearchTextNormalizer.Normalize(kampanya);
         var ctxBoost = Request.Cookies.TryGetValue("Otelturizm.SearchCtx", out var cx) ? cx.ToString() : null;
         var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, page <= 0 ? 1 : page, ctxBoost, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
-        ViewData["Title"] = model.CampaignTitle;
+        var listingMeta = _internationalSeo.BuildListingMeta(
+            listingCulture,
+            ResolveListingCitySlug(searchTerm, model.City, model.SearchLabel),
+            model.TotalCount,
+            page <= 0 ? 1 : page);
+        ViewData["Title"] = string.IsNullOrWhiteSpace(model.CampaignTitle) ? listingMeta.Title : model.CampaignTitle;
+        ViewData["MetaDescription"] = listingMeta.Description;
+        ApplyListingSeoViewData(searchTerm, etiketN, kampanyaN, page <= 0 ? 1 : page, listingCulture);
         return View("~/Views/Oteller/OtelListeleme.cshtml", model);
     }
 
     [HttpGet("harita")]
     [OutputCache(PolicyName = "public-short")]
-    public async Task<IActionResult> HaritaOteller([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? kampanya, CancellationToken cancellationToken)
+    public async Task<IActionResult> HaritaOteller([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, CancellationToken cancellationToken)
     {
         ViewData["PageCss"] = "haritaoteller";
         ViewData["PageCssMobile"] = "haritaoteller.mobile";
         var searchTermRaw = !string.IsNullOrWhiteSpace(q) ? q : city;
         var searchTerm = SearchTextNormalizer.Normalize(searchTermRaw);
-        var etiketN = SearchTextNormalizer.Normalize(etiket);
+        var etiketN = HotelService.ResolveListingCampaignTag(etiket, filter);
         var kampanyaN = SearchTextNormalizer.Normalize(kampanya);
         var ctxBoost = Request.Cookies.TryGetValue("Otelturizm.SearchCtx", out var cx) ? cx.ToString() : null;
         var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, 1, ctxBoost, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
-        ViewData["Title"] = string.IsNullOrWhiteSpace(model.SearchLabel) ? "Haritada Oteller" : $"{model.SearchLabel} haritası";
+        var mapCulture = ApplyRouteListingCulture();
+        ViewData["Title"] = string.IsNullOrWhiteSpace(model.SearchLabel)
+            ? (mapCulture == "en" ? "Hotels on map" : mapCulture == "de" ? "Hotels auf der Karte" : "Haritada Oteller")
+            : (mapCulture == "en" ? $"{model.SearchLabel} hotels on map" : mapCulture == "de" ? $"{model.SearchLabel} auf der Karte" : $"{model.SearchLabel} haritası");
+        ApplyListingSeoViewData(searchTerm, etiketN, kampanyaN, 1, mapCulture, forceNoIndex: true);
         return View("~/Views/Oteller/HaritaOteller.cshtml", model);
     }
 
@@ -199,10 +221,14 @@ public class OtellerController : Controller
             }
         }
 
-        ViewData["Title"] = "Otel Detay";
-        ViewData["PageCss"] = "otel-detay";
-        ViewData["PageCssMobile"] = "otel-detay.mobile";
+        var detailCulture = ApplyRouteListingCulture();
+        var detailMeta = _internationalSeo.BuildHotelDetailMeta(detailCulture, model.Name, model.City);
+        ViewData["Title"] = detailMeta.Title;
+        ViewData["MetaDescription"] = detailMeta.Description;
+        ViewData["PageCss"] = "paneller/otel/otel-detay";
+        ViewData["PageCssMobile"] = "paneller/otel/otel-detay.mobile";
         ViewData["SuppressGlobalDraftBanner"] = true;
+        ApplyDetailSeoViewData(slug, detailCulture);
         return View("~/Views/Oteller/OtelDetay.cshtml", model);
     }
 
@@ -597,6 +623,74 @@ public class OtellerController : Controller
             : string.Empty;
 
         return (deviceType, deviceModel, platform, browser, phoneHint);
+    }
+
+    private string ApplyRouteListingCulture()
+    {
+        var culture = _internationalSeo.ResolveCultureFromPath(Request.Path);
+        ViewData["SeoCulture"] = culture;
+        return culture;
+    }
+
+    private static string? ResolveListingCitySlug(string? searchTerm, string city, string searchLabel)
+    {
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            return searchTerm.Trim().ToLowerInvariant();
+        }
+
+        if (!string.IsNullOrWhiteSpace(city))
+        {
+            return city.Trim().ToLowerInvariant();
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchLabel))
+        {
+            return searchLabel.Trim().ToLowerInvariant().Replace(" ", "-");
+        }
+
+        return null;
+    }
+
+    private void ApplyListingSeoViewData(
+        string? normalizedSearchTerm,
+        string normalizedTag,
+        string normalizedCampaignSlug,
+        int currentPage,
+        string? listingCulture = null,
+        bool forceNoIndex = false)
+    {
+        var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var publicBase = (configuration["App:PublicBaseUrl"] ?? $"{Request.Scheme}://{Request.Host}").TrimEnd('/');
+        var culture = listingCulture ?? _internationalSeo.ResolveCultureFromPath(Request.Path);
+        var seo = HotelListingSeo.Build(
+            publicBase,
+            Request.Path,
+            normalizedSearchTerm,
+            normalizedTag,
+            normalizedCampaignSlug,
+            currentPage,
+            Request.Query,
+            culture);
+        ViewData["Canonical"] = seo.Canonical;
+        ViewData["HreflangAlternates"] = _internationalSeo.BuildHreflangAlternatesFromRequest(publicBase, Request.Path, Request.Query);
+        if (forceNoIndex || !string.IsNullOrWhiteSpace(seo.Robots))
+        {
+            ViewData["Robots"] = forceNoIndex ? "noindex, follow" : seo.Robots;
+        }
+    }
+
+    private void ApplyDetailSeoViewData(string hotelSlug, string culture)
+    {
+        var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var publicBase = (configuration["App:PublicBaseUrl"] ?? $"{Request.Scheme}://{Request.Host}").TrimEnd('/');
+        var canonicalPath = InternationalSeoPaths.BuildPublicPath(culture, InternationalSeoPaths.PageKindDetail, citySlug: null, hotelSlug);
+        ViewData["Canonical"] = publicBase + canonicalPath;
+        ViewData["HreflangAlternates"] = _internationalSeo.BuildHreflangAlternates(
+            publicBase,
+            InternationalSeoPaths.PageKindDetail,
+            citySlug: null,
+            hotelSlug);
     }
 
     private async Task ApplyFavoriteStatesAsync(otelturizmnew.Models.Oteller.HotelListingPageViewModel model, CancellationToken cancellationToken)

@@ -26,7 +26,15 @@ public class UserFavoriteHotelCardViewModel
     public decimal Rating { get; set; }
     public int ReviewCount { get; set; }
     public decimal? StartingPrice { get; set; }
+    public decimal? NightlyPrice { get; set; }
+    public decimal? DiscountedNightlyPrice { get; set; }
+    public int DiscountPercent { get; set; }
     public string PriceText { get; set; } = string.Empty;
+    public string NightlyPriceText { get; set; } = string.Empty;
+    public string? DiscountedNightlyPriceText { get; set; }
+    public string? DiscountPercentText { get; set; }
+    public string? PriceDateText { get; set; }
+    public bool HasNightlyDiscount => DiscountedNightlyPrice.HasValue && DiscountPercent > 0;
     public string RatingText { get; set; } = string.Empty;
     public DateTime FavoriteAddedAt { get; set; }
     public string AddedDateText { get; set; } = string.Empty;

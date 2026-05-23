@@ -1,36 +1,57 @@
+@import url("./user-mobile-bundle.css");
+
 @media (max-width: 900px) {
-    .messages-layout {
-        grid-template-columns: 1fr;
-        min-height: auto;
-    }
+  .messages-layout,
+  .user-messages-page {
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
 
-    .message-list-scroll {
-        max-height: 360px;
-    }
+  .messages-layout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
 
-    .message-list-head,
-    .chat-head,
-    .chat-input-row,
-    .chat-compose-actions {
-        align-items: stretch;
-        flex-direction: column;
-    }
+  .message-list-scroll {
+    max-height: 360px;
+  }
 
-    .chat-input-row {
-        grid-template-columns: 1fr;
-    }
+  .message-list-head,
+  .chat-head,
+  .chat-input-row,
+  .chat-compose-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
 
-    .chat-compose-actions,
-    .attachment-picker,
-    .send-btn {
-        width: 100%;
-    }
+  .message-item {
+    min-height: var(--user-mob-touch, 44px);
+    padding: 12px;
+    border-radius: 12px;
+  }
 
-    .bubble {
-        max-width: 92%;
-    }
+  .chat-input-row {
+    grid-template-columns: 1fr;
+  }
 
-    .thread-overview-grid {
-        grid-template-columns: 1fr;
-    }
+  .chat-compose-actions,
+  .attachment-picker,
+  .send-btn {
+    width: 100%;
+    min-height: var(--user-mob-touch, 44px);
+  }
+
+  .chat-input-row .form-control,
+  .chat-input-row textarea {
+    min-height: var(--user-mob-touch, 44px);
+    width: 100%;
+  }
+
+  .bubble {
+    max-width: 92%;
+  }
+
+  .message-list-panel .empty,
+  .chat-body .bubble.incoming:first-child {
+    padding: 20px 12px;
+  }
 }

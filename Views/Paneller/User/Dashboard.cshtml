@@ -110,7 +110,7 @@
                     </form>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-vcenter table-hover">
+                    <table class="table table-vcenter table-hover user-table--cards">
                         <thead>
                             <tr>
                                 <th>Rezervasyon</th>
@@ -143,11 +143,11 @@
                             foreach (var reservation in Model.RecentReservations)
                             {
                                 <tr class="user-reservation-row user-reservation-row--@reservation.StatusTone">
-                                    <td>
+                                    <td data-label="Rezervasyon">
                                         <div class="fw-bold">@reservation.ReservationNo</div>
                                         <div class="text-muted small">#@reservation.ReservationId</div>
                                     </td>
-                                    <td>
+                                    <td data-label="Otel">
                                         <div class="d-flex align-items-center gap-2">
                                             @if (!string.IsNullOrWhiteSpace(reservation.ImageUrl))
                                             {
@@ -163,19 +163,19 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Oda">
                                         <div class="fw-bold">@reservation.RoomName</div>
                                         <div class="text-muted small">@reservation.GuestText</div>
                                     </td>
-                                    <td>
+                                    <td data-label="Konaklama">
                                         <div class="fw-bold">@reservation.StayDateText</div>
                                         <div class="text-muted small">@reservation.MealOrRoomText</div>
                                     </td>
-                                    <td>
+                                    <td data-label="Durum">
                                         <span class="user-status-pill user-status-pill--@reservation.StatusTone">@reservation.StatusText</span>
                                     </td>
-                                    <td class="text-end fw-bold">@reservation.TotalText</td>
-                                    <td class="text-end">
+                                    <td class="text-end fw-bold" data-label="Tutar">@reservation.TotalText</td>
+                                    <td class="text-end" data-label="Aksiyon">
                                         <div class="btn-list justify-content-end flex-nowrap">
                                             <a href="/oteller/@reservation.HotelSlug" class="btn btn-outline-primary btn-sm">Detay</a>
                                             <a href="/panel/user/mesajlarim" class="btn btn-primary btn-sm">Mesaj</a>

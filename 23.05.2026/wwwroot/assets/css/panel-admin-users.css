@@ -1,0 +1,239 @@
+.admin-users-page {
+    display: grid;
+    gap: 18px;
+}
+
+.admin-users-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.admin-users-stat-card {
+    background: #fff;
+    border: 1px solid #dbe5f0;
+    border-radius: 18px;
+    padding: 16px 18px;
+    min-height: 104px;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
+}
+
+.admin-users-stat-card span {
+    display: block;
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
+.admin-users-stat-card strong {
+    display: block;
+    margin-top: 8px;
+    font-size: clamp(1.9rem, 2.2vw, 2.35rem);
+    line-height: 1.05;
+    font-weight: 800;
+}
+
+.admin-users-filterbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.admin-users-filter-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.admin-users-filter-tab {
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 1px solid #dbe5f0;
+    background: #fff;
+    color: #0f172a;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.18s ease;
+}
+
+.admin-users-filter-tab.active,
+.admin-users-filter-tab:hover {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
+}
+
+.admin-users-searchbox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: min(100%, 320px);
+    padding: 6px 6px 6px 16px;
+    border-radius: 999px;
+    border: 1px solid #dbe5f0;
+    background: #fff;
+}
+
+.admin-users-searchbox input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+}
+
+.admin-users-searchbox span {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+}
+
+.admin-users-table-card {
+    padding: 0;
+    overflow: hidden;
+    border-radius: 20px;
+}
+
+.admin-users-table {
+    min-width: 980px;
+}
+
+.admin-users-table th {
+    background: #f8fbff;
+    font-size: 0.76rem;
+    letter-spacing: 0.06em;
+}
+
+.admin-users-usercell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-users-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    color: #fff;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.admin-users-usercell strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.admin-users-usercell small {
+    color: #64748b;
+}
+
+.admin-users-tier,
+.admin-users-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.tier-gold {
+    background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+    color: #1f2937;
+}
+
+.tier-silver {
+    background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+    color: #fff;
+}
+
+.tier-bronze {
+    background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
+    color: #fff;
+}
+
+.status-active {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+}
+
+.status-pending {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+}
+
+.status-inactive {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+}
+
+.admin-users-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.admin-users-action {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid #dbe5f0;
+    background: #fff;
+    color: #0f172a;
+    cursor: pointer;
+    transition: 0.18s ease;
+}
+
+.admin-users-action:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
+}
+
+@media (max-width: 1280px) {
+    .admin-users-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1080px) {
+    .admin-users-filterbar {
+        align-items: stretch;
+    }
+
+    .admin-users-searchbox {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .admin-users-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-users-filter-tabs {
+        gap: 8px;
+    }
+
+    .admin-users-filter-tab {
+        width: 100%;
+        justify-content: center;
+    }
+}

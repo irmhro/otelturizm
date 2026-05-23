@@ -1,0 +1,15 @@
+-- Tablo: dbo.KULLANICI_PARTNERLERI
+IF OBJECT_ID(N'dbo.KULLANICI_PARTNERLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[KULLANICI_PARTNERLERI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [KULLANICI_ID] bigint NOT NULL,
+        [PARTNER_ID] bigint NOT NULL,
+        [ROL] nvarchar(255) NOT NULL,
+        [AKTIF_MI] bit NOT NULL CONSTRAINT [DF__users_par__aktif__5FD33367] DEFAULT ((1)),
+        [ANA_HESAP_MI] bit NOT NULL CONSTRAINT [DF__users_par__ana_h__60C757A0] DEFAULT ((1)),
+        [OLUSTURULMA_TARIHI] datetime2(0) NULL CONSTRAINT [DF__users_par__olust__61BB7BD9] DEFAULT (sysutcdatetime()),
+        [GUNCELLENME_TARIHI] datetime2(0) NULL,
+        CONSTRAINT [PK_KULLANICI_PARTNERLERI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

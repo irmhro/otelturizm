@@ -97,17 +97,17 @@ public class HeaderBildiriService : IHeaderBildiriService
             {
                 const string upsertSql = @"
                     MERGE panel_header_bildiri_okumalari AS target
-                    USING (SELECT @panelKey AS panel_kodu, @userId AS kullanici_id, @itemKey AS bildiri_anahtari) AS source
-                    ON target.panel_kodu = source.panel_kodu
-                       AND target.kullanici_id = source.kullanici_id
-                       AND target.bildiri_anahtari = source.bildiri_anahtari
+                    USING (SELECT @panelKey AS [PANEL_KODU], @userId AS [KULLANICI_ID], @itemKey AS [BILDIRI_ANAHTARI]) AS source
+                    ON target.[PANEL_KODU] = source.[PANEL_KODU]
+                       AND target.[KULLANICI_ID] = source.[KULLANICI_ID]
+                       AND target.[BILDIRI_ANAHTARI] = source.[BILDIRI_ANAHTARI]
                     WHEN MATCHED THEN
                         UPDATE SET
-                            okundu_mi = 1,
-                            okundu_tarihi = SYSUTCDATETIME(),
-                            guncellenme_tarihi = CURRENT_TIMESTAMP
+                            [OKUNDU_MI] = 1,
+                            [OKUNDU_TARIHI] = SYSUTCDATETIME(),
+                            [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
                     WHEN NOT MATCHED THEN
-                        INSERT (panel_kodu, kullanici_id, bildiri_anahtari, okundu_mi, okundu_tarihi, guncellenme_tarihi)
+                        INSERT ([PANEL_KODU], [KULLANICI_ID], [BILDIRI_ANAHTARI], [OKUNDU_MI], [OKUNDU_TARIHI], [GUNCELLENME_TARIHI])
                         VALUES (@panelKey, @userId, @itemKey, 1, SYSUTCDATETIME(), CURRENT_TIMESTAMP);";
                 await using var command = new SqlCommand(upsertSql, connection, (SqlTransaction)transaction);
                 command.Parameters.AddWithValue("@panelKey", normalizedPanel);
@@ -196,12 +196,12 @@ public class HeaderBildiriService : IHeaderBildiriService
     private async Task FillUserItemsAsync(SqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
     {
         const string approvedSql = @"
-            SELECT r.id, r.rezervasyon_no, COALESCE(o.otel_adi, 'Otel'), COALESCE(r.otel_onay_tarihi, r.guncellenme_tarihi, r.olusturulma_tarihi)
-            FROM rezervasyonlar r
-            LEFT JOIN oteller o ON o.id = r.otel_id
-            WHERE r.kullanici_id = @userId
-              AND (r.durum = 'Onaylandı' OR COALESCE(r.otel_onay_durumu, '') = 'Onaylandı')
-            ORDER BY COALESCE(r.otel_onay_tarihi, r.guncellenme_tarihi, r.olusturulma_tarihi) DESC
+            SELECT r.id, r.[REZERVASYON_NO], COALESCE(o.[OTEL_ADI], 'Otel'), COALESCE(r.[OTEL_ONAY_TARIHI], r.[GUNCELLENME_TARIHI], r.[OLUSTURULMA_TARIHI])
+            FROM [dbo].[REZERVASYONLAR] r
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            WHERE r.[KULLANICI_ID] = @userId
+              AND (r.[DURUM] = 'Onaylandı' OR COALESCE(r.[OTEL_ONAY_DURUMU], '') = 'Onaylandı')
+            ORDER BY COALESCE(r.[OTEL_ONAY_TARIHI], r.[GUNCELLENME_TARIHI], r.[OLUSTURULMA_TARIHI]) DESC
             OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
         await using (var command = new SqlCommand(approvedSql, connection))
@@ -225,7 +225,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             }
         }
 
-        const string birthdaySql = "SELECT TOP (1) COALESCE(ad_soyad, ''), dogum_tarihi FROM users WHERE id = @userId;";
+        const string birthdaySql = "SELECT TOP (1) COALESCE([AD_SOYAD], ''), [DOGUM_TARIHI] FROM [dbo].[KULLANICILAR] WHERE id = @userId;";
         await using (var command = new SqlCommand(birthdaySql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
@@ -250,7 +250,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             }
         }
 
-        const string reservationCountSql = "SELECT COUNT(*) FROM rezervasyonlar WHERE kullanici_id = @userId;";
+        const string reservationCountSql = "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [KULLANICI_ID] = @userId;";
         await using (var command = new SqlCommand(reservationCountSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
@@ -270,10 +270,10 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
 
         const string unreadSql = @"
-            SELECT COALESCE(SUM(misafir_okunmamis_sayisi), 0)
-            FROM mesaj_konusmalari
-            WHERE misafir_kullanici_id = @userId
-              AND durum <> 'Arşivlendi';";
+            SELECT COALESCE(SUM([MISAFIR_OKUNMAMIS_SAYISI]), 0)
+            FROM [dbo].[MESAJ_KONUSMALARI]
+            WHERE [MISAFIR_KULLANICI_ID] = @userId
+              AND [DURUM] <> 'Arşivlendi';";
         await using (var command = new SqlCommand(unreadSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
@@ -297,12 +297,12 @@ public class HeaderBildiriService : IHeaderBildiriService
     {
         const string pendingSql = @"
             SELECT COUNT(*),
-                   MAX(COALESCE(r.guncellenme_tarihi, r.olusturulma_tarihi))
-            FROM rezervasyonlar r
-            INNER JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = r.otel_id
-            WHERE oks.user_id = @userId
-              AND oks.aktif_mi = 1
-              AND r.durum IN ('Onay Bekliyor', 'Değişiklik Bekliyor');";
+                   MAX(COALESCE(r.[GUNCELLENME_TARIHI], r.[OLUSTURULMA_TARIHI]))
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oks ON oks.[OTEL_ID] = r.[OTEL_ID]
+            WHERE oks.[KULLANICI_ID] = @userId
+              AND oks.[AKTIF_MI] = 1
+              AND r.[DURUM] IN ('Onay Bekliyor', 'Değişiklik Bekliyor');";
         await using (var command = new SqlCommand(pendingSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
@@ -328,14 +328,14 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
 
         const string latestPendingSql = @"
-            SELECT r.rezervasyon_no, COALESCE(o.otel_adi, 'Otel'), r.olusturulma_tarihi
-            FROM rezervasyonlar r
-            INNER JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = r.otel_id
-            LEFT JOIN oteller o ON o.id = r.otel_id
-            WHERE oks.user_id = @userId
-              AND oks.aktif_mi = 1
-              AND r.durum IN ('Onay Bekliyor', 'Değişiklik Bekliyor')
-            ORDER BY r.olusturulma_tarihi DESC
+            SELECT r.[REZERVASYON_NO], COALESCE(o.[OTEL_ADI], 'Otel'), r.[OLUSTURULMA_TARIHI]
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oks ON oks.[OTEL_ID] = r.[OTEL_ID]
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            WHERE oks.[KULLANICI_ID] = @userId
+              AND oks.[AKTIF_MI] = 1
+              AND r.[DURUM] IN ('Onay Bekliyor', 'Değişiklik Bekliyor')
+            ORDER BY r.[OLUSTURULMA_TARIHI] DESC
             OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
         await using (var command = new SqlCommand(latestPendingSql, connection))
         {
@@ -360,13 +360,13 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
 
         const string unreadSql = @"
-            SELECT COALESCE(SUM(mk.otel_okunmamis_sayisi), 0),
-                   MAX(mk.guncellenme_tarihi)
-            FROM mesaj_konusmalari mk
-            INNER JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = mk.otel_id
-            WHERE oks.user_id = @userId
-              AND oks.aktif_mi = 1
-              AND mk.durum <> 'Arşivlendi';";
+            SELECT COALESCE(SUM(mk.[OTEL_OKUNMAMIS_SAYISI]), 0),
+                   MAX(mk.[GUNCELLENME_TARIHI])
+            FROM [dbo].[MESAJ_KONUSMALARI] mk
+            INNER JOIN [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oks ON oks.[OTEL_ID] = mk.[OTEL_ID]
+            WHERE oks.[KULLANICI_ID] = @userId
+              AND oks.[AKTIF_MI] = 1
+              AND mk.[DURUM] <> 'Arşivlendi';";
         await using (var command = new SqlCommand(unreadSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
@@ -392,18 +392,18 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
 
         const string cancellationSql = @"
-            SELECT r.rezervasyon_no,
-                   COALESCE(o.otel_adi, 'Otel'),
-                   COALESCE(NULLIF(r.iptal_nedeni, ''), 'Misafir rezervasyonu iptal etti.'),
-                   COALESCE(r.iptal_tarihi, r.guncellenme_tarihi, r.olusturulma_tarihi)
-            FROM rezervasyonlar r
-            INNER JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = r.otel_id
-            LEFT JOIN oteller o ON o.id = r.otel_id
-            WHERE oks.user_id = @userId
-              AND oks.aktif_mi = 1
-              AND r.durum = 'İptal Edildi'
-              AND COALESCE(r.iptal_eden, '') = 'Misafir'
-            ORDER BY COALESCE(r.iptal_tarihi, r.guncellenme_tarihi, r.olusturulma_tarihi) DESC
+            SELECT r.[REZERVASYON_NO],
+                   COALESCE(o.[OTEL_ADI], 'Otel'),
+                   COALESCE(NULLIF(r.[IPTAL_NEDENI], ''), 'Misafir rezervasyonu iptal etti.'),
+                   COALESCE(r.[IPTAL_TARIHI], r.[GUNCELLENME_TARIHI], r.[OLUSTURULMA_TARIHI])
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oks ON oks.[OTEL_ID] = r.[OTEL_ID]
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            WHERE oks.[KULLANICI_ID] = @userId
+              AND oks.[AKTIF_MI] = 1
+              AND r.[DURUM] = 'İptal Edildi'
+              AND COALESCE(r.[IPTAL_EDEN], '') = 'Misafir'
+            ORDER BY COALESCE(r.[IPTAL_TARIHI], r.[GUNCELLENME_TARIHI], r.[OLUSTURULMA_TARIHI]) DESC
             OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
         await using (var command = new SqlCommand(cancellationSql, connection))
         {
@@ -429,7 +429,7 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
 
         const string missingInvoiceSql = @"
-            IF OBJECT_ID(N'dbo.rezervasyon_faturalari', N'U') IS NULL
+            IF OBJECT_ID(N'[dbo].[REZERVASYON_FATURALARI]', N'U') IS NULL
             BEGIN
                 SELECT 0 AS missing_count, NULL AS last_time;
                 RETURN;
@@ -437,13 +437,13 @@ public class HeaderBildiriService : IHeaderBildiriService
 
             SELECT
                 COUNT(*) AS missing_count,
-                MAX(COALESCE(r.guncellenme_tarihi, r.check_out_tarihi, r.cikis_tarihi, r.olusturulma_tarihi)) AS last_time
-            FROM dbo.rezervasyonlar r
-            INNER JOIN dbo.otel_kullanici_sahiplikleri oks ON oks.otel_id = r.otel_id
-            LEFT JOIN dbo.rezervasyon_faturalari rf ON rf.rezervasyon_id = r.id
-            WHERE oks.user_id = @userId
-              AND oks.aktif_mi = 1
-              AND COALESCE(r.durum, '') = N'Tamamlandı'
+                MAX(COALESCE(r.[GUNCELLENME_TARIHI], r.[CHECK_OUT_TARIHI], r.[CIKIS_TARIHI], r.[OLUSTURULMA_TARIHI])) AS last_time
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oks ON oks.[OTEL_ID] = r.[OTEL_ID]
+            LEFT JOIN [dbo].[REZERVASYON_FATURALARI] rf ON rf.[REZERVASYON_ID] = r.id
+            WHERE oks.[KULLANICI_ID] = @userId
+              AND oks.[AKTIF_MI] = 1
+              AND COALESCE(r.[DURUM], '') = N'Tamamlandı'
               AND rf.id IS NULL;";
         await using (var command = new SqlCommand(missingInvoiceSql, connection))
         {
@@ -472,7 +472,7 @@ public class HeaderBildiriService : IHeaderBildiriService
 
     private async Task FillFirmaItemsAsync(SqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
     {
-        const string firmaSql = "SELECT TOP (1) COALESCE(firma_id, 0) FROM users WHERE id = @userId;";
+        const string firmaSql = "SELECT TOP (1) COALESCE([FIRMA_ID], 0) FROM [dbo].[KULLANICILAR] WHERE id = @userId;";
         long firmaId;
         await using (var command = new SqlCommand(firmaSql, connection))
         {
@@ -485,7 +485,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             return;
         }
 
-        const string pendingApprovalSql = "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id = @firmaId AND COALESCE(firma_onay_durumu, '') = 'Beklemede';";
+        const string pendingApprovalSql = "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [FIRMA_ID] = @firmaId AND COALESCE([FIRMA_ONAY_DURUMU], '') = 'Beklemede';";
         await using (var command = new SqlCommand(pendingApprovalSql, connection))
         {
             command.Parameters.AddWithValue("@firmaId", firmaId);
@@ -505,10 +505,10 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
 
         const string unreadSql = @"
-            SELECT COALESCE(SUM(firma_okunmamis_sayisi), 0)
-            FROM mesaj_konusmalari
-            WHERE firma_id = @firmaId
-              AND durum <> 'Arşivlendi';";
+            SELECT COALESCE(SUM([FIRMA_OKUNMAMIS_SAYISI]), 0)
+            FROM [dbo].[MESAJ_KONUSMALARI]
+            WHERE [FIRMA_ID] = @firmaId
+              AND [DURUM] <> 'Arşivlendi';";
         await using (var command = new SqlCommand(unreadSql, connection))
         {
             command.Parameters.AddWithValue("@firmaId", firmaId);
@@ -527,7 +527,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             }
         }
 
-        const string todaySql = "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id = @firmaId AND CAST(olusturulma_tarihi AS date) = CAST(SYSUTCDATETIME() AS date);";
+        const string todaySql = "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [FIRMA_ID] = @firmaId AND CAST([OLUSTURULMA_TARIHI] AS date) = CAST(SYSUTCDATETIME() AS date);";
         await using (var command = new SqlCommand(todaySql, connection))
         {
             command.Parameters.AddWithValue("@firmaId", firmaId);
@@ -549,7 +549,7 @@ public class HeaderBildiriService : IHeaderBildiriService
 
     private async Task FillSalesItemsAsync(SqlConnection connection, long userId, HeaderBildiriViewModel model, CancellationToken cancellationToken)
     {
-        const string todaySql = "SELECT COUNT(*) FROM rezervasyonlar WHERE satis_temsilcisi_id = @userId AND CAST(olusturulma_tarihi AS date) = CAST(SYSUTCDATETIME() AS date);";
+        const string todaySql = "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [SATIS_TEMSILCISI_ID] = @userId AND CAST([OLUSTURULMA_TARIHI] AS date) = CAST(SYSUTCDATETIME() AS date);";
         await using (var command = new SqlCommand(todaySql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
@@ -569,11 +569,11 @@ public class HeaderBildiriService : IHeaderBildiriService
         }
 
         const string monthRevenueSql = @"
-            SELECT COALESCE(SUM(toplam_tutar), 0)
-            FROM rezervasyonlar
-            WHERE satis_temsilcisi_id = @userId
-              AND olusturulma_tarihi >= DATEFROMPARTS(YEAR(SYSUTCDATETIME()), MONTH(SYSUTCDATETIME()), 1)
-              AND olusturulma_tarihi < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(SYSUTCDATETIME()), MONTH(SYSUTCDATETIME()), 1));";
+            SELECT COALESCE(SUM([TOPLAM_TUTAR]), 0)
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [SATIS_TEMSILCISI_ID] = @userId
+              AND [OLUSTURULMA_TARIHI] >= DATEFROMPARTS(YEAR(SYSUTCDATETIME()), MONTH(SYSUTCDATETIME()), 1)
+              AND [OLUSTURULMA_TARIHI] < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(SYSUTCDATETIME()), MONTH(SYSUTCDATETIME()), 1));";
         await using (var command = new SqlCommand(monthRevenueSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
@@ -592,7 +592,7 @@ public class HeaderBildiriService : IHeaderBildiriService
             }
         }
 
-        const string pendingSql = "SELECT COUNT(*) FROM rezervasyonlar WHERE satis_temsilcisi_id = @userId AND durum = 'Onay Bekliyor';";
+        const string pendingSql = "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [SATIS_TEMSILCISI_ID] = @userId AND [DURUM] = 'Onay Bekliyor';";
         await using (var command = new SqlCommand(pendingSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
@@ -637,11 +637,11 @@ public class HeaderBildiriService : IHeaderBildiriService
 
         var placeholders = string.Join(", ", keys.Select((_, index) => $"@key{index}"));
         var sql = $@"
-            SELECT bildiri_anahtari, COALESCE(okundu_mi, 0)
-            FROM panel_header_bildiri_okumalari
-            WHERE panel_kodu = @panelKey
-              AND kullanici_id = @userId
-              AND bildiri_anahtari IN ({placeholders});";
+            SELECT [BILDIRI_ANAHTARI], COALESCE([OKUNDU_MI], 0)
+            FROM [dbo].[PANEL_HEADER_BILDIRI_OKUMALARI]
+            WHERE [PANEL_KODU] = @panelKey
+              AND [KULLANICI_ID] = @userId
+              AND [BILDIRI_ANAHTARI] IN ({placeholders});";
         var readMap = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         await using (var command = new SqlCommand(sql, connection))
         {

@@ -1,0 +1,16 @@
+-- Tablo: dbo.OTEL_KULLANICI_SAHIPLIKLERI
+IF OBJECT_ID(N'dbo.OTEL_KULLANICI_SAHIPLIKLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [OTEL_ID] bigint NOT NULL,
+        [KULLANICI_ID] bigint NOT NULL,
+        [PARTNER_ID] bigint NOT NULL,
+        [ROL] nvarchar(255) NOT NULL,
+        [ANA_SORUMLU_MU] bit NOT NULL CONSTRAINT [DF__otel_kull__ana_s__178D7CA5] DEFAULT ((0)),
+        [AKTIF_MI] bit NOT NULL CONSTRAINT [DF__otel_kull__aktif__1881A0DE] DEFAULT ((1)),
+        [OLUSTURULMA_TARIHI] datetime2(0) NOT NULL CONSTRAINT [DF__otel_kull__olust__1975C517] DEFAULT (sysutcdatetime()),
+        [GUNCELLENME_TARIHI] datetime2(0) NULL,
+        CONSTRAINT [PK_OTEL_KULLANICI_SAHIPLIKLERI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

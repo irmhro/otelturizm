@@ -179,7 +179,7 @@ Kullanıcı açıkça isterse uygulanır.
 ### Yöntem 1: Publish profil üzerinden
 
 ```powershell
-dotnet publish "D:\otelturizm\otelturizmnew.csproj" -c Release /p:PublishProfile="Properties\PublishProfiles\IISProfile.pubxml"
+dotnet publish "D:\otelturizm\otelturizm.csproj" -c Release /p:PublishProfile="Properties\PublishProfiles\IISProfile.pubxml"
 ```
 
 ### Yöntem 2: Ayrı publish klasörü + MSDeploy
@@ -187,7 +187,7 @@ dotnet publish "D:\otelturizm\otelturizmnew.csproj" -c Release /p:PublishProfile
 1. Publish klasörü üret:
 
 ```powershell
-dotnet publish "D:\otelturizm\otelturizmnew.csproj" -c Release -o "D:\otelturizm\artifacts\manual-publish"
+dotnet publish "D:\otelturizm\otelturizm.csproj" -c Release -o "D:\otelturizm\artifacts\manual-publish"
 ```
 
 2. MSDeploy ile gönder:

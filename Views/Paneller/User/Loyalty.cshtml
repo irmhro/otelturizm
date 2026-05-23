@@ -327,7 +327,7 @@
             <div class="history-header">
                 <h3>Puan Hareketleri</h3>
             </div>
-            <table class="history-table">
+            <table class="history-table user-table--cards">
                 <thead>
                     <tr>
                         <th>Tarih</th>
@@ -349,11 +349,11 @@
                         foreach (var transaction in Model.PointTransactions)
                         {
                             <tr>
-                                <td>@transaction.DateText</td>
-                                <td>@transaction.TypeText</td>
-                                <td>@transaction.Title<br /><small>@transaction.Description</small></td>
-                                <td class="@(transaction.PointChange >= 0 ? "points-earned" : "points-spent")">@transaction.PointChangeText</td>
-                                <td><span class="status-badge status-@transaction.StatusTone">@transaction.StatusText</span></td>
+                                <td data-label="Tarih">@transaction.DateText</td>
+                                <td data-label="İşlem">@transaction.TypeText</td>
+                                <td data-label="Açıklama">@transaction.Title<br /><small>@transaction.Description</small></td>
+                                <td class="@(transaction.PointChange >= 0 ? "points-earned" : "points-spent")" data-label="Puan">@transaction.PointChangeText</td>
+                                <td data-label="Durum"><span class="status-badge status-@transaction.StatusTone">@transaction.StatusText</span></td>
                             </tr>
                         }
                     }

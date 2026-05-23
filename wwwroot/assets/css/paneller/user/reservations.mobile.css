@@ -1,3 +1,5 @@
+@import url("./user-mobile-bundle.css");
+
 @media (max-width: 1100px) {
   .reservation-filter-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -14,10 +16,15 @@
 
   .reservation-filter-actions .btn {
     flex: 1 1 0;
+    min-height: var(--user-mob-touch, 44px);
   }
 }
 
 @media (max-width: 900px) {
+  .user-reservations-page {
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+
   .reservation-hero {
     align-items: stretch;
     flex-direction: column;
@@ -35,10 +42,7 @@
 
   .reservation-hero-actions .btn {
     flex: 1 1 160px;
-  }
-
-  .reservation-stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-height: var(--user-mob-touch, 44px);
   }
 
   .reservation-stat {
@@ -65,14 +69,25 @@
 
   .reservation-tab {
     justify-content: center;
+    min-height: var(--user-mob-touch, 44px);
   }
 
   .reservation-filter-form {
     grid-template-columns: 1fr;
   }
 
+  .reservation-filter-form .form-control,
+  .reservation-filter-form .form-select,
+  .reservation-filter-form .btn {
+    min-height: var(--user-mob-touch, 44px);
+  }
+
   .reservation-table-wrap {
     display: none;
+  }
+
+  .reservation-table.user-table--cards {
+    display: block;
   }
 
   .reservation-mobile-list {
@@ -200,6 +215,17 @@
 
   .reservation-mobile-actions .btn {
     flex: 1 1 92px;
+    min-height: var(--user-mob-touch, 44px);
+  }
+
+  .reservation-empty {
+    padding: 28px 16px max(24px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .reservation-empty .empty-action .btn {
+    min-height: var(--user-mob-touch, 44px);
+    width: 100%;
+    max-width: 320px;
   }
 
   .reservation-pager {
@@ -214,6 +240,7 @@
 
   .reservation-pager .btn {
     flex: 1 1 0;
+    min-height: var(--user-mob-touch, 44px);
   }
 
   .reservation-dialog-grid {
@@ -224,13 +251,13 @@
   .reservation-dialog-notes {
     grid-template-columns: 1fr;
   }
+
+  .reservation-update-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
-  .reservation-stat-grid {
-    grid-template-columns: 1fr;
-  }
-
   .reservation-status-tabs {
     grid-template-columns: 1fr;
   }

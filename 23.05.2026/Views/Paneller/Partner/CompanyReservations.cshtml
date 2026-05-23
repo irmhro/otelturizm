@@ -1,0 +1,139 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerCompanyReservationsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/company-reservations";
+    var modeCreation = string.Equals(Model.DateRangeMode, "creation", StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Firmalar</div>
+            <h2 class="page-title">Firma Rezervasyonları</h2>
+            <div class="text-muted mt-1">Kurumsal rezervasyonları firma, durum ve tarih aralığına göre takip edin. Konaklama dönemine göre filtrelemek için tarih modunu &quot;Giriş–çıkış&quot; seçin.</div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="card mb-3 partner-company-res-filters">
+    <div class="card-body">
+        <input type="hidden" name="otelId" value="@Model.SelectedHotelId" />
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-lg-4">
+                <label class="form-label">Tarih aralığı neye göre?</label>
+                <select class="form-select" name="dateRangeMode">
+                    @if (modeCreation)
+                    {
+                        <option value="creation" selected>Kayıt oluşturulma tarihi</option>
+                        <option value="stay">Giriş–çıkış (konaklama penceresi)</option>
+                    }
+                    else
+                    {
+                        <option value="creation">Kayıt oluşturulma tarihi</option>
+                        <option value="stay" selected>Giriş–çıkış (konaklama penceresi)</option>
+                    }
+                </select>
+                <small class="text-muted">Konaklaması seçilen günlerle kesişen rezervasyonları görmek için &quot;Giriş–çıkış&quot; kullanın.</small>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="form-label">Başlangıç</label>
+                <input class="form-control" type="date" name="dateFrom" value="@Model.DateFrom" />
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="form-label">Bitiş</label>
+                <input class="form-control" type="date" name="dateTo" value="@Model.DateTo" />
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="form-label">Firma</label>
+                <select class="form-select" name="companyId">
+                    <option value="">Tümü</option>
+                    @foreach (var c in Model.CompanyOptions)
+                    {
+                        if (Model.CompanyId == c.CompanyId)
+                        {
+                            <option value="@c.CompanyId" selected="selected">@c.CompanyName</option>
+                        }
+                        else
+                        {
+                            <option value="@c.CompanyId">@c.CompanyName</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="form-label">Rezervasyon durumu</label>
+                <select class="form-select" name="status">
+                    @foreach (var opt in new[] { ("all", "Tümü"), ("Onay Bekliyor", "Onay Bekliyor"), ("Değişiklik Bekliyor", "Değişiklik Bekliyor"), ("Onaylandı", "Onaylandı"), ("Tamamlandı", "Tamamlandı"), ("İptal Edildi", "İptal Edildi") })
+                    {
+                        if (string.Equals(Model.Status, opt.Item1, StringComparison.OrdinalIgnoreCase))
+                        {
+                            <option value="@opt.Item1" selected>@opt.Item2</option>
+                        }
+                        else
+                        {
+                            <option value="@opt.Item1">@opt.Item2</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-lg-4 d-flex align-items-center">
+                <div class="form-check mt-3 mt-lg-4">
+                    <input class="form-check-input" type="checkbox" name="completedStaysOnly" value="true" id="completedStaysOnly" @(Model.CompletedStaysOnly ? "checked=\"checked\"" : null) />
+                    <label class="form-check-label" for="completedStaysOnly">Yalnızca tamamlanan konaklama</label>
+                    <small class="text-muted d-block">Çıkış tarihi bugünden önce ve iptal dışı kayıtlar.</small>
+                </div>
+            </div>
+            <div class="col-12 d-flex flex-wrap gap-2">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-filter me-2"></i>Filtrele
+                </button>
+                <a class="btn btn-outline-primary" href="/panel/partner/firmalar/rezervasyonlar?otelId=@Model.SelectedHotelId">Sıfırla</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title mb-0">Son 250 kayıt</h3>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+            <tr>
+                <th>Rezervasyon</th>
+                <th>Firma</th>
+                <th>Misafir</th>
+                <th>Konaklama</th>
+                <th>Durum</th>
+                <th>Firma onayı</th>
+                <th>Tutar</th>
+                <th>Oluşturma</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (Model.Rows.Count == 0)
+            {
+                <tr><td colspan="8" class="text-muted p-3">Kayıt bulunamadı.</td></tr>
+            }
+            else
+            {
+                @foreach (var r in Model.Rows)
+                {
+                    <tr>
+                        <td class="fw-bold">@r.ReservationNo</td>
+                        <td>@r.CompanyName</td>
+                        <td>@r.GuestName</td>
+                        <td class="text-muted">@r.StayText</td>
+                        <td><span class="badge bg-secondary-lt text-secondary">@r.StatusLabel</span></td>
+                        <td><span class="badge bg-azure-lt text-azure">@r.CompanyApprovalStatus</span></td>
+                        <td class="fw-bold">@r.TotalText</td>
+                        <td class="text-muted">@r.CreatedText</td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

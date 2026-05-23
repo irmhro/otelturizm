@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Nav.Hotels" xml:space="preserve"><value>Oteller</value></data>
+  <data name="Nav.Corporate" xml:space="preserve"><value>Kurumsal</value></data>
+  <data name="Nav.Home" xml:space="preserve"><value>Anasayfa</value></data>
+  <data name="Nav.Campaigns" xml:space="preserve"><value>Kampanyalar</value></data>
+  <data name="Nav.Help" xml:space="preserve"><value>Yardım</value></data>
+  <data name="Nav.Login" xml:space="preserve"><value>Giriş Yap</value></data>
+  <data name="Nav.Register" xml:space="preserve"><value>Kayıt Ol</value></data>
+  <data name="Nav.Account" xml:space="preserve"><value>Hesabım</value></data>
+  <data name="Nav.Map" xml:space="preserve"><value>Harita</value></data>
+  <data name="Nav.SkipToContent" xml:space="preserve"><value>İçeriğe atla</value></data>
+  <data name="Search.Placeholder" xml:space="preserve"><value>Nereye gitmek istersiniz?</value></data>
+  <data name="Search.AriaLabel" xml:space="preserve"><value>Otel veya destinasyon ara</value></data>
+  <data name="Search.Title" xml:space="preserve"><value>Arama</value></data>
+  <data name="Search.NoResults" xml:space="preserve"><value>Sonuç bulunamadı</value></data>
+  <data name="Search.Suggestions" xml:space="preserve"><value>Öneriler</value></data>
+  <data name="Search.Recent" xml:space="preserve"><value>Son aramalar</value></data>
+  <data name="Booking.CheckIn" xml:space="preserve"><value>Giriş</value></data>
+  <data name="Booking.CheckOut" xml:space="preserve"><value>Çıkış</value></data>
+  <data name="Booking.Guests" xml:space="preserve"><value>Misafir</value></data>
+  <data name="Booking.Rooms" xml:space="preserve"><value>Oda</value></data>
+  <data name="Booking.Nights" xml:space="preserve"><value>Gece</value></data>
+  <data name="Booking.Total" xml:space="preserve"><value>Toplam</value></data>
+  <data name="Booking.Confirm" xml:space="preserve"><value>Rezervasyonu onayla</value></data>
+  <data name="Booking.Cancel" xml:space="preserve"><value>Rezervasyonu iptal et</value></data>
+  <data name="Filter.Breakfast" xml:space="preserve"><value>Kahvaltı dahil</value></data>
+  <data name="Filter.FreeCancel" xml:space="preserve"><value>Ücretsiz iptal</value></data>
+  <data name="Filter.Pool" xml:space="preserve"><value>Havuz</value></data>
+  <data name="Filter.Spa" xml:space="preserve"><value>Spa</value></data>
+  <data name="Filter.Parking" xml:space="preserve"><value>Otopark</value></data>
+  <data name="Filter.Wifi" xml:space="preserve"><value>Ücretsiz Wi-Fi</value></data>
+  <data name="Filter.Rating" xml:space="preserve"><value>Puan</value></data>
+  <data name="Filter.Price" xml:space="preserve"><value>Fiyat</value></data>
+  <data name="Filter.Sort" xml:space="preserve"><value>Sırala</value></data>
+  <data name="Filter.Clear" xml:space="preserve"><value>Filtreleri temizle</value></data>
+  <data name="Btn.Search" xml:space="preserve"><value>Ara</value></data>
+  <data name="Btn.Book" xml:space="preserve"><value>Rezervasyon yap</value></data>
+  <data name="Btn.Save" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="Btn.Cancel" xml:space="preserve"><value>İptal</value></data>
+  <data name="Btn.Close" xml:space="preserve"><value>Kapat</value></data>
+  <data name="Btn.Back" xml:space="preserve"><value>Geri</value></data>
+  <data name="Btn.Continue" xml:space="preserve"><value>Devam et</value></data>
+  <data name="Btn.Apply" xml:space="preserve"><value>Uygula</value></data>
+  <data name="Footer.About" xml:space="preserve"><value>Hakkımızda</value></data>
+  <data name="Footer.Contact" xml:space="preserve"><value>İletişim</value></data>
+  <data name="Footer.Privacy" xml:space="preserve"><value>Gizlilik Politikası</value></data>
+  <data name="Footer.Terms" xml:space="preserve"><value>Kullanım Koşulları</value></data>
+  <data name="Footer.Copyright" xml:space="preserve"><value>Tüm hakları saklıdır.</value></data>
+  <data name="Footer.Company" xml:space="preserve"><value>Şirket</value></data>
+  <data name="Footer.Support" xml:space="preserve"><value>Destek</value></data>
+</root>

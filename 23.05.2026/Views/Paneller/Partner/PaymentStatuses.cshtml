@@ -1,0 +1,98 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerPaymentStatusesPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/reservations";
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Rezervasyon yönetimi</div>
+            <h2 class="page-title">Ödeme Durumları</h2>
+            <div class="text-muted mt-1">Rezervasyon tahsilat özetleri ve son ödeme zamanları.</div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="card mb-3">
+    <div class="card-body">
+        <input type="hidden" name="otelId" value="@Model.SelectedHotelId" />
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label">Başlangıç</label>
+                <input class="form-control" type="date" name="dateFrom" value="@Model.DateFrom" />
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Bitiş</label>
+                <input class="form-control" type="date" name="dateTo" value="@Model.DateTo" />
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Ödeme durumu</label>
+                <input class="form-control" name="paymentStatus" value="@(Model.PaymentStatus == "all" ? "" : Model.PaymentStatus)" placeholder="all / Beklemede / Tamamlandı..." />
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Ödeme yöntemi</label>
+                <input class="form-control" name="paymentMethod" value="@(Model.PaymentMethod == "all" ? "" : Model.PaymentMethod)" placeholder="all / Kart / Havale..." />
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-filter me-2"></i>Filtrele
+                </button>
+                <a class="btn btn-outline-primary" href="/panel/partner/rezervasyonlar/odeme-durumlari?otelId=@Model.SelectedHotelId">Sıfırla</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title mb-0">Son 200 kayıt</h3>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+                <tr>
+                    <th>Rezervasyon</th>
+                    <th>Misafir</th>
+                    <th>Konaklama</th>
+                    <th>Durum</th>
+                    <th>Ödeme</th>
+                    <th>Tahsilat</th>
+                    <th>Son işlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-muted p-3">Kayıt bulunamadı.</td></tr>
+                }
+                else
+                {
+                    @foreach (var r in Model.Rows)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-bold">@r.ReservationNo</div>
+                            </td>
+                            <td>@r.GuestName</td>
+                            <td class="text-muted">@r.StayText</td>
+                            <td><span class="badge bg-secondary-lt text-secondary">@r.StatusLabel</span></td>
+                            <td>
+                                <span class="badge bg-@r.ToneClass-lt text-@r.ToneClass">@r.PaymentStatusLabel</span>
+                                <div class="text-muted small">@r.PaymentMethodLabel</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">@r.CollectedText</div>
+                                <div class="text-muted small">Kalan: @r.RemainingText</div>
+                                <div class="text-muted small">Toplam: @r.TotalText</div>
+                            </td>
+                            <td class="text-muted">@r.LastPaymentTimeText</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

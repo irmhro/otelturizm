@@ -1,0 +1,17 @@
+-- ULKELER: bayrak ikon kodu (flag-icon-css uyumlu, ornek: tr, gb, us)
+SET NOCOUNT ON;
+GO
+
+IF COL_LENGTH(N'dbo.ULKELER', N'BAYRAK_IKON_KODU') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ULKELER] ADD [BAYRAK_IKON_KODU] nvarchar(16) NULL;
+END
+GO
+
+UPDATE u
+SET [BAYRAK_IKON_KODU] = LOWER(RTRIM(CAST([ISO2_KODU] AS nvarchar(2))))
+FROM [dbo].[ULKELER] u
+WHERE [BAYRAK_IKON_KODU] IS NULL
+  AND [ISO2_KODU] IS NOT NULL
+  AND LEN(RTRIM(CAST([ISO2_KODU] AS nvarchar(2)))) > 0;
+GO

@@ -1,0 +1,41 @@
+-- Tablo: dbo.ODA_TIPLERI
+IF OBJECT_ID(N'dbo.ODA_TIPLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ODA_TIPLERI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [OTEL_ID] bigint NOT NULL,
+        [ODA_TIP_KODU] nvarchar(30) NOT NULL,
+        [ODA_ADI] nvarchar(100) NOT NULL,
+        [ODA_KATEGORISI] nvarchar(255) NOT NULL,
+        [MAKSIMUM_KISI_SAYISI] tinyint NOT NULL,
+        [MAKSIMUM_YETISKIN_SAYISI] tinyint NOT NULL,
+        [MAKSIMUM_COCUK_SAYISI] tinyint NOT NULL CONSTRAINT [DF__oda_tiple__maksi__6319B466] DEFAULT ((0)),
+        [YATAK_TIPI] nvarchar(255) NULL,
+        [YATAK_SAYISI] tinyint NULL,
+        [EK_YATAK_EKLENEBILIR_MI] bit NULL CONSTRAINT [DF__oda_tiple__ek_ya__640DD89F] DEFAULT ((0)),
+        [ODA_METREKARE] smallint NULL,
+        [BALKON_VAR_MI] bit NULL CONSTRAINT [DF__oda_tiple__balko__6501FCD8] DEFAULT ((0)),
+        [BALKON_METREKARE] smallint NULL,
+        [MANZARA_TIPI] nvarchar(255) NULL,
+        [OZEL_BANYO_VAR_MI] bit NULL CONSTRAINT [DF__oda_tiple__ozel___65F62111] DEFAULT ((1)),
+        [BANYO_TIPI] nvarchar(255) NULL,
+        [STANDART_GECELIK_FIYAT] decimal(10,2) NOT NULL,
+        [HAFTASONU_FARK_ORANI] decimal(5,2) NULL CONSTRAINT [DF__oda_tiple__hafta__66EA454A] DEFAULT ((0.00)),
+        [COCUK_INDIRIM_ORANI] decimal(5,2) NULL CONSTRAINT [DF__oda_tiple__cocuk__67DE6983] DEFAULT ((0.00)),
+        [BEBEK_UCRETSIZ_MI] bit NULL CONSTRAINT [DF__oda_tiple__bebek__68D28DBC] DEFAULT ((1)),
+        [BEBEK_YAS_SINIRI] tinyint NULL CONSTRAINT [DF__oda_tiple__bebek__69C6B1F5] DEFAULT ((2)),
+        [COCUK_YAS_SINIRI] tinyint NULL CONSTRAINT [DF__oda_tiple__cocuk__6ABAD62E] DEFAULT ((12)),
+        [TOPLAM_ODA_SAYISI] smallint NOT NULL,
+        [OVERBOOKING_LIMIT] tinyint NULL CONSTRAINT [DF__oda_tiple__overb__6BAEFA67] DEFAULT ((0)),
+        [KAPAK_FOTOGRAFI] nvarchar(255) NULL,
+        [GALERI] nvarchar(max) NULL,
+        [OZELLIKLER] nvarchar(max) NULL,
+        [AKTIF_MI] bit NULL CONSTRAINT [DF__oda_tiple__aktif__6CA31EA0] DEFAULT ((1)),
+        [SIRALAMA] smallint NULL CONSTRAINT [DF__oda_tiple__siral__6D9742D9] DEFAULT ((0)),
+        [OLUSTURULMA_TARIHI] datetime2(0) NULL CONSTRAINT [DF__oda_tiple__olust__6E8B6712] DEFAULT (sysutcdatetime()),
+        [GUNCELLENME_TARIHI] datetime2(0) NULL,
+        [MAX_YETISKIN] tinyint NULL,
+        [MAX_COCUK] tinyint NULL,
+        CONSTRAINT [PK_ODA_TIPLERI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

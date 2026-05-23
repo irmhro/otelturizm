@@ -73,12 +73,12 @@ public class LoginTwoFactorService : ILoginTwoFactorService
         await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
         {
             await using (var invalidate = new SqlCommand("""
-                UPDATE dbo.kullanici_giris_2fa_tokenlari
-                SET kullanildi_mi = 1,
-                    kullanilma_tarihi = SYSUTCDATETIME(),
-                    guncellenme_tarihi = SYSUTCDATETIME()
-                WHERE kullanici_id = @userId
-                  AND kullanildi_mi = 0;
+                UPDATE [dbo].[KULLANICI_GIRIS_2FA_TOKENLARI]
+                SET [KULLANILDI_MI] = 1,
+                    [KULLANILMA_TARIHI] = SYSUTCDATETIME(),
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+                WHERE [KULLANICI_ID] = @userId
+                  AND [KULLANILDI_MI] = 0;
                 """, connection, (SqlTransaction)transaction))
             {
                 invalidate.Parameters.AddWithValue("@userId", userId);
@@ -86,12 +86,12 @@ public class LoginTwoFactorService : ILoginTwoFactorService
             }
 
             await using (var insert = new SqlCommand("""
-                INSERT INTO dbo.kullanici_giris_2fa_tokenlari
+                INSERT INTO [dbo].[KULLANICI_GIRIS_2FA_TOKENLARI]
                 (
-                    kullanici_id, kanal, telefon_e164, eposta, dogrulama_kodu_hash,
-                    deneme_sayisi, maksimum_deneme, kullanildi_mi,
-                    gecerlilik_suresi, ip_adresi, user_agent,
-                    olusturulma_tarihi, guncellenme_tarihi
+                    [KULLANICI_ID], [KANAL], [TELEFON_E164], [EPOSTA], [DOGRULAMA_KODU_HASH],
+                    [DENEME_SAYISI], [MAKSIMUM_DENEME], [KULLANILDI_MI],
+                    [GECERLILIK_SURESI], [IP_ADRESI], [KULLANICI_ARACISI],
+                    [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
                 )
                 VALUES
                 (
@@ -125,7 +125,7 @@ public class LoginTwoFactorService : ILoginTwoFactorService
                 UserId = userId,
                 RecipientEmail = delivery.Email ?? string.Empty,
                 TemplateCode = "login_2fa_email",
-                RelatedTable = "users",
+                RelatedTable = "KULLANICILAR",
                 RelatedRecordId = userId,
                 Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -176,10 +176,10 @@ public class LoginTwoFactorService : ILoginTwoFactorService
 
         const string sql = """
             SELECT TOP (1)
-                id, dogrulama_kodu_hash, deneme_sayisi, maksimum_deneme, kullanildi_mi, gecerlilik_suresi
-            FROM dbo.kullanici_giris_2fa_tokenlari
-            WHERE kullanici_id = @userId
-            ORDER BY olusturulma_tarihi DESC;
+                id, [DOGRULAMA_KODU_HASH], [DENEME_SAYISI], [MAKSIMUM_DENEME], [KULLANILDI_MI], [GECERLILIK_SURESI]
+            FROM [dbo].[KULLANICI_GIRIS_2FA_TOKENLARI]
+            WHERE [KULLANICI_ID] = @userId
+            ORDER BY [OLUSTURULMA_TARIHI] DESC;
             """;
 
         long tokenId;
@@ -225,9 +225,9 @@ public class LoginTwoFactorService : ILoginTwoFactorService
         if (!string.Equals(candidateHash, storedHash, StringComparison.OrdinalIgnoreCase))
         {
             await using var inc = new SqlCommand("""
-                UPDATE dbo.kullanici_giris_2fa_tokenlari
-                SET deneme_sayisi = COALESCE(deneme_sayisi, 0) + 1,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[KULLANICI_GIRIS_2FA_TOKENLARI]
+                SET [DENEME_SAYISI] = COALESCE([DENEME_SAYISI], 0) + 1,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @tokenId;
                 """, connection, (SqlTransaction)transaction);
             inc.Parameters.AddWithValue("@tokenId", tokenId);
@@ -237,10 +237,10 @@ public class LoginTwoFactorService : ILoginTwoFactorService
         }
 
         await using (var mark = new SqlCommand("""
-            UPDATE dbo.kullanici_giris_2fa_tokenlari
-            SET kullanildi_mi = 1,
-                kullanilma_tarihi = SYSUTCDATETIME(),
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICI_GIRIS_2FA_TOKENLARI]
+            SET [KULLANILDI_MI] = 1,
+                [KULLANILMA_TARIHI] = SYSUTCDATETIME(),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @tokenId;
             """, connection, (SqlTransaction)transaction))
         {
@@ -279,10 +279,10 @@ public class LoginTwoFactorService : ILoginTwoFactorService
     private static async Task<bool> HasCooldownAsync(SqlConnection connection, long userId, int cooldownSeconds, CancellationToken cancellationToken)
     {
         await using var cmd = new SqlCommand("""
-            SELECT TOP (1) olusturulma_tarihi
-            FROM dbo.kullanici_giris_2fa_tokenlari
-            WHERE kullanici_id = @userId
-            ORDER BY olusturulma_tarihi DESC;
+            SELECT TOP (1) [OLUSTURULMA_TARIHI]
+            FROM [dbo].[KULLANICI_GIRIS_2FA_TOKENLARI]
+            WHERE [KULLANICI_ID] = @userId
+            ORDER BY [OLUSTURULMA_TARIHI] DESC;
             """, connection);
         cmd.Parameters.AddWithValue("@userId", userId);
         var scalar = await cmd.ExecuteScalarAsync(cancellationToken);
@@ -297,13 +297,13 @@ public class LoginTwoFactorService : ILoginTwoFactorService
     {
         await using var command = new SqlCommand("""
             SELECT TOP (1)
-                COALESCE(ad_soyad, ''),
-                COALESCE(eposta, ''),
-                email_dogrulama_tarihi,
-                COALESCE(telefon_e164, ''),
-                telefon_dogrulama_tarihi,
-                COALESCE(iki_asamali_dogrulama_kanali, 'email')
-            FROM dbo.users
+                COALESCE([AD_SOYAD], ''),
+                COALESCE([EPOSTA], ''),
+                [EPOSTA_DOGRULAMA_TARIHI],
+                COALESCE([TELEFON_E164], ''),
+                [TELEFON_DOGRULAMA_TARIHI],
+                COALESCE([IKI_ASAMALI_DOGRULAMA_KANALI], 'email')
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -386,16 +386,16 @@ public class LoginTwoFactorService : ILoginTwoFactorService
     {
         await using var cmd = new SqlCommand("""
             SELECT TOP (1)
-                COALESCE(phone_number_id, ''),
-                COALESCE(permanent_access_token_encrypted, ''),
-                COALESCE(verification_template_name, ''),
-                COALESCE(default_language_code, 'tr'),
-                COALESCE(otp_code_length, 6),
-                COALESCE(otp_ttl_seconds, 300),
-                COALESCE(resend_cooldown_seconds, 60),
-                COALESCE(max_attempt_count, 5),
-                COALESCE(is_active, 0)
-            FROM dbo.whatsapp_cloud_api_ayarlari
+                COALESCE([TELEFON_NUMARASI_ID], ''),
+                COALESCE([PERMANENT_ACCESS_TOKEN_ENCRYPTED], ''),
+                COALESCE([DOGRULAMA_SABLON_ADI], ''),
+                COALESCE([VARSAYILAN_DIL_KODU], 'tr'),
+                COALESCE([OTP_KOD_LENGTH], 6),
+                COALESCE([OTP_TTL_SECONDS], 300),
+                COALESCE([RESEND_COOLDOWN_SECONDS], 60),
+                COALESCE([MAX_ATTEMPT_COUNT], 5),
+                COALESCE([AKTIF_MI], 0)
+            FROM [dbo].[WHATSAPP_CLOUD_API_AYARLARI]
             ORDER BY id DESC;
             """, connection);
 

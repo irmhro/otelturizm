@@ -1,0 +1,112 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseAppHost>true</UseAppHost>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <GenerateMvcApplicationPartsAssemblyAttributes>false</GenerateMvcApplicationPartsAssemblyAttributes>
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;bin/**;obj\**;obj/**;artifacts\**;artifacts/**;.codex_obj\**;.codex_obj/**;publish\**;publish/**;tmp\**;tmp/**;Database\Backups\**;Database/Backups/**;App_Data\imports\**;App_Data/imports/**;App_Data\logs\**;App_Data/logs/**</DefaultItemExcludes>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);NU1902</NoWarn>
+  </PropertyGroup>
+
+  <!-- Release build: avoid locking/copy issues with apphost.exe -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <!-- Debug build: avoid apphost lock during dotnet run -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.16.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="tools\\**\\*.cs" />
+    <Compile Remove="tmp\\**\\*.cs" />
+    <Compile Remove="bin\\**\\*.cs" />
+    <Compile Remove="obj\\**\\*.cs" />
+    <Compile Remove="artifacts\\**\\*.cs" />
+    <Compile Remove=".codex_obj\\**\\*.cs" />
+    <Compile Remove="publish\\**\\*.cs" />
+    <Compile Remove="Database\\Backups\\**\\*.cs" />
+    <Compile Remove="App_Data\\imports\\**\\*.cs" />
+    <Content Remove="tools\\**\\*" />
+    <Content Remove="tmp\\**\\*" />
+    <Content Remove="bin\\**\\*" />
+    <Content Remove="obj\\**\\*" />
+    <Content Remove="artifacts\\**\\*" />
+    <Content Remove=".codex_obj\\**\\*" />
+    <Content Remove="publish\\**\\*" />
+    <Content Remove="Database\\Backups\\**\\*" />
+    <Content Remove="App_Data\\imports\\**\\*" />
+    <Content Remove="App_Data\\logs\\**\\*" />
+    <EmbeddedResource Remove="tools\\**\\*" />
+    <EmbeddedResource Remove="tmp\\**\\*" />
+    <EmbeddedResource Remove="bin\\**\\*" />
+    <EmbeddedResource Remove="obj\\**\\*" />
+    <EmbeddedResource Remove="artifacts\\**\\*" />
+    <EmbeddedResource Remove=".codex_obj\\**\\*" />
+    <EmbeddedResource Remove="publish\\**\\*" />
+    <EmbeddedResource Remove="Database\\Backups\\**\\*" />
+    <EmbeddedResource Remove="App_Data\\imports\\**\\*" />
+    <None Include="tools\\**\\*" />
+    <None Remove="bin\\**\\*" />
+    <None Remove="tmp\\**\\*" />
+    <None Remove="obj\\**\\*" />
+    <None Remove="artifacts\\**\\*" />
+    <None Remove=".codex_obj\\**\\*" />
+    <None Remove="publish\\**\\*" />
+    <None Remove="Database\\Backups\\**\\*" />
+    <None Remove="App_Data\\imports\\**\\*" />
+    <None Remove="App_Data\\logs\\**\\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Views\**\*.cshtml" CopyToPublishDirectory="PreserveNewest" />
+    <Content Update="Pages\**\*.cshtml" CopyToPublishDirectory="PreserveNewest" />
+    <!-- png/svg/json/fonts vb. dahil tüm statikler (yarım deploy / eksik css önlemi) -->
+    <Content Update="wwwroot\**\*" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Dokumanlar\Arsiv\ilk-200-gelistirme-plani.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <Target Name="IncludeRuntimeCshtmlFilesInPublish" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <_RuntimeCshtmlView Include="Views\**\*.cshtml;Pages\**\*.cshtml" />
+      <ResolvedFileToPublish Include="@(_RuntimeCshtmlView)">
+        <RelativePath>%(_RuntimeCshtmlView.Identity)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <Folder Include="logs\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\SharedResources.resx">
+      <Generator></Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\SharedResources.*.resx">
+      <DependentUpon>SharedResources.resx</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

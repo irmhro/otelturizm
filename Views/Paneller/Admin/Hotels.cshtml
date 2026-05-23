@@ -131,10 +131,32 @@
         }
         else
         {
+            <form id="admin-hotels-bulk-form" method="post" action="/admin/oteller/toplu-yayin" class="admin-hotels-bulk-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="publish" id="admin-hotels-bulk-publish" value="" />
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <div class="admin-hotels-bulk-bar" id="admin-hotels-bulk-bar" hidden>
+                    <strong id="admin-hotels-bulk-count">0 otel seçildi</strong>
+                    <div class="admin-hotels-bulk-actions">
+                        <button type="submit" class="admin-action-btn success" data-publish="true" disabled>
+                            <i class="fas fa-broadcast-tower"></i> Seçilenleri yayınla
+                        </button>
+                        <button type="submit" class="admin-action-btn danger" data-publish="false" disabled>
+                            <i class="fas fa-eye-slash"></i> Seçilenleri kapat
+                        </button>
+                    </div>
+                </div>
+            </form>
+
             <div class="admin-hotels-table-wrap">
-                <table class="admin-hotels-table">
+                <table class="admin-hotels-table admin-table--cards">
                     <thead>
                         <tr>
+                            <th class="admin-hotels-select-head">
+                                <label class="admin-hotels-select-all" title="Sayfadaki tüm otelleri seç">
+                                    <input type="checkbox" id="admin-hotels-select-all" aria-label="Tümünü seç" />
+                                </label>
+                            </th>
                             <th>Otel</th>
                             <th>Konum</th>
                             <th>Tip</th>
@@ -150,21 +172,24 @@
                         @foreach (var hotel in Model.Hotels)
                         {
                             <tr>
-                                <td>
+                                <td data-label="Seç" class="admin-hotels-select-cell">
+                                    <input form="admin-hotels-bulk-form" type="checkbox" class="admin-hotels-row-select" name="hotelIds" value="@hotel.HotelId" aria-label="@hotel.HotelName seç" />
+                                </td>
+                                <td data-label="Otel">
                                     <strong>@hotel.HotelName</strong>
                                     <small>@hotel.HotelCode</small>
                                 </td>
-                                <td>@hotel.LocationText</td>
-                                <td><span class="admin-chip info"><i class="fas fa-hotel"></i>@hotel.HotelType</span></td>
-                                <td><strong>@hotel.RoomCount</strong><small>oda tipi</small></td>
-                                <td>
+                                <td data-label="Konum">@hotel.LocationText</td>
+                                <td data-label="Tip"><span class="admin-chip info"><i class="fas fa-hotel"></i>@hotel.HotelType</span></td>
+                                <td data-label="Oda"><strong>@hotel.RoomCount</strong><small>oda tipi</small></td>
+                                <td data-label="Görsel">
                                     <span>@hotel.HotelPhotoCount otel</span>
                                     <small>@hotel.RoomPhotoCount oda</small>
                                 </td>
-                                <td><span class="admin-chip @StatusTone(hotel.PublishStatus)">@hotel.PublishStatus</span></td>
-                                <td><span class="admin-chip @StatusTone(hotel.ApprovalStatus)">@hotel.ApprovalStatus</span></td>
-                                <td><span class="admin-hotel-score compact">@hotel.ScoreText</span></td>
-                                <td class="admin-hotels-actions">
+                                <td data-label="Yayın"><span class="admin-chip @StatusTone(hotel.PublishStatus)">@hotel.PublishStatus</span></td>
+                                <td data-label="Onay"><span class="admin-chip @StatusTone(hotel.ApprovalStatus)">@hotel.ApprovalStatus</span></td>
+                                <td data-label="Puan"><span class="admin-hotel-score compact">@hotel.ScoreText</span></td>
+                                <td data-label="Aksiyon" class="admin-hotels-actions">
                                     <a class="admin-action-btn primary" href="/admin/oteller/duzenle/@hotel.HotelId">
                                         <i class="fas fa-pen"></i> Düzenle
                                     </a>
@@ -202,3 +227,62 @@
         }
     </article>
 </section>
+
+@if (Model.Hotels.Count > 0)
+{
+    var bulkNonce = Context.Items["CspNonce"] as string;
+    <script nonce="@bulkNonce">
+    (() => {
+        const bulkForm = document.getElementById('admin-hotels-bulk-form');
+        const bulkBar = document.getElementById('admin-hotels-bulk-bar');
+        const bulkCount = document.getElementById('admin-hotels-bulk-count');
+        const publishInput = document.getElementById('admin-hotels-bulk-publish');
+        const selectAll = document.getElementById('admin-hotels-select-all');
+        const rowChecks = Array.from(document.querySelectorAll('.admin-hotels-row-select'));
+        const bulkButtons = Array.from(bulkForm?.querySelectorAll('[data-publish]') ?? []);
+
+        const selectedRows = () => rowChecks.filter((item) => item.checked);
+
+        const syncBulkUi = () => {
+            const count = selectedRows().length;
+            if (bulkBar) bulkBar.hidden = count === 0;
+            if (bulkCount) bulkCount.textContent = `${count} otel seçildi`;
+            bulkButtons.forEach((button) => { button.disabled = count === 0; });
+            if (selectAll) {
+                selectAll.indeterminate = count > 0 && count < rowChecks.length;
+                selectAll.checked = count > 0 && count === rowChecks.length;
+            }
+        };
+
+        selectAll?.addEventListener('change', () => {
+            rowChecks.forEach((item) => { item.checked = !!selectAll.checked; });
+            syncBulkUi();
+        });
+
+        rowChecks.forEach((item) => item.addEventListener('change', syncBulkUi));
+
+        bulkForm?.addEventListener('submit', (event) => {
+            const submitter = event.submitter;
+            const publishValue = submitter?.getAttribute('data-publish');
+            if (!publishValue) {
+                event.preventDefault();
+                return;
+            }
+            if (selectedRows().length === 0) {
+                event.preventDefault();
+                return;
+            }
+            const publish = publishValue === 'true';
+            if (publishInput) publishInput.value = publish ? 'true' : 'false';
+            const message = publish
+                ? 'Seçilen oteller yayına alınsın mı?'
+                : 'Seçilen otellerin yayını kapatılsın mı?';
+            if (!window.confirm(message)) {
+                event.preventDefault();
+            }
+        });
+
+        syncBulkUi();
+    })();
+    </script>
+}

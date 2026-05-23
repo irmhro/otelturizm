@@ -1,0 +1,158 @@
+@model otelturizmnew.Models.Firma.FirmaLandingPageViewModel
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@{
+    var firmaAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
+    var firmaAuthenticated = User.Identity?.IsAuthenticated == true;
+    var firmaPanelUrl = firmaAccountType.ToLowerInvariant() switch
+    {
+        "partner" => "/panel/partner",
+        "firma" => "/panel/firma",
+        "admin" => "/admin/dashboard",
+        "developer" => "/panel/developer",
+        "sales" => "/panel/satis",
+        _ => "/panel/user"
+    };
+    var firmaPanelLabel = firmaAccountType.ToLowerInvariant() switch
+    {
+        "partner" => "Partner Paneli",
+        "firma" => "Firma Paneli",
+        "admin" => "Admin Paneli",
+        "developer" => "Developer Paneli",
+        "sales" => "Satış Paneli",
+        _ => "Hesabım"
+    };
+}
+<header class="site-header firma-site-header" id="firmaHeader">
+    <div class="top-utility-bar firma-utility-bar">
+        <div class="utility-container">
+            <div class="utility-left">
+                <span><i class="fas fa-building-shield"></i> Firma Güvencesi</span>
+                <span><i class="fas fa-headset"></i> 7/24 Öncelikli Destek</span>
+                <span><i class="fas fa-file-invoice"></i> Tek Merkezden Faturalama</span>
+            </div>
+            <div class="utility-right">
+                <div class="language-selector"><i class="fas fa-globe"></i> TR</div>
+                <div class="currency-selector"><i class="fas fa-lira-sign"></i> TRY</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-container firma-header-container">
+        <div class="logo-area">
+            <a href="/" class="logo logo-image-only firma-logo-link" aria-label="Otelturizm Firma">
+                <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="brand-logo-image" />
+            </a>
+        </div>
+
+        <div class="header-actions firma-header-actions">
+            <a href="/oteller" class="action-btn">Oteller</a>
+            @if (!firmaAuthenticated && !string.Equals(firmaAccountType, "firma", StringComparison.OrdinalIgnoreCase))
+            {
+                <a href="/firma-giris" class="action-btn">Firma Girişi</a>
+                <a href="/firma-giris?sekme=kayit" class="action-btn primary">Firma Hesabı Açın</a>
+            }
+            <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
+            <button class="action-btn mobile-nav-toggle" id="firmaMenuToggle" type="button"><i class="fas fa-bars"></i></button>
+        </div>
+    </div>
+</header>
+
+<div class="mobile-menu-overlay" id="firmaMenuOverlay"></div>
+<div class="mobile-menu-drawer firma-menu-drawer" id="firmaMenuDrawer">
+    <div class="drawer-scroll">
+        <div class="drawer-header">
+            <div class="drawer-user">
+                <div class="drawer-brand-mark firma-drawer-brand">
+                    <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="drawer-brand-logo" />
+                </div>
+            </div>
+            <button class="drawer-close" id="firmaDrawerClose" type="button"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="drawer-nav">
+            <div class="drawer-auth-row">
+                @if (firmaAuthenticated)
+                {
+                    <a href="@firmaPanelUrl" class="drawer-action primary"><i class="fas fa-chart-pie"></i> @firmaPanelLabel</a>
+                    <form method="post" action="/cikis-yap" class="drawer-inline-form">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="drawer-action outline"><i class="fas fa-right-from-bracket"></i> Çıkış</button>
+                    </form>
+                }
+                else
+                {
+                    <a href="/firma-giris" class="drawer-action primary"><i class="fas fa-right-to-bracket"></i> Giriş Yap</a>
+                    <a href="/firma-giris?sekme=kayit" class="drawer-action outline"><i class="fas fa-user-plus"></i> Kayıt Ol</a>
+                }
+            </div>
+
+            <div class="drawer-quick-features">
+                <a href="/oteller" class="feature-tile"><i class="fas fa-hotel"></i><span>Oteller</span></a>
+                <a href="/kampanyalar" class="feature-tile"><i class="fas fa-tag"></i><span>Kampanyalar</span></a>
+                <a href="/firma" class="feature-tile"><i class="fas fa-calendar-alt"></i><span>Kurumsal Teklif</span></a>
+                <a href="/yardim-merkezi" class="feature-tile"><i class="fas fa-headset"></i><span>Canlı Destek</span></a>
+            </div>
+
+            <div class="drawer-section">
+                <div class="drawer-section-title">Öne Çıkan Fırsatlar</div>
+                <div class="drawer-promo-grid">
+                    <a href="/kampanyalar" class="drawer-action outline promo-link"><i class="fas fa-bolt"></i> Flaş İndirim</a>
+                    <a href="/kampanyalar" class="drawer-action outline promo-link"><i class="fas fa-calendar-week"></i> Hafta Sonu</a>
+                    <a href="/firma" class="drawer-action outline promo-link"><i class="fas fa-wand-magic-sparkles"></i> Akıllı Fiyat</a>
+                    <a href="/yardim-merkezi" class="drawer-action outline promo-link"><i class="fas fa-headset"></i> Rezervasyon Desteği</a>
+                </div>
+            </div>
+
+            <div class="drawer-corp-row">
+                <a href="/kurumsal" class="drawer-action ghost"><i class="fas fa-building"></i> Kurumsal</a>
+                <a href="/firma" class="drawer-action ghost"><i class="fas fa-briefcase"></i> Firma</a>
+            </div>
+
+            <div class="drawer-section">
+                <div class="drawer-section-title">Menü</div>
+                <a href="/" class="drawer-link"><i class="fas fa-home"></i> Anasayfa</a>
+                <a href="/kurumsal" class="drawer-link"><i class="fas fa-building"></i> Kurumsal</a>
+                <a href="/firma" class="drawer-link"><i class="fas fa-briefcase"></i> Firma</a>
+                <a href="/yardim-merkezi" class="drawer-link"><i class="fas fa-headset"></i> Destek</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
+    (function () {
+        const toggle = document.getElementById('firmaMenuToggle');
+        const overlay = document.getElementById('firmaMenuOverlay');
+        const drawer = document.getElementById('firmaMenuDrawer');
+        const close = document.getElementById('firmaDrawerClose');
+
+        if (!toggle || !overlay || !drawer || !close) {
+            return;
+        }
+
+        function openDrawer() {
+            overlay.classList.add('is-visible');
+            drawer.classList.add('is-visible');
+            document.body.classList.add('firma-mobile-open');
+        }
+
+        function closeDrawer() {
+            overlay.classList.remove('is-visible');
+            drawer.classList.remove('is-visible');
+            document.body.classList.remove('firma-mobile-open');
+        }
+
+        toggle.addEventListener('click', openDrawer);
+        overlay.addEventListener('click', closeDrawer);
+        close.addEventListener('click', closeDrawer);
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeDrawer();
+            }
+        });
+    })();
+</script>

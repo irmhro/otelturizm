@@ -4,6 +4,8 @@
 
 @{
     ViewData["Title"] = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Haritada Oteller" : $"{Model.SearchLabel} haritası";
+    ViewData["PageCss"] = "haritaoteller";
+    ViewData["PageCssMobile"] = "haritaoteller.mobile";
     var mapHotels = (Model.MapHotels ?? new()).Where(x => x.Latitude.HasValue && x.Longitude.HasValue).ToList();
     var mapPayload = mapHotels.Select(x => new
     {
@@ -29,6 +31,12 @@
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       crossorigin="anonymous" />
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+      crossorigin="anonymous" />
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
+      crossorigin="anonymous" />
 
 <section class="hotel-map-page">
     <div class="hotel-map-page__shell">
@@ -51,6 +59,11 @@
                         <p id="hotelMapSummaryText">İl, ilçe, mahalle ve otel adına göre filtrelenen tesisleri fiyat marker'ları ile inceleyin.</p>
                     </div>
                     <div class="hotel-map-page__toolbar-actions">
+                        <span class="hotel-map-page__pin-badge" id="hotelMapPinBadge" title="Haritadaki pin sayısı">
+                            <i class="fas fa-map-pin" aria-hidden="true"></i>
+                            <strong id="hotelMapPinCount">@mapHotels.Count</strong>
+                            <span>pin</span>
+                        </span>
                         <button type="button" class="hotel-map-page__toolbar-btn" id="fitHotelMapBtn">
                             <i class="fas fa-expand" aria-hidden="true"></i>
                             <span>Tümünü Göster</span>
@@ -58,7 +71,16 @@
                     </div>
                 </div>
 
-                <div class="hotel-map-page__map-canvas" id="hotelMapCanvas"></div>
+                <div class="hotel-map-page__map-canvas" id="hotelMapCanvas">
+                    <div class="hotel-map-page__empty @(mapHotels.Count == 0 ? "" : "is-hidden")"
+                         id="hotelMapEmptyState"
+                         role="status"
+                         aria-live="polite"
+                         @(mapHotels.Count > 0 ? "hidden" : null)>
+                        <p>Haritada gösterilecek tesis bulunamadı. Aramayı genişletin veya tüm otelleri listeleyin.</p>
+                        <a class="hotel-map-page__empty-cta" href="@Url.Action("OtelListeleme", "Oteller")">Tüm otellere dön</a>
+                    </div>
+                </div>
             </section>
 
             <aside class="hotel-map-page__sidebar">
@@ -128,8 +150,11 @@
                 </form>
 
                 <div class="hotel-map-page__list" id="hotelMapHotelList">
+                    @{ var mapListIndex = 0; }
                     @foreach (var hotel in mapHotels)
                     {
+                        var isFirstMapItem = mapListIndex == 0;
+                        mapListIndex++;
                         var areaText = string.IsNullOrWhiteSpace(hotel.Neighborhood)
                             ? $"{hotel.District}, {hotel.City}"
                             : $"{hotel.Neighborhood}, {hotel.District}, {hotel.City}";
@@ -149,7 +174,7 @@
                             <div class="hotel-map-page__item-visual">
                                 @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
                                 {
-                                    <img src="@hotel.ImageUrl" alt="@hotel.Name" loading="lazy" />
+                                    <img src="@hotel.ImageUrl" alt="@hotel.Name" @(isFirstMapItem ? "fetchpriority=\"high\" loading=\"eager\"" : "loading=\"lazy\"") decoding="async" />
                                 }
                                 else
                                 {
@@ -180,6 +205,7 @@
 
 @section Scripts {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin="anonymous"></script>
     <script>
         (function () {
             const mapCanvas = document.getElementById('hotelMapCanvas');
@@ -192,8 +218,10 @@
             const ratingFilter = document.getElementById('hotelMapRatingFilter');
             const clearFilters = document.getElementById('hotelMapClearFilters');
             const visibleCount = document.getElementById('hotelMapVisibleCount');
+            const pinCount = document.getElementById('hotelMapPinCount');
             const summaryText = document.getElementById('hotelMapSummaryText');
             const listItems = Array.from(document.querySelectorAll('[data-map-focus]'));
+            const emptyState = document.getElementById('hotelMapEmptyState');
             if (!mapCanvas || !window.L) return;
 
             let hotels = [];
@@ -236,7 +264,25 @@
                 attribution: '&copy; OpenStreetMap katkıda bulunanlar &copy; CARTO'
             }).addTo(map);
 
-            const hotelLayer = window.L.layerGroup().addTo(map);
+            const clusterLayer = typeof window.L.markerClusterGroup === 'function'
+                ? window.L.markerClusterGroup({
+                    showCoverageOnHover: false,
+                    zoomToBoundsOnClick: true,
+                    spiderfyOnMaxZoom: true,
+                    disableClusteringAtZoom: 15,
+                    maxClusterRadius: 56,
+                    iconCreateFunction: function (cluster) {
+                        const count = cluster.getChildCount();
+                        return window.L.divIcon({
+                            className: 'hotel-map-cluster-icon',
+                            html: '<span class="hotel-map-cluster" aria-label="' + count + ' otel kümesi">' + count + '</span>',
+                            iconSize: [44, 44],
+                            iconAnchor: [22, 22]
+                        });
+                    }
+                })
+                : window.L.layerGroup();
+            clusterLayer.addTo(map);
             const markers = [];
 
             hotels.forEach(function (hotel) {
@@ -272,7 +318,7 @@
                                 '<b>' + escapeHtml(priceText) + '</b>' +
                                 '<em>' + escapeHtml(Number(hotel.rating || 0).toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })) + '</em>' +
                             '</div>' +
-                            '<a href="/oteller/' + encodeURIComponent(String(hotel.slug || '')) + '">Oteli İncele</a>' +
+                            '<a class="hotel-map-popup__cta" href="/oteller/' + encodeURIComponent(String(hotel.slug || '')) + '">Oteli İncele</a>' +
                         '</div>' +
                     '</article>';
 
@@ -316,6 +362,14 @@
                     return;
                 }
 
+                if (typeof clusterLayer.getBounds === 'function') {
+                    const clusterBounds = clusterLayer.getBounds();
+                    if (clusterBounds && clusterBounds.isValid()) {
+                        map.fitBounds(clusterBounds, { padding: [50, 50], maxZoom: 12 });
+                        return;
+                    }
+                }
+
                 const bounds = window.L.latLngBounds(entries.map(function (entry) {
                     return [entry.lat, entry.lon];
                 }));
@@ -324,10 +378,10 @@
 
             function applyMapState() {
                 const entries = getFilteredEntries();
-                hotelLayer.clearLayers();
+                clusterLayer.clearLayers();
 
                 entries.forEach(function (entry) {
-                    entry.marker.addTo(hotelLayer);
+                    clusterLayer.addLayer(entry.marker);
                 });
 
                 listItems.forEach(function (item) {
@@ -337,9 +391,17 @@
                 });
 
                 visibleCount.textContent = String(entries.length);
+                if (pinCount) {
+                    pinCount.textContent = String(entries.length);
+                }
                 summaryText.textContent = entries.length
-                    ? entries.length + ' tesis filtrelerinize uygun olarak haritada gösteriliyor.'
+                    ? entries.length + ' pin haritada (yakın pinler küme halinde; küme üzerine dokununca yakınlaşır).'
                     : 'Filtrelere uygun tesis bulunamadı. Aramayı genişletin veya filtreleri temizleyin.';
+                if (emptyState) {
+                    const showEmpty = entries.length === 0;
+                    emptyState.hidden = !showEmpty;
+                    emptyState.classList.toggle('is-hidden', !showEmpty);
+                }
                 fitEntries(entries);
             }
 

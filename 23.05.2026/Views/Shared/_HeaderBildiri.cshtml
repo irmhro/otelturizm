@@ -1,0 +1,40 @@
+@model otelturizmnew.Models.Paneller.Common.HeaderBildiriViewModel
+@{
+    var dropdownId = $"header-bildiri-{Model.PanelKey}";
+}
+<div class="header-bildiri" data-header-bildiri data-panel-key="@Model.PanelKey" data-unread-count="@Model.UnreadCount">
+    <button type="button" class="header-bildiri-btn" data-header-bildiri-toggle aria-expanded="false" aria-controls="@dropdownId" aria-label="Bildirimler">
+        <i class="far fa-bell"></i>
+        @if (Model.UnreadCount > 0)
+        {
+            <span class="header-bildiri-count">@Model.UnreadCount</span>
+        }
+    </button>
+    @Html.AntiForgeryToken()
+    <div id="@dropdownId" class="header-bildiri-dropdown" data-header-bildiri-dropdown>
+        <div class="header-bildiri-head">
+            <strong>@Model.PanelLabel panel bildirimleri</strong>
+            <span>@Model.UnreadCount okunmamis</span>
+        </div>
+        <ul class="header-bildiri-list">
+            @foreach (var item in Model.Items)
+            {
+                <li class="header-bildiri-item @($"tone-{item.Tone}") @(item.IsRead ? "is-read" : "is-unread")"
+                    data-header-item-key="@item.ItemKey"
+                    data-header-item-read="@(item.IsRead ? "1" : "0")">
+                    <a href="@item.Url" data-header-item-link>
+                        <i class="fas @item.IconClass"></i>
+                        <div class="header-bildiri-content">
+                            <strong>@item.Title</strong>
+                            <p>@item.Description</p>
+                            <div class="header-bildiri-time">
+                                <span class="header-bildiri-time-chip">@item.TimeLabel</span>
+                                <span class="header-bildiri-time-chip">@item.AbsoluteTimeLabel</span>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+</div>

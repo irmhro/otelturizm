@@ -1,1 +1,79 @@
 @import url("./finance.css");
+@import url("../../shared/mobile-viewport-shell.css");
+@media (max-width: 1200px) {
+    .partner-commission-30d-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .partner-commission-stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .partner-commission-filter-grid,
+    .partner-commission-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .partner-commission-hero {
+        flex-direction: column;
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .partner-commission-rule {
+        min-width: 0;
+    }
+
+    .partner-commission-30d-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .partner-commission-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .partner-commission-filter-actions {
+        flex-direction: column;
+    }
+
+    .partner-commission-filter-actions .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .partner-commission-filter .form-control,
+    .partner-commission-filter .form-select {
+        min-height: 44px;
+    }
+
+    .partner-commission-page .btn {
+        min-height: 44px;
+    }
+
+    .partner-commission-table {
+        min-width: 720px;
+    }
+
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .partner-commission-trend-body {
+        min-height: 220px;
+    }
+
+    .partner-commission-trend-bars {
+        min-height: 180px;
+    }
+
+    .partner-commission-empty-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .partner-commission-empty-actions .btn {
+        width: 100%;
+    }
+}

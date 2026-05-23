@@ -1,33 +1,50 @@
-.user-profile-page,
-.profile-form {
-  gap: 14px;
-}
+@import url("./user-mobile-bundle.css");
 
-.profile-hero,
-.profile-panel,
-.profile-preset-card {
-  border-radius: 13px;
-}
+@media (max-width: 900px) {
+  .user-profile-page,
+  .profile-form {
+    gap: 14px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
 
-.profile-hero,
-.profile-panel {
-  padding: 14px;
-}
+  .user-profile-page {
+    padding-top: max(0px, env(safe-area-inset-top, 0px));
+  }
 
-.profile-identity h1 {
-  font-size: 23px;
-}
+  .profile-hero,
+  .profile-panel,
+  .profile-preset-card {
+    border-radius: 13px;
+  }
 
-.profile-file-picker {
-  min-height: 62px;
-}
+  .profile-hero,
+  .profile-panel {
+    padding: 14px;
+  }
 
-.profile-preset-list button {
-  width: 44px;
-  height: 44px;
-}
+  .profile-identity h1 {
+    font-size: 23px;
+  }
 
-.profile-uploaded-avatar-list,
-.profile-uploaded-avatar-actions {
-  grid-template-columns: 1fr;
+  .profile-file-picker {
+    min-height: 62px;
+  }
+
+  .profile-preset-list button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .profile-uploaded-avatar-list,
+  .profile-uploaded-avatar-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-form .form-control,
+  .profile-form .form-select,
+  .profile-form .btn {
+    min-height: var(--user-mob-touch, 44px);
+  }
 }

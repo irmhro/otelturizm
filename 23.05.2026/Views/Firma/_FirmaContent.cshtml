@@ -1,0 +1,211 @@
+@model otelturizmnew.Models.Firma.FirmaLandingPageViewModel
+<main class="firma-main">
+    <section class="site-shell firma-hero-section">
+        <div class="firma-hero-copy">
+            <h1>Firmanız İçin <span>Toplu Konaklama</span> Avantajları</h1>
+            <p class="firma-hero-lead">@Model.HeroDescription</p>
+
+            <div class="firma-process-cards">
+                <article class="firma-process-card">
+                    <span class="firma-process-step">1</span>
+                    <h4>Otel Kuralları Tanımlar</h4>
+                    <p>Her otel, minimum oda adedi ve firma indirim oranını kendi stratejisine göre belirler.</p>
+                </article>
+                <article class="firma-process-card">
+                    <span class="firma-process-step">2</span>
+                    <h4>Firma Panelinde Anlık Görünür</h4>
+                    <p>Sizin hesabınızda bireysel fiyat yerine kurumsal teklif otomatik listelenir.</p>
+                </article>
+                <article class="firma-process-card">
+                    <span class="firma-process-step">3</span>
+                    <h4>Daha Uygun Maliyetle Rezervasyon</h4>
+                    <p>Ekip konaklamalarında toplam harcama düşer, onay ve raporlama tek akışta tamamlanır.</p>
+                </article>
+            </div>
+
+            <div class="firma-hero-points">
+                <div class="firma-hero-point"><i class="fas fa-check-circle"></i> Her otel kendi firma fiyatını ve oda eşiğini belirler</div>
+                <div class="firma-hero-point"><i class="fas fa-check-circle"></i> Firma kullanıcıları bireysel fiyata göre daha avantajlı teklif görür</div>
+                <div class="firma-hero-point"><i class="fas fa-check-circle"></i> Toplu konaklamalarda maliyet, onay ve raporlama merkezi yönetilir</div>
+                <div class="firma-hero-point"><i class="fas fa-check-circle"></i> Satın alma, finans ve operasyon ekipleri tek panelde senkron çalışır</div>
+            </div>
+
+            <div class="firma-hero-actions">
+                <a href="/firma-giris?sekme=kayit" class="firma-btn firma-btn-primary">Firma Hesabı Açın <i class="fas fa-arrow-right"></i></a>
+                <a href="/firma-giris" class="firma-btn firma-btn-outline">Firma Girişi</a>
+            </div>
+        </div>
+
+        <div class="firma-hero-visual">
+            <span class="firma-visual-badge"><i class="fas fa-chart-line"></i> Canlı Fiyat Karşılaştırması</span>
+            <p class="firma-visual-title">📊 Örnek Kurumsal Konaklama Senaryosu · 5 oda</p>
+            <div class="firma-comparison-kpis">
+                <div class="firma-comparison-kpi">
+                    <small>Toplam Oda</small>
+                    <strong>5</strong>
+                </div>
+                <div class="firma-comparison-kpi positive">
+                    <small>İndirim Oranı</small>
+                    <strong>%20</strong>
+                </div>
+                <div class="firma-comparison-kpi">
+                    <small>Geceleme</small>
+                    <strong>2 Gece</strong>
+                </div>
+            </div>
+            <div class="firma-price-comparison-mini firma-price-comparison-premium">
+                <div class="firma-price-row">
+                    <span><i class="fas fa-hotel"></i> Standart Fiyat (Bireysel)</span>
+                    <span class="firma-price-standard">₺3.600</span>
+                </div>
+                <div class="firma-price-row highlight">
+                    <span><i class="fas fa-building"></i> Firma Fiyatı (5 oda)</span>
+                    <span class="firma-price-corporate">₺2.880 <b class="firma-savings-tag"><i class="fas fa-arrow-down"></i> %20</b></span>
+                </div>
+                <div class="firma-price-row">
+                    <span><i class="fas fa-piggy-bank"></i> Toplam Tasarruf</span>
+                    <span class="firma-price-savings">₺720</span>
+                </div>
+            </div>
+            <div class="firma-info-note">
+                <i class="fas fa-circle-info"></i>
+                Bu fiyatlandırma <strong>örnek gösterimdir</strong>; gerçek otel verisi kullanılmaz. Panelde firmalara özel tekliflerle güncel fiyatları görüntülersiniz.
+            </div>
+        </div>
+    </section>
+
+    <section class="site-shell firma-trust-bar">
+        <div class="firma-trust-item"><i class="fas fa-shield-alt"></i><span>Firma Güvencesi</span></div>
+        <div class="firma-trust-item"><i class="fas fa-headset"></i><span>7/24 Öncelikli Destek</span></div>
+        <div class="firma-trust-item"><i class="fas fa-file-arrow-up"></i><span>Fatura Yükleme ve Takip</span></div>
+        <div class="firma-trust-item"><i class="fas fa-chart-bar"></i><span>Harcama Raporları</span></div>
+    </section>
+
+    <section class="site-shell">
+        <div class="firma-info-note">
+            <i class="fas fa-file-invoice"></i>
+            Oteller faturaları kendi tarafında keser ve rezervasyon sonrasında sisteme yükler. Firmalar, paneldeki <strong>Faturalar</strong> ekranından tüm faturalarını görüntüler.
+        </div>
+    </section>
+
+    <section class="site-shell firma-section">
+        <div class="firma-section-title">
+            <h2>3 Adımda Firma Avantajlarından Yararlanın</h2>
+            <p>Süreç son derece basit ve hızlı.</p>
+        </div>
+        <div class="firma-steps-grid">
+            <article class="firma-step-card">
+                <span class="firma-step-number">01</span>
+                <div class="firma-step-icon"><i class="fas fa-building"></i></div>
+                <h3>1. Firma Hesabı Oluşturun</h3>
+                <p>Kurumsal bilgilerinizle ücretsiz firma hesabı açın. Firma yapınız sisteme bağlı şekilde ilerler.</p>
+            </article>
+            <article class="firma-step-card">
+                <span class="firma-step-number">02</span>
+                <div class="firma-step-icon"><i class="fas fa-users-gear"></i></div>
+                <h3>2. Çalışanlarınızı Ekleyin</h3>
+                <p>Seyahat edecek çalışanları tanımlayın, departman ve harcama limitlerini merkezden yönetin.</p>
+            </article>
+            <article class="firma-step-card">
+                <span class="firma-step-number">03</span>
+                <div class="firma-step-icon"><i class="fas fa-hotel"></i></div>
+                <h3>3. Firma Fiyatlarıyla Rezervasyon Yapın</h3>
+                <p>Otellerin firmanız için tanımladığı özel fiyatlarla rezervasyon sürecini hızlandırın.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="site-shell firma-section firma-pricing-tiers">
+        <div class="firma-section-title">
+            <h2>Oteller Firmalar İçin Nasıl Fiyatlandırma Yapıyor?</h2>
+            <p>Her otel, firmalara özel minimum oda sayısı ve indirim yapısını kendi belirler.</p>
+        </div>
+        <div class="firma-tiers-grid">
+            @foreach (var tier in Model.PricingTiers)
+            {
+                <article class="firma-tier-card @(tier.Highlighted ? "highlight" : string.Empty)">
+                    <div class="firma-tier-icon">🏨</div>
+                    <div class="firma-tier-name">@tier.Name</div>
+                    <div class="firma-tier-range">@tier.Range</div>
+                    <div class="firma-tier-discount">@tier.DiscountText <small>indirim</small></div>
+                    <div class="firma-tier-example"><i class="fas fa-tag"></i> @tier.ExampleText</div>
+                </article>
+            }
+        </div>
+        <p class="firma-tier-note"><i class="fas fa-lightbulb"></i> <strong>Önemli:</strong> Bu kademeler otelden otele değişir. Firma panelinde her otelin kendi belirlediği şartları görebilirsiniz.</p>
+    </section>
+
+    <section class="site-shell firma-section" id="firma-fiyatlari">
+        <div class="firma-section-title">
+            <h2>Firma Fiyatlandırma Mantığı Nasıl Çalışır?</h2>
+            <p>Bu bölümdeki anlatım örnekleme amaçlıdır; oteller firmalar için özel oda fiyatı belirleyerek standart fiyata göre daha avantajlı konaklama imkanı sunar.</p>
+        </div>
+        <div class="firma-pricing-story">
+            <article class="firma-pricing-story-card">
+                <div class="firma-story-head">
+                    <span class="firma-story-tag"><i class="fas fa-flask"></i> Örnek Senaryo</span>
+                    <h3>Oteller firmalar için özel fiyatlı odalar belirler, siz de standart fiyattan daha uygun maliyetle konaklama alırsınız.</h3>
+                </div>
+                <div class="firma-story-grid">
+                    <div class="firma-story-row">
+                        <span>📊 Örnek toplu konaklama talebi · 5 oda</span>
+                        <strong>Kurumsal Konaklama Senaryosu</strong>
+                    </div>
+                    <div class="firma-story-row">
+                        <span>🏨 Standart Fiyat (Bireysel)</span>
+                        <strong>₺3.600</strong>
+                    </div>
+                    <div class="firma-story-row highlight">
+                        <span>📉 Firma Fiyatı (5 oda)</span>
+                        <strong>₺2.880 <small>%20</small></strong>
+                    </div>
+                    <div class="firma-story-row">
+                        <span>💰 Toplam Tasarruf</span>
+                        <strong>₺720</strong>
+                    </div>
+                </div>
+                <p class="firma-story-note">
+                    Firma paneline sahip olmanız durumunda, otellerin firmalar için özel belirlediği toplu konaklama fiyatlarından yararlanırsınız.
+                    Bu blok görsel anlatım amaçlı örnekleme içerir; gerçek fiyatlar panelinizde otel bazlı tekliflere göre değişir.
+                </p>
+            </article>
+            <article class="firma-pricing-story-benefits">
+                <h4>Bu model firmalara ne kazandırır?</h4>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Oda sayısına göre daha güçlü pazarlık ve daha düşük gecelik maliyet</li>
+                    <li><i class="fas fa-check-circle"></i> Departman bazlı bütçe planında öngörülebilir fiyat yönetimi</li>
+                    <li><i class="fas fa-check-circle"></i> Tek panelde teklif, onay ve raporlama sürecinin hızlanması</li>
+                    <li><i class="fas fa-check-circle"></i> Seyahat operasyonunda satın alma ve finans ekipleri için şeffaf görünürlük</li>
+                </ul>
+            </article>
+        </div>
+    </section>
+
+    <section class="site-shell firma-section">
+        <div class="firma-section-title">
+            <h2>Firma Paneli Size Neler Sunar?</h2>
+        </div>
+        <div class="firma-benefits-grid">
+            @foreach (var benefit in Model.Benefits)
+            {
+                <article class="firma-benefit-card">
+                    <div class="firma-benefit-icon"><i class="fas @benefit.IconClass"></i></div>
+                    <div class="firma-benefit-content">
+                        <h4>@benefit.Title</h4>
+                        <p>@benefit.Description</p>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section class="site-shell firma-cta-section">
+        <h2>Firmanız İçin Toplu Konaklama Avantajlarından Yararlanın</h2>
+        <p>Hemen ücretsiz firma hesabı oluşturun, otellerin firmalara özel fiyatlarını görmeye başlayın.</p>
+        <div class="firma-cta-actions">
+            <a href="/firma-giris?sekme=kayit" class="firma-btn firma-btn-white">Firma Hesabı Açın <i class="fas fa-arrow-right"></i></a>
+            <a href="/firma-giris" class="firma-btn firma-btn-outline-light">Firma Girişi</a>
+        </div>
+        <small>Ücretsizdir · Kredi kartı gerektirmez · 2 dakikada kurulum</small>
+    </section>
+</main>

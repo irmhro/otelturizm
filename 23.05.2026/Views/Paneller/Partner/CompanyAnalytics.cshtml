@@ -1,0 +1,55 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerCompanyAnalyticsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/company-pricing";
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Firmalar</div>
+            <h2 class="page-title">Firma Analizleri</h2>
+            <div class="text-muted mt-1">@Model.RangeLabel için şirket bazlı rezervasyon ve gelir özetleri.</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title mb-0">En çok gelir getiren firmalar</h3>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+            <thead>
+            <tr>
+                <th>Firma</th>
+                <th>Rezervasyon</th>
+                <th>Gelir</th>
+                <th>Ortalama sepet</th>
+                <th>Son rezervasyon</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (Model.Rows.Count == 0)
+            {
+                <tr><td colspan="5" class="text-muted p-3">Kurumsal rezervasyon verisi bulunamadı.</td></tr>
+            }
+            else
+            {
+                @foreach (var r in Model.Rows)
+                {
+                    <tr>
+                        <td class="fw-bold">@r.CompanyName</td>
+                        <td>@r.ReservationCount</td>
+                        <td class="fw-bold">@r.RevenueText</td>
+                        <td class="text-muted">@r.AvgTicketText</td>
+                        <td class="text-muted">@r.LastReservationText</td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+

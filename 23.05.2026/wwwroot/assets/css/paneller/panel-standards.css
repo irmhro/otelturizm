@@ -1,0 +1,109 @@
+:root{
+  --ot-focus: 0 0 0 3px rgba(37,99,235,.25);
+  --ot-danger-strong: #b91c1c;
+}
+
+/* p91-100: ortak panel UI standard katmanı */
+
+.ot-btn:focus,
+.ot-btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible{
+  outline: none;
+  box-shadow: var(--ot-focus);
+  border-radius: 12px;
+}
+
+/* p92: kart spacing standardı */
+.ot-card{ padding: 18px; }
+.ot-card .ot-card__head{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:14px; }
+.ot-card .ot-card__kicker{ font-size:12px; letter-spacing:.12em; text-transform:uppercase; color: var(--ot-muted); font-weight:800; }
+.ot-card .ot-card__title{ margin:0; font-size:18px; font-weight:850; color: var(--ot-text); }
+.ot-card .ot-card__subtitle{ margin:6px 0 0; color: var(--ot-muted); font-size:14px; line-height:1.55; }
+
+/* p94: tablo standardı */
+.ot-table-wrap{
+  width: 100%;
+  overflow:auto;
+  border: var(--ot-border-1);
+  border-radius: var(--ot-radius-2);
+  background: var(--ot-bg);
+}
+.ot-table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+.ot-table th,
+.ot-table td{
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(15,23,42,.08);
+  text-align:left;
+  vertical-align: top;
+}
+.ot-table thead th{
+  font-size:12px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color: rgba(15,23,42,.76);
+  background: linear-gradient(180deg, rgba(248,250,252,.92) 0%, #fff 100%);
+}
+.ot-table tbody tr:hover{ background: rgba(15,23,42,.03); }
+.ot-table code{ font-size:12px; }
+
+/* p95: form standardı */
+.ot-form-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+.ot-field label{
+  display:block;
+  margin: 0 0 6px;
+  font-size:13px;
+  color: rgba(15,23,42,.78);
+  font-weight: 750;
+}
+.ot-input,
+.ot-select,
+.ot-textarea{
+  width:100%;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,.14);
+  padding: 10px 12px;
+  background:#fff;
+  color: var(--ot-text);
+}
+.ot-textarea{ min-height: 110px; resize: vertical; }
+.ot-help{ margin-top:6px; font-size:12px; color: var(--ot-muted); }
+
+/* p97: empty state */
+.ot-empty{
+  padding: 18px;
+  border-radius: var(--ot-radius-2);
+  border: 1px dashed rgba(15,23,42,.20);
+  background: rgba(15,23,42,.02);
+  color: var(--ot-muted);
+}
+.ot-empty strong{ color: var(--ot-text); }
+
+/* p98: toast — wwwroot/assets/css/paneller/panel-toasts.css (ortak, layout’ta linklenir) */
+
+/* p99: mobil nav standard (layoutlar kendi class'larını kullanıyor, sadece hizalama) */
+.panel-mobile-nav a,
+.partner-mobile-nav a,
+.firma-mobile-nav a,
+.sales-mobile-nav a,
+.user-mobile-nav a{
+  text-decoration:none;
+}
+
+@media (max-width: 900px){
+  .ot-form-grid{ grid-template-columns: 1fr; }
+  .ot-card{ padding: 14px; }
+  .ot-table{ min-width: 560px; }
+}
+

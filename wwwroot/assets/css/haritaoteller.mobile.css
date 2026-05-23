@@ -24,12 +24,58 @@
 }
 
 @media (max-width: 900px) {
+    .hotel-map-page__back,
+    .hotel-map-card__cta,
+    .hotel-map-popup a,
+    .hotel-map-popup__cta {
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+
+    .hotel-map-page__toolbar-actions {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .hotel-map-page__pin-badge {
+        flex: 1 1 auto;
+        justify-content: center;
+        min-height: 44px;
+    }
+
+    .hotel-map-cluster {
+        min-width: 48px;
+        min-height: 48px;
+        font-size: 1rem;
+    }
+
+    .hotel-map-page__topline {
+        padding-top: env(safe-area-inset-top, 0);
+    }
+
+    .hotel-map-page__sidebar {
+        padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    }
+
+    .hotel-map-page__list {
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
     .hotel-map-page {
-        padding: 14px 0 84px;
+        padding: 14px 0 calc(84px + env(safe-area-inset-bottom));
     }
 
     .hotel-map-page__shell {
-        width: min(calc(100% - 18px), 100%);
+        width: min(calc(100% - 24px), 100%);
+        margin-inline: auto;
+        padding-inline: 2px;
+        box-sizing: border-box;
+    }
+
+    .hotel-map-page,
+    .hotel-map-page__layout {
+        overflow-x: clip;
+        max-width: 100%;
     }
 
     .hotel-map-page__hero {
@@ -107,9 +153,18 @@
     }
 
     .hotel-map-page__map-canvas {
-        height: 54vh;
-        min-height: 360px;
+        height: max(50vh, 360px);
+        min-height: 50vh;
         border-radius: 22px;
+    }
+
+    .hotel-map-page__filter-grid .hotel-map-page__field label {
+        font-size: 14px;
+    }
+
+    .hotel-map-page__toolbar-btn {
+        min-height: 44px;
+        min-width: 44px;
     }
 
     .hotel-map-page__list {
@@ -159,4 +214,29 @@
         align-items: flex-start;
         flex-direction: column;
     }
+}
+
+/* Wave-XIII — mobil harita: safe-area, kart yığını, sabit üst çizgi */
+.hotel-map-page {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+.hotel-map-page__layout {
+    gap: 14px;
+}
+
+.hotel-map-page__map-canvas {
+    min-height: min(52vh, 420px);
+    border-radius: 20px;
+}
+
+.hotel-map-page__list {
+    max-height: min(48vh, 520px);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.hotel-map-page__back {
+    position: sticky;
+    top: calc(8px + env(safe-area-inset-top));
+    z-index: 2;
 }

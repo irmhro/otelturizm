@@ -1,6 +1,6 @@
 namespace otelturizmnew.Models.Payments;
 
-/// <summary>dbo.odeme_yontemi_tanimlari.kod ile eşleşir.</summary>
+/// <summary>dbo.ODEME_YONTEMI_TANIMLARI.KOD ile eşleşir.</summary>
 public static class OdemeYontemiKodlari
 {
     public const string KapidaOdeme = "KAPIDA_ODEME";

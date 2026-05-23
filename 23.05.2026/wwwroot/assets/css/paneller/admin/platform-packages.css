@@ -1,0 +1,13 @@
+.admin-platform-packages-page .row-deck .card-body {
+    padding: 1rem 1.25rem;
+}
+
+.admin-platform-packages-page .admin-table--cards td form {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.admin-platform-packages-page .admin-table--cards td .form-control-sm {
+    min-width: 0;
+    flex: 1 1 120px;
+}

@@ -4,7 +4,49 @@
         padding: 16px;
     }
 
-    .admin-hotels-table {
+    .admin-hotels-bulk-form {
+        margin: 0 16px 12px;
+    }
+
+    .admin-hotels-bulk-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-hotels-bulk-actions {
+        flex-direction: column;
+    }
+
+    .admin-hotels-bulk-actions .admin-action-btn {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+    }
+
+    .admin-hotels-table:not(.admin-table--cards) {
         min-width: 980px;
+    }
+
+    .admin-hotels-table-wrap:has(.admin-table--cards) {
+        overflow: visible;
+    }
+
+    .admin-hotels-table.admin-table--cards .admin-hotels-select-cell {
+        justify-content: flex-start;
+    }
+
+    .admin-hotels-table.admin-table--cards .admin-hotels-select-cell::before {
+        flex: 0 0 38%;
+    }
+
+    .admin-hotels-table.admin-table--cards .admin-hotels-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-hotels-table.admin-table--cards .admin-hotels-actions .admin-action-btn,
+    .admin-hotels-table.admin-table--cards .admin-hotels-actions .admin-inline-post .admin-action-btn {
+        width: 100%;
+        min-height: 44px;
     }
 }

@@ -1,0 +1,77 @@
+@model otelturizmnew.Models.Paneller.Firma.FirmaDealsPageViewModel
+@{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
+<section class="firma-section-card ot-card">
+    <h2>Kurumsal Otel Fiyatları</h2>
+    <form method="get" action="/panel/firma/firma-fiyatlari" class="firma-filter-bar">
+        <label><span>İl</span><select name="city" onchange="this.form.submit()"><option value="">Tüm iller</option>@foreach (var city in Model.AvailableCities) { <option value="@city" selected="@(string.Equals(city, Model.Filter.City, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@city</option> }</select></label>
+        <label><span>İlçe</span><select name="district" onchange="this.form.submit()"><option value="">Tüm ilçeler</option>@foreach (var d in Model.AvailableDistricts) { <option value="@d" selected="@(string.Equals(d, Model.Filter.District, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@d</option> }</select></label>
+        <label><span>Mahalle</span><select name="neighborhood"><option value="">Tümü</option>@foreach (var n in Model.AvailableNeighborhoods) { <option value="@n" selected="@(string.Equals(n, Model.Filter.Neighborhood, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@n</option> }</select></label>
+        <label><span>Min. Oda</span><select name="minRoomCount"><option value="">Tümü</option><option value="1" selected="@(Model.Filter.MinRoomCount == 1 ? "selected" : null)">1+</option><option value="3" selected="@(Model.Filter.MinRoomCount == 3 ? "selected" : null)">3+</option><option value="5" selected="@(Model.Filter.MinRoomCount == 5 ? "selected" : null)">5+</option><option value="10" selected="@(Model.Filter.MinRoomCount == 10 ? "selected" : null)">10+</option></select></label>
+        <label class="is-search"><span>Arama</span><input type="text" name="search" value="@Model.Filter.Search" placeholder="Otel / İl / İlçe / Mahalle" /></label>
+        <div class="firma-filter-actions"><button type="submit" class="firma-btn-primary ot-btn ot-btn--primary">Filtrele</button><a href="/panel/firma/firma-fiyatlari" class="firma-btn-light ot-btn ot-btn--ghost">Temizle</a></div>
+    </form>
+
+    <form method="get" action="/panel/firma/firma-fiyatlari/karsilastir" class="ot-card" style="margin-top:12px; padding:12px;">
+        <div class="firma-row-between" style="gap:12px; align-items:flex-start;">
+            <div>
+                <strong>Otel Karşılaştır</strong>
+                <div class="firma-muted">2–3 otel seçin, oda adedini girin ve kurumsal fiyatları kıyaslayın.</div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <label style="display:flex; gap:8px; align-items:center;">
+                    <span class="firma-muted">Oda</span>
+                    <input type="number" name="roomCount" min="1" value="5" style="width:92px;" />
+                </label>
+                <button type="submit" class="firma-btn-primary ot-btn ot-btn--primary">Karşılaştır</button>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin-top:10px;">
+            @foreach (var opt in Model.HotelOptions.Take(18))
+            {
+                <label class="ot-card" style="padding:10px; display:flex; gap:10px; align-items:flex-start; cursor:pointer;">
+                    <input type="checkbox" name="hotelIds" value="@opt.HotelId" />
+                    <span style="line-height:1.25">@opt.Label</span>
+                </label>
+            }
+        </div>
+        @if (Model.HotelOptions.Count > 18)
+        {
+            <div class="firma-muted" style="margin-top:8px;">Not: İlk 18 otel listelenir. Filtreyi daraltıp tekrar deneyebilirsiniz.</div>
+        }
+    </form>
+
+    <div class="firma-deal-grid">
+        @foreach (var item in Model.Deals)
+        {
+            <article class="firma-deal-card ot-card">
+                <div class="firma-row-between">
+                    <div>
+                        <strong>@item.HotelName</strong>
+                        <span>@item.RoomName</span>
+                        <small>@item.CityText</small>
+                    </div>
+                    <b class="firma-pill is-success ot-badge ot-badge--success">@item.MinimumRoomText</b>
+                </div>
+                <div class="firma-deal-meta">
+                    <span class="ot-badge">Kapasite: <b>@item.CapacityText</b></span>
+                    <span class="ot-badge">Stok: <b>@item.StockText</b></span>
+                </div>
+                <div class="firma-price-stack">
+                    <div><label>Standart</label><span class="is-strike">@item.StandardPriceText</span></div>
+                    <div><label>Firma</label><b>@item.CorporatePriceText</b></div>
+                    <div><label>Tasarruf</label><span class="is-success ot-badge ot-badge--success">@item.SavingsText</span></div>
+                </div>
+                <div class="firma-card-footer">
+                    <span class="firma-pill ot-badge">@item.DiscountText</span>
+                    <span class="firma-pill ot-badge">@item.ValidityText</span>
+                    <a class="firma-btn-primary ot-btn ot-btn--primary" style="margin-left:auto; padding:10px 14px; border-radius:999px; text-decoration:none;"
+                       href="/panel/firma/yeni-rezervasyon?hotelId=@item.HotelId&roomCount=5">Rezervasyon Yap</a>
+                </div>
+            </article>
+        }
+    </div>
+    @if (Model.Deals.Count == 0)
+    {
+        <div class="firma-empty-inline">Filtreye uygun kurumsal fiyat kaydı bulunamadı.</div>
+    }
+</section>

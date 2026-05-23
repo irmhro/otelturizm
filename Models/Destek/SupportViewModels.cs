@@ -8,6 +8,8 @@ public class YardimMerkeziViewModel
     public List<DestekKanalViewModel> SupportChannels { get; set; } = new();
     public DestekKanalViewModel? LiveChatChannel { get; set; }
     public List<YardimMerkeziTeamMemberViewModel> PlatformTeam { get; set; } = new();
+    public List<YardimMerkeziTeamMemberViewModel> DepartmentTeam { get; set; } = new();
+    public List<YardimMerkeziTeamMemberViewModel> DeveloperTeam { get; set; } = new();
 }
 
 public class YardimMerkeziTeamMemberViewModel
@@ -16,6 +18,7 @@ public class YardimMerkeziTeamMemberViewModel
     public string Title { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string AvatarUrl { get; set; } = string.Empty;
+    public string TeamType { get; set; } = "department";
 }
 
 public class SssViewModel
@@ -71,6 +74,7 @@ public class DestekMakaleViewModel
     public long Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Summary { get; set; } = string.Empty;
+    public string Html { get; set; } = string.Empty;
     public string IconClass { get; set; } = "fa-circle-question";
     public string LinkUrl { get; set; } = "#";
 }

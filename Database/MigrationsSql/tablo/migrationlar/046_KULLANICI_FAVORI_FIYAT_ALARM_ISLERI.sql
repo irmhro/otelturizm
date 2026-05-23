@@ -1,0 +1,20 @@
+-- Tablo: dbo.KULLANICI_FAVORI_FIYAT_ALARM_ISLERI
+IF OBJECT_ID(N'dbo.KULLANICI_FAVORI_FIYAT_ALARM_ISLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[KULLANICI_FAVORI_FIYAT_ALARM_ISLERI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [OTEL_ID] bigint NOT NULL,
+        [TARIH_BASLANGIC] date NOT NULL,
+        [TARIH_BITIS] date NOT NULL,
+        [TETIKLEYEN_KULLANICI_ID] bigint NULL,
+        [DURUM] nvarchar(24) NOT NULL,
+        [SON_ISLENEN_ALARM_ID] bigint NOT NULL CONSTRAINT [DF__user_favo__son_i__3F6663D5] DEFAULT ((0)),
+        [ISLENEN_KAYIT_SAYISI] int NOT NULL CONSTRAINT [DF__user_favo__islen__405A880E] DEFAULT ((0)),
+        [DENEME_SAYISI] int NOT NULL CONSTRAINT [DF__user_favo__denem__414EAC47] DEFAULT ((0)),
+        [HATA_MESAJI] nvarchar(500) NULL,
+        [PLANLI_CALISMA_TARIHI] datetime2(0) NOT NULL CONSTRAINT [DF__user_favo__planl__4242D080] DEFAULT (sysutcdatetime()),
+        [OLUSTURULMA_TARIHI] datetime2(0) NOT NULL CONSTRAINT [DF__user_favo__olust__4336F4B9] DEFAULT (sysutcdatetime()),
+        [GUNCELLENME_TARIHI] datetime2(0) NOT NULL CONSTRAINT [DF__user_favo__gunce__442B18F2] DEFAULT (sysutcdatetime()),
+        CONSTRAINT [PK_KULLANICI_FAVORI_FIYAT_ALARM_ISLERI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

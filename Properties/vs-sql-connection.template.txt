@@ -1,0 +1,28 @@
+Visual Studio > Sunucu Gezgini / SQL Server Nesne Gezgini > "Bağlantı Ekle" alanları (örnek)
+================================================================================
+Bu dosyada şifre yok. appsettings / web.config ile aynı sunucuyu kullanın.
+
+Veri kaynağı: Microsoft SQL Server (SqlClient)
+
+Sunucu adı:
+  appsettings içindeki "Data Source=" değeri (ör. 185.111.244.246 veya .\SQLEXPRESS)
+
+Kimlik doğrulama:
+  "SQL Server Kimlik Doğrulaması" seçin (Windows değil — uzak sunucuda sa / kullanıcı için)
+
+Kullanıcı adı / Parola:
+  Bağlantı dizenizdeki User ID / Password
+
+Şifrele (Encrypt):
+  Bağlantıda Encrypt=False ise burada "Optional" veya False benzeri seçin; aksi halde Mandatory kalabilir.
+
+Sunucu sertifikasına güven (Trust server certificate):
+  Bağlantıda TrustServerCertificate=True ise burada işaretleyin.
+
+Veritabanı adı:
+  "Initial Catalog=" değeri (ör. otelturizm_2026db)
+
+Bağlantıyı Sına → Tamam.
+
+Not: Canlı şema değişiklikleri için repoda Database/MigrationsSql scriptleri kaynak gerçektir;
+SSMS ile elle değişiklik yerine idempotent .sql dosyalarını tercih edin.

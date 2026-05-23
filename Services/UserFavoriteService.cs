@@ -37,7 +37,7 @@ public class UserFavoriteService : IUserFavoriteService
         }
 
         var parameters = string.Join(", ", ids.Select((_, index) => $"@hotelId{index}"));
-        var sql = $"SELECT otel_id FROM user_favori_oteller WHERE user_id = @userId AND otel_id IN ({parameters}) AND COALESCE(aktif_mi, 1) = 1 AND kaldirilma_tarihi IS NULL;";
+        var sql = $"SELECT [OTEL_ID] FROM [dbo].[KULLANICI_FAVORI_OTELLER] WHERE [KULLANICI_ID] = @userId AND [OTEL_ID] IN ({parameters}) AND COALESCE([AKTIF_MI], 1) = 1 AND [KALDIRILMA_TARIHI] IS NULL;";
 
         var result = new HashSet<long>();
 
@@ -72,7 +72,7 @@ public class UserFavoriteService : IUserFavoriteService
             return 0;
         }
 
-        const string sql = @"SELECT COUNT(*) FROM user_favori_oteller WHERE user_id = @userId AND COALESCE(aktif_mi, 1) = 1 AND kaldirilma_tarihi IS NULL;";
+        const string sql = @"SELECT COUNT(*) FROM [dbo].[KULLANICI_FAVORI_OTELLER] WHERE [KULLANICI_ID] = @userId AND COALESCE([AKTIF_MI], 1) = 1 AND [KALDIRILMA_TARIHI] IS NULL;";
 
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -106,136 +106,136 @@ public class UserFavoriteService : IUserFavoriteService
 
         const string sql = @"
             SELECT
-                f.otel_id,
-                f.olusturulma_tarihi,
-                o.otel_kodu,
-                o.otel_adi,
-                o.sehir,
-                o.ilce,
-                COALESCE(o.onay_durumu, '') AS onay_durumu,
-                COALESCE(o.yayin_durumu, '') AS yayin_durumu,
-                COALESCE(o.ortalama_puan, 0) AS ortalama_puan,
-                COALESCE(o.toplam_yorum_sayisi, 0) AS toplam_yorum_sayisi,
-                COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS gorsel_url,
+                f.[OTEL_ID],
+                f.[OLUSTURULMA_TARIHI],
+                o.[OTEL_KODU],
+                o.[OTEL_ADI],
+                o.[SEHIR],
+                o.[ILCE],
+                COALESCE(o.[ONAY_DURUMU], '') AS [ONAY_DURUMU],
+                COALESCE(o.[YAYIN_DURUMU], '') AS [YAYIN_DURUMU],
+                COALESCE(o.[ORTALAMA_PUAN], 0) AS [ORTALAMA_PUAN],
+                COALESCE(o.[TOPLAM_YORUM_SAYISI], 0) AS [TOPLAM_YORUM_SAYISI],
+                COALESCE(NULLIF(o.[KAPAK_FOTOGRAFI], ''), NULLIF(og.[GORSEL_URL], '')) AS [GORSEL_URL],
                 pf.baslangic_fiyat,
-                a.hedef_maksimum_fiyat,
-                a.baslangic_tarihi AS alert_baslangic_tarihi,
-                a.bitis_tarihi AS alert_bitis_tarihi,
-                a.son_tetiklenen_tarih AS alert_son_tetiklenen_tarih,
-                COALESCE(a.aktif_mi, 0) AS alert_aktif_mi,
+                a.[HEDEF_MAKSIMUM_FIYAT],
+                a.[BASLANGIC_TARIHI] AS alert_baslangic_tarihi,
+                a.[BITIS_TARIHI] AS alert_bitis_tarihi,
+                a.[SON_TETIKLENEN_TARIH] AS alert_son_tetiklenen_tarih,
+                COALESCE(a.[AKTIF_MI], 0) AS alert_aktif_mi,
                 (
                     SELECT COUNT(*)
-                    FROM rezervasyonlar r
-                    WHERE r.kullanici_id = @userId
-                      AND r.otel_id = f.otel_id
-                      AND r.durum <> 'İptal Edildi'
-                      AND CAST(r.cikis_tarihi AS date) < CAST(SYSUTCDATETIME() AS date)
+                    FROM [dbo].[REZERVASYONLAR] r
+                    WHERE r.[KULLANICI_ID] = @userId
+                      AND r.[OTEL_ID] = f.[OTEL_ID]
+                      AND r.[DURUM] <> 'İptal Edildi'
+                      AND CAST(r.[CIKIS_TARIHI] AS date) < CAST(SYSUTCDATETIME() AS date)
                 ) AS past_stay_count,
                 (
                     SELECT COUNT(*)
-                    FROM rezervasyonlar r
-                    WHERE r.kullanici_id = @userId
-                      AND r.otel_id = f.otel_id
-                      AND r.durum <> N'İptal Edildi'
+                    FROM [dbo].[REZERVASYONLAR] r
+                    WHERE r.[KULLANICI_ID] = @userId
+                      AND r.[OTEL_ID] = f.[OTEL_ID]
+                      AND r.[DURUM] <> N'İptal Edildi'
                 ) AS reservation_count,
                 (
                     SELECT COUNT(*)
-                    FROM yorumlar y
-                    INNER JOIN rezervasyonlar r ON r.id = y.rezervasyon_id
-                    WHERE y.kullanici_id = @userId
-                      AND r.otel_id = f.otel_id
+                    FROM [dbo].[YORUMLAR] y
+                    INNER JOIN [dbo].[REZERVASYONLAR] r ON r.id = y.[REZERVASYON_ID]
+                    WHERE y.[KULLANICI_ID] = @userId
+                      AND r.[OTEL_ID] = f.[OTEL_ID]
                 ) AS user_review_count,
                 (
                     SELECT COUNT(*)
-                    FROM rezervasyonlar r
-                    WHERE r.kullanici_id = @userId
-                      AND r.otel_id = f.otel_id
-                      AND r.durum <> N'İptal Edildi'
-                      AND CAST(r.cikis_tarihi AS date) < CAST(SYSUTCDATETIME() AS date)
+                    FROM [dbo].[REZERVASYONLAR] r
+                    WHERE r.[KULLANICI_ID] = @userId
+                      AND r.[OTEL_ID] = f.[OTEL_ID]
+                      AND r.[DURUM] <> N'İptal Edildi'
+                      AND CAST(r.[CIKIS_TARIHI] AS date) < CAST(SYSUTCDATETIME() AS date)
                       AND NOT EXISTS (
                           SELECT 1
-                          FROM yorumlar y
-                          WHERE y.rezervasyon_id = r.id
-                            AND y.kullanici_id = @userId
+                          FROM [dbo].[YORUMLAR] y
+                          WHERE y.[REZERVASYON_ID] = r.id
+                            AND y.[KULLANICI_ID] = @userId
                       )
                 ) AS pending_review_count,
                 (
                     SELECT CAST(ROUND(AVG(CAST(COALESCE(
-                        CAST(y.genel_puan_10 AS DECIMAL(9, 4)),
+                        CAST(y.[GENEL_PUAN_10] AS DECIMAL(9, 4)),
                         CASE
-                            WHEN y.genel_puan <= 5 THEN CAST(y.genel_puan AS DECIMAL(9, 4)) * 2
-                            WHEN y.genel_puan <= 10 THEN CAST(y.genel_puan AS DECIMAL(9, 4))
+                            WHEN y.[GENEL_PUAN] <= 5 THEN CAST(y.[GENEL_PUAN] AS DECIMAL(9, 4)) * 2
+                            WHEN y.[GENEL_PUAN] <= 10 THEN CAST(y.[GENEL_PUAN] AS DECIMAL(9, 4))
                             ELSE 10
                         END
                     ) AS DECIMAL(9, 4))), 1) AS DECIMAL(5, 1))
-                    FROM yorumlar y
-                    INNER JOIN rezervasyonlar r ON r.id = y.rezervasyon_id
-                    WHERE y.kullanici_id = @userId
-                      AND r.otel_id = f.otel_id
+                    FROM [dbo].[YORUMLAR] y
+                    INNER JOIN [dbo].[REZERVASYONLAR] r ON r.id = y.[REZERVASYON_ID]
+                    WHERE y.[KULLANICI_ID] = @userId
+                      AND r.[OTEL_ID] = f.[OTEL_ID]
                 ) AS user_average_rating,
                 (
-                    SELECT MAX(r.olusturulma_tarihi)
-                    FROM rezervasyonlar r
-                    WHERE r.kullanici_id = @userId
-                      AND r.otel_id = f.otel_id
-                      AND r.durum <> N'İptal Edildi'
+                    SELECT MAX(r.[OLUSTURULMA_TARIHI])
+                    FROM [dbo].[REZERVASYONLAR] r
+                    WHERE r.[KULLANICI_ID] = @userId
+                      AND r.[OTEL_ID] = f.[OTEL_ID]
+                      AND r.[DURUM] <> N'İptal Edildi'
                 ) AS last_reservation_date,
                 (
                     SELECT TOP (1) r.id
-                    FROM rezervasyonlar r
-                    LEFT JOIN yorumlar y ON y.rezervasyon_id = r.id AND y.kullanici_id = @userId
-                    WHERE r.kullanici_id = @userId
-                      AND r.otel_id = f.otel_id
+                    FROM [dbo].[REZERVASYONLAR] r
+                    LEFT JOIN [dbo].[YORUMLAR] y ON y.[REZERVASYON_ID] = r.id AND y.[KULLANICI_ID] = @userId
+                    WHERE r.[KULLANICI_ID] = @userId
+                      AND r.[OTEL_ID] = f.[OTEL_ID]
                       AND y.id IS NULL
-                      AND r.durum NOT IN (N'İptal Edildi', N'Reddedildi')
-                      AND CAST(r.cikis_tarihi AS date) < CAST(SYSUTCDATETIME() AS date)
-                      AND r.durum IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı')
+                      AND r.[DURUM] NOT IN (N'İptal Edildi', N'Reddedildi')
+                      AND CAST(r.[CIKIS_TARIHI] AS date) < CAST(SYSUTCDATETIME() AS date)
+                      AND r.[DURUM] IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı')
                       AND (
-                          COALESCE(r.otel_onay_durumu, '') = N'Onaylandı'
-                          OR r.durum IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı')
+                          COALESCE(r.[OTEL_ONAY_DURUMU], '') = N'Onaylandı'
+                          OR r.[DURUM] IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı')
                       )
-                    ORDER BY r.cikis_tarihi DESC, r.id DESC
+                    ORDER BY r.[CIKIS_TARIHI] DESC, r.id DESC
                 ) AS first_eligible_review_reservation_id
-            FROM user_favori_oteller f
-            JOIN oteller o ON o.id = f.otel_id
+            FROM [dbo].[KULLANICI_FAVORI_OTELLER] f
+            JOIN [dbo].[OTELLER] o ON o.id = f.[OTEL_ID]
             LEFT JOIN (
-                SELECT g1.otel_id, g1.gorsel_url
+                SELECT g1.[OTEL_ID], g1.[GORSEL_URL]
                 FROM (
                     SELECT
-                        g.otel_id,
-                        g.gorsel_url,
-                        ROW_NUMBER() OVER (PARTITION BY g.otel_id ORDER BY g.kapak_fotografi_mi DESC, g.one_cikan DESC, g.siralama ASC, g.id ASC) AS rn
-                    FROM otel_gorselleri g
-                    WHERE g.onay_durumu = 'Onaylandı'
+                        g.[OTEL_ID],
+                        g.[GORSEL_URL],
+                        ROW_NUMBER() OVER (PARTITION BY g.[OTEL_ID] ORDER BY g.[KAPAK_FOTOGRAFI_MI] DESC, g.[ONE_CIKAN] DESC, g.[SIRALAMA] ASC, g.id ASC) AS rn
+                    FROM [dbo].[OTEL_GORSELLERI] g
+                    WHERE g.[ONAY_DURUMU] = 'Onaylandı'
                 ) g1
                 WHERE g1.rn = 1
-            ) og ON og.otel_id = o.id
+            ) og ON og.[OTEL_ID] = o.id
             LEFT JOIN (
-                SELECT ot.otel_id,
+                SELECT ot.[OTEL_ID],
                        MIN(
                            COALESCE(
                                CASE
-                                   WHEN ofm.kapali_satis = 1 THEN NULL
-                                   WHEN (COALESCE(ofm.toplam_oda_sayisi, ot.toplam_oda_sayisi) - COALESCE(ofm.satilan_oda_sayisi, 0) - COALESCE(ofm.bloke_oda_sayisi, 0)) <= 0 THEN NULL
-                                   ELSE COALESCE(NULLIF(ofm.indirimli_fiyat, 0), NULLIF(ofm.gecelik_fiyat, 0))
+                                   WHEN ofm.[KAPALI_SATIS] = 1 THEN NULL
+                                   WHEN (COALESCE(ofm.[TOPLAM_ODA_SAYISI], ot.[TOPLAM_ODA_SAYISI]) - COALESCE(ofm.[SATILAN_ODA_SAYISI], 0) - COALESCE(ofm.[BLOKE_ODA_SAYISI], 0)) <= 0 THEN NULL
+                                   ELSE COALESCE(NULLIF(ofm.[INDIRIMLI_FIYAT], 0), NULLIF(ofm.[GECELIK_FIYAT], 0))
                                END,
-                               NULLIF(ot.standart_gecelik_fiyat, 0)
+                               NULLIF(ot.[STANDART_GECELIK_FIYAT], 0)
                            )
                        ) AS baslangic_fiyat
-                FROM oda_tipleri ot
-                LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
-                    AND ofm.otel_id = ot.otel_id
-                    AND ofm.tarih BETWEEN CAST(SYSUTCDATETIME() AS date) AND DATEADD(DAY, 120, CAST(SYSUTCDATETIME() AS date))
-                WHERE ot.aktif_mi = 1
-                GROUP BY ot.otel_id
-            ) pf ON pf.otel_id = o.id
+                FROM [dbo].[ODA_TIPLERI] ot
+                LEFT JOIN [dbo].[ODA_FIYAT_MUSAITLIK] ofm ON ofm.[ODA_TIP_ID] = ot.id
+                    AND ofm.[OTEL_ID] = ot.[OTEL_ID]
+                    AND ofm.[TARIH] BETWEEN CAST(SYSUTCDATETIME() AS date) AND DATEADD(DAY, 120, CAST(SYSUTCDATETIME() AS date))
+                WHERE ot.[AKTIF_MI] = 1
+                GROUP BY ot.[OTEL_ID]
+            ) pf ON pf.[OTEL_ID] = o.id
             LEFT JOIN user_favorite_price_alerts a
-                ON a.user_id = f.user_id
-               AND a.otel_id = f.otel_id
-               AND COALESCE(a.aktif_mi, 1) = 1
-            WHERE f.user_id = @userId
-              AND COALESCE(f.aktif_mi, 1) = 1
-            ORDER BY f.olusturulma_tarihi DESC, f.id DESC;";
+                ON a.[KULLANICI_ID] = f.[KULLANICI_ID]
+               AND a.[OTEL_ID] = f.[OTEL_ID]
+               AND COALESCE(a.[AKTIF_MI], 1) = 1
+            WHERE f.[KULLANICI_ID] = @userId
+              AND COALESCE(f.[AKTIF_MI], 1) = 1
+            ORDER BY f.[OLUSTURULMA_TARIHI] DESC, f.id DESC;";
 
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -401,17 +401,17 @@ public class UserFavoriteService : IUserFavoriteService
             _ => "latest-reservation"
         };
 
-    public async Task<HotelFavoriteToggleResponse> ToggleFavoriteAsync(long userId, long hotelId, string sourcePage, string sourceUrl, string? deviceType, string? ipAddress, CancellationToken cancellationToken = default)
+    public async Task<OtelFavoriToggleYanit> ToggleFavoriteAsync(long userId, long hotelId, string sourcePage, string sourceUrl, string? deviceType, string? ipAddress, CancellationToken cancellationToken = default)
     {
         if (userId <= 0 || hotelId <= 0)
         {
-            return new HotelFavoriteToggleResponse { Success = false, Message = "Favori işlemi için geçerli kullanıcı ve otel bilgisi gereklidir." };
+            return new OtelFavoriToggleYanit { Success = false, Message = "Favori işlemi için geçerli kullanıcı ve otel bilgisi gereklidir." };
         }
 
         var connectionString = _configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            return new HotelFavoriteToggleResponse { Success = false, Message = "Veritabanı bağlantısı bulunamadı." };
+            return new OtelFavoriToggleYanit { Success = false, Message = "Veritabanı bağlantısı bulunamadı." };
         }
 
         await using var connection = new SqlConnection(connectionString);
@@ -419,7 +419,7 @@ public class UserFavoriteService : IUserFavoriteService
 
         if (!await HotelExistsAsync(connection, hotelId, cancellationToken))
         {
-            return new HotelFavoriteToggleResponse { Success = false, Message = "Favorilere eklenecek otel bulunamadı." };
+            return new OtelFavoriToggleYanit { Success = false, Message = "Favorilere eklenecek otel bulunamadı." };
         }
 
         var hasHotelFavoriteCounter = await ColumnExistsAsync(connection, "oteller", "favori_sayisi", cancellationToken);
@@ -431,12 +431,12 @@ public class UserFavoriteService : IUserFavoriteService
             SELECT TOP (1)
                 id,
                 CASE
-                    WHEN COALESCE(CONVERT(int, aktif_mi), 1) = 1 THEN 1
+                    WHEN COALESCE(CONVERT(int, [AKTIF_MI]), 1) = 1 THEN 1
                     ELSE 0
-                END AS aktif_mi
-            FROM user_favori_oteller
-            WHERE user_id = @userId
-              AND otel_id = @hotelId
+                END AS [AKTIF_MI]
+            FROM [dbo].[KULLANICI_FAVORI_OTELLER]
+            WHERE [KULLANICI_ID] = @userId
+              AND [OTEL_ID] = @hotelId
             ORDER BY id DESC;";
         await using var selectCommand = new SqlCommand(selectSql, connection, (SqlTransaction)transaction);
         selectCommand.Parameters.AddWithValue("@userId", userId);
@@ -461,8 +461,8 @@ public class UserFavoriteService : IUserFavoriteService
         if (!recordId.HasValue)
         {
             const string insertSql = @"
-                INSERT INTO user_favori_oteller
-                (user_id, otel_id, kaynak_sayfa, kaynak_url, cihaz_tipi, ip_adresi, aktif_mi, olusturulma_tarihi, son_islem_tarihi)
+                INSERT INTO [dbo].[KULLANICI_FAVORI_OTELLER]
+                ([KULLANICI_ID], [OTEL_ID], [KAYNAK_SAYFA], [KAYNAK_URL], [CIHAZ_TIPI], [IP_ADRESI], [AKTIF_MI], [OLUSTURULMA_TARIHI], [SON_ISLEM_TARIHI])
                 VALUES
                 (@userId, @hotelId, @sourcePage, @sourceUrl, @deviceType, @ipAddress, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);";
 
@@ -477,18 +477,18 @@ public class UserFavoriteService : IUserFavoriteService
             if (hasHotelFavoriteCounter) await RefreshHotelFavoriteCounterAsync(connection, (SqlTransaction)transaction, hotelId, cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
-            return new HotelFavoriteToggleResponse { Success = true, IsFavorite = true, Message = "Otel favorilerinize eklendi." };
+            return new OtelFavoriToggleYanit { Success = true, IsFavorite = true, Message = "Otel favorilerinize eklendi." };
         }
 
         const string updateSql = @"
-            UPDATE user_favori_oteller
-            SET kaynak_sayfa = @sourcePage,
-                kaynak_url = @sourceUrl,
-                cihaz_tipi = @deviceType,
-                ip_adresi = @ipAddress,
-                aktif_mi = @isFavorite,
-                kaldirilma_tarihi = CASE WHEN @isFavorite = 1 THEN NULL ELSE CURRENT_TIMESTAMP END,
-                son_islem_tarihi = CURRENT_TIMESTAMP
+            UPDATE [dbo].[KULLANICI_FAVORI_OTELLER]
+            SET [KAYNAK_SAYFA] = @sourcePage,
+                [KAYNAK_URL] = @sourceUrl,
+                [CIHAZ_TIPI] = @deviceType,
+                [IP_ADRESI] = @ipAddress,
+                [AKTIF_MI] = @isFavorite,
+                [KALDIRILMA_TARIHI] = CASE WHEN @isFavorite = 1 THEN NULL ELSE CURRENT_TIMESTAMP END,
+                [SON_ISLEM_TARIHI] = CURRENT_TIMESTAMP
             WHERE id = @id;";
 
         await using var updateCommand = new SqlCommand(updateSql, connection, (SqlTransaction)transaction);
@@ -505,10 +505,10 @@ public class UserFavoriteService : IUserFavoriteService
         {
             const string disableAlertSql = @"
                 UPDATE user_favorite_price_alerts
-                SET aktif_mi = 0,
-                    guncellenme_tarihi = CURRENT_TIMESTAMP
-                WHERE user_id = @userId
-                  AND otel_id = @hotelId;";
+                SET [AKTIF_MI] = 0,
+                    [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
+                WHERE [KULLANICI_ID] = @userId
+                  AND [OTEL_ID] = @hotelId;";
             await using var disableAlertCommand = new SqlCommand(disableAlertSql, connection, (SqlTransaction)transaction);
             disableAlertCommand.Parameters.AddWithValue("@userId", userId);
             disableAlertCommand.Parameters.AddWithValue("@hotelId", hotelId);
@@ -516,7 +516,7 @@ public class UserFavoriteService : IUserFavoriteService
         }
 
         await transaction.CommitAsync(cancellationToken);
-        return new HotelFavoriteToggleResponse
+        return new OtelFavoriToggleYanit
         {
             Success = true,
             IsFavorite = !isActive,
@@ -548,10 +548,10 @@ public class UserFavoriteService : IUserFavoriteService
 
         const string favoriteCheckSql = @"
             SELECT COUNT(*)
-            FROM user_favori_oteller
-            WHERE user_id = @userId
-              AND otel_id = @hotelId
-              AND COALESCE(aktif_mi, 1) = 1;";
+            FROM [dbo].[KULLANICI_FAVORI_OTELLER]
+            WHERE [KULLANICI_ID] = @userId
+              AND [OTEL_ID] = @hotelId
+              AND COALESCE([AKTIF_MI], 1) = 1;";
         await using (var favoriteCommand = new SqlCommand(favoriteCheckSql, connection))
         {
             favoriteCommand.Parameters.AddWithValue("@userId", userId);
@@ -567,10 +567,10 @@ public class UserFavoriteService : IUserFavoriteService
         {
             const string disableSql = @"
                 UPDATE user_favorite_price_alerts
-                SET aktif_mi = 0,
-                    guncellenme_tarihi = CURRENT_TIMESTAMP
-                WHERE user_id = @userId
-                  AND otel_id = @hotelId;";
+                SET [AKTIF_MI] = 0,
+                    [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
+                WHERE [KULLANICI_ID] = @userId
+                  AND [OTEL_ID] = @hotelId;";
             await using var disableCommand = new SqlCommand(disableSql, connection);
             disableCommand.Parameters.AddWithValue("@userId", userId);
             disableCommand.Parameters.AddWithValue("@hotelId", form.HotelId);
@@ -610,17 +610,17 @@ public class UserFavoriteService : IUserFavoriteService
 
         const string upsertSql = @"
             MERGE user_favorite_price_alerts AS target
-            USING (SELECT @userId AS user_id, @hotelId AS otel_id) AS source
-            ON target.user_id = source.user_id AND target.otel_id = source.otel_id
+            USING (SELECT @userId AS [KULLANICI_ID], @hotelId AS [OTEL_ID]) AS source
+            ON target.[KULLANICI_ID] = source.[KULLANICI_ID] AND target.[OTEL_ID] = source.[OTEL_ID]
             WHEN MATCHED THEN
                 UPDATE SET
-                    hedef_maksimum_fiyat = @targetPrice,
-                    baslangic_tarihi = @startDate,
-                    bitis_tarihi = @endDate,
-                    aktif_mi = 1,
-                    guncellenme_tarihi = CURRENT_TIMESTAMP
+                    [HEDEF_MAKSIMUM_FIYAT] = @targetPrice,
+                    [BASLANGIC_TARIHI] = @startDate,
+                    [BITIS_TARIHI] = @endDate,
+                    [AKTIF_MI] = 1,
+                    [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
             WHEN NOT MATCHED THEN
-                INSERT (user_id, otel_id, hedef_maksimum_fiyat, baslangic_tarihi, bitis_tarihi, aktif_mi, olusturulma_tarihi, guncellenme_tarihi)
+                INSERT ([KULLANICI_ID], [OTEL_ID], [HEDEF_MAKSIMUM_FIYAT], [BASLANGIC_TARIHI], [BITIS_TARIHI], [AKTIF_MI], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI])
                 VALUES (@userId, @hotelId, @targetPrice, @startDate, @endDate, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);";
         await using var command = new SqlCommand(upsertSql, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -651,8 +651,8 @@ public class UserFavoriteService : IUserFavoriteService
 
         const string deleteSql = @"
             DELETE FROM user_favorite_price_alerts
-            WHERE user_id = @userId
-              AND otel_id = @hotelId;";
+            WHERE [KULLANICI_ID] = @userId
+              AND [OTEL_ID] = @hotelId;";
         await using var command = new SqlCommand(deleteSql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -665,7 +665,7 @@ public class UserFavoriteService : IUserFavoriteService
 
     private static async Task<bool> HotelExistsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
-        const string sql = @"SELECT COUNT(*) FROM oteller WHERE id = @hotelId;";
+        const string sql = @"SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE id = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
@@ -718,15 +718,15 @@ public class UserFavoriteService : IUserFavoriteService
     {
         const string sql = @"
             UPDATE o
-            SET o.favori_sayisi = src.toplam
-            FROM oteller o
+            SET o.[FAVORI_SAYISI] = src.toplam
+            FROM [dbo].[OTELLER] o
             CROSS APPLY
             (
-                SELECT COUNT(DISTINCT uf.user_id) AS toplam
-                FROM user_favori_oteller uf
-                WHERE uf.otel_id = @hotelId
-                  AND COALESCE(uf.aktif_mi, 1) = 1
-                  AND uf.kaldirilma_tarihi IS NULL
+                SELECT COUNT(DISTINCT uf.[KULLANICI_ID]) AS toplam
+                FROM [dbo].[KULLANICI_FAVORI_OTELLER] uf
+                WHERE uf.[OTEL_ID] = @hotelId
+                  AND COALESCE(uf.[AKTIF_MI], 1) = 1
+                  AND uf.[KALDIRILMA_TARIHI] IS NULL
             ) src
             WHERE o.id = @hotelId;";
 

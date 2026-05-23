@@ -1,5 +1,5 @@
 param(
-  [string]$ProjectPath = "D:\otelturizm\otelturizmnew.csproj"
+  [string]$ProjectPath = "D:\otelturizm\otelturizm.csproj"
 )
 
 $ErrorActionPreference = "Stop"

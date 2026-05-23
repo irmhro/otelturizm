@@ -1,0 +1,65 @@
+@{
+    Layout = null;
+    var pageCssPath = ViewData["PageCssPath"] as string ?? ViewData["PageCss"] as string;
+    var title = ViewData["Title"] as string ?? ViewData["PanelTitle"] as string ?? "Developer Paneli";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+    <title>@title - Otelturizm</title>
+    <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-tokens.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-standards.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/panel-user-shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/panel-user-shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/developer-feedback.css" asp-append-version="true" />
+    @if (!string.IsNullOrWhiteSpace(pageCssPath))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/assets/css/@(pageCssPath).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    }
+</head>
+<body>
+    <div class="dashboard-shell">
+        <partial name="~/Views/Paneller/Developer/_DeveloperSidebar.cshtml" />
+
+        <main class="dashboard-main developer-main-shell">
+            <header class="dashboard-page-header">
+                <div>
+                    <p class="dashboard-kicker">DEVELOPER PANEL</p>
+                    <h1>@ViewData["PanelTitle"]</h1>
+                    <p class="dashboard-sub">@ViewData["PanelSubtitle"]</p>
+                </div>
+
+                <div class="dashboard-header-tools">
+                    <div class="dashboard-search-box">
+                        <i class="fas fa-code-branch"></i>
+                        <input type="text" value="Canliya hazir is takibi" readonly />
+                    </div>
+                    <partial name="~/Views/Paneller/Common/_DeveloperFeedbackWidget.cshtml" />
+                    <form method="post" action="/cikis-yap" class="panel-header-logout-form">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="panel-header-logout-btn">
+                            <i class="fas fa-right-from-bracket"></i>
+                            <span>Cikis Yap</span>
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <partial name="~/Views/Paneller/Common/_PanelToasts.cshtml" />
+            @RenderBody()
+        </main>
+    </div>
+
+    <partial name="~/Views/Paneller/Developer/_DeveloperMobileNav.cshtml" />
+    <script src="~/assets/js/developer-feedback.js" asp-append-version="true"></script>
+    <script src="~/assets/js/panel-toasts.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

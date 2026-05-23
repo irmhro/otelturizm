@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Kampanyalar";
     ViewData["PageCss"] = "kampanyalar";
+    ViewData["PageCssMobile"] = "kampanyalar.mobile";
     ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.PageDescription)
         ? "Otelturizm kampanyalarını keşfedin. Sezon fırsatları ve özel indirimleri görüntüleyin."
         : Model.PageDescription;
@@ -24,6 +25,18 @@
     }
     catch { }
 }
+
+<header class="campaign-index-hero" aria-label="Kampanyalar">
+    <div class="campaign-index-hero__copy">
+        <span class="campaign-index-hero__badge"><i class="fas fa-tags" aria-hidden="true"></i> Kampanyalar</span>
+        <h1>Kampanyalı oteller ve sezon fırsatları</h1>
+        <p>Yayında olan kampanyaları keşfedin; katılan tesisleri listeleyin veya detay sayfasından koşulları inceleyin.</p>
+    </div>
+    <div class="campaign-index-hero__stats" aria-label="Özet">
+        <span class="campaign-stat-chip"><i class="fas fa-hotel" aria-hidden="true"></i> <strong>@Model.Campaigns.Count</strong> aktif kampanya</span>
+        <a class="campaign-stat-chip campaign-stat-chip--link" href="/oteller?etiket=kampanyaya-dahil-oteller"><i class="fas fa-percent" aria-hidden="true"></i> Kampanyalı oteller</a>
+    </div>
+</header>
 
 <section class="campaign-index-grid">
     @if (Model.Campaigns.Count == 0)

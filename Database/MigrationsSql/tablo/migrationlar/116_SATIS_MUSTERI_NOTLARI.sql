@@ -1,0 +1,15 @@
+-- Tablo: dbo.SATIS_MUSTERI_NOTLARI
+IF OBJECT_ID(N'dbo.SATIS_MUSTERI_NOTLARI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[SATIS_MUSTERI_NOTLARI]
+    (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [SATIS_MUSTERI_ID] bigint NOT NULL,
+        [SATIS_KULLANICI_ID] bigint NULL,
+        [NOT_TURU] nvarchar(255) NOT NULL,
+        [NOT_METNI] nvarchar(max) NOT NULL,
+        [PLANLANAN_GERI_DONUS_TARIHI] datetime2(0) NULL,
+        [OLUSTURULMA_TARIHI] datetime2(0) CONSTRAINT [DF__satis_mus__olust__0FB750B3] DEFAULT (sysutcdatetime()) NULL,
+        CONSTRAINT [PK_SATIS_MUSTERI_NOTLARI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

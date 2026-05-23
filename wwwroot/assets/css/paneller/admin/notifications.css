@@ -1,0 +1,29 @@
+@import url("./campaigns.css");
+
+.admin-notifications-page {
+    display: grid;
+    gap: 20px;
+}
+
+.admin-notifications-filter {
+    grid-template-columns: minmax(260px, 1.5fr) minmax(170px, .9fr) minmax(170px, .9fr) minmax(120px, .6fr) auto auto;
+}
+
+.admin-notifications-table td:first-child {
+    min-width: 280px;
+}
+
+.admin-notifications-table td:nth-child(5) {
+    min-width: 190px;
+}
+
+.status-pill--info {
+    color: #075985;
+    background: linear-gradient(135deg, #e0f2fe, #bfdbfe);
+}
+
+@media (max-width: 1180px) {
+    .admin-notifications-filter {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

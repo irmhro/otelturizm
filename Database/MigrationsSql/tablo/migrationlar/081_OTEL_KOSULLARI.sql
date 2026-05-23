@@ -1,0 +1,43 @@
+-- Tablo: dbo.OTEL_KOSULLARI
+IF OBJECT_ID(N'dbo.OTEL_KOSULLARI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[OTEL_KOSULLARI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [OTEL_ID] bigint NOT NULL,
+        [SIGARA_POLITIKASI] nvarchar(255) NULL,
+        [EVCIL_HAYVAN_POLITIKASI] nvarchar(255) NULL,
+        [EVCIL_HAYVAN_UCRETI] decimal(10,2) NULL,
+        [EVCIL_HAYVAN_DEPOZITOSU] decimal(10,2) NULL,
+        [PARTI_ETKINLIK_IZIN] bit NULL CONSTRAINT [DF__otel_kosu__parti__0B27A5C0] DEFAULT ((0)),
+        [SESSIZLIK_SAATLERI_BASLANGIC] time(0) NULL,
+        [SESSIZLIK_SAATLERI_BITIS] time(0) NULL,
+        [MINIMUM_YAS_SINIRI] tinyint NULL,
+        [SADECE_YETISKINLERE_MI] bit NULL CONSTRAINT [DF__otel_kosu__sadec__0C1BC9F9] DEFAULT ((0)),
+        [COCUK_KABUL_YAS_ARALIGI] nvarchar(20) NULL,
+        [BEBEK_KARYOLASI_VAR_MI] bit NULL CONSTRAINT [DF__otel_kosu__bebek__0D0FEE32] DEFAULT ((0)),
+        [BEBEK_KARYOLASI_UCRETI] decimal(10,2) NULL,
+        [EKSTRA_YATAK_VAR_MI] bit NULL CONSTRAINT [DF__otel_kosu__ekstr__0E04126B] DEFAULT ((0)),
+        [EKSTRA_YATAK_UCRETI] decimal(10,2) NULL,
+        [MAKSIMUM_COCUK_SAYISI] tinyint NULL,
+        [ON_ODEME_GEREKLI_MI] bit NULL CONSTRAINT [DF__otel_kosu__on_od__0EF836A4] DEFAULT ((1)),
+        [ON_ODEME_ORANI] decimal(5,2) NULL CONSTRAINT [DF__otel_kosu__on_od__0FEC5ADD] DEFAULT ((30.00)),
+        [KALAN_ODEME_ZAMANI] nvarchar(255) NULL,
+        [KREDI_KARTI_ILE_ODEME_KABUL] bit NULL CONSTRAINT [DF__otel_kosu__kredi__10E07F16] DEFAULT ((1)),
+        [NAKIT_ODEME_KABUL] bit NULL CONSTRAINT [DF__otel_kosu__nakit__11D4A34F] DEFAULT ((0)),
+        [KABUL_EDILEN_KARTLAR] nvarchar(255) NULL,
+        [IPTAL_POLITIKASI_OZET] nvarchar(500) NULL,
+        [DETAYLI_IPTAL_KOSULLARI] nvarchar(max) NULL,
+        [UCRETSIZ_IPTAL_SURESI] tinyint NULL,
+        [GEC_IPTAL_CEZA_ORANI] decimal(5,2) NULL,
+        [NO_SHOW_CEZA_ORANI] decimal(5,2) NULL CONSTRAINT [DF__otel_kosu__no_sh__12C8C788] DEFAULT ((100.00)),
+        [HASAR_DEPOZITOSU_TUTARI] decimal(10,2) NULL,
+        [HASAR_DEPOZITOSU_ACIKLAMASI] nvarchar(255) NULL,
+        [DISARIDAN_YIYECEK_ICECEK_SERBEST_MI] bit NULL CONSTRAINT [DF__otel_kosu__disar__13BCEBC1] DEFAULT ((1)),
+        [ZIYARETCI_KABUL_EDILIR_MI] bit NULL CONSTRAINT [DF__otel_kosu__ziyar__14B10FFA] DEFAULT ((0)),
+        [ZIYARETCI_SAATI_BASLANGIC] time(0) NULL,
+        [ZIYARETCI_SAATI_BITIS] time(0) NULL,
+        [OZEL_KOSULLAR] nvarchar(max) NULL,
+        [GUNCELLENME_TARIHI] datetime2(0) NULL,
+        CONSTRAINT [PK_OTEL_KOSULLARI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

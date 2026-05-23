@@ -1,0 +1,38 @@
+@media (max-width: 1100px) {
+    .admin-revenue-trend-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-revenue-hero {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .admin-revenue-hero-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .admin-revenue-hero-actions .btn {
+        flex: 1 1 auto;
+    }
+}
+
+@media (max-width: 720px) {
+    .admin-revenue-hero {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .admin-revenue-hero-actions {
+        flex-direction: column;
+    }
+
+    .admin-revenue-hero-actions .btn {
+        width: 100%;
+    }
+
+    .admin-revenue-chart-bars {
+        min-height: 140px;
+    }
+}

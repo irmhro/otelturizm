@@ -1,0 +1,24 @@
+@model otelturizmnew.Models.Destek.YardimMerkeziIcerikSayfaViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<section class="ym-page" aria-labelledby="ym-heading">
+    <div class="ym-page__aurora" aria-hidden="true"></div>
+    <div class="container-xl ym-page__inner">
+        <header class="ym-hero">
+            <div class="ym-hero__glass">
+                <p class="ym-hero__eyebrow"><i class="fas fa-layer-group me-2" aria-hidden="true"></i>Bilgi Merkezi</p>
+                <h1 id="ym-heading" class="ym-hero__title">@(!string.IsNullOrWhiteSpace(Model.HeroTitle) ? Model.HeroTitle : Model.Title)</h1>
+                <p class="ym-hero__lead">@(!string.IsNullOrWhiteSpace(Model.HeroSubtitle) ? Model.HeroSubtitle : Model.Summary)</p>
+            </div>
+        </header>
+
+        <article class="card">
+            <div class="card-body">
+                @Html.Raw(Model.Html)
+            </div>
+        </article>
+    </div>
+</section>
+

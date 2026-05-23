@@ -26,20 +26,20 @@ public sealed class PanelThemeService : IPanelThemeService
 
         const string sql = @"
             SELECT TOP (1)
-                bs_theme,
-                primary_hex,
-                accent_hex,
-                sidebar_bg_hex,
-                radius_scale,
-                density,
-                font_family,
-                layout_mode,
+                [BS_THEME],
+                [PRIMARY_HEX],
+                [ACCENT_HEX],
+                [SIDEBAR_BG_HEX],
+                [RADIUS_SCALE],
+                [DENSITY],
+                [FONT_FAMILY],
+                [LAYOUT_MODE],
                 rtl
-            FROM dbo.tema_panel
-            WHERE aktif_mi = 1
-              AND hedef_tur = @targetType
-              AND hedef_id = @targetId
-            ORDER BY guncellenme_tarihi DESC, id DESC;";
+            FROM [dbo].[TEMA_PANEL]
+            WHERE [AKTIF_MI] = 1
+              AND [HEDEF_TUR] = @targetType
+              AND [HEDEF_ID] = @targetId
+            ORDER BY [GUNCELLENME_TARIHI] DESC, id DESC;";
 
         try
         {
@@ -99,26 +99,26 @@ public sealed class PanelThemeService : IPanelThemeService
         if (normalizedTheme.BsTheme is not ("light" or "dark" or "auto")) normalizedTheme.BsTheme = "light";
 
         const string sql = @"
-            IF EXISTS (SELECT 1 FROM dbo.tema_panel WHERE hedef_tur = @targetType AND hedef_id = @targetId)
+            IF EXISTS (SELECT 1 FROM [dbo].[TEMA_PANEL] WHERE [HEDEF_TUR] = @targetType AND [HEDEF_ID] = @targetId)
             BEGIN
-                UPDATE dbo.tema_panel
-                SET bs_theme = @bsTheme,
-                    primary_hex = NULLIF(@primaryHex, ''),
-                    accent_hex = NULLIF(@accentHex, ''),
-                    sidebar_bg_hex = NULLIF(@sidebarBgHex, ''),
-                    radius_scale = @radiusScale,
-                    density = NULLIF(@density, ''),
-                    font_family = NULLIF(@fontFamily, ''),
-                    layout_mode = NULLIF(@layoutMode, ''),
+                UPDATE [dbo].[TEMA_PANEL]
+                SET [BS_THEME] = @bsTheme,
+                    [PRIMARY_HEX] = NULLIF(@primaryHex, ''),
+                    [ACCENT_HEX] = NULLIF(@accentHex, ''),
+                    [SIDEBAR_BG_HEX] = NULLIF(@sidebarBgHex, ''),
+                    [RADIUS_SCALE] = @radiusScale,
+                    [DENSITY] = NULLIF(@density, ''),
+                    [FONT_FAMILY] = NULLIF(@fontFamily, ''),
+                    [LAYOUT_MODE] = NULLIF(@layoutMode, ''),
                     rtl = @rtl,
-                    aktif_mi = 1,
-                    guncellenme_tarihi = SYSUTCDATETIME()
-                WHERE hedef_tur = @targetType AND hedef_id = @targetId;
+                    [AKTIF_MI] = 1,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+                WHERE [HEDEF_TUR] = @targetType AND [HEDEF_ID] = @targetId;
             END
             ELSE
             BEGIN
-                INSERT INTO dbo.tema_panel
-                (hedef_tur, hedef_id, bs_theme, primary_hex, accent_hex, sidebar_bg_hex, radius_scale, density, font_family, layout_mode, rtl, aktif_mi, olusturulma_tarihi, guncellenme_tarihi)
+                INSERT INTO [dbo].[TEMA_PANEL]
+                ([HEDEF_TUR], [HEDEF_ID], [BS_THEME], [PRIMARY_HEX], [ACCENT_HEX], [SIDEBAR_BG_HEX], [RADIUS_SCALE], [DENSITY], [FONT_FAMILY], [LAYOUT_MODE], rtl, [AKTIF_MI], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI])
                 VALUES
                 (@targetType, @targetId, @bsTheme, NULLIF(@primaryHex, ''), NULLIF(@accentHex, ''), NULLIF(@sidebarBgHex, ''), @radiusScale, NULLIF(@density, ''), NULLIF(@fontFamily, ''), NULLIF(@layoutMode, ''), @rtl, 1, SYSUTCDATETIME(), SYSUTCDATETIME());
             END;";

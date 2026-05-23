@@ -1,0 +1,17 @@
+-- Tablo: dbo.OTEL_ISTATISTIKLERI
+IF OBJECT_ID(N'dbo.OTEL_ISTATISTIKLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[OTEL_ISTATISTIKLERI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [OTEL_ID] bigint NOT NULL,
+        [ISTATISTIK_TARIHI] date NOT NULL,
+        [REZERVASYON_SAYISI] int NULL CONSTRAINT [DF__otel_ista__rezer__02925FBF] DEFAULT ((0)),
+        [IPTAL_SAYISI] int NULL CONSTRAINT [DF__otel_ista__iptal__038683F8] DEFAULT ((0)),
+        [DOLULUK_ORANI] decimal(5,2) NULL CONSTRAINT [DF__otel_ista__dolul__047AA831] DEFAULT ((0.00)),
+        [BRUT_GELIR] decimal(12,2) NULL CONSTRAINT [DF__otel_ista__brut___056ECC6A] DEFAULT ((0.00)),
+        [NET_GELIR] decimal(12,2) NULL CONSTRAINT [DF__otel_ista__net_g__0662F0A3] DEFAULT ((0.00)),
+        [ORTALAMA_PUAN] decimal(3,2) NULL CONSTRAINT [DF__otel_ista__ortal__075714DC] DEFAULT ((0.00)),
+        [YORUM_SAYISI] int NULL CONSTRAINT [DF__otel_ista__yorum__084B3915] DEFAULT ((0)),
+        CONSTRAINT [PK_OTEL_ISTATISTIKLERI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

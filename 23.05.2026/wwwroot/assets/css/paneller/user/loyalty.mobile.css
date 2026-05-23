@@ -1,0 +1,87 @@
+@media (max-width: 900px) {
+    .hero-content,
+    .loyalty-header,
+    .progress-info,
+    .next-tier,
+    .alert-item,
+    .shared-item,
+    .passport-recent-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .stats-mini-grid,
+    .features-grid,
+    .badges-grid,
+    .city-list,
+    .inline-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-badge,
+    .points-display {
+        width: 100%;
+    }
+
+    .content-header,
+    .hero-personalized,
+    .loyalty-hero,
+    .feature-card {
+        padding: 16px;
+    }
+
+    /* Tabs: yatay kaydırma + dokunma */
+    .tabs-container {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 8px;
+    }
+    .tabs-container::-webkit-scrollbar { display: none; }
+
+    .tabs-container .tab {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        padding: 9px 12px;
+        font-size: 0.92rem;
+    }
+
+    /* Tab içerikleri: daha sıkı padding */
+    .history-section,
+    .current-points-copy,
+    .tiers-grid,
+    .rewards-grid,
+    .benefits-grid {
+        padding: 14px;
+    }
+
+    /* History table: responsive scroll */
+    .history-section {
+        overflow: hidden;
+    }
+    .history-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
+    .history-table thead,
+    .history-table tbody,
+    .history-table tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+    .history-table th,
+    .history-table td {
+        padding: 10px 8px;
+    }
+
+    /* Grid alt bölümler tek kolon */
+    .benefits-grid,
+    .rewards-grid,
+    .tiers-grid {
+        grid-template-columns: 1fr;
+    }
+}

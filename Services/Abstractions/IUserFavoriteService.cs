@@ -8,7 +8,7 @@ public interface IUserFavoriteService
     Task<HashSet<long>> GetFavoriteHotelIdsAsync(long userId, IEnumerable<long> hotelIds, CancellationToken cancellationToken = default);
     Task<int> GetFavoriteCountAsync(long userId, CancellationToken cancellationToken = default);
     Task<UserFavoritesPageViewModel> GetFavoritesPageAsync(long userId, string? searchTerm = null, string? sort = null, int page = 1, CancellationToken cancellationToken = default);
-    Task<HotelFavoriteToggleResponse> ToggleFavoriteAsync(
+    Task<OtelFavoriToggleYanit> ToggleFavoriteAsync(
         long userId,
         long hotelId,
         string sourcePage,

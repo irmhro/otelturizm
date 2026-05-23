@@ -71,7 +71,7 @@ public class AuthService : IAuthService
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
-        await using var command = new SqlCommand("SELECT TOP (1) iki_asamali_dogrulama_aktif_mi FROM users WHERE id = @userId;", connection);
+        await using var command = new SqlCommand("SELECT TOP (1) [IKI_ASAMALI_DOGRULAMA_AKTIF_MI] FROM [dbo].[KULLANICILAR] WHERE id = @userId;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         var scalar = await command.ExecuteScalarAsync(cancellationToken);
         return scalar is not null && scalar != DBNull.Value && Convert.ToInt32(scalar, CultureInfo.InvariantCulture) == 1;
@@ -83,12 +83,12 @@ public class AuthService : IAuthService
         await connection.OpenAsync(cancellationToken);
         await using var command = new SqlCommand("""
             SELECT TOP (1)
-                COALESCE(eposta, ''),
-                email_dogrulama_tarihi,
-                COALESCE(telefon_e164, ''),
-                telefon_dogrulama_tarihi,
-                COALESCE(iki_asamali_dogrulama_kanali, 'email')
-            FROM users
+                COALESCE([EPOSTA], ''),
+                [EPOSTA_DOGRULAMA_TARIHI],
+                COALESCE([TELEFON_E164], ''),
+                [TELEFON_DOGRULAMA_TARIHI],
+                COALESCE([IKI_ASAMALI_DOGRULAMA_KANALI], 'email')
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -137,8 +137,8 @@ public class AuthService : IAuthService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = new SqlCommand("""
-            SELECT TOP (1) COALESCE(telefon_e164, ''), telefon_dogrulama_tarihi
-            FROM users
+            SELECT TOP (1) COALESCE([TELEFON_E164], ''), [TELEFON_DOGRULAMA_TARIHI]
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -171,13 +171,13 @@ public class AuthService : IAuthService
 
         await using (var command = new SqlCommand("""
             SELECT TOP (1)
-                COALESCE(iki_asamali_dogrulama_aktif_mi, 0),
-                COALESCE(iki_asamali_dogrulama_kanali, 'email'),
-                COALESCE(eposta, ''),
-                email_dogrulama_tarihi,
-                COALESCE(telefon_e164, ''),
-                telefon_dogrulama_tarihi
-            FROM users
+                COALESCE([IKI_ASAMALI_DOGRULAMA_AKTIF_MI], 0),
+                COALESCE([IKI_ASAMALI_DOGRULAMA_KANALI], 'email'),
+                COALESCE([EPOSTA], ''),
+                [EPOSTA_DOGRULAMA_TARIHI],
+                COALESCE([TELEFON_E164], ''),
+                [TELEFON_DOGRULAMA_TARIHI]
+            FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;
             """, connection))
         {
@@ -198,24 +198,24 @@ public class AuthService : IAuthService
 
         await using var sessionCommand = new SqlCommand("""
             SELECT TOP (5)
-                COALESCE(s.cihaz_etiketi, N'Bilinmeyen cihaz') AS cihaz,
-                s.beni_hatirla_tercihi,
-                s.toplam_oturum_suresi_saniye,
-                s.son_aktivite_tarihi,
-                l.ip_adresi,
-                l.giris_tarihi
-            FROM kullanici_oturum_istatistikleri s
+                COALESCE(s.[CIHAZ_ETIKETI], N'Bilinmeyen cihaz') AS cihaz,
+                s.[BENI_HATIRLA_TERCIHI],
+                s.[TOPLAM_OTURUM_SURESI_SANIYE],
+                s.[SON_AKTIVITE_TARIHI],
+                l.[IP_ADRESI],
+                l.[GIRIS_TARIHI]
+            FROM [dbo].[KULLANICI_OTURUM_ISTATISTIKLERI] s
             OUTER APPLY
             (
-                SELECT TOP (1) ip_adresi, giris_tarihi
-                FROM kullanici_giris_loglari
-                WHERE kullanici_id = s.kullanici_id
-                  AND hesap_tipi = @accountType
-                ORDER BY giris_tarihi DESC
+                SELECT TOP (1) [IP_ADRESI], [GIRIS_TARIHI]
+                FROM [dbo].[KULLANICI_GIRIS_LOGLARI]
+                WHERE [KULLANICI_ID] = s.[KULLANICI_ID]
+                  AND [HESAP_TIPI] = @accountType
+                ORDER BY [GIRIS_TARIHI] DESC
             ) l
-            WHERE s.kullanici_id = @userId
-              AND s.hesap_tipi = @accountType
-            ORDER BY s.son_aktivite_tarihi DESC, s.id DESC;
+            WHERE s.[KULLANICI_ID] = @userId
+              AND s.[HESAP_TIPI] = @accountType
+            ORDER BY s.[SON_AKTIVITE_TARIHI] DESC, s.id DESC;
             """, connection);
         sessionCommand.Parameters.AddWithValue("@userId", userId);
         sessionCommand.Parameters.AddWithValue("@accountType", (accountType ?? "user").Trim().ToLowerInvariant());
@@ -267,10 +267,10 @@ public class AuthService : IAuthService
         }
 
         await using var command = new SqlCommand("""
-            UPDATE users
-            SET iki_asamali_dogrulama_aktif_mi = @enabled,
-                iki_asamali_dogrulama_kanali = @channel,
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICILAR]
+            SET [IKI_ASAMALI_DOGRULAMA_AKTIF_MI] = @enabled,
+                [IKI_ASAMALI_DOGRULAMA_KANALI] = @channel,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@enabled", form.Enabled ? 1 : 0);
@@ -295,20 +295,20 @@ public class AuthService : IAuthService
         var tr = CultureInfo.GetCultureInfo("tr-TR");
         await using var command = new SqlCommand(@"
             SELECT TOP (@take)
-                COALESCE(s.cihaz_etiketi, COALESCE(l.cihaz_etiketi, 'Bilinmeyen cihaz')) AS cihaz,
-                COALESCE(s.toplam_oturum_suresi_saniye, 0) AS sure_saniye,
-                COALESCE(l.ip_adresi, '—') AS ip,
-                COALESCE(l.giris_tarihi, s.son_aktivite_tarihi, SYSUTCDATETIME()) AS zaman
-            FROM dbo.kullanici_oturum_istatistikleri s
+                COALESCE(s.[CIHAZ_ETIKETI], COALESCE(l.[CIHAZ_ETIKETI], 'Bilinmeyen cihaz')) AS cihaz,
+                COALESCE(s.[TOPLAM_OTURUM_SURESI_SANIYE], 0) AS sure_saniye,
+                COALESCE(l.[IP_ADRESI], '—') AS ip,
+                COALESCE(l.[GIRIS_TARIHI], s.[SON_AKTIVITE_TARIHI], SYSUTCDATETIME()) AS zaman
+            FROM [dbo].[KULLANICI_OTURUM_ISTATISTIKLERI] s
             OUTER APPLY
             (
-                SELECT TOP (1) ip_adresi, giris_tarihi, cihaz_etiketi
-                FROM dbo.kullanici_giris_loglari
-                WHERE kullanici_id = s.kullanici_id
-                ORDER BY giris_tarihi DESC, id DESC
+                SELECT TOP (1) [IP_ADRESI], [GIRIS_TARIHI], [CIHAZ_ETIKETI]
+                FROM [dbo].[KULLANICI_GIRIS_LOGLARI]
+                WHERE [KULLANICI_ID] = s.[KULLANICI_ID]
+                ORDER BY [GIRIS_TARIHI] DESC, id DESC
             ) l
-            WHERE s.kullanici_id = @userId
-            ORDER BY COALESCE(l.giris_tarihi, s.son_aktivite_tarihi) DESC;", connection);
+            WHERE s.[KULLANICI_ID] = @userId
+            ORDER BY COALESCE(l.[GIRIS_TARIHI], s.[SON_AKTIVITE_TARIHI]) DESC;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@take", take);
 
@@ -341,8 +341,8 @@ public class AuthService : IAuthService
         await connection.OpenAsync(cancellationToken);
 
         await using var command = new SqlCommand("""
-            INSERT INTO kullanici_giris_loglari
-            (kullanici_id, hesap_tipi, ip_adresi, user_agent, cihaz_etiketi, giris_tarihi, olusturulma_tarihi)
+            INSERT INTO [dbo].[KULLANICI_GIRIS_LOGLARI]
+            ([KULLANICI_ID], [HESAP_TIPI], [IP_ADRESI], [KULLANICI_ARACISI], [CIHAZ_ETIKETI], [GIRIS_TARIHI], [OLUSTURULMA_TARIHI])
             VALUES
             (@userId, @accountType, NULLIF(@ip, ''), NULLIF(@ua, ''), NULLIF(@device, ''), SYSUTCDATETIME(), SYSUTCDATETIME());
             """, connection);
@@ -670,9 +670,9 @@ public class AuthService : IAuthService
 
         const string existsSql = """
             SELECT
-                SUM(CASE WHEN eposta = @email THEN 1 ELSE 0 END) AS email_count,
-                SUM(CASE WHEN @phone IS NOT NULL AND telefon = @phone THEN 1 ELSE 0 END) AS phone_count
-            FROM users;
+                SUM(CASE WHEN [EPOSTA] = @email THEN 1 ELSE 0 END) AS email_count,
+                SUM(CASE WHEN @phone IS NOT NULL AND [TELEFON] = @phone THEN 1 ELSE 0 END) AS phone_count
+            FROM [dbo].[KULLANICILAR];
             """;
 
         await using (var existsCommand = new SqlCommand(existsSql, connection))
@@ -767,7 +767,7 @@ public class AuthService : IAuthService
         }
 
         var insertSql = $"""
-            INSERT INTO users
+            INSERT INTO [dbo].[KULLANICILAR]
             (
                 {string.Join(",\n                ", insertColumns)}
             )
@@ -917,14 +917,14 @@ public class AuthService : IAuthService
         }
 
         var userColumns = await GetUsersTableColumnsAsync(connection, cancellationToken);
-        var usersPartnerColumns = await GetColumnsAsync(connection, "users_partner", cancellationToken);
+        var usersPartnerColumns = await Data.SchemaTableNames.GetColumnsAsync(connection, "users_partner", cancellationToken);
 
         const string existsSql = """
             SELECT
-                (SELECT COUNT(*) FROM users WHERE eposta = @email) AS email_count,
-                (SELECT COUNT(*) FROM users WHERE telefon = @phone) AS phone_count,
-                (SELECT COUNT(*) FROM partner_detaylari WHERE vergi_numarasi = @taxNumber) AS tax_count,
-                (SELECT COUNT(*) FROM partner_detaylari WHERE @iban <> '' AND iban = @iban) AS iban_count;
+                (SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE [EPOSTA] = @email) AS email_count,
+                (SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE [TELEFON] = @phone) AS phone_count,
+                (SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [VERGI_NUMARASI] = @taxNumber) AS tax_count,
+                (SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE @iban <> '' AND iban = @iban) AS iban_count;
             """;
 
         await using (var existsCommand = new SqlCommand(existsSql, connection))
@@ -1032,7 +1032,7 @@ public class AuthService : IAuthService
             }
 
             var insertUserSql = $"""
-                INSERT INTO users
+                INSERT INTO [dbo].[KULLANICILAR]
                 (
                     {string.Join(",\n                    ", insertColumns)}
                 )
@@ -1058,32 +1058,32 @@ public class AuthService : IAuthService
             }
 
             const string insertPartnerSql = """
-                INSERT INTO partner_detaylari
+                INSERT INTO [dbo].[PARTNER_DETAYLARI]
                 (
-                    kullanici_id,
-                    firma_unvani,
-                    firma_turu,
-                    vergi_dairesi,
-                    vergi_numarasi,
-                    fatura_adresi,
-                    fatura_il,
-                    fatura_ilce,
-                    yetkili_ad_soyad,
-                    yetkili_tc_no,
-                    yetkili_telefon,
-                    yetkili_eposta,
-                    yetkili_gorev,
-                    banka_adi,
-                    banka_subesi,
+                    [KULLANICI_ID],
+                    [FIRMA_UNVANI],
+                    [FIRMA_TURU],
+                    [VERGI_DAIRESI],
+                    [VERGI_NUMARASI],
+                    [FATURA_ADRESI],
+                    [FATURA_IL],
+                    [FATURA_ILCE],
+                    [YETKILI_AD_SOYAD],
+                    [YETKILI_TC_NO],
+                    [YETKILI_TELEFON],
+                    [YETKILI_EPOSTA],
+                    [YETKILI_GOREV],
+                    [BANKA_ADI],
+                    [BANKA_SUBESI],
                     iban,
-                    hesap_sahibi_adi,
-                    hesap_para_birimi,
-                    onay_durumu,
-                    onay_tarihi,
-                    web_sitesi,
-                    aciklama,
-                    otel_tipi_id,
-                    olusturulma_tarihi
+                    [HESAP_SAHIBI_ADI],
+                    [HESAP_PARA_BIRIMI],
+                    [ONAY_DURUMU],
+                    [ONAY_TARIHI],
+                    [WEB_SITESI],
+                    [ACIKLAMA],
+                    [OTEL_TIPI_ID],
+                    [OLUSTURULMA_TARIHI]
                 )
                 VALUES
                 (
@@ -1146,13 +1146,13 @@ public class AuthService : IAuthService
 
             var hotelCode = await GenerateHotelCodeAsync(connection, (SqlTransaction)transaction, city, cancellationToken);
             const string insertHotelSql = """
-                INSERT INTO oteller
+                INSERT INTO [dbo].[OTELLER]
                 (
-                    otel_kodu, partner_id, user_id, otel_adi, otel_turu, otel_tipi_id, ulke, sehir, ilce, mahalle, tam_adres,
-                    telefon_1, eposta, web_sitesi, rezervasyon_telefonu, satis_kontak_adi, satis_kontak_telefonu, satis_kontak_eposta,
-                    check_in_saati, check_out_saati, toplam_oda_sayisi, kisa_aciklama, uzun_aciklama,
-                    varsayilan_komisyon_orani, odeme_vadesi, odeme_yontemi, fatura_kesim_turu,
-                    yayin_durumu, onay_durumu, olusturulma_tarihi
+                    [OTEL_KODU], [PARTNER_ID], [KULLANICI_ID], [OTEL_ADI], [OTEL_TURU], [OTEL_TIPI_ID], ulke, [SEHIR], ilce, [MAHALLE], [TAM_ADRES],
+                    [TELEFON_1], [EPOSTA], [WEB_SITESI], [REZERVASYON_TELEFONU], [SATIS_KONTAK_ADI], [SATIS_KONTAK_TELEFONU], [SATIS_KONTAK_EPOSTA],
+                    [CHECK_IN_SAATI], [CHECK_OUT_SAATI], [TOPLAM_ODA_SAYISI], [KISA_ACIKLAMA], [UZUN_ACIKLAMA],
+                    [VARSAYILAN_KOMISYON_ORANI], [ODEME_VADESI], [ODEME_YONTEMI], [FATURA_KESIM_TURU],
+                    [YAYIN_DURUMU], [ONAY_DURUMU], [OLUSTURULMA_TARIHI]
                 )
                 VALUES
                 (
@@ -1191,37 +1191,43 @@ public class AuthService : IAuthService
                 hotelId = Convert.ToInt64(result);
             }
 
-            if (usersPartnerColumns.Contains("user_id") && usersPartnerColumns.Contains("partner_id"))
+            var usersPartnerUserCol = usersPartnerColumns.Contains("KULLANICI_ID") ? "KULLANICI_ID"
+                : usersPartnerColumns.Contains("user_id") ? "user_id" : null;
+            var usersPartnerPartnerCol = usersPartnerColumns.Contains("PARTNER_ID") ? "PARTNER_ID"
+                : usersPartnerColumns.Contains("partner_id") ? "partner_id" : null;
+            if (usersPartnerUserCol is not null && usersPartnerPartnerCol is not null)
             {
-                var usersPartnerInsertColumns = new List<string> { "user_id", "partner_id" };
+                var usersPartnerTable = await Data.SchemaTableNames.ResolveExistingTableAsync(connection, "users_partner", cancellationToken)
+                    ?? "KULLANICI_PARTNERLERI";
+                var usersPartnerInsertColumns = new List<string> { usersPartnerUserCol, usersPartnerPartnerCol };
                 var usersPartnerInsertValues = new List<string> { "@userId", "@partnerId" };
 
-                if (usersPartnerColumns.Contains("rol"))
+                if (usersPartnerColumns.Contains("ROL") || usersPartnerColumns.Contains("rol"))
                 {
-                    usersPartnerInsertColumns.Add("rol");
+                    usersPartnerInsertColumns.Add(usersPartnerColumns.Contains("ROL") ? "ROL" : "rol");
                     usersPartnerInsertValues.Add("'owner'");
                 }
 
-                if (usersPartnerColumns.Contains("aktif_mi"))
+                if (usersPartnerColumns.Contains("AKTIF_MI") || usersPartnerColumns.Contains("aktif_mi"))
                 {
-                    usersPartnerInsertColumns.Add("aktif_mi");
+                    usersPartnerInsertColumns.Add(usersPartnerColumns.Contains("AKTIF_MI") ? "AKTIF_MI" : "aktif_mi");
                     usersPartnerInsertValues.Add("1");
                 }
 
-                if (usersPartnerColumns.Contains("ana_hesap_mi"))
+                if (usersPartnerColumns.Contains("ANA_HESAP_MI") || usersPartnerColumns.Contains("ana_hesap_mi"))
                 {
-                    usersPartnerInsertColumns.Add("ana_hesap_mi");
+                    usersPartnerInsertColumns.Add(usersPartnerColumns.Contains("ANA_HESAP_MI") ? "ANA_HESAP_MI" : "ana_hesap_mi");
                     usersPartnerInsertValues.Add("1");
                 }
 
-                if (usersPartnerColumns.Contains("olusturulma_tarihi"))
+                if (usersPartnerColumns.Contains("OLUSTURULMA_TARIHI") || usersPartnerColumns.Contains("olusturulma_tarihi"))
                 {
-                    usersPartnerInsertColumns.Add("olusturulma_tarihi");
+                    usersPartnerInsertColumns.Add(usersPartnerColumns.Contains("OLUSTURULMA_TARIHI") ? "OLUSTURULMA_TARIHI" : "olusturulma_tarihi");
                     usersPartnerInsertValues.Add("SYSUTCDATETIME()");
                 }
 
                 var insertUserPartnerSql = $"""
-                    INSERT INTO users_partner
+                    INSERT INTO [dbo].[{usersPartnerTable}]
                     (
                         {string.Join(",\n                        ", usersPartnerInsertColumns)}
                     )
@@ -1238,9 +1244,9 @@ public class AuthService : IAuthService
             }
 
             const string insertOwnershipSql = """
-                INSERT INTO otel_kullanici_sahiplikleri
+                INSERT INTO [dbo].[OTEL_KULLANICI_SAHIPLIKLERI]
                 (
-                    otel_id, user_id, partner_id, rol, ana_sorumlu_mu, aktif_mi, olusturulma_tarihi
+                    [OTEL_ID], [KULLANICI_ID], [PARTNER_ID], rol, [ANA_SORUMLU_MU], [AKTIF_MI], [OLUSTURULMA_TARIHI]
                 )
                 VALUES
                 (
@@ -1259,9 +1265,9 @@ public class AuthService : IAuthService
             if (await TableExistsAsync(connection, "partner_basvuru_hareketleri", cancellationToken, (SqlTransaction?)transaction))
             {
                 const string insertHistorySql = """
-                    INSERT INTO partner_basvuru_hareketleri
+                    INSERT INTO [dbo].[PARTNER_BASVURU_HAREKETLERI]
                     (
-                        partner_id, onceki_durum, yeni_durum, islem_tipi, aciklama, islem_yapan_kullanici_id, olusturulma_tarihi
+                        [PARTNER_ID], [ONCEKI_DURUM], [YENI_DURUM], [ISLEM_TIPI], [ACIKLAMA], [ISLEM_YAPAN_KULLANICI_ID], [OLUSTURULMA_TARIHI]
                     )
                     VALUES
                     (
@@ -1291,7 +1297,7 @@ public class AuthService : IAuthService
                 }
 
                 var updateOwnershipSql = $"""
-                    UPDATE users
+                    UPDATE [dbo].[KULLANICILAR]
                     SET {string.Join(", ", updateAssignments)}
                     WHERE id = @userId;
                     """;
@@ -1447,9 +1453,9 @@ public class AuthService : IAuthService
 
         const string existsSql = """
             SELECT
-                (SELECT COUNT(*) FROM firmalar WHERE vergi_no = @taxNumber) AS tax_count,
-                (SELECT COUNT(*) FROM firmalar WHERE firma_eposta = @companyEmail OR yetkili_eposta = @contactEmail) AS firm_email_count,
-                (SELECT COUNT(*) FROM users WHERE eposta = @contactEmail) AS user_email_count;
+                (SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE [VERGI_NO] = @taxNumber) AS tax_count,
+                (SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE [FIRMA_EPOSTA] = @companyEmail OR [YETKILI_EPOSTA] = @contactEmail) AS firm_email_count,
+                (SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE [EPOSTA] = @contactEmail) AS user_email_count;
             """;
 
         await using (var existsCommand = new SqlCommand(existsSql, connection))
@@ -1485,13 +1491,13 @@ public class AuthService : IAuthService
             var firmaCode = await GenerateFirmaCodeAsync(connection, (SqlTransaction)transaction, cancellationToken);
 
             const string insertFirmaSql = """
-                INSERT INTO firmalar
+                INSERT INTO [dbo].[FIRMALAR]
                 (
-                    firma_kodu, firma_adi, firma_turu, vergi_no, vergi_dairesi, ticaret_sicil_no, mersis_no,
-                    firma_eposta, firma_telefon, web_sitesi, sektor, calisan_sayisi, aylik_seyahat_butcesi,
-                    acik_adres, sehir, ilce, posta_kodu, yetkili_ad_soyad, yetkili_unvani, yetkili_eposta,
-                    yetkili_telefon, onay_durumu, basvuru_tarihi, aktif_mi, giris_izni_aktif_mi,
-                    planlanan_onay_suresi_saat, kayit_kaynagi, sozlesme_onay_tarihi, kvkk_onay_tarihi, notlar, olusturulma_tarihi
+                    [FIRMA_KODU], [FIRMA_ADI], [FIRMA_TURU], [VERGI_NO], [VERGI_DAIRESI], [TICARET_SICIL_NO], [MERSIS_NO],
+                    [FIRMA_EPOSTA], [FIRMA_TELEFON], [WEB_SITESI], [SEKTOR], [CALISAN_SAYISI], [AYLIK_SEYAHAT_BUTCESI],
+                    [ACIK_ADRES], [SEHIR], ilce, [POSTA_KODU], [YETKILI_AD_SOYAD], [YETKILI_UNVANI], [YETKILI_EPOSTA],
+                    [YETKILI_TELEFON], [ONAY_DURUMU], [BASVURU_TARIHI], [AKTIF_MI], [GIRIS_IZNI_AKTIF_MI],
+                    [PLANLANAN_ONAY_SURESI_SAAT], [KAYIT_KAYNAGI], [SOZLESME_ONAY_TARIHI], [KVKK_ONAY_TARIHI], [NOTLAR], [OLUSTURULMA_TARIHI]
                 )
                 VALUES
                 (
@@ -1608,7 +1614,7 @@ public class AuthService : IAuthService
             }
 
             var insertUserSql = $"""
-                INSERT INTO users
+                INSERT INTO [dbo].[KULLANICILAR]
                 (
                     {string.Join(",\n                    ", insertColumns)}
                 )
@@ -1704,11 +1710,11 @@ public class AuthService : IAuthService
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         const string sql = """
-            SELECT TOP (1) id, kullanici_id, gecerlilik_suresi, kullanildi_mi, deneme_sayisi, maksimum_deneme, token
+            SELECT TOP (1) id, [KULLANICI_ID], [GECERLILIK_SURESI], [KULLANILDI_MI], [DENEME_SAYISI], [MAKSIMUM_DENEME], [TOKEN]
             FROM email_dogrulama_tokenlari
-            WHERE eposta = @email
-              AND dogrulama_kodu = @code
-            ORDER BY olusturulma_tarihi DESC;
+            WHERE [EPOSTA] = @email
+              AND [DOGRULAMA_KODU] = @code
+            ORDER BY [OLUSTURULMA_TARIHI] DESC;
             """;
 
         long tokenId;
@@ -1762,9 +1768,9 @@ public class AuthService : IAuthService
 
         await MarkVerificationTokenUsedAsync(connection, (SqlTransaction)transaction, tokenId, cancellationToken);
         await using (var verifyUserCommand = new SqlCommand("""
-            UPDATE users
-            SET email_dogrulama_tarihi = COALESCE(email_dogrulama_tarihi, SYSUTCDATETIME()),
-                email_dogrulama_son_gonderim_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICILAR]
+            SET [EPOSTA_DOGRULAMA_TARIHI] = COALESCE([EPOSTA_DOGRULAMA_TARIHI], SYSUTCDATETIME()),
+                [EPOSTA_DOGRULAMA_SON_GONDERIM_TARIHI] = SYSUTCDATETIME()
             WHERE id = @userId;
             """, connection, (SqlTransaction)transaction))
         {
@@ -1796,16 +1802,16 @@ public class AuthService : IAuthService
             await using var probe = new SqlCommand("""
                 SELECT
                     CASE
-                        WHEN EXISTS (SELECT 1 FROM partner_detaylari p WHERE p.kullanici_id = @userId)
+                        WHEN EXISTS (SELECT 1 FROM [dbo].[PARTNER_DETAYLARI] p WHERE p.[KULLANICI_ID] = @userId)
                         THEN 1 ELSE 0
                     END AS is_partner,
                     CASE
                         WHEN COL_LENGTH('partner_detaylari', 'eposta_giris_onayi_verildi_mi') IS NULL THEN 0
                         WHEN EXISTS (
                             SELECT 1
-                            FROM partner_detaylari p
-                            WHERE p.kullanici_id = @userId
-                              AND COALESCE(p.eposta_giris_onayi_verildi_mi, 0) = 1
+                            FROM [dbo].[PARTNER_DETAYLARI] p
+                            WHERE p.[KULLANICI_ID] = @userId
+                              AND COALESCE(p.[EPOSTA_GIRIS_ONAYI_VERILDI_MI], 0) = 1
                         ) THEN 1 ELSE 0
                     END AS partner_email_login_approved;
                 """, connection);
@@ -1843,10 +1849,10 @@ public class AuthService : IAuthService
         await connection.OpenAsync(cancellationToken);
 
         const string userSql = """
-            SELECT TOP (1) id, ad_soyad, email_dogrulama_tarihi, email_dogrulama_son_gonderim_tarihi
-            FROM users
-            WHERE eposta = @email
-              AND hesap_durumu = 1;
+            SELECT TOP (1) id, [AD_SOYAD], [EPOSTA_DOGRULAMA_TARIHI], [EPOSTA_DOGRULAMA_SON_GONDERIM_TARIHI]
+            FROM [dbo].[KULLANICILAR]
+            WHERE [EPOSTA] = @email
+              AND [HESAP_DURUMU] = 1;
             """;
 
         long userId;
@@ -1903,10 +1909,10 @@ public class AuthService : IAuthService
         await connection.OpenAsync(cancellationToken);
 
         const string userSql = """
-            SELECT TOP (1) id, ad_soyad
-            FROM users
-            WHERE eposta = @email
-              AND hesap_durumu = 1;
+            SELECT TOP (1) id, [AD_SOYAD]
+            FROM [dbo].[KULLANICILAR]
+            WHERE [EPOSTA] = @email
+              AND [HESAP_DURUMU] = 1;
             """;
 
         long userId;
@@ -1928,8 +1934,8 @@ public class AuthService : IAuthService
         var resetLink = $"{_publicBaseUrl}/sifre-sifirla?token={Uri.EscapeDataString(token)}";
 
         await using (var insertCommand = new SqlCommand("""
-            INSERT INTO sifre_sifirlama_tokenlari
-            (kullanici_id, eposta, token, ip_adresi, user_agent, kullanildi_mi, gecerlilik_suresi, olusturulma_tarihi)
+            INSERT INTO [dbo].[SIFRE_SIFIRLAMA_TOKENLARI]
+            ([KULLANICI_ID], [EPOSTA], [TOKEN], [IP_ADRESI], [KULLANICI_ARACISI], [KULLANILDI_MI], [GECERLILIK_SURESI], [OLUSTURULMA_TARIHI])
             VALUES
             (@userId, @email, @token, @ipAddress, @userAgent, 0, DATEADD(HOUR, 1, SYSUTCDATETIME()), SYSUTCDATETIME());
             """, connection))
@@ -1952,7 +1958,7 @@ public class AuthService : IAuthService
                     UserId = userId,
                     RecipientEmail = normalizedEmail,
                     TemplateCode = "password_reset",
-                    RelatedTable = "users",
+                    RelatedTable = "KULLANICILAR",
                     RelatedRecordId = userId,
                     Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
@@ -1999,9 +2005,9 @@ public class AuthService : IAuthService
         bool used;
         DateTime expiryUtc;
         await using (var command = new SqlCommand("""
-            SELECT TOP (1) id, kullanici_id, kullanildi_mi, gecerlilik_suresi
-            FROM sifre_sifirlama_tokenlari
-            WHERE token = @token
+            SELECT TOP (1) id, [KULLANICI_ID], [KULLANILDI_MI], [GECERLILIK_SURESI]
+            FROM [dbo].[SIFRE_SIFIRLAMA_TOKENLARI]
+            WHERE [TOKEN] = @token
             ORDER BY id DESC;
             """, connection, (SqlTransaction)transaction))
         {
@@ -2029,11 +2035,11 @@ public class AuthService : IAuthService
         }
 
         await using (var updateUserCommand = new SqlCommand("""
-            UPDATE users
-            SET sifre = LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2)),
-                basarisiz_giris_sayisi = 0,
-                son_basarisiz_giris_tarihi = NULL,
-                giris_kilit_bitis_tarihi = NULL
+            UPDATE [dbo].[KULLANICILAR]
+            SET [SIFRE] = LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2)),
+                [BASARISIZ_GIRIS_SAYISI] = 0,
+                [SON_BASARISIZ_GIRIS_TARIHI] = NULL,
+                [GIRIS_KILIT_BITIS_TARIHI] = NULL
             WHERE id = @userId;
             """, connection, (SqlTransaction)transaction))
         {
@@ -2043,9 +2049,9 @@ public class AuthService : IAuthService
         }
 
         await using (var updateTokenCommand = new SqlCommand("""
-            UPDATE sifre_sifirlama_tokenlari
-            SET kullanildi_mi = 1,
-                kullanilma_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[SIFRE_SIFIRLAMA_TOKENLARI]
+            SET [KULLANILDI_MI] = 1,
+                [KULLANILMA_TARIHI] = SYSUTCDATETIME()
             WHERE id = @tokenId;
             """, connection, (SqlTransaction)transaction))
         {
@@ -2070,8 +2076,8 @@ public class AuthService : IAuthService
 
         const string sql = """
             SELECT TOP (1) id
-            FROM users
-            WHERE eposta = @email
+            FROM [dbo].[KULLANICILAR]
+            WHERE [EPOSTA] = @email
             ORDER BY id DESC;
             """;
 
@@ -2104,9 +2110,9 @@ public class AuthService : IAuthService
         await connection.OpenAsync(cancellationToken);
 
         const string sql = """
-            SELECT TOP (1) kullanici_id
-            FROM sifre_sifirlama_tokenlari
-            WHERE token = @token
+            SELECT TOP (1) [KULLANICI_ID]
+            FROM [dbo].[SIFRE_SIFIRLAMA_TOKENLARI]
+            WHERE [TOKEN] = @token
             ORDER BY id DESC;
             """;
 
@@ -2156,25 +2162,14 @@ public class AuthService : IAuthService
                 : "up.partner_id")
             : (authSchema.HasOwnershipPartnerColumn ? "u.sahiplik_partner_id" : "NULL");
 
-        var usersPartnerJoinClause = authSchema.HasUsersPartnerTable
-            ? (authSchema.HasUsersPartnerActiveColumn
-                ? """
-                    LEFT JOIN users_partner up
-                        ON up.user_id = u.id
-                       AND up.aktif_mi = 1
-                    """
-                : """
-                    LEFT JOIN users_partner up
-                        ON up.user_id = u.id
-                    """)
-            : string.Empty;
+        var usersPartnerJoinClause = await BuildUsersPartnerJoinClauseAsync(connection, authSchema, cancellationToken);
 
         var partnerSortOrderSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerMainAccountColumn
-            ? "MAX(COALESCE(up.ana_hesap_mi, 0))"
+            ? "MAX(COALESCE(up.[ANA_HESAP_MI], up.ana_hesap_mi, 0))"
             : "0";
 
         var partnerRowIdSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerIdColumn
-            ? "MIN(COALESCE(up.id, 0))"
+            ? "MIN(COALESCE(up.[ID], up.id, 0))"
             : "0";
 
         var partnerHotelOwnershipClause = authSchema.HasHotelOwnershipTable
@@ -2183,15 +2178,15 @@ public class AuthService : IAuthService
                     EXISTS
                     (
                         SELECT 1
-                        FROM otel_kullanici_sahiplikleri oku
-                        WHERE oku.user_id = u.id
-                          AND oku.aktif_mi = 1
+                        FROM [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oku
+                        WHERE oku.[KULLANICI_ID] = u.id
+                          AND oku.[AKTIF_MI] = 1
                     )
                     OR EXISTS
                     (
                         SELECT 1
-                        FROM oteller o
-                        WHERE o.user_id = u.id
+                        FROM [dbo].[OTELLER] o
+                        WHERE o.[KULLANICI_ID] = u.id
                     )
                 )
                 """
@@ -2200,8 +2195,8 @@ public class AuthService : IAuthService
                     EXISTS
                     (
                         SELECT 1
-                        FROM oteller o
-                        WHERE o.user_id = u.id
+                        FROM [dbo].[OTELLER] o
+                        WHERE o.[KULLANICI_ID] = u.id
                     )
                 )
                 """;
@@ -2213,13 +2208,13 @@ public class AuthService : IAuthService
         var managedHotelSelect = authSchema.HasHotelOwnershipTable
             ? """
                 (
-                    SELECT STRING_AGG(CONVERT(varchar(20), hotel_ids.otel_id), ',') WITHIN GROUP (ORDER BY hotel_ids.otel_id)
+                    SELECT STRING_AGG(CONVERT(varchar(20), hotel_ids.[OTEL_ID]), ',') WITHIN GROUP (ORDER BY hotel_ids.[OTEL_ID])
                     FROM
                     (
-                        SELECT DISTINCT oku.otel_id
-                        FROM otel_kullanici_sahiplikleri oku
-                        WHERE oku.user_id = u.id
-                          AND oku.aktif_mi = 1
+                        SELECT DISTINCT oku.[OTEL_ID]
+                        FROM [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oku
+                        WHERE oku.[KULLANICI_ID] = u.id
+                          AND oku.[AKTIF_MI] = 1
                     ) AS hotel_ids
                 )
                 """
@@ -2227,15 +2222,15 @@ public class AuthService : IAuthService
 
         var roleCodesSelect = """
             (
-                SELECT STRING_AGG(role_rows.rol_kodu, ',') WITHIN GROUP (ORDER BY role_rows.rol_kodu)
+                SELECT STRING_AGG(role_rows.[ROL_KODU], ',') WITHIN GROUP (ORDER BY role_rows.[ROL_KODU])
                 FROM
                 (
-                    SELECT DISTINCT r.rol_kodu
-                    FROM kullanici_rolleri kr
-                    INNER JOIN roller r
-                        ON r.id = kr.rol_id
-                    WHERE kr.kullanici_id = u.id
-                      AND (kr.bitis_tarihi IS NULL OR kr.bitis_tarihi > SYSUTCDATETIME())
+                    SELECT DISTINCT r.[ROL_KODU]
+                    FROM [dbo].[KULLANICI_ROLLERI] kr
+                    INNER JOIN [dbo].[ROLLER] r
+                        ON r.id = kr.[ROL_ID]
+                    WHERE kr.[KULLANICI_ID] = u.id
+                      AND (kr.[BITIS_TARIHI] IS NULL OR kr.[BITIS_TARIHI] > SYSUTCDATETIME())
                 ) AS role_rows
             )
             """;
@@ -2243,42 +2238,42 @@ public class AuthService : IAuthService
         var sql = $"""
             SELECT TOP (1)
                 u.id,
-                u.ad_soyad,
-                u.eposta,
-                MAX(COALESCE(CONVERT(int, u.iki_asamali_dogrulama_aktif_mi), 0)) AS two_factor_enabled,
-                MAX(COALESCE(u.iki_asamali_dogrulama_kanali, 'email')) AS two_factor_channel,
-                {partnerIdSelect} AS partner_id,
+                u.[AD_SOYAD],
+                u.[EPOSTA],
+                MAX(COALESCE(CONVERT(int, u.[IKI_ASAMALI_DOGRULAMA_AKTIF_MI]), 0)) AS two_factor_enabled,
+                MAX(COALESCE(u.[IKI_ASAMALI_DOGRULAMA_KANALI], 'email')) AS two_factor_channel,
+                {partnerIdSelect} AS [PARTNER_ID],
                 {roleSelect} AS user_role,
-                {firmaIdSelect} AS firma_id,
+                {firmaIdSelect} AS [FIRMA_ID],
                 {salesTeamSelect} AS sales_team,
-                {ownershipPartnerSelect} AS sahiplik_partner_id,
+                {ownershipPartnerSelect} AS [SAHIPLIK_PARTNER_ID],
                 {managedHotelSelect} AS managed_hotel_ids,
                 {partnerSortOrderSelect} AS ana_hesap_mi_order,
                 {partnerRowIdSelect} AS user_partner_row_id,
                 {roleCodesSelect} AS role_codes
-            FROM users u
+            FROM [dbo].[KULLANICILAR] u
             {usersPartnerJoinClause}
-            WHERE u.hesap_durumu = 1
+            WHERE u.[HESAP_DURUMU] = 1
               AND (
-                    LOWER(COALESCE(u.sifre, '')) = {PasswordHashSql}
-                 OR LOWER(COALESCE(u.sifre, '')) = {LegacySha1HashSql}
-                 OR LOWER(COALESCE(u.sifre, '')) = {LegacyMd5HashSql}
-                 OR COALESCE(u.sifre, '') = @password
+                    LOWER(COALESCE(u.[SIFRE], '')) = {PasswordHashSql}
+                 OR LOWER(COALESCE(u.[SIFRE], '')) = {LegacySha1HashSql}
+                 OR LOWER(COALESCE(u.[SIFRE], '')) = {LegacyMd5HashSql}
+                 OR COALESCE(u.[SIFRE], '') = @password
               )
               AND (
-                    LOWER(u.eposta) = LOWER(@identity)
+                    LOWER(u.[EPOSTA]) = LOWER(@identity)
                  OR (@partnerIdentity IS NOT NULL AND {partnerIdSelect} = @partnerIdentity)
                  OR (
                         @hotelCode IS NOT NULL
                     AND EXISTS
                     (
                         SELECT 1
-                        FROM otel_kullanici_sahiplikleri oku
-                        INNER JOIN oteller o
-                            ON o.id = oku.otel_id
-                        WHERE oku.user_id = u.id
-                          AND oku.aktif_mi = 1
-                          AND UPPER(o.otel_kodu) = @hotelCode
+                        FROM [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oku
+                        INNER JOIN [dbo].[OTELLER] o
+                            ON o.id = oku.[OTEL_ID]
+                        WHERE oku.[KULLANICI_ID] = u.id
+                          AND oku.[AKTIF_MI] = 1
+                          AND UPPER(o.[OTEL_KODU]) = @hotelCode
                     )
                  )
                  OR (
@@ -2286,14 +2281,14 @@ public class AuthService : IAuthService
                     AND EXISTS
                     (
                         SELECT 1
-                        FROM oteller o
-                        WHERE o.user_id = u.id
-                          AND UPPER(o.otel_kodu) = @hotelCode
+                        FROM [dbo].[OTELLER] o
+                        WHERE o.[KULLANICI_ID] = u.id
+                          AND UPPER(o.[OTEL_KODU]) = @hotelCode
                     )
                  )
               )
               AND {partnerRequirementClause}
-            GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}, {roleSelect}, {firmaIdSelect}, {salesTeamSelect}, {ownershipPartnerSelect}
+            GROUP BY u.id, u.[AD_SOYAD], u.[EPOSTA], {partnerIdSelect}, {roleSelect}, {firmaIdSelect}, {salesTeamSelect}, {ownershipPartnerSelect}
             ORDER BY ana_hesap_mi_order DESC, user_partner_row_id ASC
             """;
 
@@ -2454,37 +2449,26 @@ public class AuthService : IAuthService
                 : "up.partner_id")
             : (authSchema.HasOwnershipPartnerColumn ? "u.sahiplik_partner_id" : "NULL");
 
-        var usersPartnerJoinClause = authSchema.HasUsersPartnerTable
-            ? (authSchema.HasUsersPartnerActiveColumn
-                ? """
-                    LEFT JOIN users_partner up
-                        ON up.user_id = u.id
-                       AND up.aktif_mi = 1
-                    """
-                : """
-                    LEFT JOIN users_partner up
-                        ON up.user_id = u.id
-                    """)
-            : string.Empty;
+        var usersPartnerJoinClause = await BuildUsersPartnerJoinClauseAsync(connection, authSchema, cancellationToken);
 
         var partnerSortOrderSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerMainAccountColumn
-            ? "MAX(COALESCE(up.ana_hesap_mi, 0))"
+            ? "MAX(COALESCE(up.[ANA_HESAP_MI], up.ana_hesap_mi, 0))"
             : "0";
 
         var partnerRowIdSelect = authSchema.HasUsersPartnerTable && authSchema.HasUsersPartnerIdColumn
-            ? "MIN(COALESCE(up.id, 0))"
+            ? "MIN(COALESCE(up.[ID], up.id, 0))"
             : "0";
 
         var managedHotelSelect = authSchema.HasHotelOwnershipTable
             ? """
                 (
-                    SELECT STRING_AGG(CONVERT(varchar(20), hotel_ids.otel_id), ',') WITHIN GROUP (ORDER BY hotel_ids.otel_id)
+                    SELECT STRING_AGG(CONVERT(varchar(20), hotel_ids.[OTEL_ID]), ',') WITHIN GROUP (ORDER BY hotel_ids.[OTEL_ID])
                     FROM
                     (
-                        SELECT DISTINCT oku.otel_id
-                        FROM otel_kullanici_sahiplikleri oku
-                        WHERE oku.user_id = u.id
-                          AND oku.aktif_mi = 1
+                        SELECT DISTINCT oku.[OTEL_ID]
+                        FROM [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oku
+                        WHERE oku.[KULLANICI_ID] = u.id
+                          AND oku.[AKTIF_MI] = 1
                     ) AS hotel_ids
                 )
                 """
@@ -2492,15 +2476,15 @@ public class AuthService : IAuthService
 
         var roleCodesSelect = """
             (
-                SELECT STRING_AGG(role_rows.rol_kodu, ',') WITHIN GROUP (ORDER BY role_rows.rol_kodu)
+                SELECT STRING_AGG(role_rows.[ROL_KODU], ',') WITHIN GROUP (ORDER BY role_rows.[ROL_KODU])
                 FROM
                 (
-                    SELECT DISTINCT r.rol_kodu
-                    FROM kullanici_rolleri kr
-                    INNER JOIN roller r
-                        ON r.id = kr.rol_id
-                    WHERE kr.kullanici_id = u.id
-                      AND (kr.bitis_tarihi IS NULL OR kr.bitis_tarihi > SYSUTCDATETIME())
+                    SELECT DISTINCT r.[ROL_KODU]
+                    FROM [dbo].[KULLANICI_ROLLERI] kr
+                    INNER JOIN [dbo].[ROLLER] r
+                        ON r.id = kr.[ROL_ID]
+                    WHERE kr.[KULLANICI_ID] = u.id
+                      AND (kr.[BITIS_TARIHI] IS NULL OR kr.[BITIS_TARIHI] > SYSUTCDATETIME())
                 ) AS role_rows
             )
             """;
@@ -2508,23 +2492,23 @@ public class AuthService : IAuthService
         var sql = $"""
             SELECT TOP (1)
                 u.id,
-                u.ad_soyad,
-                u.eposta,
-                MAX(COALESCE(CONVERT(int, u.iki_asamali_dogrulama_aktif_mi), 0)) AS two_factor_enabled,
-                MAX(COALESCE(u.iki_asamali_dogrulama_kanali, 'email')) AS two_factor_channel,
-                {partnerIdSelect} AS partner_id,
+                u.[AD_SOYAD],
+                u.[EPOSTA],
+                MAX(COALESCE(CONVERT(int, u.[IKI_ASAMALI_DOGRULAMA_AKTIF_MI]), 0)) AS two_factor_enabled,
+                MAX(COALESCE(u.[IKI_ASAMALI_DOGRULAMA_KANALI], 'email')) AS two_factor_channel,
+                {partnerIdSelect} AS [PARTNER_ID],
                 {roleSelect} AS user_role,
-                {firmaIdSelect} AS firma_id,
+                {firmaIdSelect} AS [FIRMA_ID],
                 {salesTeamSelect} AS sales_team,
-                {ownershipPartnerSelect} AS sahiplik_partner_id,
+                {ownershipPartnerSelect} AS [SAHIPLIK_PARTNER_ID],
                 {managedHotelSelect} AS managed_hotel_ids,
                 {partnerSortOrderSelect} AS ana_hesap_mi_order,
                 {partnerRowIdSelect} AS user_partner_row_id,
                 {roleCodesSelect} AS role_codes
-            FROM users u
+            FROM [dbo].[KULLANICILAR] u
             {usersPartnerJoinClause}
             WHERE u.id = @userId
-            GROUP BY u.id, u.ad_soyad, u.eposta, {partnerIdSelect}, {roleSelect}, {firmaIdSelect}, {salesTeamSelect}, {ownershipPartnerSelect}
+            GROUP BY u.id, u.[AD_SOYAD], u.[EPOSTA], {partnerIdSelect}, {roleSelect}, {firmaIdSelect}, {salesTeamSelect}, {ownershipPartnerSelect}
             ORDER BY ana_hesap_mi_order DESC, user_partner_row_id ASC
             """;
 
@@ -2588,26 +2572,8 @@ public class AuthService : IAuthService
         };
     }
 
-    private static async Task<HashSet<string>> GetUsersTableColumnsAsync(SqlConnection connection, CancellationToken cancellationToken)
-    {
-        const string sql = """
-            SELECT COLUMN_NAME
-            FROM information_schema.COLUMNS
-            WHERE TABLE_SCHEMA = 'dbo'
-              AND TABLE_NAME = 'users';
-            """;
-
-        var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        await using var command = new SqlCommand(sql, connection);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
-        {
-            columns.Add(reader.GetString(0));
-        }
-
-        return columns;
-    }
+    private static Task<HashSet<string>> GetUsersTableColumnsAsync(SqlConnection connection, CancellationToken cancellationToken)
+        => Data.SchemaTableNames.GetColumnsAsync(connection, "users", cancellationToken);
 
     private static async Task<HashSet<string>> GetColumnsAsync(SqlConnection connection, string tableName, CancellationToken cancellationToken)
     {
@@ -2631,26 +2597,51 @@ public class AuthService : IAuthService
         return columns;
     }
 
+    private static async Task<string> BuildUsersPartnerJoinClauseAsync(
+        SqlConnection connection,
+        AuthSchemaInfo authSchema,
+        CancellationToken cancellationToken)
+    {
+        if (!authSchema.HasUsersPartnerTable)
+        {
+            return string.Empty;
+        }
+
+        var table = await Data.SchemaTableNames.ResolveExistingTableAsync(connection, "users_partner", cancellationToken)
+            ?? "KULLANICI_PARTNERLERI";
+
+        return authSchema.HasUsersPartnerActiveColumn
+            ? $"""
+                LEFT JOIN [dbo].[{table}] up
+                    ON up.[KULLANICI_ID] = u.[ID]
+                   AND up.[AKTIF_MI] = 1
+                """
+            : $"""
+                LEFT JOIN [dbo].[{table}] up
+                    ON up.[KULLANICI_ID] = u.[ID]
+                """;
+    }
+
     private static async Task<AuthSchemaInfo> GetAuthSchemaAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = """
             SELECT
-                SUM(CASE WHEN c.TABLE_NAME = 'users' AND c.COLUMN_NAME = 'rol' THEN 1 ELSE 0 END) AS has_user_role_column,
-                SUM(CASE WHEN c.TABLE_NAME = 'users' AND c.COLUMN_NAME = 'sahiplik_partner_id' THEN 1 ELSE 0 END) AS has_ownership_partner_column,
-                SUM(CASE WHEN c.TABLE_NAME = 'users' AND c.COLUMN_NAME = 'firma_id' THEN 1 ELSE 0 END) AS has_firma_id_column,
-                SUM(CASE WHEN c.TABLE_NAME = 'users' AND c.COLUMN_NAME = 'satis_ekibi' THEN 1 ELSE 0 END) AS has_sales_team_column,
-                MAX(CASE WHEN t.TABLE_NAME = 'otel_kullanici_sahiplikleri' THEN 1 ELSE 0 END) AS has_hotel_ownership_table,
-                MAX(CASE WHEN t.TABLE_NAME = 'users_partner' THEN 1 ELSE 0 END) AS has_users_partner_table,
-                SUM(CASE WHEN c.TABLE_NAME = 'users_partner' AND c.COLUMN_NAME = 'partner_id' THEN 1 ELSE 0 END) AS has_users_partner_partner_id_column,
-                SUM(CASE WHEN c.TABLE_NAME = 'users_partner' AND c.COLUMN_NAME = 'aktif_mi' THEN 1 ELSE 0 END) AS has_users_partner_active_column,
-                SUM(CASE WHEN c.TABLE_NAME = 'users_partner' AND c.COLUMN_NAME = 'ana_hesap_mi' THEN 1 ELSE 0 END) AS has_users_partner_main_account_column,
-                SUM(CASE WHEN c.TABLE_NAME = 'users_partner' AND c.COLUMN_NAME = 'id' THEN 1 ELSE 0 END) AS has_users_partner_id_column
+                SUM(CASE WHEN c.TABLE_NAME IN ('KULLANICILAR', 'users') AND c.COLUMN_NAME IN ('rol', 'ROL') THEN 1 ELSE 0 END) AS has_user_role_column,
+                SUM(CASE WHEN c.TABLE_NAME IN ('KULLANICILAR', 'users') AND c.COLUMN_NAME IN ('sahiplik_partner_id', 'SAHIPLIK_PARTNER_ID') THEN 1 ELSE 0 END) AS has_ownership_partner_column,
+                SUM(CASE WHEN c.TABLE_NAME IN ('KULLANICILAR', 'users') AND c.COLUMN_NAME IN ('firma_id', 'FIRMA_ID') THEN 1 ELSE 0 END) AS has_firma_id_column,
+                SUM(CASE WHEN c.TABLE_NAME IN ('KULLANICILAR', 'users') AND c.COLUMN_NAME IN ('satis_ekibi', 'SATIS_EKIBI') THEN 1 ELSE 0 END) AS has_sales_team_column,
+                MAX(CASE WHEN t.TABLE_NAME IN ('OTEL_KULLANICI_SAHIPLIKLERI', 'otel_kullanici_sahiplikleri') THEN 1 ELSE 0 END) AS has_hotel_ownership_table,
+                MAX(CASE WHEN t.TABLE_NAME IN ('KULLANICI_PARTNERLERI', 'users_partner') THEN 1 ELSE 0 END) AS has_users_partner_table,
+                SUM(CASE WHEN c.TABLE_NAME IN ('KULLANICI_PARTNERLERI', 'users_partner') AND c.COLUMN_NAME IN ('partner_id', 'PARTNER_ID') THEN 1 ELSE 0 END) AS has_users_partner_partner_id_column,
+                SUM(CASE WHEN c.TABLE_NAME IN ('KULLANICI_PARTNERLERI', 'users_partner') AND c.COLUMN_NAME IN ('aktif_mi', 'AKTIF_MI') THEN 1 ELSE 0 END) AS has_users_partner_active_column,
+                SUM(CASE WHEN c.TABLE_NAME IN ('KULLANICI_PARTNERLERI', 'users_partner') AND c.COLUMN_NAME IN ('ana_hesap_mi', 'ANA_HESAP_MI') THEN 1 ELSE 0 END) AS has_users_partner_main_account_column,
+                SUM(CASE WHEN c.TABLE_NAME IN ('KULLANICI_PARTNERLERI', 'users_partner') AND c.COLUMN_NAME IN ('id', 'ID') THEN 1 ELSE 0 END) AS has_users_partner_id_column
             FROM information_schema.TABLES t
             LEFT JOIN information_schema.COLUMNS c
                 ON c.TABLE_SCHEMA = t.TABLE_SCHEMA
                AND c.TABLE_NAME = t.TABLE_NAME
             WHERE t.TABLE_SCHEMA = 'dbo'
-              AND t.TABLE_NAME IN ('users', 'otel_kullanici_sahiplikleri', 'users_partner');
+              AND t.TABLE_NAME IN ('KULLANICILAR', 'users', 'OTEL_KULLANICI_SAHIPLIKLERI', 'otel_kullanici_sahiplikleri', 'KULLANICI_PARTNERLERI', 'users_partner');
             """;
 
         await using var command = new SqlCommand(sql, connection);
@@ -2765,14 +2756,14 @@ public class AuthService : IAuthService
     private static async Task<(int Id, string Name)?> ResolveHotelTypeAsync(SqlConnection connection, int? hotelTypeId, string? hotelTypeCode, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT TOP (1) id, tip_adi
-            FROM dbo.otel_tipleri
-            WHERE aktif_mi = 1
+            SELECT TOP (1) id, [TIP_ADI]
+            FROM [dbo].[OTEL_TIPLERI]
+            WHERE [AKTIF_MI] = 1
               AND (
                   (@hotelTypeCode IS NOT NULL AND kod = @hotelTypeCode)
-                  OR (@hotelTypeCode IS NULL AND id = COALESCE(@hotelTypeId, (SELECT TOP (1) id FROM dbo.otel_tipleri WHERE kod = N'otel')))
+                  OR (@hotelTypeCode IS NULL AND id = COALESCE(@hotelTypeId, (SELECT TOP (1) id FROM [dbo].[OTEL_TIPLERI] WHERE kod = N'otel')))
               )
-            ORDER BY siralama;";
+            ORDER BY [SIRALAMA];";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelTypeId", hotelTypeId.HasValue ? hotelTypeId.Value : DBNull.Value);
@@ -2818,14 +2809,14 @@ public class AuthService : IAuthService
 
         const string sql = """
             SELECT COUNT(*)
-            FROM users u
-            INNER JOIN firmalar f
-                ON f.id = u.firma_id
+            FROM [dbo].[KULLANICILAR] u
+            INNER JOIN [dbo].[FIRMALAR] f
+                ON f.id = u.[FIRMA_ID]
             WHERE u.id = @userId
-              AND u.hesap_durumu = 1
-              AND f.aktif_mi = 1
-              AND UPPER(COALESCE(CONVERT(nvarchar(100), f.onay_durumu), N'')) COLLATE Turkish_CI_AI LIKE N'ONAY%'
-              AND COALESCE(f.giris_izni_aktif_mi, 0) = 1;
+              AND u.[HESAP_DURUMU] = 1
+              AND f.[AKTIF_MI] = 1
+              AND UPPER(COALESCE(CONVERT(nvarchar(100), f.[ONAY_DURUMU]), N'')) COLLATE Turkish_CI_AI LIKE N'ONAY%'
+              AND COALESCE(f.[GIRIS_IZNI_AKTIF_MI], 0) = 1;
             """;
 
         await using var command = new SqlCommand(sql, connection);
@@ -2853,11 +2844,11 @@ public class AuthService : IAuthService
 
         var sql = $"""
             SELECT COUNT(*)
-            FROM users u
-            INNER JOIN partner_detaylari p
-                ON p.kullanici_id = u.id
+            FROM [dbo].[KULLANICILAR] u
+            INNER JOIN [dbo].[PARTNER_DETAYLARI] p
+                ON p.[KULLANICI_ID] = u.id
             WHERE u.id = @userId
-              AND u.hesap_durumu = 1
+              AND u.[HESAP_DURUMU] = 1
               AND {activeClause}
               AND {emailApprovalClause};
             """;
@@ -2882,18 +2873,7 @@ public class AuthService : IAuthService
                 : "up.partner_id")
             : (authSchema.HasOwnershipPartnerColumn ? "u.sahiplik_partner_id" : "NULL");
 
-        var usersPartnerJoinClause = authSchema.HasUsersPartnerTable
-            ? (authSchema.HasUsersPartnerActiveColumn
-                ? """
-                    LEFT JOIN users_partner up
-                        ON up.user_id = u.id
-                       AND up.aktif_mi = 1
-                    """
-                : """
-                    LEFT JOIN users_partner up
-                        ON up.user_id = u.id
-                    """)
-            : string.Empty;
+        var usersPartnerJoinClause = await BuildUsersPartnerJoinClauseAsync(connection, authSchema, cancellationToken);
 
         var partnerHotelOwnershipClause = authSchema.HasHotelOwnershipTable
             ? """
@@ -2901,15 +2881,15 @@ public class AuthService : IAuthService
                     EXISTS
                     (
                         SELECT 1
-                        FROM otel_kullanici_sahiplikleri oku
-                        WHERE oku.user_id = u.id
-                          AND oku.aktif_mi = 1
+                        FROM [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oku
+                        WHERE oku.[KULLANICI_ID] = u.id
+                          AND oku.[AKTIF_MI] = 1
                     )
                     OR EXISTS
                     (
                         SELECT 1
-                        FROM oteller o
-                        WHERE o.user_id = u.id
+                        FROM [dbo].[OTELLER] o
+                        WHERE o.[KULLANICI_ID] = u.id
                     )
                 )
                 """
@@ -2918,8 +2898,8 @@ public class AuthService : IAuthService
                     EXISTS
                     (
                         SELECT 1
-                        FROM oteller o
-                        WHERE o.user_id = u.id
+                        FROM [dbo].[OTELLER] o
+                        WHERE o.[KULLANICI_ID] = u.id
                     )
                 )
                 """;
@@ -2931,28 +2911,28 @@ public class AuthService : IAuthService
         var sql = $"""
             SELECT TOP (1)
                 u.id,
-                u.eposta,
+                u.[EPOSTA],
                 {roleSelect} AS user_role,
-                u.email_dogrulama_tarihi,
-                u.giris_kilit_bitis_tarihi,
-                {partnerIdSelect} AS partner_id,
-                {ownershipPartnerSelect} AS sahiplik_partner_id
-            FROM users u
+                u.[EPOSTA_DOGRULAMA_TARIHI],
+                u.[GIRIS_KILIT_BITIS_TARIHI],
+                {partnerIdSelect} AS [PARTNER_ID],
+                {ownershipPartnerSelect} AS [SAHIPLIK_PARTNER_ID]
+            FROM [dbo].[KULLANICILAR] u
             {usersPartnerJoinClause}
-            WHERE u.hesap_durumu = 1
+            WHERE u.[HESAP_DURUMU] = 1
               AND (
-                    LOWER(u.eposta) = LOWER(@identity)
+                    LOWER(u.[EPOSTA]) = LOWER(@identity)
                  OR (@partnerIdentity IS NOT NULL AND {partnerIdSelect} = @partnerIdentity)
                  OR (
                         @hotelCode IS NOT NULL
                     AND EXISTS
                     (
                         SELECT 1
-                        FROM otel_kullanici_sahiplikleri oku
-                        INNER JOIN oteller o ON o.id = oku.otel_id
-                        WHERE oku.user_id = u.id
-                          AND oku.aktif_mi = 1
-                          AND UPPER(o.otel_kodu) = @hotelCode
+                        FROM [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oku
+                        INNER JOIN [dbo].[OTELLER] o ON o.id = oku.[OTEL_ID]
+                        WHERE oku.[KULLANICI_ID] = u.id
+                          AND oku.[AKTIF_MI] = 1
+                          AND UPPER(o.[OTEL_KODU]) = @hotelCode
                     )
                  )
                  OR (
@@ -2960,9 +2940,9 @@ public class AuthService : IAuthService
                     AND EXISTS
                     (
                         SELECT 1
-                        FROM oteller o
-                        WHERE o.user_id = u.id
-                          AND UPPER(o.otel_kodu) = @hotelCode
+                        FROM [dbo].[OTELLER] o
+                        WHERE o.[KULLANICI_ID] = u.id
+                          AND UPPER(o.[OTEL_KODU]) = @hotelCode
                     )
                  )
               )
@@ -3002,12 +2982,12 @@ public class AuthService : IAuthService
         await connection.OpenAsync(cancellationToken);
 
         var sql = $"""
-            UPDATE users
-            SET basarisiz_giris_sayisi = COALESCE(basarisiz_giris_sayisi, 0) + 1,
-                son_basarisiz_giris_tarihi = SYSDATETIME(),
-                giris_kilit_bitis_tarihi = CASE
-                    WHEN COALESCE(basarisiz_giris_sayisi, 0) + 1 >= {FailedLoginLockoutThreshold} THEN DATEADD(MINUTE, {FailedLoginLockoutMinutes}, SYSDATETIME())
-                    ELSE giris_kilit_bitis_tarihi
+            UPDATE [dbo].[KULLANICILAR]
+            SET [BASARISIZ_GIRIS_SAYISI] = COALESCE([BASARISIZ_GIRIS_SAYISI], 0) + 1,
+                [SON_BASARISIZ_GIRIS_TARIHI] = SYSDATETIME(),
+                [GIRIS_KILIT_BITIS_TARIHI] = CASE
+                    WHEN COALESCE([BASARISIZ_GIRIS_SAYISI], 0) + 1 >= {FailedLoginLockoutThreshold} THEN DATEADD(MINUTE, {FailedLoginLockoutMinutes}, SYSDATETIME())
+                    ELSE [GIRIS_KILIT_BITIS_TARIHI]
                 END
             WHERE id = @userId;
             """;
@@ -3018,7 +2998,7 @@ public class AuthService : IAuthService
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
-        await using var readCommand = new SqlCommand("SELECT TOP (1) giris_kilit_bitis_tarihi FROM users WHERE id = @userId;", connection);
+        await using var readCommand = new SqlCommand("SELECT TOP (1) [GIRIS_KILIT_BITIS_TARIHI] FROM [dbo].[KULLANICILAR] WHERE id = @userId;", connection);
         readCommand.Parameters.AddWithValue("@userId", userId);
         var result = await readCommand.ExecuteScalarAsync(cancellationToken);
         return result is DBNull or null ? null : Convert.ToDateTime(result, CultureInfo.InvariantCulture);
@@ -3033,11 +3013,11 @@ public class AuthService : IAuthService
         await connection.OpenAsync(cancellationToken);
 
         await using var command = new SqlCommand("""
-            UPDATE users
-            SET basarisiz_giris_sayisi = 0,
-                son_basarisiz_giris_tarihi = NULL,
-                giris_kilit_bitis_tarihi = NULL,
-                son_giris_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICILAR]
+            SET [BASARISIZ_GIRIS_SAYISI] = 0,
+                [SON_BASARISIZ_GIRIS_TARIHI] = NULL,
+                [GIRIS_KILIT_BITIS_TARIHI] = NULL,
+                [SON_GIRIS_TARIHI] = SYSUTCDATETIME()
             WHERE id = @userId;
             """, connection);
         command.Parameters.AddWithValue("@userId", userId);
@@ -3050,13 +3030,13 @@ public class AuthService : IAuthService
         await connection.OpenAsync(cancellationToken);
 
         const string sql = """
-            UPDATE users
-            SET sifre = LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2)),
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICILAR]
+            SET [SIFRE] = LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2)),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @userId
               AND (
-                    sifre IS NULL
-                 OR LOWER(sifre) <> LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2))
+                    [SIFRE] IS NULL
+                 OR LOWER([SIFRE]) <> LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', CONVERT(nvarchar(max), @password)), 2))
               );
             """;
 
@@ -3071,7 +3051,7 @@ public class AuthService : IAuthService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        await using var command = new SqlCommand("SELECT TOP (1) email_dogrulama_tarihi FROM users WHERE id = @userId;", connection);
+        await using var command = new SqlCommand("SELECT TOP (1) [EPOSTA_DOGRULAMA_TARIHI] FROM [dbo].[KULLANICILAR] WHERE id = @userId;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return result is not null && result is not DBNull;
@@ -3093,7 +3073,7 @@ public class AuthService : IAuthService
 
         await using (var insertCommand = new SqlCommand("""
             INSERT INTO email_dogrulama_tokenlari
-            (kullanici_id, eposta, token, dogrulama_kodu, kullanildi_mi, deneme_sayisi, maksimum_deneme, ip_adresi, user_agent, gecerlilik_suresi, olusturulma_tarihi)
+            ([KULLANICI_ID], [EPOSTA], [TOKEN], [DOGRULAMA_KODU], [KULLANILDI_MI], [DENEME_SAYISI], [MAKSIMUM_DENEME], [IP_ADRESI], [KULLANICI_ARACISI], [GECERLILIK_SURESI], [OLUSTURULMA_TARIHI])
             VALUES
             (@userId, @email, @token, @code, 0, 0, 5, @ipAddress, @userAgent, DATEADD(HOUR, 24, SYSUTCDATETIME()), SYSUTCDATETIME());
             """, connection, transaction))
@@ -3108,8 +3088,8 @@ public class AuthService : IAuthService
         }
 
         await using (var updateUserCommand = new SqlCommand("""
-            UPDATE users
-            SET email_dogrulama_son_gonderim_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[KULLANICILAR]
+            SET [EPOSTA_DOGRULAMA_SON_GONDERIM_TARIHI] = SYSUTCDATETIME()
             WHERE id = @userId;
             """, connection, transaction))
         {
@@ -3125,7 +3105,7 @@ public class AuthService : IAuthService
                 UserId = userId,
                 RecipientEmail = email,
                 TemplateCode = "email_verify",
-                RelatedTable = "users",
+                RelatedTable = "KULLANICILAR",
                 RelatedRecordId = userId,
                 Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -3143,8 +3123,8 @@ public class AuthService : IAuthService
     {
         await using var command = new SqlCommand("""
             UPDATE email_dogrulama_tokenlari
-            SET kullanildi_mi = 1,
-                kullanilma_tarihi = SYSUTCDATETIME()
+            SET [KULLANILDI_MI] = 1,
+                [KULLANILMA_TARIHI] = SYSUTCDATETIME()
             WHERE id = @tokenId;
             """, connection, (SqlTransaction)transaction);
         command.Parameters.AddWithValue("@tokenId", tokenId);
@@ -3155,7 +3135,7 @@ public class AuthService : IAuthService
     {
         await using var command = new SqlCommand("""
             UPDATE email_dogrulama_tokenlari
-            SET deneme_sayisi = COALESCE(deneme_sayisi, 0) + 1
+            SET [DENEME_SAYISI] = COALESCE([DENEME_SAYISI], 0) + 1
             WHERE id = @tokenId;
             """, connection, (SqlTransaction)transaction);
         command.Parameters.AddWithValue("@tokenId", tokenId);
@@ -3200,7 +3180,7 @@ public class AuthService : IAuthService
     {
         const string sql = """
             SELECT COALESCE(MAX(id), 0) + 1
-            FROM firmalar;
+            FROM [dbo].[FIRMALAR];
             """;
 
         await using var command = transaction is null
@@ -3218,8 +3198,8 @@ public class AuthService : IAuthService
 
         const string existsSql = """
             SELECT COUNT(*)
-            FROM oteller
-            WHERE UPPER(otel_kodu) = @hotelCode;
+            FROM [dbo].[OTELLER]
+            WHERE UPPER([OTEL_KODU]) = @hotelCode;
             """;
 
         for (var attempt = 0; attempt < 32; attempt++)

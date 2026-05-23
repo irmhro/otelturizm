@@ -1,0 +1,162 @@
+@media (max-width: 1100px) {
+  .reviews-filter-form {
+    grid-template-columns: 1fr;
+  }
+
+  .reviews-filter-actions {
+    justify-content: stretch;
+  }
+
+  .reviews-filter-actions .btn {
+    flex: 1 1 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .reviews-page-hero {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .reviews-page-hero .page-title {
+    font-size: 24px;
+  }
+
+  .reviews-page-hero-actions {
+    justify-content: stretch;
+  }
+
+  .reviews-page-hero-actions .btn {
+    flex: 1 1 160px;
+  }
+
+  .reviews-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reviews-filter-card .card-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .reviews-status-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reviews-tab {
+    justify-content: center;
+  }
+
+  .review-row-card {
+    grid-template-columns: 96px minmax(0, 1fr);
+    padding: 12px;
+  }
+
+  .review-row-media {
+    width: 96px;
+  }
+
+  .review-row-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .review-row-status {
+    align-self: flex-start;
+  }
+
+  .review-row-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .review-row-actions .btn,
+  .review-row-actions .review-edit-summary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .review-delete-inline .btn {
+    width: 100%;
+  }
+
+  .reviews-pager {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reviews-pager .btn-list,
+  .reviews-pager .btn {
+    width: 100%;
+  }
+
+  .reviews-pager .btn {
+    flex: 1 1 0;
+  }
+
+  .reservation-review-hero,
+  .review-form-grid,
+  .user-review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .review-form-head,
+  .user-review-actions {
+    flex-direction: column;
+  }
+
+  .reservation-review-meta {
+    min-width: 0;
+  }
+
+  .reservation-review-hero {
+    padding: 14px;
+  }
+
+  .reservation-review-hero h1 {
+    font-size: 21px;
+  }
+
+  .reservation-review-meta span {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .star-rating {
+    flex-wrap: wrap;
+  }
+
+  .star-option span {
+    width: 36px;
+    height: 36px;
+  }
+
+  .star-rating-value {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .reviews-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reviews-status-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .review-row-card {
+    grid-template-columns: 1fr;
+  }
+
+  .review-row-media {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+}

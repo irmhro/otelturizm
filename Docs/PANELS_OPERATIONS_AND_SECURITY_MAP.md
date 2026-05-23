@@ -39,6 +39,10 @@ Global: **CSRF** (`AutoValidateAntiforgeryToken`), panel formlarında antiforger
 - Firma panelinde rezervasyon oluşturma/listeler `FirmaService` ile ayrı akışta; partner tarafı firma **rezervasyonlarının görünürlüğü** ve **filtre zenginliği** bu iş paketinde güçlendirildi.
 - İleride: Partner firma satırından detay sayfasına (`rezervasyonlar` odaklı) derin bağlantı istenirse tek rezervasyon route’u ile bağlanabilir.
 
+## Loglama (PII)
+
+- Ayrıntı: [PII_LOGGING_H8_NOTE.md](PII_LOGGING_H8_NOTE.md) — upload audit, e-posta hata logları ve rezervasyon denetim logları.
+
 ## Bakım
 
 - Yeni panel API’si: POST’ta antiforgery veya açıkça sınırlandırılmış JSON + rate limit politikası.

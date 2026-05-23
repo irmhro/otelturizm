@@ -1,0 +1,54 @@
+/* MOBIL_TEK_EKRAN — shared viewport, touch targets, sticky CTA (Wave-III) */
+:root {
+    --mob-touch-min: 44px;
+    --mob-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --mob-sticky-cta-height: calc(var(--mob-touch-min) + 20px + var(--mob-safe-bottom));
+    --mob-sticky-cta-offset: max(12px, var(--mob-safe-bottom));
+    --mob-viewport-h: 100dvh;
+    --mob-content-pad-bottom: calc(var(--mob-sticky-cta-height) + 8px);
+}
+
+@media (max-width: 900px) {
+    button,
+    [role="button"],
+    a.btn,
+    .btn,
+    input[type="submit"],
+    input[type="button"],
+    .dock-btn,
+    .quick-filter-btn {
+        min-height: var(--mob-touch-min);
+        min-width: var(--mob-touch-min);
+    }
+
+    .mob-full-bleed {
+        width: 100vw;
+        max-width: 100vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+    }
+
+    .mob-sticky-cta {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1740;
+        padding: 10px 12px var(--mob-sticky-cta-offset);
+        min-height: var(--mob-sticky-cta-height);
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-top: 1px solid rgba(203, 213, 225, 0.55);
+    }
+
+    body.mob-has-sticky-cta {
+        padding-bottom: var(--mob-content-pad-bottom);
+    }
+
+    body.mob-modal-open {
+        overflow: hidden;
+        touch-action: none;
+    }
+}

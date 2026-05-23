@@ -1,0 +1,5 @@
+@import url("./account-info.css");
+
+.partner-dl-grid {
+    grid-template-columns: 1fr;
+}

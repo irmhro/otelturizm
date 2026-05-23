@@ -1,5 +1,6 @@
 @using System.Security.Claims
 @using otelturizmnew.Constants
+@using otelturizmnew.Services
 @inject otelturizmnew.Services.Abstractions.IPublicTextService T
 @{
     var homeAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
@@ -26,8 +27,9 @@
     };
     var currentCulture = System.Globalization.CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
     var currentLang = (System.Globalization.CultureInfo.CurrentUICulture?.TwoLetterISOLanguageName ?? "tr").ToLowerInvariant();
-    var currentFlag = currentLang switch { "en" => "gb", "fr" => "fr", "de" => "de", "es" => "es", _ => "tr" };
+    var currentFlag = currentLang switch { "en" => "gb", "fr" => "fr", "de" => "de", "es" => "es", "ru" => "ru", "ar" => "sa", _ => "tr" };
     var currentCurrency = (Context.Request.Cookies["ot_currency"] ?? "TRY").Trim().ToUpperInvariant();
+    var hotelsListingPath = InternationalSeoPaths.BuildPublicPath(currentLang, InternationalSeoPaths.PageKindListing, null, null);
 }
 
 <header class="site-header" id="mainHeader">
@@ -46,27 +48,14 @@
                 <span><i class="fas fa-tag"></i> @T.Get("best_price")</span>
             </div>
             <div class="utility-right">
-                <div class="dropdown language-dropdown" id="languageDropdown">
-                    <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
-                        <span class="toggle-flag flag-icon flag-icon-@currentFlag" aria-hidden="true"></span>
-                        <span class="dropdown-label">@currentLang.ToUpperInvariant()</span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu">
-                        <li class="dropdown-item" data-value="tr"><button type="button"><span class="flag-icon flag-icon-tr"></span> Türkçe</button></li>
-                        <li class="dropdown-item" data-value="en"><button type="button"><span class="flag-icon flag-icon-gb"></span> English</button></li>
-                        <li class="dropdown-item" data-value="fr"><button type="button"><span class="flag-icon flag-icon-fr"></span> Français</button></li>
-                        <li class="dropdown-item" data-value="de"><button type="button"><span class="flag-icon flag-icon-de"></span> Deutsch</button></li>
-                        <li class="dropdown-item" data-value="es"><button type="button"><span class="flag-icon flag-icon-es"></span> Español</button></li>
-                    </ul>
-                </div>
-
+                <partial name="~/Views/Shared/_LanguageSwitcher.cshtml" />
             </div>
         </div>
     </div>
 
     <div class="header-container">
         <div class="logo-area">
-            <a asp-controller="Home" asp-action="Index" class="logo logo-image-only" aria-label="Otelturizm Anasayfa">
+            <a asp-controller="Home" asp-action="Index" class="logo logo-image-only" aria-label="Otelturizm @SharedLocalizer["Nav.Home"]">
                 <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="brand-logo-image" />
                 <span class="brand-beta" aria-label="Beta">beta</span>
             </a>
@@ -76,11 +65,11 @@
         </div>
 
         <div class="search-wrapper">
-            <form class="search-container public-header-search-form" method="get" action="/oteller" autocomplete="off">
-                <input type="text" class="search-input" id="publicHeaderSearchInput" name="q" placeholder="@T.Get("search_placeholder")">
+            <form class="search-container public-header-search-form" method="get" action="@hotelsListingPath" autocomplete="off">
+                <input type="text" class="search-input" id="publicHeaderSearchInput" name="q" placeholder="@SharedLocalizer["Search.Placeholder"]" aria-label="@SharedLocalizer["Search.AriaLabel"]">
                 <input type="hidden" id="publicHeaderSelectedType" value="" />
                 <input type="hidden" id="publicHeaderSelectedSlug" value="" />
-                <button type="submit" class="search-btn header-search-btn" aria-label="Ara">
+                <button type="submit" class="search-btn header-search-btn" aria-label="@SharedLocalizer["Btn.Search"]">
                     <i class="fas fa-search"></i>
                 </button>
                 <div class="header-search-suggestions" id="publicHeaderSearchSuggestions" hidden></div>
@@ -90,18 +79,18 @@
         <div class="header-actions">
             @if (homeAuthenticated && headerContext == "corporate")
             {
-                <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+                <a asp-controller="Oteller" asp-action="Index" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
                 <a href="/firma" class="action-btn primary">Firma</a>
             }
             else if (homeAuthenticated && headerContext == "firma")
             {
-                <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+                <a asp-controller="Oteller" asp-action="Index" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
                 <a href="/firma" class="action-btn primary">Firma</a>
             }
             else if (homeAuthenticated)
             {
-                <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
-                <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">Kurumsal</a>
+                <a asp-controller="Oteller" asp-action="Index" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
+                <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">@SharedLocalizer["Nav.Corporate"]</a>
             }
             <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
             <button class="action-btn mobile-nav-toggle" id="mobileMenuToggle" type="button"><i class="fas fa-bars"></i></button>
@@ -113,30 +102,30 @@
         <div class="home-header-quick-links" aria-label="Öne çıkan bağlantılar">
             <div class="quick-links-container">
             <div class="quick-links-pills" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
-                <button type="button" class="quick-link-pill hot-pill">
+                <a href="@(hotelsListingPath)?etiket=ay-sonu-ozel" class="quick-link-pill hot-pill">
                     <i class="fas fa-bolt"></i>
                     <span class="rose-gradient-text">Ay Sonu Özel</span>
-                </button>
-                <button type="button" class="quick-link-pill">
+                </a>
+                <a href="@(hotelsListingPath)?etiket=flash-indirim" class="quick-link-pill">
                     <i class="fas fa-tag"></i>
                     <span>Flash İndirim</span>
-                </button>
-                <button type="button" class="quick-link-pill">
+                </a>
+                <a href="@(hotelsListingPath)?etiket=hafta-sonu-firsatlari" class="quick-link-pill">
                     <i class="fas fa-calendar-week"></i>
                     <span>Hafta Sonu Fırsatları</span>
-                </button>
-                <button type="button" class="quick-link-pill">
+                </a>
+                <a href="@(hotelsListingPath)?etiket=erken-rezervasyon" class="quick-link-pill">
                     <i class="fas fa-clock"></i>
                     <span>Erken Rezervasyon</span>
-                </button>
-                <button type="button" class="quick-link-pill">
+                </a>
+                <a href="@(hotelsListingPath)?etiket=akilli-fiyat" class="quick-link-pill">
                     <i class="fas fa-wand-magic-sparkles"></i>
                     <span>Akıllı Fiyat</span>
-                </button>
-                <button type="button" class="quick-link-pill subtle-pill">
+                </a>
+                <a href="mailto:destek@otelturizm.com" class="quick-link-pill subtle-pill">
                     <i class="fas fa-headset"></i>
-                    <span>Rezervasyon Desteği</span>
-                </button>
+                    <span>@SharedLocalizer["Nav.Help"]</span>
+                </a>
             </div>
         </div>
         </div>
@@ -646,7 +635,7 @@
         <div class="drawer-user drawer-user-centered">
             <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="drawer-brand-logo drawer-brand-logo-plain" />
         </div>
-        <button class="drawer-close" id="drawerClose" type="button"><i class="fas fa-times"></i></button>
+        <button class="drawer-close" id="drawerClose" type="button" aria-label="@SharedLocalizer["Btn.Close"]"><i class="fas fa-times"></i></button>
     </div>
     <div class="drawer-nav">
         <div class="drawer-auth-row">
@@ -655,49 +644,49 @@
                 <a href="@homePanelUrl" class="drawer-action primary"><i class="fas fa-grid-2"></i> @homePanelLabel</a>
                 <form method="post" action="/cikis-yap" class="drawer-logout-form">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="drawer-action outline"><i class="fas fa-right-from-bracket"></i> Çıkış</button>
+                    <button type="submit" class="drawer-action outline"><i class="fas fa-right-from-bracket"></i> @SharedLocalizer["Btn.Cancel"]</button>
                 </form>
             }
             else
             {
-                <a href="/kullanici-giris" class="drawer-action primary"><i class="fas fa-right-to-bracket"></i> Giriş Yap</a>
-                <a href="/kullanici-giris?sekme=kayit" class="drawer-action outline"><i class="fas fa-user-plus"></i> Kayıt Ol</a>
+                <a href="/kullanici-giris" class="drawer-action primary"><i class="fas fa-right-to-bracket"></i> @SharedLocalizer["Nav.Login"]</a>
+                <a href="/kullanici-giris?sekme=kayit" class="drawer-action outline"><i class="fas fa-user-plus"></i> @SharedLocalizer["Nav.Register"]</a>
             }
         </div>
 
         <div class="drawer-quick-features">
-            <a href="/oteller" class="feature-tile">
+            <a href="@hotelsListingPath" class="feature-tile">
                 <i class="fas fa-hotel"></i>
-                <span>Oteller</span>
+                <span>@SharedLocalizer["Nav.Hotels"]</span>
             </a>
-            <a href="/oteller/istanbul?filter=campaign" class="feature-tile">
+            <a href="@(hotelsListingPath)?etiket=kampanyaya-dahil-oteller" class="feature-tile">
                 <i class="fas fa-badge-percent"></i>
-                <span>Kampanyalar</span>
+                <span>@SharedLocalizer["Nav.Campaigns"]</span>
             </a>
-            <a href="/oteller/istanbul?etiket=butik" class="feature-tile">
+            <a href="/oteller?etiket=butik-oteller" class="feature-tile">
                 <i class="fas fa-city"></i>
                 <span>Butik Seçimler</span>
             </a>
             <a href="/yardim-merkezi#destek-kanallari" class="feature-tile">
                 <i class="fas fa-headset"></i>
-                <span>Canlı Destek</span>
+                <span>@SharedLocalizer["Nav.Help"]</span>
             </a>
         </div>
 
         <div class="drawer-section">
             <div class="drawer-section-title">Öne Çıkan Fırsatlar</div>
             <div class="drawer-promo-grid">
-                <a href="/oteller/istanbul?etiket=ay-sonu-ozel" class="drawer-link promo-link"><i class="fas fa-bolt"></i> Ay Sonu Özel</a>
-                <a href="/oteller/istanbul?filter=discount" class="drawer-link promo-link"><i class="fas fa-tag"></i> Flash İndirim</a>
-                <a href="/oteller/istanbul?etiket=haftasonu-firsatlari" class="drawer-link promo-link"><i class="fas fa-calendar-week"></i> Hafta Sonu Fırsatları</a>
-                <a href="/oteller/istanbul?etiket=erken-rezervasyon" class="drawer-link promo-link"><i class="fas fa-clock"></i> Erken Rezervasyon</a>
-                <a href="/oteller/istanbul?etiket=akilli-fiyat" class="drawer-link promo-link"><i class="fas fa-wand-magic-sparkles"></i> Akıllı Fiyat</a>
-                <a href="/yardim-merkezi#destek-kanallari" class="drawer-link promo-link"><i class="fas fa-headset"></i> Rezervasyon Desteği</a>
+                <a href="@(hotelsListingPath)?etiket=ay-sonu-ozel" class="drawer-link promo-link"><i class="fas fa-bolt"></i> Ay Sonu Özel</a>
+                <a href="@(hotelsListingPath)?etiket=flash-indirim" class="drawer-link promo-link"><i class="fas fa-tag"></i> Flash İndirim</a>
+                <a href="@(hotelsListingPath)?etiket=hafta-sonu-firsatlari" class="drawer-link promo-link"><i class="fas fa-calendar-week"></i> Hafta Sonu Fırsatları</a>
+                <a href="@(hotelsListingPath)?etiket=erken-rezervasyon" class="drawer-link promo-link"><i class="fas fa-clock"></i> Erken Rezervasyon</a>
+                <a href="@(hotelsListingPath)?etiket=akilli-fiyat" class="drawer-link promo-link"><i class="fas fa-wand-magic-sparkles"></i> Akıllı Fiyat</a>
+                <a href="/yardim-merkezi#destek-kanallari" class="drawer-link promo-link"><i class="fas fa-headset"></i> @SharedLocalizer["Nav.Help"]</a>
             </div>
         </div>
 
         <div class="drawer-corp-row">
-            <a asp-controller="Home" asp-action="Kurumsal" class="drawer-action ghost"><i class="fas fa-building"></i> Kurumsal</a>
+            <a asp-controller="Home" asp-action="Kurumsal" class="drawer-action ghost"><i class="fas fa-building"></i> @SharedLocalizer["Nav.Corporate"]</a>
             <a href="/firma" class="drawer-action ghost"><i class="fas fa-briefcase"></i> Firma</a>
         </div>
 

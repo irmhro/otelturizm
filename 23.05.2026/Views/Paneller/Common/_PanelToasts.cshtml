@@ -1,0 +1,55 @@
+@{
+    var success = TempData["AdminSuccess"] as string
+                  ?? TempData["PartnerSuccess"] as string
+                  ?? TempData["FirmaSuccess"] as string
+                  ?? TempData["SalesSuccess"] as string
+                  ?? TempData["UserSuccess"] as string
+                  ?? TempData["DeveloperSuccess"] as string;
+    var error = TempData["AdminError"] as string
+                ?? TempData["PartnerError"] as string
+                ?? TempData["FirmaError"] as string
+                ?? TempData["SalesError"] as string
+                ?? TempData["UserError"] as string
+                ?? TempData["DeveloperError"] as string;
+    var warning = TempData["AdminWarning"] as string
+                  ?? TempData["PartnerWarning"] as string
+                  ?? TempData["FirmaWarning"] as string
+                  ?? TempData["SalesWarning"] as string
+                  ?? TempData["UserWarning"] as string;
+}
+
+@if (!string.IsNullOrWhiteSpace(success) || !string.IsNullOrWhiteSpace(error) || !string.IsNullOrWhiteSpace(warning))
+{
+    <div id="ot-panel-toast-stack" class="ot-toast-stack" role="region" aria-label="Sistem bildirimleri" aria-live="polite" aria-atomic="true">
+        @if (!string.IsNullOrWhiteSpace(success))
+        {
+            <div id="ot-panel-toast-success" class="ot-toast ot-toast--success" role="status" data-ot-toast="success" data-timeout-ms="5500">
+                <span class="ot-toast__glyph" aria-hidden="true"><i class="fas fa-circle-check"></i></span>
+                <div class="ot-toast__body">
+                    <p class="ot-toast__title">Başarılı</p>
+                    <p class="ot-toast__text">@success</p>
+                </div>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(warning))
+        {
+            <div id="ot-panel-toast-warning" class="ot-toast ot-toast--warning" role="status" data-ot-toast="warning" data-timeout-ms="6500">
+                <span class="ot-toast__glyph" aria-hidden="true"><i class="fas fa-triangle-exclamation"></i></span>
+                <div class="ot-toast__body">
+                    <p class="ot-toast__title">Uyarı</p>
+                    <p class="ot-toast__text">@warning</p>
+                </div>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(error))
+        {
+            <div id="ot-panel-toast-error" class="ot-toast ot-toast--danger" role="alert" data-ot-toast="danger" data-timeout-ms="8500">
+                <span class="ot-toast__glyph" aria-hidden="true"><i class="fas fa-circle-exclamation"></i></span>
+                <div class="ot-toast__body">
+                    <p class="ot-toast__title">Hata</p>
+                    <p class="ot-toast__text">@error</p>
+                </div>
+            </div>
+        }
+    </div>
+}

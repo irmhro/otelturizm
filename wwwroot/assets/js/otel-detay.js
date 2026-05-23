@@ -485,6 +485,9 @@
                 if (Number.isFinite(idx)) {
                     syncMainImage(idx);
                     scrollMobileTrackTo(idx);
+                    if (hasSlayt) {
+                        openLightbox(idx);
+                    }
                 }
             });
         });

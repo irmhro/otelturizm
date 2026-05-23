@@ -1,0 +1,19 @@
+-- Tablo: dbo.PARTNER_BASVURU_EVRAKLARI
+IF OBJECT_ID(N'dbo.PARTNER_BASVURU_EVRAKLARI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PARTNER_BASVURU_EVRAKLARI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [PARTNER_ID] bigint NOT NULL,
+        [GUVENLI_DOSYA_ID] bigint NOT NULL,
+        [EVRAK_TIPI] nvarchar(80) NOT NULL,
+        [BELGE_BASLIGI] nvarchar(150) NULL,
+        [DURUM] nvarchar(255) NOT NULL,
+        [RED_NEDENI] nvarchar(500) NULL,
+        [YUKLEYEN_KULLANICI_ID] bigint NULL,
+        [INCELEYEN_ADMIN_ID] bigint NULL,
+        [INCELENME_TARIHI] datetime2(0) NULL,
+        [OLUSTURULMA_TARIHI] datetime2(0) NOT NULL CONSTRAINT [DF__partner_b__olust__45544755] DEFAULT (sysutcdatetime()),
+        [GUNCELLENME_TARIHI] datetime2(0) NULL,
+        CONSTRAINT [PK_PARTNER_BASVURU_EVRAKLARI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

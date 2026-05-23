@@ -1,0 +1,19 @@
+-- Tablo: dbo.FIRMA_HARCAMA_LIMITLERI
+IF OBJECT_ID(N'dbo.FIRMA_HARCAMA_LIMITLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[FIRMA_HARCAMA_LIMITLERI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [FIRMA_ID] bigint NOT NULL,
+        [DEPARTMAN] nvarchar(100) NULL,
+        [KULLANICI_ID] bigint NULL,
+        [GECELIK_LIMIT] decimal(10,2) NULL,
+        [REZERVASYON_BASI_LIMIT] decimal(10,2) NULL,
+        [AYLIK_LIMIT] decimal(10,2) NULL,
+        [ONAY_GEREKSINIMI] bit NOT NULL CONSTRAINT [DF__firma_har__onay___3587F3E0] DEFAULT ((0)),
+        [OTOMATIK_ONAY_LIMIT] decimal(10,2) NULL,
+        [AKTIF_MI] bit NOT NULL CONSTRAINT [DF__firma_har__aktif__367C1819] DEFAULT ((1)),
+        [OLUSTURULMA_TARIHI] datetime2(0) NULL CONSTRAINT [DF__firma_har__olust__37703C52] DEFAULT (sysutcdatetime()),
+        [GUNCELLENME_TARIHI] datetime2(0) NULL,
+        CONSTRAINT [PK_FIRMA_HARCAMA_LIMITLERI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

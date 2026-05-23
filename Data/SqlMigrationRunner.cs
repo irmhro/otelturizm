@@ -7,8 +7,12 @@ namespace otelturizmnew.Data;
 public sealed class SqlMigrationRunner
 {
     private const string ScriptsFolder = "Database\\MigrationsSql";
-    private const string SnapshotFolder = "Database\\MigrationsSql\\000_current_schema_by_table";
-    private const string HistoryTable = "dbo.__sql_migrations";
+    private const string TableMigrationsFolder = "tablo\\migrationlar";
+    private const string DataMigrationsFolder = "veri\\migrationlar";
+    private const string LegacyTablesFolder = "tables";
+    private const string ConstraintsFolder = "constraints";
+    private const string SnapshotFolder = "Database\\MigrationsSql\\tablo\\migrationlar";
+    private const string HistoryTable = "dbo.SEMA_MIGRASYONLARI";
 
     private readonly IConfiguration _configuration;
     private readonly IWebHostEnvironment _environment;
@@ -55,28 +59,7 @@ public sealed class SqlMigrationRunner
             return;
         }
 
-        var scriptFiles = Directory
-            .EnumerateFiles(scriptsPath, "*.sql", SearchOption.AllDirectories)
-            .Select(path => new
-            {
-                FullPath = path,
-                RelativePath = Path.GetRelativePath(scriptsPath, path),
-                FileName = Path.GetFileName(path)
-            })
-            .OrderBy(x =>
-            {
-                // Önce: tablo/kolon onarımları (000_current_schema_by_table\0xx..8xx)
-                // Sonra: normal sqlserver migration/seed dosyaları (kök klasör)
-                // En son: index/fk paketleri (000_current_schema_by_table\9xx) - kolonlar oluşmadan patlamasın
-                if (x.RelativePath.StartsWith("000_current_schema_by_table", StringComparison.OrdinalIgnoreCase))
-                {
-                    var fileName = Path.GetFileName(x.RelativePath);
-                    return fileName.StartsWith("9", StringComparison.OrdinalIgnoreCase) ? 2 : 0;
-                }
-                return 1;
-            })
-            .ThenBy(x => x.RelativePath, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var scriptFiles = BuildOrderedScriptFiles(scriptsPath);
 
         if (scriptFiles.Count == 0)
         {
@@ -86,6 +69,7 @@ public sealed class SqlMigrationRunner
 
         await using var conn = new SqlConnection(connectionString);
         await conn.OpenAsync(cancellationToken);
+        await ApplyRequiredSetOptionsAsync(conn, cancellationToken);
 
         await EnsureHistoryTableAsync(conn, cancellationToken);
 
@@ -167,12 +151,13 @@ public sealed class SqlMigrationRunner
 
         await using var conn = new SqlConnection(connectionString);
         await conn.OpenAsync(cancellationToken);
+        await ApplyRequiredSetOptionsAsync(conn, cancellationToken);
 
         var existing = await ReadExistingColumnsAsync(conn, cancellationToken);
 
         var sb = new StringBuilder();
         sb.AppendLine("-- AUTO-GENERATED (SqlMigrationRunner): local schema drift repair");
-        sb.AppendLine("-- Kaynak: Database/MigrationsSql/000_current_schema_by_table snapshot");
+        sb.AppendLine("-- Kaynak: Database/MigrationsSql/tablo/migrationlar snapshot");
         sb.AppendLine("SET NOCOUNT ON;");
         sb.AppendLine();
 
@@ -234,6 +219,7 @@ public sealed class SqlMigrationRunner
 
         await using var conn = new SqlConnection(connectionString);
         await conn.OpenAsync(cancellationToken);
+        await ApplyRequiredSetOptionsAsync(conn, cancellationToken);
 
         // 1) Update stats (hızlı ve güvenli)
         _logger.LogInformation("DB: sp_updatestats calistiriliyor...");
@@ -263,7 +249,7 @@ EXEC sp_executesql @sql;";
     {
         var expected = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var file in Directory.EnumerateFiles(snapshotPath, "*_table_*.sql", SearchOption.TopDirectoryOnly))
+        foreach (var file in Directory.EnumerateFiles(snapshotPath, "*.sql", SearchOption.TopDirectoryOnly))
         {
             var text = File.ReadAllText(file, Encoding.UTF8);
             var createIdx = text.IndexOf("CREATE TABLE", StringComparison.OrdinalIgnoreCase);
@@ -272,9 +258,12 @@ EXEC sp_executesql @sql;";
             var openParenIdx = text.IndexOf('(', createIdx);
             if (openParenIdx < 0) continue;
 
-            // tablo adı: CREATE TABLE [dbo].[oteller]  veya CREATE TABLE [dbo].[xxx]
             var header = text.Substring(createIdx, Math.Min(220, text.Length - createIdx));
             var tableName = ExtractTableName(header);
+            if (string.IsNullOrWhiteSpace(tableName))
+            {
+                tableName = ExtractTableNameFromSnapshotFile(Path.GetFileName(file));
+            }
             if (string.IsNullOrWhiteSpace(tableName)) continue;
 
             var endIdx = text.IndexOf(");", openParenIdx, StringComparison.OrdinalIgnoreCase);
@@ -327,6 +316,15 @@ EXEC sp_executesql @sql;";
         return createHeader.Substring(start, end - start);
     }
 
+    private static string ExtractTableNameFromSnapshotFile(string fileName)
+    {
+        // 077_OTELLER.sql -> OTELLER
+        var stem = Path.GetFileNameWithoutExtension(fileName);
+        var idx = stem.IndexOf('_');
+        if (idx < 0 || idx >= stem.Length - 1) return string.Empty;
+        return stem[(idx + 1)..];
+    }
+
     private static async Task<Dictionary<string, HashSet<string>>> ReadExistingColumnsAsync(SqlConnection conn, CancellationToken ct)
     {
         const string sql = @"
@@ -351,35 +349,136 @@ EXEC sp_executesql @sql;";
         return map;
     }
 
+    private static List<(string FullPath, string RelativePath, string FileName)> BuildOrderedScriptFiles(string scriptsPath)
+    {
+        var scriptFiles = new List<(string FullPath, string RelativePath, string FileName)>();
+
+        AddSqlFilesFromFolder(scriptFiles, scriptsPath, TableMigrationsFolder);
+        AddSqlFilesFromFolder(scriptFiles, scriptsPath, LegacyTablesFolder);
+
+        foreach (var tail in new[] { "900_foreign_keys.sql", "901_indexes.sql", "902_triggers.sql" })
+        {
+            var path = Path.Combine(scriptsPath, ConstraintsFolder, tail);
+            if (!File.Exists(path))
+            {
+                path = Path.Combine(scriptsPath, tail);
+            }
+            if (!File.Exists(path)) continue;
+            var rel = Path.GetRelativePath(scriptsPath, path);
+            scriptFiles.Add((path, rel, tail));
+        }
+
+        AddSqlFilesFromFolder(scriptFiles, scriptsPath, DataMigrationsFolder);
+
+        foreach (var path in Directory.EnumerateFiles(scriptsPath, "*.sql", SearchOption.TopDirectoryOnly))
+        {
+            var fileName = Path.GetFileName(path);
+            if (!IsEightDigitDatedMigration(fileName))
+            {
+                continue;
+            }
+
+            scriptFiles.Add((path, fileName, fileName));
+        }
+
+        return scriptFiles
+            .OrderBy(x => GetScriptSortKey(x.RelativePath, x.FileName))
+            .ThenBy(x => x.RelativePath, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static void AddSqlFilesFromFolder(
+        List<(string FullPath, string RelativePath, string FileName)> scriptFiles,
+        string scriptsPath,
+        string folderRelative)
+    {
+        var folderPath = Path.Combine(scriptsPath, folderRelative);
+        if (!Directory.Exists(folderPath))
+        {
+            return;
+        }
+
+        foreach (var path in Directory.EnumerateFiles(folderPath, "*.sql"))
+        {
+            var fileName = Path.GetFileName(path);
+            var relativePath = Path.Combine(folderRelative, fileName);
+            scriptFiles.Add((path, relativePath, fileName));
+        }
+    }
+
+    private static int GetScriptSortKey(string relativePath, string fileName)
+    {
+        if (IsUnderMigrationFolder(relativePath, TableMigrationsFolder)
+            || IsUnderMigrationFolder(relativePath, LegacyTablesFolder))
+        {
+            return 0;
+        }
+
+        if (fileName.StartsWith("900_", StringComparison.OrdinalIgnoreCase)) return 1;
+        if (fileName.StartsWith("901_", StringComparison.OrdinalIgnoreCase)) return 2;
+        if (fileName.StartsWith("902_", StringComparison.OrdinalIgnoreCase)) return 3;
+        if (IsUnderMigrationFolder(relativePath, DataMigrationsFolder)) return 4;
+        if (IsEightDigitDatedMigration(fileName)) return 4;
+        return 9;
+    }
+
+    private static bool IsUnderMigrationFolder(string relativePath, string folderRelative)
+    {
+        return relativePath.StartsWith($"{folderRelative}\\", StringComparison.OrdinalIgnoreCase)
+               || relativePath.StartsWith($"{folderRelative}/", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsIgnoredScript(string fileName, string relativePath)
     {
         if (string.IsNullOrWhiteSpace(fileName)) return true;
         if (fileName.Equals("README.md", StringComparison.OrdinalIgnoreCase)) return true;
-        // Tek dosyada toplu uygulama runbook'u; runner zaten scriptleri tek tek izliyor (çift çalışma riski).
+        if (fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) return true;
+        if (relativePath.Contains("_archive", StringComparison.OrdinalIgnoreCase)) return true;
         if (fileName.Equals("20260504_apply_all_migrations_safe.sql", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        if (!relativePath.StartsWith("000_current_schema_by_table", StringComparison.OrdinalIgnoreCase))
+        // veri/migrationlar altinda zaten var; kokteki kopya cift calistirmayi onler
+        if (fileName.Equals("20260524_seed_koordinat_turkiye.sql", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(relativePath, fileName, StringComparison.OrdinalIgnoreCase))
         {
-            // Kök klasördeki eski/MySQL döneminden kalma 0xx create/seed scriptleri var.
-            // MSSQL için: sqlserver_*, 20260504_seed_*, 20YYMMDD_* tarih önekli migrationlar, tema_panel.
-            var lower = fileName.ToLowerInvariant();
-            var isSqlServerScript = lower.Contains("sqlserver");
-            var isSeedScript = lower.StartsWith("20260504_seed_", StringComparison.OrdinalIgnoreCase);
-            var isThemePanelScript = lower.Contains("tema_panel", StringComparison.OrdinalIgnoreCase);
-            var isDatedMigration = IsEightDigitDatedMigration(fileName);
-            if (!isSqlServerScript && !isSeedScript && !isDatedMigration)
-            {
-                if (isThemePanelScript)
-                {
-                    return false;
-                }
-                return true;
-            }
+            return true;
         }
-        return false;
+
+        if (IsUnderMigrationFolder(relativePath, TableMigrationsFolder)
+            || IsUnderMigrationFolder(relativePath, LegacyTablesFolder)
+            || IsUnderMigrationFolder(relativePath, DataMigrationsFolder))
+        {
+            return false;
+        }
+
+        if (relativePath.StartsWith($"{ConstraintsFolder}\\", StringComparison.OrdinalIgnoreCase)
+            || relativePath.StartsWith($"{ConstraintsFolder}/", StringComparison.OrdinalIgnoreCase))
+        {
+            if (fileName.StartsWith("900_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("901_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("902_", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        if (fileName.StartsWith("900_", StringComparison.OrdinalIgnoreCase)
+            || fileName.StartsWith("901_", StringComparison.OrdinalIgnoreCase)
+            || fileName.StartsWith("902_", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (IsEightDigitDatedMigration(fileName)
+            && string.Equals(relativePath, fileName, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>20YYMMDD_*.sql biçimindeki tarih önekli MSSQL migration dosyaları.</summary>
@@ -423,13 +522,14 @@ EXEC sp_executesql @sql;";
 IF OBJECT_ID(N'{HistoryTable}', N'U') IS NULL
 BEGIN
     CREATE TABLE {HistoryTable} (
-        id bigint IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        script_name nvarchar(260) NOT NULL,
-        script_hash char(64) NOT NULL,
-        applied_at datetime2(0) NOT NULL CONSTRAINT DF___sql_migrations_applied_at DEFAULT (sysutcdatetime()),
-        CONSTRAINT UQ___sql_migrations_name_hash UNIQUE(script_name, script_hash)
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [BETIK_ADI] nvarchar(260) NOT NULL,
+        [KONTROL_TOPLAMI] char(64) NOT NULL,
+        [UYGULANMA_TARIHI] datetime2(0) NOT NULL CONSTRAINT [DF_SEMA_MIGRASYONLARI_UYGULANMA] DEFAULT (sysutcdatetime()),
+        CONSTRAINT [PK_SEMA_MIGRASYONLARI] PRIMARY KEY CLUSTERED ([ID] ASC),
+        CONSTRAINT [UQ_SEMA_MIGRASYONLARI_BETIK_HASH] UNIQUE ([BETIK_ADI], [KONTROL_TOPLAMI])
     );
-    CREATE INDEX IX___sql_migrations_name ON {HistoryTable}(script_name);
+    CREATE INDEX [IX_SEMA_MIGRASYONLARI_BETIK] ON {HistoryTable}([BETIK_ADI]);
 END";
         await using var cmd = new SqlCommand(sql, conn) { CommandTimeout = 120 };
         await cmd.ExecuteNonQueryAsync(ct);
@@ -437,7 +537,7 @@ END";
 
     private static async Task<bool> IsAlreadyAppliedAsync(SqlConnection conn, string scriptName, string scriptHash, CancellationToken ct)
     {
-        var sql = $"SELECT TOP (1) 1 FROM {HistoryTable} WHERE script_name = @name AND script_hash = @hash;";
+        var sql = $"SELECT TOP (1) 1 FROM {HistoryTable} WHERE [BETIK_ADI] = @name AND [KONTROL_TOPLAMI] = @hash;";
         await using var cmd = new SqlCommand(sql, conn) { CommandTimeout = 60 };
         cmd.Parameters.AddWithValue("@name", scriptName);
         cmd.Parameters.AddWithValue("@hash", scriptHash);
@@ -447,7 +547,7 @@ END";
 
     private static async Task MarkAppliedAsync(SqlConnection conn, string scriptName, string scriptHash, CancellationToken ct)
     {
-        var sql = $"INSERT INTO {HistoryTable}(script_name, script_hash) VALUES (@name, @hash);";
+        var sql = $"INSERT INTO {HistoryTable}([BETIK_ADI], [KONTROL_TOPLAMI]) VALUES (@name, @hash);";
         await using var cmd = new SqlCommand(sql, conn) { CommandTimeout = 60 };
         cmd.Parameters.AddWithValue("@name", scriptName);
         cmd.Parameters.AddWithValue("@hash", scriptHash);
@@ -460,9 +560,27 @@ END";
         foreach (var batch in batches)
         {
             if (string.IsNullOrWhiteSpace(batch)) continue;
+            await ApplyRequiredSetOptionsAsync(conn, ct);
             await using var cmd = new SqlCommand(batch, conn) { CommandTimeout = 300 };
             await cmd.ExecuteNonQueryAsync(ct);
         }
+    }
+
+    private static async Task ApplyRequiredSetOptionsAsync(SqlConnection conn, CancellationToken ct)
+    {
+        await using var cmd = new SqlCommand("""
+            SET ANSI_NULLS ON;
+            SET ANSI_PADDING ON;
+            SET ANSI_WARNINGS ON;
+            SET ARITHABORT ON;
+            SET CONCAT_NULL_YIELDS_NULL ON;
+            SET QUOTED_IDENTIFIER ON;
+            SET NUMERIC_ROUNDABORT OFF;
+            """, conn)
+        {
+            CommandTimeout = 60
+        };
+        await cmd.ExecuteNonQueryAsync(ct);
     }
 
     private static List<string> SplitOnGo(string script)

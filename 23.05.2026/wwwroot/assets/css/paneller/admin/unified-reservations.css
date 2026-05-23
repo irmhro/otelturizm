@@ -1,0 +1,52 @@
+@import url("./dashboard.css");
+
+.admin-unified-reservations-page {
+    display: grid;
+    gap: 18px;
+}
+
+.admin-reservation-filter {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) 240px 160px auto;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 16px;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.admin-reservation-filter label {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    color: #1e293b;
+    font-weight: 850;
+}
+
+.admin-reservation-filter input,
+.admin-reservation-filter select {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #d7e1f0;
+    border-radius: 10px;
+    background: #fff;
+    padding: 10px 12px;
+    font: inherit;
+}
+
+.admin-pagination-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+    color: #64748b;
+    font-weight: 850;
+}
+
+.admin-pagination-row > div {
+    display: flex;
+    gap: 8px;
+}

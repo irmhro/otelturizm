@@ -13,6 +13,7 @@ UI / Tasarım Kuralları
 - Kartlar kompakt olmalı: gereksiz büyük boşluk, aşırı gölge veya büyük tipografik sapmalar olmasın.
 - Mobil öncelikli: mobil görünümü düşünerek grid/stack tasarımları kullanın.
 - Erişilebilirlik: semantic HTML, alt metin, label, kontrast ve klavye erişilebilirliği zorunlu.
+- Panel içi özellik seçimleri, toggle/checkbox/pill butonları ve kart üzerindeki düzenlenebilir alanlar mümkün olduğunca otomatik kayıt mantığıyla çalışır. Kullanıcı seçim yaptığında veya alanı değiştirdiğinde kayıt/sil/değiştir işlemi anlık yapılır; ayrıca ayrı "Kaydet" butonu zorunlu tutulmaz. İşlem sonucunda ekranda kısa ve anlaşılır güncelleme bildirimi gösterilir.
 
 Admin Panel (AdminLTE v3) Zorunlu Standardı
 - Tüm admin panel sayfaları AdminLTE v3 bileşen diliyle geliştirilmelidir.

@@ -85,6 +85,106 @@ public class PartnerDashboardViewModel
     public int RejectCountLast30Days { get; set; }
     public bool PenaltyActive { get; set; }
     public string? PenaltyEndText { get; set; }
+    public PartnerDashboardAssistantViewModel Assistants { get; set; } = new();
+}
+
+public class PartnerDashboardAssistantViewModel
+{
+    public PartnerMagicPriceSuggestionViewModel MagicPrice { get; set; } = new();
+    public PartnerCompetitorAssistantViewModel CompetitorAnalysis { get; set; } = new();
+    public PartnerWeatherCampaignSuggestionViewModel WeatherCampaign { get; set; } = new();
+}
+
+public class PartnerMagicPriceSuggestionViewModel
+{
+    public string RoomScopeText { get; set; } = "Tümü";
+    public string DayScopeText { get; set; } = "Hafta içi";
+    public int TargetOccupancyPercent { get; set; } = 85;
+    public string CurrentPriceText { get; set; } = "₺0";
+    public string SuggestedPriceText { get; set; } = "₺0";
+    public string DifferenceText { get; set; } = "₺0";
+    public int EstimatedReservationLift { get; set; }
+    public string CalculationText { get; set; } = string.Empty;
+    public string ActionUrl { get; set; } = "#";
+    public List<PartnerMagicPriceDayViewModel> DaySuggestions { get; set; } = new();
+    public List<string> RoomOptions { get; set; } = new();
+}
+
+public class PartnerMagicPriceDayViewModel
+{
+    public string DayLabel { get; set; } = string.Empty;
+    public string PriceText { get; set; } = string.Empty;
+}
+
+public class PartnerCompetitorAssistantViewModel
+{
+    public string RegionTitle { get; set; } = "Bölge Rakip Analizi";
+    public string InsightText { get; set; } = string.Empty;
+    public string DetailsUrl { get; set; } = "#";
+    public string ApplyUrl { get; set; } = "#";
+    public List<PartnerCompetitorAssistantRowViewModel> Rows { get; set; } = new();
+}
+
+public class PartnerCompetitorAssistantRowViewModel
+{
+    public string HotelName { get; set; } = string.Empty;
+    public string PriceText { get; set; } = "-";
+    public string OccupancyText { get; set; } = "-";
+    public string ScoreText { get; set; } = "-";
+    public string DiffText { get; set; } = "-";
+    public bool IsOwnHotel { get; set; }
+    public bool IsCheaperThanUs { get; set; }
+}
+
+public class PartnerWeatherCampaignSuggestionViewModel
+{
+    public string RecommendationText { get; set; } = string.Empty;
+    public string CampaignUrl { get; set; } = "#";
+    public List<PartnerWeatherDayViewModel> Days { get; set; } = new();
+}
+
+public class PartnerWeatherDayViewModel
+{
+    public string Label { get; set; } = string.Empty;
+    public string IconClass { get; set; } = "fa-cloud-sun";
+    public string TemperatureText { get; set; } = string.Empty;
+}
+
+public class PartnerMealServicesPageViewModel
+{
+    public PartnerShellViewModel Shell { get; set; } = new();
+    public List<PartnerMealServiceRowViewModel> Meals { get; set; } = new();
+}
+
+public class PartnerMealServiceRowViewModel
+{
+    public string ServiceType { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public bool IncludedInRoomPrice { get; set; }
+    public decimal? PerPersonPrice { get; set; }
+    public decimal? TwoPersonPrice { get; set; }
+    public string? StartTime { get; set; }
+    public string? EndTime { get; set; }
+    public string? Description { get; set; }
+}
+
+public class PartnerMealServicesSaveRequest
+{
+    public long HotelId { get; set; }
+    public List<PartnerMealServiceFormRow> Meals { get; set; } = new();
+}
+
+public class PartnerMealServiceFormRow
+{
+    public string ServiceType { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public bool IncludedInRoomPrice { get; set; }
+    public decimal? PerPersonPrice { get; set; }
+    public decimal? TwoPersonPrice { get; set; }
+    public string? StartTime { get; set; }
+    public string? EndTime { get; set; }
+    public string? Description { get; set; }
 }
 
 public class PartnerQuickActionViewModel
@@ -489,6 +589,9 @@ public class PartnerCampaignOptionViewModel
     public string? BadgeText { get; set; }
     public string? PromoBadge { get; set; }
     public string? ColorCode { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? DetailUrl { get; set; }
+    public string? TermsText { get; set; }
     public bool IsHighlighted { get; set; }
 }
 
@@ -644,6 +747,14 @@ public class PartnerHotelInfoForm
     public string? City { get; set; }
     public string? District { get; set; }
     public string? Neighborhood { get; set; }
+    /// <summary>OTELLER.ULKE_ID</summary>
+    public long? UlkeId { get; set; }
+    /// <summary>OTELLER.SEHIR_ID (ILLER.ID)</summary>
+    public long? SehirId { get; set; }
+    /// <summary>OTELLER.ILCE_ID</summary>
+    public long? IlceId { get; set; }
+    /// <summary>OTELLER.MAHALLE_ID</summary>
+    public long? MahalleId { get; set; }
     public string? PostalCode { get; set; }
     public string? LocationDescription { get; set; }
     public decimal? Latitude { get; set; }
@@ -701,6 +812,9 @@ public class PartnerHotelAmenitiesUpdateRequest
 public class PartnerHotelLocationUpdateRequest
 {
     public long HotelId { get; set; }
+    /// <summary>ULKELER.ID</summary>
+    public long? UlkeId { get; set; }
+    /// <summary>ILLER.ID — OTELLER.SEHIR_ID</summary>
     public long? CityId { get; set; }
     public long? DistrictId { get; set; }
     public long? NeighborhoodId { get; set; }
@@ -813,8 +927,27 @@ public class PartnerRoomFeaturesPageViewModel
 {
     public PartnerShellViewModel Shell { get; set; } = new();
     public long SelectedHotelId { get; set; }
+    public long? SelectedRoomId { get; set; }
+    public List<PartnerRoomFeatureRoomOptionViewModel> Rooms { get; set; } = new();
     public List<PartnerRoomFeatureRowViewModel> Features { get; set; } = new();
+    public List<long> SelectedFeatureIds { get; set; } = new();
     public PartnerRoomFeatureAddRequest AddForm { get; set; } = new();
+    public PartnerRoomFeatureSaveRequest SaveForm { get; set; } = new();
+    public int CategoryCount => Features.Select(x => x.Category).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+    public int SelectedFeatureCount => SelectedFeatureIds.Count;
+    public PartnerRoomFeatureRoomOptionViewModel? SelectedRoom => Rooms.FirstOrDefault(x => x.RoomId == SelectedRoomId);
+}
+
+public class PartnerRoomFeatureRoomOptionViewModel
+{
+    public long RoomId { get; set; }
+    public string RoomName { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string CapacityText { get; set; } = string.Empty;
+    public string StockText { get; set; } = string.Empty;
+    public string PriceText { get; set; } = string.Empty;
+    public int SelectedFeatureCount { get; set; }
+    public bool IsActive { get; set; }
 }
 
 public class PartnerRoomFeatureRowViewModel
@@ -841,6 +974,13 @@ public class PartnerRoomFeatureToggleRequest
     public long HotelId { get; set; }
     public short FeatureId { get; set; }
     public bool IsActive { get; set; }
+}
+
+public class PartnerRoomFeatureSaveRequest
+{
+    public long HotelId { get; set; }
+    public long RoomId { get; set; }
+    public List<long> SelectedFeatureIds { get; set; } = new();
 }
 
 public class PartnerPhotosPageViewModel
@@ -875,6 +1015,7 @@ public class PartnerPhotoCardViewModel
     public string? Description { get; set; }
     public ushort DisplayOrder { get; set; }
     public bool IsCover { get; set; }
+    public bool IsFeatured { get; set; }
     public bool IsApproved { get; set; }
 }
 
@@ -988,14 +1129,35 @@ public class PartnerFinancePageViewModel
 {
     public PartnerShellViewModel Shell { get; set; } = new();
     public List<PartnerStatCardViewModel> SummaryCards { get; set; } = new();
+    public List<PartnerStatCardViewModel> Last30DaySummaryCards { get; set; } = new();
     public List<PartnerFinanceTransactionViewModel> Transactions { get; set; } = new();
+    public List<PartnerCommissionReservationRowViewModel> CommissionRows { get; set; } = new();
     public List<PartnerFinanceInvoiceViewModel> Invoices { get; set; } = new();
     public PartnerBankInfoForm BankInfoForm { get; set; } = new();
     public string PayoutNote { get; set; } = string.Empty;
     public string ActiveRuleDateText { get; set; } = string.Empty;
     public string ActiveRuleTaxText { get; set; } = string.Empty;
     public string ActiveRuleCommissionText { get; set; } = string.Empty;
+    public string Month { get; set; } = string.Empty;
+    public string PaymentStatus { get; set; } = string.Empty;
+    public int PageSize { get; set; } = 50;
+    public int MonthlyReservationCount { get; set; }
+    public int MonthlySoldRoomCount { get; set; }
+    public decimal MonthlyGrossRevenue { get; set; }
+    public decimal MonthlyCommissionTotal { get; set; }
+    public decimal MonthlyPaidCommission { get; set; }
+    public decimal MonthlyPendingCommission => Math.Max(0m, MonthlyCommissionTotal - MonthlyPaidCommission);
+    public decimal DailyCommissionTotal { get; set; }
+    public string CommissionPaymentDayText { get; set; } = string.Empty;
+    public DateTime? FilterDateFrom { get; set; }
+    public DateTime? FilterDateTo { get; set; }
     public List<PartnerFinanceTaxRowViewModel> TaxRows { get; set; } = new();
+}
+
+public class PartnerCommissionMarkPaidRequest
+{
+    public long HotelId { get; set; }
+    public long CommissionRecordId { get; set; }
 }
 
 public class PartnerFinanceTransactionViewModel
@@ -1014,6 +1176,25 @@ public class PartnerFinanceTaxRowViewModel
     public string RateText { get; set; } = string.Empty;
     public string AmountText { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+}
+
+public class PartnerCommissionReservationRowViewModel
+{
+    public long CommissionRecordId { get; set; }
+    public long ReservationId { get; set; }
+    public bool CanMarkPaidOnline { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public string StayText { get; set; } = string.Empty;
+    public int RoomCount { get; set; }
+    public decimal ReservationTotal { get; set; }
+    public decimal CommissionRate { get; set; }
+    public decimal CommissionAmount { get; set; }
+    public decimal NetPayout { get; set; }
+    public string PaymentStatusText { get; set; } = string.Empty;
+    public string AccountingPeriod { get; set; } = string.Empty;
+    public string PlatformTahsilatStatus { get; set; } = string.Empty;
 }
 
 public class PartnerFinanceInvoiceViewModel

@@ -1,1 +1,23 @@
 @import url("./kampanya-detay.css");
+
+.campaign-detail-hero {
+    grid-template-columns: 1fr;
+    padding-top: 18px;
+    gap: 18px;
+}
+
+.campaign-back-link,
+.campaign-hotel-card__link,
+.campaign-detail-cta {
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.campaign-detail-hero h1 {
+    font-size: clamp(1.55rem, 5vw, 2.2rem);
+}
+
+.campaign-detail-section {
+    padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}

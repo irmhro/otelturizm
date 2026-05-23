@@ -38,11 +38,11 @@ public class SalesService : ISalesService
         model.SummaryCards.Add(new SalesStatCardViewModel { Label = "Ekip Sıralaması", Value = shell.Ranking <= 0 ? "-" : $"#{shell.Ranking}", Description = "Aylık ciroya göre", IconClass = "fa-trophy", ToneClass = "danger" });
 
         const string sql = @"
-            SELECT COALESCE(SUM(toplam_tutar),0), COUNT(*)
-            FROM rezervasyonlar
-            WHERE satis_temsilcisi_id = @userId
-              AND olusturulma_tarihi >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
-              AND olusturulma_tarihi < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1));";
+            SELECT COALESCE(SUM([TOPLAM_TUTAR]),0), COUNT(*)
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [SATIS_TEMSILCISI_ID] = @userId
+              AND [OLUSTURULMA_TARIHI] >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+              AND [OLUSTURULMA_TARIHI] < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1));";
         await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
@@ -217,12 +217,12 @@ public class SalesService : ISalesService
         };
 
         const string sql = @"
-            SELECT COALESCE(SUM(toplam_tutar),0), COALESCE(SUM(komisyon_tutari),0), COUNT(*),
-                   SUM(CASE WHEN durum = 'Onaylandı' THEN 1 ELSE 0 END),
-                   SUM(CASE WHEN durum = 'İptal Edildi' THEN 1 ELSE 0 END)
-            FROM rezervasyonlar
-            WHERE satis_temsilcisi_id = @userId
-              AND YEAR(olusturulma_tarihi) = @year;";
+            SELECT COALESCE(SUM([TOPLAM_TUTAR]),0), COALESCE(SUM([KOMISYON_TUTARI]),0), COUNT(*),
+                   SUM(CASE WHEN [DURUM] = 'Onaylandı' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN [DURUM] = 'İptal Edildi' THEN 1 ELSE 0 END)
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [SATIS_TEMSILCISI_ID] = @userId
+              AND YEAR([OLUSTURULMA_TARIHI]) = @year;";
         await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);
@@ -290,14 +290,14 @@ public class SalesService : ISalesService
             var reservationNo = await GenerateReservationNoAsync(connection, (SqlTransaction)transaction, cancellationToken);
 
             var insertSql = $@"
-                INSERT INTO rezervasyonlar
+                INSERT INTO [dbo].[REZERVASYONLAR]
                 (
-                    rezervasyon_no, otel_id, oda_tip_id, kullanici_id, satis_temsilcisi_id, satis_musteri_id,
-                    misafir_ad_soyad, misafir_eposta, misafir_telefon, misafir_notu, misafir_sehir, misafir_ilce, misafir_mahalle, misafir_adres,
-                    giris_tarihi, cikis_tarihi, yetiskin_sayisi, cocuk_sayisi, oda_sayisi,
-                    gecelik_fiyat, toplam_oda_tutari, vergi_tutari, toplam_tutar,
-                    komisyon_orani, durum, rezervasyon_durumu_id, odeme_durumu, otel_onay_durumu, firma_onay_durumu,
-                    kaynak, rezervasyon_kanali, musteri_talep_notu, ozel_istekler
+                    [REZERVASYON_NO], [OTEL_ID], [ODA_TIP_ID], [KULLANICI_ID], [SATIS_TEMSILCISI_ID], [SATIS_MUSTERI_ID],
+                    [MISAFIR_AD_SOYAD], [MISAFIR_EPOSTA], [MISAFIR_TELEFON], [MISAFIR_NOTU], [MISAFIR_SEHIR], [MISAFIR_ILCE], [MISAFIR_MAHALLE], [MISAFIR_ADRES],
+                    [GIRIS_TARIHI], [CIKIS_TARIHI], [YETISKIN_SAYISI], [COCUK_SAYISI], [ODA_SAYISI],
+                    [GECELIK_FIYAT], [TOPLAM_ODA_TUTARI], [VERGI_TUTARI], [TOPLAM_TUTAR],
+                    [KOMISYON_ORANI], [DURUM], [REZERVASYON_DURUMU_ID], [ODEME_DURUMU], [OTEL_ONAY_DURUMU], [FIRMA_ONAY_DURUMU],
+                    [KAYNAK], [REZERVASYON_KANALI], [MUSTERI_TALEP_NOTU], [OZEL_ISTEKLER]
                 )
                 VALUES
                 (
@@ -305,7 +305,7 @@ public class SalesService : ISalesService
                     @fullName, @email, @phone, @note, @city, @district, @neighborhood, @address,
                     @checkIn, @checkOut, @adultCount, @childCount, @roomCount,
                     @nightlyPrice, @roomTotal, @taxAmount, @totalAmount,
-                    @commissionRate, 'Onay Bekliyor', (SELECT TOP (1) id FROM dbo.rezervasyon_durum_tanimlari WHERE kod = N'{RezervasyonDurumKodlari.OnayBekliyor}'), 'Beklemede', 'Beklemede', 'Onay Gerekmiyor',
+                    @commissionRate, 'Onay Bekliyor', (SELECT TOP (1) id FROM [dbo].[REZERVASYON_DURUM_TANIMLARI] WHERE kod = N'{RezervasyonDurumKodlari.OnayBekliyor}'), 'Beklemede', 'Beklemede', 'Onay Gerekmiyor',
                     'Telefon', 'Satış Paneli', @note, @note
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS bigint);";
@@ -340,11 +340,11 @@ public class SalesService : ISalesService
             }
 
             const string updateCustomerSql = @"
-                UPDATE satis_musterileri
-                SET toplam_rezervasyon_sayisi = toplam_rezervasyon_sayisi + 1,
-                    toplam_harcama = toplam_harcama + @totalAmount,
-                    son_rezervasyon_tarihi = @checkIn,
-                    son_talep_ozeti = @summary
+                UPDATE [dbo].[SATIS_MUSTERILERI]
+                SET [TOPLAM_REZERVASYON_SAYISI] = [TOPLAM_REZERVASYON_SAYISI] + 1,
+                    [TOPLAM_HARCAMA] = [TOPLAM_HARCAMA] + @totalAmount,
+                    [SON_REZERVASYON_TARIHI] = @checkIn,
+                    [SON_TALEP_OZETI] = @summary
                 WHERE id = @customerId;";
             await using (var command = new SqlCommand(updateCustomerSql, connection, (SqlTransaction)transaction))
             {
@@ -444,7 +444,7 @@ public class SalesService : ISalesService
             var customerId = await EnsureSalesCustomerAsync(connection, (SqlTransaction)transaction, userId, reservationModel, cancellationToken, model.MembershipLevel);
             if (!string.IsNullOrWhiteSpace(model.Note))
             {
-                const string noteSql = "INSERT INTO satis_musteri_notlari (satis_musteri_id, sales_user_id, not_basligi, not_icerigi) VALUES (@customerId, @userId, 'Müşteri Notu', @note);";
+                const string noteSql = "INSERT INTO [dbo].[SATIS_MUSTERI_NOTLARI] ([SATIS_MUSTERI_ID], [SATIS_KULLANICI_ID], not_basligi, not_icerigi) VALUES (@customerId, @userId, 'Müşteri Notu', @note);";
                 await using var noteCommand = new SqlCommand(noteSql, connection, (SqlTransaction)transaction);
                 noteCommand.Parameters.AddWithValue("@customerId", customerId);
                 noteCommand.Parameters.AddWithValue("@userId", userId);
@@ -474,18 +474,18 @@ public class SalesService : ISalesService
 
         const string sql = @"
             SELECT
-                r.id, r.rezervasyon_no, o.otel_adi, COALESCE(o.rezervasyon_telefonu, o.telefon_1, ''),
-                ot.oda_adi,
-                CAST(r.giris_tarihi AS date), CAST(r.cikis_tarihi AS date),
-                r.yetiskin_sayisi, r.cocuk_sayisi, r.oda_sayisi,
-                COALESCE(r.misafir_ad_soyad,''), COALESCE(r.misafir_eposta,''), COALESCE(r.misafir_telefon,''),
-                COALESCE(r.gecelik_fiyat,0), COALESCE(r.toplam_oda_tutari,0), COALESCE(r.vergi_tutari,0), COALESCE(r.toplam_tutar,0),
-                FORMAT(r.olusturulma_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR')
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            INNER JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
+                r.id, r.[REZERVASYON_NO], o.[OTEL_ADI], COALESCE(o.[REZERVASYON_TELEFONU], o.[TELEFON_1], ''),
+                ot.[ODA_ADI],
+                CAST(r.[GIRIS_TARIHI] AS date), CAST(r.[CIKIS_TARIHI] AS date),
+                r.[YETISKIN_SAYISI], r.[COCUK_SAYISI], r.[ODA_SAYISI],
+                COALESCE(r.[MISAFIR_AD_SOYAD],''), COALESCE(r.[MISAFIR_EPOSTA],''), COALESCE(r.[MISAFIR_TELEFON],''),
+                COALESCE(r.[GECELIK_FIYAT],0), COALESCE(r.[TOPLAM_ODA_TUTARI],0), COALESCE(r.[VERGI_TUTARI],0), COALESCE(r.[TOPLAM_TUTAR],0),
+                FORMAT(r.[OLUSTURULMA_TARIHI], 'dd.MM.yyyy HH:mm', 'tr-TR')
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            INNER JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
             WHERE r.id = @reservationId
-              AND r.satis_temsilcisi_id = @userId;";
+              AND r.[SATIS_TEMSILCISI_ID] = @userId;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@reservationId", reservationId);
@@ -526,12 +526,12 @@ public class SalesService : ISalesService
         await EnsureSalesUserAsync(connection, userId, cancellationToken);
         const string sql = @"
             SELECT
-                u.ad_soyad, u.eposta, u.rol, COALESCE(u.satis_ekibi,'Satış Ekibi'),
-                COALESCE(u.gunluk_satis_hedefi,0), COALESCE(u.aylik_satis_hedefi,0),
-                COALESCE((SELECT COUNT(*) FROM rezervasyonlar r WHERE r.satis_temsilcisi_id = u.id AND CAST(r.olusturulma_tarihi AS date) = CAST(GETDATE() AS date)),0),
-                COALESCE((SELECT SUM(r.toplam_tutar) FROM rezervasyonlar r WHERE r.satis_temsilcisi_id = u.id AND CAST(r.olusturulma_tarihi AS date) = CAST(GETDATE() AS date)),0),
-                COALESCE((SELECT COUNT(*) FROM rezervasyonlar r WHERE r.satis_temsilcisi_id = u.id AND YEAR(r.olusturulma_tarihi)=YEAR(GETDATE()) AND MONTH(r.olusturulma_tarihi)=MONTH(GETDATE())),0)
-            FROM users u WHERE u.id = @userId;";
+                u.[AD_SOYAD], u.[EPOSTA], u.[ROL], COALESCE(u.[SATIS_EKIBI],'Satış Ekibi'),
+                COALESCE(u.[GUNLUK_SATIS_HEDEFI],0), COALESCE(u.[AYLIK_SATIS_HEDEFI],0),
+                COALESCE((SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE r.[SATIS_TEMSILCISI_ID] = u.id AND CAST(r.[OLUSTURULMA_TARIHI] AS date) = CAST(GETDATE() AS date)),0),
+                COALESCE((SELECT SUM(r.[TOPLAM_TUTAR]) FROM [dbo].[REZERVASYONLAR] r WHERE r.[SATIS_TEMSILCISI_ID] = u.id AND CAST(r.[OLUSTURULMA_TARIHI] AS date) = CAST(GETDATE() AS date)),0),
+                COALESCE((SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE r.[SATIS_TEMSILCISI_ID] = u.id AND YEAR(r.[OLUSTURULMA_TARIHI])=YEAR(GETDATE()) AND MONTH(r.[OLUSTURULMA_TARIHI])=MONTH(GETDATE())),0)
+            FROM [dbo].[KULLANICILAR] u WHERE u.id = @userId;";
         var shell = new SalesPanelShellViewModel();
         await using (var command = new SqlCommand(sql, connection))
         {
@@ -560,7 +560,7 @@ public class SalesService : ISalesService
 
     private async Task EnsureSalesUserAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT COUNT(*) FROM users WHERE id = @userId AND rol IN ('sales_admin','sales_agent') AND hesap_durumu = 1;";
+        const string sql = "SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE id = @userId AND rol IN ('sales_admin','sales_agent') AND [HESAP_DURUMU] = 1;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         if (Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) == 0)
@@ -572,14 +572,14 @@ public class SalesService : ISalesService
     private async Task<int> LoadRankingAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT siralama FROM (
-                SELECT satis_temsilcisi_id, DENSE_RANK() OVER (ORDER BY COALESCE(SUM(toplam_tutar),0) DESC) AS siralama
-                FROM rezervasyonlar
-                WHERE satis_temsilcisi_id IS NOT NULL
-                  AND olusturulma_tarihi >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
-                  AND olusturulma_tarihi < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
-                GROUP BY satis_temsilcisi_id
-            ) t WHERE satis_temsilcisi_id = @userId;";
+            SELECT [SIRALAMA] FROM (
+                SELECT [SATIS_TEMSILCISI_ID], DENSE_RANK() OVER (ORDER BY COALESCE(SUM([TOPLAM_TUTAR]),0) DESC) AS [SIRALAMA]
+                FROM [dbo].[REZERVASYONLAR]
+                WHERE [SATIS_TEMSILCISI_ID] IS NOT NULL
+                  AND [OLUSTURULMA_TARIHI] >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+                  AND [OLUSTURULMA_TARIHI] < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
+                GROUP BY [SATIS_TEMSILCISI_ID]
+            ) t WHERE [SATIS_TEMSILCISI_ID] = @userId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
@@ -589,20 +589,20 @@ public class SalesService : ISalesService
     private async Task<List<SalesReservationListItemViewModel>> LoadReservationsAsync(SqlConnection connection, long userId, SalesReservationsFilterViewModel filters, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT r.id, r.rezervasyon_no, o.otel_adi, r.misafir_ad_soyad, COALESCE(r.misafir_eposta,''), COALESCE(r.misafir_telefon,''),
-                   FORMAT(r.giris_tarihi, 'dd.MM.yyyy', 'tr-TR'), FORMAT(r.cikis_tarihi, 'dd.MM.yyyy', 'tr-TR'),
-                   r.gece_sayisi, ot.oda_adi, r.durum, r.otel_onay_durumu, r.toplam_tutar, r.komisyon_tutari,
-                   FORMAT(r.olusturulma_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR'), COALESCE(r.rezervasyon_kanali,''), COALESCE(r.musteri_talep_notu,'')
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            INNER JOIN oda_tipleri ot ON ot.id = r.oda_tip_id
-            WHERE r.satis_temsilcisi_id = @userId
-              AND (@search IS NULL OR r.rezervasyon_no LIKE CONCAT('%', @search, '%') OR o.otel_adi LIKE CONCAT('%', @search, '%') OR r.misafir_ad_soyad LIKE CONCAT('%', @search, '%') OR r.misafir_telefon LIKE CONCAT('%', @search, '%') OR r.misafir_eposta LIKE CONCAT('%', @search, '%'))
-              AND (@status IS NULL OR r.durum = @status)
-              AND (@approval IS NULL OR r.otel_onay_durumu = @approval)
-              AND (@startDate IS NULL OR r.giris_tarihi >= @startDate)
-              AND (@endDate IS NULL OR r.cikis_tarihi <= @endDate)
-            ORDER BY r.olusturulma_tarihi DESC
+            SELECT r.id, r.[REZERVASYON_NO], o.[OTEL_ADI], r.[MISAFIR_AD_SOYAD], COALESCE(r.[MISAFIR_EPOSTA],''), COALESCE(r.[MISAFIR_TELEFON],''),
+                   FORMAT(r.[GIRIS_TARIHI], 'dd.MM.yyyy', 'tr-TR'), FORMAT(r.[CIKIS_TARIHI], 'dd.MM.yyyy', 'tr-TR'),
+                   r.[GECE_SAYISI], ot.[ODA_ADI], r.[DURUM], r.[OTEL_ONAY_DURUMU], r.[TOPLAM_TUTAR], r.[KOMISYON_TUTARI],
+                   FORMAT(r.[OLUSTURULMA_TARIHI], 'dd.MM.yyyy HH:mm', 'tr-TR'), COALESCE(r.[REZERVASYON_KANALI],''), COALESCE(r.[MUSTERI_TALEP_NOTU],'')
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            INNER JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
+            WHERE r.[SATIS_TEMSILCISI_ID] = @userId
+              AND (@search IS NULL OR r.[REZERVASYON_NO] LIKE CONCAT('%', @search, '%') OR o.[OTEL_ADI] LIKE CONCAT('%', @search, '%') OR r.[MISAFIR_AD_SOYAD] LIKE CONCAT('%', @search, '%') OR r.[MISAFIR_TELEFON] LIKE CONCAT('%', @search, '%') OR r.[MISAFIR_EPOSTA] LIKE CONCAT('%', @search, '%'))
+              AND (@status IS NULL OR r.[DURUM] = @status)
+              AND (@approval IS NULL OR r.[OTEL_ONAY_DURUMU] = @approval)
+              AND (@startDate IS NULL OR r.[GIRIS_TARIHI] >= @startDate)
+              AND (@endDate IS NULL OR r.[CIKIS_TARIHI] <= @endDate)
+            ORDER BY r.[OLUSTURULMA_TARIHI] DESC
             OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;";
         var items = new List<SalesReservationListItemViewModel>();
         await using var command = new SqlCommand(sql, connection);
@@ -642,13 +642,13 @@ public class SalesService : ISalesService
     private async Task<List<SalesCustomerCardViewModel>> LoadCustomersAsync(SqlConnection connection, string? search, int limit, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT TOP (@limit) id, musteri_kodu, ad_soyad, COALESCE(eposta,''), COALESCE(telefon,''), uyelik_seviyesi,
-                   toplam_rezervasyon_sayisi, son_rezervasyon_tarihi, COALESCE(son_talep_ozeti,''), toplam_harcama,
-                   CONCAT_WS(', ', NULLIF(mahalle,''), NULLIF(ilce,''), NULLIF(sehir,'')),
-                   COALESCE(sehir,''), COALESCE(ilce,''), COALESCE(mahalle,''), COALESCE(adres,'')
-            FROM satis_musterileri
-            WHERE (@search IS NULL OR ad_soyad LIKE CONCAT('%', @search, '%') OR eposta LIKE CONCAT('%', @search, '%') OR telefon LIKE CONCAT('%', @search, '%'))
-            ORDER BY toplam_rezervasyon_sayisi DESC, guncellenme_tarihi DESC, olusturulma_tarihi DESC;";
+            SELECT TOP (@limit) id, [MUSTERI_KODU], [AD_SOYAD], COALESCE([EPOSTA],''), COALESCE([TELEFON],''), [UYELIK_SEVIYESI],
+                   [TOPLAM_REZERVASYON_SAYISI], [SON_REZERVASYON_TARIHI], COALESCE([SON_TALEP_OZETI],''), [TOPLAM_HARCAMA],
+                   CONCAT_WS(', ', NULLIF([MAHALLE],''), NULLIF(ilce,''), NULLIF([SEHIR],'')),
+                   COALESCE([SEHIR],''), COALESCE(ilce,''), COALESCE([MAHALLE],''), COALESCE([ADRES],'')
+            FROM [dbo].[SATIS_MUSTERILERI]
+            WHERE (@search IS NULL OR [AD_SOYAD] LIKE CONCAT('%', @search, '%') OR [EPOSTA] LIKE CONCAT('%', @search, '%') OR [TELEFON] LIKE CONCAT('%', @search, '%'))
+            ORDER BY [TOPLAM_REZERVASYON_SAYISI] DESC, [GUNCELLENME_TARIHI] DESC, [OLUSTURULMA_TARIHI] DESC;";
         var items = new List<SalesCustomerCardViewModel>();
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@search", string.IsNullOrWhiteSpace(search) ? DBNull.Value : search.Trim());
@@ -683,26 +683,26 @@ public class SalesService : ISalesService
             SELECT TOP (250)
                 id,
                 CONCAT(
-                    otel_adi,
+                    [OTEL_ADI],
                     CASE
-                        WHEN NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF(sehir,''))), '') IS NULL THEN ''
-                        ELSE CONCAT(' · ', TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF(sehir,''))))
+                        WHEN NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF([SEHIR],''))), '') IS NULL THEN ''
+                        ELSE CONCAT(' · ', TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF([SEHIR],''))))
                     END
                 ) AS etiket
-            FROM oteller
-            WHERE yayin_durumu IN ('Yayında','Bakımda')
-              AND onay_durumu = 'Onaylandı'
-              AND (@search IS NULL OR otel_adi LIKE CONCAT('%', @search, '%') OR sehir LIKE CONCAT('%', @search, '%') OR ilce LIKE CONCAT('%', @search, '%') OR tam_adres LIKE CONCAT('%', @search, '%'))
-              AND (@city IS NULL OR sehir = @city)
+            FROM [dbo].[OTELLER]
+            WHERE [YAYIN_DURUMU] IN ('Yayında','Bakımda')
+              AND [ONAY_DURUMU] = 'Onaylandı'
+              AND (@search IS NULL OR [OTEL_ADI] LIKE CONCAT('%', @search, '%') OR [SEHIR] LIKE CONCAT('%', @search, '%') OR ilce LIKE CONCAT('%', @search, '%') OR [TAM_ADRES] LIKE CONCAT('%', @search, '%'))
+              AND (@city IS NULL OR [SEHIR] = @city)
               AND (@district IS NULL OR ilce = @district)
-              AND (@neighborhood IS NULL OR tam_adres LIKE CONCAT('%', @neighborhood, '%'))
+              AND (@neighborhood IS NULL OR [TAM_ADRES] LIKE CONCAT('%', @neighborhood, '%'))
             ORDER BY
-                CASE WHEN @search IS NOT NULL AND otel_adi LIKE CONCAT(@search, '%') THEN 0 ELSE 1 END,
-                one_cikan_otel DESC,
-                populerlik_sirasi DESC,
-                ortalama_puan DESC,
-                toplam_yorum_sayisi DESC,
-                otel_adi;",
+                CASE WHEN @search IS NOT NULL AND [OTEL_ADI] LIKE CONCAT(@search, '%') THEN 0 ELSE 1 END,
+                [ONE_CIKAN_OTEL] DESC,
+                [POPULERLIK_SIRASI] DESC,
+                [ORTALAMA_PUAN] DESC,
+                [TOPLAM_YORUM_SAYISI] DESC,
+                [OTEL_ADI];",
             cmd =>
             {
                 cmd.Parameters.AddWithValue("@search", string.IsNullOrWhiteSpace(search) ? DBNull.Value : search.Trim());
@@ -713,37 +713,37 @@ public class SalesService : ISalesService
             cancellationToken);
 
     private async Task<List<SalesSelectOption>> LoadCitiesAsync(SqlConnection connection, CancellationToken cancellationToken)
-        => await LoadOptionsAsync(connection, "SELECT MIN(id), sehir FROM oteller GROUP BY sehir ORDER BY sehir;", null, cancellationToken);
+        => await LoadOptionsAsync(connection, "SELECT MIN(id), [SEHIR] FROM [dbo].[OTELLER] GROUP BY [SEHIR] ORDER BY [SEHIR];", null, cancellationToken);
 
     private async Task<List<SalesSelectOption>> LoadDistrictsAsync(SqlConnection connection, string? city, CancellationToken cancellationToken)
-        => await LoadOptionsAsync(connection, "SELECT MIN(id), ilce FROM oteller WHERE (@city IS NULL OR sehir = @city) GROUP BY ilce ORDER BY ilce;", cmd => cmd.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? DBNull.Value : city.Trim()), cancellationToken);
+        => await LoadOptionsAsync(connection, "SELECT MIN(id), ilce FROM [dbo].[OTELLER] WHERE (@city IS NULL OR [SEHIR] = @city) GROUP BY ilce ORDER BY ilce;", cmd => cmd.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(city) ? DBNull.Value : city.Trim()), cancellationToken);
 
     private async Task<List<SalesSelectOption>> LoadRoomTypeOptionsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
-        => await LoadOptionsAsync(connection, "SELECT id, oda_adi FROM oda_tipleri WHERE otel_id = @hotelId AND aktif_mi = 1 ORDER BY standart_gecelik_fiyat ASC, oda_adi;", cmd => cmd.Parameters.AddWithValue("@hotelId", hotelId), cancellationToken);
+        => await LoadOptionsAsync(connection, "SELECT id, [ODA_ADI] FROM [dbo].[ODA_TIPLERI] WHERE [OTEL_ID] = @hotelId AND [AKTIF_MI] = 1 ORDER BY [STANDART_GECELIK_FIYAT] ASC, [ODA_ADI];", cmd => cmd.Parameters.AddWithValue("@hotelId", hotelId), cancellationToken);
 
     private async Task<List<SalesRoomOptionViewModel>> LoadRoomOptionsAsync(SqlConnection connection, long hotelId, DateOnly checkIn, DateOnly checkOut, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT o.id, o.oda_adi, o.maksimum_kisi_sayisi, o.toplam_oda_sayisi,
-                   COALESCE(AVG(COALESCE(ofm.indirimli_fiyat, ofm.gecelik_fiyat)), o.standart_gecelik_fiyat) AS fiyat,
-                   COALESCE(MAX(ofm.toplam_oda_sayisi - ofm.satilan_oda_sayisi - ofm.bloke_oda_sayisi), o.toplam_oda_sayisi) AS stok,
-                   COALESCE(feature_data.ozellikler, '')
-            FROM oda_tipleri o
-            LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = o.id
-                AND ofm.otel_id = o.otel_id
-                AND ofm.tarih >= @checkIn
-                AND ofm.tarih < @checkOut
+            SELECT o.id, o.[ODA_ADI], o.[MAKSIMUM_KISI_SAYISI], o.[TOPLAM_ODA_SAYISI],
+                   COALESCE(AVG(COALESCE(ofm.[INDIRIMLI_FIYAT], ofm.[GECELIK_FIYAT])), o.[STANDART_GECELIK_FIYAT]) AS fiyat,
+                   COALESCE(MAX(ofm.[TOPLAM_ODA_SAYISI] - ofm.[SATILAN_ODA_SAYISI] - ofm.[BLOKE_ODA_SAYISI]), o.[TOPLAM_ODA_SAYISI]) AS stok,
+                   COALESCE(feature_data.[OZELLIKLER], '')
+            FROM [dbo].[ODA_TIPLERI] o
+            LEFT JOIN [dbo].[ODA_FIYAT_MUSAITLIK] ofm ON ofm.[ODA_TIP_ID] = o.id
+                AND ofm.[OTEL_ID] = o.[OTEL_ID]
+                AND ofm.[TARIH] >= @checkIn
+                AND ofm.[TARIH] < @checkOut
             OUTER APPLY (
-                SELECT STRING_AGG(feature_rows.ozellik_adi, ', ') WITHIN GROUP (ORDER BY feature_rows.siralama ASC) AS ozellikler
+                SELECT STRING_AGG(feature_rows.[OZELLIK_ADI], ', ') WITHIN GROUP (ORDER BY feature_rows.[SIRALAMA] ASC) AS [OZELLIKLER]
                 FROM (
-                    SELECT DISTINCT oo.ozellik_adi, oo.siralama
-                    FROM oda_tipi_ozellikleri oto
-                    INNER JOIN oda_ozellikleri oo ON oo.id = oto.ozellik_id AND oo.aktif_mi = 1
-                    WHERE oto.oda_tip_id = o.id
+                    SELECT DISTINCT oo.[OZELLIK_ADI], oo.[SIRALAMA]
+                    FROM [dbo].[ODA_TIPI_OZELLIKLERI] oto
+                    INNER JOIN [dbo].[ODA_OZELLIKLERI] oo ON oo.id = oto.[OZELLIK_ID] AND oo.[AKTIF_MI] = 1
+                    WHERE oto.[ODA_TIP_ID] = o.id
                 ) feature_rows
             ) feature_data
-            WHERE o.otel_id = @hotelId AND o.aktif_mi = 1
-            GROUP BY o.id, o.oda_adi, o.maksimum_kisi_sayisi, o.toplam_oda_sayisi, o.standart_gecelik_fiyat
+            WHERE o.[OTEL_ID] = @hotelId AND o.[AKTIF_MI] = 1
+            GROUP BY o.id, o.[ODA_ADI], o.[MAKSIMUM_KISI_SAYISI], o.[TOPLAM_ODA_SAYISI], o.[STANDART_GECELIK_FIYAT]
             ORDER BY fiyat ASC;";
         var items = new List<SalesRoomOptionViewModel>();
         await using var command = new SqlCommand(sql, connection);
@@ -773,12 +773,12 @@ public class SalesService : ISalesService
     private async Task<SalesReservationPriceSummaryViewModel> BuildPriceSummaryAsync(SqlConnection connection, long roomTypeId, DateOnly checkIn, DateOnly checkOut, int roomCount, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT COALESCE(AVG(COALESCE(ofm.indirimli_fiyat, ofm.gecelik_fiyat)), ot.standart_gecelik_fiyat)
-            FROM oda_tipleri ot
-            LEFT JOIN oda_fiyat_musaitlik ofm ON ofm.oda_tip_id = ot.id
-                AND ofm.otel_id = ot.otel_id
-                AND ofm.tarih >= @checkIn
-                AND ofm.tarih < @checkOut
+            SELECT COALESCE(AVG(COALESCE(ofm.[INDIRIMLI_FIYAT], ofm.[GECELIK_FIYAT])), ot.[STANDART_GECELIK_FIYAT])
+            FROM [dbo].[ODA_TIPLERI] ot
+            LEFT JOIN [dbo].[ODA_FIYAT_MUSAITLIK] ofm ON ofm.[ODA_TIP_ID] = ot.id
+                AND ofm.[OTEL_ID] = ot.[OTEL_ID]
+                AND ofm.[TARIH] >= @checkIn
+                AND ofm.[TARIH] < @checkOut
             WHERE ot.id = @roomTypeId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@checkIn", checkIn.ToDateTime(TimeOnly.MinValue));
@@ -805,35 +805,35 @@ public class SalesService : ISalesService
     private async Task<List<SalesHotelSearchCardViewModel>> LoadHotelSearchResultsAsync(SqlConnection connection, string? searchTerm, string? city, string? district, string? neighborhood, decimal? minPrice, decimal? maxPrice, decimal? minimumRating, int? minimumReviewCount, string? feature, int resultLimit, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT o.id, o.otel_adi, o.sehir, o.ilce, o.tam_adres, COALESCE(o.rezervasyon_telefonu, o.telefon_1, ''),
-                   o.ortalama_puan, o.toplam_yorum_sayisi,
-                   COALESCE((SELECT MIN(standart_gecelik_fiyat) FROM oda_tipleri WHERE otel_id = o.id),0),
-                   (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.otel_id = o.id AND CAST(r.olusturulma_tarihi AS date) = CAST(GETDATE() AS date)),
+            SELECT o.id, o.[OTEL_ADI], o.[SEHIR], o.[ILCE], o.[TAM_ADRES], COALESCE(o.[REZERVASYON_TELEFONU], o.[TELEFON_1], ''),
+                   o.[ORTALAMA_PUAN], o.[TOPLAM_YORUM_SAYISI],
+                   COALESCE((SELECT MIN([STANDART_GECELIK_FIYAT]) FROM [dbo].[ODA_TIPLERI] WHERE [OTEL_ID] = o.id),0),
+                   (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE r.[OTEL_ID] = o.id AND CAST(r.[OLUSTURULMA_TARIHI] AS date) = CAST(GETDATE() AS date)),
                    COALESCE((
-                       SELECT STRING_AGG(feature_rows.ozellik_adi, ', ') WITHIN GROUP (ORDER BY feature_rows.siralama ASC)
+                       SELECT STRING_AGG(feature_rows.[OZELLIK_ADI], ', ') WITHIN GROUP (ORDER BY feature_rows.[SIRALAMA] ASC)
                        FROM (
-                           SELECT TOP (3) oo.ozellik_adi, oo.siralama
-                           FROM otel_ozellik_iliskileri il
-                           INNER JOIN otel_ozellikleri oo ON oo.id = il.ozellik_id
-                           WHERE il.otel_id = o.id
-                           ORDER BY oo.siralama ASC
+                           SELECT TOP (3) oo.[OZELLIK_ADI], oo.[SIRALAMA]
+                           FROM [dbo].[OTEL_OZELLIK_ILISKILERI] il
+                           INNER JOIN [dbo].[OTEL_OZELLIKLERI] oo ON oo.id = il.[OZELLIK_ID]
+                           WHERE il.[OTEL_ID] = o.id
+                           ORDER BY oo.[SIRALAMA] ASC
                        ) feature_rows
                    ),'')
-            FROM oteller o
-            WHERE o.yayin_durumu IN ('Yayında','Bakımda')
-              AND o.onay_durumu = 'Onaylandı'
-              AND (@searchTerm IS NULL OR o.otel_adi LIKE CONCAT('%', @searchTerm, '%') OR o.sehir LIKE CONCAT('%', @searchTerm, '%') OR o.ilce LIKE CONCAT('%', @searchTerm, '%') OR o.tam_adres LIKE CONCAT('%', @searchTerm, '%'))
-              AND (@city IS NULL OR o.sehir = @city)
-              AND (@district IS NULL OR o.ilce = @district)
-              AND (@neighborhood IS NULL OR o.tam_adres LIKE CONCAT('%', @neighborhood, '%'))
-              AND (@minimumRating IS NULL OR o.ortalama_puan >= @minimumRating)
-              AND (@minimumReviewCount IS NULL OR o.toplam_yorum_sayisi >= @minimumReviewCount)
-              AND (@feature IS NULL OR EXISTS (SELECT 1 FROM otel_ozellik_iliskileri il INNER JOIN otel_ozellikleri oo ON oo.id = il.ozellik_id WHERE il.otel_id = o.id AND oo.ozellik_adi LIKE CONCAT('%', @feature, '%')))
+            FROM [dbo].[OTELLER] o
+            WHERE o.[YAYIN_DURUMU] IN ('Yayında','Bakımda')
+              AND o.[ONAY_DURUMU] = 'Onaylandı'
+              AND (@searchTerm IS NULL OR o.[OTEL_ADI] LIKE CONCAT('%', @searchTerm, '%') OR o.[SEHIR] LIKE CONCAT('%', @searchTerm, '%') OR o.[ILCE] LIKE CONCAT('%', @searchTerm, '%') OR o.[TAM_ADRES] LIKE CONCAT('%', @searchTerm, '%'))
+              AND (@city IS NULL OR o.[SEHIR] = @city)
+              AND (@district IS NULL OR o.[ILCE] = @district)
+              AND (@neighborhood IS NULL OR o.[TAM_ADRES] LIKE CONCAT('%', @neighborhood, '%'))
+              AND (@minimumRating IS NULL OR o.[ORTALAMA_PUAN] >= @minimumRating)
+              AND (@minimumReviewCount IS NULL OR o.[TOPLAM_YORUM_SAYISI] >= @minimumReviewCount)
+              AND (@feature IS NULL OR EXISTS (SELECT 1 FROM [dbo].[OTEL_OZELLIK_ILISKILERI] il INNER JOIN [dbo].[OTEL_OZELLIKLERI] oo ON oo.id = il.[OZELLIK_ID] WHERE il.[OTEL_ID] = o.id AND oo.[OZELLIK_ADI] LIKE CONCAT('%', @feature, '%')))
             ORDER BY
-                CASE WHEN @searchTerm IS NOT NULL AND o.otel_adi LIKE CONCAT(@searchTerm, '%') THEN 0 ELSE 1 END,
-                CASE WHEN @district IS NOT NULL AND o.ilce = @district THEN 0 ELSE 1 END,
-                CASE WHEN @city IS NOT NULL AND o.sehir = @city THEN 0 ELSE 1 END,
-                o.one_cikan_otel DESC, o.ortalama_puan DESC, o.toplam_yorum_sayisi DESC
+                CASE WHEN @searchTerm IS NOT NULL AND o.[OTEL_ADI] LIKE CONCAT(@searchTerm, '%') THEN 0 ELSE 1 END,
+                CASE WHEN @district IS NOT NULL AND o.[ILCE] = @district THEN 0 ELSE 1 END,
+                CASE WHEN @city IS NOT NULL AND o.[SEHIR] = @city THEN 0 ELSE 1 END,
+                o.[ONE_CIKAN_OTEL] DESC, o.[ORTALAMA_PUAN] DESC, o.[TOPLAM_YORUM_SAYISI] DESC
             OFFSET 0 ROWS FETCH NEXT @resultLimit ROWS ONLY;";
         var items = new List<SalesHotelSearchCardViewModel>();
         await using var command = new SqlCommand(sql, connection);
@@ -895,13 +895,13 @@ public class SalesService : ISalesService
         const string sql = @"
             SELECT id,
                    CONCAT(
-                       otel_adi,
+                       [OTEL_ADI],
                        CASE
-                           WHEN NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF(sehir,''))), '') IS NULL THEN ''
-                           ELSE CONCAT(' · ', TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF(sehir,''))))
+                           WHEN NULLIF(TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF([SEHIR],''))), '') IS NULL THEN ''
+                           ELSE CONCAT(' · ', TRIM(CONCAT_WS(', ', NULLIF(ilce,''), NULLIF([SEHIR],''))))
                        END
                    ) AS etiket
-            FROM oteller
+            FROM [dbo].[OTELLER]
             WHERE id = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -921,14 +921,14 @@ public class SalesService : ISalesService
     private async Task<List<SalesAvailabilityDayViewModel>> LoadAvailabilityDaysAsync(SqlConnection connection, long roomTypeId, DateOnly monthStart, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT ofm.tarih, ofm.gecelik_fiyat, ofm.indirimli_fiyat, ofm.toplam_oda_sayisi, ofm.satilan_oda_sayisi, ofm.bloke_oda_sayisi
-            FROM oda_fiyat_musaitlik ofm
-            INNER JOIN oda_tipleri ot ON ot.id = ofm.oda_tip_id
-            WHERE ofm.oda_tip_id = @roomTypeId
-              AND ofm.otel_id = ot.otel_id
-              AND ofm.tarih >= @monthStart
-              AND ofm.tarih < DATEADD(MONTH, 1, @monthStart)
-            ORDER BY ofm.tarih;";
+            SELECT ofm.[TARIH], ofm.[GECELIK_FIYAT], ofm.[INDIRIMLI_FIYAT], ofm.[TOPLAM_ODA_SAYISI], ofm.[SATILAN_ODA_SAYISI], ofm.[BLOKE_ODA_SAYISI]
+            FROM [dbo].[ODA_FIYAT_MUSAITLIK] ofm
+            INNER JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = ofm.[ODA_TIP_ID]
+            WHERE ofm.[ODA_TIP_ID] = @roomTypeId
+              AND ofm.[OTEL_ID] = ot.[OTEL_ID]
+              AND ofm.[TARIH] >= @monthStart
+              AND ofm.[TARIH] < DATEADD(MONTH, 1, @monthStart)
+            ORDER BY ofm.[TARIH];";
         var items = new List<SalesAvailabilityDayViewModel>();
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
@@ -956,15 +956,15 @@ public class SalesService : ISalesService
     private async Task<List<SalesHotelGuideItemViewModel>> LoadHotelGuideAsync(SqlConnection connection, string? search, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT o.id, o.otel_adi, COALESCE(o.rezervasyon_telefonu, o.telefon_1, ''),
-                   COALESCE(o.satis_kontak_adi,''), COALESCE(o.satis_kontak_telefonu,''), COALESCE(o.satis_kontak_eposta,''),
-                   o.tam_adres, COALESCE(o.satis_notlari,''),
-                   (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.otel_id = o.id AND CAST(r.olusturulma_tarihi AS date) = CAST(GETDATE() AS date))
-            FROM oteller o
-            WHERE o.yayin_durumu IN ('Yayında','Bakımda')
-              AND o.onay_durumu = 'Onaylandı'
-              AND (@search IS NULL OR o.otel_adi LIKE CONCAT('%', @search, '%') OR o.sehir LIKE CONCAT('%', @search, '%') OR o.ilce LIKE CONCAT('%', @search, '%'))
-            ORDER BY 9 DESC, o.one_cikan_otel DESC, o.otel_adi;";
+            SELECT o.id, o.[OTEL_ADI], COALESCE(o.[REZERVASYON_TELEFONU], o.[TELEFON_1], ''),
+                   COALESCE(o.[SATIS_KONTAK_ADI],''), COALESCE(o.[SATIS_KONTAK_TELEFONU],''), COALESCE(o.[SATIS_KONTAK_EPOSTA],''),
+                   o.[TAM_ADRES], COALESCE(o.[SATIS_NOTLARI],''),
+                   (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE r.[OTEL_ID] = o.id AND CAST(r.[OLUSTURULMA_TARIHI] AS date) = CAST(GETDATE() AS date))
+            FROM [dbo].[OTELLER] o
+            WHERE o.[YAYIN_DURUMU] IN ('Yayında','Bakımda')
+              AND o.[ONAY_DURUMU] = 'Onaylandı'
+              AND (@search IS NULL OR o.[OTEL_ADI] LIKE CONCAT('%', @search, '%') OR o.[SEHIR] LIKE CONCAT('%', @search, '%') OR o.[ILCE] LIKE CONCAT('%', @search, '%'))
+            ORDER BY 9 DESC, o.[ONE_CIKAN_OTEL] DESC, o.[OTEL_ADI];";
         var items = new List<SalesHotelGuideItemViewModel>();
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@search", string.IsNullOrWhiteSpace(search) ? DBNull.Value : search.Trim());
@@ -989,7 +989,7 @@ public class SalesService : ISalesService
 
     private async Task<long> EnsureSalesCustomerAsync(SqlConnection connection, SqlTransaction transaction, long userId, SalesReservationCreateModel model, CancellationToken cancellationToken, string? membershipLevel = null)
     {
-        const string findSql = "SELECT TOP (1) id FROM satis_musterileri WHERE (eposta = @email AND @email <> '') OR (telefon = @phone AND @phone <> '');";
+        const string findSql = "SELECT TOP (1) id FROM [dbo].[SATIS_MUSTERILERI] WHERE ([EPOSTA] = @email AND @email <> '') OR ([TELEFON] = @phone AND @phone <> '');";
         await using (var findCommand = new SqlCommand(findSql, connection, (SqlTransaction)transaction))
         {
             findCommand.Parameters.AddWithValue("@email", model.CustomerEmail.Trim());
@@ -998,12 +998,12 @@ public class SalesService : ISalesService
             if (existing is not null and not DBNull) return Convert.ToInt64(existing, CultureInfo.InvariantCulture);
         }
 
-        await using var seqCommand = new SqlCommand("SELECT COUNT(*) + 1 FROM satis_musterileri;", connection, (SqlTransaction)transaction);
+        await using var seqCommand = new SqlCommand("SELECT COUNT(*) + 1 FROM [dbo].[SATIS_MUSTERILERI];", connection, (SqlTransaction)transaction);
         var seq = Convert.ToInt32(await seqCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
         var code = $"SATMUST-{seq:0000}";
         const string insertSql = @"
-            INSERT INTO satis_musterileri
-            (musteri_kodu, ad_soyad, eposta, telefon, sehir, ilce, mahalle, adres, uyelik_seviyesi, son_talep_ozeti, notlar, olusturan_sales_user_id)
+            INSERT INTO [dbo].[SATIS_MUSTERILERI]
+            ([MUSTERI_KODU], [AD_SOYAD], [EPOSTA], [TELEFON], [SEHIR], ilce, [MAHALLE], [ADRES], [UYELIK_SEVIYESI], [SON_TALEP_OZETI], [NOTLAR], [OLUSTURAN_SATIS_KULLANICI_ID])
             VALUES
             (@code, @fullName, @email, @phone, @city, @district, @neighborhood, @address, @membership, @summary, @notes, @userId);
             SELECT CAST(SCOPE_IDENTITY() AS bigint);";
@@ -1025,7 +1025,7 @@ public class SalesService : ISalesService
 
     private async Task<long> EnsurePublicCustomerUserAsync(SqlConnection connection, SqlTransaction transaction, SalesReservationCreateModel model, string emailForUser, CancellationToken cancellationToken)
     {
-        const string findSql = "SELECT TOP (1) id FROM users WHERE eposta = @email OR (telefon = @phone AND @phone <> '') ORDER BY id;";
+        const string findSql = "SELECT TOP (1) id FROM [dbo].[KULLANICILAR] WHERE [EPOSTA] = @email OR ([TELEFON] = @phone AND @phone <> '') ORDER BY id;";
         await using (var findCommand = new SqlCommand(findSql, connection, (SqlTransaction)transaction))
         {
             findCommand.Parameters.AddWithValue("@email", emailForUser.Trim());
@@ -1035,8 +1035,8 @@ public class SalesService : ISalesService
         }
 
         const string insertSql = @"
-            INSERT INTO users
-            (ad_soyad, eposta, telefon, sehir, ilce, mahalle, adres, sifre, rol, hesap_durumu, dil_tercihi, para_birimi, ulke)
+            INSERT INTO [dbo].[KULLANICILAR]
+            ([AD_SOYAD], [EPOSTA], [TELEFON], [SEHIR], ilce, [MAHALLE], [ADRES], [SIFRE], rol, [HESAP_DURUMU], [DIL_TERCIHI], [PARA_BIRIMI], ulke)
             VALUES
             (@fullName, @email, @phone, @city, @district, @neighborhood, @address, CONVERT(varchar(64), HASHBYTES('SHA2_256', '1585'), 2), 'user', 1, 'tr', 'TRY', N'Türkiye');
             SELECT CAST(SCOPE_IDENTITY() AS bigint);";
@@ -1061,14 +1061,14 @@ public class SalesService : ISalesService
 
     private async Task<string> GenerateReservationNoAsync(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand("SELECT COUNT(*) + 1 FROM rezervasyonlar WHERE CAST(olusturulma_tarihi AS date) = CAST(GETDATE() AS date);", connection, (SqlTransaction)transaction);
+        await using var command = new SqlCommand("SELECT COUNT(*) + 1 FROM [dbo].[REZERVASYONLAR] WHERE CAST([OLUSTURULMA_TARIHI] AS date) = CAST(GETDATE() AS date);", connection, (SqlTransaction)transaction);
         var seq = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
         return $"SAT-{DateTime.Now:yyyyMMdd}-{seq:0000}";
     }
 
     private async Task<(string HotelName, decimal CommissionRate)> GetHotelSummaryAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand("SELECT TOP (1) otel_adi, varsayilan_komisyon_orani FROM oteller WHERE id = @hotelId;", connection);
+        await using var command = new SqlCommand("SELECT TOP (1) [OTEL_ADI], [VARSAYILAN_KOMISYON_ORANI] FROM [dbo].[OTELLER] WHERE id = @hotelId;", connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken)) throw new InvalidOperationException("Otel bulunamadı.");
@@ -1077,7 +1077,7 @@ public class SalesService : ISalesService
 
     private async Task<string> GetRoomNameAsync(SqlConnection connection, long roomTypeId, long hotelId, CancellationToken cancellationToken)
     {
-        await using var command = new SqlCommand("SELECT TOP (1) oda_adi FROM oda_tipleri WHERE id = @roomTypeId AND otel_id = @hotelId;", connection);
+        await using var command = new SqlCommand("SELECT TOP (1) [ODA_ADI] FROM [dbo].[ODA_TIPLERI] WHERE id = @roomTypeId AND [OTEL_ID] = @hotelId;", connection);
         command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         var result = await command.ExecuteScalarAsync(cancellationToken);
@@ -1088,12 +1088,12 @@ public class SalesService : ISalesService
     private async Task<(long UserId, string Email)> ResolvePartnerRecipientAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT TOP (1) COALESCE(o.user_id, oks.user_id, 1), COALESCE(o.satis_kontak_eposta, u.eposta, o.eposta, 'partner@otelturizm.com')
-            FROM oteller o
-            LEFT JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = o.id AND oks.aktif_mi = 1
-            LEFT JOIN users u ON u.id = COALESCE(o.user_id, oks.user_id)
+            SELECT TOP (1) COALESCE(o.[KULLANICI_ID], oks.[KULLANICI_ID], 1), COALESCE(o.[SATIS_KONTAK_EPOSTA], u.[EPOSTA], o.[EPOSTA], 'partner@otelturizm.com')
+            FROM [dbo].[OTELLER] o
+            LEFT JOIN [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oks ON oks.[OTEL_ID] = o.id AND oks.[AKTIF_MI] = 1
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = COALESCE(o.[KULLANICI_ID], oks.[KULLANICI_ID])
             WHERE o.id = @hotelId
-            ORDER BY oks.ana_sorumlu_mu DESC, oks.id ASC;";
+            ORDER BY oks.[ANA_SORUMLU_MU] DESC, oks.id ASC;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -1114,10 +1114,10 @@ public class SalesService : ISalesService
     private async Task<SalesCustomerCardViewModel?> LoadCustomerPrefillAsync(SqlConnection connection, long customerId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, musteri_kodu, ad_soyad, COALESCE(eposta,''), COALESCE(telefon,''), COALESCE(uyelik_seviyesi,'Standart'),
-                   toplam_rezervasyon_sayisi, son_rezervasyon_tarihi, COALESCE(son_talep_ozeti,''), toplam_harcama,
-                   COALESCE(sehir,''), COALESCE(ilce,''), COALESCE(mahalle,''), COALESCE(adres,'')
-            FROM satis_musterileri
+            SELECT id, [MUSTERI_KODU], [AD_SOYAD], COALESCE([EPOSTA],''), COALESCE([TELEFON],''), COALESCE([UYELIK_SEVIYESI],'Standart'),
+                   [TOPLAM_REZERVASYON_SAYISI], [SON_REZERVASYON_TARIHI], COALESCE([SON_TALEP_OZETI],''), [TOPLAM_HARCAMA],
+                   COALESCE([SEHIR],''), COALESCE(ilce,''), COALESCE([MAHALLE],''), COALESCE([ADRES],'')
+            FROM [dbo].[SATIS_MUSTERILERI]
             WHERE id = @customerId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@customerId", customerId);
@@ -1155,9 +1155,9 @@ public class SalesService : ISalesService
         }
 
         const string sql = @"
-            SELECT otel_adi, COALESCE(ilce,''), COALESCE(sehir,''), COALESCE(ortalama_puan,0), COALESCE(toplam_yorum_sayisi,0),
-                   COALESCE(rezervasyon_telefonu, telefon_1, '')
-            FROM oteller
+            SELECT [OTEL_ADI], COALESCE(ilce,''), COALESCE([SEHIR],''), COALESCE([ORTALAMA_PUAN],0), COALESCE([TOPLAM_YORUM_SAYISI],0),
+                   COALESCE([REZERVASYON_TELEFONU], [TELEFON_1], '')
+            FROM [dbo].[OTELLER]
             WHERE id = @hotelId;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelId", hotelId);
@@ -1202,14 +1202,14 @@ public class SalesService : ISalesService
     {
         const string sql = @"
             SELECT COUNT(*)
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            WHERE r.satis_temsilcisi_id = @userId
-              AND (@search IS NULL OR r.rezervasyon_no LIKE CONCAT('%', @search, '%') OR o.otel_adi LIKE CONCAT('%', @search, '%') OR r.misafir_ad_soyad LIKE CONCAT('%', @search, '%') OR r.misafir_telefon LIKE CONCAT('%', @search, '%') OR r.misafir_eposta LIKE CONCAT('%', @search, '%'))
-              AND (@status IS NULL OR r.durum = @status)
-              AND (@approval IS NULL OR r.otel_onay_durumu = @approval)
-              AND (@startDate IS NULL OR r.giris_tarihi >= @startDate)
-              AND (@endDate IS NULL OR r.cikis_tarihi <= @endDate);";
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            WHERE r.[SATIS_TEMSILCISI_ID] = @userId
+              AND (@search IS NULL OR r.[REZERVASYON_NO] LIKE CONCAT('%', @search, '%') OR o.[OTEL_ADI] LIKE CONCAT('%', @search, '%') OR r.[MISAFIR_AD_SOYAD] LIKE CONCAT('%', @search, '%') OR r.[MISAFIR_TELEFON] LIKE CONCAT('%', @search, '%') OR r.[MISAFIR_EPOSTA] LIKE CONCAT('%', @search, '%'))
+              AND (@status IS NULL OR r.[DURUM] = @status)
+              AND (@approval IS NULL OR r.[OTEL_ONAY_DURUMU] = @approval)
+              AND (@startDate IS NULL OR r.[GIRIS_TARIHI] >= @startDate)
+              AND (@endDate IS NULL OR r.[CIKIS_TARIHI] <= @endDate);";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@search", filters.Search is null ? DBNull.Value : filters.Search);
@@ -1230,17 +1230,17 @@ public class SalesService : ISalesService
     {
         const string sql = @"
             SELECT COUNT(*),
-                   SUM(CASE WHEN r.otel_onay_durumu = 'Onaylandı' OR r.durum = 'Onaylandı' THEN 1 ELSE 0 END),
-                   SUM(CASE WHEN r.durum = 'İptal Edildi' THEN 1 ELSE 0 END),
-                   COALESCE(SUM(r.toplam_tutar), 0)
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            WHERE r.satis_temsilcisi_id = @userId
-              AND (@search IS NULL OR r.rezervasyon_no LIKE CONCAT('%', @search, '%') OR o.otel_adi LIKE CONCAT('%', @search, '%') OR r.misafir_ad_soyad LIKE CONCAT('%', @search, '%') OR r.misafir_telefon LIKE CONCAT('%', @search, '%') OR r.misafir_eposta LIKE CONCAT('%', @search, '%'))
-              AND (@status IS NULL OR r.durum = @status)
-              AND (@approval IS NULL OR r.otel_onay_durumu = @approval)
-              AND (@startDate IS NULL OR r.giris_tarihi >= @startDate)
-              AND (@endDate IS NULL OR r.cikis_tarihi <= @endDate);";
+                   SUM(CASE WHEN r.[OTEL_ONAY_DURUMU] = 'Onaylandı' OR r.[DURUM] = 'Onaylandı' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN r.[DURUM] = 'İptal Edildi' THEN 1 ELSE 0 END),
+                   COALESCE(SUM(r.[TOPLAM_TUTAR]), 0)
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            WHERE r.[SATIS_TEMSILCISI_ID] = @userId
+              AND (@search IS NULL OR r.[REZERVASYON_NO] LIKE CONCAT('%', @search, '%') OR o.[OTEL_ADI] LIKE CONCAT('%', @search, '%') OR r.[MISAFIR_AD_SOYAD] LIKE CONCAT('%', @search, '%') OR r.[MISAFIR_TELEFON] LIKE CONCAT('%', @search, '%') OR r.[MISAFIR_EPOSTA] LIKE CONCAT('%', @search, '%'))
+              AND (@status IS NULL OR r.[DURUM] = @status)
+              AND (@approval IS NULL OR r.[OTEL_ONAY_DURUMU] = @approval)
+              AND (@startDate IS NULL OR r.[GIRIS_TARIHI] >= @startDate)
+              AND (@endDate IS NULL OR r.[CIKIS_TARIHI] <= @endDate);";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@search", filters.Search is null ? DBNull.Value : filters.Search);
@@ -1266,15 +1266,15 @@ public class SalesService : ISalesService
     private async Task<List<SalesMonthlyPerformanceItemViewModel>> LoadMonthlyPerformanceAsync(SqlConnection connection, long userId, int year, int page, int pageSize, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT MONTH(olusturulma_tarihi) AS ay,
-                   COUNT(*) AS rezervasyon_sayisi,
-                   SUM(CASE WHEN durum = 'Onaylandı' OR otel_onay_durumu = 'Onaylandı' THEN 1 ELSE 0 END) AS onaylanan,
-                   SUM(CASE WHEN durum = 'İptal Edildi' THEN 1 ELSE 0 END) AS iptal_edilen,
-                   COALESCE(SUM(toplam_tutar), 0) AS toplam_tutar
-            FROM rezervasyonlar
-            WHERE satis_temsilcisi_id = @userId
-              AND YEAR(olusturulma_tarihi) = @year
-            GROUP BY MONTH(olusturulma_tarihi)
+            SELECT MONTH([OLUSTURULMA_TARIHI]) AS ay,
+                   COUNT(*) AS [REZERVASYON_SAYISI],
+                   SUM(CASE WHEN [DURUM] = 'Onaylandı' OR [OTEL_ONAY_DURUMU] = 'Onaylandı' THEN 1 ELSE 0 END) AS onaylanan,
+                   SUM(CASE WHEN [DURUM] = 'İptal Edildi' THEN 1 ELSE 0 END) AS iptal_edilen,
+                   COALESCE(SUM([TOPLAM_TUTAR]), 0) AS [TOPLAM_TUTAR]
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [SATIS_TEMSILCISI_ID] = @userId
+              AND YEAR([OLUSTURULMA_TARIHI]) = @year
+            GROUP BY MONTH([OLUSTURULMA_TARIHI])
             ORDER BY ay DESC
             OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;";
         var items = new List<SalesMonthlyPerformanceItemViewModel>();
@@ -1304,11 +1304,11 @@ public class SalesService : ISalesService
         const string sql = @"
             SELECT COUNT(*)
             FROM (
-                SELECT MONTH(olusturulma_tarihi) AS ay
-                FROM rezervasyonlar
-                WHERE satis_temsilcisi_id = @userId
-                  AND YEAR(olusturulma_tarihi) = @year
-                GROUP BY MONTH(olusturulma_tarihi)
+                SELECT MONTH([OLUSTURULMA_TARIHI]) AS ay
+                FROM [dbo].[REZERVASYONLAR]
+                WHERE [SATIS_TEMSILCISI_ID] = @userId
+                  AND YEAR([OLUSTURULMA_TARIHI]) = @year
+                GROUP BY MONTH([OLUSTURULMA_TARIHI])
             ) aylik;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@userId", userId);

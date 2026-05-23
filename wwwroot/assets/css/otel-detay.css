@@ -6,6 +6,14 @@
     margin: 0 auto;
 }
 
+/* Wave-XIII — kamu detay marka tokenları (şablon #003B95) */
+.otel-detail-template-v41 {
+    --detail-brand: #003b95;
+    --detail-brand-dark: #002a6b;
+    --detail-accent: #ff385c;
+    --detail-success: #00a86b;
+}
+
 /* OtelDetay tipografi + buton ölçeği (marka bağımsız) */
 :root {
     --detail-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
@@ -424,6 +432,34 @@
 .gallery-main-image > * {
     position: relative;
     z-index: 1;
+}
+
+.gallery-all-photos-btn {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(231, 233, 236, 0.95);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.04));
+    font-weight: 800;
+    color: var(--text-dark, #1A1F26);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gallery-all-photos-btn i {
+    color: var(--primary, #003B95);
+}
+
+.gallery-all-photos-btn:hover {
+    box-shadow: var(--shadow-hover, 0 20px 30px -10px rgba(0, 59, 149, 0.15));
+    transform: translateY(-1px);
 }
 
 .gallery-star-badge {
@@ -2248,10 +2284,23 @@
 
 .review-summary {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 24px;
     align-items: center;
     margin-bottom: 22px;
+    padding: 24px;
+    border-radius: var(--radius-card, 16px);
+    border: 1px solid var(--border-light, #E7E9EC);
+    background: var(--card-bg, #ffffff);
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.04));
+}
+
+@media (max-width: 900px) {
+    .review-summary {
+        grid-template-columns: 1fr;
+        padding: 18px;
+        gap: 14px;
+    }
 }
 
 .review-signature {
@@ -2698,7 +2747,15 @@
 
 .amenities-list-clean {
     display: grid;
-    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+@media (max-width: 680px) {
+    .amenities-list-clean {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
 }
 
 .amenities-list-item {
@@ -2707,9 +2764,10 @@
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    border: 1px solid rgba(203, 213, 225, 0.75);
-    border-radius: 12px;
-    background: #fff;
+    border: 1px solid var(--border-light, #E7E9EC);
+    border-radius: 14px;
+    background: var(--card-bg, #ffffff);
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.04));
 }
 
 .amenities-list-item-icon {
@@ -2719,8 +2777,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #0f766e;
-    background: rgba(13, 148, 136, 0.12);
+    color: var(--primary, #003B95);
+    background: rgba(0, 59, 149, 0.10);
     font-size: 0.95rem;
 }
 
@@ -3039,11 +3097,11 @@
 
 .booking-price-head strong {
     font-size: 2rem;
-    color: #0f172a;
+    color: var(--text-dark, #1A1F26);
 }
 
 .booking-price-head span {
-    color: #64748b;
+    color: var(--text-gray, #6B7380);
 }
 
 .booking-tax-banner {
@@ -3083,9 +3141,9 @@
     padding: 8px 12px;
     border-radius: 999px;
     color: #fff;
-    font-size: 0.84rem;
+    font-size: 0.82rem;
     font-weight: 700;
-    background: #059669;
+    background: var(--success, #00A86B);
 }
 
 .booking-form {
@@ -3188,10 +3246,17 @@ label [aria-invalid="true"] {
     width: 100%;
     max-width: 100%;
     padding: 14px 16px;
-    border-radius: 16px;
-    border: 1px solid #dbe4f0;
+    border-radius: 12px;
+    border: 1px solid var(--border-light, #E7E9EC);
     background: #fff;
     min-width: 0;
+}
+
+.booking-form input:focus,
+.booking-form select:focus {
+    outline: none;
+    border-color: rgba(0, 59, 149, 0.35);
+    box-shadow: 0 0 0 3px rgba(0, 59, 149, 0.12);
 }
 
 .guest-row {
@@ -3224,15 +3289,25 @@ label [aria-invalid="true"] {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    border: 1px solid #dbe4f0;
+    border: 1px solid var(--border-light, #E7E9EC);
     background: #fff;
     font-size: 1.2rem;
 }
 
 .reserve-btn {
     color: #fff;
-    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    background: var(--secondary, #FF385C);
     margin-top: 8px;
+    min-height: 52px;
+    border-radius: var(--radius-button, 32px);
+    font-weight: 800;
+    font-size: 1.02rem;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.reserve-btn:hover {
+    filter: brightness(0.96);
+    transform: translateY(-1px);
 }
 
 .price-breakdown {
@@ -5769,11 +5844,70 @@ body.room-gallery-open {
     border-radius: 18px;
     overflow: hidden;
     background: linear-gradient(135deg, #f8fbff 0%, #edf3fb 100%);
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-light, #E7E9EC);
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.04));
 }
 
 .room-card-cover .room-gallery-trigger {
     height: 100%;
+}
+
+.room-card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.35s ease;
+}
+
+.room-card-cover .room-gallery-trigger:hover img {
+    transform: scale(1.04);
+}
+
+.room-card-cover::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 44%;
+    background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.52));
+    pointer-events: none;
+}
+
+.room-cover-title {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    z-index: 2;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-shadow: 0 10px 26px rgba(0,0,0,0.38);
+    max-width: calc(100% - 24px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.room-gallery-count {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(231,233,236,0.95);
+    color: #0f172a;
+    font-weight: 800;
+    font-size: 0.78rem;
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.04));
+}
+
+.room-gallery-count i {
+    color: var(--primary, #003B95);
 }
 
 .room-thumb-strip {
@@ -5794,7 +5928,7 @@ body.room-gallery-open {
 .room-thumb-item {
     flex: 0 0 52px;
     height: 40px;
-    border: 1px solid rgba(148, 163, 184, 0.24);
+    border: 1px solid var(--border-light, #E7E9EC);
     border-radius: 12px;
     overflow: hidden;
     padding: 0;
@@ -5808,8 +5942,8 @@ body.room-gallery-open {
 .room-thumb-item:hover,
 .room-thumb-item.active {
     opacity: 1;
-    border-color: rgba(29, 78, 216, 0.42);
-    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
+    border-color: rgba(0, 59, 149, 0.32);
+    box-shadow: 0 12px 22px rgba(0, 59, 149, 0.12);
 }
 
 .room-thumb-item img {
@@ -7390,6 +7524,25 @@ body.room-gallery-open {
     width: min(var(--page-max-width), calc(100% - 40px));
 }
 
+.otel-detail-template-v41 {
+    /* Swissôtel şablon tokenları */
+    --primary: #003B95;
+    --secondary: #FF385C;
+    --bg-light: #F5F7FA;
+    --card-bg: #FFFFFF;
+    --text-dark: #1A1F26;
+    --text-gray: #6B7380;
+    --border-light: #E7E9EC;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+    --shadow-hover: 0 20px 30px -10px rgba(0, 59, 149, 0.15);
+    --radius-card: 16px;
+    --radius-button: 32px;
+    --success: #00A86B;
+    --warning: #FFB800;
+    background: var(--bg-light);
+    color: var(--text-dark);
+}
+
 .otel-detail-template-v41 .detail-breadcrumb {
     padding: 12px 0 16px;
 }
@@ -7423,10 +7576,10 @@ body.room-gallery-open {
 
 .otel-detail-template-v41 .detail-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 338px;
+    grid-template-columns: minmax(0, 1fr) 380px;
     grid-template-rows: auto auto;
-    gap: 18px;
-    padding-top: 8px;
+    gap: 32px;
+    padding-top: 18px;
     align-items: start;
 }
 
@@ -7438,6 +7591,8 @@ body.room-gallery-open {
 .otel-detail-template-v41 .detail-grid > .booking-sidebar {
     grid-column: 2;
     grid-row: 1;
+    position: sticky;
+    top: 100px;
 }
 
 .otel-detail-template-v41 .detail-grid > .detail-map-card {
@@ -7446,9 +7601,10 @@ body.room-gallery-open {
 }
 
 .otel-detail-template-v41 .content-card {
-    border-radius: 18px;
-    box-shadow: none;
-    border-color: #e2e8f0;
+    background: var(--card-bg);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
 }
 
 .otel-detail-template-v41 .featured-amenities-card {
@@ -7471,11 +7627,13 @@ body.room-gallery-open {
 }
 
 .otel-detail-template-v41 .room-card {
-    border-radius: 16px;
-    background: #fff;
-    padding: 16px;
+    border-radius: var(--radius-card);
+    background: var(--card-bg);
+    padding: 20px;
     gap: 14px;
     align-items: stretch;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
 }
 
 .otel-detail-template-v41 .room-card-copy {
@@ -7528,9 +7686,11 @@ body.room-gallery-open {
 }
 
 .otel-detail-template-v41 .booking-card {
-    border-radius: 22px;
-    padding: 20px 18px;
-    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+    background: var(--card-bg);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-hover);
 }
 
 .otel-detail-template-v41 .booking-price-head {
@@ -7538,7 +7698,7 @@ body.room-gallery-open {
 }
 
 .otel-detail-template-v41 .booking-price-head strong {
-    font-size: 1.95rem;
+    font-size: 1.75rem;
     font-weight: 800;
     line-height: 1;
     letter-spacing: -0.02em;
@@ -8370,5 +8530,28 @@ body.room-gallery-open {
     .otel-detail-template-v41.otel-detail-tabler .detail-header.hotel-title-section {
         padding-left: var(--space-6);
         padding-right: var(--space-6);
+    }
+}
+
+/* Desktop vitrin (≥1440): geniş ekranda okuma genişliği ve galeri oranı */
+@media (min-width: 1440px) {
+    .detail-breadcrumb,
+    .gallery-grid,
+    .detail-header,
+    .detail-grid {
+        width: min(1320px, calc(100% - 64px));
+    }
+
+    .otel-detail-template-v41 .gallery-main-image {
+        min-height: 520px;
+    }
+
+    .otel-detail-template-v41 .detail-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+        gap: 32px;
+    }
+
+    .otel-detail-template-v41 .amenities-expand__grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }

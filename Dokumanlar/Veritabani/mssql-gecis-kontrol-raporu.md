@@ -17,7 +17,7 @@ Tarih: 2026-04-16
 ## Temiz Olan Katmanlar
 - `appsettings.json` -> `SqlServer`
 - `appsettings.Development.json` -> `(localdb)\\MSSQLLocalDB`
-- `otelturizmnew.csproj` -> `Microsoft.Data.SqlClient`
+- `otelturizm.csproj` -> `Microsoft.Data.SqlClient`
 - `wwwroot` altindaki CSS/JS -> MySQL/Laragon/Heidi kalintisi yok
 
 ## Aktif Runtime'da Hala MySQL Sozdizimi Bulunan Kritik Servisler

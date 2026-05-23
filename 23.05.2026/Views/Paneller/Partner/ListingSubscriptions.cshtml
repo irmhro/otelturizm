@@ -1,0 +1,116 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerListingSubscriptionsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+}
+
+<section class="partner-section-card">
+    <div class="partner-row-between">
+        <div>
+            <h2>Aboneliklerim</h2>
+            <p class="partner-muted">İl/ilçe/mahalle aramalarında 1-2-3 sabit çıkmak için talep oluşturun. Admin onayından sonra sıralama otomatik uygulanır.</p>
+        </div>
+        <div class="partner-chip ot-badge ot-badge--info">Seçili Otel: <strong>@Model.SelectedHotelName</strong></div>
+    </div>
+
+    @if (TempData["PartnerError"] is string err && !string.IsNullOrWhiteSpace(err))
+    {
+        <div class="partner-alert is-danger">@err</div>
+    }
+    @if (TempData["PartnerSuccess"] is string ok && !string.IsNullOrWhiteSpace(ok))
+    {
+        <div class="partner-alert is-success">@ok</div>
+    }
+
+    <div class="partner-subscription-grid">
+        <form method="post" action="/panel/partner/aboneliklerim/talep-olustur" class="partner-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+
+            <label class="partner-form-span">
+                <span>Kapsam Tipi</span>
+                <select name="ScopeType" required>
+                    <option value="IL">İl (Şehir)</option>
+                    <option value="ILCE">İlçe</option>
+                    <option value="MAHALLE">Mahalle</option>
+                </select>
+            </label>
+
+            <label class="partner-form-span">
+                <span>Kapsam Değeri</span>
+                <input type="text" name="ScopeValue" placeholder="örn. İstanbul / Maltepe / Cevizli" required />
+                <small class="partner-muted">Arama terimi ile aynı yazın (sistem normalize eder).</small>
+            </label>
+
+            <label>
+                <span>Hedef Sıra</span>
+                <select name="DesiredRank" required>
+                    <option value="1">1. sırada sabit</option>
+                    <option value="2">2. sırada sabit</option>
+                    <option value="3">3. sırada sabit</option>
+                </select>
+            </label>
+
+            <label>
+                <span>Süre (gün)</span>
+                <input type="number" name="DayCount" min="1" max="30" value="7" required />
+            </label>
+
+            <label class="partner-form-span">
+                <span>Not (opsiyonel)</span>
+                <input type="text" name="PartnerNote" placeholder="örn. Kampanya dönemi, açıklama..." />
+            </label>
+
+            <div class="partner-form-span partner-form-actions">
+                <button type="submit" class="partner-primary-btn ot-btn ot-btn--primary">
+                    <i class="fas fa-paper-plane"></i>
+                    Talep Oluştur
+                </button>
+            </div>
+        </form>
+
+        <div class="partner-table-card ot-card">
+            <div class="partner-table-head">
+                <h3>Taleplerim</h3>
+                <small class="partner-muted">Son 120 kayıt</small>
+            </div>
+            @if (Model.Items.Count == 0)
+            {
+                <div class="partner-empty">
+                    Henüz abonelik talebiniz yok.
+                </div>
+            }
+            else
+            {
+                <div class="partner-table-wrap">
+                    <table class="partner-table">
+                        <thead>
+                        <tr>
+                            <th>Kapsam</th>
+                            <th>Sıra</th>
+                            <th>Durum</th>
+                            <th>Başlangıç</th>
+                            <th>Bitiş</th>
+                            <th>Not</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var row in Model.Items)
+                        {
+                            <tr>
+                                <td><strong>@row.ScopeType</strong><div class="partner-muted">@row.ScopeValue</div></td>
+                                <td>@row.DesiredRank</td>
+                                <td><span class="partner-status ot-badge">@row.Status</span></td>
+                                <td>@row.StartText</td>
+                                <td>@row.EndText</td>
+                                <td class="partner-muted">@row.Note</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+

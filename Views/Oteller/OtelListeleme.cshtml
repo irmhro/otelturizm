@@ -8,7 +8,6 @@
     ViewData["Title"] = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Oteller" : Model.SearchLabel;
     var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
                   ?? "https://otelturizm.com";
-    ViewData["Canonical"] = $"{baseUrl}/oteller";
     ViewData["MetaDescription"] = string.IsNullOrWhiteSpace(Model.SearchLabel)
         ? "Türkiye genelinde otelleri filtreleyin, fiyatları karşılaştırın ve güvenle rezervasyon oluşturun."
         : $"{Model.SearchLabel} için otelleri filtreleyin, fiyatları karşılaştırın ve güvenle rezervasyon oluşturun.";
@@ -55,6 +54,44 @@
         .ThenByDescending(x => x.HotelCount)
         .ThenBy(x => x.Name)
         .ToList();
+    var mealFilters = new (string Slug, string Label, string Icon, string AmenityToken)[]
+    {
+        ("kahvalti-dahil", "Kahvaltı Dahil", "fa-mug-hot", "kahvalti dahil"),
+        ("ogle-yemegi-dahil", "Öğle Yemeği", "fa-utensils", "ogle yemegi"),
+        ("aksam-yemegi-dahil", "Akşam Yemeği", "fa-moon", "aksam yemegi")
+    };
+    string BuildMealFilterUrl(string slug)
+    {
+        return Url.Action("OtelListeleme", "Oteller", new
+        {
+            q = Model.SearchTerm,
+            city = (string?)null,
+            etiket = slug,
+            kampanya = Model.CampaignSlug,
+            page = 1
+        }) ?? "/oteller";
+    }
+    string BuildConceptFilterUrl(string etiket, string? kampanya = null)
+    {
+        return Url.Action("OtelListeleme", "Oteller", new
+        {
+            q = Model.SearchTerm,
+            city = (string?)null,
+            etiket,
+            kampanya = kampanya ?? Model.CampaignSlug,
+            page = 1
+        }) ?? $"/oteller?etiket={Uri.EscapeDataString(etiket)}";
+    }
+    var conceptFilters = new (string Slug, string Label, string Icon, string Modifier)[]
+    {
+        ("akilli-fiyat", "En İyi Fiyat", "fa-fire", "best-price"),
+        ("hafta-sonu-firsatlari", "Hafta Sonu", "fa-calendar-week", "weekend"),
+        ("butceme-uygun-oteller", "Bütçeme Uygun", "fa-wallet", "budget"),
+        ("ultra-luks", "Yıldız Yağmuru", "fa-crown", "star-rain"),
+        ("evcil-hayvan-dostu", "Evcil Hayvan", "fa-paw", "pet"),
+        ("havuzlu-oteller", "Havuzlu", "fa-person-swimming", "pool"),
+        ("kampanyaya-dahil-oteller", "Kampanyalı", "fa-tag", "campaign")
+    };
     var mapListingUrl = $"/oteller/harita?q={Uri.EscapeDataString(Model.SearchTerm ?? string.Empty)}";
 
     string NormalizeToken(string value)
@@ -293,6 +330,8 @@
   .card-campaign-badges { position: absolute; left: var(--space-3); bottom: var(--space-3); z-index: 3; display: flex; flex-wrap: wrap; gap: 8px; max-width: calc(100% - (var(--space-3) * 2)); pointer-events: none; }
   .card-campaign-badge { display: inline-flex; align-items: center; max-width: 100%; padding: 7px 12px; border-radius: 999px; background: rgba(15, 23, 42, 0.78); color: #fff; font-weight: 900; font-size: 12px; line-height: 1; box-shadow: 0 14px 28px rgba(2, 6, 23, 0.22); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-campaign-badge--more { background: rgba(255, 255, 255, 0.92); color: rgba(15, 23, 42, 0.92); border: 1px solid rgba(226, 232, 240, 0.9); }
+  .card-free-cancel-badge { position: absolute; top: var(--space-3); left: var(--space-3); z-index: 4; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: rgba(0, 168, 107, 0.92); color: #fff; font-weight: 800; font-size: 11px; line-height: 1; box-shadow: 0 10px 22px rgba(0, 168, 107, 0.28); pointer-events: none; }
+  .card-free-cancel-badge i { font-size: 12px; }
   .card-badge-top-left { position: absolute; top: var(--space-3); left: var(--space-3); z-index: 2; pointer-events: none; display: flex; flex-direction: column; gap: 8px; }
   .card-badge-top-right { position: absolute; top: var(--space-3); right: var(--space-3); z-index: 2; pointer-events: none; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
   .card-badge-bottom-right { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 2; pointer-events: none; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
@@ -966,8 +1005,13 @@
 </style>
 
 <section class="hotel-listing-shell listing-template-v41">
+    <a class="listing-map-fab mob-sticky-cta"
+       href="@mapListingUrl"
+       aria-label="Harita görünümünü aç">
+        <i class="fas fa-map-location-dot" aria-hidden="true"></i>
+    </a>
     <button type="button"
-            class="listing-yanbar-filter"
+            class="listing-yanbar-filter listing-filter-fab mob-sticky-cta"
             id="listingYanbarFilterBtn"
             aria-haspopup="dialog"
             aria-controls="listingFilterModal"
@@ -1045,6 +1089,29 @@
                                 <span class="rating-chip" data-min-score="9">9+ Muhteşem</span>
                                 <span class="rating-chip" data-min-score="8">8+ Çok İyi</span>
                                 <span class="rating-chip" data-min-score="7">7+ İyi</span>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="filter-accordion" id="filterMeals" open>
+                        <summary class="filter-accordion-summary">
+                            <span>Yemek Planı</span>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </summary>
+                        <div class="filter-accordion-body">
+                            <div class="filter-options" aria-label="Yemek filtreleri">
+                                @foreach (var meal in mealFilters)
+                                {
+                                    var mealActive = string.Equals(Model.ActiveTag, meal.Slug, StringComparison.OrdinalIgnoreCase);
+                                    <label class="filter-check">
+                                        <input type="checkbox"
+                                               class="listing-meal-filter"
+                                               value="@meal.Slug"
+                                               data-amenity-token="@meal.AmenityToken"
+                                               @(mealActive ? "checked" : null)>
+                                        <span class="filter-check-text">@meal.Label</span>
+                                    </label>
+                                }
                             </div>
                         </div>
                     </details>
@@ -1137,25 +1204,64 @@
             </aside>
 
             <div class="listing-main">
+            <nav class="listing-concept-bar" aria-label="Özel konseptler">
+                <p class="listing-concept-bar__title">
+                    <i class="fas fa-star" aria-hidden="true"></i>
+                    <span>Özel Konseptler · Hızlı Filtrele</span>
+                </p>
+                <div class="listing-concept-bar__track">
+                    @foreach (var concept in conceptFilters)
+                    {
+                        var conceptActive = string.Equals(Model.ActiveTag, concept.Slug, StringComparison.OrdinalIgnoreCase);
+                        <a class="listing-concept-btn @concept.Modifier @(conceptActive ? "is-active" : null)"
+                           href="@BuildConceptFilterUrl(concept.Slug)">
+                            <i class="fas @concept.Icon" aria-hidden="true"></i>
+                            <span>@concept.Label</span>
+                        </a>
+                    }
+                    <a class="listing-concept-btn campaign-alt"
+                       href="/kampanyalar"
+                       @(Context.Request.Path.StartsWithSegments("/kampanyalar", StringComparison.OrdinalIgnoreCase) ? "aria-current=\"page\"" : null)>
+                        <i class="fas fa-bullhorn" aria-hidden="true"></i>
+                        <span>Tüm Kampanyalar</span>
+                    </a>
+                </div>
+            </nav>
+            <div class="filter-sort-bar" aria-label="Hızlı yemek filtreleri">
+                <div class="quick-filters">
+                    @foreach (var meal in mealFilters)
+                    {
+                        var mealQuickActive = string.Equals(Model.ActiveTag, meal.Slug, StringComparison.OrdinalIgnoreCase);
+                        <a class="quick-filter-btn @(mealQuickActive ? "active" : null)"
+                           href="@BuildMealFilterUrl(meal.Slug)"
+                           data-meal-slug="@meal.Slug">
+                            <i class="fas @meal.Icon" aria-hidden="true"></i>
+                            <span>@meal.Label</span>
+                        </a>
+                    }
+                </div>
+            </div>
             <div class="listing-reel-viewport" id="listingReelViewport">
             <div class="hotel-list" id="hotelListView">
                 <div class="listing-cards" id="listingCards">
                     @if (!hotels.Any())
                     {
-                        <div class="hotel-card">
-                            <div class="card-content">
-                                <div class="hotel-header">
-                                    <h3 class="hotel-name">Filtreye uygun tesis bulunamadı</h3>
-                                </div>
-                                <div class="hotel-location"><i class="fas fa-map-pin"></i> Arama kriterlerini değiştirip tekrar deneyin.</div>
+                        <div class="listing-empty-state" id="listingServerEmptyState" role="status" aria-live="polite">
+                            <div class="listing-empty-icon" aria-hidden="true"><i class="fas fa-hotel"></i></div>
+                            <h2>Şu an listelenecek tesis yok</h2>
+                            <p>Arama veya bölge kriterlerini genişletin; haritada da keşfedebilirsiniz.</p>
+                            <div class="listing-empty-actions">
+                                <a class="btn-detail listing-empty-action" href="@Url.Action("OtelListeleme", "Oteller")">Tüm oteller</a>
+                                <a class="listing-map-launch-btn listing-empty-action" href="@mapListingUrl">Haritada ara</a>
                             </div>
                         </div>
                     }
                     else
                     {
-                        @foreach (var hotel in hotels)
-                        {
+                    @foreach (var hotel in hotels)
+                    {
                         var price = hotel.StartingPrice ?? 0m;
+                        var isFirstListingCard = hotels.Count > 0 && ReferenceEquals(hotel, hotels[0]);
                         var amenitiesSafe = hotel.Amenities ?? new List<string>();
                         var campaignSlugsSafe = hotel.CampaignSlugs ?? new List<string>();
                         var campaignNamesSafe = hotel.CampaignNames ?? new List<string>();
@@ -1181,7 +1287,10 @@
                         var isBudget = string.Equals(Model.ActiveTag, "butceme-uygun-oteller", StringComparison.OrdinalIgnoreCase) || (price > 0m && price <= 4000m);
                         var isCampaign = campaignSlugsSafe.Count > 0;
                         var hasDiscount = hotel.HasDiscount;
-                        <article class="hotel-card listing-hotel-card"
+                        var showFreeCancelBadge = hotel.HasFreeCancellation
+                            || (!string.IsNullOrWhiteSpace(hotel.HotelCode)
+                                && hotel.HotelCode.StartsWith("ORK", StringComparison.OrdinalIgnoreCase));
+                        <article class="hotel-card listing-hotel-card @(hotel.HasDiscount ? "has-discount" : null)"
                                  data-hotel-id="@hotel.Id"
                                  data-keywords="@keywords"
                                  data-price="@price.ToString(CultureInfo.InvariantCulture)"
@@ -1214,7 +1323,11 @@
                                    asp-route-slug="@hotel.Slug"
                                    class="card-image-link"
                                    aria-label="@hotel.Name detay sayfasına git">
-                                    <img class="card-main-image" src="@(string.IsNullOrWhiteSpace(mainCardImage) ? "/assets/img/placeholder-hotel.jpg" : mainCardImage)" alt="@hotel.Name">
+                                    <img class="card-main-image"
+                                         src="@(string.IsNullOrWhiteSpace(mainCardImage) ? "/assets/img/placeholder-hotel.jpg" : mainCardImage)"
+                                         alt="@hotel.Name"
+                                         @(isFirstListingCard ? "fetchpriority=\"high\" loading=\"eager\"" : "loading=\"lazy\"")
+                                         decoding="async" />
                                     @{
                                         var campaignPairs = campaignNamesSafe
                                             .Zip(campaignSlugsSafe, (n, s) => new { Name = n, Slug = s })
@@ -1237,6 +1350,19 @@
                                         }
                                         var overflowCampaignCount = Math.Max(0, campaignPairs.Count - displayCampaigns.Count);
                                     }
+                                    @if (hotel.HasDiscount && hotel.DiscountPercent > 0)
+                                    {
+                                        <span class="listing-card-discount-corner" aria-label="@($"%{hotel.DiscountPercent} indirim")">
+                                            %@hotel.DiscountPercent
+                                        </span>
+                                    }
+                                    @if (showFreeCancelBadge)
+                                    {
+                                        <span class="card-free-cancel-badge" title="Ücretsiz iptal">
+                                            <i class="fas fa-rotate-left" aria-hidden="true"></i>
+                                            Ücretsiz iptal
+                                        </span>
+                                    }
                                     @if (campaignPairs.Count > 0)
                                     {
                                         <div class="card-campaign-badges" aria-label="Kampanyalar">
@@ -1244,7 +1370,7 @@
                                             {
                                                 <span class="card-campaign-badge">@name</span>
                                             }
-                                            @if (overflowCampaignCount > 0)
+                                            if (overflowCampaignCount > 0)
                                             {
                                                 <span class="card-campaign-badge card-campaign-badge--more">+@overflowCampaignCount</span>
                                             }
@@ -1406,10 +1532,10 @@
                                     <div class="price-info">
                                         @if (hotel.HasDiscount && hotel.OriginalPrice.HasValue && hotel.DiscountedPrice.HasValue)
                                         {
-                                            <span class="old-price">₺@hotel.OriginalPrice.Value.ToString("N0")</span>
-                                            <span class="current-price">₺@hotel.DiscountedPrice.Value.ToString("N0")</span>
-                                            <span class="listing-discount-rate">%@hotel.DiscountPercent</span>
-                                            @if (hotel.DiscountId.HasValue && !string.IsNullOrWhiteSpace(hotel.DiscountName))
+                                            <span class="old-price" aria-label="Eski fiyat">₺@hotel.OriginalPrice.Value.ToString("N0")</span>
+                                            <span class="current-price listing-price--discounted">₺@hotel.DiscountedPrice.Value.ToString("N0")</span>
+                                            <span class="listing-discount-rate listing-discount-rate--pill">%@hotel.DiscountPercent</span>
+                                            if (hotel.DiscountId.HasValue && !string.IsNullOrWhiteSpace(hotel.DiscountName))
                                             {
                                                 <button type="button"
                                                         class="discount-info-btn"
@@ -1432,8 +1558,17 @@
                                 </div>
                             </div>
                         </article>
-                        }
                     }
+                    }
+                </div>
+                <div class="listing-empty-state" id="listingClientEmptyState" hidden role="status" aria-live="polite">
+                    <div class="listing-empty-icon" aria-hidden="true"><i class="fas fa-sliders"></i></div>
+                    <h2>Filtrelere uygun tesis bulunamadı</h2>
+                    <p>Tarih, fiyat veya konum kriterlerini gevşetin; filtreleri sıfırlayıp tekrar deneyin.</p>
+                    <div class="listing-empty-actions">
+                        <button type="button" class="btn-detail listing-empty-action" id="listingEmptyClearFilters">Filtreleri temizle</button>
+                        <a class="listing-map-launch-btn listing-empty-action" href="@mapListingUrl">Haritada ara</a>
+                    </div>
                 </div>
             </div>
             </div>
@@ -1457,7 +1592,7 @@
                     @if (start > 1)
                     {
                         <a class="page-num" href="@Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = Model.ActiveTag, kampanya = Model.CampaignSlug, page = 1 })">1</a>
-                        @if (start > 2)
+                        if (start > 2)
                         {
                             <span class="page-ellipsis" aria-hidden="true">…</span>
                         }
@@ -1472,7 +1607,7 @@
 
                     @if (end < total)
                     {
-                        @if (end < total - 1)
+                        if (end < total - 1)
                         {
                             <span class="page-ellipsis" aria-hidden="true">…</span>
                         }
@@ -1580,7 +1715,10 @@
             const ratingChips = Array.from(document.querySelectorAll('.rating-chip'));
             const featuredChecks = Array.from(document.querySelectorAll('.listing-featured-filter'));
             const campaignChecks = Array.from(document.querySelectorAll('.listing-campaign-filter'));
+            const mealChecks = Array.from(document.querySelectorAll('.listing-meal-filter'));
             const clearAllBtn = document.getElementById('clearAllFiltersBtn');
+            const listingClientEmptyState = document.getElementById('listingClientEmptyState');
+            const listingEmptyClearFilters = document.getElementById('listingEmptyClearFilters');
             const keywordClearBtn = document.getElementById('listingKeywordClear');
             const keywordSuggestions = document.getElementById('listingKeywordSuggestions');
             const discountModal = document.getElementById('discountModal');
@@ -2148,6 +2286,27 @@
                 }, force ? 0 : 450);
             }
 
+            function navigateMealTag(slug) {
+                const params = new URLSearchParams(window.location.search);
+                const normalizedSlug = String(slug || '').trim().toLowerCase();
+                if (normalizedSlug) {
+                    params.set('etiket', normalizedSlug);
+                } else {
+                    params.delete('etiket');
+                }
+                params.delete('page');
+                const query = params.toString();
+                window.location.href = query.length > 0
+                    ? window.location.pathname + '?' + query
+                    : window.location.pathname;
+            }
+
+            function cardMatchesMealToken(cardAmenities, amenityToken) {
+                const token = normalize(amenityToken || '');
+                if (!token) return true;
+                return cardAmenities.indexOf(token) > -1;
+            }
+
             function applyFilters() {
                 refreshCards();
                 const keyword = normalize(keywordInput?.value || '');
@@ -2158,6 +2317,9 @@
                 const minPrice = allowPriceFilter ? Math.max(0, priceBounds.min) : 0;
                 const maxPrice = allowPriceFilter ? Math.max(0, priceBounds.max) : Number.POSITIVE_INFINITY;
                 const selectedAmenities = amenityChecks.filter(x => x.checked).map(x => normalize(x.value));
+                const selectedMeals = mealChecks
+                    .filter(x => x.checked)
+                    .map(x => normalize(String(x.dataset.amenityToken || x.value || '')));
                 const selectedStars = starChecks.filter(x => x.checked).map(x => String(x.value));
                 const featuredOnly = featuredChecks.some(x => x.checked);
                 const selectedCampaigns = campaignChecks.filter(x => x.checked).map(x => normalize(x.value));
@@ -2192,6 +2354,7 @@
                     const starOk = selectedStars.length === 0 || selectedStars.includes(cardStars);
                     const ratingOk = minScore <= 0 || cardRating >= minScore;
                     const amenityOk = selectedAmenities.length === 0 || selectedAmenities.every(x => cardAmenities.indexOf(x) > -1);
+                    const mealOk = selectedMeals.length === 0 || selectedMeals.every(x => cardMatchesMealToken(cardAmenities, x));
                     const featuredOk = !featuredOnly || isFeatured;
                     const campaignOk = selectedCampaigns.length === 0
                         || selectedCampaigns.some(function (slug) { return cardCampaignSlugs.indexOf(slug) > -1; });
@@ -2199,12 +2362,12 @@
                         || (Number.isFinite(cardLat) && Number.isFinite(cardLon)
                             && haversineKm(userLocation.lat, userLocation.lon, cardLat, cardLon) <= distanceKm);
 
-                    const nonPriceOk = keywordOk && starOk && ratingOk && amenityOk && featuredOk && campaignOk && distanceOk;
+                    const nonPriceOk = keywordOk && starOk && ratingOk && amenityOk && mealOk && featuredOk && campaignOk && distanceOk;
                     if (nonPriceOk && Number.isFinite(cardPrice) && cardPrice > 0) {
                         cheapestNonPriceMatch = Math.min(cheapestNonPriceMatch, cardPrice);
                     }
 
-                    const isVisible = keywordOk && priceOk && starOk && ratingOk && amenityOk && featuredOk && campaignOk && distanceOk;
+                    const isVisible = keywordOk && priceOk && starOk && ratingOk && amenityOk && mealOk && featuredOk && campaignOk && distanceOk;
                     card.hidden = !isVisible;
                     if (isVisible) {
                         visibleCount += 1;
@@ -2231,6 +2394,11 @@
                     setLocationInsight('Konumun doğrulandı. Aşağıdan yarıçapı artırıp otelleri gerçek koordinat mesafesine göre filtreleyebilirsin.');
                 } else {
                     setLocationInsight('Konum aramaları, partnerlerin bölgene otel eklemesi için anonim pazar içgörüsü üretir.');
+                }
+
+                if (listingClientEmptyState) {
+                    const showClientEmpty = cards.length > 0 && visibleCount === 0;
+                    listingClientEmptyState.hidden = !showClientEmpty;
                 }
 
                 // Desktop makara: filtre sonrası üstte yarım kart kalmasın.
@@ -2867,6 +3035,20 @@
             starChecks.forEach(x => x.addEventListener('change', function () { applyFilters(); sortCards(); syncMobileFilterCount(); }));
             featuredChecks.forEach(x => x.addEventListener('change', function () { applyFilters(); sortCards(); syncMobileFilterCount(); }));
             campaignChecks.forEach(x => x.addEventListener('change', function () { applyFilters(); sortCards(); syncMobileFilterCount(); }));
+            mealChecks.forEach(function (check) {
+                check.addEventListener('change', function () {
+                    if (check.checked) {
+                        mealChecks.forEach(function (other) {
+                            if (other !== check) {
+                                other.checked = false;
+                            }
+                        });
+                        navigateMealTag(check.value);
+                        return;
+                    }
+                    navigateMealTag('');
+                });
+            });
             ratingChips.forEach(function (chip) {
                 chip.addEventListener('click', function () {
                     chip.classList.toggle('active');
@@ -2881,7 +3063,12 @@
                 starChecks.forEach(x => x.checked = false);
                 featuredChecks.forEach(x => x.checked = false);
                 campaignChecks.forEach(x => x.checked = false);
+                mealChecks.forEach(x => x.checked = false);
                 ratingChips.forEach(x => x.classList.remove('active'));
+                if (String(new URLSearchParams(window.location.search).get('etiket') || '').trim()) {
+                    navigateMealTag('');
+                    return;
+                }
                 if (keywordInput) keywordInput.value = '';
                 hideKeywordSuggestions();
                 if (minPriceInput) minPriceInput.value = String(defaultMinPrice);
@@ -2904,6 +3091,10 @@
                 syncMobileFilterCount();
             });
 
+            listingEmptyClearFilters?.addEventListener('click', function () {
+                clearAllBtn?.click();
+            });
+
             function syncMobileFilterCount() {
                 if (!filterCount) return;
                 const active =
@@ -2911,6 +3102,7 @@
                     + (starChecks.filter(x => x.checked).length)
                     + (featuredChecks.filter(x => x.checked).length)
                     + (campaignChecks.filter(x => x.checked).length)
+                    + (mealChecks.filter(x => x.checked).length)
                     + (ratingChips.filter(x => x.classList.contains('active')).length)
                     + ((String(keywordInput?.value || '').trim().length > 0) ? 1 : 0)
                     + ((Number(minPriceInput?.value || '0') > 0) ? 1 : 0)

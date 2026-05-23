@@ -89,7 +89,7 @@ public class RegisterController : Controller
                 return Redirect(PartnerLoginPath);
             }
 
-            TempData["UserLoginSuccess"] = result.Message;
+            TempData["PartnerRegisterSuccess"] = result.Message;
             return Redirect($"/eposta-dogrula?email={Uri.EscapeDataString(normalizedEmail)}");
         }
         catch (Exception ex)
@@ -116,7 +116,7 @@ public class RegisterController : Controller
                 return Redirect(FirmaLoginPath);
             }
 
-            TempData["UserLoginSuccess"] = result.Message;
+            TempData["FirmaRegisterSuccess"] = result.Message;
             return Redirect($"/eposta-dogrula?email={Uri.EscapeDataString(normalizedEmail)}");
         }
         catch (Exception ex)

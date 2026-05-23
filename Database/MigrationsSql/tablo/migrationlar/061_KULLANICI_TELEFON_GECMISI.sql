@@ -1,0 +1,16 @@
+-- Tablo: dbo.KULLANICI_TELEFON_GECMISI
+IF OBJECT_ID(N'dbo.KULLANICI_TELEFON_GECMISI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[KULLANICI_TELEFON_GECMISI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [KULLANICI_ID] bigint NOT NULL,
+        [ONCEKI_TELEFON_RAW] nvarchar(32) NULL,
+        [ONCEKI_TELEFON_E164] nvarchar(32) NULL,
+        [YENI_TELEFON_RAW] nvarchar(32) NULL,
+        [YENI_TELEFON_E164] nvarchar(32) NULL,
+        [DOGRULAMA_DURUMU] nvarchar(40) NULL,
+        [DEGISIM_NEDENI] nvarchar(255) NULL,
+        [OLUSTURULMA_TARIHI] datetime2(7) NOT NULL CONSTRAINT [DF_kullanici_telefon_gecmisi_created] DEFAULT (sysutcdatetime()),
+        CONSTRAINT [PK_KULLANICI_TELEFON_GECMISI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

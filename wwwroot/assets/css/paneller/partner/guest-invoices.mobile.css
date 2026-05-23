@@ -1,0 +1,84 @@
+@media (max-width: 900px) {
+  .partner-guest-invoices .guest-invoices-table-wrap {
+    overflow: visible;
+  }
+
+  .partner-guest-invoices table.guest-invoices-table--cards thead {
+    display: none;
+  }
+
+  .partner-guest-invoices table.guest-invoices-table--cards tbody {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .partner-guest-invoices table.guest-invoices-table--cards tr {
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  }
+
+  .partner-guest-invoices table.guest-invoices-table--cards td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    border: 0;
+    padding: 4px 0;
+  }
+
+  .partner-guest-invoices table.guest-invoices-table--cards td::before {
+    content: attr(data-label);
+    flex: 0 0 42%;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #64748b;
+  }
+
+  .partner-guest-invoices table.guest-invoices-table--cards td[colspan]::before {
+    display: none;
+  }
+
+  .partner-guest-invoices table.guest-invoices-table--cards td[colspan] {
+    display: block;
+    text-align: center;
+  }
+
+  .partner-guest-invoices table.guest-invoices-table--cards td[data-label="İşlem"] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .partner-guest-invoices table.guest-invoices-table--cards td[data-label="İşlem"]::before {
+    margin-bottom: 4px;
+  }
+
+  .partner-guest-invoices .guest-invoice-upload {
+    display: grid;
+    width: 100%;
+    gap: 10px;
+    justify-items: stretch;
+  }
+
+  .partner-guest-invoices .guest-invoice-file {
+    width: 100%;
+    max-width: none;
+    min-height: 44px;
+  }
+
+  .partner-guest-invoices .guest-invoice-upload-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .partner-guest-invoices .guest-invoices-actions .btn {
+    min-height: 44px;
+  }
+}

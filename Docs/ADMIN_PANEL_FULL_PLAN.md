@@ -1,5 +1,13 @@
 # Admin paneli (`/admin`) — eksiklik envanteri ve tamamlanan işler
 
+**Grup ID:** `08` · [ADMIN_PANEL_AJAN_GRUBU.md](../ADMIN_PANEL_AJAN_GRUBU.md) · [docs/agent-gruplari/08-admin-panel.md](../docs/agent-gruplari/08-admin-panel.md)
+
+## Grup ID → dosya
+
+| Grup ID | Dosya |
+|---------|-------|
+| **08** | `Controllers/Paneller/Admin/**`, `Views/Paneller/Admin/**`, `wwwroot/assets/css/paneller/admin/**` |
+
 ## Kapsam
 
 | Bileşen | Konum |
@@ -27,7 +35,7 @@
 
 ## Doğrulama
 
-`dotnet build "D:\otelturizm\otelturizmnew.csproj" --no-restore`
+`dotnet build "D:\otelturizm\otelturizm.csproj" --no-restore`
 
 ## 2026-05-06 Admin Sidebar Eksik Gelişim Checklist
 
@@ -60,7 +68,7 @@ Ortak section iskeletiyle çalışan ve sırayla özel sayfaya dönüştürülec
 | Ticari Operasyon | Ödemeler | Tahsilat, iade, başarısız ödeme, provider referans ve mutabakat takibi | Geliştirildi: filtreli/sayfalı özel tabloya bağlandı; iade/onay aksiyonları sırada |
 | Ticari Operasyon | Faturalar | Partner/kullanıcı/firma faturası, indirme, onay, iptal ve eksik belge takibi | Geliştirildi: filtreli/sayfalı özel tabloya bağlandı; onay/iptal/yükleme aksiyonları sırada |
 | Ticari Operasyon | Raporlar | Otel bazlı ciro/komisyon CSV, dönem filtresi ve aylık kırılım | Geliştirildi: dönem/otel filtreli özel rapor sayfasına bağlandı |
-| Konaklama | Kampanyalar | Kampanya oluşturma, otel katılımı, aktif/pasif, kullanım raporu | Sırada |
-| İletişim | Bildirimler | Sistem bildirimi oluşturma, hedef kitle, okundu/arşiv aksiyonları | Sırada |
+| Konaklama | Kampanyalar | Kampanya oluşturma, otel katılımı, aktif/pasif, kullanım raporu | Geliştirildi: filtreli/sayfalı özel tabloya bağlandı; aktif/pasif aksiyonu loglu çalışıyor |
+| İletişim | Bildirimler | Sistem bildirimi oluşturma, hedef kitle, okundu/arşiv aksiyonları | Geliştirildi: bildirim logları filtreli/sayfalı tabloya bağlandı; okundu aksiyonu loglu çalışıyor |
 | Sistem | Ayarlar/Güvenlik | Canlı servis ayarları, 2FA, IP, rate limit ve audit kayıtları | Sırada |
 | Sistem | Log/Konum/Yedekleme | Log filtreleme, konum logları, koordinat değişimleri, yedek kayıtları | Sırada |

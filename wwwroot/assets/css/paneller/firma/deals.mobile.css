@@ -1,1 +1,12 @@
 @import url("./deals.css");
+
+@media (max-width: 900px) {
+    .firma-filter-actions .btn,
+    .firma-deal-card .btn {
+        min-height: 44px;
+    }
+
+    .firma-deal-card .btn {
+        width: 100%;
+    }
+}

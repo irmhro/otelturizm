@@ -1,27 +1,53 @@
-.user-favorites-page {
-  gap: 14px;
-}
+@import url("./user-mobile-bundle.css");
 
-.favorites-hero {
-  border-radius: 14px;
-}
+@media (max-width: 900px) {
+  .user-favorites-page {
+    gap: 14px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
 
-.favorite-card {
-  border-radius: 14px;
-}
+  .favorites-hero {
+    border-radius: 14px;
+    padding: 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-.favorite-card-media {
-  aspect-ratio: 4 / 3;
-}
+  .favorite-card {
+    border-radius: 14px;
+  }
 
-.favorite-price-row,
-.favorite-review-callout,
-.favorite-alert-summary {
-  border-radius: 12px;
-}
+  .favorite-card-media {
+    aspect-ratio: 4 / 3;
+  }
 
-.favorite-actions .btn,
-.favorite-review-callout .btn,
-.favorite-alert-delete-btn {
-  min-height: 42px;
+  .favorite-price-row,
+  .favorite-review-callout,
+  .favorite-alert-summary {
+    border-radius: 12px;
+  }
+
+  .favorite-actions .btn,
+  .favorite-review-callout .btn,
+  .favorite-alert-delete-btn,
+  .favorite-action {
+    min-height: var(--user-mob-touch, 44px);
+  }
+
+  .favorite-row {
+    padding: 12px;
+  }
+
+  .favorite-price-box {
+    padding: 10px;
+  }
+
+  .favorite-empty-card {
+    padding: 28px 16px max(24px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .favorite-empty-card .btn {
+    min-height: var(--user-mob-touch, 44px);
+    width: 100%;
+  }
 }

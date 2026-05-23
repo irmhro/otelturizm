@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using otelturizmnew.Utils;
 
 namespace otelturizmnew.Services;
 
@@ -76,7 +77,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         var defaultSmtp = await LoadSmtpConfigAsync(connection, null, null, cancellationToken);
         if (defaultSmtp is null)
         {
-            // Dev ortamında DB'de email_services kaydı yoksa bile kuyruk akışını test edebilmek için
+            // Dev ortamında DB'de EPOSTA_SERVISLERI kaydı yoksa bile kuyruk akışını test edebilmek için
             // pickup directory moduna düşebiliriz.
             defaultSmtp = TryBuildDevPickupSmtp();
             if (defaultSmtp is null)
@@ -85,7 +86,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 if (Interlocked.CompareExchange(ref _missingActiveSmtpLogged, 1, 0) == 0)
                 {
                     _logger.LogWarning(
-                        "E-posta kuyrugu calismiyor: veritabaninda aktif SMTP yok (email_services.aktif_mi=1 ve gecerli smtp_host/sifre). " +
+                        "E-posta kuyrugu calismiyor: veritabaninda aktif SMTP yok (EPOSTA_SERVISLERI.AKTIF_MI=1 ve gecerli SMTP_HOST/SIFRE). " +
                         "bildirim_loglari kayitlari Birikir ancak gonderilmez. Admin: Database/MigrationsSql/20260502_enable_live_email_delivery.sql ve smtp_sifre.");
                 }
                 return;
@@ -176,8 +177,8 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             }
         }
 
-        var hasUpdatedAtColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "guncellenme_tarihi", cancellationToken);
-        var hasNextAttemptColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "sonraki_deneme_utc", cancellationToken);
+        var hasUpdatedAtColumn = await ColumnExistsAsync(connection, "[dbo].[BILDIRIM_LOGLARI]", "guncellenme_tarihi", cancellationToken);
+        var hasNextAttemptColumn = await ColumnExistsAsync(connection, "[dbo].[BILDIRIM_LOGLARI]", "sonraki_deneme_utc", cancellationToken);
         var pendingEmails = await ClaimPendingEmailsAsync(connection, hasUpdatedAtColumn, hasNextAttemptColumn, cancellationToken);
         foreach (var item in pendingEmails)
         {
@@ -193,7 +194,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             {
                 await MarkEmailFailedAsync(connection, item, ex.Message, hasNextAttemptColumn, cancellationToken);
                 await MarkSmtpFailureAsync(connection, item.ServiceCode ?? defaultSmtp.ServiceCode, ex.Message, cancellationToken);
-                _logger.LogError(ex, "E-posta gonderimi basarisiz. Alici={Recipient}, Konu={Subject}, KuyrukId={QueueId}", item.RecipientEmail, item.Subject, item.Id);
+                _logger.LogError(ex, "E-posta gonderimi basarisiz. Alici={Recipient}, Konu={Subject}, KuyrukId={QueueId}", LogRedaction.MaskEmail(item.RecipientEmail), item.Subject, item.Id);
             }
         }
     }
@@ -250,9 +251,9 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 
     private static async Task<List<QueuedEmailItem>> ClaimPendingEmailsAsync(SqlConnection connection, bool hasUpdatedAtColumn, bool hasNextAttemptColumn, CancellationToken cancellationToken)
     {
-        var hasAttachmentsColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "ekler_json", cancellationToken);
-        var hasServiceCodeColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "email_servis_kodu", cancellationToken);
-        var hasSenderOverrideColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "gonderen_eposta_override", cancellationToken);
+        var hasAttachmentsColumn = await ColumnExistsAsync(connection, "[dbo].[BILDIRIM_LOGLARI]", "ekler_json", cancellationToken);
+        var hasServiceCodeColumn = await ColumnExistsAsync(connection, "[dbo].[BILDIRIM_LOGLARI]", "email_servis_kodu", cancellationToken);
+        var hasSenderOverrideColumn = await ColumnExistsAsync(connection, "[dbo].[BILDIRIM_LOGLARI]", "gonderen_eposta_override", cancellationToken);
         var updateSet = hasUpdatedAtColumn
             ? "durum = 'İşleniyor', guncellenme_tarihi = SYSUTCDATETIME()"
             : "durum = 'İşleniyor'";
@@ -291,26 +292,26 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             sql = """
                 ;WITH cte AS (
                     SELECT TOP (10) id
-                    FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
+                    FROM [dbo].[BILDIRIM_LOGLARI] WITH (READPAST, ROWLOCK, UPDLOCK)
                     WHERE tur = 'E-posta'
                       AND __STALE_PROCESSING_WHERE__
-                      AND alici_eposta IS NOT NULL
+                      AND [ALICI_EPOSTA] IS NOT NULL
                       __NEXT_ATTEMPT_WHERE__
-                    ORDER BY olusturulma_tarihi ASC
+                    ORDER BY [OLUSTURULMA_TARIHI] ASC
                 )
                 UPDATE b
                 SET __UPDATE_SET__
                 OUTPUT
                     inserted.id,
-                    inserted.alici_eposta,
-                    inserted.konu,
-                    inserted.gonderilen_icerik,
-                    COALESCE(inserted.gonderme_denemesi, 1),
-                    COALESCE(inserted.maksimum_deneme, 3),
-                    inserted.ekler_json,
+                    inserted.[ALICI_EPOSTA],
+                    inserted.[KONU],
+                    inserted.[GONDERILEN_ICERIK],
+                    COALESCE(inserted.[GONDERME_DENEMESI], 1),
+                    COALESCE(inserted.[MAKSIMUM_DENEME], 3),
+                    inserted.[EKLER_JSON],
                     inserted.email_servis_kodu,
-                    inserted.gonderen_eposta_override
-                FROM bildirim_loglari b
+                    inserted.[GONDEREN_EPOSTA_OVERRIDE]
+                FROM [dbo].[BILDIRIM_LOGLARI] b
                 INNER JOIN cte ON cte.id = b.id;
                 """
             ;
@@ -320,26 +321,26 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             sql = """
                 ;WITH cte AS (
                     SELECT TOP (10) id
-                    FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
+                    FROM [dbo].[BILDIRIM_LOGLARI] WITH (READPAST, ROWLOCK, UPDLOCK)
                     WHERE tur = 'E-posta'
                       AND __STALE_PROCESSING_WHERE__
-                      AND alici_eposta IS NOT NULL
+                      AND [ALICI_EPOSTA] IS NOT NULL
                       __NEXT_ATTEMPT_WHERE__
-                    ORDER BY olusturulma_tarihi ASC
+                    ORDER BY [OLUSTURULMA_TARIHI] ASC
                 )
                 UPDATE b
                 SET __UPDATE_SET__
                 OUTPUT
                     inserted.id,
-                    inserted.alici_eposta,
-                    inserted.konu,
-                    inserted.gonderilen_icerik,
-                    COALESCE(inserted.gonderme_denemesi, 1),
-                    COALESCE(inserted.maksimum_deneme, 3),
-                    inserted.ekler_json,
+                    inserted.[ALICI_EPOSTA],
+                    inserted.[KONU],
+                    inserted.[GONDERILEN_ICERIK],
+                    COALESCE(inserted.[GONDERME_DENEMESI], 1),
+                    COALESCE(inserted.[MAKSIMUM_DENEME], 3),
+                    inserted.[EKLER_JSON],
                     NULL AS email_servis_kodu,
-                    NULL AS gonderen_eposta_override
-                FROM bildirim_loglari b
+                    NULL AS [GONDEREN_EPOSTA_OVERRIDE]
+                FROM [dbo].[BILDIRIM_LOGLARI] b
                 INNER JOIN cte ON cte.id = b.id;
                 """;
         }
@@ -348,26 +349,26 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             sql = """
                 ;WITH cte AS (
                     SELECT TOP (10) id
-                    FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
+                    FROM [dbo].[BILDIRIM_LOGLARI] WITH (READPAST, ROWLOCK, UPDLOCK)
                     WHERE tur = 'E-posta'
                       AND __STALE_PROCESSING_WHERE__
-                      AND alici_eposta IS NOT NULL
+                      AND [ALICI_EPOSTA] IS NOT NULL
                       __NEXT_ATTEMPT_WHERE__
-                    ORDER BY olusturulma_tarihi ASC
+                    ORDER BY [OLUSTURULMA_TARIHI] ASC
                 )
                 UPDATE b
                 SET __UPDATE_SET__
                 OUTPUT
                     inserted.id,
-                    inserted.alici_eposta,
-                    inserted.konu,
-                    inserted.gonderilen_icerik,
-                    COALESCE(inserted.gonderme_denemesi, 1),
-                    COALESCE(inserted.maksimum_deneme, 3),
-                    NULL AS ekler_json,
+                    inserted.[ALICI_EPOSTA],
+                    inserted.[KONU],
+                    inserted.[GONDERILEN_ICERIK],
+                    COALESCE(inserted.[GONDERME_DENEMESI], 1),
+                    COALESCE(inserted.[MAKSIMUM_DENEME], 3),
+                    NULL AS [EKLER_JSON],
                     inserted.email_servis_kodu,
-                    inserted.gonderen_eposta_override
-                FROM bildirim_loglari b
+                    inserted.[GONDEREN_EPOSTA_OVERRIDE]
+                FROM [dbo].[BILDIRIM_LOGLARI] b
                 INNER JOIN cte ON cte.id = b.id;
                 """;
         }
@@ -376,26 +377,26 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
             sql = """
                 ;WITH cte AS (
                     SELECT TOP (10) id
-                    FROM bildirim_loglari WITH (READPAST, ROWLOCK, UPDLOCK)
+                    FROM [dbo].[BILDIRIM_LOGLARI] WITH (READPAST, ROWLOCK, UPDLOCK)
                     WHERE tur = 'E-posta'
                       AND __STALE_PROCESSING_WHERE__
-                      AND alici_eposta IS NOT NULL
+                      AND [ALICI_EPOSTA] IS NOT NULL
                       __NEXT_ATTEMPT_WHERE__
-                    ORDER BY olusturulma_tarihi ASC
+                    ORDER BY [OLUSTURULMA_TARIHI] ASC
                 )
                 UPDATE b
                 SET __UPDATE_SET__
                 OUTPUT
                     inserted.id,
-                    inserted.alici_eposta,
-                    inserted.konu,
-                    inserted.gonderilen_icerik,
-                    COALESCE(inserted.gonderme_denemesi, 1),
-                    COALESCE(inserted.maksimum_deneme, 3),
-                    NULL AS ekler_json,
+                    inserted.[ALICI_EPOSTA],
+                    inserted.[KONU],
+                    inserted.[GONDERILEN_ICERIK],
+                    COALESCE(inserted.[GONDERME_DENEMESI], 1),
+                    COALESCE(inserted.[MAKSIMUM_DENEME], 3),
+                    NULL AS [EKLER_JSON],
                     NULL AS email_servis_kodu,
-                    NULL AS gonderen_eposta_override
-                FROM bildirim_loglari b
+                    NULL AS [GONDEREN_EPOSTA_OVERRIDE]
+                FROM [dbo].[BILDIRIM_LOGLARI] b
                 INNER JOIN cte ON cte.id = b.id;
                 """;
         }
@@ -437,14 +438,14 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
     private static async Task<SmtpConfig?> LoadSmtpConfigAsync(SqlConnection connection, string? preferredServiceCode, string? preferredSenderEmail, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT TOP (1) servis_kodu, gonderen_ad, gonderen_eposta, yanitla_eposta, smtp_host, smtp_port, smtp_kullanici_adi, smtp_sifre, guvenlik_tipi, baglanti_zaman_asimi_saniye, test_modu, metadata
-            FROM email_services
-            WHERE aktif_mi = 1
+            SELECT TOP (1) [SERVIS_KODU], [GONDEREN_AD], [GONDEREN_EPOSTA], [YANITLA_EPOSTA], [SMTP_HOST], [SMTP_PORT], [SMTP_KULLANICI_ADI], [SMTP_SIFRE], [GUVENLIK_TIPI], [BAGLANTI_ZAMAN_ASIMI_SANIYE], [TEST_MODU], [METADATA]
+            FROM [dbo].[EPOSTA_SERVISLERI]
+            WHERE [AKTIF_MI] = 1
             ORDER BY
                 CASE
-                    WHEN @serviceCode IS NOT NULL AND LOWER(servis_kodu) = LOWER(@serviceCode) THEN 3
-                    WHEN @senderEmail IS NOT NULL AND LOWER(gonderen_eposta) = LOWER(@senderEmail) THEN 2
-                    WHEN varsayilan_mi = 1 THEN 1
+                    WHEN @serviceCode IS NOT NULL AND LOWER([SERVIS_KODU]) = LOWER(@serviceCode) THEN 3
+                    WHEN @senderEmail IS NOT NULL AND LOWER([GONDEREN_EPOSTA]) = LOWER(@senderEmail) THEN 2
+                    WHEN [VARSAYILAN_MI] = 1 THEN 1
                     ELSE 0
                 END DESC,
                 id ASC;
@@ -715,12 +716,12 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
     private static async Task MarkSmtpSuccessAsync(SqlConnection connection, string serviceCode, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            UPDATE email_services
-            SET son_basarili_test_tarihi = SYSUTCDATETIME(),
-                son_hata_tarihi = NULL,
-                son_hata_mesaji = NULL
-            WHERE aktif_mi = 1
-              AND servis_kodu = @serviceCode;
+            UPDATE [dbo].[EPOSTA_SERVISLERI]
+            SET [SON_BASARILI_TEST_TARIHI] = SYSUTCDATETIME(),
+                [SON_HATA_TARIHI] = NULL,
+                [SON_HATA_MESAJI] = NULL
+            WHERE [AKTIF_MI] = 1
+              AND [SERVIS_KODU] = @serviceCode;
             """, connection);
         command.Parameters.AddWithValue("@serviceCode", serviceCode);
         await command.ExecuteNonQueryAsync(cancellationToken);
@@ -729,11 +730,11 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
     private static async Task MarkSmtpFailureAsync(SqlConnection connection, string serviceCode, string errorMessage, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            UPDATE email_services
-            SET son_hata_tarihi = SYSUTCDATETIME(),
-                son_hata_mesaji = @error
-            WHERE aktif_mi = 1
-              AND servis_kodu = @serviceCode;
+            UPDATE [dbo].[EPOSTA_SERVISLERI]
+            SET [SON_HATA_TARIHI] = SYSUTCDATETIME(),
+                [SON_HATA_MESAJI] = @error
+            WHERE [AKTIF_MI] = 1
+              AND [SERVIS_KODU] = @serviceCode;
             """, connection);
         command.Parameters.AddWithValue("@serviceCode", serviceCode);
         command.Parameters.AddWithValue("@error", errorMessage.Length > 1000 ? errorMessage[..1000] : errorMessage);
@@ -776,12 +777,12 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
     private static async Task MarkEmailAcceptedAsync(SqlConnection connection, long notificationId, EmailSendResult sendResult, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            UPDATE bildirim_loglari
-            SET durum = @status,
-                gonderim_tarihi = SYSUTCDATETIME(),
-                saglayici_mesaj_id = @providerMessageId,
-                hata_kodu = NULL,
-                hata_mesaji = NULL
+            UPDATE [dbo].[BILDIRIM_LOGLARI]
+            SET [DURUM] = @status,
+                [GONDERIM_TARIHI] = SYSUTCDATETIME(),
+                [SAGLAYICI_MESAJ_ID] = @providerMessageId,
+                [HATA_KODU] = NULL,
+                [HATA_MESAJI] = NULL
             WHERE id = @id;
             """, connection);
         command.Parameters.AddWithValue("@status", sendResult.Status);
@@ -798,20 +799,20 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
 
         var sql = hasNextAttemptColumn && finalStatus == "Beklemede"
             ? """
-            UPDATE bildirim_loglari
-            SET durum = @status,
-                gonderme_denemesi = @attemptCount,
-                hata_kodu = 'SMTP',
-                hata_mesaji = @error,
+            UPDATE [dbo].[BILDIRIM_LOGLARI]
+            SET [DURUM] = @status,
+                [GONDERME_DENEMESI] = @attemptCount,
+                [HATA_KODU] = 'SMTP',
+                [HATA_MESAJI] = @error,
                 sonraki_deneme_utc = DATEADD(SECOND, @delaySec, SYSUTCDATETIME())
             WHERE id = @id;
             """
             : """
-            UPDATE bildirim_loglari
-            SET durum = @status,
-                gonderme_denemesi = @attemptCount,
-                hata_kodu = 'SMTP',
-                hata_mesaji = @error
+            UPDATE [dbo].[BILDIRIM_LOGLARI]
+            SET [DURUM] = @status,
+                [GONDERME_DENEMESI] = @attemptCount,
+                [HATA_KODU] = 'SMTP',
+                [HATA_MESAJI] = @error
             WHERE id = @id;
             """;
 

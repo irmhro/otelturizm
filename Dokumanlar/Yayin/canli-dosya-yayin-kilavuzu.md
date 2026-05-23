@@ -16,7 +16,7 @@ Bu doküman, uygulama dosyalarını canlı sunucuya güvenli biçimde taşıma a
 ## 2) Publish Alma
 
 ```powershell
-dotnet publish D:\otelturizm\otelturizmnew.csproj -c Release -o D:\otelturizm\.codex-publish\release
+dotnet publish D:\otelturizm\otelturizm.csproj -c Release -o D:\otelturizm\.codex-publish\release
 ```
 
 Oluşan klasör:

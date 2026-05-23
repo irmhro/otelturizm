@@ -9,6 +9,15 @@ public class AnasayfaViewModel
     public List<HomeDestinationCardViewModel> PopularDestinations { get; set; } = new();
     public List<HomeHotelCardViewModel> PopularHotels { get; set; } = new();
     public List<HomeHotelCardViewModel> WeekendHotels { get; set; } = new();
+    public List<HomeCategorySectionViewModel> CategorySections { get; set; } = new();
+}
+
+public class HomeCategorySectionViewModel
+{
+    public string Key { get; set; } = string.Empty;
+    public string Etiket { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public List<HomeHotelCardViewModel> Hotels { get; set; } = new();
 }
 
 public class HomeHeroSlideViewModel
@@ -64,10 +73,15 @@ public class HomeHotelCardViewModel
     public string PriceText { get; set; } = "Fiyat icin detay sayfasina bakin";
     public string PriceNote { get; set; } = "GÜNLÜK · vergi öncesi";
     public string ImageUrl { get; set; } = string.Empty;
+    public List<string> GalleryImageUrls { get; set; } = new();
     public string DetailSlug { get; set; } = string.Empty;
     public List<HomeAmenityViewModel> Amenities { get; set; } = new();
     public List<string> Tags { get; set; } = new();
+    public List<string> RecentCampaigns { get; set; } = new();
+    public List<string> RecentDiscounts { get; set; } = new();
     public bool IsSmartPrice { get; set; }
+    public bool IsFeatured { get; set; }
+    public bool IsRecommended { get; set; }
     public bool IsFavorite { get; set; }
     public byte? StarCount { get; set; }
     // Weather info for display on card

@@ -1,0 +1,124 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminRevenueCommandCenterPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+}
+
+<section class="admin-revenue-command-page">
+    <div class="admin-revenue-hero">
+        <div>
+            <p class="mini-caption">GELİR KOMUTA MERKEZİ</p>
+            <h1>Platform gelir özeti</h1>
+            <span>Son 30 gün GMV, komisyon, rezervasyon trendi ve otel liderleri — tek ekranda.</span>
+        </div>
+        <div class="admin-revenue-hero-actions">
+            <a class="btn btn-primary" href="/admin/raporlar"><i class="fas fa-chart-column me-2"></i>Aylık rapor</a>
+            <a class="btn btn-outline-primary" href="/admin/raporlar/aylik-ciro-komisyon.csv" download><i class="fas fa-file-csv me-2"></i>CSV</a>
+            @if (Model.PackageTablesReady)
+            {
+                <a class="btn btn-outline-secondary" href="/admin/platform-paketleri"><i class="fas fa-shield-halved me-2"></i>5651/5661 paketler</a>
+            }
+        </div>
+    </div>
+
+    <div class="admin-summary-grid admin-revenue-summary-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <article class="admin-summary-card admin-summary-card--@card.ToneClass">
+                <span class="admin-summary-icon"><i class="fas @card.IconClass"></i></span>
+                <div>
+                    <p>@card.Label</p>
+                    <h2>@card.Value</h2>
+                    <span>@card.Description</span>
+                </div>
+            </article>
+        }
+    </div>
+
+    <div class="admin-revenue-trend-grid">
+        <article class="admin-section-card">
+            <div class="admin-section-head">
+                <div>
+                    <p class="mini-caption">GÜNLÜK TREND</p>
+                    <h2>GMV (30 gün)</h2>
+                    <span>İptal hariç günlük ciro (TL, yuvarlanmış sütun).</span>
+                </div>
+            </div>
+            <div class="admin-chart-bars admin-revenue-chart-bars">
+                @foreach (var bar in Model.GmvDailyTrend)
+                {
+                    <div class="chart-bar-item" title="@bar.Label: @bar.Value.ToString("N0", tr) TL">
+                        <span class="chart-bar chart-bar--gmv" style="height:@bar.HeightPercent%;"></span>
+                        <strong>@bar.Value.ToString("N0", tr)</strong>
+                        <small>@bar.Label</small>
+                    </div>
+                }
+            </div>
+        </article>
+
+        <article class="admin-section-card">
+            <div class="admin-section-head">
+                <div>
+                    <p class="mini-caption">GÜNLÜK TREND</p>
+                    <h2>Rezervasyon (30 gün)</h2>
+                    <span>Günlük oluşturulan kayıt adedi.</span>
+                </div>
+                <a class="btn btn-outline-primary btn-sm" href="/admin/rezervasyonlar-tek-liste">Liste</a>
+            </div>
+            <div class="admin-chart-bars admin-revenue-chart-bars">
+                @foreach (var bar in Model.ReservationDailyTrend)
+                {
+                    <div class="chart-bar-item" title="@bar.Label: @bar.Value">
+                        <span class="chart-bar chart-bar--count" style="height:@bar.HeightPercent%;"></span>
+                        <strong>@bar.Value</strong>
+                        <small>@bar.Label</small>
+                    </div>
+                }
+            </div>
+        </article>
+    </div>
+
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">OTEL LİDERLERİ</p>
+                <h2>En yüksek GMV (30 gün)</h2>
+                <span>Otel bazlı ciro, komisyon ve iptal adedi.</span>
+            </div>
+            <a class="btn btn-outline-primary btn-sm" href="/admin/ticari-icgoru">Ticari içgörü</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-vcenter table-hover admin-table admin-table--cards admin-revenue-leaders-table">
+                <thead>
+                    <tr>
+                        <th>Otel</th>
+                        <th>Konum</th>
+                        <th>Rezervasyon</th>
+                        <th>İptal</th>
+                        <th>GMV</th>
+                        <th>Komisyon</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.TopHotels.Count == 0)
+                    {
+                        <tr><td colspan="6">Son 30 günde rezervasyon kaydı bulunamadı.</td></tr>
+                    }
+                    @foreach (var row in Model.TopHotels)
+                    {
+                        <tr>
+                            <td data-label="Otel"><strong>@row.HotelName</strong></td>
+                            <td data-label="Konum">@row.CityLabel</td>
+                            <td data-label="Rezervasyon">@row.ReservationCount.ToString("N0", tr)</td>
+                            <td data-label="İptal">@row.CancelledCount.ToString("N0", tr)</td>
+                            <td data-label="GMV">@row.Gmv.ToString("N0", tr) TL</td>
+                            <td data-label="Komisyon">@row.Commission.ToString("N0", tr) TL</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>

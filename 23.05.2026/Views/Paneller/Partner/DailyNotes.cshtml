@@ -1,0 +1,83 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerPricingPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    var maxPricingDate = DateTime.Today.AddDays(365).ToString("yyyy-MM-dd");
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Fiyat</div>
+            <h2 class="page-title">Günlük notlar</h2>
+            <div class="text-muted mt-1">Operasyon notlarını (kahvaltı dahil, bakım, tadilat vb.) tarih aralığına ve oda tiplerine toplu uygulayın.</div>
+        </div>
+        <div class="col-auto ms-auto">
+            <a class="btn btn-outline-primary" href="/panel/partner/takvim-fiyatlar?otelId=@Model.SelectedHotelId&roomId=@Model.SelectedRoomId&month=@Model.MonthKey">
+                <i class="fas fa-calendar-days me-2"></i>Takvim & Fiyatlar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title mb-0">Toplu not güncelleme</h3>
+                    <div class="text-muted small">Bu form yalnızca takvim notu alanını etkiler.</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/panel/partner/fiyat/gunluk-notlar/uygula">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
+                    <input type="hidden" name="ViewRoomId" value="@Model.SelectedRoomId" />
+                    <input type="hidden" name="ViewMonth" value="@Model.MonthKey" />
+
+                    <div class="mb-3">
+                        <div class="form-label">Güncelleme uygulanacak odalar</div>
+                        <div class="row g-2">
+                            @foreach (var room in Model.Rooms.Where(x => x.IsActive))
+                            {
+                                var isChecked = Model.BulkForm.SelectedRoomIds.Contains(room.RoomId);
+                                <div class="col-12 col-md-6 col-xl-3">
+                                    <label class="form-check notes-room-check">
+                                        <input class="form-check-input" type="checkbox" name="SelectedRoomIds" value="@room.RoomId" checked="@(isChecked ? "checked" : null)" />
+                                        <span class="form-check-label">
+                                            <span class="fw-bold">@room.RoomName</span>
+                                            <span class="text-muted d-block small">@room.BasePriceText</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">Tarih başlangıcı</label>
+                            <input class="form-control" type="date" name="DateFrom" value="@Model.BulkForm.DateFrom.ToString("yyyy-MM-dd")" max="@maxPricingDate" />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">Tarih bitişi</label>
+                            <input class="form-control" type="date" name="DateTo" value="@Model.BulkForm.DateTo.ToString("yyyy-MM-dd")" max="@maxPricingDate" />
+                        </div>
+                        <div class="col-12 col-xl-6">
+                            <label class="form-label">Takvim notu</label>
+                            <textarea class="form-control" name="PriceNote" rows="2" placeholder="Örn. Kahvaltı dahil, bakım nedeniyle satış kapalı, ekstra yatak yok..."></textarea>
+                            <div class="form-hint">Boş gönderirseniz not temizlenir.</div>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-floppy-disk me-2"></i>Uygula
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

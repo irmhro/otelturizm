@@ -1,0 +1,109 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminPlatformTeamPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+}
+
+<section class="admin-section-card">
+    <div class="admin-section-head">
+        <div>
+            <p class="mini-caption">YARDIM MERKEZİ</p>
+            <h2>Ekibimiz</h2>
+            <span>Yardım Merkezi sayfasındaki ekip kartlarını buradan yönetebilirsiniz.</span>
+        </div>
+    </div>
+
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Sıra</th>
+                    <th>Profil</th>
+                    <th>Ad Soyad</th>
+                    <th>Ünvan</th>
+                    <th>E-posta</th>
+                    <th>Aktif</th>
+                    <th class="text-end">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model.Members.Count == 0)
+            {
+                <tr><td colspan="7">Kayıt bulunamadı. Migration uygulanmadıysa önce tabloyu oluşturun.</td></tr>
+            }
+            else
+            {
+                foreach (var row in Model.Members)
+                {
+                    <tr>
+                        <td>@row.OrderNo</td>
+                        <td><img src="@row.AvatarUrl" alt="" width="42" height="42" style="border-radius:999px; object-fit:cover;" /></td>
+                        <td><strong>@row.Name</strong>@if (!string.IsNullOrWhiteSpace(row.Description)){<div class="text-muted small">@row.Description</div>}</td>
+                        <td>@row.Title</td>
+                        <td>@row.Email</td>
+                        <td>@(row.IsActive ? "Evet" : "Hayır")</td>
+                        <td class="text-end">
+                            <a class="btn btn-outline-primary btn-sm" href="/admin/ekibimiz?editId=@row.Id">Düzenle</a>
+                            <form method="post" action="/admin/ekibimiz/sil" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@row.Id" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Sil</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="admin-section-card" style="margin-top: 1rem;">
+    <div class="admin-section-head">
+        <div>
+            <p class="mini-caption">KAYIT</p>
+            <h2>Ekip üyesi ekle / güncelle</h2>
+            <span>Profil resmi opsiyoneldir; yüklenmezse otomatik avatar kullanılır.</span>
+        </div>
+    </div>
+
+    <form method="post" action="/admin/ekibimiz/kaydet" enctype="multipart/form-data" class="admin-form-grid">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Form.Id" />
+        <label class="admin-form-span">
+            <span>Ad Soyad</span>
+            <input type="text" name="Name" value="@Model.Form.Name" required />
+        </label>
+        <label class="admin-form-span">
+            <span>Ünvan</span>
+            <input type="text" name="Title" value="@Model.Form.Title" required />
+        </label>
+        <label class="admin-form-span">
+            <span>E-posta</span>
+            <input type="email" name="Email" value="@Model.Form.Email" required />
+        </label>
+        <label class="admin-form-span">
+            <span>Alt açıklama</span>
+            <input type="text" name="Description" value="@Model.Form.Description" />
+        </label>
+        <label>
+            <span>Sıralama</span>
+            <input type="number" name="OrderNo" value="@Model.Form.OrderNo" />
+        </label>
+        <label>
+            <span>Aktif</span>
+            <select name="IsActive">
+                <option value="true" selected="@(Model.Form.IsActive)">Evet</option>
+                <option value="false" selected="@(!Model.Form.IsActive)">Hayır</option>
+            </select>
+        </label>
+        <label class="admin-form-span">
+            <span>Profil resmi</span>
+            <input type="file" name="avatarFile" accept="image/*" />
+        </label>
+        <div class="admin-form-actions">
+            <button type="submit" class="btn btn-primary">Kaydet</button>
+        </div>
+    </form>
+</section>
+

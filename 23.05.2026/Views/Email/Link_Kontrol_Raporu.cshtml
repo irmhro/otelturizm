@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Link Kontrol Raporu</title>
+</head>
+<body style="font-family:Arial,Helvetica,sans-serif;margin:0;padding:0;background:#f6f7fb;">
+<div style="max-width:720px;margin:0 auto;padding:24px;">
+    <div style="background:#ffffff;border:1px solid #e7e9f1;border-radius:12px;padding:18px 18px 14px;">
+        <h2 style="margin:0 0 8px 0;font-size:18px;">Sistem Sağlığı · Broken Link Raporu</h2>
+        <div style="color:#556070;font-size:13px;line-height:1.5;">
+            <div><strong>Base URL:</strong> {{base_url}}</div>
+            <div><strong>Kontrol zamanı:</strong> {{checked_at}}</div>
+            <div><strong>Özet:</strong> OK={{ok_count}} · BAD={{bad_count}} · Toplam={{total_count}}</div>
+        </div>
+    </div>
+
+    <div style="height:12px;"></div>
+
+    <div style="background:#ffffff;border:1px solid #e7e9f1;border-radius:12px;padding:16px;">
+        <h3 style="margin:0 0 10px 0;font-size:15px;">Hatalı Route Listesi (ilk 50)</h3>
+        <div style="color:#556070;font-size:13px;line-height:1.6;white-space:pre-wrap;">{{bad_list}}</div>
+        <div style="margin-top:10px;color:#8a93a3;font-size:12px;">
+            Not: Bu rapor admin paneldeki <em>Sistem Sağlığı → Linkleri kontrol et</em> butonundan otomatik oluşturulmuştur.
+        </div>
+    </div>
+</div>
+</body>
+</html>
+

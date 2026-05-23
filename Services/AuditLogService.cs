@@ -68,7 +68,7 @@ public class AuditLogService : IAuditLogService
             return;
         }
 
-        var sql = $"INSERT INTO api_loglari ({string.Join(", ", columns)}) VALUES ({string.Join(", ", values)});";
+        var sql = $"INSERT INTO [dbo].[API_LOGLARI] ({string.Join(", ", columns)}) VALUES ({string.Join(", ", values)});";
         await using var cmd = new SqlCommand(sql, connection);
         cmd.Parameters.AddRange(parameters.ToArray());
         await cmd.ExecuteNonQueryAsync(cancellationToken);
@@ -110,8 +110,8 @@ public class AuditLogService : IAuditLogService
 
         // Basit, güvenli bir exception logu: message + stack + path (payload yok)
         var sql = @"
-            INSERT INTO sistem_hata_loglari
-            (hata_seviyesi, hata_mesaji, stack_trace, endpoint, ip_adresi, user_agent, kullanici_id, cozuldu_mu, olusturulma_tarihi)
+            INSERT INTO [dbo].[SISTEM_HATA_LOGLARI]
+            ([HATA_SEVIYESI], [HATA_MESAJI], stack_trace, [ENDPOINT], [IP_ADRESI], [KULLANICI_ARACISI], [KULLANICI_ID], [COZULDU_MU], [OLUSTURULMA_TARIHI])
             VALUES
             (@level, @msg, @stack, @endpoint, @ip, @ua, @userId, 0, SYSUTCDATETIME());";
 
@@ -144,8 +144,8 @@ public class AuditLogService : IAuditLogService
         }
 
         const string sql = @"
-            INSERT INTO admin_islem_loglari
-            (admin_kullanici_id, islem_turu, hedef_tablo, hedef_kayit_id, aciklama, ip_adresi, islem_tarihi)
+            INSERT INTO [dbo].[ADMIN_ISLEM_LOGLARI]
+            ([ADMIN_KULLANICI_ID], [ISLEM_TURU], [HEDEF_TABLO], [HEDEF_KAYIT_ID], [ACIKLAMA], [IP_ADRESI], [ISLEM_TARIHI])
             VALUES
             (@adminId, @type, @table, @targetId, @note, @ip, SYSUTCDATETIME());";
 

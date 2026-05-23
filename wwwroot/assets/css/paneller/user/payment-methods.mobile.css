@@ -1,29 +1,54 @@
+@import url("./user-mobile-bundle.css");
+
 @media (max-width: 900px) {
-    .section-head,
-    .payment-hero,
-    .payment-panel-head,
-    .payment-method-row,
-    .action-row,
-    .toggle-row {
-        align-items: stretch;
-        flex-direction: column;
-    }
+  .user-payment-methods-page,
+  .payment-methods-page {
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
 
-    .payment-grid,
-    .form-grid,
-    .payment-method-row,
-    .info-list div {
-        grid-template-columns: 1fr;
-    }
+  .section-head,
+  .payment-hero,
+  .payment-panel-head,
+  .payment-method-row,
+  .action-row,
+  .toggle-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
 
-    .btn-primary-solid,
-    .btn-danger-soft,
-    .action-row form,
-    .action-row button {
-        width: 100%;
-    }
+  .payment-grid,
+  .form-grid,
+  .payment-method-row,
+  .info-list div {
+    grid-template-columns: 1fr;
+  }
 
-    .payment-hero-metric {
-        width: 100%;
-    }
+  .btn-primary-solid,
+  .btn-danger-soft,
+  .action-row form,
+  .action-row button,
+  .payment-hero .btn,
+  .payment-panel .btn {
+    width: 100%;
+    min-height: var(--user-mob-touch, 44px);
+  }
+
+  .payment-hero-metric {
+    width: 100%;
+  }
+
+  .payment-empty {
+    padding: 28px 16px max(24px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .payment-empty .btn {
+    min-height: var(--user-mob-touch, 44px);
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .form-grid .form-control,
+  .form-grid .form-select {
+    min-height: var(--user-mob-touch, 44px);
+  }
 }

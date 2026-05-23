@@ -20,7 +20,9 @@ public class AdminShellViewModel
 public class AdminDashboardViewModel
 {
     public AdminShellViewModel Shell { get; set; } = new();
+    public int PendingApprovalsQueueCount { get; set; }
     public List<AdminMetricCardViewModel> Metrics { get; set; } = new();
+    public List<AdminMetricCardViewModel> Revenue30DayMetrics { get; set; } = new();
     public List<AdminChartBarViewModel> ReservationChart { get; set; } = new();
     public List<AdminActivityViewModel> Activities { get; set; } = new();
     public List<AdminDashboardHotelRowViewModel> HighlightHotels { get; set; } = new();
@@ -231,6 +233,12 @@ public class AdminCommissionRuleRowViewModel
     public string NetText { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public string? Note { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public decimal CommissionRate { get; set; }
+    public decimal CommissionIncomeTaxRate { get; set; }
+    public decimal VatRate { get; set; }
+    public decimal AccommodationTaxRate { get; set; }
 }
 
 public class AdminCommissionManagementPageViewModel
@@ -239,23 +247,57 @@ public class AdminCommissionManagementPageViewModel
     public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
     public List<AdminCommissionRuleRowViewModel> Rules { get; set; } = new();
     public List<AdminHotelCommissionFinanceRowViewModel> HotelFinanceRows { get; set; } = new();
+    public List<AdminCommissionReservationRowViewModel> ReservationRows { get; set; } = new();
     public AdminCommissionRuleForm Form { get; set; } = new();
     public List<AdminCommissionHotelOptionViewModel> Hotels { get; set; } = new();
+    public List<string> CityOptions { get; set; } = new();
+    public List<string> DistrictOptions { get; set; } = new();
+    public List<string> NeighborhoodOptions { get; set; } = new();
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
+    public string Month { get; set; } = string.Empty;
+    public string PaymentStatus { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string District { get; set; } = string.Empty;
+    public string Neighborhood { get; set; } = string.Empty;
+    public int PageSize { get; set; } = 50;
+    public long? SelectedRuleId { get; set; }
 }
 
 public class AdminHotelCommissionFinanceRowViewModel
 {
     public long HotelId { get; set; }
     public string HotelName { get; set; } = string.Empty;
+    public string HotelCode { get; set; } = string.Empty;
+    public string CityLabel { get; set; } = string.Empty;
+    public string ContactEmail { get; set; } = string.Empty;
     public decimal GrossRevenue { get; set; }
     public decimal TotalCommission { get; set; }
     public decimal PaidCommission { get; set; }
     public decimal PendingCommission => Math.Max(0m, TotalCommission - PaidCommission);
     public int ReservationCount { get; set; }
     public int CompletedReservationCount { get; set; }
+    public int SoldRoomCount { get; set; }
     public decimal PlatformNetCommission { get; set; }
+    public string PaymentDueText { get; set; } = string.Empty;
+    public string PaymentStatusText { get; set; } = string.Empty;
+}
+
+public class AdminCommissionReservationRowViewModel
+{
+    public long ReservationId { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public string GuestEmail { get; set; } = string.Empty;
+    public string StayText { get; set; } = string.Empty;
+    public int RoomCount { get; set; }
+    public decimal ReservationTotal { get; set; }
+    public decimal CommissionRate { get; set; }
+    public decimal CommissionAmount { get; set; }
+    public decimal NetPayout { get; set; }
+    public string PaymentStatusText { get; set; } = string.Empty;
 }
 
 public class AdminCommissionHotelOptionViewModel
@@ -278,6 +320,68 @@ public class AdminCommissionRuleForm
     public decimal VatRate { get; set; }
     public decimal AccommodationTaxRate { get; set; }
     public string Currency { get; set; } = "TRY";
+    public string? Note { get; set; }
+}
+
+public class AdminCommissionCollectionFilter
+{
+    public string Donem { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string District { get; set; } = string.Empty;
+    public string Neighborhood { get; set; } = string.Empty;
+    public long? IlceId { get; set; }
+    public long? HotelId { get; set; }
+    public long? PartnerId { get; set; }
+    public string TahsilatStatus { get; set; } = string.Empty;
+    public string PaymentStatus { get; set; } = string.Empty;
+    public string SortBy { get; set; } = "commission";
+    public string SortDir { get; set; } = "desc";
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 50;
+}
+
+public class AdminCommissionCollectionRowViewModel
+{
+    public long HotelId { get; set; }
+    public string HotelCode { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string District { get; set; } = string.Empty;
+    public string Neighborhood { get; set; } = string.Empty;
+    public long? IlceId { get; set; }
+    public long PartnerId { get; set; }
+    public string Donem { get; set; } = string.Empty;
+    public int ReservationCount { get; set; }
+    public decimal GrossCommission { get; set; }
+    public decimal CollectedAmount { get; set; }
+    public decimal PendingAmount { get; set; }
+    public string TahsilatStatus { get; set; } = string.Empty;
+    public string PaymentStatusSummary { get; set; } = string.Empty;
+}
+
+public class AdminCommissionCollectionTotalsViewModel
+{
+    public int ReservationTotal { get; set; }
+    public decimal TotalCommission { get; set; }
+    public decimal CollectedTotal { get; set; }
+    public decimal PendingTotal { get; set; }
+}
+
+public class AdminCommissionCollectionPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public AdminCommissionCollectionFilter Filter { get; set; } = new();
+    public List<AdminCommissionCollectionRowViewModel> Rows { get; set; } = new();
+    public AdminCommissionCollectionTotalsViewModel Totals { get; set; } = new();
+    public int Total { get; set; }
+    public int TotalPages => Filter.PageSize <= 0 ? 0 : (int)Math.Ceiling(Total / (double)Filter.PageSize);
+}
+
+public class AdminCommissionCollectionMarkPaidForm
+{
+    public List<long> HotelIds { get; set; } = new();
+    public List<string> Donems { get; set; } = new();
+    public string? Reference { get; set; }
     public string? Note { get; set; }
 }
 

@@ -1,0 +1,183 @@
+-- Foreign keys
+-- Foreign keys generated from current local MSSQL database.
+
+IF OBJECT_ID(N'dbo.FK_firma_oda_fiyat_musaitlik_oda_tip', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] WITH CHECK ADD CONSTRAINT [FK_firma_oda_fiyat_musaitlik_oda_tip] FOREIGN KEY ([ODA_TIP_ID]) REFERENCES [dbo].[ODA_TIPLERI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_firma_oda_fiyat_musaitlik_otel', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] WITH CHECK ADD CONSTRAINT [FK_firma_oda_fiyat_musaitlik_otel] FOREIGN KEY ([OTEL_ID]) REFERENCES [dbo].[OTELLER] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_firma_oda_fiyat_musaitlik_users_updated_by', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] WITH CHECK ADD CONSTRAINT [FK_firma_oda_fiyat_musaitlik_users_updated_by] FOREIGN KEY ([GUNCELLEYEN_KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_gelistirme_talepleri_ana', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[GELISTIRME_TALEPLERI] WITH CHECK ADD CONSTRAINT [FK_gelistirme_talepleri_ana] FOREIGN KEY ([ANA_TALEP_ID]) REFERENCES [dbo].[GELISTIRME_TALEPLERI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_gelistirme_talepleri_atanan', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[GELISTIRME_TALEPLERI] WITH CHECK ADD CONSTRAINT [FK_gelistirme_talepleri_atanan] FOREIGN KEY ([ATANAN_GELISTIRICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_gelistirme_talepleri_cevap', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[GELISTIRME_TALEPLERI] WITH CHECK ADD CONSTRAINT [FK_gelistirme_talepleri_cevap] FOREIGN KEY ([CEVAP_TALEP_ID]) REFERENCES [dbo].[GELISTIRME_TALEPLERI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_gelistirme_talepleri_olusturan', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[GELISTIRME_TALEPLERI] WITH CHECK ADD CONSTRAINT [FK_gelistirme_talepleri_olusturan] FOREIGN KEY ([OLUSTURAN_KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_kullanici_giris_2fa_tokenlari_users', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[KULLANICI_GIRIS_2FA_TOKENLARI] WITH CHECK ADD CONSTRAINT [FK_kullanici_giris_2fa_tokenlari_users] FOREIGN KEY ([KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]) ON DELETE CASCADE;
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_kullanici_giris_loglari_users', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[KULLANICI_GIRIS_LOGLARI] WITH CHECK ADD CONSTRAINT [FK_kullanici_giris_loglari_users] FOREIGN KEY ([KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]) ON DELETE CASCADE;
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_kullanici_telefon_gecmisi_users', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[KULLANICI_TELEFON_GECMISI] WITH CHECK ADD CONSTRAINT [FK_kullanici_telefon_gecmisi_users] FOREIGN KEY ([KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_oda_fiyat_musaitlik_fiyat_indirimleri', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ODA_FIYAT_MUSAITLIK] WITH CHECK ADD CONSTRAINT [FK_oda_fiyat_musaitlik_fiyat_indirimleri] FOREIGN KEY ([INDIRIM_ID]) REFERENCES [dbo].[FIYAT_INDIRIMLERI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_otel_liste_abonelikleri_oteller', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[OTEL_LISTE_ABONELIKLERI] WITH CHECK ADD CONSTRAINT [FK_otel_liste_abonelikleri_oteller] FOREIGN KEY ([OTEL_ID]) REFERENCES [dbo].[OTELLER] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_otel_liste_abonelikleri_users_approver', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[OTEL_LISTE_ABONELIKLERI] WITH CHECK ADD CONSTRAINT [FK_otel_liste_abonelikleri_users_approver] FOREIGN KEY ([ONAYLAYAN_ADMIN_KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_otel_liste_abonelikleri_users_requester', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[OTEL_LISTE_ABONELIKLERI] WITH CHECK ADD CONSTRAINT [FK_otel_liste_abonelikleri_users_requester] FOREIGN KEY ([TALEP_EDEN_KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_oteller_otel_tipleri', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[OTELLER] WITH CHECK ADD CONSTRAINT [FK_oteller_otel_tipleri] FOREIGN KEY ([OTEL_TIPI_ID]) REFERENCES [dbo].[OTEL_TIPLERI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_partner_detaylari_otel_tipleri', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PARTNER_DETAYLARI] WITH CHECK ADD CONSTRAINT [FK_partner_detaylari_otel_tipleri] FOREIGN KEY ([OTEL_TIPI_ID]) REFERENCES [dbo].[OTEL_TIPLERI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_platform_email_mesajlari_hesap', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PLATFORM_EPOSTA_MESAJLARI] WITH CHECK ADD CONSTRAINT [FK_platform_email_mesajlari_hesap] FOREIGN KEY ([HESAP_ID]) REFERENCES [dbo].[PLATFORM_EPOSTA_HESAPLARI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_rezervasyon_odeme_kalem_dekont', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[REZERVASYON_ODEME_KALEMLERI] WITH CHECK ADD CONSTRAINT [FK_rezervasyon_odeme_kalem_dekont] FOREIGN KEY ([DEKONT_GUVENLI_DOSYA_ID]) REFERENCES [dbo].[GUVENLI_DOSYA_VARLIKLARI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_rezervasyon_odeme_kalem_durum', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[REZERVASYON_ODEME_KALEMLERI] WITH CHECK ADD CONSTRAINT [FK_rezervasyon_odeme_kalem_durum] FOREIGN KEY ([ODEME_DURUMU_ID]) REFERENCES [dbo].[ODEME_DURUMU_TANIMLARI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_rezervasyon_odeme_kalem_rez', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[REZERVASYON_ODEME_KALEMLERI] WITH CHECK ADD CONSTRAINT [FK_rezervasyon_odeme_kalem_rez] FOREIGN KEY ([REZERVASYON_ID]) REFERENCES [dbo].[REZERVASYONLAR] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_rezervasyon_odeme_kalem_yontem', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[REZERVASYON_ODEME_KALEMLERI] WITH CHECK ADD CONSTRAINT [FK_rezervasyon_odeme_kalem_yontem] FOREIGN KEY ([ODEME_YONTEMI_ID]) REFERENCES [dbo].[ODEME_YONTEMI_TANIMLARI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_rezervasyonlar_komisyon_vergiler', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[REZERVASYONLAR] WITH CHECK ADD CONSTRAINT [FK_rezervasyonlar_komisyon_vergiler] FOREIGN KEY ([KOMISYON_VERGI_KURAL_ID]) REFERENCES [dbo].[KOMISYON_VERGILER] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_rezervasyonlar_odeme_durumu', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[REZERVASYONLAR] WITH CHECK ADD CONSTRAINT [FK_rezervasyonlar_odeme_durumu] FOREIGN KEY ([ODEME_DURUMU_ID]) REFERENCES [dbo].[ODEME_DURUMU_TANIMLARI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_rezervasyonlar_rezervasyon_durumu', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[REZERVASYONLAR] WITH CHECK ADD CONSTRAINT [FK_rezervasyonlar_rezervasyon_durumu] FOREIGN KEY ([REZERVASYON_DURUMU_ID]) REFERENCES [dbo].[REZERVASYON_DURUM_TANIMLARI] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_sozlesme_gonderim_sozlesmeler', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[SOZLESME_GONDERIM_LOGLARI] WITH CHECK ADD CONSTRAINT [FK_sozlesme_gonderim_sozlesmeler] FOREIGN KEY ([SOZLESME_ID]) REFERENCES [dbo].[SOZLESMELER] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_sozlesme_gonderim_users', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[SOZLESME_GONDERIM_LOGLARI] WITH CHECK ADD CONSTRAINT [FK_sozlesme_gonderim_users] FOREIGN KEY ([KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_sozlesme_kabulleri_sozlesmeler', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[SOZLESME_KABULLERI] WITH CHECK ADD CONSTRAINT [FK_sozlesme_kabulleri_sozlesmeler] FOREIGN KEY ([SOZLESME_ID]) REFERENCES [dbo].[SOZLESMELER] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_sozlesme_kabulleri_users', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[SOZLESME_KABULLERI] WITH CHECK ADD CONSTRAINT [FK_sozlesme_kabulleri_users] FOREIGN KEY ([KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_telefon_dogrulama_tokenlari_users', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[TELEFON_DOGRULAMA_TOKENLARI] WITH CHECK ADD CONSTRAINT [FK_telefon_dogrulama_tokenlari_users] FOREIGN KEY ([KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.FK_whatsapp_mesaj_loglari_users', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[WHATSAPP_MESAJ_LOGLARI] WITH CHECK ADD CONSTRAINT [FK_whatsapp_mesaj_loglari_users] FOREIGN KEY ([KULLANICI_ID]) REFERENCES [dbo].[KULLANICILAR] ([ID]);
+END
+GO
+

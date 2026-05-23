@@ -151,6 +151,7 @@ public class UserPanelController : Controller
 
         ViewData["FavoriteCount"] = await _userFavoriteService.GetFavoriteCountAsync(userId, cancellationToken);
         ViewData["PageCssPath"] = "paneller/user/reviews";
+        ViewData["PageCssMobile"] = "paneller/user/reviews.mobile";
         ViewData["PanelTitle"] = "Konaklama değerlendirmesi";
         ViewData["PanelSubtitle"] = "Konakladığınız tesis hakkında geri bildirim verin.";
         return View("~/Views/Paneller/User/ReservationReview.cshtml", model);
@@ -241,6 +242,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("favorilerim/fiyat-alarmi")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveFavoritePriceAlert(UserFavoritePriceAlertForm form, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
@@ -295,6 +297,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("otelpuan-programi/butce-planlayici")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveBudgetPlan(UserLoyaltyBudgetPlanForm form, CancellationToken cancellationToken = default)
     {
         if (CanAccessUserPanel())
@@ -307,6 +310,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("otelpuan-programi/seyahat-plani")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveTravelPlan(UserLoyaltyTravelPlanForm form, CancellationToken cancellationToken = default)
     {
         if (CanAccessUserPanel())
@@ -356,6 +360,21 @@ public class UserPanelController : Controller
         return View("~/Views/Paneller/User/Profile.cshtml", model);
     }
 
+    [HttpGet("faturalarim")]
+    public async Task<IActionResult> Invoices(CancellationToken cancellationToken)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _userPanelService.GetInvoicesAsync(GetCurrentUserId(), cancellationToken);
+        ViewData["PageCssPath"] = "paneller/user/invoices";
+        ViewData["PanelTitle"] = "Faturalarım";
+        ViewData["PanelSubtitle"] = "Tamamlanan konaklamalarınıza ait yüklenmiş fatura belgelerini görüntüleyin.";
+        return View("~/Views/Paneller/User/Invoices.cshtml", model);
+    }
+
     [HttpGet("odeme-yontemleri")]
     public async Task<IActionResult> PaymentMethods(CancellationToken cancellationToken)
     {
@@ -402,6 +421,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("profil-bilgilerim/kaydet")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveProfile(UserProfileForm form, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
@@ -441,6 +461,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("profil-bilgilerim/telefon-kodu-gonder")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendPhoneVerificationCode(string? phoneNumber, string? returnUrl, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
@@ -463,6 +484,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("profil-bilgilerim/telefon-kodu-dogrula")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> VerifyPhoneVerificationCode(string verificationCode, string? returnUrl, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
@@ -564,7 +586,7 @@ public class UserPanelController : Controller
         {
             var saved = await _secureFileService.SaveAsync(profileImage, new SecureFileSaveRequest
             {
-                ContextTable = "users",
+                ContextTable = "KULLANICILAR",
                 ContextId = userId,
                 OwnerUserId = userId,
                 VisibilityScope = "user-only",
@@ -640,6 +662,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("mesajlarim/gonder")]
+    [ValidateAntiForgeryToken]
     [RequestFormLimits(MultipartBodyLengthLimit = 31457280)]
     [RequestSizeLimit(31457280)]
     public async Task<IActionResult> SendMessage(MessageSendRequest form, List<IFormFile>? attachments, CancellationToken cancellationToken)
@@ -654,6 +677,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("mesajlarim/sil")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteMessage(MessageDeleteRequest form, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
@@ -678,6 +702,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("bildirim-tercihleri/kaydet")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveNotifications(UserNotificationPreferencesForm form, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
@@ -690,6 +715,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("guvenlik-ve-giris/sifre")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangePassword(UserChangePasswordForm form, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
@@ -702,6 +728,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("guvenlik-ve-giris/iki-asamali")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveTwoFactor(UserTwoFactorForm form, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
@@ -716,6 +743,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("odeme-yontemleri/kaydet")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SavePaymentMethod(UserPaymentMethodForm form, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())
@@ -730,6 +758,7 @@ public class UserPanelController : Controller
     }
 
     [HttpPost("odeme-yontemleri/sil")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeletePaymentMethod(long paymentMethodId, CancellationToken cancellationToken)
     {
         if (CanAccessUserPanel())

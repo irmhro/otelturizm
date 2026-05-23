@@ -1,0 +1,11 @@
+-- Tablo: dbo.ADMIN_KULLANICI_ROLLER
+IF OBJECT_ID(N'dbo.ADMIN_KULLANICI_ROLLER', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ADMIN_KULLANICI_ROLLER] (
+        [ADMIN_KULLANICI_ID] bigint NOT NULL,
+        [ROL_CODE] nvarchar(64) NOT NULL,
+        [ACTIVE] bit NOT NULL CONSTRAINT [DF_admin_user_roles_active] DEFAULT ((1)),
+        [CREATED_UTC] datetime2(0) NOT NULL CONSTRAINT [DF_admin_user_roles_created] DEFAULT (sysutcdatetime()),
+        CONSTRAINT [PK_ADMIN_KULLANICI_ROLLER] PRIMARY KEY CLUSTERED ([ADMIN_KULLANICI_ID], [ROL_CODE] ASC)
+    );
+END

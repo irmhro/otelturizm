@@ -61,15 +61,15 @@ public class ContractContentService : IContractContentService
         }
 
         const string sql = @"
-            SELECT id, baslik, versiyon_no, sozlesme_tipi
-            FROM sozlesmeler
-            WHERE hedef_kitle = @audience
-              AND sozlesme_tipi IN ('agreement', 'kvkk')
-              AND aktif_mi = 1
-              AND kabul_gerektirir_mi = 1
-              AND baslangic_tarihi <= SYSUTCDATETIME()
-              AND (bitis_tarihi IS NULL OR bitis_tarihi >= SYSUTCDATETIME())
-            ORDER BY CASE sozlesme_tipi WHEN 'agreement' THEN 0 ELSE 1 END, id ASC;";
+            SELECT id, [BASLIK], [VERSIYON_NO], [SOZLESME_TIPI]
+            FROM [dbo].[SOZLESMELER]
+            WHERE [HEDEF_KITLE] = @audience
+              AND [SOZLESME_TIPI] IN ('agreement', 'kvkk')
+              AND [AKTIF_MI] = 1
+              AND [KABUL_GEREKTIRIR_MI] = 1
+              AND [BASLANGIC_TARIHI] <= SYSUTCDATETIME()
+              AND ([BITIS_TARIHI] IS NULL OR [BITIS_TARIHI] >= SYSUTCDATETIME())
+            ORDER BY CASE [SOZLESME_TIPI] WHEN 'agreement' THEN 0 ELSE 1 END, id ASC;";
 
         var contracts = new List<(long Id, string Title, int VersionNo, string Type)>();
         await using (var command = new SqlCommand(sql, connection, transaction))
@@ -89,11 +89,11 @@ public class ContractContentService : IContractContentService
         foreach (var contract in contracts.Where(c => wantedTypes.Contains(c.Type, StringComparer.OrdinalIgnoreCase)))
         {
             const string insertSql = @"
-                INSERT INTO sozlesme_kabulleri
+                INSERT INTO [dbo].[SOZLESME_KABULLERI]
                 (
-                    sozlesme_id, kabul_eden_tip, kullanici_id, partner_id, firma_id, alici_eposta,
-                    sozlesme_baslik_snapshot, sozlesme_versiyon_snapshot, kabul_kaynagi, kabul_ip,
-                    kabul_user_agent, eposta_dogrulandi_mi, kabul_tarihi, durum
+                    [SOZLESME_ID], [KABUL_EDEN_TIP], [KULLANICI_ID], [PARTNER_ID], [FIRMA_ID], [ALICI_EPOSTA],
+                    [SOZLESME_BASLIK_SNAPSHOT], [SOZLESME_VERSIYON_SNAPSHOT], [KABUL_KAYNAGI], [KABUL_IP],
+                    [KABUL_KULLANICI_ARACISI], [EPOSTA_DOGRULANDI_MI], [KABUL_TARIHI], [DURUM]
                 )
                 VALUES
                 (
@@ -127,12 +127,12 @@ public class ContractContentService : IContractContentService
         }
 
         await using (var updateCommand = new SqlCommand(@"
-            UPDATE sozlesme_kabulleri
-            SET eposta_dogrulandi_mi = 1,
-                eposta_dogrulama_tarihi = COALESCE(eposta_dogrulama_tarihi, SYSUTCDATETIME())
-            WHERE kullanici_id = @userId
-              AND alici_eposta = @email
-              AND eposta_dogrulandi_mi = 0;", connection, transaction))
+            UPDATE [dbo].[SOZLESME_KABULLERI]
+            SET [EPOSTA_DOGRULANDI_MI] = 1,
+                [EPOSTA_DOGRULAMA_TARIHI] = COALESCE([EPOSTA_DOGRULAMA_TARIHI], SYSUTCDATETIME())
+            WHERE [KULLANICI_ID] = @userId
+              AND [ALICI_EPOSTA] = @email
+              AND [EPOSTA_DOGRULANDI_MI] = 0;", connection, transaction))
         {
             updateCommand.Parameters.AddWithValue("@userId", userId);
             updateCommand.Parameters.AddWithValue("@email", recipient.Email);
@@ -158,7 +158,7 @@ public class ContractContentService : IContractContentService
                 UserId = recipient.UserId,
                 RecipientEmail = recipient.Email,
                 TemplateCode = "contract_delivery",
-                RelatedTable = "users",
+                RelatedTable = "KULLANICILAR",
                 RelatedRecordId = recipient.UserId,
                 Attachments = attachments,
                 Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -174,10 +174,10 @@ public class ContractContentService : IContractContentService
         foreach (var contract in contracts)
         {
             const string logSql = @"
-                INSERT INTO sozlesme_gonderim_loglari
+                INSERT INTO [dbo].[SOZLESME_GONDERIM_LOGLARI]
                 (
-                    sozlesme_id, kullanici_id, partner_id, firma_id, alici_eposta, gonderim_nedeni,
-                    konu_snapshot, icerik_snapshot, durum, gonderim_tarihi, ip_adresi, user_agent
+                    [SOZLESME_ID], [KULLANICI_ID], [PARTNER_ID], [FIRMA_ID], [ALICI_EPOSTA], [GONDERIM_NEDENI],
+                    [KONU_SNAPSHOT], [ICERIK_SNAPSHOT], [DURUM], [GONDERIM_TARIHI], [IP_ADRESI], [KULLANICI_ARACISI]
                 )
                 VALUES
                 (
@@ -222,10 +222,10 @@ public class ContractContentService : IContractContentService
 
         var summarySqls = new[]
         {
-            "SELECT COUNT(*) FROM sozlesmeler WHERE aktif_mi = 1;",
-            "SELECT COUNT(*) FROM sozlesme_kabulleri;",
-            "SELECT COUNT(*) FROM sozlesme_kabulleri WHERE eposta_dogrulandi_mi = 1;",
-            "SELECT COUNT(*) FROM sozlesme_gonderim_loglari;"
+            "SELECT COUNT(*) FROM [dbo].[SOZLESMELER] WHERE [AKTIF_MI] = 1;",
+            "SELECT COUNT(*) FROM [dbo].[SOZLESME_KABULLERI];",
+            "SELECT COUNT(*) FROM [dbo].[SOZLESME_KABULLERI] WHERE [EPOSTA_DOGRULANDI_MI] = 1;",
+            "SELECT COUNT(*) FROM [dbo].[SOZLESME_GONDERIM_LOGLARI];"
         };
 
         for (var i = 0; i < summarySqls.Length; i++)
@@ -235,14 +235,14 @@ public class ContractContentService : IContractContentService
         }
 
         const string listSql = @"
-            SELECT s.id, s.hedef_kitle, s.sozlesme_tipi, s.baslik, s.slug, s.versiyon_no,
-                   CONCAT(FORMAT(s.baslangic_tarihi, 'dd.MM.yyyy', 'tr-TR'),
-                          CASE WHEN s.bitis_tarihi IS NULL THEN ' - Süresiz' ELSE CONCAT(' - ', FORMAT(s.bitis_tarihi, 'dd.MM.yyyy', 'tr-TR')) END),
-                   (SELECT COUNT(*) FROM sozlesme_kabulleri sk WHERE sk.sozlesme_id = s.id),
-                   (SELECT COUNT(*) FROM sozlesme_gonderim_loglari sg WHERE sg.sozlesme_id = s.id),
-                   s.aktif_mi
-            FROM sozlesmeler s
-            ORDER BY s.hedef_kitle, s.sozlesme_tipi, s.versiyon_no DESC, s.id DESC;";
+            SELECT s.id, s.[HEDEF_KITLE], s.[SOZLESME_TIPI], s.[BASLIK], s.[SLUG], s.[VERSIYON_NO],
+                   CONCAT(FORMAT(s.[BASLANGIC_TARIHI], 'dd.MM.yyyy', 'tr-TR'),
+                          CASE WHEN s.[BITIS_TARIHI] IS NULL THEN ' - Süresiz' ELSE CONCAT(' - ', FORMAT(s.[BITIS_TARIHI], 'dd.MM.yyyy', 'tr-TR')) END),
+                   (SELECT COUNT(*) FROM [dbo].[SOZLESME_KABULLERI] sk WHERE sk.[SOZLESME_ID] = s.id),
+                   (SELECT COUNT(*) FROM [dbo].[SOZLESME_GONDERIM_LOGLARI] sg WHERE sg.[SOZLESME_ID] = s.id),
+                   s.[AKTIF_MI]
+            FROM [dbo].[SOZLESMELER] s
+            ORDER BY s.[HEDEF_KITLE], s.[SOZLESME_TIPI], s.[VERSIYON_NO] DESC, s.id DESC;";
 
         await using (var listCommand = new SqlCommand(listSql, connection))
         await using (var reader = await listCommand.ExecuteReaderAsync(cancellationToken))
@@ -293,25 +293,25 @@ public class ContractContentService : IContractContentService
             if (request.ContractId.HasValue && request.ContractId.Value > 0)
             {
                 const string updateSql = @"
-                    UPDATE sozlesmeler
-                    SET hedef_kitle = @audience,
-                        sozlesme_tipi = @contractType,
-                        baslik = @title,
-                        alt_baslik = @subtitle,
+                    UPDATE [dbo].[SOZLESMELER]
+                    SET [HEDEF_KITLE] = @audience,
+                        [SOZLESME_TIPI] = @contractType,
+                        [BASLIK] = @title,
+                        [ALT_BASLIK] = @subtitle,
                         slug = @slug,
-                        ozet_html = @summaryHtml,
-                        icerik_html = @contentHtml,
-                        gorsel_url = @heroImageUrl,
-                        sozlesme_linki = @contractUrl,
-                        versiyon_no = @versionNo,
-                        baslangic_tarihi = @effectiveStart,
-                        bitis_tarihi = @effectiveEnd,
-                        kabul_gerektirir_mi = @requiresAcceptance,
-                        email_dogrulamada_gonder = @sendOnVerification,
-                        aktif_mi = @isActive,
-                        notlar = @note,
-                        guncellenme_tarihi = SYSUTCDATETIME(),
-                        guncelleyen_kullanici_id = @adminUserId
+                        [OZET_HTML] = @summaryHtml,
+                        [ICERIK_HTML] = @contentHtml,
+                        [GORSEL_URL] = @heroImageUrl,
+                        [SOZLESME_LINKI] = @contractUrl,
+                        [VERSIYON_NO] = @versionNo,
+                        [BASLANGIC_TARIHI] = @effectiveStart,
+                        [BITIS_TARIHI] = @effectiveEnd,
+                        [KABUL_GEREKTIRIR_MI] = @requiresAcceptance,
+                        [EPOSTA_DOGRULAMADA_GONDER] = @sendOnVerification,
+                        [AKTIF_MI] = @isActive,
+                        [NOTLAR] = @note,
+                        [GUNCELLENME_TARIHI] = SYSUTCDATETIME(),
+                        [GUNCELLEYEN_KULLANICI_ID] = @adminUserId
                     WHERE id = @contractId;";
 
                 await using var updateCommand = new SqlCommand(updateSql, connection, transaction);
@@ -323,11 +323,11 @@ public class ContractContentService : IContractContentService
             else
             {
                 const string insertSql = @"
-                    INSERT INTO sozlesmeler
+                    INSERT INTO [dbo].[SOZLESMELER]
                     (
-                        hedef_kitle, sozlesme_tipi, baslik, alt_baslik, slug, ozet_html, icerik_html, gorsel_url, sozlesme_linki,
-                        versiyon_no, baslangic_tarihi, bitis_tarihi, kabul_gerektirir_mi, email_dogrulamada_gonder,
-                        aktif_mi, notlar, olusturan_kullanici_id, olusturulma_tarihi, guncellenme_tarihi
+                        [HEDEF_KITLE], [SOZLESME_TIPI], [BASLIK], [ALT_BASLIK], slug, [OZET_HTML], [ICERIK_HTML], [GORSEL_URL], [SOZLESME_LINKI],
+                        [VERSIYON_NO], [BASLANGIC_TARIHI], [BITIS_TARIHI], [KABUL_GEREKTIRIR_MI], [EPOSTA_DOGRULAMADA_GONDER],
+                        [AKTIF_MI], [NOTLAR], [OLUSTURAN_KULLANICI_ID], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
                     )
                     VALUES
                     (
@@ -391,8 +391,8 @@ public class ContractContentService : IContractContentService
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-            SELECT TOP (1) baslik, COALESCE(ozet_html, ''), COALESCE(icerik_html, '')
-            FROM sozlesmeler
+            SELECT TOP (1) [BASLIK], COALESCE([OZET_HTML], ''), COALESCE([ICERIK_HTML], '')
+            FROM [dbo].[SOZLESMELER]
             WHERE id = @contractId
             ORDER BY id DESC;";
 
@@ -418,8 +418,8 @@ public class ContractContentService : IContractContentService
     private async Task<int> ResendContractBundleInternalAsync(SqlConnection connection, SqlTransaction? transaction, long adminUserId, long contractId, CancellationToken cancellationToken)
     {
         const string contractSql = @"
-            SELECT TOP (1) hedef_kitle
-            FROM sozlesmeler
+            SELECT TOP (1) [HEDEF_KITLE]
+            FROM [dbo].[SOZLESMELER]
             WHERE id = @contractId;";
 
         string audience;
@@ -437,12 +437,12 @@ public class ContractContentService : IContractContentService
 
         var recipients = new List<ContractRecipient>();
         const string recipientSql = @"
-            SELECT DISTINCT u.id, u.ad_soyad, u.eposta, sk.partner_id, sk.firma_id
-            FROM sozlesme_kabulleri sk
-            INNER JOIN users u ON u.id = sk.kullanici_id
-            WHERE sk.sozlesme_id = @contractId
-              AND u.email_dogrulama_tarihi IS NOT NULL
-              AND u.hesap_durumu = 1;";
+            SELECT DISTINCT u.id, u.[AD_SOYAD], u.[EPOSTA], sk.[PARTNER_ID], sk.[FIRMA_ID]
+            FROM [dbo].[SOZLESME_KABULLERI] sk
+            INNER JOIN [dbo].[KULLANICILAR] u ON u.id = sk.[KULLANICI_ID]
+            WHERE sk.[SOZLESME_ID] = @contractId
+              AND u.[EPOSTA_DOGRULAMA_TARIHI] IS NOT NULL
+              AND u.[HESAP_DURUMU] = 1;";
 
         await using (var recipientCommand = new SqlCommand(recipientSql, connection, transaction))
         {
@@ -501,10 +501,10 @@ public class ContractContentService : IContractContentService
             foreach (var contract in contracts)
             {
                 await using var logCommand = new SqlCommand(@"
-                    INSERT INTO sozlesme_gonderim_loglari
+                    INSERT INTO [dbo].[SOZLESME_GONDERIM_LOGLARI]
                     (
-                        sozlesme_id, kullanici_id, partner_id, firma_id, alici_eposta, gonderim_nedeni,
-                        konu_snapshot, icerik_snapshot, durum, gonderim_tarihi, olusturan_admin_id
+                        [SOZLESME_ID], [KULLANICI_ID], [PARTNER_ID], [FIRMA_ID], [ALICI_EPOSTA], [GONDERIM_NEDENI],
+                        [KONU_SNAPSHOT], [ICERIK_SNAPSHOT], [DURUM], [GONDERIM_TARIHI], [OLUSTURAN_ADMIN_ID]
                     )
                     VALUES
                     (
@@ -541,22 +541,22 @@ public class ContractContentService : IContractContentService
 
         // Migration uygulanmamış olabilir.
         const string sql = @"
-            IF OBJECT_ID('dbo.sozlesme_dosyalari', 'U') IS NULL
+            IF OBJECT_ID('[dbo].[SOZLESME_DOSYALARI]', 'U') IS NULL
             BEGIN
-                SELECT CAST(NULL AS bigint) AS sozlesme_id, CAST(NULL AS nvarchar(500)) AS dosya_yolu, CAST(NULL AS nvarchar(250)) AS dosya_adi
+                SELECT CAST(NULL AS bigint) AS [SOZLESME_ID], CAST(NULL AS nvarchar(500)) AS [DOSYA_YOLU], CAST(NULL AS nvarchar(250)) AS [DOSYA_ADI]
                 WHERE 1 = 0;
                 RETURN;
             END
 
-            SELECT s.sozlesme_id, s.dosya_yolu, COALESCE(s.dosya_adi, '') AS dosya_adi
-            FROM sozlesme_dosyalari s
+            SELECT s.[SOZLESME_ID], s.[DOSYA_YOLU], COALESCE(s.[DOSYA_ADI], '') AS [DOSYA_ADI]
+            FROM [dbo].[SOZLESME_DOSYALARI] s
             INNER JOIN (
-                SELECT sozlesme_id, MAX(id) AS max_id
-                FROM sozlesme_dosyalari
-                WHERE dosya_tipi = 'pdf'
-                  AND sozlesme_id IN (SELECT value FROM STRING_SPLIT(@ids, ','))
-                GROUP BY sozlesme_id
-            ) x ON x.sozlesme_id = s.sozlesme_id AND x.max_id = s.id;";
+                SELECT [SOZLESME_ID], MAX(id) AS max_id
+                FROM [dbo].[SOZLESME_DOSYALARI]
+                WHERE [DOSYA_TIPI] = 'pdf'
+                  AND [SOZLESME_ID] IN (SELECT value FROM STRING_SPLIT(@ids, ','))
+                GROUP BY [SOZLESME_ID]
+            ) x ON x.[SOZLESME_ID] = s.[SOZLESME_ID] AND x.max_id = s.id;";
 
         var idCsv = string.Join(",", contractIds.Distinct());
         await using var command = new SqlCommand(sql, connection, transaction);
@@ -599,14 +599,14 @@ public class ContractContentService : IContractContentService
     private async Task<ContractDetailPageViewModel?> LoadContractDetailAsync(SqlConnection connection, SqlTransaction? transaction, string slug, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT TOP (1) id, hedef_kitle, sozlesme_tipi, baslik, alt_baslik, ozet_html, icerik_html,
-                   gorsel_url, versiyon_no, baslangic_tarihi
-            FROM sozlesmeler
+            SELECT TOP (1) id, [HEDEF_KITLE], [SOZLESME_TIPI], [BASLIK], [ALT_BASLIK], [OZET_HTML], [ICERIK_HTML],
+                   [GORSEL_URL], [VERSIYON_NO], [BASLANGIC_TARIHI]
+            FROM [dbo].[SOZLESMELER]
             WHERE slug = @slug
-              AND aktif_mi = 1
-              AND baslangic_tarihi <= SYSUTCDATETIME()
-              AND (bitis_tarihi IS NULL OR bitis_tarihi >= SYSUTCDATETIME())
-            ORDER BY versiyon_no DESC, id DESC;";
+              AND [AKTIF_MI] = 1
+              AND [BASLANGIC_TARIHI] <= SYSUTCDATETIME()
+              AND ([BITIS_TARIHI] IS NULL OR [BITIS_TARIHI] >= SYSUTCDATETIME())
+            ORDER BY [VERSIYON_NO] DESC, id DESC;";
 
         ContractDetailPageViewModel? model = null;
         string audience;
@@ -642,13 +642,13 @@ public class ContractContentService : IContractContentService
     private async Task<IReadOnlyList<ContractLinkViewModel>> LoadContractLinksAsync(SqlConnection connection, SqlTransaction? transaction, string audience, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, baslik, slug, sozlesme_tipi
-            FROM sozlesmeler
-            WHERE hedef_kitle = @audience
-              AND aktif_mi = 1
-              AND baslangic_tarihi <= SYSUTCDATETIME()
-              AND (bitis_tarihi IS NULL OR bitis_tarihi >= SYSUTCDATETIME())
-            ORDER BY CASE sozlesme_tipi WHEN 'agreement' THEN 0 WHEN 'kvkk' THEN 1 ELSE 2 END, versiyon_no DESC, id DESC;";
+            SELECT id, [BASLIK], slug, [SOZLESME_TIPI]
+            FROM [dbo].[SOZLESMELER]
+            WHERE [HEDEF_KITLE] = @audience
+              AND [AKTIF_MI] = 1
+              AND [BASLANGIC_TARIHI] <= SYSUTCDATETIME()
+              AND ([BITIS_TARIHI] IS NULL OR [BITIS_TARIHI] >= SYSUTCDATETIME())
+            ORDER BY CASE [SOZLESME_TIPI] WHEN 'agreement' THEN 0 WHEN 'kvkk' THEN 1 ELSE 2 END, [VERSIYON_NO] DESC, id DESC;";
 
         var items = new List<ContractLinkViewModel>();
         await using var command = new SqlCommand(sql, connection, transaction);
@@ -670,14 +670,14 @@ public class ContractContentService : IContractContentService
     private async Task<List<ContractEmailBundleRow>> LoadEmailBundleContractsAsync(SqlConnection connection, SqlTransaction? transaction, string audience, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT id, baslik, COALESCE(alt_baslik, ''), slug, versiyon_no
-            FROM sozlesmeler
-            WHERE hedef_kitle = @audience
-              AND aktif_mi = 1
-              AND email_dogrulamada_gonder = 1
-              AND baslangic_tarihi <= SYSUTCDATETIME()
-              AND (bitis_tarihi IS NULL OR bitis_tarihi >= SYSUTCDATETIME())
-            ORDER BY CASE sozlesme_tipi WHEN 'agreement' THEN 0 WHEN 'kvkk' THEN 1 ELSE 2 END, versiyon_no DESC, id DESC;";
+            SELECT id, [BASLIK], COALESCE([ALT_BASLIK], ''), slug, [VERSIYON_NO]
+            FROM [dbo].[SOZLESMELER]
+            WHERE [HEDEF_KITLE] = @audience
+              AND [AKTIF_MI] = 1
+              AND [EPOSTA_DOGRULAMADA_GONDER] = 1
+              AND [BASLANGIC_TARIHI] <= SYSUTCDATETIME()
+              AND ([BITIS_TARIHI] IS NULL OR [BITIS_TARIHI] >= SYSUTCDATETIME())
+            ORDER BY CASE [SOZLESME_TIPI] WHEN 'agreement' THEN 0 WHEN 'kvkk' THEN 1 ELSE 2 END, [VERSIYON_NO] DESC, id DESC;";
 
         var rows = new List<ContractEmailBundleRow>();
         await using var command = new SqlCommand(sql, connection, transaction);
@@ -703,13 +703,13 @@ public class ContractContentService : IContractContentService
         const string sql = @"
             SELECT TOP (1)
                 u.id,
-                u.ad_soyad,
-                u.eposta,
-                u.rol,
-                u.firma_id,
-                p.id AS partner_id
-            FROM users u
-            LEFT JOIN partner_detaylari p ON p.kullanici_id = u.id
+                u.[AD_SOYAD],
+                u.[EPOSTA],
+                u.[ROL],
+                u.[FIRMA_ID],
+                p.id AS [PARTNER_ID]
+            FROM [dbo].[KULLANICILAR] u
+            LEFT JOIN [dbo].[PARTNER_DETAYLARI] p ON p.[KULLANICI_ID] = u.id
             WHERE u.id = @userId;";
 
         await using var command = new SqlCommand(sql, connection, transaction);
@@ -744,10 +744,10 @@ public class ContractContentService : IContractContentService
     {
         const string sql = @"
             SELECT TOP (1)
-                id, hedef_kitle, sozlesme_tipi, baslik, alt_baslik, slug, ozet_html, icerik_html, gorsel_url,
-                sozlesme_linki, versiyon_no, baslangic_tarihi, bitis_tarihi,
-                kabul_gerektirir_mi, email_dogrulamada_gonder, aktif_mi, notlar
-            FROM sozlesmeler
+                id, [HEDEF_KITLE], [SOZLESME_TIPI], [BASLIK], [ALT_BASLIK], slug, [OZET_HTML], [ICERIK_HTML], [GORSEL_URL],
+                [SOZLESME_LINKI], [VERSIYON_NO], [BASLANGIC_TARIHI], [BITIS_TARIHI],
+                [KABUL_GEREKTIRIR_MI], [EPOSTA_DOGRULAMADA_GONDER], [AKTIF_MI], [NOTLAR]
+            FROM [dbo].[SOZLESMELER]
             WHERE id = @contractId;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -793,10 +793,10 @@ public class ContractContentService : IContractContentService
 
         const string shellSql = @"
             SELECT
-                (SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Beklemede') AS pending_partner,
-                (SELECT COUNT(*) FROM bildirim_loglari WHERE durum = 'Beklemede') AS unread_notifications,
-                (SELECT COUNT(*) FROM sistem_hata_loglari WHERE hata_seviyesi IN ('Error', 'Critical')) AS critical_logs,
-                (SELECT COUNT(*) FROM yorumlar WHERE onay_durumu = 'Beklemede') AS pending_reviews;";
+                (SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU] = 'Beklemede') AS pending_partner,
+                (SELECT COUNT(*) FROM [dbo].[BILDIRIM_LOGLARI] WHERE [DURUM] = 'Beklemede') AS unread_notifications,
+                (SELECT COUNT(*) FROM [dbo].[SISTEM_HATA_LOGLARI] WHERE [HATA_SEVIYESI] IN ('Error', 'Critical')) AS critical_logs,
+                (SELECT COUNT(*) FROM [dbo].[YORUMLAR] WHERE [ONAY_DURUMU] = 'Beklemede') AS pending_reviews;";
 
         await using var command = new SqlCommand(shellSql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);

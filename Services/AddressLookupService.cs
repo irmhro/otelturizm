@@ -2,8 +2,6 @@ using System.Data.Common;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
-using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
-using SqlException = Microsoft.Data.SqlClient.SqlException;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -18,27 +16,39 @@ public class AddressLookupService : IAddressLookupService
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
     }
 
-    public async Task<IReadOnlyList<AddressProvinceOption>> GetProvincesAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<AddressProvinceOption>> GetProvincesAsync(long countryId, CancellationToken cancellationToken = default)
     {
+        if (countryId <= 0)
+        {
+            return Array.Empty<AddressProvinceOption>();
+        }
+
         const string sql = """
-            SELECT id, il_adi, seo_slug, plaka_kodu
-            FROM iller
-            WHERE aktif_mi = 1
-            ORDER BY plaka_kodu ASC, il_adi ASC;
+            SELECT [ID], [ULKE_ID], [IL_ADI], [SEO_SLUG], [PLAKA_KODU], [BOLGE_TIPI], [ENLEM], [BOYLAM]
+            FROM [dbo].[ILLER]
+            WHERE [AKTIF_MI] = 1 AND [ULKE_ID] = @countryId
+            ORDER BY
+                CASE WHEN [BOLGE_TIPI] = N'IL' THEN [PLAKA_KODU] ELSE 999 END ASC,
+                [IL_ADI] ASC;
             """;
 
         var items = new List<AddressProvinceOption>();
         await using var connection = await CreateOpenConnectionAsync(cancellationToken);
         await using var command = CreateCommand(connection, sql);
+        AddParameter(command, "@countryId", countryId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             items.Add(new AddressProvinceOption
             {
                 Id = reader.GetInt64(0),
-                Name = reader.GetString(1),
-                Slug = reader.GetString(2),
-                PlateCode = reader.GetInt16(3)
+                CountryId = reader.GetInt64(1),
+                Name = reader.GetString(2),
+                Slug = reader.GetString(3),
+                PlateCode = reader.GetInt16(4),
+                RegionType = reader.IsDBNull(5) ? "IL" : reader.GetString(5).Trim(),
+                Latitude = reader.IsDBNull(6) ? null : reader.GetDecimal(6),
+                Longitude = reader.IsDBNull(7) ? null : reader.GetDecimal(7)
             });
         }
 
@@ -51,7 +61,7 @@ public class AddressLookupService : IAddressLookupService
             SELECT COUNT(*)
             FROM INFORMATION_SCHEMA.TABLES
             WHERE TABLE_CATALOG = DB_NAME()
-              AND TABLE_NAME = 'ulkeler';
+              AND TABLE_NAME = 'ULKELER';
             """;
 
         await using var connection = await CreateOpenConnectionAsync(cancellationToken);
@@ -63,16 +73,16 @@ public class AddressLookupService : IAddressLookupService
             {
                 return new List<AddressCountryOption>
                 {
-                    new() { Id = 1, Name = "Türkiye", Iso2 = "TR", Iso3 = "TUR" }
+                    new() { Id = 1, Name = "Türkiye", Iso2 = "TR", Iso3 = "TUR", FlagIconCode = "tr" }
                 };
             }
         }
 
         const string sql = """
-            SELECT id, ulke_adi, iso2_kodu, iso3_kodu
-            FROM ulkeler
-            WHERE aktif_mi = 1
-            ORDER BY varsayilan_ulke DESC, ulke_adi ASC;
+            SELECT [ID], [ULKE_ADI], [ISO2_KODU], [ISO3_KODU], [BAYRAK_IKON_KODU]
+            FROM [dbo].[ULKELER]
+            WHERE [AKTIF_MI] = 1
+            ORDER BY [VARSAYILAN_ULKE] DESC, [ULKE_ADI] ASC;
             """;
 
         var items = new List<AddressCountryOption>();
@@ -80,12 +90,20 @@ public class AddressLookupService : IAddressLookupService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var iso2 = reader.IsDBNull(2) ? string.Empty : reader.GetString(2).Trim();
+            var flag = reader.IsDBNull(4) ? string.Empty : reader.GetString(4).Trim();
+            if (string.IsNullOrWhiteSpace(flag) && !string.IsNullOrWhiteSpace(iso2))
+            {
+                flag = iso2.ToLowerInvariant();
+            }
+
             items.Add(new AddressCountryOption
             {
                 Id = reader.GetInt64(0),
                 Name = reader.GetString(1),
-                Iso2 = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                Iso3 = reader.IsDBNull(3) ? string.Empty : reader.GetString(3)
+                Iso2 = iso2,
+                Iso3 = reader.IsDBNull(3) ? string.Empty : reader.GetString(3).Trim(),
+                FlagIconCode = flag
             });
         }
 
@@ -100,10 +118,10 @@ public class AddressLookupService : IAddressLookupService
         }
 
         const string sql = """
-            SELECT id, il_id, ilce_adi, seo_slug
-            FROM ilceler
-            WHERE aktif_mi = 1 AND il_id = @provinceId
-            ORDER BY merkez_mi DESC, ilce_adi ASC;
+            SELECT [ID], [IL_ID], [ILCE_ADI], [SEO_SLUG], [ENLEM], [BOYLAM]
+            FROM [dbo].[ILCELER]
+            WHERE [AKTIF_MI] = 1 AND [IL_ID] = @provinceId
+            ORDER BY [MERKEZ_MI] DESC, [ILCE_ADI] ASC;
             """;
 
         var items = new List<AddressDistrictOption>();
@@ -118,7 +136,9 @@ public class AddressLookupService : IAddressLookupService
                 Id = reader.GetInt64(0),
                 ProvinceId = reader.GetInt64(1),
                 Name = reader.GetString(2),
-                Slug = reader.GetString(3)
+                Slug = reader.GetString(3),
+                Latitude = reader.IsDBNull(4) ? null : reader.GetDecimal(4),
+                Longitude = reader.IsDBNull(5) ? null : reader.GetDecimal(5)
             });
         }
 
@@ -133,10 +153,10 @@ public class AddressLookupService : IAddressLookupService
         }
 
         const string sql = """
-            SELECT id, ilce_id, mahalle_adi, seo_slug, posta_kodu
-            FROM mahalleler
-            WHERE aktif_mi = 1 AND ilce_id = @districtId
-            ORDER BY mahalle_adi ASC;
+            SELECT [ID], [ILCE_ID], [MAHALLE_ADI], [SEO_SLUG], [POSTA_KODU], [ENLEM], [BOYLAM]
+            FROM [dbo].[MAHALLELER]
+            WHERE [AKTIF_MI] = 1 AND [ILCE_ID] = @districtId
+            ORDER BY [MAHALLE_ADI] ASC;
             """;
 
         var items = new List<AddressNeighborhoodOption>();
@@ -152,7 +172,9 @@ public class AddressLookupService : IAddressLookupService
                 DistrictId = reader.GetInt64(1),
                 Name = reader.GetString(2),
                 Slug = reader.GetString(3),
-                PostalCode = reader.IsDBNull(4) ? null : reader.GetString(4)
+                PostalCode = reader.IsDBNull(4) ? null : reader.GetString(4),
+                Latitude = reader.IsDBNull(5) ? null : reader.GetDecimal(5),
+                Longitude = reader.IsDBNull(6) ? null : reader.GetDecimal(6)
             });
         }
 
@@ -167,10 +189,10 @@ public class AddressLookupService : IAddressLookupService
         if (!string.IsNullOrWhiteSpace(country))
         {
             var countrySql = """
-                SELECT TOP (1) id
-                FROM ulkeler
-                WHERE aktif_mi = 1
-                  AND LOWER(ulke_adi) = LOWER(@country);
+                SELECT TOP (1) [ID]
+                FROM [dbo].[ULKELER]
+                WHERE [AKTIF_MI] = 1
+                  AND LOWER([ULKE_ADI]) = LOWER(@country);
                 """;
             try
             {
@@ -184,20 +206,32 @@ public class AddressLookupService : IAddressLookupService
             }
             catch (DbException)
             {
-                // ulkeler tablosu henüz yoksa fallback ile devam ediyoruz.
+                // ULKELER tablosu henüz yoksa fallback ile devam ediyoruz.
             }
         }
 
         if (!string.IsNullOrWhiteSpace(city))
         {
-            var provinceSql = """
-                SELECT TOP (1) id
-                FROM iller
-                WHERE aktif_mi = 1
-                  AND LOWER(il_adi) = LOWER(@city);
+            var provinceSql = result.CountryId.HasValue
+                ? """
+                SELECT TOP (1) [ID]
+                FROM [dbo].[ILLER]
+                WHERE [AKTIF_MI] = 1
+                  AND [ULKE_ID] = @countryId
+                  AND LOWER([IL_ADI]) = LOWER(@city);
+                """
+                : """
+                SELECT TOP (1) [ID]
+                FROM [dbo].[ILLER]
+                WHERE [AKTIF_MI] = 1
+                  AND LOWER([IL_ADI]) = LOWER(@city);
                 """;
             await using var provinceCommand = CreateCommand(connection, provinceSql);
             AddParameter(provinceCommand, "@city", city.Trim());
+            if (result.CountryId.HasValue)
+            {
+                AddParameter(provinceCommand, "@countryId", result.CountryId.Value);
+            }
             var provinceId = await provinceCommand.ExecuteScalarAsync(cancellationToken);
             if (provinceId is not null && provinceId != DBNull.Value)
             {
@@ -208,11 +242,11 @@ public class AddressLookupService : IAddressLookupService
         if (result.ProvinceId.HasValue && !string.IsNullOrWhiteSpace(district))
         {
             var districtSql = """
-                SELECT TOP (1) id
-                FROM ilceler
-                WHERE aktif_mi = 1
-                  AND il_id = @provinceId
-                  AND LOWER(ilce_adi) = LOWER(@district);
+                SELECT TOP (1) [ID]
+                FROM [dbo].[ILCELER]
+                WHERE [AKTIF_MI] = 1
+                  AND [IL_ID] = @provinceId
+                  AND LOWER([ILCE_ADI]) = LOWER(@district);
                 """;
             await using var districtCommand = CreateCommand(connection, districtSql);
             AddParameter(districtCommand, "@provinceId", result.ProvinceId.Value);
@@ -227,11 +261,11 @@ public class AddressLookupService : IAddressLookupService
         if (result.DistrictId.HasValue && !string.IsNullOrWhiteSpace(neighborhood))
         {
             var neighborhoodSql = """
-                SELECT TOP (1) id
-                FROM mahalleler
-                WHERE aktif_mi = 1
-                  AND ilce_id = @districtId
-                  AND LOWER(mahalle_adi) = LOWER(@neighborhood);
+                SELECT TOP (1) [ID]
+                FROM [dbo].[MAHALLELER]
+                WHERE [AKTIF_MI] = 1
+                  AND [ILCE_ID] = @districtId
+                  AND LOWER([MAHALLE_ADI]) = LOWER(@neighborhood);
                 """;
             await using var neighborhoodCommand = CreateCommand(connection, neighborhoodSql);
             AddParameter(neighborhoodCommand, "@districtId", result.DistrictId.Value);

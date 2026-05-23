@@ -13,7 +13,8 @@ public sealed class PartnerListingSubscriptionsPageViewModel
 public sealed class PartnerListingSubscriptionCreateRequest
 {
     public long HotelId { get; set; }
-    public string ScopeType { get; set; } = "IL"; // IL / ILCE / MAHALLE
+    /// <summary>ILLER / ILCELER / MAHALLELER kapsamı: IL, ILCE, MAHALLE.</summary>
+    public string ScopeType { get; set; } = "IL";
     public string ScopeValue { get; set; } = string.Empty;
     public int DesiredRank { get; set; } = 1; // 1..3
     public int DayCount { get; set; } = 7; // 1..30

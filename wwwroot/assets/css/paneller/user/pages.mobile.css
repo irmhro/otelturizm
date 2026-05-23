@@ -1,14 +1,27 @@
+@import url("./user-mobile-bundle.css");
+
 @media (max-width: 900px) {
-  .user-panel-v2 .card-header {
-    align-items: flex-start;
-    gap: 10px;
-  }
+    .user-panel-v2 .card-header {
+        align-items: flex-start;
+        gap: 10px;
+        flex-direction: column;
+    }
 
-  .user-panel-v2 .btn-list {
-    flex-wrap: wrap;
-  }
+    .user-panel-v2 .btn-list {
+        flex-wrap: wrap;
+        width: 100%;
+    }
 
-  .user-panel-v2 .table-responsive {
-    border-radius: 12px;
-  }
+    .user-panel-v2 .btn-list .btn {
+        flex: 1 1 auto;
+    }
+
+    .user-panel-v2 .table-responsive {
+        border-radius: 12px;
+    }
+
+    .user-table-card .table-responsive:not(:has(.user-table--cards)) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 }

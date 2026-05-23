@@ -1,0 +1,45 @@
+﻿@model dynamic
+@{
+    // Template tokens:
+    // invited_full_name, invited_email, hotel_name, inviter_name, approval_link, start_date, end_date
+    var fullName = (Model?.Tokens?["invited_full_name"] ?? "KullanÄ±cÄ±").ToString();
+    var email = (Model?.Tokens?["invited_email"] ?? "").ToString();
+    var hotelName = (Model?.Tokens?["hotel_name"] ?? "Tesis").ToString();
+    var inviter = (Model?.Tokens?["inviter_name"] ?? "Partner").ToString();
+    var link = (Model?.Tokens?["approval_link"] ?? "").ToString();
+    var start = (Model?.Tokens?["start_date"] ?? "").ToString();
+    var end = (Model?.Tokens?["end_date"] ?? "").ToString();
+}
+
+<div style="font-family: Arial, sans-serif; line-height:1.5; color:#0f172a;">
+    <h2 style="margin:0 0 10px 0;">Tesis kullanÄ±cÄ± daveti</h2>
+    <p style="margin:0 0 12px 0;">
+        Merhaba <strong>@fullName</strong>,
+        <strong>@hotelName</strong> tesisi iÃ§in <strong>@inviter</strong> tarafÄ±ndan yÃ¶netim eriÅŸimi daveti aldÄ±nÄ±z.
+    </p>
+    @if (!string.IsNullOrWhiteSpace(start) || !string.IsNullOrWhiteSpace(end))
+    {
+        <p style="margin:0 0 12px 0;">
+            Yetki aralÄ±ÄŸÄ±:
+            <strong>@(string.IsNullOrWhiteSpace(start) ? "-" : start)</strong>
+            â€”
+            <strong>@(string.IsNullOrWhiteSpace(end) ? "-" : end)</strong>
+        </p>
+    }
+    <p style="margin:0 0 14px 0;">
+        Daveti onaylamak iÃ§in:
+    </p>
+    <p style="margin:0 0 18px 0;">
+        <a href="@link" style="display:inline-block; padding:10px 14px; background:#003b95; color:#fff; text-decoration:none; border-radius:10px;">
+            Daveti Onayla
+        </a>
+    </p>
+    <p style="margin:0 0 8px 0; color:#334155;">
+        Not: Bu daveti onaylayabilmek iÃ§in hesabÄ±nÄ±zla giriÅŸ yapmÄ±ÅŸ olmanÄ±z ve eâ€‘posta adresinizin doÄŸrulanmÄ±ÅŸ olmasÄ± gerekir.
+    </p>
+    <p style="margin:0; color:#64748b; font-size:12px;">
+        Bu eâ€‘posta <strong>@email</strong> adresine gÃ¶nderilmiÅŸtir.
+    </p>
+</div>
+
+

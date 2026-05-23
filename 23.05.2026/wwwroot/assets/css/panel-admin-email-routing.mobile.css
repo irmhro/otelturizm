@@ -1,0 +1,30 @@
+@media (max-width: 900px) {
+    .admin-email-routing-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-email-routing-hero-aside {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .admin-email-routing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-email-routing-card__head {
+        flex-direction: column;
+    }
+
+    .admin-email-routing-card__meta {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+}
+
+@media (max-width: 575px) {
+    .admin-email-routing-hero-aside {
+        grid-template-columns: 1fr;
+    }
+}

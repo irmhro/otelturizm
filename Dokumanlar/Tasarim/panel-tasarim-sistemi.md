@@ -1,6 +1,6 @@
 # Otelturizm Panel Tasarım Sistemi (Canon) · Linkli Standart
 
-Bu doküman, `paneltasarim.md` ile `ultra-panel-tasarim-sistemi.md` içeriklerinin **harmanlanmış, tek kaynaktan yönetilen** sürümüdür. Tüm paneller (Admin/Partner/Firma/Satış/Kullanıcı) için **ortak, minimalist, premium** UI standardı sağlar.
+Kanonik panel UI standardı. Tüm paneller (Admin/Partner/Firma/Satış/Kullanıcı) için **ortak, minimalist, premium** görünüm kurallarını tanımlar.
 
 ## İçindekiler
 

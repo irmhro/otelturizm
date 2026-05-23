@@ -8,7 +8,7 @@ using otelturizmnew.Utils;
 
 namespace otelturizmnew.Controllers.Paneller.Satis;
 
-[Authorize]
+[Authorize(Policy = "SalesPanel")]
 [Route("panel/satis")]
 public class SalesPanelController : Controller
 {
@@ -27,7 +27,6 @@ public class SalesPanelController : Controller
     [HttpGet("dashboard")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var model = await _salesService.GetDashboardAsync(GetUserId(), cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Satış Dashboard";
@@ -38,7 +37,6 @@ public class SalesPanelController : Controller
     [HttpGet("guvenlik")]
     public async Task<IActionResult> Security(CancellationToken cancellationToken)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var dashboard = await _salesService.GetDashboardAsync(GetUserId(), cancellationToken);
         ApplyFeedback(dashboard.Shell);
         ViewData["SalesShell"] = dashboard.Shell;
@@ -47,6 +45,7 @@ public class SalesPanelController : Controller
         TempData["SalesError"] ??= TempData["UserSecurityError"];
         ViewData["Title"] = "Satış Güvenlik";
         ViewData["PageCssPath"] = "panel-user-security";
+        ViewData["PageCssMobile"] = "panel-user-security.mobile";
         return View("~/Views/Paneller/Satis/Security.cshtml", model);
     }
 
@@ -54,7 +53,6 @@ public class SalesPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveTwoFactor(otelturizmnew.Models.Paneller.User.UserTwoFactorForm form, CancellationToken cancellationToken)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var result = await _authService.SaveTwoFactorSecurityAsync(GetUserId(), form, cancellationToken);
         TempData[result.Success ? "SalesSuccess" : "SalesError"] = result.Message;
         return Redirect("/panel/satis/guvenlik");
@@ -63,7 +61,6 @@ public class SalesPanelController : Controller
     [HttpGet("yeni-rezervasyon")]
     public async Task<IActionResult> CreateReservation(long? hotelId = null, long? roomTypeId = null, long? customerId = null, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, decimal? minPrice = null, decimal? maxPrice = null, decimal? minimumRating = null, int? minimumReviewCount = null, string? feature = null, CancellationToken cancellationToken = default)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var model = await _salesService.GetCreateReservationAsync(GetUserId(), hotelId, roomTypeId, customerId, searchTerm, city, district, neighborhood, minPrice, maxPrice, minimumRating, minimumReviewCount, feature, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Yeni Rezervasyon Oluştur";
@@ -76,7 +73,6 @@ public class SalesPanelController : Controller
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("reservation-create")]
     public async Task<IActionResult> CreateReservationPost(SalesReservationCreateModel model, CancellationToken cancellationToken)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var idemKey = IdempotencyKey.ForObject($"sales-res-create:{GetUserId()}", model);
         var result = await _idempotency.GetOrCreateAsync(
             idemKey,
@@ -95,7 +91,6 @@ public class SalesPanelController : Controller
     [HttpGet("rezervasyon-pdf/{reservationId:long}")]
     public async Task<IActionResult> ReservationPdf(long reservationId, CancellationToken cancellationToken)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var dashboard = await _salesService.GetDashboardAsync(GetUserId(), cancellationToken);
         ApplyFeedback(dashboard.Shell);
         dashboard.Shell.ActiveSectionKey = "reservations";
@@ -111,7 +106,6 @@ public class SalesPanelController : Controller
     [HttpGet("api/rezervasyon-pdf/{reservationId:long}")]
     public async Task<IActionResult> ReservationPdfData(long reservationId, CancellationToken cancellationToken)
     {
-        if (!IsSalesUser()) return Unauthorized();
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(TimeSpan.FromSeconds(8)); // p166: timebox
         try
@@ -140,8 +134,6 @@ public class SalesPanelController : Controller
         int take = 8,
         CancellationToken cancellationToken = default)
     {
-        if (!IsSalesUser()) return Unauthorized();
-
         var hotels = await _salesService.SearchHotelsForAssistantAsync(
             GetUserId(),
             q,
@@ -181,7 +173,6 @@ public class SalesPanelController : Controller
     [HttpGet("musaitlik-takvimi")]
     public async Task<IActionResult> Availability(long? hotelId = null, long? roomTypeId = null, string? search = null, int? year = null, int? month = null, CancellationToken cancellationToken = default)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         DateOnly? targetMonth = null;
         if (year.HasValue && month.HasValue) targetMonth = new DateOnly(year.Value, month.Value, 1);
         var model = await _salesService.GetAvailabilityAsync(GetUserId(), hotelId, roomTypeId, search, targetMonth, cancellationToken);
@@ -194,7 +185,6 @@ public class SalesPanelController : Controller
     [HttpGet("rezervasyonlarim")]
     public async Task<IActionResult> Reservations(string? search = null, string? status = null, string? approval = null, DateOnly? startDate = null, DateOnly? endDate = null, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var filters = new SalesReservationsFilterViewModel
         {
             Search = search,
@@ -215,7 +205,6 @@ public class SalesPanelController : Controller
     [HttpGet("musteri-yonetimi")]
     public async Task<IActionResult> Customers(string? search = null, CancellationToken cancellationToken = default)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var model = await _salesService.GetCustomersAsync(GetUserId(), search, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Müşteri Yönetimi";
@@ -227,7 +216,6 @@ public class SalesPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateCustomer(SalesCustomerCreateModel model, CancellationToken cancellationToken)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var result = await _salesService.CreateCustomerAsync(GetUserId(), model, cancellationToken);
         SetFeedback(result.Success, result.Message);
         return Redirect("/panel/satis/musteri-yonetimi");
@@ -236,7 +224,6 @@ public class SalesPanelController : Controller
     [HttpGet("raporlar")]
     public async Task<IActionResult> Reports(int year = 0, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var targetYear = year <= 0 ? DateTime.Today.Year : year;
         var model = await _salesService.GetReportsAsync(GetUserId(), targetYear, page, pageSize, cancellationToken);
         ApplyFeedback(model.Shell);
@@ -248,20 +235,11 @@ public class SalesPanelController : Controller
     [HttpGet("otel-rehberi")]
     public async Task<IActionResult> Hotels(string? search = null, CancellationToken cancellationToken = default)
     {
-        if (!IsSalesUser()) return Redirect("/kullanici-giris");
         var model = await _salesService.GetHotelGuideAsync(GetUserId(), search, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Otel Rehberi";
         ViewData["PageCssPath"] = "paneller/satis/hotels";
         return View("~/Views/Paneller/Satis/Hotels.cshtml", model);
-    }
-
-    private bool IsSalesUser()
-    {
-        var accountType = User.FindFirstValue(AuthClaimTypes.AccountType);
-        var userRole = User.FindFirstValue(AuthClaimTypes.UserRole);
-        return string.Equals(accountType, "sales", StringComparison.OrdinalIgnoreCase)
-            || (!string.IsNullOrWhiteSpace(userRole) && userRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase));
     }
 
     private long GetUserId()

@@ -47,6 +47,11 @@
                     <span>Extranet üzerinden rezervasyon, fiyat, oda ve operasyon kayıtlarını yönetebilirsiniz.</span>
                 </div>
 
+                @if (TempData["PartnerRegisterSuccess"] is string partnerRegisterSuccess)
+                {
+                    <div class="auth-success">@partnerRegisterSuccess</div>
+                }
+
                 @if (TempData["PartnerLoginError"] is string partnerLoginError)
                 {
                     <div class="auth-alert">@partnerLoginError</div>
@@ -248,8 +253,15 @@
                 provinceSelect.addEventListener('change', loadDistricts);
                 districtSelect.addEventListener('change', loadNeighborhoods);
 
-                const provinceResponse = await fetch('/api/adres/iller', { credentials: 'same-origin' });
-                const provinces = await provinceResponse.json();
+                const countriesResponse = await fetch('/api/adres/ulkeler', { credentials: 'same-origin' });
+                const countries = countriesResponse.ok ? await countriesResponse.json() : [];
+                const trCountry = countries.find(function (c) { return (c.iso2 || '').toUpperCase() === 'TR'; }) || countries[0];
+                if (!trCountry || !trCountry.id) {
+                    fillOptions(provinceSelect, [], 'Ülke listesi yüklenemedi');
+                    return;
+                }
+                const provinceResponse = await fetch('/api/adres/iller?ulkeId=' + encodeURIComponent(trCountry.id), { credentials: 'same-origin' });
+                const provinces = provinceResponse.ok ? await provinceResponse.json() : [];
                 fillOptions(provinceSelect, provinces, 'İl seçiniz');
             }
 

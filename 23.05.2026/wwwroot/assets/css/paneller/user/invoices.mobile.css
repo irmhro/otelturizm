@@ -1,0 +1,87 @@
+.user-invoices-page {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 900px) {
+  .user-invoices-hero {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .user-invoices-hero h1 {
+    font-size: 24px;
+  }
+
+  .user-invoices-table-wrap {
+    display: none;
+  }
+
+  .user-invoices-mobile-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .user-invoice-card {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, .06);
+  }
+
+  .user-invoice-card--ok {
+    background: linear-gradient(135deg, rgba(209, 250, 229, .5), #fff 58%);
+  }
+
+  .user-invoice-card--wait {
+    background: linear-gradient(135deg, rgba(255, 247, 214, .72), #fff 54%);
+  }
+
+  .user-invoice-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .user-invoice-card-top strong {
+    display: block;
+    color: #0f172a;
+    font-weight: 900;
+  }
+
+  .user-invoice-card-top small {
+    display: block;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .user-invoice-card-meta {
+    display: grid;
+    gap: 6px;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .user-invoice-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .user-invoice-card-actions .btn {
+    flex: 1 1 120px;
+    min-height: 44px;
+  }
+}
+
+@media (min-width: 901px) {
+  .user-invoices-mobile-list {
+    display: none;
+  }
+}

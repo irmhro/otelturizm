@@ -1,7 +1,7 @@
 # Otelturizm Panel Design Sozlesmesi
 
 Bu dosya, admin/partner/firma panellerinde kullanilan tasarim ve fonksiyon gelistirme sozlesmesidir.
-Temel tasarım sistemi kaynak doküman: `ultra-panel-tasarim-sistemi.md`.
+Temel tasarım sistemi kaynak doküman: `panel-tasarim-sistemi.md`.
 
 ## Tasarim Kurallari (Zorunlu)
 

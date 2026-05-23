@@ -1,0 +1,15 @@
+-- Tablo: dbo.PARTNER_DESTEK_MESAJLARI
+IF OBJECT_ID(N'dbo.PARTNER_DESTEK_MESAJLARI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PARTNER_DESTEK_MESAJLARI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [TALEP_ID] bigint NOT NULL,
+        [GONDEREN_KULLANICI_ID] bigint NULL,
+        [GONDEREN_TIPI] nvarchar(255) NOT NULL,
+        [MESAJ] nvarchar(max) NOT NULL,
+        [EK_DOSYA_YOLU] nvarchar(255) NULL,
+        [OKUNDU_MU] bit NULL CONSTRAINT [DF__partner_d__okund__4B0D20AB] DEFAULT ((0)),
+        [OLUSTURULMA_TARIHI] datetime2(0) NULL CONSTRAINT [DF__partner_d__olust__4C0144E4] DEFAULT (sysutcdatetime()),
+        CONSTRAINT [PK_PARTNER_DESTEK_MESAJLARI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

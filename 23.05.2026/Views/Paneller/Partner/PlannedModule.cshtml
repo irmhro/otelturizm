@@ -1,0 +1,64 @@
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    var title = ViewData["Title"] as string ?? "Partner Modülü";
+    var modulePath = ViewData["ModulePath"] as string ?? string.Empty;
+    var tables = ViewData["ModuleTables"] as string ?? string.Empty;
+}
+
+<section class="partner-dashboard">
+    <div class="card">
+        <div class="card-body p-4 p-lg-5">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <div class="page-pretitle">Partner operasyon modülü</div>
+                    <h1 class="page-title mb-2">@title</h1>
+                    <p class="text-muted mb-0">
+                        Bu alan partner panel mimarisine eklendi. Veri tabanı bağı ve ekran akışı ayrı dosya yapısıyla geliştirilmek üzere hazır tutuluyor.
+                    </p>
+                </div>
+                <div class="col-lg-4">
+                    <div class="alert alert-info mb-0">
+                        <strong>Route</strong>
+                        <div class="small">@modulePath</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-3">
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">Geliştirme kapsamı</h2>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item px-0">
+                            <strong>Veri okuma</strong>
+                            <p class="text-muted mb-0">İlgili tablolar üzerinden otel, oda, tarih, fiyat ve kullanıcı yetkisi bağları kurulacak.</p>
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>İşlem güvenliği</strong>
+                            <p class="text-muted mb-0">Tüm kayıt işlemleri otel sahipliği, anti-forgery ve işlem logu kontrolleriyle çalışacak.</p>
+                        </div>
+                        <div class="list-group-item px-0">
+                            <strong>Panel standardı</strong>
+                            <p class="text-muted mb-0">Her sayfanın kendi `cshtml`, `cs`, `css` ve mobil css dosyasıyla ayrışması korunacak.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">İlgili veri tabloları</h2>
+                </div>
+                <div class="card-body">
+                    <div class="text-muted">@tables</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

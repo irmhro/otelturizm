@@ -1,0 +1,311 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminContractManagementPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+}
+
+<style>
+    .contract-admin-preview-modal .modal-dialog {
+        max-width: min(980px, calc(100vw - 28px));
+    }
+
+    .contract-admin-preview-modal .modal-content {
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(2, 6, 23, 0.10);
+        box-shadow: 0 26px 70px rgba(15, 23, 42, 0.25);
+    }
+
+    .contract-admin-preview-modal .modal-header {
+        background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    }
+
+    .contract-admin-preview-body {
+        padding: 18px;
+        max-height: min(72vh, 860px);
+        overflow: auto;
+        background: #fff;
+    }
+
+    .contract-admin-preview-body :is(h1, h2, h3) {
+        letter-spacing: -0.01em;
+        color: #0f172a;
+    }
+
+    .contract-admin-preview-body :is(p, li) {
+        color: #0f172a;
+        line-height: 1.7;
+    }
+
+    .contract-pdf-upload-card {
+        border: 1px dashed rgba(2, 6, 23, 0.18);
+        border-radius: 14px;
+        padding: 12px;
+        background: rgba(248, 250, 252, 0.75);
+    }
+</style>
+
+<div class="row">
+    @foreach (var item in Model.SummaryCards)
+    {
+        <div class="col-lg-3 col-md-6 col-12">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>@item.Value</h3>
+                    <p>@item.Label</p>
+                    <small>@item.Description</small>
+                </div>
+                <div class="icon"><i class="fas @item.IconClass"></i></div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Kayıtlı sözleşmeler</h3>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Başlık</th>
+                            <th>Kitle</th>
+                            <th>Tür</th>
+                            <th>Versiyon</th>
+                            <th>Yürürlük</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Contracts)
+                        {
+                            <tr>
+                                <td><strong>@item.Title</strong><div>@item.Slug</div></td>
+                                <td>@item.Audience</td>
+                                <td>@item.ContractType</td>
+                                <td>@item.VersionText</td>
+                                <td>@item.EffectiveRangeText</td>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-primary mr-1" href="/admin/sozlesmeler?contractId=@item.ContractId">Düzenle</a>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-success mr-1"
+                                            data-contract-preview
+                                            data-contract-id="@item.ContractId"
+                                            data-contract-title="@item.Title">
+                                        Önizle
+                                    </button>
+                                    <form method="post" action="/admin/sozlesmeler/yeniden-gonder" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="contractId" value="@item.ContractId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Tekrar Gönder</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">@(Model.Form.ContractId.HasValue ? "Sözleşmeyi Düzenle" : "Yeni Sözleşme")</h3>
+            </div>
+            <form method="post" action="/admin/sozlesmeler/kaydet">
+                <div class="card-body">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ContractId" value="@Model.Form.ContractId" />
+                    <div class="row">
+                        <div class="col-6 form-group">
+                            <label>Hedef kitle</label>
+                            <select name="Audience" class="form-control">
+                                @if (Model.Form.Audience == "user")
+                                {
+                                    <option value="user" selected>Kullanıcı</option>
+                                }
+                                else
+                                {
+                                    <option value="user">Kullanıcı</option>
+                                }
+                                @if (Model.Form.Audience == "partner")
+                                {
+                                    <option value="partner" selected>Partner</option>
+                                }
+                                else
+                                {
+                                    <option value="partner">Partner</option>
+                                }
+                                @if (Model.Form.Audience == "firma")
+                                {
+                                    <option value="firma" selected>Firma</option>
+                                }
+                                else
+                                {
+                                    <option value="firma">Firma</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6 form-group">
+                            <label>Sözleşme türü</label>
+                            <select name="ContractType" class="form-control">
+                                @if (Model.Form.ContractType == "agreement")
+                                {
+                                    <option value="agreement" selected>Ana sözleşme</option>
+                                }
+                                else
+                                {
+                                    <option value="agreement">Ana sözleşme</option>
+                                }
+                                @if (Model.Form.ContractType == "kvkk")
+                                {
+                                    <option value="kvkk" selected>KVKK</option>
+                                }
+                                else
+                                {
+                                    <option value="kvkk">KVKK</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Başlık</label>
+                        <input type="text" name="Title" class="form-control" value="@Model.Form.Title" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Slug</label>
+                        <input type="text" name="Slug" class="form-control" value="@Model.Form.Slug" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Özet HTML</label>
+                        <textarea id="SummaryHtmlEditor" name="SummaryHtml" rows="3" class="form-control">@Model.Form.SummaryHtml</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>İçerik HTML</label>
+                        <textarea id="ContentHtmlEditor" name="ContentHtml" rows="12" class="form-control" required>@Model.Form.ContentHtml</textarea>
+                    </div>
+                    @if (Model.Form.ContractId.HasValue && Model.Form.ContractId.Value > 0)
+                    {
+                        <div class="form-group contract-pdf-upload-card">
+                            <label class="d-block mb-2">PDF (e-posta eki için)</label>
+                            <form method="post" action="/admin/sozlesmeler/pdf-yukle" enctype="multipart/form-data">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="contractId" value="@Model.Form.ContractId.Value" />
+                                <div class="input-group">
+                                    <div class="custom-file">
+                                        <input type="file" name="pdfFile" accept="application/pdf" class="custom-file-input" id="contractPdfFile" required />
+                                        <label class="custom-file-label" for="contractPdfFile">PDF seçiniz</label>
+                                    </div>
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-outline-primary">PDF Yükle</button>
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-2">Not: PDF yüklenirse, sözleşme e-postalarında ek olarak gönderilebilir.</small>
+                            </form>
+                        </div>
+                    }
+                    <div class="form-group clearfix">
+                        <div class="icheck-primary d-inline mr-3">
+                            <input type="checkbox" id="requiresAcceptance" name="RequiresAcceptance" value="true" @(Model.Form.RequiresAcceptance ? "checked" : null) />
+                            <label for="requiresAcceptance">Kabul zorunlu</label>
+                        </div>
+                        <div class="icheck-primary d-inline mr-3">
+                            <input type="checkbox" id="sendOnEmailVerification" name="SendOnEmailVerification" value="true" @(Model.Form.SendOnEmailVerification ? "checked" : null) />
+                            <label for="sendOnEmailVerification">E-posta onayında gönder</label>
+                        </div>
+                        <div class="icheck-primary d-inline">
+                            <input type="checkbox" id="isActive" name="IsActive" value="true" @(Model.Form.IsActive ? "checked" : null) />
+                            <label for="isActive">Aktif</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade contract-admin-preview-modal" id="contractPreviewModal" tabindex="-1" role="dialog" aria-labelledby="contractPreviewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="text-uppercase text-primary" style="font-size:.72rem;font-weight:800;letter-spacing:.08em;">SÖZLEŞME ÖNİZLEME</div>
+                    <h5 class="modal-title mb-0" id="contractPreviewTitle">Sözleşme</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="contract-admin-preview-body" id="contractPreviewBody">
+                <div class="text-muted">Yükleniyor...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
+    (function () {
+        function initEditor(selector, heightPx) {
+            if (!window.tinymce) return;
+            const el = document.querySelector(selector);
+            if (!el) return;
+
+            tinymce.init({
+                selector: selector,
+                height: heightPx,
+                menubar: false,
+                branding: false,
+                statusbar: false,
+                plugins: 'lists link table code autoresize',
+                toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | link table | removeformat | code',
+                content_style: 'body{font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:1.7; color:#0f172a;} h1,h2,h3{letter-spacing:-.01em;}',
+            });
+        }
+
+        initEditor('#SummaryHtmlEditor', 220);
+        initEditor('#ContentHtmlEditor', 520);
+
+        const modalEl = document.getElementById('contractPreviewModal');
+        const titleEl = document.getElementById('contractPreviewTitle');
+        const bodyEl = document.getElementById('contractPreviewBody');
+        if (!modalEl || !titleEl || !bodyEl) return;
+
+        async function openPreview(contractId, contractTitle) {
+            titleEl.textContent = contractTitle || 'Sözleşme';
+            bodyEl.innerHTML = '<div class="text-muted">Yükleniyor...</div>';
+            if (window.bootstrap && modalEl) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+
+            try {
+                const response = await fetch(`/admin/sozlesmeler/onizleme?contractId=${encodeURIComponent(contractId)}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!response.ok) throw new Error('Önizleme yüklenemedi.');
+                const data = await response.json();
+                titleEl.textContent = data.title || contractTitle || 'Sözleşme';
+                bodyEl.innerHTML = data.html || '<div class="text-muted">İçerik bulunamadı.</div>';
+            } catch (e) {
+                bodyEl.innerHTML = `<div class="alert alert-warning mb-0">${(e && e.message) ? e.message : 'Önizleme yüklenemedi.'}</div>`;
+            }
+        }
+
+        document.addEventListener('click', function (event) {
+            const btn = event.target.closest('[data-contract-preview]');
+            if (!btn) return;
+            const id = btn.getAttribute('data-contract-id');
+            const title = btn.getAttribute('data-contract-title');
+            if (!id) return;
+            openPreview(id, title);
+        });
+    })();
+</script>

@@ -1,0 +1,185 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerFinancePageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/finance";
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+    string Money(decimal value) => string.Format(tr, "{0:C0}", value);
+    var periodStart = Model.FilterDateFrom ?? (DateTime.TryParse(Model.Month + "-01", out var parsedMonth) ? parsedMonth : new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1));
+    var periodEnd = Model.FilterDateTo ?? periodStart.AddMonths(1).AddDays(-1);
+    var selectedHotelId = Model.Shell.SelectedHotelId ?? 0;
+}
+
+<section class="partner-commission-page">
+    <div class="partner-commission-hero">
+        <div>
+            <div class="page-pretitle">Finans</div>
+            <h2 class="page-title">Komisyonlar</h2>
+            <p>Seçili ay için rezervasyon cirosu, komisyon, ödeme durumu ve rezervasyon kırılımını takip edin.</p>
+        </div>
+        <div class="partner-commission-rule">
+            <span>Aktif kural</span>
+            <strong>@(string.IsNullOrWhiteSpace(Model.ActiveRuleCommissionText) ? "Kural tanımı yok" : Model.ActiveRuleCommissionText)</strong>
+            <small>@Model.ActiveRuleDateText · @Model.ActiveRuleTaxText</small>
+        </div>
+    </div>
+
+    <div class="partner-commission-stats">
+        <article><span>Günlük komisyon</span><strong>@Money(Model.DailyCommissionTotal)</strong><small>@DateTime.Today.ToString("dd MMMM yyyy", tr)</small></article>
+        <article><span>Ödeme günü</span><strong>@(string.IsNullOrWhiteSpace(Model.CommissionPaymentDayText) ? "—" : Model.CommissionPaymentDayText)</strong><small>Otel komisyon vadesi</small></article>
+        <article><span>Rezervasyon</span><strong>@Model.MonthlyReservationCount.ToString("N0", tr)</strong><small>Seçili dönem</small></article>
+        <article><span>Satılan oda</span><strong>@Model.MonthlySoldRoomCount.ToString("N0", tr)</strong><small>Toplam oda adedi</small></article>
+        <article><span>Aylık gelir</span><strong>@Money(Model.MonthlyGrossRevenue)</strong><small>Vergiler dahil ciro</small></article>
+        <article><span>Aylık komisyon</span><strong>@Money(Model.MonthlyCommissionTotal)</strong><small>Platform komisyonu</small></article>
+        <article><span>Ödenen</span><strong>@Money(Model.MonthlyPaidCommission)</strong><small>Muhasebe kapanan</small></article>
+        <article><span>Ödenmedi</span><strong>@Money(Model.MonthlyPendingCommission)</strong><small>Bekleyen tahakkuk</small></article>
+    </div>
+
+    <article class="card partner-commission-filter">
+        <div class="card-body">
+            <form method="get" action="/panel/partner/finans/komisyonlar" class="partner-commission-filter-grid">
+                @if (Model.Shell.SelectedHotelId.HasValue)
+                {
+                    <input type="hidden" name="otelId" value="@Model.Shell.SelectedHotelId.Value" />
+                }
+                <label>
+                    <span>Başlangıç</span>
+                    <input type="date" class="form-control" name="dateFrom" value="@periodStart.ToString("yyyy-MM-dd")" />
+                </label>
+                <label>
+                    <span>Bitiş</span>
+                    <input type="date" class="form-control" name="dateTo" value="@periodEnd.ToString("yyyy-MM-dd")" />
+                </label>
+                <label>
+                    <span>Komisyon ödeme</span>
+                    <select class="form-select" name="paymentStatus">
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(Model.PaymentStatus))">Tümü</option>
+                        <option value="Ödendi" selected="@(Model.PaymentStatus == "Ödendi")">Ödendi</option>
+                        <option value="Ödenmedi" selected="@(Model.PaymentStatus == "Ödenmedi")">Ödenmedi</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Sayfa başı</span>
+                    <select class="form-select" name="pageSize">
+                        @foreach (var size in new[] { 50, 100, 150, 200 })
+                        {
+                            <option value="@size" selected="@(Model.PageSize == size)">@size</option>
+                        }
+                    </select>
+                </label>
+                <div class="partner-commission-filter-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrele</button>
+                    <a class="btn btn-outline-secondary" href="/panel/partner/finans/komisyonlar@(Model.Shell.SelectedHotelId.HasValue ? "?otelId=" + Model.Shell.SelectedHotelId.Value : "")">Sıfırla</a>
+                </div>
+            </form>
+        </div>
+    </article>
+
+    <article class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title mb-0">Rezervasyon komisyon listesi</h3>
+                <div class="text-muted small">Rezervasyon fiyatı, komisyon oranı, komisyon tutarı ve ödeme durumu.</div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table partner-commission-table">
+                <thead>
+                    <tr>
+                        <th>Rezervasyon</th>
+                        <th>Oda</th>
+                        <th>Misafir</th>
+                        <th>Konaklama</th>
+                        <th>Rezervasyon fiyatı</th>
+                        <th>Komisyon</th>
+                        <th>Otele net</th>
+                        <th>Ödeme</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.CommissionRows.Count == 0)
+                    {
+                        <tr><td colspan="9" class="text-muted p-3">Seçili filtreye uygun komisyon kaydı yok.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model.CommissionRows)
+                        {
+                            <tr>
+                                <td><strong>@item.ReservationNo</strong><div class="text-muted small">@item.AccountingPeriod</div></td>
+                                <td><strong>@item.RoomName</strong><div class="text-muted small">@item.RoomCount oda</div></td>
+                                <td>@item.GuestName</td>
+                                <td>@item.StayText</td>
+                                <td>@Money(item.ReservationTotal)</td>
+                                <td><strong>@Money(item.CommissionAmount)</strong><div class="text-muted small">%@item.CommissionRate.ToString("0.##", tr)</div></td>
+                                <td>@Money(item.NetPayout)</td>
+                                <td><span class="partner-commission-status @(item.PaymentStatusText == "Ödendi" ? "paid" : "pending")">@item.PaymentStatusText</span></td>
+                                <td>
+                                    @if (item.CanMarkPaidOnline && selectedHotelId > 0)
+                                    {
+                                        <form method="post" action="/panel/partner/finans/komisyonlar/odendi" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="HotelId" value="@selectedHotelId" />
+                                            <input type="hidden" name="CommissionRecordId" value="@item.CommissionRecordId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-success">Ödendi işaretle</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <div class="partner-commission-grid">
+        <article class="card">
+            <div class="card-header"><h3 class="card-title mb-0">Vergi ve kesinti özeti</h3></div>
+            <div class="card-body">
+                <div class="partner-finance-tax-list">
+                    @foreach (var row in Model.TaxRows)
+                    {
+                        <div class="partner-finance-tax-row">
+                            <div><strong>@row.Label</strong><small>@row.Description</small></div>
+                            <div class="partner-finance-tax-meta"><span>@row.RateText</span><strong>@row.AmountText</strong></div>
+                        </div>
+                    }
+                    @if (Model.TaxRows.Count == 0)
+                    {
+                        <div class="text-muted">Vergi özeti henüz hazır değil.</div>
+                    }
+                </div>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-header"><h3 class="card-title mb-0">Son finans hareketleri</h3></div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead><tr><th>Kayıt</th><th>Tarih</th><th>Durum</th><th>Tutar</th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.Transactions.Take(10))
+                    {
+                        <tr>
+                            <td>@item.Label</td>
+                            <td class="text-muted">@item.DateText</td>
+                            <td>@item.StatusText</td>
+                            <td class="fw-bold">@item.AmountText</td>
+                        </tr>
+                    }
+                    @if (Model.Transactions.Count == 0)
+                    {
+                        <tr><td colspan="4" class="text-muted p-3">Henüz finans hareketi yok.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+</section>

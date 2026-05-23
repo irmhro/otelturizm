@@ -33,11 +33,11 @@ public class AdminRbacService : IAdminRbacService
             await connection.OpenAsync(cancellationToken);
 
             const string sql = """
-                SELECT DISTINCT p.permission_code
-                FROM dbo.admin_user_roles ur
-                INNER JOIN dbo.admin_role_permissions rp ON rp.role_code = ur.role_code
-                INNER JOIN dbo.admin_permissions p ON p.permission_code = rp.permission_code
-                WHERE ur.admin_user_id = @uid AND ur.active = 1 AND rp.active = 1 AND p.active = 1;
+                SELECT DISTINCT y.[YETKI_CODE]
+                FROM [dbo].[ADMIN_KULLANICI_ROLLER] ur
+                INNER JOIN [dbo].[ADMIN_ROL_YETKILER] ry ON ry.[ROL_CODE] = ur.[ROL_CODE] AND ry.[ACTIVE] = 1
+                INNER JOIN [dbo].[ADMIN_YETKILER] y ON y.[YETKI_CODE] = ry.[YETKI_CODE] AND y.[ACTIVE] = 1
+                WHERE ur.[ADMIN_KULLANICI_ID] = @uid AND ur.[ACTIVE] = 1;
                 """;
 
             await using var cmd = new SqlCommand(sql, connection);

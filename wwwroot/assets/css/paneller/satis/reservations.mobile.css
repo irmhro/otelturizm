@@ -1,1 +1,22 @@
 @import url("./reservations.css");
+
+@media (max-width: 900px) {
+    .sales-reservation-filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-reservation-filter-grid .btn {
+        min-height: 44px;
+        width: 100%;
+    }
+
+    .sales-table-wrap,
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sales-table {
+        min-width: 640px;
+    }
+}

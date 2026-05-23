@@ -1,0 +1,186 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@using Microsoft.AspNetCore.Hosting
+@inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
+@inject otelturizmnew.Services.Abstractions.IDevelopmentAccessService DevelopmentAccessService
+<!DOCTYPE html>
+@{
+    var lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    var nonce = Context.Items["CspNonce"] as string;
+    // Gelisim rotasi artik yok; overlay her sayfada tek davranis ile calisiyor.
+    var hostEnv = Context.RequestServices.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
+    var requestHost = Context.Request.Host.Host ?? string.Empty;
+    var isLoopbackHost =
+        string.Equals(requestHost, "localhost", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(requestHost, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(requestHost, "::1", StringComparison.OrdinalIgnoreCase)
+        || requestHost.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
+    var isLocalDevelopment = hostEnv?.IsDevelopment() == true || isLoopbackHost;
+    var isDevelopmentUnlocked = isLocalDevelopment || DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
+
+    var publicBaseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
+                        ?? "https://otelturizm.com";
+    var pageTitleRaw = ViewData["Title"] as string;
+    var pageTitle = string.IsNullOrWhiteSpace(pageTitleRaw) ? "Otelturizm" : pageTitleRaw.Trim();
+    var metaDescription = (ViewData["MetaDescription"] as string)?.Trim();
+    if (string.IsNullOrWhiteSpace(metaDescription))
+    {
+        metaDescription = "Otelturizm ile otelleri karşılaştırın, kampanyaları keşfedin ve güvenle rezervasyon oluşturun.";
+    }
+    var ogImage = (ViewData["OgImage"] as string)?.Trim();
+    var canonical = (ViewData["Canonical"] as string)?.Trim();
+    if (string.IsNullOrWhiteSpace(canonical))
+    {
+        canonical = publicBaseUrl + (Context.Request.Path.HasValue ? Context.Request.Path.Value : "/");
+    }
+    var jsonLd = ViewData["JsonLd"] as string;
+
+    string BuildLangUrl(string langCode)
+    {
+        var path = Context.Request.Path.HasValue ? Context.Request.Path.Value : "/";
+        // Canonical/hreflang için tracking paramlarını dışarıda bırakıyoruz.
+        var withoutQuery = path;
+        return $"{publicBaseUrl}{withoutQuery}?lang={Uri.EscapeDataString(langCode)}";
+    }
+
+    var hreflangLocales = new[] { "tr-TR", "en-US", "en-GB", "de-DE", "fr-FR", "es-ES", "ru-RU", "ar-SA" };
+    var layoutDir = System.Globalization.CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr";
+}
+<html lang="@lang" dir="@layoutDir">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+    <meta name="google-site-verification" content="XOjXVbWYoGSwJOaCHdDNb2l8Zs_JO7nr2BnsfeAp9Uw" />
+    <title>@pageTitle - Otelturizm</title>
+    <meta name="description" content="@metaDescription" />
+    @{
+        var robots = (ViewData["Robots"] as string)?.Trim();
+    }
+    @if (!string.IsNullOrWhiteSpace(robots))
+    {
+        <meta name="robots" content="@robots" />
+    }
+    <link rel="canonical" href="@canonical" />
+
+    <meta property="og:site_name" content="Otelturizm" />
+    <meta property="og:title" content="@pageTitle" />
+    <meta property="og:description" content="@metaDescription" />
+    <meta property="og:url" content="@canonical" />
+    <meta property="og:type" content="website" />
+    @if (!string.IsNullOrWhiteSpace(ogImage))
+    {
+        <meta property="og:image" content="@ogImage" />
+    }
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@pageTitle" />
+    <meta name="twitter:description" content="@metaDescription" />
+    @{
+        var ogLocale = (ViewData["OgLocale"] as string)?.Trim();
+        var ogLocaleAlternate = (ViewData["OgLocaleAlternate"] as string)?.Trim();
+    }
+    @if (!string.IsNullOrWhiteSpace(ogLocale))
+    {
+        <meta property="og:locale" content="@ogLocale" />
+    }
+    @if (!string.IsNullOrWhiteSpace(ogLocaleAlternate))
+    {
+        foreach (var alt in ogLocaleAlternate.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            <meta property="og:locale:alternate" content="@alt" />
+        }
+    }
+
+    @foreach (var loc in hreflangLocales)
+    {
+        <link rel="alternate" hreflang="@loc" href="@(BuildLangUrl(loc))" />
+    }
+    <link rel="alternate" hreflang="x-default" href="@(BuildLangUrl(hreflangLocales[0]))" />
+    <script type="importmap" nonce="@nonce"></script>
+
+    <link rel="preload" as="style" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/vendor/flag-icons/css/flag-icon.min.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="preload" as="style" href="~/assets/css/site-layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/slaytgorsel.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/yanbar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/development-gate.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/development-gate.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    @{
+        var pageCss = ViewData["PageCss"] as string;
+    }
+    @if (!string.IsNullOrWhiteSpace(pageCss))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
+    }
+    @{
+        var pageCssMobile = ViewData["PageCssMobile"] as string;
+    }
+    @if (!string.IsNullOrWhiteSpace(pageCssMobile))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCssMobile).css" asp-append-version="true" media="(max-width: 900px)" />
+    }
+    else if (!string.IsNullOrWhiteSpace(pageCss))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCss).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    }
+
+    @if (!string.IsNullOrWhiteSpace(jsonLd))
+    {
+        <script type="application/ld+json">@Html.Raw(jsonLd)</script>
+    }
+</head>
+<body class="@(isDevelopmentUnlocked ? "development-unlocked" : "development-locked")">
+@{
+    ViewData["HeaderContext"] = ViewData["HeaderContext"] as string ?? "auth";
+}
+<a class="skip-link" href="#mainContent">İçeriğe atla</a>
+<partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
+
+<script src="~/assets/js/sw-asset-guard.js" asp-append-version="true"></script>
+<script src="~/assets/js/layout/sw-cleanup.js" asp-append-version="true"></script>
+
+@{
+    var publicDraftRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    long? publicDraftUserId = long.TryParse(publicDraftRaw, out var parsedPublicDraftUserId) ? parsedPublicDraftUserId : null;
+    var publicDraftSessionKey = Context.Request.Cookies.TryGetValue(otelturizmnew.Services.ReservationDraftService.DraftCookieName, out var publicDraftCookieValue)
+        ? publicDraftCookieValue
+        : null;
+    var publicActiveDraft = await ReservationDraftService.GetActiveDraftAsync(publicDraftUserId, publicDraftSessionKey, Context.RequestAborted);
+}
+
+@if (publicActiveDraft is not null
+     && ViewData["SuppressGlobalDraftBanner"] as bool? != true
+     && ViewData["ShowGlobalDraftBanner"] as bool? == true)
+{
+    <partial name="~/Views/Shared/_ActiveReservationDraftBanner.cshtml" model="publicActiveDraft" />
+}
+
+<partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
+
+<main class="site-main" id="mainContent">@RenderBody()</main>
+
+<partial name="~/Views/Anasayfa/_AnasayfaFooter.cshtml" />
+<partial name="~/Views/Shared/yanbar.cshtml" />
+<partial name="~/Views/Shared/_SlaytGorsel.cshtml" />
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
+<script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
+<script src="~/assets/js/rum-webvitals.js" asp-append-version="true"></script>
+<script src="~/assets/js/client-error-reporter.js" asp-append-version="true"></script>
+<script src="~/assets/js/growth-analytics.js" asp-append-version="true"></script>
+<script src="~/assets/js/slaytgorsel.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+
+
+

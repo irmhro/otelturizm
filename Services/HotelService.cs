@@ -7,6 +7,7 @@ using otelturizmnew.Models.Anasayfa;
 using otelturizmnew.Models.Oteller;
 using otelturizmnew.Pricing;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Utils;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -20,6 +21,9 @@ public class HotelService : IHotelService
     private readonly IHotelPricingReadService _hotelPricingReadService;
     private readonly ICacheSingleFlight _cache;
     private readonly ILogger<HotelService> _logger;
+
+    private const string PublishStatusSql = "LOWER(REPLACE(LTRIM(RTRIM(o.yayin_durumu)), NCHAR(0x0131), N'i')) = N'yayinda'";
+    private const string ApprovalStatusSql = "LOWER(REPLACE(LTRIM(RTRIM(o.onay_durumu)), NCHAR(0x0131), N'i')) IN (N'onaylandi', N'onaylanmis', N'onayli')";
 
     public HotelService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService, ICacheSingleFlight cache, ILogger<HotelService> logger)
     {
@@ -77,7 +81,7 @@ public class HotelService : IHotelService
             : string.Empty;
 
         var hotelSql = $"""
-            SELECT TOP (18)
+            SELECT TOP (30)
                 o.id,
                 o.otel_kodu,
                 o.otel_adi,
@@ -193,8 +197,8 @@ public class HotelService : IHotelService
                    AND oo.aktif_mi = 1
                 GROUP BY oi.otel_id
             ) oz ON oz.otel_id = o.id
-            WHERE o.yayin_durumu = N'Yayında'
-              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+            WHERE {PublishStatusSql}
+              AND {ApprovalStatusSql}
             ORDER BY
                 CASE WHEN o.one_cikan_otel = 1 THEN 0 ELSE 1 END,
                 CASE WHEN o.tavsiye_edilen_otel = 1 THEN 0 ELSE 1 END,
@@ -291,7 +295,7 @@ public class HotelService : IHotelService
             {
                 Id = hotelId,
                 HotelCode = reader.GetString(reader.GetOrdinal("otel_kodu")),
-                Name = reader.GetString(reader.GetOrdinal("otel_adi")),
+                Name = reader.GetString(reader.GetOrdinal("OTEL_ADI")),
                 City = reader.GetString(reader.GetOrdinal("sehir")),
                 District = reader.GetString(reader.GetOrdinal("ilce")),
                 LocationText = $"{reader.GetString(reader.GetOrdinal("ilce"))}, {reader.GetString(reader.GetOrdinal("sehir"))}",
@@ -312,17 +316,19 @@ public class HotelService : IHotelService
                     : guestStartingPrice.HasValue ? $"TRY {guestStartingPrice.Value:N0}" : "Teklif Al",
                 PriceNote = guestStartingPrice.HasValue ? "Vergiler dahil" : "Musait fiyat bilgisi bulunamadi",
                 ImageUrl = NormalizeHotelImageUrl(hotelId, imageUrl),
-                DetailSlug = BuildSlug(reader.GetString(reader.GetOrdinal("otel_adi")), reader.GetString(reader.GetOrdinal("otel_kodu"))),
+                DetailSlug = BuildSlug(reader.GetString(reader.GetOrdinal("OTEL_ADI")), reader.GetString(reader.GetOrdinal("otel_kodu"))),
                 Amenities = amenities,
                 Tags = tags,
                 IsSmartPrice = isFeatured || isRecommended || (startingPrice.HasValue && startingPrice.Value <= 3500m),
+                IsFeatured = isFeatured,
+                IsRecommended = isRecommended,
                 StarCount = starCount
             });
         }
 
         await reader.CloseAsync();
 
-        const string destinationSql = """
+        var destinationSql = $"""
             WITH ranked_destinations AS (
                 SELECT
                     o.sehir,
@@ -337,8 +343,8 @@ public class HotelService : IHotelService
                         ORDER BY COALESCE(o.one_cikan_otel, 0) DESC, COALESCE(o.ortalama_puan, 0) DESC, COALESCE(o.populerlik_sirasi, 0) DESC, o.id DESC
                     ) AS rn
                 FROM oteller o
-                WHERE o.yayin_durumu = N'Yayında'
-                  AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+                WHERE {PublishStatusSql}
+                  AND {ApprovalStatusSql}
             )
             SELECT TOP (6)
                 sehir,
@@ -456,7 +462,45 @@ public class HotelService : IHotelService
         }
 
         model.PopularDestinations = destinations;
+
+        var categoryDefinitions = new (string Key, string Etiket, string Title)[]
+        {
+            ("hafta-sonu-firsatlari", "hafta-sonu-firsatlari", "Hafta Sonu Fırsatları"),
+            ("butceme-uygun-oteller", "butceme-uygun-oteller", "Bütçene Uygun"),
+            ("evcil-hayvan-dostu", "evcil-hayvan-dostu", "Evcil Hayvan Dostu"),
+            ("kampanyaya-dahil-oteller", "kampanyaya-dahil-oteller", "Kampanyalı Oteller"),
+            ("ultra-luks", "ultra-luks", "Yıldız Yağmuru")
+        };
+
+        foreach (var definition in categoryDefinitions)
+        {
+            var sectionHotels = ApplyHomepageCampaignFilter(hotels, definition.Etiket).Take(8).ToList();
+            if (sectionHotels.Count == 0)
+            {
+                sectionHotels = hotels.Take(8).ToList();
+            }
+
+            model.CategorySections.Add(new HomeCategorySectionViewModel
+            {
+                Key = definition.Key,
+                Etiket = definition.Etiket,
+                Title = definition.Title,
+                Hotels = sectionHotels
+            });
+        }
+
         return model;
+    }
+
+    public static string ResolveListingCampaignTag(string? etiket, string? filter)
+    {
+        var raw = !string.IsNullOrWhiteSpace(etiket) ? etiket : filter;
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return string.Empty;
+        }
+
+        return NormalizeCampaignTag(SearchTextNormalizer.Normalize(raw));
     }
 
     public async Task<HotelListingPageViewModel> GetHotelListingPageAsync(string? searchTerm, string? campaignTag = null, string? campaignSlug = null, int page = 1, string? contextualSearchBoostNormalized = null, CancellationToken cancellationToken = default)
@@ -624,18 +668,18 @@ public class HotelService : IHotelService
             return new List<(HotelSearchSuggestionViewModel Item, int Score)>();
         }
 
-        const string sql = """
+        var sql = $"""
             SELECT TOP (150) suggestion_value, suggestion_label, suggestion_type, suggestion_hotel_code
             FROM (
                 SELECT DISTINCT o.sehir AS suggestion_value, o.sehir AS suggestion_label, 'Sehir' AS suggestion_type, CAST('' AS nvarchar(50)) AS suggestion_hotel_code
                 FROM oteller o
-                WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+                WHERE {PublishStatusSql} AND {ApprovalStatusSql}
 
                 UNION
 
                 SELECT DISTINCT o.ilce AS suggestion_value, CONCAT(o.ilce, ' / ', o.sehir) AS suggestion_label, 'Ilce' AS suggestion_type, CAST('' AS nvarchar(50)) AS suggestion_hotel_code
                 FROM oteller o
-                WHERE o.yayin_durumu = N'Yayında' AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+                WHERE {PublishStatusSql} AND {ApprovalStatusSql}
 
                 UNION
 
@@ -1063,7 +1107,7 @@ public class HotelService : IHotelService
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var hasNormalizedColumns = await ColumnExistsAsync(connection, "dbo.oteller", "sehir_normalized", cancellationToken);
+        var hasNormalizedColumns = await ColumnExistsAsync(connection, "[dbo].[OTELLER]", "SEHIR_NORMALIZED", cancellationToken);
         var normalizedCitySql = hasNormalizedColumns ? "o.sehir_normalized" : BuildSearchNormalizationSql("o.sehir");
         var normalizedDistrictSql = hasNormalizedColumns ? "o.ilce_normalized" : BuildSearchNormalizationSql("o.ilce");
         var normalizedNeighborhoodSql = hasNormalizedColumns ? "o.mahalle_normalized" : BuildSearchNormalizationSql("COALESCE(o.mahalle, '')");
@@ -1086,36 +1130,41 @@ public class HotelService : IHotelService
             ? "LEFT JOIN fiyat_indirimleri fi ON fi.id = pf.indirim_id AND fi.aktif_mi = 1"
             : string.Empty;
 
-        var hasSubscriptionTable = await HotelTableExistsAsync(connection, "otel_liste_abonelikleri", cancellationToken);
+        var hasSubscriptionTable = await HotelTableExistsAsync(connection, "OTEL_LISTE_ABONELIKLERI", cancellationToken);
+        var hasScopeNormColumn = hasSubscriptionTable
+            && await ColumnExistsAsync(connection, "[dbo].[OTEL_LISTE_ABONELIKLERI]", "KAPSAM_DEGERI_NORMALIZE", cancellationToken);
+        var scopeNormSql = hasScopeNormColumn
+            ? "a.[KAPSAM_DEGERI_NORMALIZE]"
+            : BuildSearchNormalizationSql("a.[KAPSAM_DEGERI]");
         var subscriptionApplySql = hasSubscriptionTable
             ? $"""
                 OUTER APPLY (
                     SELECT TOP (1)
-                        a.hedef_sira AS pin_rank
-                    FROM otel_liste_abonelikleri a
-                    WHERE a.otel_id = o.id
-                      AND a.durum = N'Onaylandı'
-                      AND SYSUTCDATETIME() BETWEEN a.baslangic_utc AND a.bitis_utc
+                        a.HEDEF_SIRA AS pin_rank
+                    FROM [dbo].[OTEL_LISTE_ABONELIKLERI] a
+                    WHERE a.OTEL_ID = o.id
+                      AND a.DURUM = N'Onaylandı'
+                      AND SYSUTCDATETIME() BETWEEN a.BASLANGIC_UTC AND a.BITIS_UTC
                       AND (
                             @searchTermNormalized <> ''
                             AND (
-                                ({normalizedCitySql} = @searchTermNormalized AND a.kapsam_tipi = N'IL' AND a.kapsam_degeri_normalized = @searchTermNormalized)
-                                OR ({normalizedDistrictSql} = @searchTermNormalized AND a.kapsam_tipi = N'ILCE' AND a.kapsam_degeri_normalized = @searchTermNormalized)
-                                OR ({normalizedNeighborhoodSql} = @searchTermNormalized AND a.kapsam_tipi = N'MAHALLE' AND a.kapsam_degeri_normalized = @searchTermNormalized)
+                                ({normalizedCitySql} = @searchTermNormalized AND a.KAPSAM_TIPI = N'IL' AND {scopeNormSql} = @searchTermNormalized)
+                                OR ({normalizedDistrictSql} = @searchTermNormalized AND a.KAPSAM_TIPI = N'ILCE' AND {scopeNormSql} = @searchTermNormalized)
+                                OR ({normalizedNeighborhoodSql} = @searchTermNormalized AND a.KAPSAM_TIPI = N'MAHALLE' AND {scopeNormSql} = @searchTermNormalized)
                             )
                           )
-                    ORDER BY a.hedef_sira ASC, a.bitis_utc DESC, a.id DESC
+                    ORDER BY a.HEDEF_SIRA ASC, a.BITIS_UTC DESC, a.ID DESC
                 ) subs
                 """
             : "OUTER APPLY (SELECT CAST(NULL AS int) AS pin_rank) subs";
 
         var ftsQuery = BuildFullTextPrefixQuery(normalizedSearchKeyword);
-        var hasFts = !string.IsNullOrWhiteSpace(ftsQuery) && await HasFullTextIndexAsync(connection, "dbo.oteller", cancellationToken);
-        var hasFtsHotelNameIndexed = hasFts && await HasFullTextIndexedColumnAsync(connection, "dbo.oteller", "otel_adi", cancellationToken);
+        var hasFts = !string.IsNullOrWhiteSpace(ftsQuery) && await HasFullTextIndexAsync(connection, "[dbo].[OTELLER]", cancellationToken);
+        var hasFtsHotelNameIndexed = hasFts && await HasFullTextIndexedColumnAsync(connection, "[dbo].[OTELLER]", "OTEL_ADI", cancellationToken);
         var useFts = hasFtsHotelNameIndexed;
         var hasFtsSearchText = useFts
-            && await ColumnExistsAsync(connection, "dbo.oteller", "fts_search_text", cancellationToken)
-            && await HasFullTextIndexedColumnAsync(connection, "dbo.oteller", "fts_search_text", cancellationToken);
+            && await ColumnExistsAsync(connection, "[dbo].[OTELLER]", "FTS_SEARCH_TEXT", cancellationToken)
+            && await HasFullTextIndexedColumnAsync(connection, "[dbo].[OTELLER]", "FTS_SEARCH_TEXT", cancellationToken);
 
         // SQL Server compile-time doğrulama yapar: CONTAINS / olmayan kolonlar, parametre ile "devre dışı" bırakılsa bile hata üretir.
         // Bu yüzden FTS yoksa CONTAINS parçalarını sorgudan tamamen çıkarıyoruz.
@@ -1324,8 +1373,8 @@ public class HotelService : IHotelService
                   AND COALESCE(ofm2.gecelik_fiyat, 0) > 0
             ) av
             {subscriptionApplySql}
-            WHERE o.yayin_durumu = N'Yayında'
-              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+            WHERE {PublishStatusSql}
+              AND {ApprovalStatusSql}
               AND (
                     @campaignSlug = ''
                     OR EXISTS (
@@ -1390,7 +1439,7 @@ public class HotelService : IHotelService
         {
             var id = reader.GetInt64(reader.GetOrdinal("id"));
             var hotelCode = reader.GetString(reader.GetOrdinal("otel_kodu"));
-            var name = reader.GetString(reader.GetOrdinal("otel_adi"));
+            var name = reader.GetString(reader.GetOrdinal("OTEL_ADI"));
             var hotelCity = reader.GetString(reader.GetOrdinal("sehir"));
             var district = reader.GetString(reader.GetOrdinal("ilce"));
             var neighborhood = reader.GetString(reader.GetOrdinal("mahalle"));
@@ -1688,7 +1737,7 @@ public class HotelService : IHotelService
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var hasNormalizedColumns = await ColumnExistsAsync(connection, "dbo.oteller", "sehir_normalized", cancellationToken);
+        var hasNormalizedColumns = await ColumnExistsAsync(connection, "[dbo].[OTELLER]", "SEHIR_NORMALIZED", cancellationToken);
         var normalizedCitySql = hasNormalizedColumns ? "o.sehir_normalized" : BuildSearchNormalizationSql("o.sehir");
         var normalizedDistrictSql = hasNormalizedColumns ? "o.ilce_normalized" : BuildSearchNormalizationSql("o.ilce");
         var normalizedNeighborhoodSql = hasNormalizedColumns ? "o.mahalle_normalized" : BuildSearchNormalizationSql("o.mahalle");
@@ -1811,6 +1860,10 @@ public class HotelService : IHotelService
                 o.check_out_saati,
                 o.enlem,
                 o.boylam,
+                o.ulke_id,
+                o.sehir_id,
+                o.ilce_id,
+                o.mahalle_id,
                 COALESCE(NULLIF(o.video_url, ''), '') AS video_url,
                 COALESCE(NULLIF(o.kapak_fotografi, ''), '') AS gorsel_url
             FROM oteller o
@@ -1832,7 +1885,7 @@ public class HotelService : IHotelService
                 Id = reader.GetInt64(reader.GetOrdinal("id")),
                 Slug = hotelIdentity.Value.Slug,
                 HotelCode = reader.GetString(reader.GetOrdinal("otel_kodu")),
-                Name = reader.GetString(reader.GetOrdinal("otel_adi")),
+                Name = reader.GetString(reader.GetOrdinal("OTEL_ADI")),
                 City = reader.GetString(reader.GetOrdinal("sehir")),
                 District = reader.GetString(reader.GetOrdinal("ilce")),
                 Address = reader.IsDBNull(reader.GetOrdinal("tam_adres")) ? string.Empty : reader.GetString(reader.GetOrdinal("tam_adres")),
@@ -1847,6 +1900,10 @@ public class HotelService : IHotelService
                 CheckOutTime = reader.IsDBNull(reader.GetOrdinal("check_out_saati")) ? null : reader.GetTimeSpan(reader.GetOrdinal("check_out_saati")),
                 Latitude = reader.IsDBNull(reader.GetOrdinal("enlem")) ? null : reader.GetDecimal(reader.GetOrdinal("enlem")),
                 Longitude = reader.IsDBNull(reader.GetOrdinal("boylam")) ? null : reader.GetDecimal(reader.GetOrdinal("boylam")),
+                UlkeId = reader.IsDBNull(reader.GetOrdinal("ulke_id")) ? null : reader.GetInt64(reader.GetOrdinal("ulke_id")),
+                SehirId = reader.IsDBNull(reader.GetOrdinal("sehir_id")) ? null : reader.GetInt64(reader.GetOrdinal("sehir_id")),
+                IlceId = reader.IsDBNull(reader.GetOrdinal("ilce_id")) ? null : reader.GetInt64(reader.GetOrdinal("ilce_id")),
+                MahalleId = reader.IsDBNull(reader.GetOrdinal("mahalle_id")) ? null : reader.GetInt64(reader.GetOrdinal("mahalle_id")),
                 VideoUrl = NormalizeMediaUrl(reader.GetString(reader.GetOrdinal("video_url"))),
                 MainImageUrl = NormalizeHotelImageUrl(reader.GetInt64(reader.GetOrdinal("id")), reader.GetString(reader.GetOrdinal("gorsel_url")))
             };
@@ -1884,7 +1941,7 @@ public class HotelService : IHotelService
         }
 
         const string amenitiesSql = """
-            SELECT TOP (6) oo.ozellik_adi, COALESCE(oo.ozellik_ikon, 'fa-circle-check') AS ozellik_ikon
+            SELECT oo.ozellik_adi, COALESCE(oo.ozellik_ikon, 'fa-circle-check') AS ozellik_ikon
             FROM otel_ozellik_iliskileri oi
             JOIN otel_ozellikleri oo ON oo.id = oi.ozellik_id AND oo.aktif_mi = 1
             WHERE oi.otel_id = @hotelId
@@ -2407,17 +2464,17 @@ public class HotelService : IHotelService
 
         const string reviewsSql = """
             SELECT TOP (60)
-                CASE WHEN y.anonim_mi = 1 THEN 'Misafir' ELSE u.ad_soyad END AS ad_soyad,
+                CASE WHEN y.anonim_mi = 1 THEN N'Misafir' ELSE COALESCE(u.[AD_SOYAD], N'Misafir') END AS ad_soyad,
                 y.genel_puan,
                 y.genel_puan_10,
                 y.yorum_metni,
                 y.olusturulma_tarihi,
                 COALESCE(NULLIF(y.seyahat_profili, ''), '') AS seyahat_profili,
                 y.memnuniyet_seviyesi,
-                COALESCE(NULLIF(y.rezervasyon_no, ''), NULLIF(r.rezervasyon_no, '')) AS rezervasyon_no
+                COALESCE(NULLIF(r.rezervasyon_no, ''), CAST(r.id AS nvarchar(30))) AS rezervasyon_no
             FROM yorumlar y
             LEFT JOIN rezervasyonlar r ON r.id = y.rezervasyon_id
-            LEFT JOIN users u ON u.id = y.kullanici_id
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = y.kullanici_id
             WHERE y.otel_id = @hotelId
               AND y.onay_durumu LIKE N'Onaylan%'
             ORDER BY y.olusturulma_tarihi DESC;
@@ -2873,6 +2930,43 @@ public class HotelService : IHotelService
         }
     }
 
+    private static IEnumerable<HomeHotelCardViewModel> ApplyHomepageCampaignFilter(IEnumerable<HomeHotelCardViewModel> hotels, string activeTag)
+    {
+        var hotelList = hotels.ToList();
+        if (string.IsNullOrWhiteSpace(activeTag))
+        {
+            return hotelList;
+        }
+
+        IEnumerable<HomeHotelCardViewModel> Filter(Func<HomeHotelCardViewModel, bool> predicate, Func<IEnumerable<HomeHotelCardViewModel>, IOrderedEnumerable<HomeHotelCardViewModel>>? orderBy = null)
+        {
+            var filtered = hotelList.Where(predicate);
+            if (!filtered.Any())
+            {
+                filtered = hotelList;
+            }
+
+            return orderBy is null ? filtered : orderBy(filtered);
+        }
+
+        return activeTag switch
+        {
+            "havuzlu-oteller" => Filter(x => x.Amenities.Any(a => a.Label.Contains("Havuz", StringComparison.OrdinalIgnoreCase))
+                                              || x.Tags.Any(t => t.Contains("Havuz", StringComparison.OrdinalIgnoreCase))),
+            "evcil-hayvan-dostu" => Filter(x => x.Tags.Any(t => t.Contains("evcil", StringComparison.OrdinalIgnoreCase))
+                                              || x.Amenities.Any(a => a.Label.Contains("evcil", StringComparison.OrdinalIgnoreCase))),
+            "kampanyaya-dahil-oteller" => Filter(x => x.IsFeatured || x.HasDiscount).Take(12),
+            "hafta-sonu-firsatlari" => Filter(x => x.IsRecommended || x.IsFeatured || x.Tags.Any(t => t.Contains("Hafta", StringComparison.OrdinalIgnoreCase))).Take(12),
+            "butceme-uygun-oteller" => Filter(x => (x.StartingPrice ?? decimal.MaxValue) <= 4000m, items => items.OrderBy(x => x.StartingPrice ?? decimal.MaxValue)).Take(12),
+            "ultra-luks" => Filter(x => (x.StartingPrice ?? 0m) >= 5500m || x.Rating >= 8.5m, items => items.OrderByDescending(x => x.StartingPrice ?? 0m)).Take(12),
+            "ay-sonu-ozel" => Filter(x => x.IsFeatured || (x.StartingPrice ?? decimal.MaxValue) <= 4200m).Take(12),
+            "flash-indirim" => Filter(x => (x.StartingPrice ?? decimal.MaxValue) <= 3500m || x.HasDiscount, items => items.OrderBy(x => x.StartingPrice ?? decimal.MaxValue)).Take(12),
+            "erken-rezervasyon" => Filter(x => x.ReviewCount > 0, items => items.OrderByDescending(x => x.Rating)).Take(12),
+            "akilli-fiyat" => Filter(x => x.IsSmartPrice || (x.StartingPrice ?? decimal.MaxValue) <= 3600m, items => items.OrderBy(x => x.StartingPrice ?? decimal.MaxValue)).Take(12),
+            _ => hotelList
+        };
+    }
+
     private static IEnumerable<HotelListingCardViewModel> ApplyCampaignFilter(IEnumerable<HotelListingCardViewModel> hotels, string activeTag)
     {
         var hotelList = hotels.ToList();
@@ -2953,8 +3047,24 @@ public class HotelService : IHotelService
                     x => x.Tags.Any(tag => tag.Contains("Fiyat", StringComparison.OrdinalIgnoreCase)) || (x.StartingPrice ?? decimal.MaxValue) <= 3600m,
                     items => items.OrderBy(x => x.StartingPrice ?? decimal.MaxValue))
                 .Take(12),
+            "kahvalti-dahil" => Filter(x => HotelHasMealAmenity(x, "kahvalti dahil", "kahvaltı dahil")),
+            "ogle-yemegi-dahil" => Filter(x => HotelHasMealAmenity(x, "ogle yemegi", "öğle yemegi", "ogle")),
+            "aksam-yemegi-dahil" => Filter(x => HotelHasMealAmenity(x, "aksam yemegi", "akşam yemegi", "aksam")),
             _ => hotelList
         };
+    }
+
+    private static bool HotelHasMealAmenity(HotelListingCardViewModel hotel, params string[] markers)
+    {
+        if (markers.Length == 0)
+        {
+            return false;
+        }
+
+        return (hotel.Amenities ?? new List<string>()).Any(amenity =>
+                markers.Any(marker => amenity.Contains(marker, StringComparison.OrdinalIgnoreCase)))
+            || (hotel.Tags ?? new List<string>()).Any(tag =>
+                markers.Any(marker => tag.Contains(marker, StringComparison.OrdinalIgnoreCase)));
     }
 
     private static string NormalizeCampaignTag(string? campaignTag)
@@ -2966,6 +3076,15 @@ public class HotelService : IHotelService
 
         return campaignTag.Trim().ToLowerInvariant() switch
         {
+            "budget" => "butceme-uygun-oteller",
+            "discount" => "flash-indirim",
+            "weekend" => "hafta-sonu-firsatlari",
+            "pool" => "havuzlu-oteller",
+            "campaign" => "kampanyaya-dahil-oteller",
+            "butcene-uygun" => "butceme-uygun-oteller",
+            "haftasonu-firsatlari" => "hafta-sonu-firsatlari",
+            "kampanyali-oteller" => "kampanyaya-dahil-oteller",
+            "yildiz-yagmuru" => "ultra-luks",
             "havuzlu-oteller" => "havuzlu-oteller",
             "evcil-hayvan-dostu" => "evcil-hayvan-dostu",
             "butik-oteller" => "butik-oteller",
@@ -2982,6 +3101,16 @@ public class HotelService : IHotelService
             "flash-indirim" => "flash-indirim",
             "erken-rezervasyon" => "erken-rezervasyon",
             "akilli-fiyat" => "akilli-fiyat",
+            "butik" => "butik-oteller",
+            "kahvalti-dahil" => "kahvalti-dahil",
+            "kahvalti" => "kahvalti-dahil",
+            "breakfast" => "kahvalti-dahil",
+            "ogle-yemegi-dahil" => "ogle-yemegi-dahil",
+            "ogle-yemegi" => "ogle-yemegi-dahil",
+            "lunch" => "ogle-yemegi-dahil",
+            "aksam-yemegi-dahil" => "aksam-yemegi-dahil",
+            "aksam-yemegi" => "aksam-yemegi-dahil",
+            "dinner" => "aksam-yemegi-dahil",
             _ => string.Empty
         };
     }
@@ -3097,6 +3226,9 @@ public class HotelService : IHotelService
             "flash-indirim" => ("Flash İndirim", "Anlık indirimli, fiyat avantajı güçlü ve hızlı rezervasyona uygun oteller."),
             "erken-rezervasyon" => ("Erken Rezervasyon", "Ön planlama yapan kullanıcılar için güçlü fiyat dengesi sunan oteller."),
             "akilli-fiyat" => ("Akıllı Fiyat", "Fiyat-performans oranı güçlü otelleri algoritmik sıralama ile gösteriyoruz."),
+            "kahvalti-dahil" => ("Kahvaltı Dahil Oteller", "Kahvaltısı konaklamaya dahil olan tesisleri listeleyin."),
+            "ogle-yemegi-dahil" => ("Öğle Yemeği Sunan Oteller", "Öğle yemeği hizmeti sunan tesisleri keşfedin."),
+            "aksam-yemegi-dahil" => ("Akşam Yemeği Sunan Oteller", "Akşam yemeği hizmeti sunan tesisleri keşfedin."),
             _ => ("Tum Oteller", "Veritabanindaki yayinda ve onayli tum tesisleri listeleyin, filtreleyin ve karsilastirin.")
         };
     }
@@ -3287,7 +3419,7 @@ public class HotelService : IHotelService
             return result;
         }
 
-        const string sql = @"SELECT kelime FROM dbo.blockyorumkelime WHERE aktif_mi = 1 ORDER BY id DESC;";
+        const string sql = @"SELECT kelime FROM [dbo].[BLOCKYORUMKELIME] WHERE [AKTIF_MI] = 1 ORDER BY [ID] DESC;";
         await using var cmd = new SqlCommand(sql, connection);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))

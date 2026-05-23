@@ -1,0 +1,116 @@
+:root{
+  --ot-radius-1: 10px;
+  --ot-radius-2: 14px;
+  --ot-shadow-1: 0 8px 24px rgba(15,23,42,.08);
+  --ot-border-1: 1px solid rgba(15,23,42,.10);
+  --ot-muted: rgba(15,23,42,.68);
+  --ot-text: #0f172a;
+  --ot-bg: #ffffff;
+  --ot-bg-soft: rgba(15,23,42,.04);
+  --ot-primary: #2563eb;
+  --ot-success: #16a34a;
+  --ot-warning: #f59e0b;
+  --ot-danger: #ef4444;
+}
+
+.ot-card{
+  background: var(--ot-bg);
+  border: var(--ot-border-1);
+  border-radius: var(--ot-radius-2);
+  box-shadow: var(--ot-shadow-1);
+}
+
+.ot-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,.14);
+  background: #fff;
+  color: var(--ot-text);
+  text-decoration:none;
+  font-weight: 650;
+  line-height: 1;
+  cursor:pointer;
+}
+.ot-btn:disabled{ opacity:.55; cursor:not-allowed; }
+.ot-btn--primary{ background: var(--ot-primary); border-color: rgba(37,99,235,.35); color:#fff; }
+.ot-btn--success{ background: var(--ot-success); border-color: rgba(22,163,74,.35); color:#fff; }
+.ot-btn--warning{ background: var(--ot-warning); border-color: rgba(245,158,11,.45); color:#1f2937; }
+.ot-btn--danger{ background: var(--ot-danger); border-color: rgba(239,68,68,.4); color:#fff; }
+.ot-btn--ghost{ background: transparent; border-color: rgba(15,23,42,.14); }
+
+.ot-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(15,23,42,.14);
+  background: var(--ot-bg-soft);
+  color: rgba(15,23,42,.84);
+  font-size:12px;
+  font-weight:700;
+}
+.ot-badge--success{ background: rgba(22,163,74,.10); border-color: rgba(22,163,74,.22); color: #166534; }
+.ot-badge--warning{ background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.28); color: #92400e; }
+.ot-badge--danger{ background: rgba(239,68,68,.10); border-color: rgba(239,68,68,.24); color: #991b1b; }
+.ot-badge--info{ background: rgba(37,99,235,.10); border-color: rgba(37,99,235,.22); color: #1e3a8a; }
+
+.ot-muted{ color: var(--ot-muted); }
+
+/* ------------------------------------------------------------
+   p47: Panel UI standardizasyonu için "bridge" stiller
+   Amaç: AdminLTE/Bootstrap class'ları kullanan sayfalarda bile
+   görünümün ot-* token’lara yaklaşması.
+   Bu dosya sadece panel layout’larda yüklenir.
+------------------------------------------------------------ */
+
+/* Admin panel (AdminLTE) */
+.admin-panel-theme .card{
+  background: var(--ot-bg);
+  border: var(--ot-border-1);
+  border-radius: var(--ot-radius-2);
+  box-shadow: var(--ot-shadow-1);
+}
+.admin-panel-theme .card-header{
+  border-bottom: 1px solid rgba(15,23,42,.10);
+  background: linear-gradient(180deg, rgba(248,250,252,.92) 0%, #fff 100%);
+}
+.admin-panel-theme .btn{
+  border-radius: 12px;
+  font-weight: 650;
+}
+.admin-panel-theme .btn.btn-outline-primary{
+  border-color: rgba(37,99,235,.35);
+}
+.admin-panel-theme .btn.btn-outline-secondary{
+  border-color: rgba(15,23,42,.18);
+}
+.admin-panel-theme .btn.btn-primary{
+  background: var(--ot-primary);
+  border-color: rgba(37,99,235,.35);
+}
+.admin-panel-theme .badge{
+  border-radius: 999px;
+}
+
+/* Firma / Partner / Satış panelleri: eski class'ları token'a yaklaştır */
+.firma-panel-shell .firma-section-card,
+.partner-panel-shell .partner-panel-card,
+.partner-panel-shell .partner-section-card{
+  background: var(--ot-bg);
+  border: var(--ot-border-1);
+  border-radius: var(--ot-radius-2);
+  box-shadow: var(--ot-shadow-1);
+}
+
+.firma-panel-shell .firma-btn-primary,
+.partner-panel-shell .partner-btn-primary,
+.partner-panel-shell .partner-secondary-btn{
+  font-weight: 650;
+  border-radius: 12px;
+}
+

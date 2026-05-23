@@ -15,6 +15,14 @@ public class ReservationDraftUpsertRequest
     public string? GuestDistrict { get; set; }
     public string? GuestNeighborhood { get; set; }
     public string? GuestAddress { get; set; }
+    /// <summary>REZERVASYON_TASLAKLARI.MISAFIR_ULKE_ID</summary>
+    public long? GuestUlkeId { get; set; }
+    /// <summary>REZERVASYON_TASLAKLARI.MISAFIR_IL_ID</summary>
+    public long? GuestIlId { get; set; }
+    /// <summary>REZERVASYON_TASLAKLARI.MISAFIR_ILCE_ID</summary>
+    public long? GuestIlceId { get; set; }
+    /// <summary>REZERVASYON_TASLAKLARI.MISAFIR_MAHALLE_ID</summary>
+    public long? GuestMahalleId { get; set; }
     public DateOnly CheckInDate { get; set; }
     public DateOnly CheckOutDate { get; set; }
     public int AdultCount { get; set; } = 2;

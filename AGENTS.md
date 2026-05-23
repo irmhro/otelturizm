@@ -1,5 +1,7 @@
 # YZ Çalışma Yönergeleri
 
+**Agent grupları:** [AGENT_GRUPLARI_MASTER.md](AGENT_GRUPLARI_MASTER.md) — bağımsız gruplar, açık bağımlılıklar, charter: `docs/agent-gruplari/`.
+
 Bu proje üzerinde çalışan YZ ajanları token ve zaman tüketimini azaltmak için aşağıdaki kurallara uymalıdır.
 
 ## Bağlam Kullanımı
@@ -47,11 +49,25 @@ Bu proje üzerinde çalışan YZ ajanları token ve zaman tüketimini azaltmak i
 - Veri silme, reset veya truncate işlemi kullanıcı açıkça istemedikçe yapılmaz.
 - Migration üretirken güncel MSSQL şemasına uygun, tablo bazlı ve okunabilir SQL tercih edilir.
 
+## Canlı DB ile Çalışma Protokolü (Zorunlu)
+
+- Veritabanı şema/değer değişikliği **asla “elle canlıya girip düzeltme” şeklinde bırakılmaz**; mutlaka `Database/MigrationsSql` altında **idempotent** bir `.sql` dosyası oluşturulur.
+- Her yeni DB değişikliği için:
+  - **Şema**: `Database/MigrationsSql/tablo/migrationlar/` — `YYYYMMDD_*_sqlserver_*.sql` veya tablo snapshot (CREATE/ALTER).
+  - **Seed / içerik**: `Database/MigrationsSql/veri/migrationlar/` — `YYYYMMDD_seed_*.sql` (INSERT/UPDATE idempotent, UTF-8 BOM).
+  - **FK/index/trigger**: `Database/MigrationsSql/constraints/` (900–902).
+- Canlıya uygulanmadan önce:
+  - **Yedek zorunlu** (full backup veya eşdeğer güvenli yedek).
+  - Uygulama sırası dokümante edilir (hangi scriptler, hangi sırayla).
+- Bu repoda “kaynak gerçek” yaklaşımı geçerlidir:
+  - Localde oluşturulan sözleşme/şablon içerikleri canlıya taşınacaksa **veri kopyası** yerine, içerik **migration seed** dosyasıyla taşınır.
+  - Böylece canlı/stage/local aynı scriptlerle birebir eşitlenebilir.
+
 ## Build ve Test
 
 - Kod değişikliğinden sonra mümkünse build al.
 - Varsayılan build:
-  `dotnet build "D:\otelturizm\otelturizmnew.csproj" --no-restore`
+ `dotnet build "D:\otelturizm\otelturizm.csproj" --no-restore`
 - Çalışan uygulama build çıktısını kilitliyorsa uygulamayı gereksiz yere kapatma; gerekirse ayrı geçici output klasörüyle doğrula.
 - Build çıktısı kısa özetlenir; tüm log kullanıcıya dökülmez.
 

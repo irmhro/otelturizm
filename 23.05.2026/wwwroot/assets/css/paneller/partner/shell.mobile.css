@@ -1,0 +1,10 @@
+/* Mobile overrides for partner panel shell. */
+@media (max-width: 900px) {
+    body.partner-panel-v2 .page {
+        padding-left: 0;
+    }
+
+    body.partner-panel-v2 .page-wrapper {
+        margin-left: 0;
+    }
+}

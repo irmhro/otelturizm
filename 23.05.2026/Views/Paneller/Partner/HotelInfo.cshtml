@@ -1,0 +1,264 @@
+@using System.Globalization
+@model otelturizmnew.Models.Paneller.Partner.PartnerHotelInfoPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/hotel-info";
+    var form = Model.Form;
+    string Dec(decimal? value) => value.HasValue ? value.Value.ToString("0.########", CultureInfo.InvariantCulture) : string.Empty;
+    string DateLabel(DateTime? value) => value.HasValue ? value.Value.ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")) : "Henüz yok";
+    string CompletionLabel()
+    {
+        var total = 11;
+        var done = 0;
+        if (!string.IsNullOrWhiteSpace(form.HotelName)) done++;
+        if (form.HotelTypeId.HasValue) done++;
+        if (!string.IsNullOrWhiteSpace(form.ShortDescription)) done++;
+        if (!string.IsNullOrWhiteSpace(form.Description)) done++;
+        if (!string.IsNullOrWhiteSpace(form.Address)) done++;
+        if (!string.IsNullOrWhiteSpace(form.City) && !string.IsNullOrWhiteSpace(form.District)) done++;
+        if (form.Latitude.HasValue && form.Longitude.HasValue) done++;
+        if (!string.IsNullOrWhiteSpace(form.ContactEmail)) done++;
+        if (!string.IsNullOrWhiteSpace(form.HotelPhone)) done++;
+        if (form.TotalRoomCount > 0) done++;
+        if (Model.AvailableAmenities.Any(x => x.IsSelected)) done++;
+        return $"{Math.Round(done * 100m / total):0}%";
+    }
+}
+
+<form method="post" action="/panel/partner/otel-bilgileri/kaydet" class="hotel-info-page">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="HotelId" value="@form.HotelId" />
+
+    <section class="hotel-info-hero">
+        <div>
+            <div class="page-pretitle">Tesis veri merkezi</div>
+            <h1 class="page-title">@form.HotelName</h1>
+            <p class="text-muted mb-0">Otel kimliği, konum, iletişim, operasyon, finans ve özellik bilgilerini tek kontrollü akışta yönetin.</p>
+        </div>
+        <div class="hotel-info-hero-actions">
+            <span class="hotel-info-status">@CompletionLabel() tamamlandı</span>
+            <button type="submit" class="btn btn-primary btn-pill">
+                <i class="fas fa-floppy-disk me-2"></i>Bilgileri Kaydet
+            </button>
+        </div>
+    </section>
+
+    <section class="hotel-info-summary">
+        <article>
+            <span>Yayın durumu</span>
+            <strong>@(form.PublishStatus ?? "Belirtilmedi")</strong>
+        </article>
+        <article>
+            <span>Onay durumu</span>
+            <strong>@(form.ApprovalStatus ?? "Belirtilmedi")</strong>
+        </article>
+        <article>
+            <span>Misafir puanı</span>
+            <strong>@(form.AverageScore?.ToString("0.0", CultureInfo.GetCultureInfo("tr-TR")) ?? "-")</strong>
+        </article>
+        <article>
+            <span>Son güncelleme</span>
+            <strong>@DateLabel(form.UpdatedAt)</strong>
+        </article>
+    </section>
+
+    <div class="hotel-info-shell">
+        <aside class="hotel-info-nav">
+            <a href="#kimlik"><i class="fas fa-id-card"></i> Kimlik</a>
+            <a href="#adres"><i class="fas fa-location-dot"></i> Adres & Konum</a>
+            <a href="#iletisim"><i class="fas fa-phone"></i> İletişim</a>
+            <a href="#icerik"><i class="fas fa-align-left"></i> İçerik</a>
+            <a href="#operasyon"><i class="fas fa-clock"></i> Operasyon</a>
+            <a href="#finans"><i class="fas fa-file-invoice"></i> Finans</a>
+            <a href="#ozellikler"><i class="fas fa-sparkles"></i> Özellikler</a>
+        </aside>
+
+        <div class="hotel-info-content">
+            <section class="hotel-info-card" id="kimlik">
+                <div class="hotel-info-card-head">
+                    <div>
+                        <span>01</span>
+                        <h2>Tesis kimliği</h2>
+                        <p>Misafire ve arama motorlarına görünen ana tesis bilgileri.</p>
+                    </div>
+                </div>
+                <div class="hotel-info-grid">
+                    <label class="field span-2"><span>Otel adı</span><input name="HotelName" value="@form.HotelName" required maxlength="255" /></label>
+                    <label class="field"><span>Otel tipi</span><select name="HotelTypeId">
+                        @foreach (var hotelType in Model.HotelTypes)
+                        {
+                            <option value="@hotelType.HotelTypeId" selected="@(form.HotelTypeId == hotelType.HotelTypeId ? "selected" : null)">@hotelType.Name</option>
+                        }
+                    </select></label>
+                    <label class="field"><span>Yıldız sayısı</span><input type="number" min="0" max="5" name="StarCount" value="@form.StarCount" /></label>
+                    <label class="field"><span>Turizm belge no</span><input name="TourismDocumentNo" value="@form.TourismDocumentNo" maxlength="50" /></label>
+                    <label class="field"><span>Belge türü</span><input name="TourismDocumentType" value="@form.TourismDocumentType" maxlength="255" /></label>
+                    <label class="field"><span>Toplam oda</span><input type="number" min="0" name="TotalRoomCount" value="@form.TotalRoomCount" /></label>
+                    <label class="field"><span>Yatak kapasitesi</span><input type="number" min="0" name="TotalBedCapacity" value="@form.TotalBedCapacity" /></label>
+                    <label class="field"><span>Kat sayısı</span><input type="number" min="0" name="FloorCount" value="@form.FloorCount" /></label>
+                    <label class="field"><span>Konuşulan diller</span><input name="SpokenLanguages" value="@form.SpokenLanguages" placeholder="Türkçe, İngilizce" /></label>
+                </div>
+            </section>
+
+            <section class="hotel-info-card" id="adres">
+                <div class="hotel-info-card-head">
+                    <div>
+                        <span>02</span>
+                        <h2>Adres ve harita</h2>
+                        <p>Konuma göre arama, harita ve detay sayfası bu alanları kullanır.</p>
+                    </div>
+                </div>
+                @if (!form.Latitude.HasValue || !form.Longitude.HasValue)
+                {
+                    <div class="hotel-info-warning">
+                        <strong>Konuma göre bulunmak için koordinat zorunlu.</strong>
+                        <span>Misafirlerin sizi konuma göre arama, harita ve mesafe filtrelerinde bulabilmesi için enlem ve boylam alanlarını mutlaka doldurun.</span>
+                    </div>
+                }
+                <div class="hotel-info-grid">
+                    <label class="field"><span>Ülke</span><input name="Country" value="@(form.Country ?? "Türkiye")" /></label>
+                    <label class="field"><span>Şehir</span><input name="City" value="@form.City" required /></label>
+                    <label class="field"><span>İlçe</span><input name="District" value="@form.District" required /></label>
+                    <label class="field"><span>Mahalle</span><input name="Neighborhood" value="@form.Neighborhood" /></label>
+                    <label class="field"><span>Posta kodu</span><input name="PostalCode" value="@form.PostalCode" /></label>
+                    <label class="field"><span>Enlem</span><input type="text" inputmode="decimal" name="Latitude" value="@Dec(form.Latitude)" placeholder="Örn: 40.9060787" /></label>
+                    <label class="field"><span>Boylam</span><input type="text" inputmode="decimal" name="Longitude" value="@Dec(form.Longitude)" placeholder="Örn: 29.2809220" /></label>
+                    <div class="field span-2 hotel-info-note">
+                        <span>Koordinat nasıl girilir?</span>
+                        <small>Google Maps üzerinde otel noktasına sağ tıklayıp kopyaladığınız <strong>enlem, boylam</strong> değerini buraya girin. Nokta veya virgül kullanabilirsiniz. Enlem aralığı <strong>-90 / 90</strong>, boylam aralığı <strong>-180 / 180</strong> olmalıdır.</small>
+                    </div>
+                    <label class="field span-2"><span>Tam adres</span><textarea name="Address" rows="3" required>@form.Address</textarea></label>
+                    <label class="field span-2"><span>Konum açıklaması</span><textarea name="LocationDescription" rows="3" placeholder="Metro, havaalanı, sahil, merkez gibi ulaşım notları">@form.LocationDescription</textarea></label>
+                </div>
+            </section>
+
+            <section class="hotel-info-card" id="iletisim">
+                <div class="hotel-info-card-head">
+                    <div>
+                        <span>03</span>
+                        <h2>İletişim ve satış kontakları</h2>
+                        <p>Misafir, satış ve operasyon iletişim kanalları.</p>
+                    </div>
+                </div>
+                <div class="hotel-info-grid">
+                    <label class="field"><span>İletişim e-postası</span><input type="email" name="ContactEmail" value="@form.ContactEmail" required /></label>
+                    <label class="field"><span>Web sitesi</span><input type="url" name="Website" value="@form.Website" placeholder="https://..." /></label>
+                    <label class="field"><span>Telefon</span><input name="HotelPhone" value="@form.HotelPhone" required /></label>
+                    <label class="field"><span>Telefon 2</span><input name="HotelPhone2" value="@form.HotelPhone2" /></label>
+                    <label class="field"><span>Rezervasyon telefonu</span><input name="ReservationPhone" value="@form.ReservationPhone" /></label>
+                    <label class="field"><span>Faks</span><input name="Fax" value="@form.Fax" /></label>
+                    <label class="field"><span>Satış kontak adı</span><input name="SalesContactName" value="@form.SalesContactName" /></label>
+                    <label class="field"><span>Satış kontak telefonu</span><input name="SalesContactPhone" value="@form.SalesContactPhone" /></label>
+                    <label class="field"><span>Satış kontak e-postası</span><input type="email" name="SalesContactEmail" value="@form.SalesContactEmail" /></label>
+                    <label class="field span-2"><span>Satış notları</span><textarea name="SalesNotes" rows="3">@form.SalesNotes</textarea></label>
+                </div>
+            </section>
+
+            <section class="hotel-info-card" id="icerik">
+                <div class="hotel-info-card-head">
+                    <div>
+                        <span>04</span>
+                        <h2>Tanıtım içerikleri</h2>
+                        <p>Otel detay, listeleme ve SEO alanlarında kullanılan açıklamalar.</p>
+                    </div>
+                </div>
+                <div class="hotel-info-grid">
+                    <label class="field span-2"><span>Kısa açıklama</span><textarea name="ShortDescription" rows="3" maxlength="500">@form.ShortDescription</textarea></label>
+                    <label class="field span-2"><span>Uzun açıklama</span><textarea name="Description" rows="8">@form.Description</textarea></label>
+                    <label class="field"><span>Video URL</span><input type="url" name="VideoUrl" value="@form.VideoUrl" /></label>
+                    <label class="field"><span>Sanal tur URL</span><input type="url" name="VirtualTourUrl" value="@form.VirtualTourUrl" /></label>
+                </div>
+            </section>
+
+            <section class="hotel-info-card" id="operasyon">
+                <div class="hotel-info-card-head">
+                    <div>
+                        <span>05</span>
+                        <h2>Operasyon kuralları</h2>
+                        <p>Giriş/çıkış, minimum konaklama ve tesis operasyon kuralları.</p>
+                    </div>
+                </div>
+                <div class="hotel-info-grid">
+                    <label class="field"><span>Check-in</span><input type="time" name="CheckInTime" value="@form.CheckInTime" /></label>
+                    <label class="field"><span>Check-out</span><input type="time" name="CheckOutTime" value="@form.CheckOutTime" /></label>
+                    <label class="field"><span>Minimum gece</span><input type="number" min="1" name="MinStay" value="@form.MinStay" /></label>
+                    <label class="field"><span>Maksimum gece</span><input type="number" min="1" name="MaxStay" value="@form.MaxStay" /></label>
+                    <label class="switch-field"><input type="hidden" name="LateCheckoutAvailable" value="false" /><input type="checkbox" name="LateCheckoutAvailable" value="true" checked="@form.LateCheckoutAvailable" /><span>Geç çıkış mümkün</span></label>
+                    <label class="field"><span>Geç çıkış ücreti</span><input type="number" step="0.01" name="LateCheckoutFee" value="@Dec(form.LateCheckoutFee)" /></label>
+                    <label class="switch-field"><input type="hidden" name="EarlyCheckinAvailable" value="false" /><input type="checkbox" name="EarlyCheckinAvailable" value="true" checked="@form.EarlyCheckinAvailable" /><span>Erken giriş mümkün</span></label>
+                    <label class="field"><span>Erken giriş ücreti</span><input type="number" step="0.01" name="EarlyCheckinFee" value="@Dec(form.EarlyCheckinFee)" /></label>
+                    <label class="switch-field"><input type="hidden" name="ElevatorAvailable" value="false" /><input type="checkbox" name="ElevatorAvailable" value="true" checked="@form.ElevatorAvailable" /><span>Asansör var</span></label>
+                    <label class="field"><span>Asansör sayısı</span><input type="number" min="0" name="ElevatorCount" value="@form.ElevatorCount" /></label>
+                </div>
+            </section>
+
+            <section class="hotel-info-card" id="finans">
+                <div class="hotel-info-card-head">
+                    <div>
+                        <span>06</span>
+                        <h2>Finans ve ödeme tanımları</h2>
+                        <p>Bu alanlar admin tarafından yönetilir. Partner kullanıcılar sözleşme ve ödeme yapılandırmasını burada sadece görüntüler.</p>
+                    </div>
+                    <strong class="hotel-info-readonly-badge">Salt okunur</strong>
+                </div>
+                <div class="hotel-info-grid hotel-info-grid-readonly">
+                    <label class="field readonly-field"><span>Varsayılan komisyon (%)</span><input value="@Dec(form.DefaultCommissionRate)" readonly /></label>
+                    <label class="field readonly-field"><span>Komisyon türü</span><input value="@form.CommissionType" readonly /></label>
+                    <label class="field readonly-field"><span>Komisyon hesaplama tipi</span><input value="@form.CommissionCalculationType" readonly /></label>
+                    <label class="field readonly-field"><span>Ödeme vadesi</span><input value="@form.PaymentTerm" readonly /></label>
+                    <label class="field readonly-field"><span>Ödeme yöntemi</span><input value="@form.PaymentMethod" readonly /></label>
+                    <label class="field readonly-field"><span>Fatura kesim türü</span><input value="@form.InvoiceIssueType" readonly /></label>
+                    <label class="field readonly-field"><span>Depozito tutarı</span><input value="@Dec(form.DepositAmount)" readonly /></label>
+                    <label class="field readonly-field"><span>Depozito iade süresi (gün)</span><input value="@form.DepositReturnDays" readonly /></label>
+                    <div class="hotel-info-note span-2">
+                        <i class="fas fa-shield-halved"></i>
+                        <div>
+                            <strong>Finans alanı korumalıdır</strong>
+                            <p>Komisyon oranı, komisyon türü, hesaplama tipi ve ödeme vadeleri admin tarafından tanımlanır. Değişiklik gerekiyorsa yönetim ekibi üzerinden güncellenir.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="hotel-info-card" id="ozellikler">
+                <div class="hotel-info-card-head">
+                    <div>
+                        <span>07</span>
+                        <h2>Tesis özellikleri</h2>
+                        <p>Otel listeleme, detay ve filtreleme alanlarında ikonlarla gösterilir.</p>
+                    </div>
+                    <strong>@Model.AvailableAmenities.Count(x => x.IsSelected) seçili</strong>
+                </div>
+                <div class="hotel-amenity-categories">
+                    @foreach (var group in Model.AvailableAmenities.GroupBy(x => x.CategoryName).OrderBy(x => x.Key))
+                    {
+                        <div class="hotel-amenity-category">
+                            <h3>@group.Key</h3>
+                            <div class="hotel-amenity-grid">
+                                @foreach (var amenity in group)
+                                {
+                                    <label class="amenity-chip">
+                                        <input type="checkbox" name="SelectedAmenityIds" value="@amenity.AmenityId" checked="@amenity.IsSelected" />
+                                        <i class="fas @amenity.IconClass"></i>
+                                        <span>@amenity.Name</span>
+                                    </label>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="hotel-info-savebar">
+        <div>
+            <strong>@form.HotelName</strong>
+            <span>Oluşturma: @DateLabel(form.CreatedAt)</span>
+        </div>
+        <button type="submit" class="btn btn-primary btn-pill">
+            <i class="fas fa-floppy-disk me-2"></i>Tüm Değişiklikleri Kaydet
+        </button>
+    </div>
+</form>

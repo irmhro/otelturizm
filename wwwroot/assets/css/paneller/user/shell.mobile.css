@@ -1,3 +1,5 @@
+@import url("./user-mobile-bundle.css");
+
 @media (max-width: 991px) {
   body.user-sidebar-open {
     overflow: hidden;
@@ -83,13 +85,16 @@
 
   .user-topbar {
     min-height: 60px;
+    padding-top: max(6px, env(safe-area-inset-top, 0px));
   }
 
   .user-topbar .navbar-toggler {
     display: inline-grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     border: 1px solid #d8e4f5;
     border-radius: 10px;
     color: #0b62c7;
@@ -100,7 +105,7 @@
     gap: 6px !important;
   }
 
-  /* Sabit alt gezinme (991px ve altı; layout’ta userId > 0 iken eklenir) */
+  /* Sabit alt gezinme (_UserMobileNav; layout’ta userId > 0 iken eklenir) */
   .user-mobile-nav-wrap {
     position: fixed;
     left: 0;
@@ -110,11 +115,14 @@
     background: var(--tblr-bg-surface, #fff);
     border-top: 1px solid rgba(15, 23, 42, 0.08);
     box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.06);
-    padding-bottom: max(6px, env(safe-area-inset-bottom));
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(0px, env(safe-area-inset-left, 0px));
+    padding-right: max(0px, env(safe-area-inset-right, 0px));
   }
 
+  body.user-panel-v2:has(.user-mobile-nav-wrap) .page-body > .container-fluid,
   .user-panel-page-body-mobile-pad {
-    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 16px);
   }
 
   .mobile-bottom-nav.mobile-bottom-nav--scroll {
@@ -137,7 +145,8 @@
   .mobile-bottom-nav.mobile-bottom-nav--scroll a,
   .mobile-bottom-nav.mobile-bottom-nav--scroll .panel-mobile-logout-form button {
     flex: 0 0 auto;
-    min-width: 68px;
+    min-width: 44px;
+    min-height: 44px;
     max-width: 96px;
     text-decoration: none;
     color: var(--tblr-secondary, #64748b);

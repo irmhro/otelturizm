@@ -1,0 +1,14 @@
+-- Tablo: dbo.YARDIM_MERKEZI_KATEGORI_SSS
+IF OBJECT_ID(N'dbo.YARDIM_MERKEZI_KATEGORI_SSS', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[YARDIM_MERKEZI_KATEGORI_SSS] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [DESTEK_KATEGORI_ID] bigint NOT NULL,
+        [SORU] nvarchar(220) NOT NULL,
+        [CEVAP] nvarchar(max) NOT NULL,
+        [SIRALAMA] int NOT NULL CONSTRAINT [DF_ym_kat_sss_sira] DEFAULT ((0)),
+        [AKTIF_MI] bit NOT NULL CONSTRAINT [DF_ym_kat_sss_aktif] DEFAULT ((1)),
+        [OLUSTURULMA_TARIHI] datetime2(0) NOT NULL CONSTRAINT [DF_ym_kat_sss_olustur] DEFAULT (sysutcdatetime()),
+        CONSTRAINT [PK_YARDIM_MERKEZI_KATEGORI_SSS] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

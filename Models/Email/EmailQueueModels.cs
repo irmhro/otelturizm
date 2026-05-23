@@ -8,6 +8,7 @@ public class QueuedEmailTemplateRequest
     public string? ServiceCodeOverride { get; set; }
     public string? SenderEmailOverride { get; set; }
     public Dictionary<string, string> Tokens { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>ILGILI_TABLO — örn. KULLANICILAR, REZERVASYONLAR.</summary>
     public string? RelatedTable { get; set; }
     public long? RelatedRecordId { get; set; }
     public string? SubjectOverride { get; set; }

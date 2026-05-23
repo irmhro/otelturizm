@@ -1,0 +1,30 @@
+@media (max-width: 900px) {
+  .notify-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .notify-row {
+    gap: 12px;
+  }
+
+  .notify-ico {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .notify-toggle {
+    width: 52px;
+    height: 30px;
+  }
+
+  .notify-toggle span::after {
+    width: 24px;
+    height: 24px;
+  }
+
+  .notify-toggle input:checked + span::after {
+    transform: translate(22px, -50%);
+  }
+}
+

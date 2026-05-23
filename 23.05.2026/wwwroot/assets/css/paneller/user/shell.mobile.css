@@ -1,0 +1,175 @@
+@media (max-width: 991px) {
+  body.user-sidebar-open {
+    overflow: hidden;
+  }
+
+  .user-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1045;
+    width: min(88vw, 336px);
+    height: 100vh;
+    transform: translateX(-104%);
+    transition: transform .24s ease, box-shadow .24s ease;
+    border-right: 1px solid rgba(219, 234, 254, .24);
+    box-shadow: none;
+  }
+
+  body.user-sidebar-open .user-sidebar {
+    transform: translateX(0);
+    box-shadow: 22px 0 54px rgba(15, 37, 64, .30);
+  }
+
+  .user-sidebar .container-fluid {
+    min-height: 100vh;
+    padding: 12px 10px;
+  }
+
+  .user-sidebar .navbar-brand {
+    padding-right: 48px;
+  }
+
+  .user-sidebar-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    display: inline-grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(219, 234, 254, .28);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+  }
+
+  .user-sidebar .navbar-collapse {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 78px);
+  }
+
+  .user-sidebar-profile,
+  .user-sidebar-footer {
+    margin-inline: 8px;
+  }
+
+  .user-sidebar-scroll {
+    max-height: none;
+  }
+
+  .user-sidebar-footer {
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  .user-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    display: block;
+    pointer-events: none;
+    opacity: 0;
+    border: 0;
+    background: rgba(15, 23, 42, .46);
+    backdrop-filter: blur(4px);
+    transition: opacity .2s ease;
+  }
+
+  body.user-sidebar-open .user-sidebar-backdrop {
+    pointer-events: auto;
+    opacity: 1;
+  }
+
+  .user-topbar {
+    min-height: 60px;
+  }
+
+  .user-topbar .navbar-toggler {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #d8e4f5;
+    border-radius: 10px;
+    color: #0b62c7;
+    background: #fff;
+  }
+
+  .user-topbar .navbar-nav {
+    gap: 6px !important;
+  }
+
+  /* Sabit alt gezinme (991px ve altı; layout’ta userId > 0 iken eklenir) */
+  .user-mobile-nav-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1030;
+    background: var(--tblr-bg-surface, #fff);
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.06);
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+
+  .user-panel-page-body-mobile-pad {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .mobile-bottom-nav.mobile-bottom-nav--scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding: 6px 8px 4px;
+    margin: 0;
+  }
+
+  .mobile-bottom-nav.mobile-bottom-nav--scroll::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .mobile-bottom-nav.mobile-bottom-nav--scroll a,
+  .mobile-bottom-nav.mobile-bottom-nav--scroll .panel-mobile-logout-form button {
+    flex: 0 0 auto;
+    min-width: 68px;
+    max-width: 96px;
+    text-decoration: none;
+    color: var(--tblr-secondary, #64748b);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.1;
+    border: none;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+    border-radius: 10px;
+  }
+
+  .mobile-bottom-nav.mobile-bottom-nav--scroll a i,
+  .mobile-bottom-nav.mobile-bottom-nav--scroll .panel-mobile-logout-form button i {
+    font-size: 1.05rem;
+  }
+
+  .mobile-bottom-nav.mobile-bottom-nav--scroll a.active {
+    color: var(--user-accent, #2563eb);
+    background: rgba(37, 99, 235, 0.08);
+  }
+
+  .mobile-bottom-nav.mobile-bottom-nav--scroll .panel-mobile-logout-form {
+    margin: 0;
+    display: flex;
+    align-items: stretch;
+  }
+}

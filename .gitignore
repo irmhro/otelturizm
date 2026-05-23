@@ -9,6 +9,9 @@
 *.user
 *.userosscache
 *.sln.docstates
+*.slnx
+otelturizmnew-vs.sln
+otelturizmnew-vs.slnx
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -394,5 +397,8 @@ tmp_*.log
 # Yerel Release publish ciktisi (tools/Release/Publish-To-YayinKlasoru.ps1)
 yayinlanacakderlenmisdosyalar/
 
-# Sunucu yukleme paketi (tools/Release/Publish-To-Yayinla.ps1)
-yayinla/
+# Orkestra build çıktıları (yerel doğrulama)
+.coord-build/
+.coord-build-*/
+.build-*/
+.tmp.driveupload/

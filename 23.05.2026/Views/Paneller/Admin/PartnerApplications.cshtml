@@ -1,0 +1,102 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminPartnerApplicationsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+}
+
+<section class="admin-partner-applications-page">
+    <div class="admin-kpi-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            var tone = string.IsNullOrWhiteSpace(card.ToneClass) ? "info" : card.ToneClass;
+            <article class="admin-kpi-card @tone">
+                <span class="kpi-icon"><i class="fas @card.IconClass"></i></span>
+                <div>
+                    <p>@card.Label</p>
+                    <h2>@card.Value</h2>
+                    <span>@card.Description</span>
+                </div>
+            </article>
+        }
+    </div>
+
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">PARTNER ONBOARDING</p>
+                <h2>Partner Başvuru Listesi</h2>
+                <span>Evrak, e-posta doğrulama ve admin giriş onayı aynı akışta takip edilir.</span>
+            </div>
+        </div>
+
+        @if (Model.Applications.Count == 0)
+        {
+            <div class="admin-empty-panel">Bekleyen partner başvurusu bulunmuyor.</div>
+        }
+        else
+        {
+            <div class="admin-partner-application-list">
+                @foreach (var application in Model.Applications)
+                {
+                    var tone = application.StatusToneClass?.Contains("danger", StringComparison.OrdinalIgnoreCase) == true
+                        ? "danger"
+                        : application.StatusToneClass?.Contains("success", StringComparison.OrdinalIgnoreCase) == true ? "success" : "warning";
+                    <article class="admin-partner-application-card">
+                        <div class="admin-partner-application-main">
+                            <div>
+                                <p class="mini-caption">#@application.PartnerId · @application.RegistrationDateText</p>
+                                <h3>@application.CompanyName</h3>
+                                <span>@application.HotelName</span>
+                            </div>
+                            <span class="table-status @tone">@application.StatusText</span>
+                        </div>
+
+                        <div class="admin-partner-meta">
+                            <span><small>Yetkili</small><strong>@application.ContactName</strong></span>
+                            <span><small>E-posta</small><strong>@application.Email</strong></span>
+                            <span><small>Vergi No</small><strong>@application.TaxNumber</strong></span>
+                            <span><small>Evrak</small><strong>@application.DocumentCount belge</strong></span>
+                            <span><small>E-posta doğrulama</small><strong>@(application.EmailVerified ? "Tamamlandı" : "Bekleniyor")</strong></span>
+                            <span><small>Admin giriş onayı</small><strong>@(application.EmailLoginApproved ? "Verildi" : "Bekliyor")</strong></span>
+                        </div>
+
+                        @if (application.EmailVerified && !application.EmailLoginApproved)
+                        {
+                            <form method="post" action="/admin/partner-basvurulari/eposta-giris-onayi" class="admin-inline-action">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="PartnerId" value="@application.PartnerId" />
+                                <input type="hidden" name="Approved" value="true" />
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-circle-check me-2"></i>E-posta giriş onayı ver
+                                </button>
+                            </form>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(application.ReviewNote))
+                        {
+                            <div class="admin-partner-note">@application.ReviewNote</div>
+                        }
+
+                        <form method="post" action="/admin/partner-basvurulari/durum" class="admin-partner-decision-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="PartnerId" value="@application.PartnerId" />
+                            <label>
+                                <span>Karar</span>
+                                <select name="TargetStatus">
+                                    <option value="Onaylandi" selected="@(application.StatusText == "Onaylandi")">Onayla</option>
+                                    <option value="Askida" selected="@(application.StatusText == "Askida")">Askıya al</option>
+                                    <option value="Reddedildi" selected="@(application.StatusText == "Reddedildi")">Reddet</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Not</span>
+                                <textarea name="Note" rows="2" placeholder="Partnera gösterilecek not">@application.ReviewNote</textarea>
+                            </label>
+                            <button type="submit" class="btn btn-primary">Kararı Kaydet</button>
+                        </form>
+                    </article>
+                }
+            </div>
+        }
+    </article>
+</section>

@@ -8,6 +8,7 @@ using otelturizmnew.Models.Firma;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.Firma;
 using System.Text.Json;
+using otelturizmnew.Models.Reservations;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -40,29 +41,29 @@ public class FirmaService : IFirmaService
 
         const string summarySql = @"
             SELECT
-                (SELECT COUNT(*) FROM firmalar WHERE aktif_mi = 1 AND onay_durumu = 'Onaylandı') AS active_companies,
-                (SELECT COUNT(DISTINCT otel_id) FROM firma_oda_fiyat_musaitlik WHERE aktif_mi = 1 AND kapali_satis = 0) AS contracted_hotels,
+                (SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE [AKTIF_MI] = 1 AND [ONAY_DURUMU] = 'Onaylandı') AS active_companies,
+                (SELECT COUNT(DISTINCT [OTEL_ID]) FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] WHERE [AKTIF_MI] = 1 AND [KAPALI_SATIS] = 0) AS contracted_hotels,
                 (
                     SELECT COALESCE(MAX(
                         CASE
-                            WHEN std.base_price > 0 AND f.firma_gecelik_fiyat > 0 AND f.firma_gecelik_fiyat < std.base_price
-                            THEN ((std.base_price - f.firma_gecelik_fiyat) / std.base_price) * 100
+                            WHEN std.base_price > 0 AND f.[FIRMA_GECELIK_FIYAT] > 0 AND f.[FIRMA_GECELIK_FIYAT] < std.base_price
+                            THEN ((std.base_price - f.[FIRMA_GECELIK_FIYAT]) / std.base_price) * 100
                             ELSE 0
                         END
                     ), 0)
-                    FROM firma_oda_fiyat_musaitlik f
+                    FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] f
                     OUTER APPLY (
                         SELECT TOP (1)
                             CASE
-                                WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
-                                ELSE ofm.gecelik_fiyat
+                                WHEN ofm.[INDIRIMLI_FIYAT] IS NOT NULL AND ofm.[INDIRIMLI_FIYAT] > 0 AND ofm.[INDIRIMLI_FIYAT] < ofm.[GECELIK_FIYAT] THEN ofm.[INDIRIMLI_FIYAT]
+                                ELSE ofm.[GECELIK_FIYAT]
                             END AS base_price
-                        FROM oda_fiyat_musaitlik ofm
-                        WHERE ofm.otel_id = f.otel_id
-                          AND ofm.oda_tip_id = f.oda_tip_id
-                          AND ofm.tarih = f.tarih
+                        FROM [dbo].[ODA_FIYAT_MUSAITLIK] ofm
+                        WHERE ofm.[OTEL_ID] = f.[OTEL_ID]
+                          AND ofm.[ODA_TIP_ID] = f.[ODA_TIP_ID]
+                          AND ofm.[TARIH] = f.[TARIH]
                     ) std
-                    WHERE f.aktif_mi = 1 AND f.kapali_satis = 0
+                    WHERE f.[AKTIF_MI] = 1 AND f.[KAPALI_SATIS] = 0
                 ) AS max_discount;";
 
         await using (var summaryCommand = new SqlCommand(summarySql, connection))
@@ -86,26 +87,26 @@ public class FirmaService : IFirmaService
         const string dealsSql = @"
             WITH deals AS (
                 SELECT
-                    f.otel_id,
-                    f.oda_tip_id,
-                    MIN(CASE WHEN f.firma_gecelik_fiyat > 0 THEN f.firma_gecelik_fiyat ELSE NULL END) AS corporate_price,
+                    f.[OTEL_ID],
+                    f.[ODA_TIP_ID],
+                    MIN(CASE WHEN f.[FIRMA_GECELIK_FIYAT] > 0 THEN f.[FIRMA_GECELIK_FIYAT] ELSE NULL END) AS corporate_price,
                     MIN(COALESCE(std.base_price, 0)) AS standard_price
-                FROM firma_oda_fiyat_musaitlik f
+                FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] f
                 OUTER APPLY (
                     SELECT TOP (1)
                         CASE
-                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
-                            ELSE ofm.gecelik_fiyat
+                            WHEN ofm.[INDIRIMLI_FIYAT] IS NOT NULL AND ofm.[INDIRIMLI_FIYAT] > 0 AND ofm.[INDIRIMLI_FIYAT] < ofm.[GECELIK_FIYAT] THEN ofm.[INDIRIMLI_FIYAT]
+                            ELSE ofm.[GECELIK_FIYAT]
                         END AS base_price
-                    FROM oda_fiyat_musaitlik ofm
-                    WHERE ofm.otel_id = f.otel_id
-                      AND ofm.oda_tip_id = f.oda_tip_id
-                      AND ofm.tarih = f.tarih
+                    FROM [dbo].[ODA_FIYAT_MUSAITLIK] ofm
+                    WHERE ofm.[OTEL_ID] = f.[OTEL_ID]
+                      AND ofm.[ODA_TIP_ID] = f.[ODA_TIP_ID]
+                      AND ofm.[TARIH] = f.[TARIH]
                 ) std
-                WHERE f.aktif_mi = 1 AND f.kapali_satis = 0
-                GROUP BY f.otel_id, f.oda_tip_id
+                WHERE f.[AKTIF_MI] = 1 AND f.[KAPALI_SATIS] = 0
+                GROUP BY f.[OTEL_ID], f.[ODA_TIP_ID]
             )
-            SELECT TOP (6) ot.id, ot.otel_adi, ot.sehir, d.standard_price, d.corporate_price,
+            SELECT TOP (6) ot.id, ot.[OTEL_ADI], ot.[SEHIR], d.standard_price, d.corporate_price,
                    CASE
                        WHEN d.standard_price > 0 AND d.corporate_price > 0 AND d.corporate_price < d.standard_price
                        THEN ((d.standard_price - d.corporate_price) / d.standard_price) * 100
@@ -113,7 +114,7 @@ public class FirmaService : IFirmaService
                    END AS discount_rate,
                    1 AS minimum_room_count
             FROM deals d
-            INNER JOIN oteller ot ON ot.id = d.otel_id
+            INNER JOIN [dbo].[OTELLER] ot ON ot.id = d.[OTEL_ID]
             ORDER BY discount_rate DESC, d.corporate_price ASC;";
 
         await using (var dealsCommand = new SqlCommand(dealsSql, connection))
@@ -165,10 +166,10 @@ public class FirmaService : IFirmaService
 
         const string statsSql = @"
             SELECT
-                (SELECT COUNT(*) FROM users u WHERE u.firma_id = @firmaId AND u.rol LIKE 'firma_%' AND u.hesap_durumu = 1) AS employee_count,
-                (SELECT COUNT(DISTINCT CONCAT(f.otel_id, ':', f.oda_tip_id)) FROM firma_oda_fiyat_musaitlik f WHERE f.aktif_mi = 1 AND f.kapali_satis = 0) AS deal_count,
-                (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.firma_id = @firmaId) AS reservation_count,
-                (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.firma_id = @firmaId AND r.firma_onay_durumu = 'Beklemede') AS pending_approval_count;";
+                (SELECT COUNT(*) FROM [dbo].[KULLANICILAR] u WHERE u.[FIRMA_ID] = @firmaId AND u.[ROL] LIKE 'firma_%' AND u.[HESAP_DURUMU] = 1) AS employee_count,
+                (SELECT COUNT(DISTINCT CONCAT(f.[OTEL_ID], ':', f.[ODA_TIP_ID])) FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] f WHERE f.[AKTIF_MI] = 1 AND f.[KAPALI_SATIS] = 0) AS deal_count,
+                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE r.[FIRMA_ID] = @firmaId) AS reservation_count,
+                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE r.[FIRMA_ID] = @firmaId AND r.[FIRMA_ONAY_DURUMU] = 'Beklemede') AS pending_approval_count;";
 
         await using (var command = new SqlCommand(statsSql, connection))
         {
@@ -245,8 +246,8 @@ public class FirmaService : IFirmaService
 
         // Hotels header info
         const string hotelsSql = @"
-            SELECT id, otel_adi, CONCAT(COALESCE(ilce, N''), CASE WHEN COALESCE(ilce, N'') <> '' THEN N', ' ELSE N'' END, COALESCE(sehir, N'')) AS city_text
-            FROM dbo.oteller
+            SELECT id, [OTEL_ADI], CONCAT(COALESCE(ilce, N''), CASE WHEN COALESCE(ilce, N'') <> '' THEN N', ' ELSE N'' END, COALESCE([SEHIR], N'')) AS city_text
+            FROM [dbo].[OTELLER]
             WHERE id IN (SELECT value FROM OPENJSON(@ids));";
         await using (var cmd = new SqlCommand(hotelsSql, connection))
         {
@@ -266,43 +267,43 @@ public class FirmaService : IFirmaService
         // Compare rows: corp min nightly vs standard min nightly per hotel+roomType
         const string compareSql = @"
             WITH sel AS (
-                SELECT value AS otel_id
+                SELECT value AS [OTEL_ID]
                 FROM OPENJSON(@ids)
             ),
             corp AS (
-                SELECT f.otel_id, f.oda_tip_id,
-                       MIN(CASE WHEN f.firma_gecelik_fiyat > 0 THEN f.firma_gecelik_fiyat ELSE NULL END) AS corp_price,
-                       MIN(f.tarih) AS min_date,
-                       MAX(f.tarih) AS max_date
-                FROM dbo.firma_oda_fiyat_musaitlik f
-                INNER JOIN sel s ON s.otel_id = f.otel_id
-                WHERE f.aktif_mi = 1
-                  AND f.kapali_satis = 0
-                GROUP BY f.otel_id, f.oda_tip_id
+                SELECT f.[OTEL_ID], f.[ODA_TIP_ID],
+                       MIN(CASE WHEN f.[FIRMA_GECELIK_FIYAT] > 0 THEN f.[FIRMA_GECELIK_FIYAT] ELSE NULL END) AS corp_price,
+                       MIN(f.[TARIH]) AS min_date,
+                       MAX(f.[TARIH]) AS max_date
+                FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] f
+                INNER JOIN sel s ON s.[OTEL_ID] = f.[OTEL_ID]
+                WHERE f.[AKTIF_MI] = 1
+                  AND f.[KAPALI_SATIS] = 0
+                GROUP BY f.[OTEL_ID], f.[ODA_TIP_ID]
             ),
             std AS (
-                SELECT ofm.otel_id, ofm.oda_tip_id,
+                SELECT ofm.[OTEL_ID], ofm.[ODA_TIP_ID],
                        MIN(
                             CASE
-                                WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
-                                ELSE ofm.gecelik_fiyat
+                                WHEN ofm.[INDIRIMLI_FIYAT] IS NOT NULL AND ofm.[INDIRIMLI_FIYAT] > 0 AND ofm.[INDIRIMLI_FIYAT] < ofm.[GECELIK_FIYAT] THEN ofm.[INDIRIMLI_FIYAT]
+                                ELSE ofm.[GECELIK_FIYAT]
                             END
                        ) AS std_price
-                FROM dbo.oda_fiyat_musaitlik ofm
-                INNER JOIN sel s ON s.otel_id = ofm.otel_id
-                GROUP BY ofm.otel_id, ofm.oda_tip_id
+                FROM [dbo].[ODA_FIYAT_MUSAITLIK] ofm
+                INNER JOIN sel s ON s.[OTEL_ID] = ofm.[OTEL_ID]
+                GROUP BY ofm.[OTEL_ID], ofm.[ODA_TIP_ID]
             )
-            SELECT c.otel_id, c.oda_tip_id, COALESCE(od.oda_adi, N'Oda') AS room_name,
-                   COALESCE(od.maksimum_kisi_sayisi, 0) AS max_guest,
-                   COALESCE(od.maksimum_yetiskin_sayisi, 0) AS max_adult,
-                   COALESCE(od.maksimum_cocuk_sayisi, 0) AS max_child,
+            SELECT c.[OTEL_ID], c.[ODA_TIP_ID], COALESCE(od.[ODA_ADI], N'Oda') AS room_name,
+                   COALESCE(od.[MAKSIMUM_KISI_SAYISI], 0) AS max_guest,
+                   COALESCE(od.[MAKSIMUM_YETISKIN_SAYISI], 0) AS max_adult,
+                   COALESCE(od.[MAKSIMUM_COCUK_SAYISI], 0) AS max_child,
                    COALESCE(c.corp_price, 0) AS corp_price,
                    COALESCE(s.std_price, 0) AS std_price,
                    c.min_date, c.max_date
             FROM corp c
-            LEFT JOIN std s ON s.otel_id = c.otel_id AND s.oda_tip_id = c.oda_tip_id
-            LEFT JOIN dbo.oda_tipleri od ON od.id = c.oda_tip_id
-            ORDER BY c.otel_id ASC, corp_price ASC;";
+            LEFT JOIN std s ON s.[OTEL_ID] = c.[OTEL_ID] AND s.[ODA_TIP_ID] = c.[ODA_TIP_ID]
+            LEFT JOIN [dbo].[ODA_TIPLERI] od ON od.id = c.[ODA_TIP_ID]
+            ORDER BY c.[OTEL_ID] ASC, corp_price ASC;";
 
         var culture = CultureInfo.GetCultureInfo("tr-TR");
         await using (var cmd = new SqlCommand(compareSql, connection))
@@ -358,7 +359,18 @@ public class FirmaService : IFirmaService
         return new FirmaReservationsPageViewModel { Shell = context.Shell, Reservations = await LoadReservationsAsync(connection, context.FirmaId, 200, cancellationToken) };
     }
 
-    public async Task<FirmaCreateReservationPageViewModel> GetCreateReservationAsync(long userId, long? hotelId = null, long? roomTypeId = null, string? search = null, CancellationToken cancellationToken = default)
+    public async Task<FirmaCreateReservationPageViewModel> GetCreateReservationAsync(
+        long userId,
+        long? hotelId = null,
+        long? roomTypeId = null,
+        string? search = null,
+        DateOnly? checkIn = null,
+        DateOnly? checkOut = null,
+        int? roomCount = null,
+        int? adultCount = null,
+        int? childCount = null,
+        long? employeeUserId = null,
+        CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -368,25 +380,50 @@ public class FirmaService : IFirmaService
         model.Form.HotelId = hotelId.GetValueOrDefault();
         model.Form.RoomTypeId = roomTypeId.GetValueOrDefault();
         model.HotelSearch = search;
+        if (checkIn.HasValue)
+        {
+            model.Form.CheckInDate = checkIn.Value;
+        }
+        if (checkOut.HasValue && checkOut.Value > model.Form.CheckInDate)
+        {
+            model.Form.CheckOutDate = checkOut.Value;
+        }
+        if (roomCount.HasValue && roomCount.Value > 0)
+        {
+            model.Form.RoomCount = Math.Clamp(roomCount.Value, 1, 50);
+        }
+        if (adultCount.HasValue && adultCount.Value > 0)
+        {
+            model.Form.AdultCount = adultCount.Value;
+        }
+        if (childCount.HasValue && childCount.Value >= 0)
+        {
+            model.Form.ChildCount = childCount.Value;
+        }
+        if (employeeUserId.HasValue && employeeUserId.Value > 0)
+        {
+            model.Form.EmployeeUserId = employeeUserId.Value;
+        }
 
         model.Employees = (await LoadEmployeesAsync(connection, context.FirmaId, 200, cancellationToken))
-            .Select(static item => new FirmaEmployeeOptionViewModel
+            .Select(item => new FirmaEmployeeOptionViewModel
             {
                 UserId = item.UserId,
                 FullName = item.FullName,
                 Email = item.Email,
-                Department = item.Department
+                Department = item.Department,
+                IsSelected = model.Form.EmployeeUserId.HasValue && model.Form.EmployeeUserId.Value == item.UserId
             })
             .ToList();
 
         // Hotels: approved/published + optional search (otel/sehir/ilce/mahalle)
         const string hotelsSql = @"
-            SELECT TOP (300) id, CONCAT(otel_adi, ' · ', ilce, ', ', sehir)
-            FROM oteller
-            WHERE onay_durumu = 'Onaylandı'
-              AND yayin_durumu IN ('Yayında','Bakımda')
-              AND (@q IS NULL OR @q = '' OR otel_adi LIKE '%' + @q + '%' OR sehir LIKE '%' + @q + '%' OR ilce LIKE '%' + @q + '%' OR mahalle LIKE '%' + @q + '%')
-            ORDER BY one_cikan_otel DESC, otel_adi ASC;";
+            SELECT TOP (300) id, CONCAT([OTEL_ADI], ' · ', ilce, ', ', [SEHIR])
+            FROM [dbo].[OTELLER]
+            WHERE [ONAY_DURUMU] = 'Onaylandı'
+              AND [YAYIN_DURUMU] IN ('Yayında','Bakımda')
+              AND (@q IS NULL OR @q = '' OR [OTEL_ADI] LIKE '%' + @q + '%' OR [SEHIR] LIKE '%' + @q + '%' OR ilce LIKE '%' + @q + '%' OR [MAHALLE] LIKE '%' + @q + '%')
+            ORDER BY [ONE_CIKAN_OTEL] DESC, [OTEL_ADI] ASC;";
         await using (var cmd = new SqlCommand(hotelsSql, connection))
         {
             cmd.Parameters.AddWithValue("@q", string.IsNullOrWhiteSpace(search) ? (object)DBNull.Value : search.Trim());
@@ -404,10 +441,10 @@ public class FirmaService : IFirmaService
 
         // Rooms for selected hotel
         const string roomsSql = @"
-            SELECT id, oda_adi
-            FROM oda_tipleri
-            WHERE otel_id = @hotelId AND aktif_mi = 1
-            ORDER BY oda_adi;";
+            SELECT id, [ODA_ADI]
+            FROM [dbo].[ODA_TIPLERI]
+            WHERE [OTEL_ID] = @hotelId AND [AKTIF_MI] = 1
+            ORDER BY [ODA_ADI];";
         await using (var roomCmd = new SqlCommand(roomsSql, connection))
         {
             roomCmd.Parameters.AddWithValue("@hotelId", model.Form.HotelId);
@@ -461,15 +498,15 @@ public class FirmaService : IFirmaService
             var partnerRecipient = await ResolvePartnerRecipientAsync(connection, (SqlTransaction)tx, model.HotelId, cancellationToken);
 
             const string insertSql = @"
-                INSERT INTO rezervasyonlar
+                INSERT INTO [dbo].[REZERVASYONLAR]
                 (
-                    rezervasyon_no, otel_id, oda_tip_id, kullanici_id,
-                    firma_id, firma_calisan_id,
-                    misafir_ad_soyad, misafir_eposta, misafir_telefon, misafir_notu,
-                    giris_tarihi, cikis_tarihi, yetiskin_sayisi, cocuk_sayisi, oda_sayisi,
-                    gecelik_fiyat, toplam_oda_tutari, vergi_tutari, toplam_tutar,
-                    durum, rezervasyon_durumu_id, odeme_durumu, otel_onay_durumu, firma_onay_durumu,
-                    kaynak, rezervasyon_kanali, musteri_talep_notu
+                    [REZERVASYON_NO], [OTEL_ID], [ODA_TIP_ID], [KULLANICI_ID],
+                    [FIRMA_ID], [FIRMA_CALISAN_ID],
+                    [MISAFIR_AD_SOYAD], [MISAFIR_EPOSTA], [MISAFIR_TELEFON], [MISAFIR_NOTU],
+                    [GIRIS_TARIHI], [CIKIS_TARIHI], [YETISKIN_SAYISI], [COCUK_SAYISI], [ODA_SAYISI],
+                    [GECELIK_FIYAT], [TOPLAM_ODA_TUTARI], [VERGI_TUTARI], [TOPLAM_TUTAR],
+                    [DURUM], [REZERVASYON_DURUMU_ID], [ODEME_DURUMU], [OTEL_ONAY_DURUMU], [FIRMA_ONAY_DURUMU],
+                    [KAYNAK], [REZERVASYON_KANALI], [MUSTERI_TALEP_NOTU]
                 )
                 VALUES
                 (
@@ -478,7 +515,7 @@ public class FirmaService : IFirmaService
                     @guestName, @guestEmail, @guestPhone, @note,
                     @checkIn, @checkOut, @adultCount, @childCount, @roomCount,
                     @nightlyPrice, @roomTotal, 0, @totalAmount,
-                    'Onay Bekliyor', (SELECT TOP (1) id FROM dbo.rezervasyon_durum_tanimlari WHERE kod = N'OnayBekliyor'), 'Beklemede', 'Beklemede', 'Beklemede',
+                    'Onay Bekliyor', (SELECT TOP (1) id FROM [dbo].[REZERVASYON_DURUM_TANIMLARI] WHERE kod = N'{RezervasyonDurumKodlari.OnayBekliyor}'), 'Beklemede', 'Beklemede', 'Beklemede',
                     'Firma', 'Firma Paneli', @note
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS bigint);";
@@ -594,24 +631,24 @@ public class FirmaService : IFirmaService
 
         // Query both firm daily override + base ofm effective
         const string sql = @"
-            SELECT d.tarih,
-                   f.firma_gecelik_fiyat,
-                   f.kapali_satis,
+            SELECT d.[TARIH],
+                   f.[FIRMA_GECELIK_FIYAT],
+                   f.[KAPALI_SATIS],
                    CASE
-                       WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
-                       ELSE ofm.gecelik_fiyat
+                       WHEN ofm.[INDIRIMLI_FIYAT] IS NOT NULL AND ofm.[INDIRIMLI_FIYAT] > 0 AND ofm.[INDIRIMLI_FIYAT] < ofm.[GECELIK_FIYAT] THEN ofm.[INDIRIMLI_FIYAT]
+                       ELSE ofm.[GECELIK_FIYAT]
                    END AS base_price
             FROM
             (
-                SELECT DATEADD(DAY, v.number, @startDate) AS tarih
+                SELECT DATEADD(DAY, v.number, @startDate) AS [TARIH]
                 FROM master..spt_values v
                 WHERE v.type = 'P' AND v.number BETWEEN 0 AND DATEDIFF(DAY, @startDate, @endDate)
             ) d
-            LEFT JOIN firma_oda_fiyat_musaitlik f
-                ON f.otel_id=@hotelId AND f.oda_tip_id=@roomTypeId AND f.tarih = d.tarih
-            LEFT JOIN oda_fiyat_musaitlik ofm
-                ON ofm.otel_id=@hotelId AND ofm.oda_tip_id=@roomTypeId AND ofm.tarih = d.tarih
-            ORDER BY d.tarih;";
+            LEFT JOIN [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] f
+                ON f.[OTEL_ID]=@hotelId AND f.[ODA_TIP_ID]=@roomTypeId AND f.[TARIH] = d.[TARIH]
+            LEFT JOIN [dbo].[ODA_FIYAT_MUSAITLIK] ofm
+                ON ofm.[OTEL_ID]=@hotelId AND ofm.[ODA_TIP_ID]=@roomTypeId AND ofm.[TARIH] = d.[TARIH]
+            ORDER BY d.[TARIH];";
 
         await using var cmd = new SqlCommand(sql, connection);
         cmd.Parameters.AddWithValue("@startDate", start.ToDateTime(TimeOnly.MinValue));
@@ -669,12 +706,12 @@ public class FirmaService : IFirmaService
     {
         if (employeeUserId.HasValue && employeeUserId.Value > 0)
         {
-            await using var cmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF(ad_soyad,''),'Firma Personeli') FROM users WHERE id=@id;", connection, tx);
+            await using var cmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF([AD_SOYAD],''),'Firma Personeli') FROM [dbo].[KULLANICILAR] WHERE id=@id;", connection, tx);
             cmd.Parameters.AddWithValue("@id", employeeUserId.Value);
             var raw = await cmd.ExecuteScalarAsync(cancellationToken);
             if (raw is not null and not DBNull) return Convert.ToString(raw, CultureInfo.InvariantCulture) ?? "Firma Personeli";
         }
-        await using var firmCmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF(firma_adi,''),'Firma') FROM firmalar WHERE id=@id;", connection, tx);
+        await using var firmCmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF([FIRMA_ADI],''),'Firma') FROM [dbo].[FIRMALAR] WHERE id=@id;", connection, tx);
         firmCmd.Parameters.AddWithValue("@id", firmaId);
         var firmRaw = await firmCmd.ExecuteScalarAsync(cancellationToken);
         return firmRaw is null or DBNull ? "Firma" : Convert.ToString(firmRaw, CultureInfo.InvariantCulture) ?? "Firma";
@@ -682,7 +719,7 @@ public class FirmaService : IFirmaService
 
     private static async Task<(string? Email, string? CompanyName)> LoadCompanyContactAsync(SqlConnection connection, SqlTransaction tx, long firmaId, CancellationToken cancellationToken)
     {
-        await using var cmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF(firma_eposta,''), NULLIF(yetkili_eposta,''), NULL), COALESCE(NULLIF(firma_adi,''),NULL) FROM firmalar WHERE id=@id;", connection, tx);
+        await using var cmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF([FIRMA_EPOSTA],''), NULLIF([YETKILI_EPOSTA],''), NULL), COALESCE(NULLIF([FIRMA_ADI],''),NULL) FROM [dbo].[FIRMALAR] WHERE id=@id;", connection, tx);
         cmd.Parameters.AddWithValue("@id", firmaId);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken)) return (null, null);
@@ -693,7 +730,7 @@ public class FirmaService : IFirmaService
 
     private static async Task<string?> ResolveEmployeeEmailAsync(SqlConnection connection, SqlTransaction tx, long userId, CancellationToken cancellationToken)
     {
-        await using var cmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF(eposta,''), NULL) FROM users WHERE id=@id;", connection, tx);
+        await using var cmd = new SqlCommand("SELECT TOP (1) COALESCE(NULLIF([EPOSTA],''), NULL) FROM [dbo].[KULLANICILAR] WHERE id=@id;", connection, tx);
         cmd.Parameters.AddWithValue("@id", userId);
         var raw = await cmd.ExecuteScalarAsync(cancellationToken);
         return raw is null or DBNull ? null : Convert.ToString(raw, CultureInfo.InvariantCulture);
@@ -701,7 +738,7 @@ public class FirmaService : IFirmaService
 
     private static async Task<string> LoadHotelNameAsync(SqlConnection connection, SqlTransaction tx, long hotelId, CancellationToken cancellationToken)
     {
-        await using var cmd = new SqlCommand("SELECT TOP (1) otel_adi FROM oteller WHERE id=@id;", connection, tx);
+        await using var cmd = new SqlCommand("SELECT TOP (1) [OTEL_ADI] FROM [dbo].[OTELLER] WHERE id=@id;", connection, tx);
         cmd.Parameters.AddWithValue("@id", hotelId);
         var raw = await cmd.ExecuteScalarAsync(cancellationToken);
         return raw is null or DBNull ? "Otel" : Convert.ToString(raw, CultureInfo.InvariantCulture) ?? "Otel";
@@ -710,12 +747,12 @@ public class FirmaService : IFirmaService
     private static async Task<(long UserId, string Email)> ResolvePartnerRecipientAsync(SqlConnection connection, SqlTransaction tx, long hotelId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT TOP (1) COALESCE(o.user_id, oks.user_id, 1), COALESCE(o.satis_kontak_eposta, u.eposta, o.eposta, 'partner@otelturizm.com')
-            FROM oteller o
-            LEFT JOIN otel_kullanici_sahiplikleri oks ON oks.otel_id = o.id AND oks.aktif_mi = 1
-            LEFT JOIN users u ON u.id = COALESCE(o.user_id, oks.user_id)
+            SELECT TOP (1) COALESCE(o.[KULLANICI_ID], oks.[KULLANICI_ID], 1), COALESCE(o.[SATIS_KONTAK_EPOSTA], u.[EPOSTA], o.[EPOSTA], 'partner@otelturizm.com')
+            FROM [dbo].[OTELLER] o
+            LEFT JOIN [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] oks ON oks.[OTEL_ID] = o.id AND oks.[AKTIF_MI] = 1
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = COALESCE(o.[KULLANICI_ID], oks.[KULLANICI_ID])
             WHERE o.id = @hotelId
-            ORDER BY oks.ana_sorumlu_mu DESC, oks.id ASC;";
+            ORDER BY oks.[ANA_SORUMLU_MU] DESC, oks.id ASC;";
         await using var cmd = new SqlCommand(sql, connection, tx);
         cmd.Parameters.AddWithValue("@hotelId", hotelId);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
@@ -728,7 +765,7 @@ public class FirmaService : IFirmaService
 
     private static async Task<string> GenerateFirmaReservationNoAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
-        await using var cmd = new SqlCommand("SELECT COUNT(*) + 1 FROM rezervasyonlar WHERE CAST(olusturulma_tarihi AS date) = CAST(GETDATE() AS date);", connection);
+        await using var cmd = new SqlCommand("SELECT COUNT(*) + 1 FROM [dbo].[REZERVASYONLAR] WHERE CAST([OLUSTURULMA_TARIHI] AS date) = CAST(GETDATE() AS date);", connection);
         var seq = Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
         return $"FRM-{DateTime.Now:yyyyMMdd}-{seq:0000}";
     }
@@ -809,10 +846,10 @@ public class FirmaService : IFirmaService
     private async Task<List<string>> LoadEmployeeDepartmentsAsync(SqlConnection connection, long firmaId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT DISTINCT LTRIM(RTRIM(COALESCE(departman, N'Tanımsız'))) AS departman
-            FROM users
-            WHERE firma_id = @firmaId AND rol LIKE 'firma_%'
-            ORDER BY LTRIM(RTRIM(COALESCE(departman, N'Tanımsız'))) ASC;";
+            SELECT DISTINCT LTRIM(RTRIM(COALESCE([DEPARTMAN], N'Tanımsız'))) AS [DEPARTMAN]
+            FROM [dbo].[KULLANICILAR]
+            WHERE [FIRMA_ID] = @firmaId AND rol LIKE 'firma_%'
+            ORDER BY LTRIM(RTRIM(COALESCE([DEPARTMAN], N'Tanımsız'))) ASC;";
 
         var items = new List<string>();
         await using var command = new SqlCommand(sql, connection);
@@ -843,23 +880,23 @@ public class FirmaService : IFirmaService
 
             WITH base_users AS (
                 SELECT u.id
-                FROM users u
-                WHERE u.firma_id = @firmaId
-                  AND u.rol LIKE 'firma_%'
-                  AND (@qLike IS NULL OR u.ad_soyad LIKE @qLike OR u.eposta LIKE @qLike OR COALESCE(u.departman, N'Tanımsız') LIKE @qLike)
-                  AND (@departman IS NULL OR LTRIM(RTRIM(@departman)) = N'' OR LTRIM(RTRIM(COALESCE(u.departman, N'Tanımsız'))) = LTRIM(RTRIM(@departman)))
+                FROM [dbo].[KULLANICILAR] u
+                WHERE u.[FIRMA_ID] = @firmaId
+                  AND u.[ROL] LIKE 'firma_%'
+                  AND (@qLike IS NULL OR u.[AD_SOYAD] LIKE @qLike OR u.[EPOSTA] LIKE @qLike OR COALESCE(u.[DEPARTMAN], N'Tanımsız') LIKE @qLike)
+                  AND (@departman IS NULL OR LTRIM(RTRIM(@departman)) = N'' OR LTRIM(RTRIM(COALESCE(u.[DEPARTMAN], N'Tanımsız'))) = LTRIM(RTRIM(@departman)))
             )
-            SELECT u.id, u.ad_soyad, COALESCE(u.departman, N'Tanımsız'), COALESCE(u.gorev_unvani, u.rol), u.eposta,
-                   u.harcama_limiti, u.onay_gereksinimi, u.rol, u.firma_yonetici_mi,
-                   u.telefon_dogrulama_tarihi, u.telefon_son_sahiplik_teyit_tarihi, COALESCE(u.telefon_dogrulama_durumu, N''),
-                   COUNT(r.id) AS rezervasyon_sayisi, COALESCE(SUM(r.toplam_tutar), 0) AS harcama_toplami,
+            SELECT u.id, u.[AD_SOYAD], COALESCE(u.[DEPARTMAN], N'Tanımsız'), COALESCE(u.[GOREV_UNVANI], u.[ROL]), u.[EPOSTA],
+                   u.[HARCAMA_LIMITI], u.[ONAY_GEREKSINIMI], u.[ROL], u.[FIRMA_YONETICI_MI],
+                   u.[TELEFON_DOGRULAMA_TARIHI], u.[TELEFON_SON_SAHIPLIK_TEYIT_TARIHI], COALESCE(u.[TELEFON_DOGRULAMA_DURUMU], N''),
+                   COUNT(r.id) AS [REZERVASYON_SAYISI], COALESCE(SUM(r.[TOPLAM_TUTAR]), 0) AS harcama_toplami,
                    (SELECT COUNT(*) FROM base_users) AS total_count
-            FROM users u
+            FROM [dbo].[KULLANICILAR] u
             INNER JOIN base_users bu ON bu.id = u.id
-            LEFT JOIN rezervasyonlar r ON r.firma_calisan_id = u.id
-            GROUP BY u.id, u.ad_soyad, u.departman, u.gorev_unvani, u.eposta, u.harcama_limiti, u.onay_gereksinimi, u.rol, u.firma_yonetici_mi,
-                     u.telefon_dogrulama_tarihi, u.telefon_son_sahiplik_teyit_tarihi, u.telefon_dogrulama_durumu
-            ORDER BY u.firma_yonetici_mi DESC, u.ad_soyad ASC
+            LEFT JOIN [dbo].[REZERVASYONLAR] r ON r.[FIRMA_CALISAN_ID] = u.id
+            GROUP BY u.id, u.[AD_SOYAD], u.[DEPARTMAN], u.[GOREV_UNVANI], u.[EPOSTA], u.[HARCAMA_LIMITI], u.[ONAY_GEREKSINIMI], u.[ROL], u.[FIRMA_YONETICI_MI],
+                     u.[TELEFON_DOGRULAMA_TARIHI], u.[TELEFON_SON_SAHIPLIK_TEYIT_TARIHI], u.[TELEFON_DOGRULAMA_DURUMU]
+            ORDER BY u.[FIRMA_YONETICI_MI] DESC, u.[AD_SOYAD] ASC
             OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;";
 
         var items = new List<FirmaPanelEmployeeRowViewModel>();
@@ -922,13 +959,13 @@ public class FirmaService : IFirmaService
         {
             const string sql = @"
                 SELECT id,
-                       CASE WHEN kullanici_id IS NOT NULL THEN CONCAT('Kullanıcı · ', COALESCE((SELECT TOP (1) ad_soyad FROM users u WHERE u.id = fhl.kullanici_id), 'Kayıt'))
-                            WHEN departman IS NOT NULL THEN CONCAT('Departman · ', departman)
+                       CASE WHEN [KULLANICI_ID] IS NOT NULL THEN CONCAT('Kullanıcı · ', COALESCE((SELECT TOP (1) [AD_SOYAD] FROM [dbo].[KULLANICILAR] u WHERE u.id = fhl.[KULLANICI_ID]), 'Kayıt'))
+                            WHEN [DEPARTMAN] IS NOT NULL THEN CONCAT('Departman · ', [DEPARTMAN])
                             ELSE 'Firma Geneli' END AS scope_text,
-                       gecelik_limit, rezervasyon_basi_limit, aylik_limit, onay_gereksinimi
-                FROM firma_harcama_limitleri fhl
-                WHERE firma_id = @firmaId AND aktif_mi = 1
-                ORDER BY kullanici_id IS NULL DESC, departman ASC, id ASC;";
+                       [GECELIK_LIMIT], [REZERVASYON_BASI_LIMIT], [AYLIK_LIMIT], [ONAY_GEREKSINIMI]
+                FROM [dbo].[FIRMA_HARCAMA_LIMITLERI] fhl
+                WHERE [FIRMA_ID] = @firmaId AND [AKTIF_MI] = 1
+                ORDER BY [KULLANICI_ID] IS NULL DESC, [DEPARTMAN] ASC, id ASC;";
 
             await using (var command = new SqlCommand(sql, connection))
             {
@@ -969,10 +1006,10 @@ public class FirmaService : IFirmaService
         var model = new FirmaInvoicesPageViewModel { Shell = context.Shell };
 
         const string sql = @"
-            SELECT TOP (100) fatura_no, fatura_tarihi, fatura_turu, fatura_alici_unvan, genel_toplam, fatura_durumu
-            FROM faturalar
-            WHERE firma_id = @firmaId
-            ORDER BY fatura_tarihi DESC, id DESC;";
+            SELECT TOP (100) [FATURA_NO], [FATURA_TARIHI], [FATURA_TURU], [FATURA_ALICI_UNVAN], [GENEL_TOPLAM], [FATURA_DURUMU]
+            FROM [dbo].[FATURALAR]
+            WHERE [FIRMA_ID] = @firmaId
+            ORDER BY [FATURA_TARIHI] DESC, id DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", context.FirmaId);
@@ -1001,12 +1038,12 @@ public class FirmaService : IFirmaService
         var model = new FirmaSpendingReportsPageViewModel { Shell = context.Shell };
 
         const string sql = @"
-            SELECT FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR') AS ay, COALESCE(SUM(toplam_tutar), 0) AS toplam, COUNT(*) AS rezervasyon_sayisi
-            FROM rezervasyonlar
-            WHERE firma_id = @firmaId
-              AND olusturulma_tarihi >= DATEADD(MONTH, -5, CAST(SYSUTCDATETIME() AS date))
-            GROUP BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi), FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR')
-            ORDER BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi);";
+            SELECT FORMAT([OLUSTURULMA_TARIHI], 'MMM', 'tr-TR') AS ay, COALESCE(SUM([TOPLAM_TUTAR]), 0) AS toplam, COUNT(*) AS [REZERVASYON_SAYISI]
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [FIRMA_ID] = @firmaId
+              AND [OLUSTURULMA_TARIHI] >= DATEADD(MONTH, -5, CAST(SYSUTCDATETIME() AS date))
+            GROUP BY YEAR([OLUSTURULMA_TARIHI]), MONTH([OLUSTURULMA_TARIHI]), FORMAT([OLUSTURULMA_TARIHI], 'MMM', 'tr-TR')
+            ORDER BY YEAR([OLUSTURULMA_TARIHI]), MONTH([OLUSTURULMA_TARIHI]);";
 
         await using (var command = new SqlCommand(sql, connection))
         {
@@ -1041,13 +1078,13 @@ public class FirmaService : IFirmaService
         var model = new FirmaHotelReportsPageViewModel { Shell = context.Shell };
 
         const string sql = @"
-            SELECT o.otel_adi, CONCAT(o.ilce, ', ', o.sehir) AS city_text, COUNT(*) AS rezervasyon_sayisi,
-                   COALESCE(SUM(r.toplam_tutar), 0) AS toplam, COALESCE(SUM(r.toplam_tasarruf), 0) AS tasarruf
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            WHERE r.firma_id = @firmaId
-            GROUP BY o.id, o.otel_adi, o.ilce, o.sehir
-            ORDER BY toplam DESC, rezervasyon_sayisi DESC;";
+            SELECT o.[OTEL_ADI], CONCAT(o.[ILCE], ', ', o.[SEHIR]) AS city_text, COUNT(*) AS [REZERVASYON_SAYISI],
+                   COALESCE(SUM(r.[TOPLAM_TUTAR]), 0) AS toplam, COALESCE(SUM(r.[TOPLAM_TASARRUF]), 0) AS tasarruf
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            WHERE r.[FIRMA_ID] = @firmaId
+            GROUP BY o.id, o.[OTEL_ADI], o.[ILCE], o.[SEHIR]
+            ORDER BY toplam DESC, [REZERVASYON_SAYISI] DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", context.FirmaId);
@@ -1081,7 +1118,7 @@ public class FirmaService : IFirmaService
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, string.Empty, string.Empty, "employees", cancellationToken);
 
-        const string existsSql = "SELECT COUNT(*) FROM users WHERE eposta = @email;";
+        const string existsSql = "SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE [EPOSTA] = @email;";
         await using (var existsCommand = new SqlCommand(existsSql, connection))
         {
             existsCommand.Parameters.AddWithValue("@email", normalizedEmail);
@@ -1096,11 +1133,11 @@ public class FirmaService : IFirmaService
         try
         {
                 const string insertUserSql = @"
-                    INSERT INTO users
+                    INSERT INTO [dbo].[KULLANICILAR]
                     (
-                        ad_soyad, eposta, telefon, telefon_e164, telefon_dogrulama_kanali, telefon_dogrulama_durumu, sifre, rol, firma_id, departman, gorev_unvani,
-                        harcama_limiti, onay_gereksinimi, personel_kodu, firma_yonetici_mi,
-                        hesap_durumu, dil_tercihi, para_birimi, ulke, olusturulma_tarihi
+                        [AD_SOYAD], [EPOSTA], [TELEFON], [TELEFON_E164], [TELEFON_DOGRULAMA_KANALI], [TELEFON_DOGRULAMA_DURUMU], [SIFRE], rol, [FIRMA_ID], [DEPARTMAN], [GOREV_UNVANI],
+                        [HARCAMA_LIMITI], [ONAY_GEREKSINIMI], [PERSONEL_KODU], [FIRMA_YONETICI_MI],
+                        [HESAP_DURUMU], [DIL_TERCIHI], [PARA_BIRIMI], ulke, [OLUSTURULMA_TARIHI]
                     )
                     VALUES
                     (
@@ -1134,9 +1171,9 @@ public class FirmaService : IFirmaService
             if (model.NightlyLimit.HasValue || model.ApprovalRequired)
             {
                 const string limitSql = @"
-                    INSERT INTO firma_harcama_limitleri
+                    INSERT INTO [dbo].[FIRMA_HARCAMA_LIMITLERI]
                     (
-                        firma_id, kullanici_id, departman, gecelik_limit, onay_gereksinimi, aktif_mi, olusturulma_tarihi
+                        [FIRMA_ID], [KULLANICI_ID], [DEPARTMAN], [GECELIK_LIMIT], [ONAY_GEREKSINIMI], [AKTIF_MI], [OLUSTURULMA_TARIHI]
                     )
                     VALUES
                     (
@@ -1184,7 +1221,7 @@ public class FirmaService : IFirmaService
         {
             if (model.UserId.HasValue)
             {
-                const string validateUserSql = "SELECT COUNT(*) FROM users WHERE id = @userId AND firma_id = @firmaId;";
+                const string validateUserSql = "SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE id = @userId AND [FIRMA_ID] = @firmaId;";
                 await using var validateCommand = new SqlCommand(validateUserSql, connection, (SqlTransaction)transaction);
                 validateCommand.Parameters.AddWithValue("@userId", model.UserId.Value);
                 validateCommand.Parameters.AddWithValue("@firmaId", context.FirmaId);
@@ -1198,12 +1235,12 @@ public class FirmaService : IFirmaService
 
             const string findSql = @"
                 SELECT id
-                FROM firma_harcama_limitleri
-                WHERE firma_id = @firmaId
-                  AND aktif_mi = 1
-                  AND ((@userId IS NOT NULL AND kullanici_id = @userId)
-                    OR (@userId IS NULL AND @department IS NOT NULL AND departman = @department)
-                    OR (@userId IS NULL AND @department IS NULL AND kullanici_id IS NULL AND departman IS NULL))
+                FROM [dbo].[FIRMA_HARCAMA_LIMITLERI]
+                WHERE [FIRMA_ID] = @firmaId
+                  AND [AKTIF_MI] = 1
+                  AND ((@userId IS NOT NULL AND [KULLANICI_ID] = @userId)
+                    OR (@userId IS NULL AND @department IS NOT NULL AND [DEPARTMAN] = @department)
+                    OR (@userId IS NULL AND @department IS NULL AND [KULLANICI_ID] IS NULL AND [DEPARTMAN] IS NULL))
                 ORDER BY id DESC
                 OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
@@ -1223,14 +1260,14 @@ public class FirmaService : IFirmaService
             if (existingId.HasValue)
             {
                 const string updateSql = @"
-                    UPDATE firma_harcama_limitleri
-                    SET departman = @department,
-                        kullanici_id = @userId,
-                        gecelik_limit = @nightlyLimit,
-                        rezervasyon_basi_limit = @reservationLimit,
-                        aylik_limit = @monthlyLimit,
-                        onay_gereksinimi = @approvalRequired,
-                        aktif_mi = 1
+                    UPDATE [dbo].[FIRMA_HARCAMA_LIMITLERI]
+                    SET [DEPARTMAN] = @department,
+                        [KULLANICI_ID] = @userId,
+                        [GECELIK_LIMIT] = @nightlyLimit,
+                        [REZERVASYON_BASI_LIMIT] = @reservationLimit,
+                        [AYLIK_LIMIT] = @monthlyLimit,
+                        [ONAY_GEREKSINIMI] = @approvalRequired,
+                        [AKTIF_MI] = 1
                     WHERE id = @id;";
 
                 await using var updateCommand = new SqlCommand(updateSql, connection, (SqlTransaction)transaction);
@@ -1246,10 +1283,10 @@ public class FirmaService : IFirmaService
             else
             {
                 const string insertSql = @"
-                    INSERT INTO firma_harcama_limitleri
+                    INSERT INTO [dbo].[FIRMA_HARCAMA_LIMITLERI]
                     (
-                        firma_id, departman, kullanici_id, gecelik_limit, rezervasyon_basi_limit, aylik_limit,
-                        onay_gereksinimi, aktif_mi, olusturulma_tarihi
+                        [FIRMA_ID], [DEPARTMAN], [KULLANICI_ID], [GECELIK_LIMIT], [REZERVASYON_BASI_LIMIT], [AYLIK_LIMIT],
+                        [ONAY_GEREKSINIMI], [AKTIF_MI], [OLUSTURULMA_TARIHI]
                     )
                     VALUES
                     (
@@ -1271,10 +1308,10 @@ public class FirmaService : IFirmaService
             if (model.UserId.HasValue)
             {
                 const string userUpdateSql = @"
-                    UPDATE users
-                    SET harcama_limiti = @nightlyLimit,
-                        onay_gereksinimi = @approvalRequired
-                    WHERE id = @userId AND firma_id = @firmaId;";
+                    UPDATE [dbo].[KULLANICILAR]
+                    SET [HARCAMA_LIMITI] = @nightlyLimit,
+                        [ONAY_GEREKSINIMI] = @approvalRequired
+                    WHERE id = @userId AND [FIRMA_ID] = @firmaId;";
                 await using var userUpdateCommand = new SqlCommand(userUpdateSql, connection, (SqlTransaction)transaction);
                 userUpdateCommand.Parameters.AddWithValue("@nightlyLimit", model.NightlyLimit.HasValue ? (object)model.NightlyLimit.Value : DBNull.Value);
                 userUpdateCommand.Parameters.AddWithValue("@approvalRequired", model.ApprovalRequired ? 1 : 0);
@@ -1312,15 +1349,15 @@ public class FirmaService : IFirmaService
         var context = await BuildContextAsync(connection, userId, string.Empty, string.Empty, "limits", cancellationToken);
 
         const string updateSql = @"
-            UPDATE rezervasyonlar
-            SET firma_onay_durumu = @approvalStatus,
-                firma_onaylayan_kullanici_id = @userId,
-                firma_onay_tarihi = CURRENT_TIMESTAMP,
-                durum = @reservationStatus,
-                iptal_nedeni = @cancelReason
+            UPDATE [dbo].[REZERVASYONLAR]
+            SET [FIRMA_ONAY_DURUMU] = @approvalStatus,
+                [FIRMA_ONAYLAYAN_KULLANICI_ID] = @userId,
+                [FIRMA_ONAY_TARIHI] = CURRENT_TIMESTAMP,
+                [DURUM] = @reservationStatus,
+                [IPTAL_NEDENI] = @cancelReason
             WHERE id = @reservationId
-              AND firma_id = @firmaId
-              AND firma_onay_durumu = 'Beklemede';";
+              AND [FIRMA_ID] = @firmaId
+              AND [FIRMA_ONAY_DURUMU] = 'Beklemede';";
 
         await using var command = new SqlCommand(updateSql, connection);
         command.Parameters.AddWithValue("@approvalStatus", isApprove ? "Onaylandı" : "Reddedildi");
@@ -1339,13 +1376,13 @@ public class FirmaService : IFirmaService
     private async Task<FirmaContext> BuildContextAsync(SqlConnection connection, long userId, string title, string subtitle, string activeSectionKey, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT f.id, f.firma_adi, COALESCE(f.onay_durumu, 'Beklemede') AS onay_durumu,
-                   u.ad_soyad, u.eposta, u.rol,
-                   (SELECT COUNT(*) FROM users fu WHERE fu.firma_id = f.id AND fu.rol LIKE 'firma_%' AND fu.hesap_durumu = 1) AS employee_count,
-                   (SELECT COUNT(DISTINCT CONCAT(ff.otel_id, ':', ff.oda_tip_id)) FROM firma_oda_fiyat_musaitlik ff WHERE ff.aktif_mi = 1 AND ff.kapali_satis = 0) AS deal_count,
-                   (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.firma_id = f.id AND r.firma_onay_durumu = 'Beklemede') AS pending_count
-            FROM users u
-            INNER JOIN firmalar f ON f.id = u.firma_id
+            SELECT f.id, f.[FIRMA_ADI], COALESCE(f.[ONAY_DURUMU], 'Beklemede') AS [ONAY_DURUMU],
+                   u.[AD_SOYAD], u.[EPOSTA], u.[ROL],
+                   (SELECT COUNT(*) FROM [dbo].[KULLANICILAR] fu WHERE fu.[FIRMA_ID] = f.id AND fu.[ROL] LIKE 'firma_%' AND fu.[HESAP_DURUMU] = 1) AS employee_count,
+                   (SELECT COUNT(DISTINCT CONCAT(ff.[OTEL_ID], ':', ff.[ODA_TIP_ID])) FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] ff WHERE ff.[AKTIF_MI] = 1 AND ff.[KAPALI_SATIS] = 0) AS deal_count,
+                   (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE r.[FIRMA_ID] = f.id AND r.[FIRMA_ONAY_DURUMU] = 'Beklemede') AS pending_count
+            FROM [dbo].[KULLANICILAR] u
+            INNER JOIN [dbo].[FIRMALAR] f ON f.id = u.[FIRMA_ID]
             WHERE u.id = @userId
             ORDER BY u.id
             OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
@@ -1401,13 +1438,13 @@ public class FirmaService : IFirmaService
     private static async Task<List<string>> LoadDealCitiesAsync(SqlConnection connection, long firmaId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT DISTINCT ot.sehir
-            FROM dbo.firma_oda_fiyat_musaitlik f
-            INNER JOIN dbo.oteller ot ON ot.id = f.otel_id
-            WHERE f.aktif_mi = 1
-              AND ot.sehir IS NOT NULL
-              AND ot.sehir <> ''
-            ORDER BY ot.sehir;";
+            SELECT DISTINCT ot.[SEHIR]
+            FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] f
+            INNER JOIN [dbo].[OTELLER] ot ON ot.id = f.[OTEL_ID]
+            WHERE f.[AKTIF_MI] = 1
+              AND ot.[SEHIR] IS NOT NULL
+              AND ot.[SEHIR] <> ''
+            ORDER BY ot.[SEHIR];";
 
         var cities = new List<string>();
         await using var command = new SqlCommand(sql, connection);
@@ -1423,14 +1460,14 @@ public class FirmaService : IFirmaService
     private static async Task<List<string>> LoadDealDistrictsAsync(SqlConnection connection, long firmaId, string? city, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT DISTINCT ot.ilce
-            FROM dbo.firma_oda_fiyat_musaitlik f
-            INNER JOIN dbo.oteller ot ON ot.id = f.otel_id
-            WHERE f.aktif_mi = 1
-              AND (@city IS NULL OR ot.sehir = @city)
-              AND ot.ilce IS NOT NULL
-              AND ot.ilce <> ''
-            ORDER BY ot.ilce;";
+            SELECT DISTINCT ot.[ILCE]
+            FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] f
+            INNER JOIN [dbo].[OTELLER] ot ON ot.id = f.[OTEL_ID]
+            WHERE f.[AKTIF_MI] = 1
+              AND (@city IS NULL OR ot.[SEHIR] = @city)
+              AND ot.[ILCE] IS NOT NULL
+              AND ot.[ILCE] <> ''
+            ORDER BY ot.[ILCE];";
 
         var items = new List<string>();
         await using var command = new SqlCommand(sql, connection);
@@ -1447,15 +1484,15 @@ public class FirmaService : IFirmaService
     private static async Task<List<string>> LoadDealNeighborhoodsAsync(SqlConnection connection, long firmaId, string? city, string? district, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT DISTINCT ot.mahalle
-            FROM dbo.firma_oda_fiyat_musaitlik f
-            INNER JOIN dbo.oteller ot ON ot.id = f.otel_id
-            WHERE f.aktif_mi = 1
-              AND (@city IS NULL OR ot.sehir = @city)
-              AND (@district IS NULL OR ot.ilce = @district)
-              AND ot.mahalle IS NOT NULL
-              AND ot.mahalle <> ''
-            ORDER BY ot.mahalle;";
+            SELECT DISTINCT ot.[MAHALLE]
+            FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] f
+            INNER JOIN [dbo].[OTELLER] ot ON ot.id = f.[OTEL_ID]
+            WHERE f.[AKTIF_MI] = 1
+              AND (@city IS NULL OR ot.[SEHIR] = @city)
+              AND (@district IS NULL OR ot.[ILCE] = @district)
+              AND ot.[MAHALLE] IS NOT NULL
+              AND ot.[MAHALLE] <> ''
+            ORDER BY ot.[MAHALLE];";
 
         var items = new List<string>();
         await using var command = new SqlCommand(sql, connection);
@@ -1477,56 +1514,56 @@ public class FirmaService : IFirmaService
         // kıyaslayıp rezervasyon akışına yönlendirmektir.
         const string sql = @"
             SELECT TOP (@take)
-                   ROW_NUMBER() OVER (ORDER BY ot.otel_adi ASC, od.oda_adi ASC) AS deal_id,
+                   ROW_NUMBER() OVER (ORDER BY ot.[OTEL_ADI] ASC, od.[ODA_ADI] ASC) AS deal_id,
                    ot.id AS hotel_id,
-                   ot.otel_adi,
-                   COALESCE(od.oda_adi, N'') AS oda_adi,
-                   CONCAT(COALESCE(ot.ilce, N''), CASE WHEN COALESCE(ot.ilce, N'') <> '' THEN N', ' ELSE N'' END, COALESCE(ot.sehir, N'')) AS city_text,
-                   COALESCE(od.maksimum_kisi_sayisi, 0) AS max_guest,
-                   COALESCE(od.maksimum_yetiskin_sayisi, 0) AS max_adult,
-                   COALESCE(od.maksimum_cocuk_sayisi, 0) AS max_child,
-                   COALESCE(od.toplam_oda_sayisi, 0) AS total_room_count,
+                   ot.[OTEL_ADI],
+                   COALESCE(od.[ODA_ADI], N'') AS [ODA_ADI],
+                   CONCAT(COALESCE(ot.[ILCE], N''), CASE WHEN COALESCE(ot.[ILCE], N'') <> '' THEN N', ' ELSE N'' END, COALESCE(ot.[SEHIR], N'')) AS city_text,
+                   COALESCE(od.[MAKSIMUM_KISI_SAYISI], 0) AS max_guest,
+                   COALESCE(od.[MAKSIMUM_YETISKIN_SAYISI], 0) AS max_adult,
+                   COALESCE(od.[MAKSIMUM_COCUK_SAYISI], 0) AS max_child,
+                   COALESCE(od.[TOPLAM_ODA_SAYISI], 0) AS total_room_count,
                    COALESCE(std.base_price, 0) AS standard_price,
                    COALESCE(corp.corp_price, 0) AS corporate_price,
                    COALESCE(corp.min_date, CAST(NULL AS date)) AS min_date,
                    COALESCE(corp.max_date, CAST(NULL AS date)) AS max_date
             FROM (
-                SELECT DISTINCT f.otel_id, f.oda_tip_id
-                FROM dbo.firma_oda_fiyat_musaitlik f
-                WHERE f.aktif_mi = 1
-                  AND f.kapali_satis = 0
+                SELECT DISTINCT f.[OTEL_ID], f.[ODA_TIP_ID]
+                FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] f
+                WHERE f.[AKTIF_MI] = 1
+                  AND f.[KAPALI_SATIS] = 0
             ) x
-            INNER JOIN dbo.oteller ot ON ot.id = x.otel_id
-            LEFT JOIN dbo.oda_tipleri od ON od.id = x.oda_tip_id
+            INNER JOIN [dbo].[OTELLER] ot ON ot.id = x.[OTEL_ID]
+            LEFT JOIN [dbo].[ODA_TIPLERI] od ON od.id = x.[ODA_TIP_ID]
             OUTER APPLY (
                 SELECT
-                    MIN(CASE WHEN f.firma_gecelik_fiyat > 0 THEN f.firma_gecelik_fiyat ELSE NULL END) AS corp_price,
-                    MIN(f.tarih) AS min_date,
-                    MAX(f.tarih) AS max_date
-                FROM dbo.firma_oda_fiyat_musaitlik f
-                WHERE f.aktif_mi = 1
-                  AND f.kapali_satis = 0
-                  AND f.otel_id = x.otel_id
-                  AND f.oda_tip_id = x.oda_tip_id
+                    MIN(CASE WHEN f.[FIRMA_GECELIK_FIYAT] > 0 THEN f.[FIRMA_GECELIK_FIYAT] ELSE NULL END) AS corp_price,
+                    MIN(f.[TARIH]) AS min_date,
+                    MAX(f.[TARIH]) AS max_date
+                FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK] f
+                WHERE f.[AKTIF_MI] = 1
+                  AND f.[KAPALI_SATIS] = 0
+                  AND f.[OTEL_ID] = x.[OTEL_ID]
+                  AND f.[ODA_TIP_ID] = x.[ODA_TIP_ID]
             ) corp
             OUTER APPLY (
                 SELECT
                     MIN(
                         CASE
-                            WHEN ofm.indirimli_fiyat IS NOT NULL AND ofm.indirimli_fiyat > 0 AND ofm.indirimli_fiyat < ofm.gecelik_fiyat THEN ofm.indirimli_fiyat
-                            ELSE ofm.gecelik_fiyat
+                            WHEN ofm.[INDIRIMLI_FIYAT] IS NOT NULL AND ofm.[INDIRIMLI_FIYAT] > 0 AND ofm.[INDIRIMLI_FIYAT] < ofm.[GECELIK_FIYAT] THEN ofm.[INDIRIMLI_FIYAT]
+                            ELSE ofm.[GECELIK_FIYAT]
                         END
                     ) AS base_price
-                FROM dbo.oda_fiyat_musaitlik ofm
-                WHERE ofm.otel_id = x.otel_id
-                  AND ofm.oda_tip_id = x.oda_tip_id
+                FROM [dbo].[ODA_FIYAT_MUSAITLIK] ofm
+                WHERE ofm.[OTEL_ID] = x.[OTEL_ID]
+                  AND ofm.[ODA_TIP_ID] = x.[ODA_TIP_ID]
             ) std
-            WHERE (@city IS NULL OR ot.sehir = @city)
-              AND (@district IS NULL OR ot.ilce = @district)
-              AND (@neighborhood IS NULL OR ot.mahalle = @neighborhood)
-              AND (@minRoomCount IS NULL OR COALESCE(od.toplam_oda_sayisi, 0) >= @minRoomCount)
-              AND (@search IS NULL OR ot.otel_adi LIKE '%' + @search + '%' OR ot.sehir LIKE '%' + @search + '%' OR ot.ilce LIKE '%' + @search + '%' OR ot.mahalle LIKE '%' + @search + '%')
-            ORDER BY ot.one_cikan_otel DESC, ot.otel_adi ASC, od.oda_adi ASC;";
+            WHERE (@city IS NULL OR ot.[SEHIR] = @city)
+              AND (@district IS NULL OR ot.[ILCE] = @district)
+              AND (@neighborhood IS NULL OR ot.[MAHALLE] = @neighborhood)
+              AND (@minRoomCount IS NULL OR COALESCE(od.[TOPLAM_ODA_SAYISI], 0) >= @minRoomCount)
+              AND (@search IS NULL OR ot.[OTEL_ADI] LIKE '%' + @search + '%' OR ot.[SEHIR] LIKE '%' + @search + '%' OR ot.[ILCE] LIKE '%' + @search + '%' OR ot.[MAHALLE] LIKE '%' + @search + '%')
+            ORDER BY ot.[ONE_CIKAN_OTEL] DESC, ot.[OTEL_ADI] ASC, od.[ODA_ADI] ASC;";
 
         var items = new List<FirmaPanelDealRowViewModel>();
         await using var command = new SqlCommand(sql, connection);
@@ -1577,16 +1614,16 @@ public class FirmaService : IFirmaService
     private async Task<List<FirmaPanelEmployeeRowViewModel>> LoadEmployeesAsync(SqlConnection connection, long firmaId, int take, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT u.id, u.ad_soyad, COALESCE(u.departman, 'Tanımsız'), COALESCE(u.gorev_unvani, u.rol), u.eposta,
-                   u.harcama_limiti, u.onay_gereksinimi, u.rol, u.firma_yonetici_mi,
-                   u.telefon_dogrulama_tarihi, u.telefon_son_sahiplik_teyit_tarihi, COALESCE(u.telefon_dogrulama_durumu, ''),
-                   COUNT(r.id) AS rezervasyon_sayisi, COALESCE(SUM(r.toplam_tutar), 0) AS harcama_toplami
-            FROM users u
-            LEFT JOIN rezervasyonlar r ON r.firma_calisan_id = u.id
-            WHERE u.firma_id = @firmaId AND u.rol LIKE 'firma_%'
-            GROUP BY u.id, u.ad_soyad, u.departman, u.gorev_unvani, u.eposta, u.harcama_limiti, u.onay_gereksinimi, u.rol, u.firma_yonetici_mi,
-                     u.telefon_dogrulama_tarihi, u.telefon_son_sahiplik_teyit_tarihi, u.telefon_dogrulama_durumu
-            ORDER BY u.firma_yonetici_mi DESC, u.ad_soyad ASC
+            SELECT u.id, u.[AD_SOYAD], COALESCE(u.[DEPARTMAN], 'Tanımsız'), COALESCE(u.[GOREV_UNVANI], u.[ROL]), u.[EPOSTA],
+                   u.[HARCAMA_LIMITI], u.[ONAY_GEREKSINIMI], u.[ROL], u.[FIRMA_YONETICI_MI],
+                   u.[TELEFON_DOGRULAMA_TARIHI], u.[TELEFON_SON_SAHIPLIK_TEYIT_TARIHI], COALESCE(u.[TELEFON_DOGRULAMA_DURUMU], ''),
+                   COUNT(r.id) AS [REZERVASYON_SAYISI], COALESCE(SUM(r.[TOPLAM_TUTAR]), 0) AS harcama_toplami
+            FROM [dbo].[KULLANICILAR] u
+            LEFT JOIN [dbo].[REZERVASYONLAR] r ON r.[FIRMA_CALISAN_ID] = u.id
+            WHERE u.[FIRMA_ID] = @firmaId AND u.[ROL] LIKE 'firma_%'
+            GROUP BY u.id, u.[AD_SOYAD], u.[DEPARTMAN], u.[GOREV_UNVANI], u.[EPOSTA], u.[HARCAMA_LIMITI], u.[ONAY_GEREKSINIMI], u.[ROL], u.[FIRMA_YONETICI_MI],
+                     u.[TELEFON_DOGRULAMA_TARIHI], u.[TELEFON_SON_SAHIPLIK_TEYIT_TARIHI], u.[TELEFON_DOGRULAMA_DURUMU]
+            ORDER BY u.[FIRMA_YONETICI_MI] DESC, u.[AD_SOYAD] ASC
             OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY;";
 
         var items = new List<FirmaPanelEmployeeRowViewModel>();
@@ -1631,14 +1668,14 @@ public class FirmaService : IFirmaService
     private async Task<List<FirmaPanelReservationRowViewModel>> LoadReservationsAsync(SqlConnection connection, long firmaId, int take, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT r.id, r.rezervasyon_no, COALESCE(u.ad_soyad, r.misafir_ad_soyad) AS employee_name, o.otel_adi,
-                   CONCAT(o.ilce, ', ', o.sehir) AS city_text,
-                   r.giris_tarihi, r.cikis_tarihi, r.durum, r.firma_onay_durumu, r.toplam_tutar
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            LEFT JOIN users u ON u.id = r.firma_calisan_id
-            WHERE r.firma_id = @firmaId
-            ORDER BY r.olusturulma_tarihi DESC, r.id DESC
+            SELECT r.id, r.[REZERVASYON_NO], COALESCE(u.[AD_SOYAD], r.[MISAFIR_AD_SOYAD]) AS employee_name, o.[OTEL_ADI],
+                   CONCAT(o.[ILCE], ', ', o.[SEHIR]) AS city_text,
+                   r.[GIRIS_TARIHI], r.[CIKIS_TARIHI], r.[DURUM], r.[FIRMA_ONAY_DURUMU], r.[TOPLAM_TUTAR]
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = r.[FIRMA_CALISAN_ID]
+            WHERE r.[FIRMA_ID] = @firmaId
+            ORDER BY r.[OLUSTURULMA_TARIHI] DESC, r.id DESC
             OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY;";
 
         var items = new List<FirmaPanelReservationRowViewModel>();
@@ -1668,14 +1705,14 @@ public class FirmaService : IFirmaService
     private async Task<List<FirmaPanelReservationRowViewModel>> LoadPendingApprovalsAsync(SqlConnection connection, long firmaId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT r.id, r.rezervasyon_no, COALESCE(u.ad_soyad, r.misafir_ad_soyad) AS employee_name, o.otel_adi,
-                   CONCAT(o.ilce, ', ', o.sehir) AS city_text,
-                   r.giris_tarihi, r.cikis_tarihi, r.durum, r.firma_onay_durumu, r.toplam_tutar
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            LEFT JOIN users u ON u.id = r.firma_calisan_id
-            WHERE r.firma_id = @firmaId AND r.firma_onay_durumu = 'Beklemede'
-            ORDER BY r.olusturulma_tarihi DESC, r.id DESC
+            SELECT r.id, r.[REZERVASYON_NO], COALESCE(u.[AD_SOYAD], r.[MISAFIR_AD_SOYAD]) AS employee_name, o.[OTEL_ADI],
+                   CONCAT(o.[ILCE], ', ', o.[SEHIR]) AS city_text,
+                   r.[GIRIS_TARIHI], r.[CIKIS_TARIHI], r.[DURUM], r.[FIRMA_ONAY_DURUMU], r.[TOPLAM_TUTAR]
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = r.[FIRMA_CALISAN_ID]
+            WHERE r.[FIRMA_ID] = @firmaId AND r.[FIRMA_ONAY_DURUMU] = 'Beklemede'
+            ORDER BY r.[OLUSTURULMA_TARIHI] DESC, r.id DESC
             OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY;";
 
         var items = new List<FirmaPanelReservationRowViewModel>();
@@ -1711,13 +1748,13 @@ public class FirmaService : IFirmaService
 
         const string monthSql = @"
             SELECT
-                COALESCE(SUM(toplam_tutar), 0),
-                COALESCE(SUM(toplam_tasarruf), 0),
+                COALESCE(SUM([TOPLAM_TUTAR]), 0),
+                COALESCE(SUM([TOPLAM_TASARRUF]), 0),
                 COUNT(*)
-            FROM rezervasyonlar
-            WHERE firma_id = @firmaId
-              AND olusturulma_tarihi >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
-              AND olusturulma_tarihi < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1));";
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [FIRMA_ID] = @firmaId
+              AND [OLUSTURULMA_TARIHI] >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+              AND [OLUSTURULMA_TARIHI] < DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1));";
 
         await using (var cmd = new SqlCommand(monthSql, connection))
         {
@@ -1735,12 +1772,12 @@ public class FirmaService : IFirmaService
         model.MonthSavingsText = FormatMoney(monthSave);
 
         const string trendSql = @"
-            SELECT FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR') AS ay, COALESCE(SUM(toplam_tutar), 0) AS toplam, COUNT(*) AS rezervasyon_sayisi
-            FROM rezervasyonlar
-            WHERE firma_id = @firmaId
-              AND olusturulma_tarihi >= DATEADD(MONTH, -5, CAST(SYSUTCDATETIME() AS date))
-            GROUP BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi), FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR')
-            ORDER BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi);";
+            SELECT FORMAT([OLUSTURULMA_TARIHI], 'MMM', 'tr-TR') AS ay, COALESCE(SUM([TOPLAM_TUTAR]), 0) AS toplam, COUNT(*) AS [REZERVASYON_SAYISI]
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [FIRMA_ID] = @firmaId
+              AND [OLUSTURULMA_TARIHI] >= DATEADD(MONTH, -5, CAST(SYSUTCDATETIME() AS date))
+            GROUP BY YEAR([OLUSTURULMA_TARIHI]), MONTH([OLUSTURULMA_TARIHI]), FORMAT([OLUSTURULMA_TARIHI], 'MMM', 'tr-TR')
+            ORDER BY YEAR([OLUSTURULMA_TARIHI]), MONTH([OLUSTURULMA_TARIHI]);";
 
         await using (var trendCmd = new SqlCommand(trendSql, connection))
         {
@@ -1766,10 +1803,10 @@ public class FirmaService : IFirmaService
         try
         {
             const string limitSql = @"
-                SELECT TOP (1) aylik_limit
-                FROM firma_harcama_limitleri
-                WHERE firma_id = @firmaId AND aktif_mi = 1
-                  AND kullanici_id IS NULL AND departman IS NULL AND aylik_limit IS NOT NULL
+                SELECT TOP (1) [AYLIK_LIMIT]
+                FROM [dbo].[FIRMA_HARCAMA_LIMITLERI]
+                WHERE [FIRMA_ID] = @firmaId AND [AKTIF_MI] = 1
+                  AND [KULLANICI_ID] IS NULL AND [DEPARTMAN] IS NULL AND [AYLIK_LIMIT] IS NOT NULL
                 ORDER BY id ASC;";
 
             await using var limCmd = new SqlCommand(limitSql, connection);

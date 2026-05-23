@@ -3,8 +3,8 @@
 Bu dokuman, `otelturizmnew` projesinde zorunlu klasorleme, tasarim referansi ve kodlama kurallarini tanimlar.
 
 ## 1) Ana Kural (Zorunlu)
-- UI gelistirmelerinde tek referans kaynak: `proje verileri` klasoru.
-- Sayfa kurgusu, komponent yapisi ve mobil davranis bu klasordeki orijinal tasarimlara gore uygulanir.
+- UI gelistirmelerinde birincil referans: `Views/`, `wwwroot/assets/css/` ve `Dokumanlar/Tasarim/panel-tasarim-sistemi.md`.
+- `proje verileri` yalnizca tarihsel HTML mock arsividir; yeni gelistirmede kaynak olarak kullanilmaz.
 - Rastgele/sifirdan farkli UI dili kullanilmaz.
 
 ## 2) Proje Verileri Klasor Sozlesmesi

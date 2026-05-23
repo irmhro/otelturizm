@@ -1,3 +1,4 @@
+
 namespace otelturizmnew.Models.Paneller.Admin;
 
 public class AdminEmailRoutingPageViewModel

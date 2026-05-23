@@ -1,0 +1,11 @@
+-- Tablo: dbo.OTEL_KOSUL_SECIMLERI
+IF OBJECT_ID(N'dbo.OTEL_KOSUL_SECIMLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[OTEL_KOSUL_SECIMLERI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [OTEL_ID] bigint NOT NULL,
+        [KOSUL_ID] bigint NOT NULL,
+        [OLUSTURULMA_TARIHI] datetime2(0) NOT NULL CONSTRAINT [DF_otel_kosul_secimleri_olusturma] DEFAULT (sysutcdatetime()),
+        CONSTRAINT [PK_OTEL_KOSUL_SECIMLERI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

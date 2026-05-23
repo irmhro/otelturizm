@@ -95,14 +95,31 @@ public class FirmaPanelController : Controller
     }
 
     [HttpGet("yeni-rezervasyon")]
-    public async Task<IActionResult> CreateReservation([FromQuery] long? hotelId = null, [FromQuery] long? roomTypeId = null, [FromQuery] int? roomCount = null, [FromQuery] string? search = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateReservation(
+        [FromQuery] long? hotelId = null,
+        [FromQuery] long? roomTypeId = null,
+        [FromQuery] int? roomCount = null,
+        [FromQuery] string? search = null,
+        [FromQuery] DateOnly? checkIn = null,
+        [FromQuery] DateOnly? checkOut = null,
+        [FromQuery] int? adultCount = null,
+        [FromQuery] int? childCount = null,
+        [FromQuery] long? employeeUserId = null,
+        CancellationToken cancellationToken = default)
     {
         if (!IsFirmaUser()) return Redirect("/kullanici-giris");
-        var model = await _firmaService.GetCreateReservationAsync(GetUserId(), hotelId, roomTypeId, search, cancellationToken);
-        if (roomCount.HasValue && roomCount.Value > 0)
-        {
-            model.Form.RoomCount = Math.Clamp(roomCount.Value, 1, 50);
-        }
+        var model = await _firmaService.GetCreateReservationAsync(
+            GetUserId(),
+            hotelId,
+            roomTypeId,
+            search,
+            checkIn,
+            checkOut,
+            roomCount,
+            adultCount,
+            childCount,
+            employeeUserId,
+            cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Yeni Rezervasyon";
         ViewData["PageCssPath"] = "paneller/firma/create-reservation";
@@ -122,7 +139,7 @@ public class FirmaPanelController : Controller
             ttl: TimeSpan.FromSeconds(25),
             cancellationToken: cancellationToken);
         SetFeedback(result.Success, result.Message);
-        return Redirect("/panel/firma/yeni-rezervasyon");
+        return Redirect(BuildCreateReservationReturnUrl(model));
     }
 
     [HttpGet("mesajlar")]
@@ -268,6 +285,26 @@ public class FirmaPanelController : Controller
 
     private long GetUserId()
         => long.TryParse(User.FindFirstValue(AuthClaimTypes.UserId), out var userId) ? userId : 0;
+
+    private static string BuildCreateReservationReturnUrl(FirmaReservationCreateModel model)
+    {
+        var query = new List<string>();
+        if (model.HotelId > 0) query.Add($"hotelId={model.HotelId}");
+        if (model.RoomTypeId > 0) query.Add($"roomTypeId={model.RoomTypeId}");
+        if (model.RoomCount > 0) query.Add($"roomCount={model.RoomCount}");
+        query.Add($"checkIn={model.CheckInDate:yyyy-MM-dd}");
+        query.Add($"checkOut={model.CheckOutDate:yyyy-MM-dd}");
+        if (model.AdultCount > 0) query.Add($"adultCount={model.AdultCount}");
+        if (model.ChildCount >= 0) query.Add($"childCount={model.ChildCount}");
+        if (model.EmployeeUserId.HasValue && model.EmployeeUserId.Value > 0)
+        {
+            query.Add($"employeeUserId={model.EmployeeUserId.Value}");
+        }
+
+        return query.Count == 0
+            ? "/panel/firma/yeni-rezervasyon"
+            : $"/panel/firma/yeni-rezervasyon?{string.Join("&", query)}";
+    }
 
     private void SetFeedback(bool success, string message)
     {

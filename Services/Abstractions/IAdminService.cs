@@ -13,7 +13,13 @@ public interface IAdminService
     Task<AdminCompanyApplicationsPageViewModel> GetCompanyApplicationsAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ReviewCompanyApplicationAsync(long adminUserId, AdminCompanyApplicationDecisionRequest request, CancellationToken cancellationToken = default);
     Task<AdminApprovalCenterPageViewModel> GetApprovalCenterAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
-    Task<AdminCommissionManagementPageViewModel> GetCommissionManagementAsync(string fullName, string email, string userRole, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, CancellationToken cancellationToken = default);
+    Task<AdminCommissionManagementPageViewModel> GetCommissionManagementAsync(string fullName, string email, string userRole, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, string? city = null, string? district = null, string? neighborhood = null, string? paymentStatus = null, int pageSize = 50, CancellationToken cancellationToken = default);
+
+    Task<AdminCommissionCollectionPageViewModel> GetCommissionCollectionLedgerAsync(string fullName, string email, string userRole, AdminCommissionCollectionFilter filter, CancellationToken cancellationToken = default);
+
+    Task<string> ExportCommissionCollectionCsvAsync(AdminCommissionCollectionFilter filter, CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string Message, int UpdatedCount)> MarkCommissionCollectionPaidAsync(long adminUserId, AdminCommissionCollectionMarkPaidForm request, CancellationToken cancellationToken = default);
     Task<AdminPlatformTeamPageViewModel> GetPlatformTeamAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SavePlatformTeamMemberAsync(long adminUserId, AdminPlatformTeamForm form, string? avatarUrl, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> DeletePlatformTeamMemberAsync(long adminUserId, long id, CancellationToken cancellationToken = default);
@@ -41,6 +47,7 @@ public interface IAdminService
     Task<AdminPaymentsPageViewModel> GetPaymentsAsync(string fullName, string email, string userRole, string? q, string? status, string? paymentType, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<AdminInvoicesPageViewModel> GetInvoicesAsync(string fullName, string email, string userRole, string? q, string? status, string? invoiceType, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<AdminReportsPageViewModel> GetReportsAsync(string fullName, string email, string userRole, long? hotelId, DateTime? dateFrom, DateTime? dateTo, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<AdminRevenueCommandCenterPageViewModel> GetRevenueCommandCenterAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<AdminRateLimitStatsPageViewModel> GetRateLimitStatsAsync(string fullName, string email, string userRole, int windowHours = 24, CancellationToken cancellationToken = default);
     Task<AdminSettingsMonitorPageViewModel> GetSettingsMonitorAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);
     Task<AdminPlatformCheckupPageViewModel> GetPlatformCheckupAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default);

@@ -1,0 +1,23 @@
+@media (max-width: 900px) {
+    .section-head,
+    .notifications-hero,
+    .notification-panel-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .notifications-grid,
+    .toggle-row,
+    .notification-row {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-primary-solid,
+    .notification-hero-metric {
+        width: 100%;
+    }
+
+    .notification-meta {
+        justify-items: start;
+    }
+}

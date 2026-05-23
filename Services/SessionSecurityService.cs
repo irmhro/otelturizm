@@ -81,28 +81,28 @@ public class SessionSecurityService : ISessionSecurityService
             MERGE kullanici_oturum_istatistikleri AS target
             USING (
                 SELECT
-                    @userId AS kullanici_id,
-                    @deviceKey AS cihaz_anahtari
+                    @userId AS [KULLANICI_ID],
+                    @deviceKey AS [CIHAZ_ANAHTARI]
             ) AS source
-            ON target.kullanici_id = source.kullanici_id
-               AND target.cihaz_anahtari = source.cihaz_anahtari
+            ON target.[KULLANICI_ID] = source.[KULLANICI_ID]
+               AND target.[CIHAZ_ANAHTARI] = source.[CIHAZ_ANAHTARI]
             WHEN MATCHED THEN
                 UPDATE SET
-                    hesap_tipi = @accountType,
-                    partner_id = @partnerId,
-                    cihaz_etiketi = @deviceLabel,
-                    beni_hatirla_tercihi = @rememberMe,
-                    toplam_ziyaret_sayisi = COALESCE(target.toplam_ziyaret_sayisi, 0) + @visitIncrement,
-                    toplam_oturum_suresi_saniye = COALESCE(target.toplam_oturum_suresi_saniye, 0) + @durationIncrement,
-                    son_oturum_baslangici = CASE WHEN @visitIncrement = 1 THEN @sessionStartedAt ELSE target.son_oturum_baslangici END,
-                    son_oturum_bitisi = @sessionEndedAt,
-                    son_aktivite_tarihi = @lastActivityAt,
-                    son_ip_hash = @ipHash,
+                    [HESAP_TIPI] = @accountType,
+                    [PARTNER_ID] = @partnerId,
+                    [CIHAZ_ETIKETI] = @deviceLabel,
+                    [BENI_HATIRLA_TERCIHI] = @rememberMe,
+                    [TOPLAM_ZIYARET_SAYISI] = COALESCE(target.[TOPLAM_ZIYARET_SAYISI], 0) + @visitIncrement,
+                    [TOPLAM_OTURUM_SURESI_SANIYE] = COALESCE(target.[TOPLAM_OTURUM_SURESI_SANIYE], 0) + @durationIncrement,
+                    [SON_OTURUM_BASLANGICI] = CASE WHEN @visitIncrement = 1 THEN @sessionStartedAt ELSE target.[SON_OTURUM_BASLANGICI] END,
+                    [SON_OTURUM_BITISI] = @sessionEndedAt,
+                    [SON_AKTIVITE_TARIHI] = @lastActivityAt,
+                    [SON_IP_HASH] = @ipHash,
                     son_user_agent_hash = @userAgentHash,
-                    guncellenme_tarihi = CURRENT_TIMESTAMP
+                    [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
             WHEN NOT MATCHED THEN
                 INSERT
-                (kullanici_id, hesap_tipi, partner_id, cihaz_anahtari, cihaz_etiketi, beni_hatirla_tercihi, toplam_ziyaret_sayisi, toplam_oturum_suresi_saniye, son_oturum_baslangici, son_oturum_bitisi, son_aktivite_tarihi, son_ip_hash, son_user_agent_hash)
+                ([KULLANICI_ID], [HESAP_TIPI], [PARTNER_ID], [CIHAZ_ANAHTARI], [CIHAZ_ETIKETI], [BENI_HATIRLA_TERCIHI], [TOPLAM_ZIYARET_SAYISI], [TOPLAM_OTURUM_SURESI_SANIYE], [SON_OTURUM_BASLANGICI], [SON_OTURUM_BITISI], [SON_AKTIVITE_TARIHI], [SON_IP_HASH], son_user_agent_hash)
                 VALUES
                 (@userId, @accountType, @partnerId, @deviceKey, @deviceLabel, @rememberMe, @visitIncrement, @durationIncrement, @sessionStartedAt, @sessionEndedAt, @lastActivityAt, @ipHash, @userAgentHash);";
 

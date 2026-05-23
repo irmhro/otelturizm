@@ -1,0 +1,47 @@
+@import url("./platform-packages.css");
+
+.partner-platform-packages__hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.partner-platform-packages__filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.partner-platform-packages__filters .ot-btn {
+    min-height: 44px;
+    justify-content: center;
+}
+
+.partner-platform-packages__grid {
+    grid-template-columns: 1fr;
+}
+
+.partner-platform-package-card__body .ot-btn--block {
+    min-height: 48px;
+}
+
+.partner-platform-packages__apps .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.partner-platform-packages__apps .table {
+    min-width: 520px;
+}
+
+.partner-platform-package-detail__hero {
+    padding: 1rem;
+}
+
+.partner-platform-package-detail__gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.partner-platform-package-detail form .ot-btn--block {
+    min-height: 48px;
+}

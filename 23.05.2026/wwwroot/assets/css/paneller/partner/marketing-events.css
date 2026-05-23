@@ -1,0 +1,42 @@
+@import url("./location-insights.css");
+
+.partner-marketing-event-list {
+    display: grid;
+    gap: 16px;
+}
+
+.partner-marketing-event-card {
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.96) 100%);
+    padding: 16px 18px;
+}
+
+.partner-marketing-event-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.partner-marketing-event-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.partner-marketing-note-form {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.partner-marketing-note-form textarea {
+    min-height: 56px;
+}
+
+.partner-marketing-note-form .partner-primary-btn {
+    justify-self: start;
+}

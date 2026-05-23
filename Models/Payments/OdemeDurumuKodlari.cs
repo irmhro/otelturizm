@@ -1,6 +1,6 @@
 namespace otelturizmnew.Models.Payments;
 
-/// <summary>dbo.odeme_durumu_tanimlari.kod ile eşleşir.</summary>
+/// <summary>dbo.ODEME_DURUMU_TANIMLARI.KOD ile eşleşir.</summary>
 public static class OdemeDurumuKodlari
 {
     public const string Beklemede = "BEKLEMEDE";

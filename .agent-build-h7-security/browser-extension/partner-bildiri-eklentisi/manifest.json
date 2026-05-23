@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Otelturizm Partner Bildiri Asistani",
+  "version": "1.0.0",
+  "description": "Partner paneli kapali olsa bile okunmamis bildirimleri izler.",
+  "permissions": [
+    "alarms",
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://localhost:7223/*",
+    "http://localhost:7223/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Partner Bildirimleri",
+    "default_popup": "popup.html"
+  }
+}

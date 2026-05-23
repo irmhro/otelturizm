@@ -55,6 +55,7 @@ public class UserReservationCardViewModel
     public string StayDateText { get; set; } = string.Empty;
     public DateOnly CheckInDate { get; set; }
     public DateOnly CheckOutDate { get; set; }
+    public long RoomTypeId { get; set; }
     public string GuestText { get; set; } = string.Empty;
     public string MealOrRoomText { get; set; } = string.Empty;
     public string StatusText { get; set; } = string.Empty;
@@ -64,6 +65,7 @@ public class UserReservationCardViewModel
     public decimal TotalAmount { get; set; }
     public string TotalText { get; set; } = string.Empty;
     public bool CanCancel { get; set; }
+    public bool CanUpdateDates { get; set; }
     public bool IsUpcoming { get; set; }
     public bool IsCancelled { get; set; }
     public string? CancellationReason { get; set; }
@@ -88,6 +90,13 @@ public class UserReservationNoteForm
 {
     public long ReservationId { get; set; }
     public string Note { get; set; } = string.Empty;
+}
+
+public class UserReservationDateUpdateForm
+{
+    public long ReservationId { get; set; }
+    public string CheckInDate { get; set; } = string.Empty;
+    public string CheckOutDate { get; set; } = string.Empty;
 }
 
 public class UserReservationReviewPageViewModel
@@ -121,8 +130,6 @@ public class UserReservationReviewForm
     public int PuanSessizlik { get; set; } = 8;
     [Range(1, 10)]
     public int PuanUlasim { get; set; } = 8;
-    [Required]
-    [MinLength(20)]
     public string Comment { get; set; } = string.Empty;
     public bool Anonymous { get; set; }
 }
@@ -194,8 +201,6 @@ public class UserReviewReservationRowViewModel
 public class UserReviewUpdateForm
 {
     public long ReviewId { get; set; }
-    [Required]
-    [MinLength(20)]
     public string Comment { get; set; } = string.Empty;
 }
 
@@ -439,6 +444,14 @@ public class UserProfileForm
     public string? City { get; set; }
     public string? District { get; set; }
     public string? Neighborhood { get; set; }
+    /// <summary>Form gönderiminde seçilen ülke (ULKELER.ID).</summary>
+    public long? UlkeId { get; set; }
+    /// <summary>Form gönderiminde seçilen il (ILLER.ID).</summary>
+    public long? IlId { get; set; }
+    /// <summary>Form gönderiminde seçilen ilçe (ILCELER.ID).</summary>
+    public long? IlceId { get; set; }
+    /// <summary>Form gönderiminde seçilen mahalle (MAHALLELER.ID).</summary>
+    public long? MahalleId { get; set; }
     public string? PostalCode { get; set; }
     public string? RoomPreference { get; set; }
     public string? BedPreference { get; set; }
@@ -507,6 +520,7 @@ public class UserSecurityPageViewModel
     public string PhoneNumber { get; set; } = string.Empty;
     public string MaskedPhoneNumber { get; set; } = string.Empty;
     public bool PhoneUsableForTwoFactor { get; set; }
+    public UserPhoneVerificationStatusViewModel PhoneVerification { get; set; } = new();
     public List<UserSessionRowViewModel> Sessions { get; set; } = new();
 }
 
@@ -564,4 +578,30 @@ public class UserBillingSummaryViewModel
     public string InvoiceName { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+}
+
+public class UserInvoicesPageViewModel
+{
+    public bool TableMissing { get; set; }
+    public List<UserInvoiceRowViewModel> Rows { get; set; } = new();
+}
+
+public class UserInvoiceRowViewModel
+{
+    public long ReservationId { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string StayText { get; set; } = string.Empty;
+    public string TotalText { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public bool HasInvoice { get; set; }
+    public string? DownloadUrl { get; set; }
+    public string? UploadedAtText { get; set; }
+    public string? MimeType { get; set; }
+    public DateTime? CheckOutDate { get; set; }
+
+    public bool IsPdf =>
+        HasInvoice && (
+            string.Equals(MimeType, "application/pdf", StringComparison.OrdinalIgnoreCase)
+            || (!string.IsNullOrWhiteSpace(DownloadUrl) && DownloadUrl.Contains(".pdf", StringComparison.OrdinalIgnoreCase)));
 }

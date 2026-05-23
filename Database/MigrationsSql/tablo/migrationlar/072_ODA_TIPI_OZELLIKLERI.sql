@@ -1,0 +1,12 @@
+-- Tablo: dbo.ODA_TIPI_OZELLIKLERI
+IF OBJECT_ID(N'dbo.ODA_TIPI_OZELLIKLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ODA_TIPI_OZELLIKLERI] (
+        [ODA_TIP_ID] bigint NOT NULL,
+        [OZELLIK_ID] smallint NOT NULL,
+        [MIKTAR] tinyint NULL CONSTRAINT [DF__oda_tipi___mikta__603D47BB] DEFAULT ((1)),
+        [OTEL_ID] bigint NULL,
+        [KATEGORI_ID] smallint NULL,
+        CONSTRAINT [PK_ODA_TIPI_OZELLIKLERI] PRIMARY KEY CLUSTERED ([ODA_TIP_ID], [OZELLIK_ID] ASC)
+    );
+END

@@ -38,10 +38,11 @@ public class AuthController : Controller
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return Redirect(GetRedirectPathByClaims());
+            return Redirect(ResolvePostLoginRedirectByClaims());
         }
 
         ViewData["PageCss"] = "user-login";
+        ViewData["ReturnUrl"] = GetSafeReturnUrl();
         return View("~/Views/Login/UserLogin.cshtml");
     }
 
@@ -83,7 +84,7 @@ public class AuthController : Controller
         if (string.IsNullOrWhiteSpace(loginEmail) || string.IsNullOrWhiteSpace(loginPassword))
         {
             TempData["UserLoginError"] = "E-posta ve sifre zorunludur.";
-            return Redirect(UserLoginPath);
+            return Redirect(UserLoginPathWithReturnUrl());
         }
 
         UserSessionModel? user;
@@ -95,18 +96,18 @@ public class AuthController : Controller
         {
             TempData["UserLoginError"] = ex.Message;
             SetResendVerifyTempData(ex, loginEmail);
-            return Redirect(UserLoginPath);
+            return Redirect(UserLoginPathWithReturnUrl());
         }
         catch (Exception ex)
         {
             TempData["UserLoginError"] = $"Veritabani baglantisi veya giris dogrulama sirasinda hata olustu: {ex.Message}";
-            return Redirect(UserLoginPath);
+            return Redirect(UserLoginPathWithReturnUrl());
         }
 
         if (user is null)
         {
             TempData["UserLoginError"] = "Giris bilgileri hatali veya hesap aktif degil.";
-            return Redirect(UserLoginPath);
+            return Redirect(UserLoginPathWithReturnUrl());
         }
 
         var twoFactorRedirect = await HandleTwoFactorAsync(user, rememberMe, UserLoginPath, "UserLoginError", cancellationToken);
@@ -117,7 +118,7 @@ public class AuthController : Controller
 
         await SignInAsync(user, rememberMe);
         await _authService.RecordLoginAsync(user.UserId, user.AccountType, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
-        return Redirect(GetRedirectPath(user));
+        return Redirect(ResolvePostLoginRedirect(user));
     }
 
     [HttpGet("/kullanici-giris-2fa")]
@@ -307,7 +308,7 @@ public class AuthController : Controller
             return Redirect(loginPath);
         }
 
-        SetLogin2FaCookie(user.UserId, rememberMe, GetRedirectPath(user), loginPath, challengeInfo.Channel, challengeInfo.DestinationHint);
+        SetLogin2FaCookie(user.UserId, rememberMe, ResolvePostLoginRedirect(user), loginPath, challengeInfo.Channel, challengeInfo.DestinationHint);
         return Redirect("/kullanici-giris-2fa");
     }
 
@@ -696,6 +697,72 @@ public class AuthController : Controller
             "firma" => FirmaLoginPath,
             _ => UserLoginPath
         };
+    }
+
+    private string? GetSafeReturnUrl()
+    {
+        var fromForm = Request.HasFormContentType ? Request.Form["ReturnUrl"].FirstOrDefault() : null;
+        var fromQuery = Request.Query["ReturnUrl"].FirstOrDefault();
+        var candidate = !string.IsNullOrWhiteSpace(fromForm) ? fromForm : fromQuery;
+        return !string.IsNullOrWhiteSpace(candidate) && Url.IsLocalUrl(candidate) ? candidate : null;
+    }
+
+    private string UserLoginPathWithReturnUrl()
+    {
+        var returnUrl = GetSafeReturnUrl();
+        return string.IsNullOrWhiteSpace(returnUrl)
+            ? UserLoginPath
+            : $"{UserLoginPath}?ReturnUrl={Uri.EscapeDataString(returnUrl)}";
+    }
+
+    private static bool CanAccessSalesReturnUrl(UserSessionModel user, string returnUrl)
+        => returnUrl.StartsWith("/panel/satis", StringComparison.OrdinalIgnoreCase)
+           && (string.Equals(user.AccountType, "sales", StringComparison.OrdinalIgnoreCase)
+               || (!string.IsNullOrWhiteSpace(user.UserRole) && user.UserRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase)));
+
+    private static bool CanAccessSalesReturnUrlByClaims(ClaimsPrincipal principal, string returnUrl)
+    {
+        if (!returnUrl.StartsWith("/panel/satis", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var accountType = principal.FindFirstValue(AuthClaimTypes.AccountType);
+        var userRole = principal.FindFirstValue(AuthClaimTypes.UserRole);
+        return string.Equals(accountType, "sales", StringComparison.OrdinalIgnoreCase)
+            || (!string.IsNullOrWhiteSpace(userRole) && userRole.StartsWith("sales_", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string ResolvePostLoginRedirect(UserSessionModel user)
+    {
+        var returnUrl = GetSafeReturnUrl();
+        if (string.IsNullOrWhiteSpace(returnUrl))
+        {
+            return GetRedirectPath(user);
+        }
+
+        if (returnUrl.StartsWith("/panel/satis", StringComparison.OrdinalIgnoreCase))
+        {
+            return CanAccessSalesReturnUrl(user, returnUrl) ? returnUrl : GetRedirectPath(user);
+        }
+
+        return returnUrl;
+    }
+
+    private string ResolvePostLoginRedirectByClaims()
+    {
+        var returnUrl = GetSafeReturnUrl();
+        if (string.IsNullOrWhiteSpace(returnUrl))
+        {
+            return GetRedirectPathByClaims();
+        }
+
+        if (returnUrl.StartsWith("/panel/satis", StringComparison.OrdinalIgnoreCase))
+        {
+            return CanAccessSalesReturnUrlByClaims(User, returnUrl) ? returnUrl : GetRedirectPathByClaims();
+        }
+
+        return returnUrl;
     }
 
     private void SetResendVerifyTempData(AuthFlowException ex, string? fallbackIdentity)

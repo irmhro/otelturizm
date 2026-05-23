@@ -1,0 +1,119 @@
+@model otelturizmnew.Models.Paneller.AdminPlatformPackagesPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+}
+
+<section class="admin-platform-packages-page">
+
+<div class="page-header d-print-none">
+    <div class="row align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Ticari operasyon</div>
+            <h2 class="page-title">@Model.Shell.PanelTitle</h2>
+            <p class="text-secondary">@Model.Shell.PanelSubtitle</p>
+        </div>
+    </div>
+</div>
+
+@if (!Model.TablesReady)
+{
+    <div class="alert alert-warning">Migration: <code>20260525_platform_paket_satis_sqlserver.sql</code> ve seed dosyası uygulanmalı.</div>
+}
+
+@if (TempData["AdminError"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (TempData["AdminMessage"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<div class="row row-deck row-cards mb-3">
+    <div class="col-sm-4"><div class="card"><div class="card-body"><div class="text-secondary">Yayındaki paket</div><div class="h2">@Model.Summary.PublishedPackageCount</div></div></div></div>
+    <div class="col-sm-4"><div class="card"><div class="card-body"><div class="text-secondary">Bekleyen başvuru</div><div class="h2 text-warning">@Model.Summary.PendingCount</div></div></div></div>
+    <div class="col-sm-4"><div class="card"><div class="card-body"><div class="text-secondary">Aktif / onaylı</div><div class="h2 text-success">@Model.Summary.ActiveCount</div></div></div></div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h3 class="card-title">Paket kataloğu</h3></div>
+    <div class="table-responsive">
+        <table class="table table-vcenter card-table admin-table admin-table--cards">
+            <thead>
+                <tr><th>Kod</th><th>Başlık</th><th>Kategori</th><th>Fiyat</th><th>Hedef</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var pkg in Model.Packages)
+                {
+                    <tr>
+                        <td data-label="Kod"><code>@pkg.PackageCode</code></td>
+                        <td data-label="Başlık">@pkg.Title</td>
+                        <td data-label="Kategori">@pkg.CategoryTitle</td>
+                        <td data-label="Fiyat">@pkg.PriceText</td>
+                        <td data-label="Hedef">@pkg.TargetRuleBadge</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3 class="card-title">Partner başvuru kuyruğu</h3></div>
+    @if (Model.Applications.Count == 0)
+    {
+        <div class="card-body text-secondary">Başvuru yok.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table admin-table admin-table--cards">
+                <thead>
+                    <tr>
+                        <th>Otel</th><th>Partner</th><th>Paket</th><th>Durum</th><th>5661 beyan</th><th>Tutar</th><th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Applications)
+                    {
+                        <tr>
+                            <td data-label="Otel">@row.HotelName</td>
+                            <td data-label="Partner">@row.PartnerEmail</td>
+                            <td data-label="Paket">@row.PackageTitle</td>
+                            <td data-label="Durum"><span class="badge bg-secondary-lt">@row.Status</span></td>
+                            <td data-label="5661 beyan">@(row.Hotel5661Declared ? "Kurulu" : "Yok")</td>
+                            <td data-label="Tutar">@row.PriceText</td>
+                            <td data-label="İşlem">
+                                @if (row.Status == "Beklemede")
+                                {
+                                    <form method="post" action="/admin/platform-paketleri/basvuru-guncelle" class="d-inline-flex gap-1 flex-wrap">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="ApplicationId" value="@row.Id" />
+                                        <input type="text" name="AdminNote" class="form-control form-control-sm" placeholder="Not" style="min-width:120px" />
+                                        <button type="submit" name="Action" value="onayla" class="btn btn-sm btn-success">Onayla</button>
+                                        <button type="submit" name="Action" value="reddet" class="btn btn-sm btn-outline-danger">Red</button>
+                                    </form>
+                                }
+                                else if (row.Status == "Onaylandi")
+                                {
+                                    <form method="post" action="/admin/platform-paketleri/basvuru-guncelle" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="ApplicationId" value="@row.Id" />
+                                        <input type="hidden" name="Action" value="aktif" />
+                                        <button type="submit" class="btn btn-sm btn-primary">Aktifleştir</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                        @if (!string.IsNullOrWhiteSpace(row.PartnerNote))
+                        {
+                            <tr><td colspan="7" data-label="Not" class="text-secondary small">Partner: @row.PartnerNote</td></tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+</section>

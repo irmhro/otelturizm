@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Nav.Hotels" xml:space="preserve"><value>Hotels</value></data>
+  <data name="Nav.Corporate" xml:space="preserve"><value>Corporate</value></data>
+  <data name="Nav.Home" xml:space="preserve"><value>Home</value></data>
+  <data name="Nav.Campaigns" xml:space="preserve"><value>Campaigns</value></data>
+  <data name="Nav.Help" xml:space="preserve"><value>Help</value></data>
+  <data name="Nav.Login" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Nav.Register" xml:space="preserve"><value>Register</value></data>
+  <data name="Nav.Account" xml:space="preserve"><value>My account</value></data>
+  <data name="Nav.Map" xml:space="preserve"><value>Map</value></data>
+  <data name="Nav.SkipToContent" xml:space="preserve"><value>Skip to content</value></data>
+  <data name="Search.Placeholder" xml:space="preserve"><value>Where to?</value></data>
+  <data name="Search.AriaLabel" xml:space="preserve"><value>Search hotels or destinations</value></data>
+  <data name="Search.Title" xml:space="preserve"><value>Search</value></data>
+  <data name="Search.NoResults" xml:space="preserve"><value>No results found</value></data>
+  <data name="Search.Suggestions" xml:space="preserve"><value>Suggestions</value></data>
+  <data name="Search.Recent" xml:space="preserve"><value>Recent searches</value></data>
+  <data name="Booking.CheckIn" xml:space="preserve"><value>Check-in</value></data>
+  <data name="Booking.CheckOut" xml:space="preserve"><value>Check-out</value></data>
+  <data name="Booking.Guests" xml:space="preserve"><value>Guests</value></data>
+  <data name="Booking.Rooms" xml:space="preserve"><value>Rooms</value></data>
+  <data name="Booking.Nights" xml:space="preserve"><value>Nights</value></data>
+  <data name="Booking.Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Booking.Confirm" xml:space="preserve"><value>Confirm booking</value></data>
+  <data name="Booking.Cancel" xml:space="preserve"><value>Cancel booking</value></data>
+  <data name="Filter.Breakfast" xml:space="preserve"><value>Breakfast included</value></data>
+  <data name="Filter.FreeCancel" xml:space="preserve"><value>Free cancellation</value></data>
+  <data name="Filter.Pool" xml:space="preserve"><value>Pool</value></data>
+  <data name="Filter.Spa" xml:space="preserve"><value>Spa</value></data>
+  <data name="Filter.Parking" xml:space="preserve"><value>Parking</value></data>
+  <data name="Filter.Wifi" xml:space="preserve"><value>Free Wi-Fi</value></data>
+  <data name="Filter.Rating" xml:space="preserve"><value>Rating</value></data>
+  <data name="Filter.Price" xml:space="preserve"><value>Price</value></data>
+  <data name="Filter.Sort" xml:space="preserve"><value>Sort</value></data>
+  <data name="Filter.Clear" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Btn.Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Btn.Book" xml:space="preserve"><value>Book now</value></data>
+  <data name="Btn.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Btn.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Btn.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Btn.Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Btn.Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="Btn.Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Footer.About" xml:space="preserve"><value>About us</value></data>
+  <data name="Footer.Contact" xml:space="preserve"><value>Contact</value></data>
+  <data name="Footer.Privacy" xml:space="preserve"><value>Privacy Policy</value></data>
+  <data name="Footer.Terms" xml:space="preserve"><value>Terms of Use</value></data>
+  <data name="Footer.Copyright" xml:space="preserve"><value>All rights reserved.</value></data>
+  <data name="Footer.Company" xml:space="preserve"><value>Company</value></data>
+  <data name="Footer.Support" xml:space="preserve"><value>Support</value></data>
+</root>

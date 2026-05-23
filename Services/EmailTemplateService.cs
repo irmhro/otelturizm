@@ -6,8 +6,9 @@ namespace otelturizmnew.Services;
 
 public class EmailTemplateService : IEmailTemplateService
 {
+    private const string EmailMasterRelativePath = "Views/Email/_EmailMaster.cshtml";
     private readonly IWebHostEnvironment _environment;
-    private static readonly string[] SupportedLanguages = ["tr", "en"];
+    private static readonly string[] SupportedLanguages = ["tr", "en", "de", "fr", "es", "ru", "ar"];
 
     public EmailTemplateService(IWebHostEnvironment environment)
     {
@@ -21,67 +22,45 @@ public class EmailTemplateService : IEmailTemplateService
             throw new InvalidOperationException("E-posta şablon yolu boş.");
         }
 
+        var lang = ResolveLanguage(tokens);
         var localizedViewPath = ResolveLocalizedViewPath(relativeViewPath, tokens);
-        var normalized = localizedViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
-        var absolutePath = Path.Combine(_environment.ContentRootPath, normalized);
-
-        // Fallback 1: dosya adında Türkçe karakter farkı (ör. "Onaylandı" -> "Onaylandi")
-        var asciiViewPath = ToAsciiTurkish(localizedViewPath);
-        var asciiAbsolutePath = !string.Equals(asciiViewPath, localizedViewPath, StringComparison.Ordinal)
-            ? Path.Combine(_environment.ContentRootPath, asciiViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar))
-            : absolutePath;
-
-        if (!File.Exists(absolutePath) && File.Exists(asciiAbsolutePath))
+        if (!TryResolveTemplateAbsolutePath(localizedViewPath, out var absolutePath))
         {
-            absolutePath = asciiAbsolutePath;
-        }
-
-        if (!File.Exists(absolutePath))
-        {
-            var compactViewPath = RemoveFileNameSpaces(localizedViewPath);
-            if (!string.Equals(compactViewPath, localizedViewPath, StringComparison.Ordinal))
+            foreach (var fallbackPath in BuildLocalizedFallbackPaths(relativeViewPath, lang))
             {
-                var compactAbsolutePath = Path.Combine(_environment.ContentRootPath, compactViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar));
-                if (File.Exists(compactAbsolutePath))
+                if (TryResolveTemplateAbsolutePath(fallbackPath, out absolutePath))
                 {
-                    absolutePath = compactAbsolutePath;
+                    localizedViewPath = fallbackPath;
+                    break;
                 }
             }
         }
 
-        if (!File.Exists(absolutePath))
+        if (string.IsNullOrWhiteSpace(absolutePath) || !File.Exists(absolutePath))
         {
             var fallbackViewPath = ResolveNeutralViewPath(localizedViewPath);
-            if (!string.Equals(fallbackViewPath, localizedViewPath, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(fallbackViewPath, localizedViewPath, StringComparison.OrdinalIgnoreCase)
+                && TryResolveTemplateAbsolutePath(fallbackViewPath, out var neutralAbsolutePath)
+                && !string.IsNullOrWhiteSpace(neutralAbsolutePath))
             {
-                var fallbackNormalized = fallbackViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
-                var fallbackAbsolutePath = Path.Combine(_environment.ContentRootPath, fallbackNormalized);
-                var fallbackAscii = ToAsciiTurkish(fallbackViewPath);
-                var fallbackAsciiAbsolutePath = !string.Equals(fallbackAscii, fallbackViewPath, StringComparison.Ordinal)
-                    ? Path.Combine(_environment.ContentRootPath, fallbackAscii.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar))
-                    : fallbackAbsolutePath;
-
-                if (!File.Exists(fallbackAbsolutePath) && File.Exists(fallbackAsciiAbsolutePath))
-                {
-                    fallbackAbsolutePath = fallbackAsciiAbsolutePath;
-                }
-                if (File.Exists(fallbackAbsolutePath))
-                {
-                    var fallbackContent = await File.ReadAllTextAsync(fallbackAbsolutePath, Encoding.UTF8, cancellationToken);
-                    foreach (var token in tokens)
-                    {
-                        var key = token.Key.StartsWith("{{", StringComparison.Ordinal) ? token.Key : $"{{{{{token.Key}}}}}";
-                        fallbackContent = fallbackContent.Replace(key, token.Value ?? string.Empty, StringComparison.OrdinalIgnoreCase);
-                    }
-
-                    return fallbackContent;
-                }
+                return await ReadAndApplyTokensAsync(neutralAbsolutePath, tokens, cancellationToken);
             }
 
-            return RenderFallbackTemplate(localizedViewPath, tokens, absolutePath);
+            return RenderFallbackTemplate(localizedViewPath, tokens, absolutePath ?? localizedViewPath);
         }
 
+        return await ReadAndApplyTokensAsync(absolutePath!, tokens, cancellationToken);
+    }
+
+    private async Task<string> ReadAndApplyTokensAsync(string absolutePath, IReadOnlyDictionary<string, string> tokens, CancellationToken cancellationToken)
+    {
         var content = await File.ReadAllTextAsync(absolutePath, Encoding.UTF8, cancellationToken);
+        content = await ComposeWithEmailMasterIfNeededAsync(content, absolutePath, tokens, cancellationToken);
+        return ApplyTokens(content, tokens);
+    }
+
+    private static string ApplyTokens(string content, IReadOnlyDictionary<string, string> tokens)
+    {
         foreach (var token in tokens)
         {
             var key = token.Key.StartsWith("{{", StringComparison.Ordinal) ? token.Key : $"{{{{{token.Key}}}}}";
@@ -89,6 +68,200 @@ public class EmailTemplateService : IEmailTemplateService
         }
 
         return content;
+    }
+
+    private async Task<string> ComposeWithEmailMasterIfNeededAsync(
+        string templateContent,
+        string templateAbsolutePath,
+        IReadOnlyDictionary<string, string> tokens,
+        CancellationToken cancellationToken)
+    {
+        if (!TryParseEmailLayout(templateContent, out var layoutMeta, out var bodyContent))
+        {
+            return templateContent;
+        }
+
+        var masterAbsolutePath = Path.Combine(_environment.ContentRootPath, EmailMasterRelativePath.Replace('/', Path.DirectorySeparatorChar));
+        if (!File.Exists(masterAbsolutePath))
+        {
+            return templateContent;
+        }
+
+        var lang = ResolveLanguage(tokens);
+        var master = await File.ReadAllTextAsync(masterAbsolutePath, Encoding.UTF8, cancellationToken);
+        master = master.Replace("{{Body}}", bodyContent, StringComparison.Ordinal);
+
+        var emailLang = layoutMeta.EmailLang ?? lang;
+        var isRtl = string.Equals(emailLang, "ar", StringComparison.OrdinalIgnoreCase);
+
+        master = master.Replace("{{email_lang}}", emailLang, StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_dir}}", isRtl ? "rtl" : "ltr", StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_rtl_class}}", isRtl ? "email-rtl" : string.Empty, StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_title}}", layoutMeta.EmailTitle ?? "Otelturizm", StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_preheader}}", layoutMeta.Preheader ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_header_tagline}}", layoutMeta.HeaderTagline ?? "OTELTURIZM", StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_header_title}}", layoutMeta.HeaderTitle ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_header_subtitle}}", layoutMeta.HeaderSubtitle ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_footer_line1}}", layoutMeta.FooterLine1 ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_footer_line2}}", layoutMeta.FooterLine2 ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_footer_legal}}", layoutMeta.FooterLegal ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        master = master.Replace("{{email_footer_year}}", DateTime.UtcNow.Year.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase);
+
+        return master;
+    }
+
+    private static bool TryParseEmailLayout(string templateContent, out EmailLayoutMeta meta, out string bodyContent)
+    {
+        meta = new EmailLayoutMeta();
+        bodyContent = templateContent;
+
+        if (string.IsNullOrWhiteSpace(templateContent)
+            || !templateContent.Contains("Layout: _EmailMaster", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var lines = templateContent.Replace("\r\n", "\n").Split('\n');
+        var bodyLines = new List<string>(lines.Length);
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("@*", StringComparison.Ordinal) && trimmed.EndsWith("*@", StringComparison.Ordinal))
+            {
+                var inner = trimmed[2..^2].Trim();
+                if (inner.StartsWith("Layout:", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var colonIndex = inner.IndexOf(':');
+                if (colonIndex > 0)
+                {
+                    var key = inner[..colonIndex].Trim();
+                    var value = inner[(colonIndex + 1)..].Trim();
+                    switch (key.ToLowerInvariant())
+                    {
+                        case "emailtitle":
+                            meta.EmailTitle = value;
+                            break;
+                        case "preheader":
+                            meta.Preheader = value;
+                            break;
+                        case "headertagline":
+                            meta.HeaderTagline = value;
+                            break;
+                        case "headertitle":
+                            meta.HeaderTitle = value;
+                            break;
+                        case "headersubtitle":
+                            meta.HeaderSubtitle = value;
+                            break;
+                        case "footerline1":
+                            meta.FooterLine1 = value;
+                            break;
+                        case "footerline2":
+                            meta.FooterLine2 = value;
+                            break;
+                        case "footerlegal":
+                            meta.FooterLegal = value;
+                            break;
+                        case "emaillang":
+                            meta.EmailLang = NormalizeLang(value);
+                            break;
+                    }
+                }
+
+                continue;
+            }
+
+            bodyLines.Add(line);
+        }
+
+        bodyContent = string.Join(Environment.NewLine, bodyLines).TrimStart();
+        return true;
+    }
+
+    private bool TryResolveTemplateAbsolutePath(string relativeViewPath, out string? absolutePath)
+    {
+        absolutePath = null;
+        var normalized = relativeViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
+        var candidate = Path.Combine(_environment.ContentRootPath, normalized);
+
+        var asciiViewPath = ToAsciiTurkish(relativeViewPath);
+        var asciiCandidate = !string.Equals(asciiViewPath, relativeViewPath, StringComparison.Ordinal)
+            ? Path.Combine(_environment.ContentRootPath, asciiViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar))
+            : candidate;
+
+        if (File.Exists(candidate))
+        {
+            absolutePath = candidate;
+            return true;
+        }
+
+        if (File.Exists(asciiCandidate))
+        {
+            absolutePath = asciiCandidate;
+            return true;
+        }
+
+        var compactViewPath = RemoveFileNameSpaces(relativeViewPath);
+        if (!string.Equals(compactViewPath, relativeViewPath, StringComparison.Ordinal))
+        {
+            var compactCandidate = Path.Combine(_environment.ContentRootPath, compactViewPath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar));
+            if (File.Exists(compactCandidate))
+            {
+                absolutePath = compactCandidate;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> BuildLocalizedFallbackPaths(string relativeViewPath, string lang)
+    {
+        var normalized = (relativeViewPath ?? string.Empty).Replace('\\', '/').Trim();
+        if (!normalized.StartsWith("Views/Email/", StringComparison.OrdinalIgnoreCase))
+        {
+            yield break;
+        }
+
+        var fileName = normalized;
+        foreach (var supported in SupportedLanguages)
+        {
+            var prefix = $"Views/Email/{supported}/";
+            if (fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                fileName = fileName[prefix.Length..];
+                break;
+            }
+        }
+
+        if (fileName.StartsWith("Views/Email/", StringComparison.OrdinalIgnoreCase))
+        {
+            fileName = fileName["Views/Email/".Length..];
+        }
+
+        var chain = new List<string> { lang, "en", "tr" };
+        foreach (var fallbackLang in chain.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            yield return $"Views/Email/{fallbackLang}/{fileName}";
+        }
+
+        yield return $"Views/Email/{fileName}";
+    }
+
+    private sealed class EmailLayoutMeta
+    {
+        public string? EmailTitle { get; set; }
+        public string? Preheader { get; set; }
+        public string? HeaderTagline { get; set; }
+        public string? HeaderTitle { get; set; }
+        public string? HeaderSubtitle { get; set; }
+        public string? FooterLine1 { get; set; }
+        public string? FooterLine2 { get; set; }
+        public string? FooterLegal { get; set; }
+        public string? EmailLang { get; set; }
     }
 
     private static string ToAsciiTurkish(string value)
@@ -133,10 +306,14 @@ public class EmailTemplateService : IEmailTemplateService
         }
 
         // If path already points to a locale subfolder, respect it.
-        if (normalized.Contains("/Views/Email/en/", StringComparison.OrdinalIgnoreCase)
-            || normalized.Contains("/Views/Email/tr/", StringComparison.OrdinalIgnoreCase))
+        foreach (var supported in SupportedLanguages)
         {
-            return normalized;
+            var segment = $"/Views/Email/{supported}/";
+            if (normalized.Contains(segment, StringComparison.OrdinalIgnoreCase)
+                || normalized.StartsWith($"Views/Email/{supported}/", StringComparison.OrdinalIgnoreCase))
+            {
+                return normalized;
+            }
         }
 
         // Only apply localization to Views/Email/*
@@ -159,14 +336,13 @@ public class EmailTemplateService : IEmailTemplateService
     private static string ResolveNeutralViewPath(string relativeViewPath)
     {
         var normalized = (relativeViewPath ?? string.Empty).Replace('\\', '/').Trim();
-        if (normalized.StartsWith("Views/Email/tr/", StringComparison.OrdinalIgnoreCase))
+        foreach (var supported in SupportedLanguages)
         {
-            return "Views/Email/" + normalized["Views/Email/tr/".Length..];
-        }
-
-        if (normalized.StartsWith("Views/Email/en/", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Views/Email/" + normalized["Views/Email/en/".Length..];
+            var prefix = $"Views/Email/{supported}/";
+            if (normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Views/Email/" + normalized[prefix.Length..];
+            }
         }
 
         return normalized;
@@ -177,6 +353,10 @@ public class EmailTemplateService : IEmailTemplateService
         // Highest priority: explicit token
         if (tokens is not null)
         {
+            if (tokens.TryGetValue("Language", out var language) && !string.IsNullOrWhiteSpace(language))
+            {
+                return NormalizeLang(language);
+            }
             if (tokens.TryGetValue("lang", out var lang) && !string.IsNullOrWhiteSpace(lang))
             {
                 return NormalizeLang(lang);
@@ -204,16 +384,19 @@ public class EmailTemplateService : IEmailTemplateService
 
         // Accept: en / en-US / EN_us / tr-TR ...
         var first = trimmed.Split('-', '_', ' ').FirstOrDefault() ?? trimmed;
-        return first.Equals("en", StringComparison.OrdinalIgnoreCase) ? "en" : "tr";
+        var normalized = first.ToLowerInvariant();
+        return SupportedLanguages.Contains(normalized, StringComparer.Ordinal) ? normalized : "tr";
     }
 
     private static string RenderFallbackTemplate(string relativeViewPath, IReadOnlyDictionary<string, string> tokens, string absolutePath)
     {
         var normalized = (relativeViewPath ?? string.Empty).Replace('\\', '/');
-        normalized = normalized.Replace("/Views/Email/en/", "/Views/Email/", StringComparison.OrdinalIgnoreCase)
-            .Replace("/Views/Email/tr/", "/Views/Email/", StringComparison.OrdinalIgnoreCase)
-            .Replace("Views/Email/en/", "Views/Email/", StringComparison.OrdinalIgnoreCase)
-            .Replace("Views/Email/tr/", "Views/Email/", StringComparison.OrdinalIgnoreCase);
+        foreach (var supported in SupportedLanguages)
+        {
+            normalized = normalized
+                .Replace($"/Views/Email/{supported}/", "/Views/Email/", StringComparison.OrdinalIgnoreCase)
+                .Replace($"Views/Email/{supported}/", "Views/Email/", StringComparison.OrdinalIgnoreCase);
+        }
 
         if (normalized.EndsWith("Views/Email/E-posta Adresini Onayla.cshtml", StringComparison.OrdinalIgnoreCase)
             || normalized.EndsWith("Views/Email/E-posta Adresini Onayla.cshtml".Replace("ş", "s"), StringComparison.OrdinalIgnoreCase))

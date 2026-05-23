@@ -212,13 +212,13 @@ public class WeatherService : IWeatherService
         var normalizedCity = NormalizeLocationText(city);
 
         const string sql = """
-            SELECT ic.ilce_adi, il.il_adi, ic.enlem, ic.boylam
-            FROM ilceler ic
-            INNER JOIN iller il ON il.id = ic.il_id
-            WHERE ic.aktif_mi = 1
-              AND il.aktif_mi = 1
-              AND ic.enlem IS NOT NULL
-              AND ic.boylam IS NOT NULL;
+            SELECT ic.[ILCE_ADI], il.[IL_ADI], ic.[ENLEM], ic.[BOYLAM]
+            FROM [dbo].[ILCELER] ic
+            INNER JOIN [dbo].[ILLER] il ON il.id = ic.[IL_ID]
+            WHERE ic.[AKTIF_MI] = 1
+              AND il.[AKTIF_MI] = 1
+              AND ic.[ENLEM] IS NOT NULL
+              AND ic.[BOYLAM] IS NOT NULL;
             """;
 
         await using var connection = new SqlConnection(connectionString);

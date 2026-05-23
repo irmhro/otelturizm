@@ -24,7 +24,7 @@ Bu dosya, projeyi baska bir bilgisayarda eksiksiz calistirmak icin gerekli tum p
 
 ## 3) Projedeki NuGet Paketleri
 
-`otelturizmnew.csproj` icerigine gore:
+`otelturizm.csproj` icerigine gore:
 
 - `MailKit` `4.15.1`
 - `Microsoft.Data.SqlClient` `7.0.0`

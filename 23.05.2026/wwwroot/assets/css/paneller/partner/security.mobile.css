@@ -1,0 +1,14 @@
+@media (max-width: 900px) {
+  .security-channel-grid {
+    gap: 10px;
+  }
+
+  .security-channel-card {
+    padding: 12px 12px;
+  }
+
+  .security-channel-copy strong {
+    font-size: 13.5px;
+  }
+}
+

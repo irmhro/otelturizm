@@ -65,6 +65,10 @@
 
                 <form class="auth-form" id="userLoginForm" method="post" asp-controller="Auth" asp-action="UserLogin">
                     @Html.AntiForgeryToken()
+                    @if (!string.IsNullOrWhiteSpace(ViewData["ReturnUrl"] as string))
+                    {
+                        <input type="hidden" name="ReturnUrl" value="@ViewData["ReturnUrl"]" />
+                    }
                     <div class="form-group">
                         <label for="loginEmail">E-posta Adresiniz</label>
                         <div class="input-wrap">

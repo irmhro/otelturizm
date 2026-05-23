@@ -1,0 +1,30 @@
+/* Demo ORK oteller — karışık platform tahsilat durumu (T415 seed, idempotent) */
+SET NOCOUNT ON;
+
+IF COL_LENGTH(N'dbo.KOMISYON_MUHASEBE_KAYITLARI', N'PLATFORM_TAHSILAT_DURUMU') IS NULL
+    RETURN;
+
+;WITH ranked AS (
+    SELECT
+        k.[ID],
+        ROW_NUMBER() OVER (PARTITION BY k.[OTEL_ID] ORDER BY k.[ID]) AS rn
+    FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] k
+    INNER JOIN [dbo].[OTELLER] o ON o.[ID] = k.[OTEL_ID]
+    WHERE o.[OTEL_KODU] LIKE N'ORK-%'
+      AND COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'') IN (N'', N'Bekliyor')
+)
+UPDATE k
+SET
+    k.[PLATFORM_TAHSILAT_DURUMU] = CASE
+        WHEN r.rn % 4 = 0 THEN N'TahsilEdildi'
+        WHEN r.rn % 4 = 1 THEN N'Kismi'
+        WHEN r.rn % 4 = 2 THEN N'Itiraz'
+        ELSE N'Bekliyor'
+    END,
+    k.[PLATFORM_TAHSILAT_TARIHI] = CASE WHEN r.rn % 4 = 0 THEN CAST(GETDATE() AS date) ELSE k.[PLATFORM_TAHSILAT_TARIHI] END,
+    k.[PLATFORM_TAHSILAT_REFERANSI] = CASE WHEN r.rn % 4 = 0 THEN N'DEMO-TAHSIL-ORK' ELSE k.[PLATFORM_TAHSILAT_REFERANSI] END,
+    k.[GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] k
+INNER JOIN ranked r ON r.[ID] = k.[ID];
+
+GO

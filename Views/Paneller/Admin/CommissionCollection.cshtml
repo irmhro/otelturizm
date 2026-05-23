@@ -1,0 +1,207 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminCommissionCollectionPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+    string Money(decimal value) => "₺" + value.ToString("N0", tr);
+    string Enc(string? value) => System.Net.WebUtility.UrlEncode(value ?? string.Empty);
+    var f = Model.Filter;
+
+    string SortUrl(string column)
+    {
+        var nextDir = string.Equals(f.SortBy, column, StringComparison.OrdinalIgnoreCase) && f.SortDir == "desc" ? "asc" : "desc";
+        return $"/admin/komisyon-tahsilat?donem={Enc(f.Donem)}&city={Enc(f.City)}&district={Enc(f.District)}&neighborhood={Enc(f.Neighborhood)}&ilceId={f.IlceId}&hotelId={f.HotelId}&partnerId={f.PartnerId}&tahsilatStatus={Enc(f.TahsilatStatus)}&paymentStatus={Enc(f.PaymentStatus)}&sortBy={column}&sortDir={nextDir}&page={f.Page}&pageSize={f.PageSize}";
+    }
+
+    string ExportUrl() =>
+        $"/admin/komisyon-tahsilat/export.csv?donem={Enc(f.Donem)}&city={Enc(f.City)}&district={Enc(f.District)}&neighborhood={Enc(f.Neighborhood)}&ilceId={f.IlceId}&hotelId={f.HotelId}&partnerId={f.PartnerId}&tahsilatStatus={Enc(f.TahsilatStatus)}&paymentStatus={Enc(f.PaymentStatus)}&sortBy={Enc(f.SortBy)}&sortDir={Enc(f.SortDir)}";
+
+    string PageUrl(int page) =>
+        $"/admin/komisyon-tahsilat?donem={Enc(f.Donem)}&city={Enc(f.City)}&district={Enc(f.District)}&neighborhood={Enc(f.Neighborhood)}&ilceId={f.IlceId}&hotelId={f.HotelId}&partnerId={f.PartnerId}&tahsilatStatus={Enc(f.TahsilatStatus)}&paymentStatus={Enc(f.PaymentStatus)}&sortBy={Enc(f.SortBy)}&sortDir={Enc(f.SortDir)}&page={page}&pageSize={f.PageSize}";
+
+    string TahsilClass(string status) => status switch
+    {
+        "TahsilEdildi" => "paid",
+        "Kismi" => "partial",
+        "Itiraz" => "dispute",
+        _ => "pending"
+    };
+}
+
+<section class="admin-commission-collection-page">
+    <div class="commission-collection-hero">
+        <div>
+            <p class="mini-caption">FİNANS · PLATFORM TAHSİLAT</p>
+            <h1>Komisyon tahsilat merkezi</h1>
+            <span>Otel ve dönem bazında platform komisyon tahsilatını filtreleyin, Excel indirin ve toplu tahsil işaretleyin.</span>
+        </div>
+        <div class="commission-collection-hero-actions">
+            <a class="btn btn-outline-secondary" href="/admin/komisyonlar"><i class="fas fa-percent"></i> Komisyon oranları</a>
+            <a class="btn btn-outline-primary" href="@ExportUrl()"><i class="fas fa-file-csv"></i> CSV indir</a>
+        </div>
+    </div>
+
+    <article class="admin-section-card">
+        <form method="get" action="/admin/komisyon-tahsilat" class="admin-form-grid commission-collection-filter-grid">
+            <label>
+                <span>Dönem (ay)</span>
+                <input type="month" name="donem" value="@f.Donem" />
+            </label>
+            <label><span>İl</span><input type="text" name="city" value="@f.City" placeholder="İstanbul" /></label>
+            <label><span>İlçe</span><input type="text" name="district" value="@f.District" placeholder="Kartal" /></label>
+            <label><span>Mahalle</span><input type="text" name="neighborhood" value="@f.Neighborhood" /></label>
+            <label><span>İlçe ID</span><input type="number" name="ilceId" value="@f.IlceId" /></label>
+            <label><span>Otel ID</span><input type="number" name="hotelId" value="@f.HotelId" /></label>
+            <label><span>Partner ID</span><input type="number" name="partnerId" value="@f.PartnerId" /></label>
+            <label>
+                <span>Tahsilat durumu</span>
+                <select name="tahsilatStatus">
+                    <option value="" selected="@(string.IsNullOrWhiteSpace(f.TahsilatStatus))">Tümü</option>
+                    <option value="Bekliyor" selected="@(f.TahsilatStatus == "Bekliyor")">Bekliyor</option>
+                    <option value="TahsilEdildi" selected="@(f.TahsilatStatus == "TahsilEdildi")">Tahsil edildi</option>
+                    <option value="Kismi" selected="@(f.TahsilatStatus == "Kismi")">Kısmi</option>
+                    <option value="Itiraz" selected="@(f.TahsilatStatus == "Itiraz")">İtiraz</option>
+                </select>
+            </label>
+            <label>
+                <span>Otele ödeme</span>
+                <select name="paymentStatus">
+                    <option value="" selected="@(string.IsNullOrWhiteSpace(f.PaymentStatus))">Tümü</option>
+                    <option value="Ödendi" selected="@(f.PaymentStatus == "Ödendi")">Ödendi</option>
+                    <option value="Ödenmedi" selected="@(f.PaymentStatus == "Ödenmedi")">Ödenmedi</option>
+                </select>
+            </label>
+            <label>
+                <span>Sayfa başı</span>
+                <select name="pageSize">
+                    @foreach (var size in new[] { 50, 100, 200, 500 })
+                    {
+                        <option value="@size" selected="@(f.PageSize == size)">@size</option>
+                    }
+                </select>
+            </label>
+            <input type="hidden" name="sortBy" value="@f.SortBy" />
+            <input type="hidden" name="sortDir" value="@f.SortDir" />
+            <div class="admin-form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrele</button>
+                <a class="btn btn-outline-secondary" href="/admin/komisyon-tahsilat">Sıfırla</a>
+            </div>
+        </form>
+    </article>
+
+    <form method="post" action="/admin/komisyon-tahsilat/tahsil" id="commission-collection-bulk-form">
+        @Html.AntiForgeryToken()
+        <article class="admin-section-card">
+            <div class="admin-section-head">
+                <div>
+                    <p class="mini-caption">OTEL · DÖNEM ÖZET</p>
+                    <h2>Tahsilat defteri</h2>
+                    <span>@Model.Total.ToString("N0", tr) kayıt · sayfa @f.Page / @(Math.Max(1, Model.TotalPages))</span>
+                </div>
+                <button type="submit" class="btn btn-success"><i class="fas fa-check-double"></i> Seçilenleri tahsil edildi işaretle</button>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table commission-collection-table" data-table-cards>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select-all-rows" aria-label="Tümünü seç" /></th>
+                            <th><a href="@SortUrl("donem")">Dönem</a></th>
+                            <th><a href="@SortUrl("hotel")">Otel</a></th>
+                            <th><a href="@SortUrl("district")">Konum</a></th>
+                            <th><a href="@SortUrl("rez")">Rez.</a></th>
+                            <th><a href="@SortUrl("commission")">Komisyon</a></th>
+                            <th><a href="@SortUrl("collected")">Tahsil</a></th>
+                            <th><a href="@SortUrl("pending")">Bekleyen</a></th>
+                            <th>Tahsilat</th>
+                            <th>Otele ödeme</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr><td colspan="10">Seçili filtre için kayıt bulunamadı.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var row in Model.Rows)
+                        {
+                            <tr>
+                                <td data-label="Seç">
+                                    <input type="checkbox" class="row-select" name="HotelIds" value="@row.HotelId" data-donem="@row.Donem" />
+                                </td>
+                                <td data-label="Dönem"><strong>@row.Donem</strong></td>
+                                <td data-label="Otel">
+                                    <strong>@row.HotelName</strong>
+                                    <div class="muted-line">@row.HotelCode · #@row.HotelId</div>
+                                </td>
+                                <td data-label="Konum">@row.City / @row.District<div class="muted-line">@row.Neighborhood</div></td>
+                                <td data-label="Rezervasyon">@row.ReservationCount.ToString("N0", tr)</td>
+                                <td data-label="Komisyon"><strong>@Money(row.GrossCommission)</strong></td>
+                                <td data-label="Tahsil">@Money(row.CollectedAmount)</td>
+                                <td data-label="Bekleyen">@Money(row.PendingAmount)</td>
+                                <td data-label="Tahsilat"><span class="tahsil-status @TahsilClass(row.TahsilatStatus)">@row.TahsilatStatus</span></td>
+                                <td data-label="Otele ödeme">@row.PaymentStatusSummary</td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                    <tfoot>
+                        <tr class="commission-collection-totals">
+                            <td colspan="4"><strong>Seçili filtre toplamı</strong></td>
+                            <td>@Model.Totals.ReservationTotal.ToString("N0", tr)</td>
+                            <td><strong>@Money(Model.Totals.TotalCommission)</strong></td>
+                            <td>@Money(Model.Totals.CollectedTotal)</td>
+                            <td>@Money(Model.Totals.PendingTotal)</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="commission-collection-pagination" aria-label="Sayfalama">
+                    @if (f.Page > 1)
+                    {
+                        <a class="btn btn-outline-secondary btn-sm" href="@PageUrl(f.Page - 1)">Önceki</a>
+                    }
+                    <span class="text-muted small">Sayfa @f.Page / @Model.TotalPages</span>
+                    @if (f.Page < Model.TotalPages)
+                    {
+                        <a class="btn btn-outline-secondary btn-sm" href="@PageUrl(f.Page + 1)">Sonraki</a>
+                    }
+                </nav>
+            }
+        </article>
+    </form>
+</section>
+
+@section Scripts {
+<script nonce="@(Context.Items["CspNonce"])">
+(() => {
+    const form = document.getElementById('commission-collection-bulk-form');
+    const selectAll = document.getElementById('select-all-rows');
+    if (!form || !selectAll) return;
+
+    selectAll.addEventListener('change', () => {
+        form.querySelectorAll('.row-select').forEach(cb => { cb.checked = selectAll.checked; });
+    });
+
+    form.addEventListener('submit', (e) => {
+        form.querySelectorAll('input[name="Donems"]').forEach(el => el.remove());
+        const checked = [...form.querySelectorAll('.row-select:checked')];
+        if (checked.length === 0) {
+            e.preventDefault();
+            alert('Lütfen en az bir satır seçin.');
+            return;
+        }
+        checked.forEach(cb => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'Donems';
+            hidden.value = cb.getAttribute('data-donem') || '';
+            form.appendChild(hidden);
+        });
+    });
+})();
+</script>
+}

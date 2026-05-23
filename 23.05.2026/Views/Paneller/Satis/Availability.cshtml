@@ -1,0 +1,114 @@
+@model otelturizmnew.Models.Paneller.Satis.SalesAvailabilityPageViewModel
+@{
+    Layout = "~/Views/Paneller/Satis/_SalesPanelLayout.cshtml";
+    ViewData["SalesShell"] = Model.Shell;
+}
+<section class="sales-panel-card sales-availability-hero">
+    <div class="sales-card-head sales-card-head-stack">
+        <div>
+            <h2>Telefon Görüşmesi İçin Hızlı Müsaitlik</h2>
+            <span>Otel adı, ilçe veya bölge ile bulun; oda seçip aylık fiyatı hemen açın.</span>
+        </div>
+        <div class="sales-inline-badges">
+            <span class="sales-soft-pill"><i class="fas fa-hotel"></i> @Model.SelectedHotelLabel</span>
+            <span class="sales-soft-pill"><i class="fas fa-bed"></i> @Model.SelectedRoomLabel</span>
+            <span class="sales-soft-pill"><i class="fas fa-calendar"></i> @Model.SelectedMonth.ToString("MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))</span>
+        </div>
+    </div>
+
+    <form method="get" class="sales-form-grid compact-grid sales-availability-filter">
+        <div class="span-2">
+            <label>Otel adı, ilçe veya bölge</label>
+            <input type="text" name="search" value="@Model.Search" placeholder="Örn: Tuzla, Pendik Marina, Hill Suites" />
+        </div>
+        <div>
+            <label>Otel</label>
+            <select name="hotelId">
+                <option value="">Otel seçin</option>
+                @foreach (var hotel in Model.Hotels)
+                {
+                    <option value="@hotel.Value" selected="@(hotel.Value == Model.SelectedHotelId)">@hotel.Label</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label>Oda tipi</label>
+            <select name="roomTypeId">
+                <option value="">Oda seçin</option>
+                @foreach (var room in Model.RoomTypes)
+                {
+                    <option value="@room.Value" selected="@(room.Value == Model.SelectedRoomTypeId)">@room.Label</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label>Yıl</label>
+            <input type="number" name="year" value="@Model.SelectedMonth.Year" min="2024" max="2035" />
+        </div>
+        <div>
+            <label>Ay</label>
+            <input type="number" name="month" value="@Model.SelectedMonth.Month" min="1" max="12" />
+        </div>
+        <div class="sales-filter-actions">
+            <button type="submit">Takvimi Getir</button>
+        </div>
+    </form>
+</section>
+
+<section class="sales-grid cols-2 sales-availability-summary-grid">
+    <article class="sales-panel-card sales-summary-mini">
+        <span class="sales-mini-label">Seçili otel</span>
+        <strong>@Model.SelectedHotelLabel</strong>
+        <p>Operatörler arama kutusuna otelin tamamını yazmak zorunda kalmadan bölge ile filtreleyebilir.</p>
+    </article>
+    <article class="sales-panel-card sales-summary-mini">
+        <span class="sales-mini-label">Seçili oda tipi</span>
+        <strong>@Model.SelectedRoomLabel</strong>
+        <p>Aylık görünümde normal fiyat, kampanyalı fiyat ve stok aynı kartta görünür.</p>
+    </article>
+</section>
+
+<section class="sales-panel-card">
+    <div class="sales-calendar-toolbar">
+        <a class="sales-month-nav" href="/panel/satis/musaitlik-takvimi?@Model.PreviousMonthQuery"><i class="fas fa-chevron-left"></i> Önceki Ay</a>
+        <div>
+            <strong>@Model.SelectedMonth.ToString("MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))</strong>
+            <p>Satış danışmanı seçili odanın tüm ayını hızlıca okuyabilir.</p>
+        </div>
+        <a class="sales-month-nav" href="/panel/satis/musaitlik-takvimi?@Model.NextMonthQuery">Sonraki Ay <i class="fas fa-chevron-right"></i></a>
+    </div>
+
+    @if (Model.SelectedHotelId is null || Model.SelectedRoomTypeId is null || !Model.Days.Any())
+    {
+        <div class="sales-empty-state">
+            <i class="fas fa-calendar-xmark"></i>
+            <strong>Takvim için önce otel ve oda tipi seçin</strong>
+            <p>Arama kutusuna otel adı, ilçe veya bölge yazıp sonuç listesinden seçim yapın.</p>
+        </div>
+    }
+    else
+    {
+        <div class="sales-calendar-grid">
+            @foreach (var day in Model.Days)
+            {
+                <article class="sales-calendar-day @(day.IsAvailable ? "available" : "unavailable")">
+                    <div class="sales-calendar-day-top">
+                        <strong>@day.Date.Day</strong>
+                        <small>@day.Date.ToString("ddd", new System.Globalization.CultureInfo("tr-TR"))</small>
+                    </div>
+                    <div class="sales-calendar-prices">
+                        <span>@day.PriceText</span>
+                        @if (!string.IsNullOrWhiteSpace(day.CampaignPriceText))
+                        {
+                            <small>@day.CampaignPriceText kampanya</small>
+                        }
+                    </div>
+                    <div class="sales-calendar-meta">
+                        <small>@day.StockText</small>
+                        <small>@day.SoldOutText</small>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

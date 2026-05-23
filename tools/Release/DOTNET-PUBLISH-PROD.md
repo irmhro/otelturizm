@@ -20,7 +20,7 @@
 ### Komut örnekleri
 
 ```powershell
-dotnet publish .\otelturizmnew.csproj -c Release /p:PublishProfile=FolderProfile-Release-Prod
+dotnet publish .\otelturizm.csproj -c Release /p:PublishProfile=FolderProfile-Release-Prod
 ```
 
 Web Deploy kullanıyorsanız şifreyi CLI’dan verin (repoya yazmayın):

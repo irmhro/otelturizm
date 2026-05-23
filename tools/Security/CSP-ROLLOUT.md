@@ -17,6 +17,7 @@ Varsayılan olarak CSP raporu aktiftir:
 
 1. **Report-Only gözlem**: `Security:CspEnforce=false` iken prod loglarında `CSP_REPORT` kayıtlarını izle.
 2. **Nonce coverage doğrula**: `tools/Security/Inventory-InlineScripts.ps1` ile `Nonce=False` kalmadığından emin ol.
-3. **Enforce aç**: `Security:CspEnforce=true` yap, ilk etapta kısa süre izle.
-4. **Kaynak kısıtlarını sıkılaştır**: İhtiyaç oldukça `script-src` / `connect-src` allowlist daralt (örn. sadece kullanılan CDN).
+3. **Enforce aç**: `Security:CspEnforce=true` (veya prod ortam değişkeni `OTELTURIZM_CSP_ENFORCE=true`) yap, ilk etapta kısa süre izle.
+4. **Prod config**: `appsettings.Production.json` → `Security:CspEnforce` (varsayılan `false`; rapor temizlendikten sonra `true`).
+5. **Kaynak kısıtlarını sıkılaştır**: İhtiyaç oldukça `script-src` / `connect-src` allowlist daralt (örn. sadece kullanılan CDN).
 

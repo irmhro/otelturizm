@@ -1,0 +1,735 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@inject otelturizmnew.Services.Abstractions.IPublicTextService T
+@{
+    var homeAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
+    var homeAuthenticated = User.Identity?.IsAuthenticated == true;
+    var headerContext = (ViewData["HeaderContext"] as string ?? "home").ToLowerInvariant();
+    var nonce = Context.Items["CspNonce"] as string;
+    var homePanelUrl = homeAccountType.ToLowerInvariant() switch
+    {
+        "partner" => "/panel/partner",
+        "firma" => "/panel/firma",
+        "admin" => "/admin/dashboard",
+        "developer" => "/panel/developer",
+        "sales" => "/panel/satis",
+        _ => "/panel/user"
+    };
+    var homePanelLabel = homeAccountType.ToLowerInvariant() switch
+    {
+        "partner" => "Partner Paneli",
+        "firma" => "Firma Paneli",
+        "admin" => "Admin Paneli",
+        "developer" => "Developer Paneli",
+        "sales" => "Satış Paneli",
+        _ => "Hesabım"
+    };
+    var currentCulture = System.Globalization.CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
+    var currentLang = (System.Globalization.CultureInfo.CurrentUICulture?.TwoLetterISOLanguageName ?? "tr").ToLowerInvariant();
+    var currentFlag = currentLang switch { "en" => "gb", "fr" => "fr", "de" => "de", "es" => "es", "ru" => "ru", "ar" => "sa", _ => "tr" };
+    var currentCurrency = (Context.Request.Cookies["ot_currency"] ?? "TRY").Trim().ToUpperInvariant();
+}
+
+<header class="site-header" id="mainHeader">
+    <div class="top-utility-bar">
+        <div class="utility-container">
+            <div class="utility-left">
+                <span><i class="fas fa-shield-alt"></i> @T.Get("safe_payment")</span>
+                <span>
+                    <i class="fas fa-headset"></i>
+                    @T.Get("support_24_7")
+                    <span class="support-contact">
+                        <i class="fas fa-envelope"></i>
+                        <a href="mailto:destek@otelturizm.com">destek@otelturizm.com</a>
+                    </span>
+                </span>
+                <span><i class="fas fa-tag"></i> @T.Get("best_price")</span>
+            </div>
+            <div class="utility-right">
+                <div class="dropdown language-dropdown" id="languageDropdown">
+                    <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+                        <span class="toggle-flag flag-icon flag-icon-@currentFlag" aria-hidden="true"></span>
+                        <span class="dropdown-label">@currentLang.ToUpperInvariant()</span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li class="dropdown-item" data-value="tr"><button type="button"><span class="flag-icon flag-icon-tr"></span> Türkçe</button></li>
+                        <li class="dropdown-item" data-value="en"><button type="button"><span class="flag-icon flag-icon-gb"></span> English</button></li>
+                        <li class="dropdown-item" data-value="fr"><button type="button"><span class="flag-icon flag-icon-fr"></span> Français</button></li>
+                        <li class="dropdown-item" data-value="de"><button type="button"><span class="flag-icon flag-icon-de"></span> Deutsch</button></li>
+                        <li class="dropdown-item" data-value="es"><button type="button"><span class="flag-icon flag-icon-es"></span> Español</button></li>
+                        <li class="dropdown-item" data-value="ru"><button type="button"><span class="flag-icon flag-icon-ru"></span> Русский</button></li>
+                        <li class="dropdown-item" data-value="ar"><button type="button"><span class="flag-icon flag-icon-sa"></span> العربية</button></li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="header-container">
+        <div class="logo-area">
+            <a asp-controller="Home" asp-action="Index" class="logo logo-image-only" aria-label="Otelturizm Anasayfa">
+                <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="brand-logo-image" />
+                <span class="brand-beta" aria-label="Beta">beta</span>
+            </a>
+
+            <nav class="desktop-nav"><!-- desktop nav removed; primary link moved to header actions -->
+            </nav>
+        </div>
+
+        <div class="search-wrapper">
+            <form class="search-container public-header-search-form" method="get" action="/oteller" autocomplete="off">
+                <input type="text" class="search-input" id="publicHeaderSearchInput" name="q" placeholder="@T.Get("search_placeholder")">
+                <input type="hidden" id="publicHeaderSelectedType" value="" />
+                <input type="hidden" id="publicHeaderSelectedSlug" value="" />
+                <button type="submit" class="search-btn header-search-btn" aria-label="Ara">
+                    <i class="fas fa-search"></i>
+                </button>
+                <div class="header-search-suggestions" id="publicHeaderSearchSuggestions" hidden></div>
+            </form>
+        </div>
+
+        <div class="header-actions">
+            @if (homeAuthenticated && headerContext == "corporate")
+            {
+                <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+                <a href="/firma" class="action-btn primary">Firma</a>
+            }
+            else if (homeAuthenticated && headerContext == "firma")
+            {
+                <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+                <a href="/firma" class="action-btn primary">Firma</a>
+            }
+            else if (homeAuthenticated)
+            {
+                <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
+                <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">Kurumsal</a>
+            }
+            <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
+            <button class="action-btn mobile-nav-toggle" id="mobileMenuToggle" type="button"><i class="fas fa-bars"></i></button>
+        </div>
+    </div>
+
+    @if (headerContext == "home")
+    {
+        <div class="home-header-quick-links" aria-label="Öne çıkan bağlantılar">
+            <div class="quick-links-container">
+            <div class="quick-links-pills" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+                <a href="/oteller?etiket=ay-sonu-ozel" class="quick-link-pill hot-pill">
+                    <i class="fas fa-bolt"></i>
+                    <span class="rose-gradient-text">Ay Sonu Özel</span>
+                </a>
+                <a href="/oteller?etiket=flash-indirim" class="quick-link-pill">
+                    <i class="fas fa-tag"></i>
+                    <span>Flash İndirim</span>
+                </a>
+                <a href="/oteller?etiket=hafta-sonu-firsatlari" class="quick-link-pill">
+                    <i class="fas fa-calendar-week"></i>
+                    <span>Hafta Sonu Fırsatları</span>
+                </a>
+                <a href="/oteller?etiket=erken-rezervasyon" class="quick-link-pill">
+                    <i class="fas fa-clock"></i>
+                    <span>Erken Rezervasyon</span>
+                </a>
+                <a href="/oteller?etiket=akilli-fiyat" class="quick-link-pill">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                    <span>Akıllı Fiyat</span>
+                </a>
+                <a href="mailto:destek@otelturizm.com" class="quick-link-pill subtle-pill">
+                    <i class="fas fa-headset"></i>
+                    <span>Rezervasyon Desteği</span>
+                </a>
+            </div>
+        </div>
+        </div>
+    }
+</header>
+
+<div id="google_translate_element" class="google-translate-hidden" aria-hidden="true"></div>
+
+<script nonce="@nonce">
+    (function(){
+        function ensureFlagIconStylesheet() {
+            const hasFlagCss = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(function (link) {
+                const href = String(link.getAttribute('href') || '').toLowerCase();
+                return href.indexOf('flag-icon.min.css') > -1 || href.indexOf('flag-icons') > -1;
+            });
+            if (hasFlagCss) {
+                return;
+            }
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = '/assets/vendor/flag-icons/css/flag-icon.min.css';
+            document.head.appendChild(link);
+        }
+
+        ensureFlagIconStylesheet();
+
+        const languageStorageKey = 'site:language:v1';
+        const legacyLanguageStorageKey = 'site:language';
+        const languageSessionKey = 'site:language:session:v1';
+        const languageCookieKey = 'site_language_v1';
+        const languageExplicitKey = 'site:language:explicit:v1';
+        const languageExplicitCookieKey = 'site_language_explicit_v1';
+        const defaultLanguage = 'tr';
+        const supportedLanguages = ['tr', 'en', 'fr', 'de', 'es', 'ru', 'ar'];
+        const languageToFlagCode = { tr: 'tr', en: 'gb', fr: 'fr', de: 'de', es: 'es', ru: 'ru', ar: 'sa' };
+        let pendingTranslateLanguage = null;
+
+        function normalizeLanguage(value) {
+            const lang = (value || defaultLanguage).toLowerCase();
+            return supportedLanguages.includes(lang) ? lang : defaultLanguage;
+        }
+
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires.toUTCString() + '; path=/; SameSite=Lax';
+        }
+
+        function getCookie(name) {
+            const search = name + '=';
+            const parts = document.cookie.split(';');
+            for (let i = 0; i < parts.length; i += 1) {
+                const item = parts[i].trim();
+                if (item.indexOf(search) === 0) {
+                    return decodeURIComponent(item.substring(search.length));
+                }
+            }
+            return '';
+        }
+
+        function persistLanguagePreference(lang) {
+            const normalized = normalizeLanguage(lang);
+            localStorage.setItem(languageStorageKey, normalized);
+            sessionStorage.setItem(languageSessionKey, normalized);
+            setCookie(languageCookieKey, normalized, 365);
+            return normalized;
+        }
+
+        function setExplicitSelection(enabled) {
+            const value = enabled ? '1' : '0';
+            localStorage.setItem(languageExplicitKey, value);
+            sessionStorage.setItem(languageExplicitKey, value);
+            setCookie(languageExplicitCookieKey, value, 365);
+        }
+
+        function hasExplicitSelection() {
+            const localValue = localStorage.getItem(languageExplicitKey);
+            const sessionValue = sessionStorage.getItem(languageExplicitKey);
+            const cookieValue = getCookie(languageExplicitCookieKey);
+            return localValue === '1' || sessionValue === '1' || cookieValue === '1';
+        }
+
+        function getPreferredLanguage() {
+            const fromLocal = localStorage.getItem(languageStorageKey);
+            const fromLegacy = localStorage.getItem(legacyLanguageStorageKey);
+            const fromSession = sessionStorage.getItem(languageSessionKey);
+            const fromCookie = getCookie(languageCookieKey);
+            const resolved = normalizeLanguage(fromLocal || fromSession || fromCookie || fromLegacy || defaultLanguage);
+            return hasExplicitSelection() ? resolved : defaultLanguage;
+        }
+
+        function setGoogleTranslateCookie(lang) {
+            const normalized = normalizeLanguage(lang);
+            const cookieValue = '/tr/' + normalized;
+            const expires = new Date();
+            expires.setFullYear(expires.getFullYear() + 1);
+            const expiresText = expires.toUTCString();
+            const baseCookie = 'googtrans=' + encodeURIComponent(cookieValue) + '; expires=' + expiresText + '; path=/; SameSite=Lax';
+            document.cookie = baseCookie;
+
+            const host = window.location.hostname;
+            if (host) {
+                document.cookie = baseCookie + '; domain=' + host;
+                if (!host.startsWith('.')) {
+                    document.cookie = baseCookie + '; domain=.' + host;
+                }
+            }
+        }
+
+        function clearGoogleTranslateCookie() {
+            const host = window.location.hostname;
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+            if (host) {
+                document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=' + host;
+                if (!host.startsWith('.')) {
+                    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.' + host;
+                }
+            }
+        }
+
+        function clearGoogleTranslateHashIfNeeded(lang) {
+            if (normalizeLanguage(lang) !== defaultLanguage) {
+                return;
+            }
+            if (window.location.hash && window.location.hash.indexOf('googtrans') > -1) {
+                history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            }
+        }
+
+        function applyGoogleTranslation(lang) {
+            const normalized = normalizeLanguage(lang);
+            setGoogleTranslateCookie(normalized);
+
+            const combo = document.querySelector('.goog-te-combo');
+            if (!combo) {
+                return false;
+            }
+
+            if (combo.value !== normalized) {
+                combo.value = normalized;
+                combo.dispatchEvent(new Event('change'));
+            }
+
+            pendingTranslateLanguage = null;
+
+            return true;
+        }
+
+        function ensureGoogleTranslateScript() {
+            if (window.google && window.google.translate && window.google.translate.TranslateElement) {
+                return;
+            }
+
+            if (document.getElementById('googleTranslateScript')) {
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.id = 'googleTranslateScript';
+            script.src = 'https://translate.google.com/translate_a/element.js?cb=otelturizmGoogleTranslateInit';
+            script.async = true;
+            document.head.appendChild(script);
+        }
+
+        function syncLanguageUi(lang) {
+            const normalized = normalizeLanguage(lang);
+            const desktopRoot = document.getElementById('languageDropdown');
+            if (desktopRoot) {
+                const toggle = desktopRoot.querySelector('.dropdown-toggle');
+                const label = desktopRoot.querySelector('.dropdown-label');
+                const flag = desktopRoot.querySelector('.toggle-flag');
+                if (label) {
+                    label.textContent = normalized.toUpperCase();
+                }
+                if (flag) {
+                    const code = languageToFlagCode[normalized] || 'tr';
+                    flag.className = 'toggle-flag flag-icon flag-icon-' + code;
+                }
+                if (toggle) {
+                    toggle.setAttribute('data-language-id', normalized);
+                }
+            }
+
+            document.querySelectorAll('[data-mobile-language-value]').forEach(function (button) {
+                const isActive = normalizeLanguage(button.getAttribute('data-mobile-language-value')) === normalized;
+                button.classList.toggle('active', isActive);
+                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+        }
+
+        function scheduleTranslationApply(lang, attempt) {
+            if (!pendingTranslateLanguage) {
+                return;
+            }
+            const currentAttempt = attempt || 0;
+            if (applyGoogleTranslation(lang)) {
+                return;
+            }
+            if (currentAttempt >= 12) {
+                return;
+            }
+            ensureGoogleTranslateScript();
+            window.setTimeout(function () {
+                scheduleTranslationApply(lang, currentAttempt + 1);
+            }, 250);
+        }
+
+        function requestTranslation(lang) {
+            pendingTranslateLanguage = normalizeLanguage(lang);
+            ensureGoogleTranslateScript();
+            window.setTimeout(function () {
+                scheduleTranslationApply(pendingTranslateLanguage, 0);
+            }, 80);
+        }
+
+        function setLanguage(lang, applyNow, isExplicitChange) {
+            const normalized = persistLanguagePreference(lang);
+            if (isExplicitChange) {
+                setExplicitSelection(true);
+            }
+            syncLanguageUi(normalized);
+            document.documentElement.lang = normalized;
+            clearGoogleTranslateHashIfNeeded(normalized);
+
+            if (applyNow !== false) {
+                if (hasExplicitSelection()) {
+                    if (normalized === defaultLanguage) {
+                        setGoogleTranslateCookie(defaultLanguage);
+                    }
+                    requestTranslation(normalized);
+                } else {
+                    clearGoogleTranslateCookie();
+                }
+            }
+
+            return normalized;
+        }
+
+        window.otelturizmGoogleTranslateInit = function () {
+            if (!(window.google && window.google.translate && window.google.translate.TranslateElement)) {
+                return;
+            }
+
+            const container = document.getElementById('google_translate_element');
+            if (!container || container.childElementCount > 0) {
+                if (pendingTranslateLanguage) {
+                    scheduleTranslationApply(pendingTranslateLanguage, 0);
+                }
+                return;
+            }
+
+            new window.google.translate.TranslateElement(
+                {
+                    pageLanguage: 'tr',
+                    includedLanguages: supportedLanguages.join(','),
+                    autoDisplay: false
+                },
+                'google_translate_element'
+            );
+
+            if (pendingTranslateLanguage) {
+                window.setTimeout(function () {
+                    scheduleTranslationApply(pendingTranslateLanguage, 0);
+                }, 150);
+            }
+        };
+
+        // Apply preference as early as possible on every page.
+        const startupLanguage = persistLanguagePreference(getPreferredLanguage());
+        if (hasExplicitSelection()) {
+            setGoogleTranslateCookie(startupLanguage);
+        } else {
+            clearGoogleTranslateCookie();
+        }
+        document.documentElement.lang = startupLanguage;
+        clearGoogleTranslateHashIfNeeded(startupLanguage);
+
+        function setupDropdown(id, storageKey){
+            const root = document.getElementById(id);
+            if(!root) return;
+            const btn = root.querySelector('.dropdown-toggle');
+            const menu = root.querySelector('.dropdown-menu');
+            const label = btn.querySelector('.dropdown-label');
+
+            // restore from localStorage
+            const saved = getPreferredLanguage();
+            if(saved){
+                // find matching item label
+                const item = menu.querySelector(`.dropdown-item[data-value="${saved}"]`);
+                if(item) {
+                    label.textContent = saved.toUpperCase();
+                    if(id === 'languageDropdown'){
+                        const code = languageToFlagCode[normalizeLanguage(saved)] || 'tr';
+                        const toggleFlag = btn.querySelector('.toggle-flag');
+                        if(toggleFlag){
+                            toggleFlag.className = 'toggle-flag flag-icon flag-icon-' + code;
+                        }
+                    }
+                }
+            }
+
+            btn.addEventListener('click', function(e){
+                e.stopPropagation();
+                const isOpen = root.classList.toggle('open');
+                btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+
+            menu.querySelectorAll('.dropdown-item').forEach(function(item){
+                item.addEventListener('click', function(ev){
+                    ev.stopPropagation();
+                    const value = item.getAttribute('data-value');
+                    label.textContent = normalizeLanguage(value).toUpperCase();
+                    localStorage.setItem(storageKey, normalizeLanguage(value));
+
+                    // update toggle icon for language or currency
+                    if(id === 'languageDropdown'){
+                        const code = languageToFlagCode[normalizeLanguage(value)] || 'tr';
+                        const toggleFlag = btn.querySelector('.toggle-flag');
+                        if(toggleFlag){
+                            toggleFlag.className = 'toggle-flag flag-icon flag-icon-' + code;
+                        }
+                        setLanguage(value, true, true);
+                    }
+                    if(id === 'currencyDropdown'){
+                        // update currency badge on toggle
+                        const toggleBadge = btn.querySelector('.currency-badge');
+                        if(toggleBadge){
+                            toggleBadge.className = 'currency-badge ' + (value === 'TRY' ? 'try' : value === 'EUR' ? 'eur' : 'usd');
+                            toggleBadge.textContent = value === 'TRY' ? '₺' : value === 'EUR' ? '€' : '$';
+                        }
+                    }
+
+                    root.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                    // optional: dispatch event for other scripts
+                    window.dispatchEvent(new CustomEvent(storageKey + ':changed', { detail: { value } }));
+                });
+            });
+
+            // close on outside click
+            document.addEventListener('click', function(){
+                if(root.classList.contains('open')){
+                    root.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+
+        function setupMobileLanguageSelector() {
+            const buttons = document.querySelectorAll('[data-mobile-language-value]');
+            if (!buttons.length) {
+                return;
+            }
+
+            buttons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const selected = button.getAttribute('data-mobile-language-value') || defaultLanguage;
+                    setLanguage(selected, true, true);
+                    const close = document.getElementById('drawerClose');
+                    if (close) {
+                        close.click();
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function(){
+            setupDropdown('languageDropdown', languageStorageKey);
+            setupMobileLanguageSelector();
+            const preferredLanguage = persistLanguagePreference(getPreferredLanguage());
+            syncLanguageUi(preferredLanguage);
+            if (hasExplicitSelection()) {
+                setGoogleTranslateCookie(preferredLanguage);
+            } else {
+                clearGoogleTranslateCookie();
+            }
+            clearGoogleTranslateHashIfNeeded(preferredLanguage);
+            if (hasExplicitSelection()) {
+                if (preferredLanguage !== defaultLanguage) {
+                    requestTranslation(preferredLanguage);
+                }
+            }
+
+            const searchForm = document.querySelector('.public-header-search-form');
+            const searchInput = document.getElementById('publicHeaderSearchInput');
+            const searchSuggestions = document.getElementById('publicHeaderSearchSuggestions');
+            const selectedTypeInput = document.getElementById('publicHeaderSelectedType');
+            const selectedSlugInput = document.getElementById('publicHeaderSelectedSlug');
+            let suggestionTimer = null;
+
+            function hideHeaderSuggestions() {
+                if (!searchSuggestions) {
+                    return;
+                }
+
+                searchSuggestions.hidden = true;
+                searchSuggestions.innerHTML = '';
+            }
+
+            function renderHeaderSuggestions(items) {
+                if (!searchSuggestions) {
+                    return;
+                }
+
+                if (!items || !items.length) {
+                    hideHeaderSuggestions();
+                    return;
+                }
+
+                searchSuggestions.innerHTML = items.map(function (item) {
+                    return '<button type="button" class="header-search-suggestion" data-value="' + item.value.replace(/"/g, '&quot;') + '" data-type="' + (item.type || '').replace(/"/g, '&quot;') + '" data-slug="' + (item.slug || '').replace(/"/g, '&quot;') + '">' +
+                        '<span>' + item.label + '</span>' +
+                        '<small>' + item.type + '</small>' +
+                        '</button>';
+                }).join('');
+                searchSuggestions.hidden = false;
+            }
+
+            async function loadHeaderSuggestions() {
+                if (!searchInput) {
+                    return;
+                }
+
+                const currentValue = searchInput.value.trim();
+                if (currentValue.length < 2) {
+                    hideHeaderSuggestions();
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/oteller/arama-onerileri?q=' + encodeURIComponent(currentValue), {
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (!response.ok) {
+                        hideHeaderSuggestions();
+                        return;
+                    }
+
+                    const items = await response.json();
+                    renderHeaderSuggestions(items);
+                } catch (_error) {
+                    hideHeaderSuggestions();
+                }
+            }
+
+            searchInput?.addEventListener('input', function () {
+                if (selectedTypeInput) {
+                    selectedTypeInput.value = '';
+                }
+                if (selectedSlugInput) {
+                    selectedSlugInput.value = '';
+                }
+                window.clearTimeout(suggestionTimer);
+                suggestionTimer = window.setTimeout(loadHeaderSuggestions, 180);
+            });
+
+            searchInput?.addEventListener('focus', function () {
+                if ((searchInput.value || '').trim().length >= 2) {
+                    loadHeaderSuggestions();
+                }
+            });
+
+            searchSuggestions?.addEventListener('click', function (event) {
+                const button = event.target.closest('.header-search-suggestion[data-value]');
+                if (!button || !searchInput) {
+                    return;
+                }
+
+                searchInput.value = button.dataset.value || '';
+                if (selectedTypeInput) {
+                    selectedTypeInput.value = button.dataset.type || '';
+                }
+                if (selectedSlugInput) {
+                    selectedSlugInput.value = button.dataset.slug || '';
+                }
+                hideHeaderSuggestions();
+                if ((button.dataset.type || '').toLowerCase() === 'otel' && (button.dataset.slug || '').trim().length > 0) {
+                    window.location.href = '/oteller/' + encodeURIComponent(button.dataset.slug || '');
+                    return;
+                }
+                searchForm?.requestSubmit();
+            });
+
+            searchForm?.addEventListener('submit', function (event) {
+                const selectedType = (selectedTypeInput?.value || '').trim().toLowerCase();
+                const selectedSlug = (selectedSlugInput?.value || '').trim();
+                if (selectedType === 'otel' && selectedSlug.length > 0) {
+                    event.preventDefault();
+                    window.location.href = '/oteller/' + encodeURIComponent(selectedSlug);
+                }
+            });
+
+            document.addEventListener('click', function (event) {
+                if (searchForm && !searchForm.contains(event.target)) {
+                    hideHeaderSuggestions();
+                }
+            });
+        });
+
+    })();
+</script>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+<div class="mobile-menu-drawer" id="mobileMenuDrawer">
+    <div class="drawer-header">
+        <div class="drawer-user drawer-user-centered">
+            <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="drawer-brand-logo drawer-brand-logo-plain" />
+        </div>
+        <button class="drawer-close" id="drawerClose" type="button"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="drawer-nav">
+        <div class="drawer-auth-row">
+            @if (homeAuthenticated)
+            {
+                <a href="@homePanelUrl" class="drawer-action primary"><i class="fas fa-grid-2"></i> @homePanelLabel</a>
+                <form method="post" action="/cikis-yap" class="drawer-logout-form">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="drawer-action outline"><i class="fas fa-right-from-bracket"></i> Çıkış</button>
+                </form>
+            }
+            else
+            {
+                <a href="/kullanici-giris" class="drawer-action primary"><i class="fas fa-right-to-bracket"></i> Giriş Yap</a>
+                <a href="/kullanici-giris?sekme=kayit" class="drawer-action outline"><i class="fas fa-user-plus"></i> Kayıt Ol</a>
+            }
+        </div>
+
+        <div class="drawer-quick-features">
+            <a href="/oteller" class="feature-tile">
+                <i class="fas fa-hotel"></i>
+                <span>Oteller</span>
+            </a>
+            <a href="/oteller?etiket=kampanyaya-dahil-oteller" class="feature-tile">
+                <i class="fas fa-badge-percent"></i>
+                <span>Kampanyalar</span>
+            </a>
+            <a href="/oteller?etiket=butik-oteller" class="feature-tile">
+                <i class="fas fa-city"></i>
+                <span>Butik Seçimler</span>
+            </a>
+            <a href="/yardim-merkezi#destek-kanallari" class="feature-tile">
+                <i class="fas fa-headset"></i>
+                <span>Canlı Destek</span>
+            </a>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-section-title">Öne Çıkan Fırsatlar</div>
+            <div class="drawer-promo-grid">
+                <a href="/oteller?etiket=ay-sonu-ozel" class="drawer-link promo-link"><i class="fas fa-bolt"></i> Ay Sonu Özel</a>
+                <a href="/oteller?etiket=flash-indirim" class="drawer-link promo-link"><i class="fas fa-tag"></i> Flash İndirim</a>
+                <a href="/oteller?etiket=hafta-sonu-firsatlari" class="drawer-link promo-link"><i class="fas fa-calendar-week"></i> Hafta Sonu Fırsatları</a>
+                <a href="/oteller?etiket=erken-rezervasyon" class="drawer-link promo-link"><i class="fas fa-clock"></i> Erken Rezervasyon</a>
+                <a href="/oteller?etiket=akilli-fiyat" class="drawer-link promo-link"><i class="fas fa-wand-magic-sparkles"></i> Akıllı Fiyat</a>
+                <a href="/yardim-merkezi#destek-kanallari" class="drawer-link promo-link"><i class="fas fa-headset"></i> Rezervasyon Desteği</a>
+            </div>
+        </div>
+
+        <div class="drawer-corp-row">
+            <a asp-controller="Home" asp-action="Kurumsal" class="drawer-action ghost"><i class="fas fa-building"></i> Kurumsal</a>
+            <a href="/firma" class="drawer-action ghost"><i class="fas fa-briefcase"></i> Firma</a>
+        </div>
+
+        <div class="drawer-language-section">
+            <div class="drawer-section-title">Dil Seçimi</div>
+            <div class="drawer-language-list">
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="tr" aria-pressed="false">
+                    <span class="flag-icon flag-icon-tr"></span><span>Türkçe</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="en" aria-pressed="false">
+                    <span class="flag-icon flag-icon-gb"></span><span>English</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="fr" aria-pressed="false">
+                    <span class="flag-icon flag-icon-fr"></span><span>Français</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="de" aria-pressed="false">
+                    <span class="flag-icon flag-icon-de"></span><span>Deutsch</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="es" aria-pressed="false">
+                    <span class="flag-icon flag-icon-es"></span><span>Español</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="ru" aria-pressed="false">
+                    <span class="flag-icon flag-icon-ru"></span><span>Русский</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="ar" aria-pressed="false">
+                    <span class="flag-icon flag-icon-sa"></span><span>العربية</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+

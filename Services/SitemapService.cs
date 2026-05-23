@@ -282,15 +282,15 @@ public sealed class SitemapService : ISitemapService
     {
         const string sql = """
             SELECT
-                o.otel_adi,
-                o.otel_kodu,
-                COALESCE(o.sehir, '') AS sehir,
-                COALESCE(o.ilce, '') AS ilce,
-                COALESCE(o.guncellenme_tarihi, o.onay_tarihi, o.olusturulma_tarihi, SYSUTCDATETIME()) AS last_modified
-            FROM oteller o
-            WHERE o.yayin_durumu = N'Yayında'
-              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
-              AND COALESCE(NULLIF(o.otel_adi, ''), NULLIF(o.otel_kodu, '')) <> '';
+                o.[OTEL_ADI],
+                o.[OTEL_KODU],
+                COALESCE(o.[SEHIR], '') AS [SEHIR],
+                COALESCE(o.[ILCE], '') AS ilce,
+                COALESCE(o.[GUNCELLENME_TARIHI], o.[ONAY_TARIHI], o.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()) AS last_modified
+            FROM [dbo].[OTELLER] o
+            WHERE o.[YAYIN_DURUMU] = N'Yayında'
+              AND o.[ONAY_DURUMU] IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+              AND COALESCE(NULLIF(o.[OTEL_ADI], ''), NULLIF(o.[OTEL_KODU], '')) <> '';
             """;
 
         var hotels = new List<RegionalHotelRow>();
@@ -406,6 +406,13 @@ public sealed class SitemapService : ISitemapService
             return absoluteUrl;
         }
 
+        if (uri.AbsolutePath.StartsWith("/oteller", StringComparison.OrdinalIgnoreCase)
+            && LocaleToCultureCode(locale) is { } cultureCode)
+        {
+            var localizedPath = InternationalSeoPaths.LocalizePath(uri.AbsolutePath, cultureCode);
+            return uri.GetLeftPart(UriPartial.Authority) + localizedPath;
+        }
+
         var builder = new UriBuilder(uri);
         var qs = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(builder.Query ?? string.Empty);
         var items = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
@@ -420,6 +427,18 @@ public sealed class SitemapService : ISitemapService
         return builder.Uri.ToString();
     }
 
+    private static string? LocaleToCultureCode(string locale) => locale switch
+    {
+        "tr-TR" => "tr",
+        "en-US" or "en-GB" => "en",
+        "de-DE" => "de",
+        "fr-FR" => "fr",
+        "es-ES" => "es",
+        "ru-RU" => "ru",
+        "ar-SA" => "ar",
+        _ => null
+    };
+
     private IEnumerable<SitemapUrlEntry> BuildStaticEntries()
     {
         var now = DateTime.UtcNow;
@@ -427,6 +446,10 @@ public sealed class SitemapService : ISitemapService
         [
             CreateStatic("/", "daily", 1.0m, now),
             CreateStatic("/oteller", "daily", 0.9m, now),
+            CreateStatic("/en/hotels", "daily", 0.85m, now),
+            CreateStatic("/de/hotels", "daily", 0.85m, now),
+            CreateStatic("/en/hotels/istanbul", "daily", 0.85m, now),
+            CreateStatic("/de/hotels/istanbul", "daily", 0.85m, now),
             CreateStatic("/kampanyalar", "daily", 0.8m, now),
             CreateStatic("/kurumsal", "weekly", 0.7m, now),
             CreateStatic("/firma", "weekly", 0.7m, now),
@@ -451,27 +474,27 @@ public sealed class SitemapService : ISitemapService
     {
         const string sql = """
             SELECT
-                o.otel_kodu,
-                o.otel_adi,
-                COALESCE(o.guncellenme_tarihi, o.onay_tarihi, o.olusturulma_tarihi, SYSUTCDATETIME()) AS last_modified,
-                COALESCE(NULLIF(o.kapak_fotografi, ''), NULLIF(og.gorsel_url, '')) AS image_url
-            FROM oteller o
+                o.[OTEL_KODU],
+                o.[OTEL_ADI],
+                COALESCE(o.[GUNCELLENME_TARIHI], o.[ONAY_TARIHI], o.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()) AS last_modified,
+                COALESCE(NULLIF(o.[KAPAK_FOTOGRAFI], ''), NULLIF(og.[GORSEL_URL], '')) AS image_url
+            FROM [dbo].[OTELLER] o
             LEFT JOIN (
-                SELECT g1.otel_id, g1.gorsel_url
+                SELECT g1.[OTEL_ID], g1.[GORSEL_URL]
                 FROM (
                     SELECT
-                        g.otel_id,
-                        g.gorsel_url,
-                        ROW_NUMBER() OVER (PARTITION BY g.otel_id ORDER BY g.kapak_fotografi_mi DESC, g.one_cikan DESC, g.siralama ASC, g.id ASC) AS rn
-                    FROM otel_gorselleri g
-                    WHERE g.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
-                      AND g.gorsel_url NOT LIKE '/uploads/logo/%'
+                        g.[OTEL_ID],
+                        g.[GORSEL_URL],
+                        ROW_NUMBER() OVER (PARTITION BY g.[OTEL_ID] ORDER BY g.[KAPAK_FOTOGRAFI_MI] DESC, g.[ONE_CIKAN] DESC, g.[SIRALAMA] ASC, g.id ASC) AS rn
+                    FROM [dbo].[OTEL_GORSELLERI] g
+                    WHERE g.[ONAY_DURUMU] IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+                      AND g.[GORSEL_URL] NOT LIKE '/uploads/logo/%'
                 ) g1
                 WHERE g1.rn = 1
-            ) og ON og.otel_id = o.id
-            WHERE o.yayin_durumu = N'Yayında'
-              AND o.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
-              AND COALESCE(NULLIF(o.otel_adi, ''), NULLIF(o.otel_kodu, '')) <> ''
+            ) og ON og.[OTEL_ID] = o.id
+            WHERE o.[YAYIN_DURUMU] = N'Yayında'
+              AND o.[ONAY_DURUMU] IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+              AND COALESCE(NULLIF(o.[OTEL_ADI], ''), NULLIF(o.[OTEL_KODU], '')) <> ''
             ORDER BY o.id DESC;
             """;
 
@@ -509,15 +532,15 @@ public sealed class SitemapService : ISitemapService
     {
         const string sql = """
             SELECT
-                COALESCE(NULLIF(k.sayfa_url, ''), CONCAT('/kampanyalar/', k.seo_slug)) AS relative_url,
-                k.kampanya_adi,
-                COALESCE(k.guncellenme_tarihi, k.olusturulma_tarihi, SYSUTCDATETIME()) AS last_modified,
-                COALESCE(NULLIF(k.kart_gorseli, ''), NULLIF(k.hero_gorseli, ''), NULLIF(k.banner_gorseli, '')) AS image_url
-            FROM kampanyalar k
-            WHERE k.aktif_mi = 1
-              AND k.gorunurluk_durumu = N'Yayında'
-              AND SYSUTCDATETIME() BETWEEN k.baslangic_tarihi AND k.bitis_tarihi
-              AND COALESCE(NULLIF(k.seo_slug, ''), NULLIF(k.sayfa_url, '')) <> ''
+                COALESCE(NULLIF(k.[SAYFA_URL], ''), CONCAT('/kampanyalar/', k.[SEO_SLUG])) AS relative_url,
+                k.[KAMPANYA_ADI],
+                COALESCE(k.[GUNCELLENME_TARIHI], k.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()) AS last_modified,
+                COALESCE(NULLIF(k.[KART_GORSELI], ''), NULLIF(k.[HERO_GORSELI], ''), NULLIF(k.[BANNER_GORSELI], '')) AS image_url
+            FROM [dbo].[KAMPANYALAR] k
+            WHERE k.[AKTIF_MI] = 1
+              AND k.[GORUNURLUK_DURUMU] = N'Yayında'
+              AND SYSUTCDATETIME() BETWEEN k.[BASLANGIC_TARIHI] AND k.[BITIS_TARIHI]
+              AND COALESCE(NULLIF(k.[SEO_SLUG], ''), NULLIF(k.[SAYFA_URL], '')) <> ''
             ORDER BY k.id DESC;
             """;
 

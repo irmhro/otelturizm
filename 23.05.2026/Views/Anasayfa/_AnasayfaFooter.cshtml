@@ -1,0 +1,117 @@
+<footer class="site-footer">
+    <div class="footer-pattern"></div>
+    <div class="footer-container">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <div class="footer-logo">
+                    <img src="~/uploads/logo/altlogo.png" alt="Otelturizm" class="footer-logo-image" />
+                </div>
+                <p class="footer-description">Türkiye genelinde güvenli bağlantı ile otel arayıp rezervasyon oluşturabileceğiniz platform; özet ve iptal koşullarını hesabınızdan takip edebilirsiniz.</p>
+                <div class="footer-social">
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="Instagram iletişim"><i class="fab fa-instagram"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="Facebook iletişim"><i class="fab fa-facebook-f"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="X iletişim"><i class="fab fa-x-twitter"></i></a>
+                    <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="YouTube iletişim"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-title">Şirket</h4>
+                <ul class="footer-links">
+                    <li><a href="/yardim-merkezi/sayfa/about/hakkimizda"><i class="fas fa-chevron-right"></i> Hakkımızda</a></li>
+                    <li><a href="/yardim-merkezi/sayfa/career/kariyer"><i class="fas fa-chevron-right"></i> Kariyer</a></li>
+                    <li><a href="/yardim-merkezi/sayfa/press/basin-odasi"><i class="fas fa-chevron-right"></i> Basın Odası</a></li>
+                    <li><a href="/yardim-merkezi/sayfa/blog/blog"><i class="fas fa-chevron-right"></i> Blog</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-title">Keşfet</h4>
+                <ul class="footer-links">
+                    <li><a href="/oteller"><i class="fas fa-chevron-right"></i> Tüm Oteller</a></li>
+                    <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> Son Dakika Fırsatları</a></li>
+                    <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> Erken Rezervasyon</a></li>
+                    <li><a href="/firma"><i class="fas fa-chevron-right"></i> İş Seyahatleri</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-title">Otelciler İçin</h4>
+                <ul class="footer-links">
+                    <li><a href="/partner-giris"><i class="fas fa-chevron-right"></i> Extranet Girişi</a></li>
+                    <li><a href="/kurumsal"><i class="fas fa-chevron-right"></i> Partner Programı</a></li>
+                    <li><a href="/kurumsal"><i class="fas fa-chevron-right"></i> Komisyon Oranları</a></li>
+                    <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> Eğitim ve Destek</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-title">Destek</h4>
+                <ul class="footer-links">
+                    <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> Yardım Merkezi</a></li>
+                    <li><a href="/sss?kategori=iptal-iade"><i class="fas fa-chevron-right"></i> İptal ve İade</a></li>
+                    <li><a href="/sss"><i class="fas fa-chevron-right"></i> SSS</a></li>
+                    <li><a href="/yardim-merkezi#destek-kanallari"><i class="fas fa-chevron-right"></i> İletişim</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-bottom-top">
+                <div class="footer-copyright">&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</div>
+                <div class="footer-agency-wrap">
+                    <div class="trust-badges" role="group" aria-label="Güven taahhütleri">
+                        <a class="trust-badge" href="/" title="HTTPS güvenliği"><i class="fas fa-lock" aria-hidden="true"></i> Şifreli bağlantı (HTTPS)</a>
+                        <a class="trust-badge" href="/panel/user/rezervasyonlarim" title="Rezervasyon özetine git"><i class="fas fa-user-check" aria-hidden="true"></i> Hesaptan rezervasyon özeti</a>
+                        <a class="trust-badge" href="/sozlesmeler/kullanici-kvkk-aydinlatma" title="KVKK aydınlatma metni"><i class="fas fa-scale-balanced" aria-hidden="true"></i> KVKK kapsamında veri işleme</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom-links">
+                <a asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>
+                <a href="/sozlesmeler/kullanici-kullanim-kosullari">Kullanım Koşulları</a>
+                <a href="/sozlesmeler/kullanici-kvkk-aydinlatma">KVKK</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
+    (function () {
+        try {
+            const storageKey = 'otelturizm.sitemap.refresh.lastPing';
+            const refreshIntervalMs = 3 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            const lastPing = Number(localStorage.getItem(storageKey) || '0');
+
+            if ((now - lastPing) < refreshIntervalMs) {
+                return;
+            }
+
+            fetch('/seo/sitemap-refresh', {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                keepalive: true,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(function (response) {
+                if (response && response.ok) {
+                    localStorage.setItem(storageKey, String(now));
+                }
+            }).catch(function () {
+                // sessiz
+            });
+        } catch (_) {
+            // sessiz
+        }
+    })();
+</script>
+
+<script src="~/assets/js/konum-kordinat.js" asp-append-version="true"></script>
+
+

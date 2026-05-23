@@ -99,6 +99,9 @@ public class HotelListingCardViewModel
 
     /// <summary>Listede gösterilen gecelik fiyatın bağlı olduğu oda tipi adı (bugünkü satır).</summary>
     public string? ListingLeadRoomName { get; set; }
+
+    /// <summary>Liste kartında ücretsiz iptal rozeti (T381).</summary>
+    public bool HasFreeCancellation { get; set; }
 }
 
 public class HotelDetailPageViewModel
@@ -109,6 +112,10 @@ public class HotelDetailPageViewModel
     public string Name { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
+    public long? UlkeId { get; set; }
+    public long? SehirId { get; set; }
+    public long? IlceId { get; set; }
+    public long? MahalleId { get; set; }
     public string Address { get; set; } = string.Empty;
     public string ShortDescription { get; set; } = string.Empty;
     public string LongDescription { get; set; } = string.Empty;
@@ -253,6 +260,10 @@ public class HotelProfileCompletionPromptViewModel
     public string? City { get; set; }
     public string? District { get; set; }
     public string? Neighborhood { get; set; }
+    public long? UlkeId { get; set; }
+    public long? IlId { get; set; }
+    public long? IlceId { get; set; }
+    public long? MahalleId { get; set; }
     public string? Address { get; set; }
 }
 

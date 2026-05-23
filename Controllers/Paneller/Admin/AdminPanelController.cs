@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Text.Json;
 using Microsoft.AspNetCore.OutputCaching;
 using otelturizmnew.Constants;
+using otelturizmnew.Models.Paneller;
 using otelturizmnew.Models.Paneller.Admin;
 using otelturizmnew.Models.Paneller.Developer;
 using otelturizmnew.Models.TelefonDogrulama;
@@ -37,8 +38,9 @@ public class AdminPanelController : Controller
     private readonly ISecureFileService _secureFileService;
     private readonly IGrowthGovernanceService _growthGovernance;
     private readonly IPanelThemeService _panelThemeService;
+    private readonly IPlatformPackageService _platformPackageService;
 
-    public AdminPanelController(IAdminService adminService, IAdminEmailRoutingService adminEmailRoutingService, IAdminRbacService adminRbacService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance, IPanelThemeService panelThemeService)
+    public AdminPanelController(IAdminService adminService, IAdminEmailRoutingService adminEmailRoutingService, IAdminRbacService adminRbacService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance, IPanelThemeService panelThemeService, IPlatformPackageService platformPackageService)
     {
         _adminService = adminService;
         _adminEmailRoutingService = adminEmailRoutingService;
@@ -57,6 +59,7 @@ public class AdminPanelController : Controller
         _secureFileService = secureFileService;
         _growthGovernance = growthGovernance;
         _panelThemeService = panelThemeService;
+        _platformPackageService = platformPackageService;
     }
 
     [HttpGet("ekibimiz")]
@@ -91,7 +94,7 @@ public class AdminPanelController : Controller
             }
         }
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/notifications";
+        ViewData["PageCssPath"] = "panel-admin-section";
         return View("~/Views/Paneller/Admin/Team.cshtml", model);
     }
 
@@ -181,12 +184,12 @@ public class AdminPanelController : Controller
 
         // Categories + details
         const string catSql = @"
-            SELECT k.id, k.kategori_adi, k.seo_slug, COALESCE(k.kategori_ikon, N''), COALESCE(k.kisa_aciklama, N''),
-                   COALESCE(d.hero_baslik, N''), COALESCE(d.hero_alt_baslik, N''), COALESCE(d.hero_gorsel_url, N''), COALESCE(d.tam_aciklama, N'')
-            FROM dbo.destek_kategorileri k
-            LEFT JOIN dbo.yardim_merkezi_kategori_detaylari d ON d.destek_kategori_id = k.id
-            WHERE k.durum = 1
-            ORDER BY k.siralama, k.id;";
+            SELECT k.[ID], k.[KATEGORI_ADI], k.[SEO_SLUG], COALESCE(k.[KATEGORI_IKON], N''), COALESCE(k.[KISA_ACIKLAMA], N''),
+                   COALESCE(d.[HERO_BASLIK], N''), COALESCE(d.[HERO_ALT_BASLIK], N''), COALESCE(d.[HERO_GORSEL_URL], N''), COALESCE(d.[TAM_ACIKLAMA], N'')
+            FROM [dbo].[DESTEK_KATEGORILERI] k
+            LEFT JOIN [dbo].[YARDIM_MERKEZI_KATEGORI_DETAYLARI] d ON d.[DESTEK_KATEGORI_ID] = k.[ID]
+            WHERE k.[DURUM] = 1
+            ORDER BY k.[SIRALAMA], k.[ID];";
         try
         {
             await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(catSql, connection);
@@ -216,10 +219,10 @@ public class AdminPanelController : Controller
         try
         {
             const string faqSql = @"
-                SELECT TOP (200) f.id, f.destek_kategori_id, k.kategori_adi, COALESCE(f.siralama, 0), COALESCE(f.aktif_mi, 1), f.soru, f.cevap
-                FROM dbo.yardim_merkezi_kategori_sss f
-                INNER JOIN dbo.destek_kategorileri k ON k.id = f.destek_kategori_id
-                ORDER BY k.siralama, f.siralama, f.id DESC;";
+                SELECT TOP (200) f.[ID], f.[DESTEK_KATEGORI_ID], k.[KATEGORI_ADI], COALESCE(f.[SIRALAMA], 0), COALESCE(f.[AKTIF_MI], 1), f.[SORU], f.[CEVAP]
+                FROM [dbo].[YARDIM_MERKEZI_KATEGORI_SSS] f
+                INNER JOIN [dbo].[DESTEK_KATEGORILERI] k ON k.[ID] = f.[DESTEK_KATEGORI_ID]
+                ORDER BY k.[SIRALAMA], f.[SIRALAMA], f.[ID] DESC;";
             await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(faqSql, connection);
             await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
             while (await r.ReadAsync(cancellationToken))
@@ -245,9 +248,9 @@ public class AdminPanelController : Controller
         try
         {
             const string cSql = @"
-                SELECT TOP (200) id, icerik_turu, baslik, seo_slug, COALESCE(aktif_mi,1), COALESCE(siralama,0), COALESCE(one_cikan_mi,0)
-                FROM dbo.yardim_merkezi_icerikler
-                ORDER BY icerik_turu, one_cikan_mi DESC, siralama, id DESC;";
+                SELECT TOP (200) [ID], [ICERIK_TURU], [BASLIK], [SEO_SLUG], COALESCE([AKTIF_MI],1), COALESCE([SIRALAMA],0), COALESCE([ONE_CIKAN_MI],0)
+                FROM [dbo].[YARDIM_MERKEZI_ICERIKLER]
+                ORDER BY [ICERIK_TURU], [ONE_CIKAN_MI] DESC, [SIRALAMA], [ID] DESC;";
             await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(cSql, connection);
             await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
             while (await r.ReadAsync(cancellationToken))
@@ -306,9 +309,9 @@ public class AdminPanelController : Controller
             try
             {
                 const string oneSql = @"
-                    SELECT TOP (1) id, icerik_turu, baslik, seo_slug, COALESCE(ozet,N''), COALESCE(hero_baslik,N''), COALESCE(hero_alt_baslik,N''), COALESCE(hero_gorsel_url,N''), icerik,
-                                   COALESCE(siralama,0), COALESCE(one_cikan_mi,0), COALESCE(aktif_mi,1)
-                    FROM dbo.yardim_merkezi_icerikler WHERE id=@id;";
+                    SELECT TOP (1) [ID], [ICERIK_TURU], [BASLIK], [SEO_SLUG], COALESCE([OZET],N''), COALESCE([HERO_BASLIK],N''), COALESCE([HERO_ALT_BASLIK],N''), COALESCE([HERO_GORSEL_URL],N''), [ICERIK],
+                                   COALESCE([SIRALAMA],0), COALESCE([ONE_CIKAN_MI],0), COALESCE([AKTIF_MI],1)
+                    FROM [dbo].[YARDIM_MERKEZI_ICERIKLER] WHERE [ID]=@id;";
                 await using var cmd = new Microsoft.Data.SqlClient.SqlCommand(oneSql, connection);
                 cmd.Parameters.AddWithValue("@id", editContentId.Value);
                 await using var r = await cmd.ExecuteReaderAsync(cancellationToken);
@@ -368,26 +371,26 @@ public class AdminPanelController : Controller
         await using var connection = new Microsoft.Data.SqlClient.SqlConnection(HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection"));
         await connection.OpenAsync(cancellationToken);
         var sql = @"
-            IF OBJECT_ID(N'dbo.yardim_merkezi_kategori_detaylari', N'U') IS NULL
+            IF OBJECT_ID(N'dbo.YARDIM_MERKEZI_KATEGORI_DETAYLARI', N'U') IS NULL
             BEGIN
-                RAISERROR('yardim_merkezi_kategori_detaylari tablosu yok.', 16, 1);
+                RAISERROR('YARDIM_MERKEZI_KATEGORI_DETAYLARI tablosu yok.', 16, 1);
                 RETURN;
             END
 
-            IF EXISTS (SELECT 1 FROM dbo.yardim_merkezi_kategori_detaylari WHERE destek_kategori_id=@cid)
+            IF EXISTS (SELECT 1 FROM [dbo].[YARDIM_MERKEZI_KATEGORI_DETAYLARI] WHERE [DESTEK_KATEGORI_ID]=@cid)
             BEGIN
-                UPDATE dbo.yardim_merkezi_kategori_detaylari
-                SET hero_baslik=@ht,
-                    hero_alt_baslik=@hs,
-                    hero_gorsel_url=COALESCE(NULLIF(@hu,N''), hero_gorsel_url),
-                    tam_aciklama=@html,
-                    aktif_mi=1,
-                    guncellenme_tarihi=SYSUTCDATETIME()
-                WHERE destek_kategori_id=@cid;
+                UPDATE [dbo].[YARDIM_MERKEZI_KATEGORI_DETAYLARI]
+                SET [HERO_BASLIK]=@ht,
+                    [HERO_ALT_BASLIK]=@hs,
+                    [HERO_GORSEL_URL]=COALESCE(NULLIF(@hu,N''), [HERO_GORSEL_URL]),
+                    [TAM_ACIKLAMA]=@html,
+                    [AKTIF_MI]=1,
+                    [GUNCELLENME_TARIHI]=SYSUTCDATETIME()
+                WHERE [DESTEK_KATEGORI_ID]=@cid;
             END
             ELSE
             BEGIN
-                INSERT INTO dbo.yardim_merkezi_kategori_detaylari(destek_kategori_id, hero_baslik, hero_alt_baslik, hero_gorsel_url, tam_aciklama, aktif_mi, guncellenme_tarihi)
+                INSERT INTO [dbo].[YARDIM_MERKEZI_KATEGORI_DETAYLARI]([DESTEK_KATEGORI_ID], [HERO_BASLIK], [HERO_ALT_BASLIK], [HERO_GORSEL_URL], [TAM_ACIKLAMA], [AKTIF_MI], [GUNCELLENME_TARIHI])
                 VALUES(@cid,@ht,@hs,@hu,@html,1,SYSUTCDATETIME());
             END";
         try
@@ -418,21 +421,21 @@ public class AdminPanelController : Controller
         await using var connection = new Microsoft.Data.SqlClient.SqlConnection(HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection"));
         await connection.OpenAsync(cancellationToken);
         var sql = @"
-            IF OBJECT_ID(N'dbo.yardim_merkezi_kategori_sss', N'U') IS NULL
+            IF OBJECT_ID(N'dbo.YARDIM_MERKEZI_KATEGORI_SSS', N'U') IS NULL
             BEGIN
-                RAISERROR('yardim_merkezi_kategori_sss tablosu yok.', 16, 1);
+                RAISERROR('YARDIM_MERKEZI_KATEGORI_SSS tablosu yok.', 16, 1);
                 RETURN;
             END
 
-            IF (@id IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.yardim_merkezi_kategori_sss WHERE id=@id))
+            IF (@id IS NOT NULL AND EXISTS (SELECT 1 FROM [dbo].[YARDIM_MERKEZI_KATEGORI_SSS] WHERE [ID]=@id))
             BEGIN
-                UPDATE dbo.yardim_merkezi_kategori_sss
-                SET destek_kategori_id=@cid, soru=@q, cevap=@a, siralama=@o, aktif_mi=@active
-                WHERE id=@id;
+                UPDATE [dbo].[YARDIM_MERKEZI_KATEGORI_SSS]
+                SET [DESTEK_KATEGORI_ID]=@cid, [SORU]=@q, [CEVAP]=@a, [SIRALAMA]=@o, [AKTIF_MI]=@active
+                WHERE [ID]=@id;
             END
             ELSE
             BEGIN
-                INSERT INTO dbo.yardim_merkezi_kategori_sss(destek_kategori_id, soru, cevap, siralama, aktif_mi)
+                INSERT INTO [dbo].[YARDIM_MERKEZI_KATEGORI_SSS]([DESTEK_KATEGORI_ID], [SORU], [CEVAP], [SIRALAMA], [AKTIF_MI])
                 VALUES(@cid,@q,@a,@o,@active);
             END";
         try
@@ -478,23 +481,23 @@ public class AdminPanelController : Controller
         await using var connection = new Microsoft.Data.SqlClient.SqlConnection(HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection"));
         await connection.OpenAsync(cancellationToken);
         var sql = @"
-            IF OBJECT_ID(N'dbo.yardim_merkezi_icerikler', N'U') IS NULL
+            IF OBJECT_ID(N'dbo.YARDIM_MERKEZI_ICERIKLER', N'U') IS NULL
             BEGIN
-                RAISERROR('yardim_merkezi_icerikler tablosu yok.', 16, 1);
+                RAISERROR('YARDIM_MERKEZI_ICERIKLER tablosu yok.', 16, 1);
                 RETURN;
             END
 
-            IF (@id IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.yardim_merkezi_icerikler WHERE id=@id))
+            IF (@id IS NOT NULL AND EXISTS (SELECT 1 FROM [dbo].[YARDIM_MERKEZI_ICERIKLER] WHERE [ID]=@id))
             BEGIN
-                UPDATE dbo.yardim_merkezi_icerikler
-                SET icerik_turu=@t, baslik=@title, seo_slug=@slug, ozet=@sum,
-                    hero_baslik=@ht, hero_alt_baslik=@hs, hero_gorsel_url=COALESCE(NULLIF(@hu,N''), hero_gorsel_url),
-                    icerik=@html, siralama=@o, one_cikan_mi=@f, aktif_mi=@active, guncellenme_tarihi=SYSUTCDATETIME()
-                WHERE id=@id;
+                UPDATE [dbo].[YARDIM_MERKEZI_ICERIKLER]
+                SET [ICERIK_TURU]=@t, [BASLIK]=@title, [SEO_SLUG]=@slug, [OZET]=@sum,
+                    [HERO_BASLIK]=@ht, [HERO_ALT_BASLIK]=@hs, [HERO_GORSEL_URL]=COALESCE(NULLIF(@hu,N''), [HERO_GORSEL_URL]),
+                    [ICERIK]=@html, [SIRALAMA]=@o, [ONE_CIKAN_MI]=@f, [AKTIF_MI]=@active, [GUNCELLENME_TARIHI]=SYSUTCDATETIME()
+                WHERE [ID]=@id;
             END
             ELSE
             BEGIN
-                INSERT INTO dbo.yardim_merkezi_icerikler(icerik_turu, baslik, seo_slug, ozet, hero_baslik, hero_alt_baslik, hero_gorsel_url, icerik, siralama, one_cikan_mi, aktif_mi)
+                INSERT INTO [dbo].[YARDIM_MERKEZI_ICERIKLER]([ICERIK_TURU], [BASLIK], [SEO_SLUG], [OZET], [HERO_BASLIK], [HERO_ALT_BASLIK], [HERO_GORSEL_URL], [ICERIK], [SIRALAMA], [ONE_CIKAN_MI], [AKTIF_MI])
                 VALUES(@t,@title,@slug,@sum,@ht,@hs,@hu,@html,@o,@f,@active);
             END";
         try
@@ -567,6 +570,7 @@ public class AdminPanelController : Controller
         var model = await _adminService.GetDashboardAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = "Admin Dashboard";
         ViewData["PageCssPath"] = "paneller/admin/dashboard";
+        ViewData["PageCssMobile"] = "paneller/admin/dashboard.mobile";
         return View("~/Views/Paneller/Admin/Dashboard.cshtml", model);
     }
 
@@ -642,6 +646,7 @@ public class AdminPanelController : Controller
         var model = await _adminService.GetApprovalCenterAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "paneller/admin/approval-center";
+        ViewData["PageCssMobile"] = "paneller/admin/approval-center.mobile";
         return View("~/Views/Paneller/Admin/ApprovalCenter.cshtml", model);
     }
 
@@ -754,12 +759,12 @@ public class AdminPanelController : Controller
             // admin hedef listesi (doğrulanmış e-posta)
             var adminEmails = new List<(long Id, string Email)>();
             await using (var cmd = new Microsoft.Data.SqlClient.SqlCommand("""
-                SELECT TOP (25) id, eposta
-                FROM dbo.users
+                SELECT TOP (25) id, [EPOSTA]
+                FROM [dbo].[KULLANICILAR]
                 WHERE rol = N'admin'
-                  AND eposta IS NOT NULL
-                  AND LTRIM(RTRIM(eposta)) <> N''
-                  AND email_dogrulama_tarihi IS NOT NULL
+                  AND [EPOSTA] IS NOT NULL
+                  AND LTRIM(RTRIM([EPOSTA])) <> N''
+                  AND [EPOSTA_DOGRULAMA_TARIHI] IS NOT NULL
                 ORDER BY id ASC;
                 """, connection))
             await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken))
@@ -800,7 +805,7 @@ public class AdminPanelController : Controller
                     UserId = target.Id,
                     RecipientEmail = target.Email,
                     TemplateCode = "system_health_link_report",
-                    RelatedTable = "users",
+                    RelatedTable = "KULLANICILAR",
                     RelatedRecordId = target.Id,
                     Tokens = tokens
                 }, cancellationToken);
@@ -837,22 +842,22 @@ public class AdminPanelController : Controller
         await using var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var cmd = new Microsoft.Data.SqlClient.SqlCommand("""
-            UPDATE email_services
-            SET test_modu = @enabled,
-                guncellenme_tarihi = SYSUTCDATETIME()
-            WHERE aktif_mi = 1;
+            UPDATE [dbo].[EPOSTA_SERVISLERI]
+            SET [TEST_MODU] = @enabled,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+            WHERE [AKTIF_MI] = 1;
             """, connection);
         cmd.Parameters.AddWithValue("@enabled", enabled ? 1 : 0);
         var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
 
         TempData["AdminMessage"] = affected > 0
             ? $"E-posta servisi test modu {(enabled ? "AÇILDI" : "KAPATILDI")}."
-            : "Aktif e-posta servisi bulunamadı (email_services.aktif_mi=1).";
+            : "Aktif e-posta servisi bulunamadı (EPOSTA_SERVISLERI.AKTIF_MI=1).";
 
         await _auditLogService.TryLogAdminActionAsync(
             GetUserId(),
             "email_test_mode",
-            "email_services",
+            "EPOSTA_SERVISLERI",
             enabled ? "1" : "0",
             $"Gerekçe: {reason}",
             HttpContext.Connection.RemoteIpAddress?.ToString(),
@@ -876,6 +881,52 @@ public class AdminPanelController : Controller
 
         var rows = slowSqlTracker.GetTop(take);
         return Ok(new { ok = true, rows });
+    }
+
+    [HttpGet("slow-sql")]
+    public async Task<IActionResult> SlowSqlMonitor(
+        [FromServices] otelturizmnew.Services.Abstractions.ISlowSqlTracker slowSqlTracker,
+        [FromQuery] int take = 50,
+        CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!await CanAccessAsync("admin.system_health", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var shell = (await _adminService.GetSectionPageAsync("security", GetFullName(), GetEmail(), GetUserRole(), cancellationToken)).Shell;
+        shell.PanelTitle = "Yavaş SQL";
+        shell.PanelSubtitle = "Uygulama içi en yavaş sorgular (bellek içi tracker, yeniden başlatmada sıfırlanır).";
+
+        var clampedTake = Math.Clamp(take <= 0 ? 50 : take, 10, 100);
+        var model = new AdminSlowSqlPageViewModel
+        {
+            Shell = shell,
+            Take = clampedTake,
+            Rows = slowSqlTracker.GetTop(clampedTake)
+                .Select(r => new AdminSlowSqlRowViewModel
+                {
+                    Key = r.Key,
+                    Scope = r.Scope,
+                    Count = r.Count,
+                    MaxMs = r.MaxMs,
+                    AvgMs = r.AvgMs,
+                    LastSeenUtc = r.LastSeenUtc,
+                    SampleSql = r.SampleSql
+                })
+                .ToList()
+        };
+
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssMobile"] = "paneller/admin/slow-sql";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/SlowSql.cshtml", model);
     }
 
     // p182: Admin işlem logları
@@ -954,6 +1005,7 @@ public class AdminPanelController : Controller
         var model = await _adminService.GetUnifiedReservationsAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, page, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "paneller/admin/unified-reservations";
+        ViewData["PageCssMobile"] = "paneller/admin/unified-reservations.mobile";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/UnifiedReservations.cshtml", model);
     }
@@ -1384,6 +1436,7 @@ public class AdminPanelController : Controller
         var model = await _adminHotelManagementService.GetHotelsPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, city, district, neighborhood, publishStatus, approvalStatus, page, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "panel-admin-hotels";
+        ViewData["PageCssMobile"] = "panel-admin-hotels.mobile";
         return View("~/Views/Paneller/Admin/Hotels.cshtml", model);
     }
 
@@ -1568,6 +1621,48 @@ public class AdminPanelController : Controller
         return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
             ? LocalRedirect(returnUrl)
             : RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+    }
+
+    [HttpPost("oteller/toplu-yayin")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkUpdateHotelPublishStatus([FromForm] long[] hotelIds, [FromForm] bool publish, [FromForm] string? returnUrl, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+        if (!await CanAccessAsync("admin.hotels", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        if (!CanPerformCriticalAdminActions())
+        {
+            TempData["AdminHotelError"] = "Bu islem yalnizca admin yetkisi ile yapilabilir.";
+            return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? LocalRedirect(returnUrl)
+                : RedirectToAction(nameof(Hotels));
+        }
+
+        var result = await _adminHotelManagementService.BulkUpdateHotelPublishStatusAsync(hotelIds, publish, GetUserId(), cancellationToken);
+        TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
+        if (result.Success)
+        {
+            await EvictPublicOutputCacheAsync(cancellationToken);
+            var targetIds = (hotelIds ?? Array.Empty<long>()).Where(id => id > 0).Distinct().ToArray();
+            await _auditLogService.TryLogAdminActionAsync(
+                GetUserId(),
+                publish ? "hotel_bulk_activate" : "hotel_bulk_deactivate",
+                "oteller",
+                string.Join(",", targetIds),
+                result.Message,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                cancellationToken);
+        }
+
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? LocalRedirect(returnUrl)
+            : RedirectToAction(nameof(Hotels));
     }
 
     [HttpPost("oteller/otel-fotograf-yukle")]
@@ -1771,6 +1866,7 @@ public class AdminPanelController : Controller
         model.Shell.PanelSubtitle = "Bireysel, firma ve satış kaynaklı rezervasyonları tek operasyon tablosunda yönetin.";
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "paneller/admin/unified-reservations";
+        ViewData["PageCssMobile"] = "paneller/admin/unified-reservations.mobile";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/UnifiedReservations.cshtml", model);
     }
@@ -1816,17 +1912,122 @@ public class AdminPanelController : Controller
     }
 
     [HttpGet("komisyonlar")]
-    public async Task<IActionResult> Commissions([FromQuery] long? hotelId, [FromQuery] DateTime? dateFrom, [FromQuery] DateTime? dateTo, CancellationToken cancellationToken)
+    public async Task<IActionResult> Commissions([FromQuery] long? hotelId, [FromQuery] DateTime? dateFrom, [FromQuery] DateTime? dateTo, [FromQuery] string? city, [FromQuery] string? district, [FromQuery] string? neighborhood, [FromQuery] string? paymentStatus, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default)
     {
         if (!CanAccessAdminPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
         }
 
-        var model = await _adminService.GetCommissionManagementAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, dateFrom, dateTo, cancellationToken);
+        var model = await _adminService.GetCommissionManagementAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, dateFrom, dateTo, city, district, neighborhood, paymentStatus, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "paneller/admin/commissions";
         return View("~/Views/Paneller/Admin/Commissions.cshtml", model);
+    }
+
+    [HttpGet("komisyon-tahsilat")]
+    public async Task<IActionResult> CommissionCollection(
+        [FromQuery] string? donem,
+        [FromQuery] string? city,
+        [FromQuery] string? district,
+        [FromQuery] string? neighborhood,
+        [FromQuery] long? ilceId,
+        [FromQuery] long? hotelId,
+        [FromQuery] long? partnerId,
+        [FromQuery] string? tahsilatStatus,
+        [FromQuery] string? paymentStatus,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDir,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var filter = new AdminCommissionCollectionFilter
+        {
+            Donem = string.IsNullOrWhiteSpace(donem) ? DateTime.Today.ToString("yyyy-MM") : donem.Trim(),
+            City = city ?? string.Empty,
+            District = district ?? string.Empty,
+            Neighborhood = neighborhood ?? string.Empty,
+            IlceId = ilceId,
+            HotelId = hotelId,
+            PartnerId = partnerId,
+            TahsilatStatus = tahsilatStatus ?? string.Empty,
+            PaymentStatus = paymentStatus ?? string.Empty,
+            SortBy = sortBy ?? "commission",
+            SortDir = sortDir ?? "desc",
+            Page = page,
+            PageSize = pageSize
+        };
+
+        var model = await _adminService.GetCommissionCollectionLedgerAsync(GetFullName(), GetEmail(), GetUserRole(), filter, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "panel-admin-commission-collection";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/CommissionCollection.cshtml", model);
+    }
+
+    [HttpGet("komisyon-tahsilat/export.csv")]
+    public async Task<IActionResult> ExportCommissionCollectionCsv(
+        [FromQuery] string? donem,
+        [FromQuery] string? city,
+        [FromQuery] string? district,
+        [FromQuery] string? neighborhood,
+        [FromQuery] long? ilceId,
+        [FromQuery] long? hotelId,
+        [FromQuery] long? partnerId,
+        [FromQuery] string? tahsilatStatus,
+        [FromQuery] string? paymentStatus,
+        [FromQuery] string? sortBy,
+        [FromQuery] string? sortDir,
+        CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var filter = new AdminCommissionCollectionFilter
+        {
+            Donem = donem ?? string.Empty,
+            City = city ?? string.Empty,
+            District = district ?? string.Empty,
+            Neighborhood = neighborhood ?? string.Empty,
+            IlceId = ilceId,
+            HotelId = hotelId,
+            PartnerId = partnerId,
+            TahsilatStatus = tahsilatStatus ?? string.Empty,
+            PaymentStatus = paymentStatus ?? string.Empty,
+            SortBy = sortBy ?? "commission",
+            SortDir = sortDir ?? "desc"
+        };
+
+        var csv = await _adminService.ExportCommissionCollectionCsvAsync(filter, cancellationToken);
+        var preamble = Encoding.UTF8.GetPreamble();
+        var body = Encoding.UTF8.GetBytes(csv);
+        var bytes = new byte[preamble.Length + body.Length];
+        Buffer.BlockCopy(preamble, 0, bytes, 0, preamble.Length);
+        Buffer.BlockCopy(body, 0, bytes, preamble.Length, body.Length);
+        var fileName = $"komisyon-tahsilat-{DateTime.UtcNow:yyyyMMdd-HHmm}.csv";
+        return File(bytes, "text/csv; charset=utf-8", fileName);
+    }
+
+    [HttpPost("komisyon-tahsilat/tahsil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkCommissionCollectionPaid(AdminCommissionCollectionMarkPaidForm request, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _adminService.MarkCommissionCollectionPaidAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return Redirect("/admin/komisyon-tahsilat");
     }
 
     [HttpGet("sozlesmeler")]
@@ -1959,16 +2160,15 @@ public class AdminPanelController : Controller
                 await using var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
                 await connection.OpenAsync(cancellationToken);
                 await using var command = new Microsoft.Data.SqlClient.SqlCommand(@"
-                    IF OBJECT_ID('dbo.sozlesme_dosyalari', 'U') IS NOT NULL
+                    IF OBJECT_ID(N'[dbo].[SOZLESME_DOSYALARI]', N'U') IS NOT NULL
                     BEGIN
-                        INSERT INTO sozlesme_dosyalari (sozlesme_id, dosya_tipi, dosya_adi, dosya_yolu, mime_tipi, olusturan_kullanici_id, olusturulma_tarihi, guvenli_dosya_id)
-                        VALUES (@contractId, 'pdf', @fileName, @fileUrl, 'application/pdf', @adminUserId, SYSUTCDATETIME(), @secureFileId);
+                        INSERT INTO [dbo].[SOZLESME_DOSYALARI] ([SOZLESME_ID], [DOSYA_TIPI], [DOSYA_ADI], [DOSYA_YOLU], [MIME_TIPI], [OLUSTURAN_KULLANICI_ID], [OLUSTURULMA_TARIHI])
+                        VALUES (@contractId, N'pdf', @fileName, @fileUrl, N'application/pdf', @adminUserId, SYSUTCDATETIME());
                     END", connection);
                 command.Parameters.AddWithValue("@contractId", contractId);
                 command.Parameters.AddWithValue("@fileName", Path.GetFileName(pdfFile.FileName));
                 command.Parameters.AddWithValue("@fileUrl", filePathOrUrl);
                 command.Parameters.AddWithValue("@adminUserId", adminUserId);
-                command.Parameters.AddWithValue("@secureFileId", stored.FileId > 0 ? stored.FileId : DBNull.Value);
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
         }
@@ -2144,6 +2344,83 @@ public class AdminPanelController : Controller
         }
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
         return RedirectToAction(nameof(ListingSubscriptions));
+    }
+
+    [HttpGet("platform-paketleri")]
+    public async Task<IActionResult> PlatformPackages(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.platform_packages", cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        var model = await _platformPackageService.GetAdminPageAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "paneller/admin/platform-packages";
+        ViewData["PageCssMobile"] = "paneller/admin/platform-packages.mobile";
+        return View("~/Views/Paneller/Admin/PlatformPackages.cshtml", model);
+    }
+
+    [HttpGet("platform-paketleri/basvurular.csv")]
+    public async Task<IActionResult> ExportPlatformPackageApplicationsCsv(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.platform_packages", cancellationToken) is { } deniedCsv)
+        {
+            return deniedCsv;
+        }
+
+        var csv = await _platformPackageService.ExportAdminApplicationsCsvAsync(cancellationToken);
+        var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray();
+        var fileName = $"platform-paket-basvurulari-{DateTime.UtcNow:yyyyMMdd-HHmm}.csv";
+        return File(bytes, "text/csv; charset=utf-8", fileName);
+    }
+
+    [HttpPost("platform-paketleri/basvuru-guncelle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdatePlatformPackageApplication(AdminPlatformPackageApplicationDecisionRequest request, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.platform_packages", cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        var result = await _platformPackageService.ReviewApplicationAsync(GetUserId(), request, cancellationToken);
+        if (result.Success)
+        {
+            try
+            {
+                await _auditLogService.TryLogAdminActionAsync(
+                    GetUserId(),
+                    $"platform_package_{request.Action}",
+                    "partner_paket_basvurulari",
+                    request.ApplicationId.ToString(),
+                    string.IsNullOrWhiteSpace(request.AdminNote) ? result.Message : request.AdminNote.Trim(),
+                    HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    cancellationToken);
+            }
+            catch
+            {
+                // audit fail-safe
+            }
+        }
+
+        TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
+        return RedirectToAction(nameof(PlatformPackages));
     }
 
     [HttpGet("gelistirme-talepleri")]
@@ -2387,6 +2664,27 @@ public class AdminPanelController : Controller
             return Redirect(form.ReturnUrl);
         }
         return RedirectToAction(nameof(Reviews));
+    }
+
+    [HttpGet("gelir-merkezi")]
+    [HttpGet("revenue-command-center")]
+    public async Task<IActionResult> RevenueCommandCenter(CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!await CanAccessAsync("admin.reports", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var model = await _adminService.GetRevenueCommandCenterAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "paneller/admin/revenue-command-center";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/RevenueCommandCenter.cshtml", model);
     }
 
     [HttpGet("raporlar")]
@@ -2807,6 +3105,9 @@ public class AdminPanelController : Controller
         ViewData["PageCssPath"] = string.Equals(sectionKey, "users", StringComparison.OrdinalIgnoreCase)
             ? "panel-admin-users"
             : "panel-admin-section";
+        ViewData["PageCssMobile"] = string.Equals(sectionKey, "users", StringComparison.OrdinalIgnoreCase)
+            ? "panel-admin-users.mobile"
+            : "panel-admin-section.mobile";
         if (string.Equals(sectionKey, "reports", StringComparison.OrdinalIgnoreCase))
         {
             ViewData["MonthlyCsvExportUrl"] = Url.Action(nameof(ExportMonthlyRevenueCommissionCsv), "AdminPanel");

@@ -332,6 +332,106 @@ public sealed class AdminReportsPageViewModel
     public List<AdminRevenueReportRowViewModel> Rows { get; set; } = new();
 }
 
+public sealed class AdminRevenueCommandCenterPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public List<AdminChartBarViewModel> GmvDailyTrend { get; set; } = new();
+    public List<AdminChartBarViewModel> ReservationDailyTrend { get; set; } = new();
+    public List<AdminRevenueHotelLeaderRowViewModel> TopHotels { get; set; } = new();
+    public bool PackageTablesReady { get; set; }
+    public int PackageApplications30d { get; set; }
+    public int Package5651Applications30d { get; set; }
+    public int Package5661Applications30d { get; set; }
+}
+
+public sealed class AdminRevenueHotelLeaderRowViewModel
+{
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public string CityLabel { get; set; } = string.Empty;
+    public int ReservationCount { get; set; }
+    public int CancelledCount { get; set; }
+    public decimal Gmv { get; set; }
+    public decimal Commission { get; set; }
+}
+
+public sealed class AdminCampaignRowViewModel
+{
+    public long CampaignId { get; set; }
+    public string CampaignCode { get; set; } = string.Empty;
+    public string CampaignName { get; set; } = string.Empty;
+    public string CampaignType { get; set; } = string.Empty;
+    public string ShortDescription { get; set; } = string.Empty;
+    public decimal DiscountRate { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal MaxDiscountAmount { get; set; }
+    public decimal MinCartAmount { get; set; }
+    public DateTimeOffset? StartsAtUtc { get; set; }
+    public DateTimeOffset? EndsAtUtc { get; set; }
+    public bool IsActive { get; set; }
+    public string VisibilityStatus { get; set; } = string.Empty;
+    public bool PartnerJoinOpen { get; set; }
+    public int UsedCount { get; set; }
+    public int? TotalLimit { get; set; }
+    public bool Featured { get; set; }
+    public bool ShowcaseActive { get; set; }
+    public string TargetCities { get; set; } = string.Empty;
+    public string Badge { get; set; } = string.Empty;
+    public string ColorCode { get; set; } = string.Empty;
+    public int RemainingLimit => TotalLimit.HasValue ? Math.Max(0, TotalLimit.Value - UsedCount) : 0;
+}
+
+public sealed class AdminCampaignsPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public string? Query { get; set; }
+    public string? Status { get; set; }
+    public string? CampaignType { get; set; }
+    public bool? PartnerJoinOpen { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 25;
+    public int Total { get; set; }
+    public List<string> StatusOptions { get; set; } = new();
+    public List<string> TypeOptions { get; set; } = new();
+    public List<AdminCampaignRowViewModel> Rows { get; set; } = new();
+}
+
+public sealed class AdminNotificationLogRowViewModel
+{
+    public long NotificationId { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public string Recipient { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string Provider { get; set; } = string.Empty;
+    public string ServiceCode { get; set; } = string.Empty;
+    public int AttemptCount { get; set; }
+    public int MaxAttemptCount { get; set; }
+    public DateTimeOffset? CreatedAtUtc { get; set; }
+    public DateTimeOffset? SentAtUtc { get; set; }
+    public DateTimeOffset? ReadAtUtc { get; set; }
+    public string RelatedTable { get; set; } = string.Empty;
+    public long? RelatedId { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
+}
+
+public sealed class AdminNotificationsPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public string? Query { get; set; }
+    public string? Status { get; set; }
+    public string? NotificationType { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 25;
+    public int Total { get; set; }
+    public List<string> StatusOptions { get; set; } = new();
+    public List<string> TypeOptions { get; set; } = new();
+    public List<AdminNotificationLogRowViewModel> Rows { get; set; } = new();
+}
+
 public sealed class AdminRateLimitEndpointStatViewModel
 {
     public string Endpoint { get; set; } = string.Empty;
@@ -364,10 +464,59 @@ public sealed class AdminLogEventsPageViewModel
     public string? Warning { get; set; }
 }
 
+public sealed class AdminSlowSqlRowViewModel
+{
+    public string Key { get; set; } = string.Empty;
+    public string Scope { get; set; } = string.Empty;
+    public long Count { get; set; }
+    public long MaxMs { get; set; }
+    public double AvgMs { get; set; }
+    public DateTimeOffset LastSeenUtc { get; set; }
+    public string SampleSql { get; set; } = string.Empty;
+}
+
+public sealed class AdminSlowSqlPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public int Take { get; set; } = 50;
+    public List<AdminSlowSqlRowViewModel> Rows { get; set; } = new();
+}
+
 public sealed class AdminSettingsMonitorPageViewModel
 {
     public AdminShellViewModel Shell { get; set; } = new();
     public Dictionary<string, string?> Items { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+public sealed class AdminSecurityLoginRowViewModel
+{
+    public long LoginId { get; set; }
+    public long UserId { get; set; }
+    public string AccountType { get; set; } = string.Empty;
+    public string IpAddress { get; set; } = string.Empty;
+    public string DeviceLabel { get; set; } = string.Empty;
+    public string UserAgent { get; set; } = string.Empty;
+    public DateTimeOffset? LoginAtUtc { get; set; }
+}
+
+public sealed class AdminSecurityApiRiskRowViewModel
+{
+    public long LogId { get; set; }
+    public string Endpoint { get; set; } = string.Empty;
+    public string Method { get; set; } = string.Empty;
+    public int StatusCode { get; set; }
+    public bool Success { get; set; }
+    public string IpAddress { get; set; } = string.Empty;
+    public string ErrorMessage { get; set; } = string.Empty;
+    public DateTimeOffset? StartedAtUtc { get; set; }
+}
+
+public sealed class AdminSecurityPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public List<AdminSummaryCardViewModel> SummaryCards { get; set; } = new();
+    public List<AdminSecurityLoginRowViewModel> RecentLogins { get; set; } = new();
+    public List<AdminSecurityApiRiskRowViewModel> ApiRisks { get; set; } = new();
 }
 
 public sealed class AdminPlatformCheckupPageViewModel

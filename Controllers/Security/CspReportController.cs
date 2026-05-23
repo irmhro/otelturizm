@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace otelturizmnew.Controllers.Security;
 
 [ApiController]
+[IgnoreAntiforgeryToken]
 [EnableRateLimiting("csp-ingest")]
 public sealed class CspReportController : ControllerBase
 {

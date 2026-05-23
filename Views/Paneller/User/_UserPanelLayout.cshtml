@@ -8,6 +8,7 @@
 @{
     Layout = null;
     var pageCssPath = ViewData["PageCssPath"] as string ?? ViewData["PageCss"] as string;
+    var pageCssMobile = ViewData["PageCssMobile"] as string;
     var title = ViewData["Title"] as string ?? ViewData["PanelTitle"] as string ?? "Kullanıcı Paneli";
     var userRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     var userId = long.TryParse(userRaw, out var parsedUserId) ? parsedUserId : 0;
@@ -71,12 +72,13 @@
     <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/paneller/user/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/user/shell.mobile.css" asp-append-version="true" media="(max-width: 991px)" />
+    <link rel="stylesheet" href="~/assets/css/paneller/user/user-mobile-bundle.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/panel-header-bildiri.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/developer-feedback.css" asp-append-version="true" />
     @if (!string.IsNullOrWhiteSpace(pageCssPath))
     {
         <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
-        <link rel="stylesheet" href="~/assets/css/@(pageCssPath).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+        <link rel="stylesheet" href="~/assets/css/@(pageCssMobile ?? $"{pageCssPath}.mobile").css" asp-append-version="true" media="(max-width: 900px)" />
     }
 </head>
 <body class="layout-fluid user-panel-v2" data-bs-theme="@(bsTheme == "auto" ? null : bsTheme)" dir="@dir" style="@BuildThemeStyle()">
@@ -110,10 +112,16 @@
                         <a class="btn btn-primary btn-pill d-none d-md-inline-flex" href="/oteller">
                             <i class="fas fa-magnifying-glass me-2"></i>Otel Ara
                         </a>
-                        <a class="btn btn-outline-primary btn-pill d-none d-md-inline-flex" href="/panel/user/rezervasyonlarim">
-                            <i class="fas fa-calendar-check me-2"></i>Rezervasyonlarım
+                        <a class="btn btn-outline-primary btn-pill d-none d-md-inline-flex" href="/panel/user">
+                            <i class="fas fa-grid-2 me-2"></i>Panelim
                         </a>
-                        <button class="btn btn-icon btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#userThemeSettings" aria-label="Tema ayarları">
+                        <a class="btn btn-outline-primary btn-pill d-none d-md-inline-flex" href="/panel/user/profil-bilgilerim">
+                            <i class="fas fa-user me-2"></i>Hesabım
+                        </a>
+                        <a class="btn btn-outline-primary btn-pill d-none d-md-inline-flex" href="/panel/user/rezervasyonlarim">
+                            <i class="fas fa-calendar-check me-2"></i>Rezervasyonlar
+                        </a>
+                        <button class="btn btn-icon btn-outline-primary" type="button" aria-label="Tema ayarları (yakında)" aria-disabled="true" disabled title="Tema ayarı yakında aktif edilecek">
                             <i class="fas fa-palette"></i>
                         </button>
                         <partial name="~/Views/Paneller/Common/_DeveloperFeedbackWidget.cshtml" />
@@ -134,12 +142,13 @@
                                 </div>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                                <a class="dropdown-item" href="/panel/user/profil-bilgilerim"><i class="fas fa-user me-2"></i>Profil Bilgilerim</a>
-                                <a class="dropdown-item" href="/panel/user/guvenlik-ve-giris"><i class="fas fa-shield-halved me-2"></i>Güvenlik</a>
+                                <a class="dropdown-item" href="/panel/user"><i class="fas fa-grid-2 me-2"></i>Panelim</a>
+                                <a class="dropdown-item" href="/panel/user/profil-bilgilerim"><i class="fas fa-user me-2"></i>Hesabım</a>
+                                <a class="dropdown-item" href="/panel/user/rezervasyonlarim"><i class="fas fa-calendar-check me-2"></i>Rezervasyonlar</a>
                                 <div class="dropdown-divider"></div>
-                                <form method="post" action="/cikis-yap" class="px-2">
+                                <form method="post" action="/cikis-yap">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-outline-danger w-100"><i class="fas fa-right-from-bracket me-2"></i>Çıkış</button>
+                                    <button type="submit" class="dropdown-item text-danger"><i class="fas fa-right-from-bracket me-2"></i>Güvenli Çıkış</button>
                                 </form>
                             </div>
                         </div>

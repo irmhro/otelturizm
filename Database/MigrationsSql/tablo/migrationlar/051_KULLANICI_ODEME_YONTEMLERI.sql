@@ -1,0 +1,19 @@
+-- Tablo: dbo.KULLANICI_ODEME_YONTEMLERI
+IF OBJECT_ID(N'dbo.KULLANICI_ODEME_YONTEMLERI', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[KULLANICI_ODEME_YONTEMLERI] (
+        [ID] bigint IDENTITY(1,1) NOT NULL,
+        [KULLANICI_ID] bigint NOT NULL,
+        [KART_ETIKETI] nvarchar(100) NOT NULL,
+        [KART_SAHIBI] nvarchar(100) NOT NULL,
+        [MARKA] nvarchar(30) NOT NULL,
+        [SON_DORT_HANE] nchar(4) NOT NULL,
+        [SON_KULLANIM_AY] tinyint NOT NULL,
+        [SON_KULLANIM_YIL] smallint NOT NULL,
+        [VARSAYILAN_MI] bit NOT NULL CONSTRAINT [DF__kullanici__varsa__09746778] DEFAULT ((0)),
+        [AKTIF_MI] bit NOT NULL CONSTRAINT [DF__kullanici__aktif__0A688BB1] DEFAULT ((1)),
+        [OLUSTURULMA_TARIHI] datetime2(0) NULL CONSTRAINT [DF__kullanici__olust__0B5CAFEA] DEFAULT (sysutcdatetime()),
+        [GUNCELLENME_TARIHI] datetime2(0) NULL,
+        CONSTRAINT [PK_KULLANICI_ODEME_YONTEMLERI] PRIMARY KEY CLUSTERED ([ID] ASC)
+    );
+END

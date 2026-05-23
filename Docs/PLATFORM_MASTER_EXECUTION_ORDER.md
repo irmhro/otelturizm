@@ -1,5 +1,7 @@
 # Platform tamamlama — sıralı yürütme sırası (tek doğruluk kaynağı)
 
+**Agent grupları:** [AGENT_GRUPLARI_MASTER.md](../AGENT_GRUPLARI_MASTER.md) · **Grup 14:** [PROJECT_COMPLETION_SUMMARY.md](../PROJECT_COMPLETION_SUMMARY.md)
+
 **Tek pencere özet ve boşluk tablosu:** `PLATFORM_SINGLE_WINDOW_AUDIT_AND_BACKLOG.md` — mimari, riskler ve iş sırası (S1–S10).
 
 **Kurumsal B2B + satış + SEO birlikte:** `CROSS_PANEL_B2B_AND_SEO_ROADMAP.md` — firma/partner/satış/admin akışı ve konum bazlı SEO sprint sırası.
@@ -28,6 +30,17 @@ Bu belge, depodaki diğer plan dosyalarını **tek bir sıraya** oturtur. Her fa
 - [ ] `/health/live`, `/health/ready`, `/health/platform` (beklenen HTTP kodları)
 - [ ] Admin: Sistem sağlığı, Platform checkup, Güvenlik (yetki ile)
 - [ ] Log klasörü yazımı (Sunucu): `App_Data/logs` izinleri
+
+## Grup ID → faz eşlemesi
+
+| Faz | Grup ID |
+|-----|---------|
+| Güvenlik | 07 |
+| SEO / public | 11, 06 |
+| Paneller | 08, 09, 10 |
+| Mobil CSS | 06 |
+| DB migration | 01, 12 |
+| Yayın smoke | 14 |
 
 ## Paralel “iş gücü” modeli (insan takımı için)
 

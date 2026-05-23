@@ -1,0 +1,437 @@
+@model otelturizmnew.Models.Paneller.User.UserLoyaltyPageViewModel
+@{
+    Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
+    ViewData["Title"] = "Puanlarim";
+    var currentTier = string.IsNullOrWhiteSpace(Model.CurrentTierName) ? "Bronz" : Model.CurrentTierName;
+}
+
+<section class="content-header">
+    <div class="page-title">
+        <h1>OtelPuan Programi</h1>
+        <p>Seyahat planlarinizi, puan hareketlerinizi ve size ozel avantajlari tek merkezden yonetin.</p>
+    </div>
+</section>
+
+@if (TempData["UserLoyaltySuccess"] is string loyaltySuccess)
+{
+    <div class="alert-banner success">@loyaltySuccess</div>
+}
+@if (TempData["UserLoyaltyError"] is string loyaltyError)
+{
+    <div class="alert-banner danger">@loyaltyError</div>
+}
+
+<section class="hero-personalized loyalty-hero-card">
+    <div class="hero-content">
+        <div class="hero-text">
+            <h1><i class="@Model.CurrentTierIconClass" style="color: var(--loyalty-gold);"></i> Hos geldin, @Model.UserDisplayName!</h1>
+            <p>@Model.CurrentTierSummary</p>
+        </div>
+        <div class="hero-badge">
+            <div class="points">@Model.AvailablePoints.ToString("N0")</div>
+            <div class="label">Kullanilabilir OtelPuan</div>
+            <div class="hero-tier-copy">@currentTier seviye</div>
+        </div>
+    </div>
+</section>
+
+<section class="loyalty-hero">
+    <div class="loyalty-header">
+        <div class="tier-info">
+            <div class="tier-icon @Model.CurrentTierCssClass"><i class="@Model.CurrentTierIconClass"></i></div>
+            <div class="tier-details">
+                <h3>@Model.CurrentTierName Uye</h3>
+                <p><i class="fas fa-check-circle"></i> Avantajlariniz aktif</p>
+            </div>
+        </div>
+        <div class="points-display">
+            <div class="points-value">@Model.TotalPoints.ToString("N0")</div>
+            <div class="points-label">Toplam kazanilan puan</div>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-info">
+            <span><i class="fas fa-gem"></i> @(!string.IsNullOrWhiteSpace(Model.NextTierName) ? Model.NextTierName + " seviyesine kalan puan" : "Maksimum seviyedesiniz")</span>
+            <span>@Model.AvailablePoints.ToString("N0") / @(string.IsNullOrWhiteSpace(Model.NextTierName) ? Model.AvailablePoints.ToString("N0") : (Model.AvailablePoints + Model.PointsToNextTier).ToString("N0"))</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width:@Math.Clamp(Model.ProgressPercent, 0, 100)%"></div>
+        </div>
+    </div>
+
+    <div class="next-tier">
+        <span><i class="fas fa-calendar"></i> Puan gecerlilik tarihi: @Model.PointsExpiryText</span>
+        <span><i class="fas fa-gift"></i> Sonraki seviye: @(string.IsNullOrWhiteSpace(Model.NextTierName) ? "Platinum zirvesi" : Model.NextTierName + " icin " + Model.PointsToNextTier + " puan")</span>
+    </div>
+</section>
+
+<section class="stats-mini-grid">
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon stat-success"><i class="fas fa-plus-circle"></i></div>
+        <div class="stat-mini-content">
+            <h3>@Model.CurrentYearEarnedPoints.ToString("N0")</h3>
+            <p>Bu yil kazanilan</p>
+        </div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon stat-danger"><i class="fas fa-minus-circle"></i></div>
+        <div class="stat-mini-content">
+            <h3>@Model.CurrentYearSpentPoints.ToString("N0")</h3>
+            <p>Bu yil kullanilan</p>
+        </div>
+    </div>
+    <div class="stat-mini-card">
+        <div class="stat-mini-icon stat-gold"><i class="fas fa-bell"></i></div>
+        <div class="stat-mini-content">
+            <h3>@Model.PriceAlerts.Count</h3>
+            <p>Aktif fiyat alarmi</p>
+        </div>
+    </div>
+</section>
+
+<section class="features-grid loyalty-feature-grid">
+    <article class="feature-card">
+        <div class="feature-header">
+            <div class="feature-icon feature-tone-secondary"><i class="fas fa-bell"></i></div>
+            <h3>Fiyat Alarmlarim</h3>
+        </div>
+        @if (Model.PriceAlerts.Count == 0)
+        {
+            <p class="feature-empty">Henuz aktif fiyat alarmi yok. Favorilere eklediginiz oteller icin alarm kurabilirsiniz.</p>
+        }
+        else
+        {
+            foreach (var alert in Model.PriceAlerts)
+            {
+                <div class="alert-item">
+                    <div>
+                        <div class="alert-hotel">@alert.HotelName</div>
+                        <div class="alert-sub">Hedef @alert.TargetPriceText</div>
+                    </div>
+                    <div class="alert-right">
+                        <span class="alert-price @(alert.IsTriggered ? "is-triggered" : string.Empty)">@alert.CurrentPriceText</span>
+                        <form asp-action="DeletePriceAlertFromLoyalty" asp-controller="UserPanel" method="post" class="inline-delete">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="hotelId" value="@alert.HotelId" />
+                            <button type="submit" class="icon-delete" title="Alarmı sil" aria-label="Alarmı sil">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        }
+        <a class="btn-add" asp-action="Favorites" asp-controller="UserPanel"><i class="fas fa-plus"></i> Yeni Fiyat Alarmi Ekle</a>
+    </article>
+
+    <article class="feature-card">
+        <div class="feature-header">
+            <div class="feature-icon feature-tone-gold"><i class="fas fa-trophy"></i></div>
+            <h3>Rozet Koleksiyonun</h3>
+        </div>
+        <div class="badges-grid">
+            @foreach (var badge in Model.Badges.Take(4))
+            {
+                <div class="badge-item">
+                    <div class="badge-icon @(badge.IsEarned ? "earned" : string.Empty)"><i class="@badge.IconClass"></i></div>
+                    <span>@badge.Title</span>
+                    <small>@badge.ProgressText</small>
+                </div>
+            }
+        </div>
+        <p class="feature-support-copy">Toplam @Model.Badges.Count rozet tanimi var. Yeni rozetler rezervasyon ve yorum yaptikca acilir.</p>
+    </article>
+
+    <article class="feature-card">
+        <div class="feature-header">
+            <div class="feature-icon feature-tone-success"><i class="fas fa-passport"></i></div>
+            <h3>Dijital Pasaport</h3>
+        </div>
+        <div class="passport-map">
+            <p><strong><i class="fas fa-map-pin"></i> Ziyaret ettigin sehirler</strong></p>
+            <div class="city-list">
+                @if (Model.PassportCities.Count == 0)
+                {
+                    <span class="city-tag">Ilk damganizi rezervasyonla kazanin</span>
+                }
+                else
+                {
+                    foreach (var city in Model.PassportCities.Take(6))
+                    {
+                        <span class="city-tag visited"><i class="fas fa-check"></i> @city.CityName</span>
+                    }
+                }
+            </div>
+        </div>
+        <p class="feature-support-copy">@Model.PassportCities.Count sehir damgasi bulundu.</p>
+        @if (Model.RecentReservationCities.Count > 0)
+        {
+            <div class="passport-recent">
+                <div class="passport-recent-title"><i class="far fa-clock"></i> Son rezervasyon sehirleri</div>
+                <div class="passport-recent-list">
+                    @foreach (var item in Model.RecentReservationCities.Take(5))
+                    {
+                        <div class="passport-recent-row">
+                            <strong>@item.CityName</strong>
+                            <span>@item.DateText</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </article>
+
+    <article class="feature-card">
+        <div class="feature-header">
+            <div class="feature-icon feature-tone-info"><i class="fas fa-users"></i></div>
+            <h3>Arkadasinla Planla</h3>
+        </div>
+        @if (Model.TravelPlans.Count == 0)
+        {
+            <p class="feature-empty">Henuz ortak planin yok. Yeni bir rota acip otel secenekleri toplayabilirsin.</p>
+        }
+        else
+        {
+            foreach (var plan in Model.TravelPlans.Take(2))
+            {
+                <div class="shared-item">
+                    <i class="fas fa-route"></i>
+                    <div>
+                        <strong>@plan.PlanName</strong>
+                        <div class="alert-sub">@plan.DestinationText · @plan.DateText</div>
+                    </div>
+                    <div class="shared-summary">@plan.VoteSummary</div>
+                </div>
+            }
+        }
+        <form asp-action="SaveTravelPlan" asp-controller="UserPanel" method="post" class="loyalty-inline-form">
+            @Html.AntiForgeryToken()
+            <input asp-for="TravelPlanForm.PlanName" type="text" placeholder="Plan adi" />
+            <input asp-for="TravelPlanForm.DestinationCity" type="text" placeholder="Hedef sehir" />
+            <div class="inline-form-grid">
+                <input asp-for="TravelPlanForm.StartDateText" type="date" />
+                <input asp-for="TravelPlanForm.EndDateText" type="date" />
+            </div>
+            <input asp-for="TravelPlanForm.BudgetAmount" type="number" min="0" step="100" placeholder="Butce (TRY)" />
+            <button class="btn btn-primary" type="submit"><i class="fas fa-plus"></i> Yeni Grup Plani</button>
+        </form>
+    </article>
+
+    <article class="feature-card">
+        <div class="feature-header">
+            <div class="feature-icon feature-tone-purple"><i class="fas fa-gift"></i></div>
+            <h3>Sana Ozel Firsatlar</h3>
+        </div>
+        @if (Model.Offers.Count == 0)
+        {
+            <p class="feature-empty">Aktif kullanici teklifin bulunmuyor. Kampanya sezonunda burada belirecek.</p>
+        }
+        else
+        {
+            var primaryOffer = Model.Offers.First();
+            <div class="special-offer">
+                <p>@primaryOffer.Description</p>
+                <p class="offer-title">@primaryOffer.Title</p>
+                <span class="offer-code">@primaryOffer.Code</span>
+                <a class="btn offer-action" href="@primaryOffer.ActionUrl">Firsati Kullan</a>
+            </div>
+        }
+    </article>
+
+    <article class="feature-card">
+        <div class="feature-header">
+            <div class="feature-icon feature-tone-warning"><i class="fas fa-calculator"></i></div>
+            <h3>Butce Planlayici</h3>
+        </div>
+        <form asp-action="SaveBudgetPlan" asp-controller="UserPanel" method="post" class="loyalty-inline-form compact">
+            @Html.AntiForgeryToken()
+            <input asp-for="BudgetPlanForm.DestinationCity" type="text" placeholder="Hedef sehir" />
+            <div class="inline-form-grid">
+                <input asp-for="BudgetPlanForm.TargetBudget" type="number" min="0" step="100" placeholder="Butce" />
+                <input asp-for="BudgetPlanForm.NightCount" type="number" min="1" max="30" placeholder="Gece" />
+            </div>
+            <input asp-for="BudgetPlanForm.TravelerCount" type="number" min="1" max="10" placeholder="Kisi sayisi" />
+            <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> Butceyi Kaydet</button>
+        </form>
+        @if (Model.BudgetPlans.Count > 0)
+        {
+            <div class="budget-plan-list">
+                @foreach (var budgetPlan in Model.BudgetPlans.Take(2))
+                {
+                    <div class="suggestion-item">
+                        <div>
+                            <strong>@budgetPlan.DestinationText</strong>
+                            <p>@budgetPlan.TravelerText</p>
+                        </div>
+                        <span>@budgetPlan.BudgetText</span>
+                    </div>
+                }
+            </div>
+        }
+    </article>
+
+    <article class="feature-card">
+        <div class="feature-header">
+            <div class="feature-icon feature-tone-primary"><i class="fas fa-compass"></i></div>
+            <h3>Benzer Gezginler</h3>
+        </div>
+        @if (Model.Recommendations.Count == 0)
+        {
+            <p class="feature-empty">Otel onerileri hazirlaniyor.</p>
+        }
+        else
+        {
+            foreach (var recommendation in Model.Recommendations)
+            {
+                <a class="recommendation-item" href="@recommendation.Url">
+                    <img src="@recommendation.ImageUrl" alt="@recommendation.HotelName" class="rec-image" />
+                    <div>
+                        <strong>@recommendation.HotelName</strong>
+                        <p>@recommendation.DistrictText</p>
+                    </div>
+                    <span>@recommendation.RatingText</span>
+                </a>
+            }
+        }
+    </article>
+</section>
+
+<section class="tabs-root" data-tab-root>
+    <div class="tabs-container">
+        <button type="button" class="tab active" data-tab="benefits"><i class="fas fa-gem"></i> Avantajlarim</button>
+        <button type="button" class="tab" data-tab="history"><i class="fas fa-history"></i> Puan Gecmisi</button>
+        <button type="button" class="tab" data-tab="rewards"><i class="fas fa-gift"></i> Odul Katalogu</button>
+        <button type="button" class="tab" data-tab="tiers"><i class="fas fa-trophy"></i> Uyelik Seviyeleri</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="benefits">
+        <div class="benefits-grid">
+            @foreach (var benefit in Model.Benefits)
+            {
+                <div class="benefit-card @(benefit.IsUnlocked ? string.Empty : "locked")">
+                    <div class="benefit-icon benefit-@benefit.Tone"><i class="@benefit.IconClass"></i></div>
+                    <h4>@benefit.Title</h4>
+                    <p>@benefit.Description</p>
+                    @if (!benefit.IsUnlocked && !string.IsNullOrWhiteSpace(benefit.UnlockText))
+                    {
+                        <div class="unlock-text"><i class="fas fa-lock"></i> @benefit.UnlockText</div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="tab-panel" data-panel="history">
+        <div class="history-section">
+            <div class="history-header">
+                <h3>Puan Hareketleri</h3>
+            </div>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Islem</th>
+                        <th>Aciklama</th>
+                        <th>Puan</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.PointTransactions.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="table-empty">Henuz puan hareketi bulunmuyor. Rezervasyon yaptikca burada listelenecek.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var transaction in Model.PointTransactions)
+                        {
+                            <tr>
+                                <td>@transaction.DateText</td>
+                                <td>@transaction.TypeText</td>
+                                <td>@transaction.Title<br /><small>@transaction.Description</small></td>
+                                <td class="@(transaction.PointChange >= 0 ? "points-earned" : "points-spent")">@transaction.PointChangeText</td>
+                                <td><span class="status-badge status-@transaction.StatusTone">@transaction.StatusText</span></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-panel" data-panel="rewards">
+        <div class="current-points-copy">
+            <p>Mevcut puaniniz: <strong>@Model.AvailablePoints.ToString("N0")</strong></p>
+        </div>
+        <div class="rewards-grid">
+            @foreach (var reward in Model.Rewards)
+            {
+                <div class="reward-card">
+                    <div class="reward-icon benefit-@reward.Tone"><i class="@reward.IconClass"></i></div>
+                    <h4>@reward.Title</h4>
+                    <p>@reward.Description</p>
+                    <div class="reward-points">@reward.RequiredPoints.ToString("N0") <small>puan</small></div>
+                    <button class="btn btn-primary" type="button" @(reward.IsAvailable ? null : "disabled")>
+                        <i class="@(reward.IsAvailable ? "fas fa-exchange-alt" : "fas fa-lock")"></i>
+                        @(reward.IsAvailable ? "Kullanima Hazir" : "Yetersiz Puan")
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="tab-panel" data-panel="tiers">
+        <div class="tiers-grid tiers-detailed">
+            @foreach (var tier in Model.Tiers)
+            {
+                <div class="tier-card @(tier.IsCurrent ? "active" : string.Empty)">
+                    <div class="tier-icon-sm tier-@tier.CssClass">@tier.Code[..1]</div>
+                    <h4>@tier.Name @if (tier.IsCurrent) { <span class="tier-current-pill">Mevcut</span> }</h4>
+                    <div class="tier-range">@tier.RangeText</div>
+                    <ul class="tier-benefits">
+                        @foreach (var item in tier.BenefitSummary.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        {
+                            <li><i class="fas fa-check-circle"></i> @item</li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @{
+        var nonce = Context.Items["CspNonce"] as string;
+    }
+    <script nonce="@nonce">
+        (function () {
+            const root = document.querySelector('[data-tab-root]');
+            if (!root) {
+                return;
+            }
+
+            const tabs = root.querySelectorAll('[data-tab]');
+            const panels = root.querySelectorAll('[data-panel]');
+
+            function switchTab(tabId) {
+                tabs.forEach(function (tab) {
+                    tab.classList.toggle('active', tab.getAttribute('data-tab') === tabId);
+                });
+
+                panels.forEach(function (panel) {
+                    panel.classList.toggle('active', panel.getAttribute('data-panel') === tabId);
+                });
+            }
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    switchTab(tab.getAttribute('data-tab'));
+                });
+            });
+        })();
+    </script>
+}

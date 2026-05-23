@@ -1,0 +1,183 @@
+@model otelturizmnew.Models.TelefonDogrulama.AdminWhatsAppCloudApiPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+}
+
+<div class="row">
+    <div class="col-lg-4 col-md-6 col-12">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>@(Model.Form.IsActive ? "Aktif" : "Pasif")</h3>
+                <p>Cloud API Durumu</p>
+                <small>@Model.ConnectionSummary</small>
+            </div>
+            <div class="icon"><i class="fab fa-whatsapp"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6 col-12">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>@(Model.HasSavedToken ? "Var" : "Yok")</h3>
+                <p>Access Token</p>
+                <small>@(Model.HasSavedVerifyToken ? "Webhook verify token kayıtlı." : "Webhook verify token bekleniyor.")</small>
+            </div>
+            <div class="icon"><i class="fas fa-key"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6 col-12">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>7 Gün</h3>
+                <p>Mesaj Özeti</p>
+                <small>@Model.DeliverySummary</small>
+            </div>
+            <div class="icon"><i class="fas fa-chart-line"></i></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">WhatsApp Cloud API Ayarları</h3>
+    </div>
+    <form method="post" action="/admin/whatsapp-cloud-api/kaydet">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 form-group">
+                    <label>App ID</label>
+                    <input type="text" name="AppId" value="@Model.Form.AppId" class="form-control" />
+                </div>
+                <div class="col-md-4 form-group">
+                    <label>Business Account ID</label>
+                    <input type="text" name="BusinessAccountId" value="@Model.Form.BusinessAccountId" class="form-control" />
+                </div>
+                <div class="col-md-4 form-group">
+                    <label>Phone Number ID</label>
+                    <input type="text" name="PhoneNumberId" value="@Model.Form.PhoneNumberId" class="form-control" />
+                </div>
+                <div class="col-md-4 form-group">
+                    <label>App Secret</label>
+                    <input type="password" name="AppSecret" value="" class="form-control" placeholder="@(Model.HasSavedAppSecret ? "Kayıtlı değeri korumak için boş bırakın" : "App secret")" />
+                </div>
+                <div class="col-md-4 form-group">
+                    <label>Permanent Access Token</label>
+                    <input type="password" name="PermanentAccessToken" value="" class="form-control" placeholder="@(Model.HasSavedToken ? "Kayıtlı değeri korumak için boş bırakın" : "Access token")" />
+                </div>
+                <div class="col-md-4 form-group">
+                    <label>Webhook Verify Token</label>
+                    <input type="password" name="WebhookVerifyToken" value="" class="form-control" placeholder="@(Model.HasSavedVerifyToken ? "Kayıtlı değeri korumak için boş bırakın" : "Verify token")" />
+                </div>
+                <div class="col-md-4 form-group">
+                    <label>Doğrulama Template Adı</label>
+                    <input type="text" name="VerificationTemplateName" value="@Model.Form.VerificationTemplateName" class="form-control" />
+                </div>
+                <div class="col-md-2 form-group">
+                    <label>Dil Kodu</label>
+                    <input type="text" name="DefaultLanguageCode" value="@Model.Form.DefaultLanguageCode" class="form-control" />
+                </div>
+                <div class="col-md-2 form-group">
+                    <label>Kod Uzunluğu</label>
+                    <input type="number" name="OtpCodeLength" value="@Model.Form.OtpCodeLength" min="4" max="8" class="form-control" />
+                </div>
+                <div class="col-md-2 form-group">
+                    <label>TTL (sn)</label>
+                    <input type="number" name="OtpTtlSeconds" value="@Model.Form.OtpTtlSeconds" min="60" max="900" class="form-control" />
+                </div>
+                <div class="col-md-2 form-group">
+                    <label>Yeniden Gönderim (sn)</label>
+                    <input type="number" name="ResendCooldownSeconds" value="@Model.Form.ResendCooldownSeconds" min="30" max="300" class="form-control" />
+                </div>
+                <div class="col-md-2 form-group">
+                    <label>Maks. Deneme</label>
+                    <input type="number" name="MaxAttemptCount" value="@Model.Form.MaxAttemptCount" min="3" max="10" class="form-control" />
+                </div>
+                <div class="col-md-2 form-group">
+                    <label>Yeniden Doğrulama (gün)</label>
+                    <input type="number" name="PhoneReverifyAfterDays" value="@Model.Form.PhoneReverifyAfterDays" min="30" max="730" class="form-control" />
+                </div>
+                <div class="col-md-4 form-group">
+                    <label>Test Telefonu (E.164)</label>
+                    <input type="text" name="TestRecipientPhoneE164" value="@Model.Form.TestRecipientPhoneE164" class="form-control" placeholder="+90555..." />
+                </div>
+                <div class="col-md-4 form-group d-flex align-items-end">
+                    <div class="custom-control custom-switch mr-4">
+                        <input type="checkbox" class="custom-control-input" id="reservationVerificationRequired" name="ReservationPhoneVerificationRequired" value="true" @(Model.Form.ReservationPhoneVerificationRequired ? "checked" : string.Empty) />
+                        <label class="custom-control-label" for="reservationVerificationRequired">Rezervasyon için telefon doğrulaması zorunlu</label>
+                    </div>
+                </div>
+                <div class="col-md-4 form-group d-flex align-items-end">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="whatsAppCloudApiActive" name="IsActive" value="true" @(Model.Form.IsActive ? "checked" : string.Empty) />
+                        <label class="custom-control-label" for="whatsAppCloudApiActive">Yapılandırma aktif</label>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-info mb-0">
+                Webhook callback adresi: <code>/api/integrations/whatsapp/webhook</code>
+                Template, gövdesinde tek bir doğrulama kodu parametresi bekleyecek şekilde hazırlanmalıdır.
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+            <span class="text-muted">Gizli alanlar boş bırakılırsa kayıtlı değer korunur.</span>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Kaydet</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Test Mesajı</h3>
+    </div>
+    <form method="post" action="/admin/whatsapp-cloud-api/test-gonder" class="mb-0">
+        @Html.AntiForgeryToken()
+        <div class="card-body row">
+            <div class="col-md-8 form-group mb-md-0">
+                <label>Telefon Numarası</label>
+                <input type="text" name="phoneNumber" value="@Model.Form.TestRecipientPhoneE164" class="form-control" placeholder="+90555..." />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-success btn-block"><i class="fab fa-whatsapp mr-1"></i> Test Gönder</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Son Mesaj Logları</h3>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Telefon</th>
+                    <th>Template</th>
+                    <th>Durum</th>
+                    <th>Tarih</th>
+                    <th>Hata</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.RecentLogs.Count == 0)
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">Henüz log kaydı oluşmadı.</td></tr>
+                }
+                else
+                {
+                    @foreach (var item in Model.RecentLogs)
+                    {
+                        <tr>
+                            <td>@item.PhoneNumberE164</td>
+                            <td>@item.TemplateName</td>
+                            <td><span class="badge badge-@item.DeliveryToneClass">@item.DeliveryStatus</span></td>
+                            <td>@item.CreatedAtText</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.ErrorText) ? "-" : item.ErrorText)</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

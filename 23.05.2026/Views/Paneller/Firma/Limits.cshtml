@@ -1,0 +1,79 @@
+@model otelturizmnew.Models.Paneller.Firma.FirmaLimitsPageViewModel
+@{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
+<section class="firma-two-column">
+    <article class="firma-section-card">
+        <h2>Harcama Limitleri</h2>
+        <div class="firma-table-wrap">
+            <table class="firma-table">
+                <thead><tr><th>Kapsam</th><th>Gecelik</th><th>Rez. Başı</th><th>Aylık</th><th>Akış</th></tr></thead>
+                <tbody>
+                @foreach (var item in Model.Limits)
+                {
+                    <tr>
+                        <td>@item.ScopeText</td>
+                        <td>@item.NightlyLimitText</td>
+                        <td>@item.ReservationLimitText</td>
+                        <td>@item.MonthlyLimitText</td>
+                        <td>@item.ApprovalText</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <form method="post" action="/panel/firma/limit-kaydet" class="firma-form-grid firma-form-compact">
+            @Html.AntiForgeryToken()
+            <label>
+                <span>Çalışan</span>
+                <select name="UserId">
+                    <option value="">Firma geneli / departman</option>
+                    @foreach (var employee in Model.Employees)
+                    {
+                        <option value="@employee.UserId">@employee.FullName (@employee.Department)</option>
+                    }
+                </select>
+            </label>
+            <label><span>Departman</span><input type="text" name="Department" value="@Model.LimitForm.Department" placeholder="Satış" /></label>
+            <label><span>Gecelik Limit</span><input type="number" step="0.01" min="0" name="NightlyLimit" /></label>
+            <label><span>Rezervasyon Başı Limit</span><input type="number" step="0.01" min="0" name="ReservationLimit" /></label>
+            <label><span>Aylık Limit</span><input type="number" step="0.01" min="0" name="MonthlyLimit" /></label>
+            <label class="firma-checkbox"><input type="checkbox" name="ApprovalRequired" value="true" /><span>Onay zorunlu olsun</span></label>
+            <div class="firma-form-actions">
+                <button type="submit" class="firma-btn-primary">Limit Kaydet</button>
+            </div>
+        </form>
+    </article>
+    <article class="firma-section-card">
+        <h2>Onay Bekleyen Rezervasyonlar</h2>
+        <div class="firma-list">
+            @foreach (var item in Model.PendingApprovals)
+            {
+                <div class="firma-list-row firma-approval-row">
+                    <div>
+                        <strong>@item.ReservationNo · @item.EmployeeName</strong>
+                        <span>@item.HotelName · @item.HotelCityText</span>
+                        <small>@item.StayText</small>
+                    </div>
+                    <div class="firma-approval-actions">
+                        <b>@item.TotalText</b>
+                        <form method="post" action="/panel/firma/rezervasyon-onay">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="ReservationId" value="@item.ReservationId" />
+                            <input type="hidden" name="Decision" value="approve" />
+                            <button type="submit" class="firma-btn-success">Onayla</button>
+                        </form>
+                        <form method="post" action="/panel/firma/rezervasyon-onay">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="ReservationId" value="@item.ReservationId" />
+                            <input type="hidden" name="Decision" value="reject" />
+                            <button type="submit" class="firma-btn-danger">Reddet</button>
+                        </form>
+                    </div>
+                </div>
+            }
+            @if (Model.PendingApprovals.Count == 0)
+            {
+                <div class="firma-empty-inline">Bekleyen firma onayı bulunmuyor.</div>
+            }
+        </div>
+    </article>
+</section>

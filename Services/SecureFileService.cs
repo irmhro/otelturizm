@@ -84,11 +84,11 @@ public class SecureFileService : ISecureFileService
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-            INSERT INTO guvenli_dosya_varliklari
+            INSERT INTO [dbo].[GUVENLI_DOSYA_VARLIKLARI]
             (
-                baglam_tablo, baglam_kayit_id, sahibi_kullanici_id, sahibi_firma_id,
-                kategori, gorunurluk_kapsami, orijinal_dosya_adi, depolanan_dosya_adi, depolama_yolu,
-                mime_tipi, dosya_uzantisi, dosya_boyutu, sha256_ozeti, gorsel_mi
+                [BAGLAM_TABLO], [BAGLAM_KAYIT_ID], [SAHIBI_KULLANICI_ID], [SAHIBI_FIRMA_ID],
+                [KATEGORI], [GORUNURLUK_KAPSAMI], [ORIJINAL_DOSYA_ADI], [DEPOLANAN_DOSYA_ADI], [DEPOLAMA_YOLU],
+                [MIME_TIPI], [DOSYA_UZANTISI], [DOSYA_BOYUTU], [SHA256_OZETI], [GORSEL_MI]
             )
             VALUES
             (
@@ -162,10 +162,10 @@ public class SecureFileService : ISecureFileService
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-            INSERT INTO guvenli_dosya_erisim_tokenlari
+            INSERT INTO [dbo].[GUVENLI_DOSYA_ERISIM_TOKENLARI]
             (
-                guvenli_dosya_id, erisim_tokeni, kullanici_id, hesap_tipi,
-                gecerlilik_tarihi, maksimum_kullanim_sayisi
+                [GUVENLI_DOSYA_ID], [ERISIM_TOKENI], [KULLANICI_ID], [HESAP_TIPI],
+                [GECERLILIK_TARIHI], [MAKSIMUM_KULLANIM_SAYISI]
             )
             VALUES
             (
@@ -189,16 +189,16 @@ public class SecureFileService : ISecureFileService
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-            SELECT TOP (1) gfv.depolama_yolu, gfv.orijinal_dosya_adi, gfv.mime_tipi,
-                   gdet.id, gdet.kullanim_sayisi, gdet.maksimum_kullanim_sayisi
-            FROM guvenli_dosya_erisim_tokenlari gdet
-            INNER JOIN guvenli_dosya_varliklari gfv ON gfv.id = gdet.guvenli_dosya_id
-            WHERE gdet.erisim_tokeni = @token
-              AND gdet.iptal_tarihi IS NULL
-              AND gdet.kullanici_id = @userId
-              AND gdet.hesap_tipi = @accountType
-              AND gdet.gecerlilik_tarihi >= SYSUTCDATETIME()
-              AND gfv.aktif_mi = 1;";
+            SELECT TOP (1) gfv.[DEPOLAMA_YOLU], gfv.[ORIJINAL_DOSYA_ADI], gfv.[MIME_TIPI],
+                   gdet.id, gdet.[KULLANIM_SAYISI], gdet.[MAKSIMUM_KULLANIM_SAYISI]
+            FROM [dbo].[GUVENLI_DOSYA_ERISIM_TOKENLARI] gdet
+            INNER JOIN [dbo].[GUVENLI_DOSYA_VARLIKLARI] gfv ON gfv.id = gdet.[GUVENLI_DOSYA_ID]
+            WHERE gdet.[ERISIM_TOKENI] = @token
+              AND gdet.[IPTAL_TARIHI] IS NULL
+              AND gdet.[KULLANICI_ID] = @userId
+              AND gdet.[HESAP_TIPI] = @accountType
+              AND gdet.[GECERLILIK_TARIHI] >= SYSUTCDATETIME()
+              AND gfv.[AKTIF_MI] = 1;";
 
         long accessTokenId;
         long usageCount;
@@ -237,9 +237,9 @@ public class SecureFileService : ISecureFileService
         }
 
         await using (var updateCommand = new SqlCommand(@"
-            UPDATE guvenli_dosya_erisim_tokenlari
-            SET kullanim_sayisi = kullanim_sayisi + 1,
-                son_erisim_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[GUVENLI_DOSYA_ERISIM_TOKENLARI]
+            SET [KULLANIM_SAYISI] = [KULLANIM_SAYISI] + 1,
+                [SON_ERISIM_TARIHI] = SYSUTCDATETIME()
             WHERE id = @id;", connection))
         {
             updateCommand.Parameters.AddWithValue("@id", accessTokenId);
@@ -267,11 +267,11 @@ public class SecureFileService : ISecureFileService
 
         string? path = null;
         await using (var lookup = new SqlCommand("""
-            SELECT TOP (1) depolama_yolu
-            FROM guvenli_dosya_varliklari
+            SELECT TOP (1) [DEPOLAMA_YOLU]
+            FROM [dbo].[GUVENLI_DOSYA_VARLIKLARI]
             WHERE id = @fileId
-              AND sahibi_kullanici_id = @ownerUserId
-              AND kategori = @category;
+              AND [SAHIBI_KULLANICI_ID] = @ownerUserId
+              AND [KATEGORI] = @category;
             """, connection))
         {
             lookup.Parameters.AddWithValue("@fileId", fileId);
@@ -288,17 +288,17 @@ public class SecureFileService : ISecureFileService
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            await using (var tokenDelete = new SqlCommand("DELETE FROM guvenli_dosya_erisim_tokenlari WHERE guvenli_dosya_id = @fileId;", connection, (SqlTransaction)transaction))
+            await using (var tokenDelete = new SqlCommand("DELETE FROM [dbo].[GUVENLI_DOSYA_ERISIM_TOKENLARI] WHERE [GUVENLI_DOSYA_ID] = @fileId;", connection, (SqlTransaction)transaction))
             {
                 tokenDelete.Parameters.AddWithValue("@fileId", fileId);
                 await tokenDelete.ExecuteNonQueryAsync(cancellationToken);
             }
 
             await using (var fileDelete = new SqlCommand("""
-                DELETE FROM guvenli_dosya_varliklari
+                DELETE FROM [dbo].[GUVENLI_DOSYA_VARLIKLARI]
                 WHERE id = @fileId
-                  AND sahibi_kullanici_id = @ownerUserId
-                  AND kategori = @category;
+                  AND [SAHIBI_KULLANICI_ID] = @ownerUserId
+                  AND [KATEGORI] = @category;
                 """, connection, (SqlTransaction)transaction))
             {
                 fileDelete.Parameters.AddWithValue("@fileId", fileId);

@@ -100,50 +100,50 @@ public sealed class DepartmentPanelService : IDepartmentPanelService
 
     private static async Task FillUserDepartmentAsync(SqlConnection connection, DepartmentDashboardPageViewModel model, CancellationToken cancellationToken)
     {
-        await AddMetricAsync(connection, model, "Toplam Kullanıcı", "SELECT COUNT(*) FROM users", "Kayıtlı kullanıcı hesabı", "info", "fa-users", cancellationToken);
-        await AddMetricAsync(connection, model, "Bugün Giriş", "SELECT COUNT(*) FROM kullanici_giris_loglari WHERE giris_tarihi >= CONVERT(date, SYSUTCDATETIME())", "Günlük oturum hareketi", "success", "fa-right-to-bracket", cancellationToken);
-        await AddMetricAsync(connection, model, "Onaysız Yorum", "SELECT COUNT(*) FROM yorumlar WHERE COALESCE(onay_durumu,'Beklemede')='Beklemede'", "Yayın bekleyen yorumlar", "warning", "fa-star-half-stroke", cancellationToken);
+        await AddMetricAsync(connection, model, "Toplam Kullanıcı", "SELECT COUNT(*) FROM [dbo].[KULLANICILAR]", "Kayıtlı kullanıcı hesabı", "info", "fa-users", cancellationToken);
+        await AddMetricAsync(connection, model, "Bugün Giriş", "SELECT COUNT(*) FROM [dbo].[KULLANICI_GIRIS_LOGLARI] WHERE [GIRIS_TARIHI] >= CONVERT(date, SYSUTCDATETIME())", "Günlük oturum hareketi", "success", "fa-right-to-bracket", cancellationToken);
+        await AddMetricAsync(connection, model, "Onaysız Yorum", "SELECT COUNT(*) FROM [dbo].[YORUMLAR] WHERE COALESCE([ONAY_DURUMU],'Beklemede')='Beklemede'", "Yayın bekleyen yorumlar", "warning", "fa-star-half-stroke", cancellationToken);
         model.WorkItems.Add(new() { Type = "Yorum", Title = "Misafir değerlendirmeleri", Detail = "Bekleyen yorumları kontrol et ve yayın standardına göre onayla.", StatusText = "Bekliyor", ToneClass = "warning", ActionUrl = "/admin/degerlendirmeler" });
     }
 
     private static async Task FillPartnerDepartmentAsync(SqlConnection connection, DepartmentDashboardPageViewModel model, CancellationToken cancellationToken)
     {
-        await AddMetricAsync(connection, model, "Partner Başvurusu", "SELECT COUNT(*) FROM partner_detaylari WHERE COALESCE(onay_durumu,'Beklemede')='Beklemede'", "Admin evrak/onay bekleyen partnerler", "warning", "fa-file-signature", cancellationToken);
-        await AddMetricAsync(connection, model, "Yayın Bekleyen Otel", "SELECT COUNT(*) FROM oteller WHERE COALESCE(onay_durumu,'Beklemede') <> 'Onaylandi' OR COALESCE(yayin_durumu,'Kapali') <> 'Yayinda'", "Onay/yayın kararı bekleyen oteller", "danger", "fa-circle-pause", cancellationToken);
-        await AddMetricAsync(connection, model, "Toplam Otel", "SELECT COUNT(*) FROM oteller", "Partner otel portföyü", "info", "fa-hotel", cancellationToken);
+        await AddMetricAsync(connection, model, "Partner Başvurusu", "SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE COALESCE([ONAY_DURUMU],'Beklemede')='Beklemede'", "Admin evrak/onay bekleyen partnerler", "warning", "fa-file-signature", cancellationToken);
+        await AddMetricAsync(connection, model, "Yayın Bekleyen Otel", "SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE COALESCE([ONAY_DURUMU],'Beklemede') <> 'Onaylandi' OR COALESCE([YAYIN_DURUMU],'Kapali') <> 'Yayinda'", "Onay/yayın kararı bekleyen oteller", "danger", "fa-circle-pause", cancellationToken);
+        await AddMetricAsync(connection, model, "Toplam Otel", "SELECT COUNT(*) FROM [dbo].[OTELLER]", "Partner otel portföyü", "info", "fa-hotel", cancellationToken);
         model.WorkItems.Add(new() { Type = "Partner", Title = "Partner başvuruları", Detail = "Evrak, e-posta giriş onayı ve otel yayın bağlantısını kontrol et.", StatusText = "İnceleme", ToneClass = "warning", ActionUrl = "/admin/partner-basvurulari" });
         model.WorkItems.Add(new() { Type = "Otel", Title = "Otel yayın/onay", Detail = "Admin onayı olmayan otellerin listelenmesini engelle ve yayına açma kararını ver.", StatusText = "Kritik", ToneClass = "danger", ActionUrl = "/admin/onay-merkezi" });
     }
 
     private static async Task FillCompanyDepartmentAsync(SqlConnection connection, DepartmentDashboardPageViewModel model, CancellationToken cancellationToken)
     {
-        await AddMetricAsync(connection, model, "Firma Başvurusu", "SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu,'Beklemede')='Beklemede'", "Kurumsal onay kuyruğu", "warning", "fa-building", cancellationToken);
-        await AddMetricAsync(connection, model, "Firma Rezervasyonu", "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id IS NOT NULL", "Firma kaynaklı konaklama talebi", "success", "fa-calendar-check", cancellationToken);
-        await AddMetricAsync(connection, model, "Firma Faturası", "SELECT COUNT(*) FROM faturalar WHERE firma_id IS NOT NULL", "Firma panelinde görünecek faturalar", "info", "fa-receipt", cancellationToken);
+        await AddMetricAsync(connection, model, "Firma Başvurusu", "SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE COALESCE([ONAY_DURUMU],'Beklemede')='Beklemede'", "Kurumsal onay kuyruğu", "warning", "fa-building", cancellationToken);
+        await AddMetricAsync(connection, model, "Firma Rezervasyonu", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [FIRMA_ID] IS NOT NULL", "Firma kaynaklı konaklama talebi", "success", "fa-calendar-check", cancellationToken);
+        await AddMetricAsync(connection, model, "Firma Faturası", "SELECT COUNT(*) FROM [dbo].[FATURALAR] WHERE [FIRMA_ID] IS NOT NULL", "Firma panelinde görünecek faturalar", "info", "fa-receipt", cancellationToken);
         model.WorkItems.Add(new() { Type = "Firma", Title = "Firma başvuruları", Detail = "Vergi no, sicil, MERSİS ve yetkili bilgisi kontrol edilecek.", StatusText = "Bekliyor", ToneClass = "warning", ActionUrl = "/admin/firma-basvurulari" });
     }
 
     private static async Task FillSalesDepartmentAsync(SqlConnection connection, DepartmentDashboardPageViewModel model, CancellationToken cancellationToken)
     {
-        await AddMetricAsync(connection, model, "Satış Müşterisi", "SELECT COUNT(*) FROM satis_musterileri", "Satış müşteri havuzu", "info", "fa-address-book", cancellationToken);
-        await AddMetricAsync(connection, model, "Satış Rezervasyonu", "SELECT COUNT(*) FROM rezervasyonlar WHERE satis_temsilcisi_id IS NOT NULL", "Satış temsilcisi bağlantılı kayıt", "success", "fa-handshake", cancellationToken);
-        await AddMetricAsync(connection, model, "Satış Cirosu", "SELECT COALESCE(SUM(COALESCE(toplam_tutar,0)),0) FROM rezervasyonlar WHERE satis_temsilcisi_id IS NOT NULL", "Satış kaynaklı toplam ciro", "success", "fa-chart-line", cancellationToken, true);
+        await AddMetricAsync(connection, model, "Satış Müşterisi", "SELECT COUNT(*) FROM [dbo].[SATIS_MUSTERILERI]", "Satış müşteri havuzu", "info", "fa-address-book", cancellationToken);
+        await AddMetricAsync(connection, model, "Satış Rezervasyonu", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [SATIS_TEMSILCISI_ID] IS NOT NULL", "Satış temsilcisi bağlantılı kayıt", "success", "fa-handshake", cancellationToken);
+        await AddMetricAsync(connection, model, "Satış Cirosu", "SELECT COALESCE(SUM(COALESCE([TOPLAM_TUTAR],0)),0) FROM [dbo].[REZERVASYONLAR] WHERE [SATIS_TEMSILCISI_ID] IS NOT NULL", "Satış kaynaklı toplam ciro", "success", "fa-chart-line", cancellationToken, true);
         model.WorkItems.Add(new() { Type = "Satış", Title = "Satış rezervasyonları", Detail = "Müşteri, otel ve rezervasyon ciro hareketlerini takip et.", StatusText = "Aktif", ToneClass = "success", ActionUrl = "/panel/satis/rezervasyonlarim" });
     }
 
     private static async Task FillAccountingDepartmentAsync(SqlConnection connection, DepartmentDashboardPageViewModel model, CancellationToken cancellationToken)
     {
-        await AddMetricAsync(connection, model, "Toplam Komisyon", "SELECT COALESCE(SUM(COALESCE(komisyon_tutari,0)),0) FROM komisyon_muhasebe_kayitlari", "Tahakkuk eden komisyon", "success", "fa-percent", cancellationToken, true);
-        await AddMetricAsync(connection, model, "Bekleyen Fatura", "SELECT COUNT(*) FROM faturalar WHERE COALESCE(fatura_durumu,'Taslak') IN ('Taslak','Beklemede')", "Onay/yükleme bekleyen faturalar", "warning", "fa-file-invoice", cancellationToken);
-        await AddMetricAsync(connection, model, "Mutabakat İtirazı", "SELECT COUNT(*) FROM komisyon_muhasebe_kayitlari WHERE COALESCE(itiraz_var_mi,0)=1", "Çözüm bekleyen muhasebe kayıtları", "danger", "fa-triangle-exclamation", cancellationToken);
+        await AddMetricAsync(connection, model, "Toplam Komisyon", "SELECT COALESCE(SUM(COALESCE([KOMISYON_TUTARI],0)),0) FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI]", "Tahakkuk eden komisyon", "success", "fa-percent", cancellationToken, true);
+        await AddMetricAsync(connection, model, "Bekleyen Fatura", "SELECT COUNT(*) FROM [dbo].[FATURALAR] WHERE COALESCE([FATURA_DURUMU],'Taslak') IN ('Taslak','Beklemede')", "Onay/yükleme bekleyen faturalar", "warning", "fa-file-invoice", cancellationToken);
+        await AddMetricAsync(connection, model, "Mutabakat İtirazı", "SELECT COUNT(*) FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] WHERE COALESCE([ITIRAZ_VAR_MI],0)=1", "Çözüm bekleyen muhasebe kayıtları", "danger", "fa-triangle-exclamation", cancellationToken);
         model.WorkItems.Add(new() { Type = "Muhasebe", Title = "Komisyon ve fatura", Detail = "Otel komisyon oranları, vergi ve fatura yükleme süreçlerini kontrol et.", StatusText = "Kontrol", ToneClass = "warning", ActionUrl = "/admin/komisyonlar" });
     }
 
     private static async Task FillSupportDepartmentAsync(SqlConnection connection, DepartmentDashboardPageViewModel model, CancellationToken cancellationToken)
     {
-        await AddMetricAsync(connection, model, "Partner Destek", "SELECT COUNT(*) FROM partner_destek_talepleri WHERE COALESCE(durum,'Acik') <> 'Kapali'", "Açık partner destek talepleri", "warning", "fa-headset", cancellationToken);
-        await AddMetricAsync(connection, model, "Mesaj Konuşması", "SELECT COUNT(*) FROM mesaj_konusmalari", "Platform mesaj merkezi", "info", "fa-comments", cancellationToken);
-        await AddMetricAsync(connection, model, "Sistem Hatası", "SELECT COUNT(*) FROM sistem_hata_loglari WHERE COALESCE(cozuldu_mu,0)=0", "Çözülmemiş hata kaydı", "danger", "fa-bug", cancellationToken);
+        await AddMetricAsync(connection, model, "Partner Destek", "SELECT COUNT(*) FROM [dbo].[PARTNER_DESTEK_TALEPLERI] WHERE COALESCE([DURUM],'Acik') <> 'Kapali'", "Açık partner destek talepleri", "warning", "fa-headset", cancellationToken);
+        await AddMetricAsync(connection, model, "Mesaj Konuşması", "SELECT COUNT(*) FROM [dbo].[MESAJ_KONUSMALARI]", "Platform mesaj merkezi", "info", "fa-comments", cancellationToken);
+        await AddMetricAsync(connection, model, "Sistem Hatası", "SELECT COUNT(*) FROM [dbo].[SISTEM_HATA_LOGLARI] WHERE COALESCE([COZULDU_MU],0)=0", "Çözülmemiş hata kaydı", "danger", "fa-bug", cancellationToken);
         model.WorkItems.Add(new() { Type = "Destek", Title = "Açık destek talepleri", Detail = "Partner, firma ve kullanıcı destek işlerini SLA mantığında takip et.", StatusText = "Açık", ToneClass = "warning", ActionUrl = "/admin/destek-makaleleri" });
     }
 

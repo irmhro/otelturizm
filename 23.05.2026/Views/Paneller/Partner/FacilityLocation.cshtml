@@ -1,0 +1,207 @@
+@using System.Globalization
+@model otelturizmnew.Models.Paneller.Partner.PartnerHotelLocationPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/hotel-info";
+    var form = Model.Form;
+    string Dec(decimal? value) => value.HasValue ? value.Value.ToString("0.########", CultureInfo.InvariantCulture) : string.Empty;
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Tesis yönetimi</div>
+            <h2 class="page-title">Konum & Harita</h2>
+            <div class="text-muted mt-1">Adres, koordinat ve konum açıklaması otel detay ve harita aramalarında kullanılır.</div>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+                <a class="btn btn-outline-primary" href="/panel/partner/otel-bilgileri?otelId=@form.HotelId#adres">
+                    <i class="fas fa-arrow-up-right-from-square me-2"></i>Tesis veri merkezini aç
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="post" action="/panel/partner/tesis/konum/kaydet">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="HotelId" value="@form.HotelId" />
+
+    <div class="row row-cards">
+        <div class="col-12">
+            <div class="card" id="adres">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title mb-0">Adres ve koordinat</h3>
+                        <div class="text-muted small">Koordinat girilmezse harita ve mesafe filtreleri eksik çalışır.</div>
+                    </div>
+                    <div class="card-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-floppy-disk me-2"></i>Kaydet
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Ülke</label>
+                            <input class="form-control" name="Country" value="@(form.Country ?? "Türkiye")" readonly />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Şehir</label>
+                            <select class="form-select" name="CityId" id="locationCity" required>
+                                <option value="">Seçiniz</option>
+                                @foreach (var row in Model.Cities)
+                                {
+                                    if (Model.SelectedCityId.HasValue && Model.SelectedCityId.Value == row.Id)
+                                    {
+                                        <option value="@row.Id" selected="selected">@row.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@row.Id">@row.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">İlçe</label>
+                            <select class="form-select" name="DistrictId" id="locationDistrict" required>
+                                <option value="">Seçiniz</option>
+                                @foreach (var row in Model.Districts)
+                                {
+                                    if (Model.SelectedDistrictId.HasValue && Model.SelectedDistrictId.Value == row.Id)
+                                    {
+                                        <option value="@row.Id" selected="selected">@row.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@row.Id">@row.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Mahalle</label>
+                            <select class="form-select" name="NeighborhoodId" id="locationNeighborhood">
+                                <option value="">Seçiniz</option>
+                                @foreach (var row in Model.Neighborhoods)
+                                {
+                                    if (Model.SelectedNeighborhoodId.HasValue && Model.SelectedNeighborhoodId.Value == row.Id)
+                                    {
+                                        <option value="@row.Id" selected="selected">@row.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@row.Id">@row.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Posta kodu</label>
+                            <input class="form-control" name="PostalCode" value="@form.PostalCode" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Enlem</label>
+                            <input class="form-control" type="text" inputmode="decimal" name="Latitude" value="@Dec(form.Latitude)" placeholder="Örn: 40.9060787" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Boylam</label>
+                            <input class="form-control" type="text" inputmode="decimal" name="Longitude" value="@Dec(form.Longitude)" placeholder="Örn: 29.2809220" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Tam adres</label>
+                            <textarea class="form-control" name="Address" rows="3" required>@form.Address</textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Konum açıklaması</label>
+                            <textarea class="form-control" name="LocationDescription" rows="3" placeholder="Metro, havaalanı, sahil, merkez gibi ulaşım notları">@form.LocationDescription</textarea>
+                            <div class="form-hint">Google Maps üzerinde otel noktasına sağ tıklayıp kopyaladığınız enlem/boylam değerini nokta veya virgülle girebilirsiniz.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-floppy-disk me-2"></i>Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@{
+    var nonce = Context.Items["CspNonce"] as string;
+}
+<script nonce="@nonce">
+    (function () {
+        const city = document.getElementById('locationCity');
+        const district = document.getElementById('locationDistrict');
+        const neighborhood = document.getElementById('locationNeighborhood');
+
+        function setOptions(selectEl, items, placeholder) {
+            if (!selectEl) return;
+            const current = selectEl.value;
+            selectEl.innerHTML = '';
+            const opt0 = document.createElement('option');
+            opt0.value = '';
+            opt0.textContent = placeholder || 'Seçiniz';
+            selectEl.appendChild(opt0);
+            (items || []).forEach(function (x) {
+                const o = document.createElement('option');
+                o.value = String(x.id);
+                o.textContent = x.name;
+                selectEl.appendChild(o);
+            });
+            if (current) {
+                selectEl.value = current;
+            }
+        }
+
+        async function loadDistricts(cityId) {
+            setOptions(district, [], 'Yükleniyor...');
+            setOptions(neighborhood, [], 'Seçiniz');
+            if (!cityId) {
+                setOptions(district, [], 'Seçiniz');
+                return;
+            }
+            const res = await fetch('/panel/partner/tesis/konum/ilceler?cityId=' + encodeURIComponent(cityId), { credentials: 'same-origin' });
+            if (!res.ok) {
+                setOptions(district, [], 'Seçiniz');
+                return;
+            }
+            const data = await res.json();
+            setOptions(district, data, 'Seçiniz');
+        }
+
+        async function loadNeighborhoods(districtId) {
+            setOptions(neighborhood, [], 'Yükleniyor...');
+            if (!districtId) {
+                setOptions(neighborhood, [], 'Seçiniz');
+                return;
+            }
+            const res = await fetch('/panel/partner/tesis/konum/mahalleler?districtId=' + encodeURIComponent(districtId), { credentials: 'same-origin' });
+            if (!res.ok) {
+                setOptions(neighborhood, [], 'Seçiniz');
+                return;
+            }
+            const data = await res.json();
+            setOptions(neighborhood, data, 'Seçiniz');
+        }
+
+        if (city) {
+            city.addEventListener('change', function () {
+                loadDistricts(city.value);
+            });
+        }
+        if (district) {
+            district.addEventListener('change', function () {
+                loadNeighborhoods(district.value);
+            });
+        }
+    })();
+</script>
+

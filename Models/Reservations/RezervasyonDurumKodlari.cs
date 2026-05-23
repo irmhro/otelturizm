@@ -1,7 +1,7 @@
 namespace otelturizmnew.Models.Reservations;
 
 /// <summary>
-/// Stabil rezervasyon durum kodları — veritabanında <c>rezervasyon_durum_tanimlari.kod</c> ile eşleşir.
+/// Stabil rezervasyon durum kodları — veritabanında <c>REZERVASYON_DURUM_TANIMLARI.KOD</c> ile eşleşir.
 /// </summary>
 public static class RezervasyonDurumKodlari
 {

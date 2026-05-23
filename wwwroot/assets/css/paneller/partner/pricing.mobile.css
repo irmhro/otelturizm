@@ -1,1 +1,56 @@
 @import url("./pricing.css");
+@import url("../../shared/mobile-viewport-shell.css");
+
+@media (max-width: 900px) {
+    .partner-pricing-hero {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px;
+    }
+
+    .partner-pricing-hero-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .partner-pricing-hero-actions .btn,
+    .partner-pricing-toolbar .btn,
+    .partner-month-picker-form .btn {
+        min-height: 44px;
+    }
+
+    .partner-pricing-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .partner-pricing-month-nav {
+        width: 100%;
+    }
+
+    .partner-calendar-month-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        max-width: 100%;
+        padding-bottom: 4px;
+    }
+
+    .partner-calendar-month-scroll .partner-calendar-weekdays,
+    .partner-calendar-month-scroll .partner-calendar-month-grid {
+        min-width: min(100vw - 32px, 560px);
+        width: 100%;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    .partner-calendar-month-grid {
+        gap: 6px;
+    }
+
+    .partner-calendar-cell {
+        min-height: 108px;
+        padding: 10px 8px;
+        font-size: 11px;
+    }
+}

@@ -1,0 +1,133 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminPaymentsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+    var totalPages = Model.PageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(Model.Total / (double)Model.PageSize));
+    var pageSizes = new[] { 10, 25, 50, 100, 200 };
+    static string Enc(string? value) => System.Net.WebUtility.UrlEncode(value ?? string.Empty);
+    string Tone(string status)
+    {
+        var text = (status ?? string.Empty).ToLowerInvariant();
+        if (text.Contains("başar") || text.Contains("basar") || text.Contains("tamam")) return "success";
+        if (text.Contains("bek") || text.Contains("işlen") || text.Contains("islen") || text.Contains("ask")) return "warning";
+        if (text.Contains("başarısız") || text.Contains("basarisiz") || text.Contains("red") || text.Contains("iptal")) return "danger";
+        return "info";
+    }
+}
+
+<section class="admin-payments-page">
+    <div class="admin-summary-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <article class="admin-summary-card admin-summary-card--@card.ToneClass">
+                <span class="admin-summary-icon"><i class="fas @card.IconClass"></i></span>
+                <div>
+                    <p>@card.Label</p>
+                    <h2>@card.Value</h2>
+                    <span>@card.Description</span>
+                </div>
+            </article>
+        }
+    </div>
+
+    <article class="admin-section-card">
+        <div class="card-header">
+            <div>
+                <p class="mini-caption">TİCARİ OPERASYON</p>
+                <h2 class="card-title mb-1">Ödemeler</h2>
+                <span class="text-muted">Tahsilat, iade, risk puanı ve manuel onay gerektiren işlemleri izleyin.</span>
+            </div>
+            <span class="badge bg-blue-lt text-blue">@Model.Total kayıt</span>
+        </div>
+
+        <form method="get" action="/admin/odemeler" class="admin-ops-filter">
+            <label>
+                <span>Arama</span>
+                <input name="q" value="@Model.Query" placeholder="İşlem no, rezervasyon, otel, müşteri" />
+            </label>
+            <label>
+                <span>Durum</span>
+                <select name="status">
+                    <option value="">Tüm durumlar</option>
+                    @foreach (var option in Model.StatusOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(Model.Status, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Ödeme türü</span>
+                <select name="paymentType">
+                    <option value="">Tüm türler</option>
+                    @foreach (var option in Model.TypeOptions)
+                    {
+                        <option value="@option" selected="@(string.Equals(Model.PaymentType, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Sayfa başı</span>
+                <select name="pageSize">
+                    @foreach (var size in pageSizes)
+                    {
+                        <option value="@size" selected="@(Model.PageSize == size)">@size</option>
+                    }
+                </select>
+            </label>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-2"></i>Filtrele</button>
+            <a class="btn btn-outline-primary" href="/admin/odemeler"><i class="fas fa-rotate-left me-2"></i>Temizle</a>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-vcenter table-hover admin-ops-table">
+                <thead>
+                    <tr>
+                        <th>İşlem</th>
+                        <th>Rezervasyon</th>
+                        <th>Otel / Müşteri</th>
+                        <th>Tür / Yöntem</th>
+                        <th>Durum</th>
+                        <th>Tahsilat</th>
+                        <th>Risk</th>
+                        <th>Tarih</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr><td colspan="8">Filtreye uygun ödeme kaydı bulunamadı.</td></tr>
+                    }
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td><strong>@row.TransactionNo</strong><small>#@row.PaymentId</small></td>
+                            <td>@row.ReservationNo</td>
+                            <td><strong>@row.HotelName</strong><small>@row.CustomerName</small></td>
+                            <td><span>@row.PaymentType</span><small>@row.PaymentMethod · @row.Provider</small></td>
+                            <td><span class="badge bg-@(Tone(row.Status))-lt text-@(Tone(row.Status))">@row.Status</span></td>
+                            <td><strong>@row.TotalCollected.ToString("N2", tr) @row.Currency</strong><small>Komisyon @row.CommissionAmount.ToString("N2", tr) · Vergi @row.TaxAmount.ToString("N2", tr)</small></td>
+                            <td>
+                                <span class="badge @(row.ManualApprovalRequired || row.RiskScore >= 70 ? "bg-red-lt text-red" : row.RiskScore >= 40 ? "bg-yellow-lt text-yellow" : "bg-green-lt text-green")">@row.RiskScore</span>
+                                @if (row.ManualApprovalRequired)
+                                {
+                                    <small>Manuel onay</small>
+                                }
+                            </td>
+                            <td><span>@(row.StartedAtUtc?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "-")</span><small>@(row.CompletedAtUtc?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "Tamamlanmadı")</small></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-pagination-row">
+            <span>@Model.Page / @totalPages sayfa</span>
+            <div>
+                <a class="btn btn-outline-primary btn-sm @(Model.Page <= 1 ? "disabled" : "")" href="/admin/odemeler?page=@(Model.Page - 1)&pageSize=@Model.PageSize&q=@Enc(Model.Query)&status=@Enc(Model.Status)&paymentType=@Enc(Model.PaymentType)">Önceki</a>
+                <a class="btn btn-outline-primary btn-sm @(Model.Page >= totalPages ? "disabled" : "")" href="/admin/odemeler?page=@(Model.Page + 1)&pageSize=@Model.PageSize&q=@Enc(Model.Query)&status=@Enc(Model.Status)&paymentType=@Enc(Model.PaymentType)">Sonraki</a>
+            </div>
+        </div>
+    </article>
+</section>

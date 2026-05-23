@@ -23,6 +23,17 @@ public interface IFirmaService
     Task<(bool Success, string Message)> UpsertLimitAsync(long userId, FirmaLimitUpsertModel model, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> UpdateReservationApprovalAsync(long userId, FirmaReservationDecisionModel model, CancellationToken cancellationToken = default);
 
-    Task<FirmaCreateReservationPageViewModel> GetCreateReservationAsync(long userId, long? hotelId = null, long? roomTypeId = null, string? search = null, CancellationToken cancellationToken = default);
+    Task<FirmaCreateReservationPageViewModel> GetCreateReservationAsync(
+        long userId,
+        long? hotelId = null,
+        long? roomTypeId = null,
+        string? search = null,
+        DateOnly? checkIn = null,
+        DateOnly? checkOut = null,
+        int? roomCount = null,
+        int? adultCount = null,
+        int? childCount = null,
+        long? employeeUserId = null,
+        CancellationToken cancellationToken = default);
     Task<(bool Success, string Message, long? ReservationId)> CreateReservationAsync(long userId, FirmaReservationCreateModel model, CancellationToken cancellationToken = default);
 }

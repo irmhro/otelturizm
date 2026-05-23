@@ -1,0 +1,48 @@
+.partner-guest-invoices .guest-invoices-hint {
+  margin-bottom: 12px;
+}
+
+.partner-guest-invoices .guest-invoices-table td {
+  vertical-align: middle;
+}
+
+.partner-guest-invoices .guest-invoice-upload-form {
+  margin: 0;
+}
+
+.partner-guest-invoices .guest-invoice-upload {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.partner-guest-invoices .guest-invoice-file {
+  max-width: 260px;
+}
+
+.partner-guest-invoices .guest-invoice-upload-btn {
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.partner-alert {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  margin-bottom: 14px;
+  font-weight: 700;
+}
+
+.partner-alert.is-danger {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.06);
+  color: #b91c1c;
+}
+
+.partner-alert.is-success {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+  color: #166534;
+}

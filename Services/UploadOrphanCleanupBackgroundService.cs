@@ -112,21 +112,21 @@ public sealed class UploadOrphanCleanupBackgroundService : BackgroundService
         const string sql = @"
             DECLARE @urls TABLE(url nvarchar(2048));
 
-            IF OBJECT_ID('dbo.users', 'U') IS NOT NULL AND COL_LENGTH('dbo.users', 'profil_resim_url') IS NOT NULL
+            IF OBJECT_ID('[dbo].[KULLANICILAR]', 'U') IS NOT NULL AND COL_LENGTH('[dbo].[KULLANICILAR]', 'profil_resim_url') IS NOT NULL
                 INSERT INTO @urls(url)
-                SELECT profil_resim_url FROM dbo.users WHERE profil_resim_url LIKE '/uploads/%';
+                SELECT [PROFIL_RESIM_URL] FROM [dbo].[KULLANICILAR] WHERE [PROFIL_RESIM_URL] LIKE '/uploads/%';
 
-            IF OBJECT_ID('dbo.otel_gorselleri', 'U') IS NOT NULL AND COL_LENGTH('dbo.otel_gorselleri', 'gorsel_url') IS NOT NULL
+            IF OBJECT_ID('[dbo].[OTEL_GORSELLERI]', 'U') IS NOT NULL AND COL_LENGTH('[dbo].[OTEL_GORSELLERI]', 'gorsel_url') IS NOT NULL
                 INSERT INTO @urls(url)
-                SELECT gorsel_url FROM dbo.otel_gorselleri WHERE gorsel_url LIKE '/uploads/%';
+                SELECT [GORSEL_URL] FROM [dbo].[OTEL_GORSELLERI] WHERE [GORSEL_URL] LIKE '/uploads/%';
 
-            IF OBJECT_ID('dbo.oda_gorselleri', 'U') IS NOT NULL AND COL_LENGTH('dbo.oda_gorselleri', 'gorsel_url') IS NOT NULL
+            IF OBJECT_ID('[dbo].[ODA_GORSELLERI]', 'U') IS NOT NULL AND COL_LENGTH('[dbo].[ODA_GORSELLERI]', 'gorsel_url') IS NOT NULL
                 INSERT INTO @urls(url)
-                SELECT gorsel_url FROM dbo.oda_gorselleri WHERE gorsel_url LIKE '/uploads/%';
+                SELECT [GORSEL_URL] FROM [dbo].[ODA_GORSELLERI] WHERE [GORSEL_URL] LIKE '/uploads/%';
 
-            IF OBJECT_ID('dbo.oteller', 'U') IS NOT NULL AND COL_LENGTH('dbo.oteller', 'kapak_fotografi') IS NOT NULL
+            IF OBJECT_ID('[dbo].[OTELLER]', 'U') IS NOT NULL AND COL_LENGTH('[dbo].[OTELLER]', 'kapak_fotografi') IS NOT NULL
                 INSERT INTO @urls(url)
-                SELECT kapak_fotografi FROM dbo.oteller WHERE kapak_fotografi LIKE '/uploads/%';
+                SELECT [KAPAK_FOTOGRAFI] FROM [dbo].[OTELLER] WHERE [KAPAK_FOTOGRAFI] LIKE '/uploads/%';
 
             SELECT DISTINCT url FROM @urls WHERE url IS NOT NULL AND url <> '';";
 

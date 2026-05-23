@@ -65,11 +65,11 @@ public class DevelopmentRequestService : IDevelopmentRequestService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = new SqlCommand("""
-            INSERT INTO dbo.gelistirme_talepleri
+            INSERT INTO [dbo].[GELISTIRME_TALEPLERI]
             (
-                ana_talep_id, cevap_talep_id, kayit_tipi, kaynak_rol, olusturan_kullanici_id,
-                baslik, aciklama, oncelik, durum, gorsel_url,
-                son_hareket_tarihi, olusturulma_tarihi, guncellenme_tarihi
+                [ANA_TALEP_ID], [CEVAP_TALEP_ID], [KAYIT_TIPI], [KAYNAK_ROL], [OLUSTURAN_KULLANICI_ID],
+                [BASLIK], [ACIKLAMA], [ONCELIK], [DURUM], [GORSEL_URL],
+                [SON_HAREKET_TARIHI], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
             )
             VALUES
             (
@@ -194,12 +194,12 @@ public class DevelopmentRequestService : IDevelopmentRequestService
         }
 
         await using var command = new SqlCommand("""
-            UPDATE dbo.gelistirme_talepleri
-            SET silindi_mi = 1,
-                durum = N'Reddedildi',
-                son_hareket_tarihi = SYSUTCDATETIME(),
-                guncellenme_tarihi = SYSUTCDATETIME()
-            WHERE id = @requestId OR ana_talep_id = @requestId;
+            UPDATE [dbo].[GELISTIRME_TALEPLERI]
+            SET [SILINDI_MI] = 1,
+                [DURUM] = N'Reddedildi',
+                [SON_HAREKET_TARIHI] = SYSUTCDATETIME(),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+            WHERE id = @requestId OR [ANA_TALEP_ID] = @requestId;
             """, connection, transaction);
         command.Parameters.AddWithValue("@requestId", requestId);
         await command.ExecuteNonQueryAsync(cancellationToken);
@@ -213,31 +213,31 @@ public class DevelopmentRequestService : IDevelopmentRequestService
         await using var command = new SqlCommand("""
             SELECT
                 root.id,
-                root.olusturan_kullanici_id,
-                root.atanan_gelistirici_id,
-                COALESCE(root.baslik, N''),
-                COALESCE(root.aciklama, N''),
-                COALESCE(root.oncelik, N'Orta'),
-                COALESCE(root.durum, N'Yeni'),
-                root.planlanan_baslangic_tarihi,
-                root.hedef_bitis_tarihi,
-                root.tamamlanma_tarihi,
-                root.gorsel_url,
-                root.olusturulma_tarihi,
-                root.son_hareket_tarihi,
-                COALESCE(creator.ad_soyad, N'Developer'),
-                COALESCE(assignee.ad_soyad, N'')
-            FROM dbo.gelistirme_talepleri AS root
-            INNER JOIN dbo.users AS creator ON creator.id = root.olusturan_kullanici_id
-            LEFT JOIN dbo.users AS assignee ON assignee.id = root.atanan_gelistirici_id
-            WHERE root.ana_talep_id IS NULL
-              AND root.silindi_mi = 0
-              AND (@forAdmin = 1 OR root.olusturan_kullanici_id = @currentUserId OR root.atanan_gelistirici_id = @currentUserId)
-              AND (@search = N'' OR root.baslik LIKE N'%' + @search + N'%' OR root.aciklama LIKE N'%' + @search + N'%')
-              AND (@statusFilter = N'all' OR root.durum = @statusFilter)
-              AND (@priorityFilter = N'all' OR root.oncelik = @priorityFilter)
-              AND (@developerFilterUserId IS NULL OR root.atanan_gelistirici_id = @developerFilterUserId)
-            ORDER BY root.son_hareket_tarihi DESC, root.id DESC;
+                root.[OLUSTURAN_KULLANICI_ID],
+                root.[ATANAN_GELISTIRICI_ID],
+                COALESCE(root.[BASLIK], N''),
+                COALESCE(root.[ACIKLAMA], N''),
+                COALESCE(root.[ONCELIK], N'Orta'),
+                COALESCE(root.[DURUM], N'Yeni'),
+                root.[PLANLANAN_BASLANGIC_TARIHI],
+                root.[HEDEF_BITIS_TARIHI],
+                root.[TAMAMLANMA_TARIHI],
+                root.[GORSEL_URL],
+                root.[OLUSTURULMA_TARIHI],
+                root.[SON_HAREKET_TARIHI],
+                COALESCE(creator.[AD_SOYAD], N'Developer'),
+                COALESCE(assignee.[AD_SOYAD], N'')
+            FROM [dbo].[GELISTIRME_TALEPLERI] AS root
+            INNER JOIN [dbo].[KULLANICILAR] AS creator ON creator.id = root.[OLUSTURAN_KULLANICI_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] AS assignee ON assignee.id = root.[ATANAN_GELISTIRICI_ID]
+            WHERE root.[ANA_TALEP_ID] IS NULL
+              AND root.[SILINDI_MI] = 0
+              AND (@forAdmin = 1 OR root.[OLUSTURAN_KULLANICI_ID] = @currentUserId OR root.[ATANAN_GELISTIRICI_ID] = @currentUserId)
+              AND (@search = N'' OR root.[BASLIK] LIKE N'%' + @search + N'%' OR root.[ACIKLAMA] LIKE N'%' + @search + N'%')
+              AND (@statusFilter = N'all' OR root.[DURUM] = @statusFilter)
+              AND (@priorityFilter = N'all' OR root.[ONCELIK] = @priorityFilter)
+              AND (@developerFilterUserId IS NULL OR root.[ATANAN_GELISTIRICI_ID] = @developerFilterUserId)
+            ORDER BY root.[SON_HAREKET_TARIHI] DESC, root.id DESC;
             """, connection);
         command.Parameters.AddWithValue("@forAdmin", forAdmin ? 1 : 0);
         command.Parameters.AddWithValue("@currentUserId", currentUserId);
@@ -301,20 +301,20 @@ public class DevelopmentRequestService : IDevelopmentRequestService
         await using var activityCommand = new SqlCommand($"""
             SELECT
                 activity.id,
-                activity.ana_talep_id,
-                activity.kayit_tipi,
-                activity.kaynak_rol,
-                COALESCE(u.ad_soyad, N'Ekip'),
-                COALESCE(activity.aciklama, N''),
-                COALESCE(activity.durum, N''),
-                COALESCE(activity.oncelik, N''),
-                activity.gorsel_url,
-                activity.olusturulma_tarihi
-            FROM dbo.gelistirme_talepleri AS activity
-            LEFT JOIN dbo.users AS u ON u.id = activity.olusturan_kullanici_id
-            WHERE activity.ana_talep_id IN ({ids})
-              AND activity.silindi_mi = 0
-            ORDER BY activity.olusturulma_tarihi ASC, activity.id ASC;
+                activity.[ANA_TALEP_ID],
+                activity.[KAYIT_TIPI],
+                activity.[KAYNAK_ROL],
+                COALESCE(u.[AD_SOYAD], N'Ekip'),
+                COALESCE(activity.[ACIKLAMA], N''),
+                COALESCE(activity.[DURUM], N''),
+                COALESCE(activity.[ONCELIK], N''),
+                activity.[GORSEL_URL],
+                activity.[OLUSTURULMA_TARIHI]
+            FROM [dbo].[GELISTIRME_TALEPLERI] AS activity
+            LEFT JOIN [dbo].[KULLANICILAR] AS u ON u.id = activity.[OLUSTURAN_KULLANICI_ID]
+            WHERE activity.[ANA_TALEP_ID] IN ({ids})
+              AND activity.[SILINDI_MI] = 0
+            ORDER BY activity.[OLUSTURULMA_TARIHI] ASC, activity.id ASC;
             """, connection);
         await using var activityReader = await activityCommand.ExecuteReaderAsync(cancellationToken);
         var itemMap = items.ToDictionary(x => x.RequestId);
@@ -367,11 +367,11 @@ public class DevelopmentRequestService : IDevelopmentRequestService
             UserRole = userRole,
             PanelTitle = "Gelistirme Talepleri",
             PanelSubtitle = "Developer ekibinden gelen proje taleplerini planla, cevapla ve son durumu takip et.",
-            PendingPartnerApplications = await CountAsync("SELECT COUNT(*) FROM partner_basvurulari WHERE durum = N'Bekliyor';"),
-            PendingCompanyApplications = await CountAsync("SELECT COUNT(*) FROM firma_basvurulari WHERE durum = N'Bekliyor';"),
-            UnreadNotifications = await CountAsync("SELECT COUNT(*) FROM bildirim_loglari WHERE durum = N'Bekliyor';"),
-            PendingReviews = await CountAsync("SELECT COUNT(*) FROM yorumlar WHERE onay_durumu LIKE N'Bekliyor%';"),
-            CriticalLogs = await CountAsync("SELECT COUNT(*) FROM log_kayitlari WHERE seviye IN (N'Kritik', N'Critical', N'Error');")
+            PendingPartnerApplications = await CountAsync("SELECT COUNT(*) FROM partner_basvurulari WHERE [DURUM] = N'Bekliyor';"),
+            PendingCompanyApplications = await CountAsync("SELECT COUNT(*) FROM firma_basvurulari WHERE [DURUM] = N'Bekliyor';"),
+            UnreadNotifications = await CountAsync("SELECT COUNT(*) FROM [dbo].[BILDIRIM_LOGLARI] WHERE [DURUM] = N'Bekliyor';"),
+            PendingReviews = await CountAsync("SELECT COUNT(*) FROM [dbo].[YORUMLAR] WHERE [ONAY_DURUMU] LIKE N'Bekliyor%';"),
+            CriticalLogs = await CountAsync("SELECT COUNT(*) FROM log_kayitlari WHERE [SEVIYE] IN (N'Kritik', N'Critical', N'Error');")
         };
     }
 
@@ -379,19 +379,19 @@ public class DevelopmentRequestService : IDevelopmentRequestService
     {
         var developers = new List<DeveloperUserOptionViewModel>();
         await using var command = new SqlCommand("""
-            SELECT d.id, d.ad_soyad, d.eposta
+            SELECT d.id, d.[AD_SOYAD], d.[EPOSTA]
             FROM (
                 SELECT DISTINCT
                     u.id,
-                    COALESCE(u.ad_soyad, N'Developer') AS ad_soyad,
-                    COALESCE(u.eposta, N'') AS eposta
-                FROM dbo.users AS u
-                LEFT JOIN dbo.kullanici_rolleri AS ur ON ur.kullanici_id = u.id AND ur.bitis_tarihi IS NULL
-                LEFT JOIN dbo.roller AS r ON r.id = ur.rol_id
-                WHERE LOWER(COALESCE(u.rol, N'')) = N'developer'
-                   OR LOWER(COALESCE(r.rol_kodu, N'')) = N'developer'
+                    COALESCE(u.[AD_SOYAD], N'Developer') AS [AD_SOYAD],
+                    COALESCE(u.[EPOSTA], N'') AS [EPOSTA]
+                FROM [dbo].[KULLANICILAR] AS u
+                LEFT JOIN [dbo].[KULLANICI_ROLLERI] AS ur ON ur.[KULLANICI_ID] = u.id AND ur.[BITIS_TARIHI] IS NULL
+                LEFT JOIN [dbo].[ROLLER] AS r ON r.id = ur.[ROL_ID]
+                WHERE LOWER(COALESCE(u.[ROL], N'')) = N'developer'
+                   OR LOWER(COALESCE(r.[ROL_KODU], N'')) = N'developer'
             ) d
-            ORDER BY d.ad_soyad, d.eposta;
+            ORDER BY d.[AD_SOYAD], d.[EPOSTA];
             """, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -438,12 +438,12 @@ public class DevelopmentRequestService : IDevelopmentRequestService
     private static async Task InsertActivityAsync(SqlConnection connection, SqlTransaction transaction, long requestId, string recordType, string sourceRole, long createdByUserId, long? assignedDeveloperUserId, string title, string description, string priority, string status, DateOnly? plannedStartDate, DateOnly? dueDate, string? imageUrl, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            INSERT INTO dbo.gelistirme_talepleri
+            INSERT INTO [dbo].[GELISTIRME_TALEPLERI]
             (
-                ana_talep_id, cevap_talep_id, kayit_tipi, kaynak_rol, olusturan_kullanici_id,
-                atanan_gelistirici_id, baslik, aciklama, oncelik, durum,
-                planlanan_baslangic_tarihi, hedef_bitis_tarihi, gorsel_url,
-                son_hareket_tarihi, olusturulma_tarihi, guncellenme_tarihi
+                [ANA_TALEP_ID], [CEVAP_TALEP_ID], [KAYIT_TIPI], [KAYNAK_ROL], [OLUSTURAN_KULLANICI_ID],
+                [ATANAN_GELISTIRICI_ID], [BASLIK], [ACIKLAMA], [ONCELIK], [DURUM],
+                [PLANLANAN_BASLANGIC_TARIHI], [HEDEF_BITIS_TARIHI], [GORSEL_URL],
+                [SON_HAREKET_TARIHI], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
             )
             VALUES
             (
@@ -471,17 +471,17 @@ public class DevelopmentRequestService : IDevelopmentRequestService
     private static async Task UpdateRootAsync(SqlConnection connection, SqlTransaction transaction, long requestId, string title, string description, string priority, string status, long? assignedDeveloperUserId, DateOnly? plannedStartDate, DateOnly? dueDate, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            UPDATE dbo.gelistirme_talepleri
-            SET baslik = @title,
-                aciklama = @description,
-                oncelik = @priority,
-                durum = @status,
-                atanan_gelistirici_id = @assignedDeveloperUserId,
-                planlanan_baslangic_tarihi = @plannedStartDate,
-                hedef_bitis_tarihi = @dueDate,
-                tamamlanma_tarihi = CASE WHEN @status = N'Tamamlandi' THEN COALESCE(tamamlanma_tarihi, SYSUTCDATETIME()) ELSE NULL END,
-                son_hareket_tarihi = SYSUTCDATETIME(),
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[GELISTIRME_TALEPLERI]
+            SET [BASLIK] = @title,
+                [ACIKLAMA] = @description,
+                [ONCELIK] = @priority,
+                [DURUM] = @status,
+                [ATANAN_GELISTIRICI_ID] = @assignedDeveloperUserId,
+                [PLANLANAN_BASLANGIC_TARIHI] = @plannedStartDate,
+                [HEDEF_BITIS_TARIHI] = @dueDate,
+                [TAMAMLANMA_TARIHI] = CASE WHEN @status = N'Tamamlandi' THEN COALESCE([TAMAMLANMA_TARIHI], SYSUTCDATETIME()) ELSE NULL END,
+                [SON_HAREKET_TARIHI] = SYSUTCDATETIME(),
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @requestId;
             """, connection, transaction);
         command.Parameters.AddWithValue("@requestId", requestId);
@@ -500,18 +500,18 @@ public class DevelopmentRequestService : IDevelopmentRequestService
         await using var command = new SqlCommand("""
             SELECT TOP (1)
                 id,
-                olusturan_kullanici_id,
-                atanan_gelistirici_id,
-                COALESCE(baslik, N''),
-                COALESCE(aciklama, N''),
-                COALESCE(oncelik, N'Orta'),
-                COALESCE(durum, N'Yeni'),
-                planlanan_baslangic_tarihi,
-                hedef_bitis_tarihi
-            FROM dbo.gelistirme_talepleri
+                [OLUSTURAN_KULLANICI_ID],
+                [ATANAN_GELISTIRICI_ID],
+                COALESCE([BASLIK], N''),
+                COALESCE([ACIKLAMA], N''),
+                COALESCE([ONCELIK], N'Orta'),
+                COALESCE([DURUM], N'Yeni'),
+                [PLANLANAN_BASLANGIC_TARIHI],
+                [HEDEF_BITIS_TARIHI]
+            FROM [dbo].[GELISTIRME_TALEPLERI]
             WHERE id = @requestId
-              AND ana_talep_id IS NULL
-              AND silindi_mi = 0;
+              AND [ANA_TALEP_ID] IS NULL
+              AND [SILINDI_MI] = 0;
             """, connection, transaction);
         command.Parameters.AddWithValue("@requestId", requestId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);

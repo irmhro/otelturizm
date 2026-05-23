@@ -82,7 +82,7 @@ dotnet build --no-restore
 3. Publish al (Release):
 
 ```bash
-dotnet publish "D:\otelturizm\otelturizmnew.csproj" -c Release
+dotnet publish "D:\otelturizm\otelturizm.csproj" -c Release
 ```
 
 4. MSDeploy ile canlıya gönder:
@@ -93,7 +93,7 @@ dotnet publish "D:\otelturizm\otelturizmnew.csproj" -c Release
 Alternatif manuel publish:
 
 ```powershell
-dotnet publish "D:\otelturizm\otelturizmnew.csproj" -c Release -o "D:\otelturizm\artifacts\manual-publish"
+dotnet publish "D:\otelturizm\otelturizm.csproj" -c Release -o "D:\otelturizm\artifacts\manual-publish"
 ```
 
 ```powershell

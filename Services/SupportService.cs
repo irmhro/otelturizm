@@ -26,10 +26,10 @@ public class SupportService : ISupportService
         await connection.OpenAsync(cancellationToken);
 
         const string categoriesSql = @"
-            SELECT kategori_adi, seo_slug, kisa_aciklama, kategori_ikon, renk_kodu
-            FROM destek_kategorileri
-            WHERE durum = 1
-            ORDER BY siralama, id;";
+            SELECT [KATEGORI_ADI], [SEO_SLUG], [KISA_ACIKLAMA], [KATEGORI_IKON], [RENK_KODU]
+            FROM [dbo].[DESTEK_KATEGORILERI]
+            WHERE [DURUM] = 1
+            ORDER BY [SIRALAMA], [ID];";
 
         await using (var command = new SqlCommand(categoriesSql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -50,17 +50,17 @@ public class SupportService : ISupportService
         }
 
         var topicsSql = @"
-            SELECT id, baslik, ozet, COALESCE(ikon, 'fa-circle-question') AS ikon
-            FROM destek_makaleleri
-            WHERE durum = 1
-              AND yardim_merkezinde_goster = 1";
+            SELECT [ID], [BASLIK], [OZET], COALESCE([IKON], 'fa-circle-question') AS ikon
+            FROM [dbo].[DESTEK_MAKALELERI]
+            WHERE [DURUM] = 1
+              AND [YARDIM_MERKEZINDE_GOSTER] = 1";
 
         if (!string.IsNullOrWhiteSpace(model.SearchTerm))
         {
-            topicsSql += " AND (baslik LIKE '%' + @search + '%' OR ozet LIKE '%' + @search + '%' OR icerik LIKE '%' + @search + '%')";
+            topicsSql += " AND ([BASLIK] LIKE '%' + @search + '%' OR [OZET] LIKE '%' + @search + '%' OR [ICERIK] LIKE '%' + @search + '%')";
         }
 
-        topicsSql += " ORDER BY one_cikan_mi DESC, siralama, id OFFSET 0 ROWS FETCH NEXT 6 ROWS ONLY;";
+        topicsSql += " ORDER BY [ONE_CIKAN_MI] DESC, [SIRALAMA], [ID] OFFSET 0 ROWS FETCH NEXT 6 ROWS ONLY;";
 
         await using (var command = new SqlCommand(topicsSql, connection))
         {
@@ -85,10 +85,10 @@ public class SupportService : ISupportService
         }
 
         const string channelsSql = @"
-            SELECT kanal_adi, aciklama, ikon, buton_metin, baglanti_url, ek_bilgi, renk_tonu, kanal_turu
-            FROM destek_kanallari
-            WHERE aktif_mi = 1
-            ORDER BY siralama, id;";
+            SELECT [KANAL_ADI], [ACIKLAMA], [IKON], [BUTON_METIN], [BAGLANTI_URL], [EK_BILGI], [RENK_TONU], [KANAL_TURU]
+            FROM [dbo].[DESTEK_KANALLARI]
+            WHERE [AKTIF_MI] = 1
+            ORDER BY [SIRALAMA], [ID];";
 
         await using (var command = new SqlCommand(channelsSql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -136,20 +136,20 @@ public class SupportService : ISupportService
 
         const string categorySql = @"
             SELECT TOP (1)
-                k.id,
-                k.kategori_adi,
-                k.seo_slug,
-                COALESCE(k.kisa_aciklama, N'') AS kisa_aciklama,
-                COALESCE(k.kategori_ikon, N'fa-circle-info') AS kategori_ikon,
-                COALESCE(k.renk_kodu, N'#003B95') AS renk_kodu,
-                COALESCE(d.hero_baslik, N'') AS hero_baslik,
-                COALESCE(d.hero_alt_baslik, N'') AS hero_alt_baslik,
-                COALESCE(d.hero_gorsel_url, N'') AS hero_gorsel_url,
-                COALESCE(d.tam_aciklama, N'') AS tam_aciklama
-            FROM dbo.destek_kategorileri k
-            LEFT JOIN dbo.yardim_merkezi_kategori_detaylari d ON d.destek_kategori_id = k.id AND d.aktif_mi = 1
-            WHERE k.durum = 1
-              AND k.seo_slug = @slug;";
+                k.[ID],
+                k.[KATEGORI_ADI],
+                k.[SEO_SLUG],
+                COALESCE(k.[KISA_ACIKLAMA], N'') AS [KISA_ACIKLAMA],
+                COALESCE(k.[KATEGORI_IKON], N'fa-circle-info') AS [KATEGORI_IKON],
+                COALESCE(k.[RENK_KODU], N'#003B95') AS [RENK_KODU],
+                COALESCE(d.[HERO_BASLIK], N'') AS hero_baslik,
+                COALESCE(d.[HERO_ALT_BASLIK], N'') AS hero_alt_baslik,
+                COALESCE(d.[HERO_GORSEL_URL], N'') AS hero_gorsel_url,
+                COALESCE(d.[TAM_ACIKLAMA], N'') AS tam_aciklama
+            FROM [dbo].[DESTEK_KATEGORILERI] k
+            LEFT JOIN [dbo].[YARDIM_MERKEZI_KATEGORI_DETAYLARI] d ON d.[DESTEK_KATEGORI_ID] = k.[ID] AND d.[AKTIF_MI] = 1
+            WHERE k.[DURUM] = 1
+              AND k.[SEO_SLUG] = @slug;";
 
         long categoryId;
         await using (var cmd = new SqlCommand(categorySql, connection))
@@ -180,10 +180,10 @@ public class SupportService : ISupportService
         try
         {
             const string faqSql = @"
-                SELECT soru, cevap
-                FROM dbo.yardim_merkezi_kategori_sss
-                WHERE aktif_mi = 1 AND destek_kategori_id = @categoryId
-                ORDER BY siralama ASC, id ASC;";
+                SELECT [SORU], [CEVAP]
+                FROM [dbo].[YARDIM_MERKEZI_KATEGORI_SSS]
+                WHERE [AKTIF_MI] = 1 AND [DESTEK_KATEGORI_ID] = @categoryId
+                ORDER BY [SIRALAMA] ASC, [ID] ASC;";
             await using var faqCmd = new SqlCommand(faqSql, connection);
             faqCmd.Parameters.AddWithValue("@categoryId", categoryId);
             await using var faqReader = await faqCmd.ExecuteReaderAsync(cancellationToken);
@@ -202,13 +202,13 @@ public class SupportService : ISupportService
         }
 
         const string relatedSql = @"
-            SELECT TOP (12) id, baslik, ozet, COALESCE(ikon, 'fa-circle-question') AS ikon
-            FROM dbo.destek_makaleleri
-            WHERE durum = 1
-              AND destek_kategori_id = @categoryId
-              AND yardim_merkezinde_goster = 1
-              AND (@q IS NULL OR (baslik LIKE '%' + @q + '%' OR ozet LIKE '%' + @q + '%' OR icerik LIKE '%' + @q + '%'))
-            ORDER BY one_cikan_mi DESC, siralama, id DESC;";
+            SELECT TOP (12) [ID], [BASLIK], [OZET], COALESCE([IKON], 'fa-circle-question') AS ikon
+            FROM [dbo].[DESTEK_MAKALELERI]
+            WHERE [DURUM] = 1
+              AND [DESTEK_KATEGORI_ID] = @categoryId
+              AND [YARDIM_MERKEZINDE_GOSTER] = 1
+              AND (@q IS NULL OR ([BASLIK] LIKE '%' + @q + '%' OR [OZET] LIKE '%' + @q + '%' OR [ICERIK] LIKE '%' + @q + '%'))
+            ORDER BY [ONE_CIKAN_MI] DESC, [SIRALAMA], [ID] DESC;";
         await using (var cmd = new SqlCommand(relatedSql, connection))
         {
             cmd.Parameters.AddWithValue("@categoryId", categoryId);
@@ -246,12 +246,12 @@ public class SupportService : ISupportService
         {
             const string sql = @"
                 SELECT TOP (1)
-                    icerik_turu, baslik, COALESCE(ozet, N''), COALESCE(hero_baslik, N''), COALESCE(hero_alt_baslik, N''),
-                    COALESCE(hero_gorsel_url, N''), icerik
-                FROM dbo.yardim_merkezi_icerikler
-                WHERE aktif_mi = 1
-                  AND icerik_turu = @type
-                  AND seo_slug = @slug;";
+                    [ICERIK_TURU], [BASLIK], COALESCE([OZET], N''), COALESCE([HERO_BASLIK], N''), COALESCE([HERO_ALT_BASLIK], N''),
+                    COALESCE([HERO_GORSEL_URL], N''), [ICERIK]
+                FROM [dbo].[YARDIM_MERKEZI_ICERIKLER]
+                WHERE [AKTIF_MI] = 1
+                  AND [ICERIK_TURU] = @type
+                  AND [SEO_SLUG] = @slug;";
             await using var cmd = new SqlCommand(sql, connection);
             cmd.Parameters.AddWithValue("@type", t);
             cmd.Parameters.AddWithValue("@slug", slug.Trim());
@@ -283,10 +283,10 @@ public class SupportService : ISupportService
         try
         {
             const string sql = @"
-                SELECT ad_soyad, unvan, eposta, COALESCE(avatar_url, N'') AS avatar_url
-                FROM dbo.platform_ekip_uyeleri
-                WHERE aktif_mi = 1
-                ORDER BY siralama ASC, id ASC;";
+                SELECT [AD_SOYAD], [UNVAN], [EPOSTA], COALESCE([AVATAR_URL], N'') AS [AVATAR_URL]
+                FROM [dbo].[PLATFORM_EKIP_UYELERI]
+                WHERE [AKTIF_MI] = 1
+                ORDER BY [SIRALAMA] ASC, [ID] ASC;";
             await using var cmd = new SqlCommand(sql, connection);
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             var list = new List<YardimMerkeziTeamMemberViewModel>();
@@ -410,10 +410,10 @@ public class SupportService : ISupportService
         await connection.OpenAsync(cancellationToken);
 
         const string categorySql = @"
-            SELECT kategori_adi, seo_slug
-            FROM sss_kategorileri
-            WHERE aktif_mi = 1
-            ORDER BY siralama, id;";
+            SELECT [KATEGORI_ADI], [SEO_SLUG]
+            FROM [dbo].[SSS_KATEGORILERI]
+            WHERE [AKTIF_MI] = 1
+            ORDER BY [SIRALAMA], id;";
 
         model.Categories.Add(new SssKategoriViewModel
         {
@@ -439,16 +439,16 @@ public class SupportService : ISupportService
 
         var faqSql = @"
             SELECT
-                k.kategori_adi,
-                k.seo_slug,
-                COALESCE(k.ikon, 'fa-circle-question') AS ikon,
+                k.[KATEGORI_ADI],
+                k.[SEO_SLUG],
+                COALESCE(k.[IKON], 'fa-circle-question') AS ikon,
                 s.id,
-                s.soru,
-                s.cevap
-            FROM sss_sorulari s
-            INNER JOIN sss_kategorileri k ON k.id = s.sss_kategori_id
-            WHERE s.aktif_mi = 1
-              AND k.aktif_mi = 1";
+                s.[SORU],
+                s.[CEVAP]
+            FROM [dbo].[SSS_SORULARI] s
+            INNER JOIN [dbo].[SSS_KATEGORILERI] k ON k.id = s.[SSS_KATEGORI_ID]
+            WHERE s.[AKTIF_MI] = 1
+              AND k.[AKTIF_MI] = 1";
 
         if (normalizedCategory != "tumu")
         {
@@ -502,10 +502,10 @@ public class SupportService : ISupportService
         }
 
         const string ctaSql = @"
-            SELECT TOP (1) kanal_adi, aciklama, ikon, buton_metin, baglanti_url, ek_bilgi, renk_tonu
-            FROM destek_kanallari
-            WHERE aktif_mi = 1 AND kanal_turu = 'canli_destek'
-            ORDER BY siralama, id;";
+            SELECT TOP (1) [KANAL_ADI], [ACIKLAMA], [IKON], [BUTON_METIN], [BAGLANTI_URL], [EK_BILGI], [RENK_TONU]
+            FROM [dbo].[DESTEK_KANALLARI]
+            WHERE [AKTIF_MI] = 1 AND [KANAL_TURU] = 'canli_destek'
+            ORDER BY [SIRALAMA], [ID];";
 
         await using (var command = new SqlCommand(ctaSql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))

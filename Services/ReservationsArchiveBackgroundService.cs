@@ -32,7 +32,7 @@ public sealed class ReservationsArchiveBackgroundService : BackgroundService
                     enabled);
                 if (enabled)
                 {
-                    _logger.LogInformation("ARCHIVE_COLD_STORAGE_PLANNED migrate old rows to dbo.rezervasyonlar_archive (implement with DBA review).");
+                    _logger.LogInformation("ARCHIVE_COLD_STORAGE_PLANNED migrate old rows to [dbo].[REZERVASYONLAR_ARSIV] (implement with DBA review).");
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

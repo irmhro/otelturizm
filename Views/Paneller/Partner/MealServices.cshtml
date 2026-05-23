@@ -1,0 +1,78 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerMealServicesPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/meal-services";
+    ViewData["Title"] = "Yemek Hizmetleri";
+}
+
+<div class="partner-meals-page">
+    <section class="partner-page-hero">
+        <div>
+            <div class="page-pretitle">Tesis Yönetimi</div>
+            <h1 class="page-title">Yemek hizmetleri</h1>
+            <p class="text-muted mb-0">Kahvaltı, öğle, akşam ve 7/24 sipariş seçeneklerini oda fiyatına dahil veya ek ücretli olarak tanımlayın.</p>
+        </div>
+    </section>
+
+    <form method="post" action="/panel/partner/tesis/yemek/kaydet" class="card partner-meals-card">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+        <div class="card-header">
+            <h3 class="card-title mb-0">Yemek planı ve fiyatlar</h3>
+        </div>
+        <div class="card-body">
+            <div class="partner-meals-grid">
+                @for (var i = 0; i < Model.Meals.Count; i++)
+                {
+                    var meal = Model.Meals[i];
+                    <article class="partner-meal-item">
+                        <input type="hidden" name="Meals[@i].ServiceType" value="@meal.ServiceType" />
+                        <div class="partner-meal-head">
+                            <div>
+                                <strong>@meal.Label</strong>
+                                <small>Rezervasyon fiyatına dahil edilebilir veya ek ücret olarak sunulabilir.</small>
+                            </div>
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="Meals[@i].IsActive" value="true" @(meal.IsActive ? "checked" : "") />
+                                <span class="form-check-label">Aktif</span>
+                            </label>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Kişi başı fiyat</label>
+                                <input class="form-control" type="number" step="0.01" min="0" name="Meals[@i].PerPersonPrice" value="@(meal.PerPersonPrice?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">2 kişilik fiyat</label>
+                                <input class="form-control" type="number" step="0.01" min="0" name="Meals[@i].TwoPersonPrice" value="@(meal.TwoPersonPrice?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Oda fiyatına dahil</label>
+                                <label class="form-check partner-meal-check">
+                                    <input class="form-check-input" type="checkbox" name="Meals[@i].IncludedInRoomPrice" value="true" @(meal.IncludedInRoomPrice ? "checked" : "") />
+                                    <span class="form-check-label">Dahil göster</span>
+                                </label>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label">Başlangıç</label>
+                                <input class="form-control" type="time" name="Meals[@i].StartTime" value="@meal.StartTime" />
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label">Bitiş</label>
+                                <input class="form-control" type="time" name="Meals[@i].EndTime" value="@meal.EndTime" />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Kısa açıklama</label>
+                                <input class="form-control" name="Meals[@i].Description" value="@meal.Description" maxlength="500" placeholder="Örn. açık büfe, set menü, oda servisi" />
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-end">
+            <button class="btn btn-primary btn-pill" type="submit"><i class="fas fa-check me-2"></i>Kaydet</button>
+        </div>
+    </form>
+</div>

@@ -33,17 +33,7 @@
         "admin" => "Admin Paneli",
         "developer" => "Developer Paneli",
         "sales" => "Satış Paneli",
-        _ => "Hesabım"
-    };
-
-    string GetAccountBadge() => accountType.ToLowerInvariant() switch
-    {
-        "partner" => "Partner Aktif",
-        "firma" => "Firma Aktif",
-        "admin" => "Admin Aktif",
-        "developer" => "Developer Aktif",
-        "sales" => "Satış Aktif",
-        _ => "Üyelik Aktif"
+        _ => SharedLocalizer["Nav.Account"].Value
     };
 
     var nonce = Context.Items["CspNonce"] as string;
@@ -67,7 +57,7 @@
         <summary class="public-account-toggle" title="@fullName">
             <span class="public-account-status-dot"></span>
             <span class="public-account-toggle-copy">
-                <strong>Hesabım</strong>
+                <strong>@SharedLocalizer["Nav.Account"]</strong>
                 <small>@fullName</small>
             </span>
             <i class="fas fa-chevron-down"></i>
@@ -76,14 +66,17 @@
         <div class="public-account-dropdown">
             @if (string.Equals(accountType, "user", StringComparison.OrdinalIgnoreCase))
             {
-                <div class="public-account-summary">
-                    <span class="public-account-badge">@GetAccountBadge()</span>
-                    <strong>@fullName</strong>
-                </div>
-
-                <a href="@GetPanelUrl()" class="public-account-link">
+                <a href="/panel/user" class="public-account-link">
                     <i class="fas fa-grid-2"></i>
-                    <span>@GetPanelLabel()</span>
+                    <span>Panelim</span>
+                </a>
+                <a href="/panel/user/profil-bilgilerim" class="public-account-link">
+                    <i class="fas fa-user"></i>
+                    <span>@SharedLocalizer["Nav.Account"]</span>
+                </a>
+                <a href="/panel/user/rezervasyonlarim" class="public-account-link">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Rezervasyonlar</span>
                 </a>
             }
             else if (string.Equals(accountType, "partner", StringComparison.OrdinalIgnoreCase))
@@ -98,16 +91,11 @@
                 </a>
                 <a href="/kurumsal" class="public-account-link">
                     <i class="fas fa-building"></i>
-                    <span>Kurumsal</span>
+                    <span>@SharedLocalizer["Nav.Corporate"]</span>
                 </a>
             }
             else
             {
-                <div class="public-account-summary">
-                    <span class="public-account-badge">@GetAccountBadge()</span>
-                    <strong>@GetPanelLabel()</strong>
-                </div>
-
                 <a href="@GetPanelUrl()" class="public-account-link">
                     <i class="fas fa-grid-2"></i>
                     <span>@GetPanelLabel()</span>
@@ -115,7 +103,7 @@
 
                 <a href="/kurumsal" class="public-account-link">
                     <i class="fas fa-building"></i>
-                    <span>Kurumsal</span>
+                    <span>@SharedLocalizer["Nav.Corporate"]</span>
                 </a>
 
                 @if (string.Equals(accountType, "admin", StringComparison.OrdinalIgnoreCase))
@@ -155,23 +143,23 @@ else
 {
     if (headerContext == "corporate")
     {
-        <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
-        <a href="/partner-giris" class="action-btn">Partner Giriş</a>
-        <a href="/partner-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
+        <a asp-controller="Oteller" asp-action="Index" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
+        <a href="/partner-giris" class="action-btn">@SharedLocalizer["Nav.Login"]</a>
+        <a href="/partner-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.Register"]</a>
         <a href="/firma" class="action-btn primary">Firma</a>
     }
     else if (headerContext == "firma")
     {
-        <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
-        <a href="/firma-giris" class="action-btn">Firma Giriş</a>
-        <a href="/firma-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
+        <a asp-controller="Oteller" asp-action="Index" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
+        <a href="/firma-giris" class="action-btn">@SharedLocalizer["Nav.Login"]</a>
+        <a href="/firma-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.Register"]</a>
     }
     else
     {
-        <a asp-controller="Oteller" asp-action="Index" class="action-btn">Oteller</a>
-        <a href="/kullanici-giris" class="action-btn">Kullanıcı Giriş</a>
-        <a href="/kullanici-giris?sekme=kayit" class="action-btn action-btn-soft">Kayıt Ol</a>
-        <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">Kurumsal</a>
+        <a asp-controller="Oteller" asp-action="Index" class="action-btn">@SharedLocalizer["Nav.Hotels"]</a>
+        <a href="/kullanici-giris" class="action-btn">@SharedLocalizer["Nav.Login"]</a>
+        <a href="/kullanici-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.Register"]</a>
+        <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">@SharedLocalizer["Nav.Corporate"]</a>
     }
 }
 

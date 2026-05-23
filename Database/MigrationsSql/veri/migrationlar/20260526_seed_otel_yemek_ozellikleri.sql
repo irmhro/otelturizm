@@ -1,0 +1,161 @@
+-- Kahvalti / ogle / aksam yemek ozellikleri + ORK-IST / ORK-SEED demo otel iliskileri
+-- Hedef: en az 15 kahvalti, 8 ogle, 8 aksam (idempotent)
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET ARITHABORT ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+
+DECLARE @KatYeme bigint;
+SELECT @KatYeme = [ID]
+FROM [dbo].[OTEL_OZELLIK_KATEGORILERI]
+WHERE [KATEGORI_ADI] = N'YEME_ICME';
+
+IF @KatYeme IS NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM [dbo].[OTEL_OZELLIK_KATEGORILERI] WHERE [KATEGORI_ADI] = N'YEME_ICME')
+        INSERT INTO [dbo].[OTEL_OZELLIK_KATEGORILERI]([KATEGORI_ADI],[KATEGORI_IKON],[SIRALAMA],[AKTIF_MI])
+        VALUES (N'YEME_ICME', N'fa-utensils', 20, 1);
+    SELECT @KatYeme = [ID] FROM [dbo].[OTEL_OZELLIK_KATEGORILERI] WHERE [KATEGORI_ADI] = N'YEME_ICME';
+END;
+
+IF OBJECT_ID(N'dbo.OTEL_OZELLIKLERI', N'U') IS NOT NULL AND @KatYeme IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM [dbo].[OTEL_OZELLIKLERI] WHERE [OZELLIK_KODU] = N'KAHVALTI_DAHIL')
+        INSERT INTO [dbo].[OTEL_OZELLIKLERI](
+            [KATEGORI_ID],[OZELLIK_ADI],[OZELLIK_IKON],[UCRETLI_MI],[ONE_CIKAN_OZELLIK],[SIRALAMA],[AKTIF_MI],
+            [OZELLIK_KODU],[FILTRELENEBILIR_MI],[DEGER_TIPI],[SECENEKLER_JSON],[GORUNUM_ALANI])
+        VALUES (@KatYeme, N'Kahvaltı Dahil', N'fa-mug-hot', 0, 1, 121, 1, N'KAHVALTI_DAHIL', 1, N'BOOL', NULL, N'OTEL_KARTI');
+
+    IF NOT EXISTS (SELECT 1 FROM [dbo].[OTEL_OZELLIKLERI] WHERE [OZELLIK_KODU] = N'OGLE_YEMEGI')
+        INSERT INTO [dbo].[OTEL_OZELLIKLERI](
+            [KATEGORI_ID],[OZELLIK_ADI],[OZELLIK_IKON],[UCRETLI_MI],[ONE_CIKAN_OZELLIK],[SIRALAMA],[AKTIF_MI],
+            [OZELLIK_KODU],[FILTRELENEBILIR_MI],[DEGER_TIPI],[SECENEKLER_JSON],[GORUNUM_ALANI])
+        VALUES (@KatYeme, N'Öğle Yemeği', N'fa-utensils', 1, 1, 122, 1, N'OGLE_YEMEGI', 1, N'BOOL', NULL, N'OTEL_KARTI');
+
+    IF NOT EXISTS (SELECT 1 FROM [dbo].[OTEL_OZELLIKLERI] WHERE [OZELLIK_KODU] = N'AKSAM_YEMEGI')
+        INSERT INTO [dbo].[OTEL_OZELLIKLERI](
+            [KATEGORI_ID],[OZELLIK_ADI],[OZELLIK_IKON],[UCRETLI_MI],[ONE_CIKAN_OZELLIK],[SIRALAMA],[AKTIF_MI],
+            [OZELLIK_KODU],[FILTRELENEBILIR_MI],[DEGER_TIPI],[SECENEKLER_JSON],[GORUNUM_ALANI])
+        VALUES (@KatYeme, N'Akşam Yemeği', N'fa-moon', 1, 1, 123, 1, N'AKSAM_YEMEGI', 1, N'BOOL', NULL, N'OTEL_KARTI');
+
+    UPDATE [dbo].[OTEL_OZELLIKLERI]
+    SET [KATEGORI_ID] = @KatYeme,
+        [OZELLIK_ADI] = N'Kahvaltı Dahil',
+        [OZELLIK_IKON] = N'fa-mug-hot',
+        [ONE_CIKAN_OZELLIK] = 1,
+        [FILTRELENEBILIR_MI] = 1,
+        [GORUNUM_ALANI] = N'OTEL_KARTI',
+        [AKTIF_MI] = 1
+    WHERE [OZELLIK_KODU] = N'KAHVALTI_DAHIL';
+
+    UPDATE [dbo].[OTEL_OZELLIKLERI]
+    SET [KATEGORI_ID] = @KatYeme,
+        [OZELLIK_ADI] = N'Öğle Yemeği',
+        [OZELLIK_IKON] = N'fa-utensils',
+        [ONE_CIKAN_OZELLIK] = 1,
+        [FILTRELENEBILIR_MI] = 1,
+        [GORUNUM_ALANI] = N'OTEL_KARTI',
+        [AKTIF_MI] = 1
+    WHERE [OZELLIK_KODU] = N'OGLE_YEMEGI';
+
+    UPDATE [dbo].[OTEL_OZELLIKLERI]
+    SET [KATEGORI_ID] = @KatYeme,
+        [OZELLIK_ADI] = N'Akşam Yemeği',
+        [OZELLIK_IKON] = N'fa-moon',
+        [ONE_CIKAN_OZELLIK] = 1,
+        [FILTRELENEBILIR_MI] = 1,
+        [GORUNUM_ALANI] = N'OTEL_KARTI',
+        [AKTIF_MI] = 1
+    WHERE [OZELLIK_KODU] = N'AKSAM_YEMEGI';
+END;
+
+DECLARE @KahvaltiId bigint, @OgleId bigint, @AksamId bigint;
+SELECT @KahvaltiId = [ID] FROM [dbo].[OTEL_OZELLIKLERI] WHERE [OZELLIK_KODU] = N'KAHVALTI_DAHIL';
+SELECT @OgleId = [ID] FROM [dbo].[OTEL_OZELLIKLERI] WHERE [OZELLIK_KODU] = N'OGLE_YEMEGI';
+SELECT @AksamId = [ID] FROM [dbo].[OTEL_OZELLIKLERI] WHERE [OZELLIK_KODU] = N'AKSAM_YEMEGI';
+
+DECLARE @Hotels TABLE (
+    RowNo int NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    HotelId bigint NOT NULL,
+    OtelKodu nvarchar(32) NOT NULL
+);
+
+INSERT INTO @Hotels (HotelId, OtelKodu)
+SELECT o.[ID], o.[OTEL_KODU]
+FROM [dbo].[OTELLER] o
+WHERE (o.[OTEL_KODU] LIKE N'ORK-IST-%' OR o.[OTEL_KODU] LIKE N'ORK-SEED-%')
+  AND o.[YAYIN_DURUMU] LIKE N'Yay%'
+ORDER BY o.[OTEL_KODU];
+
+IF OBJECT_ID(N'dbo.OTEL_OZELLIK_ILISKILERI', N'U') IS NOT NULL
+BEGIN
+    IF @KahvaltiId IS NOT NULL
+    BEGIN
+        INSERT INTO [dbo].[OTEL_OZELLIK_ILISKILERI]([OTEL_ID],[OZELLIK_ID],[AKTIF_MI],[DEGER_METNI])
+        SELECT h.[HotelId], @KahvaltiId, 1, N'DAHIL'
+        FROM @Hotels h
+        WHERE h.[RowNo] <= 15
+          AND NOT EXISTS (
+              SELECT 1 FROM [dbo].[OTEL_OZELLIK_ILISKILERI] i
+              WHERE i.[OTEL_ID] = h.[HotelId] AND i.[OZELLIK_ID] = @KahvaltiId
+          );
+    END;
+
+    IF @OgleId IS NOT NULL
+    BEGIN
+        INSERT INTO [dbo].[OTEL_OZELLIK_ILISKILERI]([OTEL_ID],[OZELLIK_ID],[AKTIF_MI])
+        SELECT h.[HotelId], @OgleId, 1
+        FROM @Hotels h
+        WHERE h.[RowNo] BETWEEN 1 AND 8
+          AND NOT EXISTS (
+              SELECT 1 FROM [dbo].[OTEL_OZELLIK_ILISKILERI] i
+              WHERE i.[OTEL_ID] = h.[HotelId] AND i.[OZELLIK_ID] = @OgleId
+          );
+    END;
+
+    IF @AksamId IS NOT NULL
+    BEGIN
+        INSERT INTO [dbo].[OTEL_OZELLIK_ILISKILERI]([OTEL_ID],[OZELLIK_ID],[AKTIF_MI])
+        SELECT h.[HotelId], @AksamId, 1
+        FROM @Hotels h
+        WHERE h.[RowNo] BETWEEN 9 AND 16
+          AND NOT EXISTS (
+              SELECT 1 FROM [dbo].[OTEL_OZELLIK_ILISKILERI] i
+              WHERE i.[OTEL_ID] = h.[HotelId] AND i.[OZELLIK_ID] = @AksamId
+          );
+    END;
+END;
+
+DECLARE @KahvaltiCount int = (
+    SELECT COUNT(DISTINCT i.[OTEL_ID])
+    FROM [dbo].[OTEL_OZELLIK_ILISKILERI] i
+    INNER JOIN [dbo].[OTELLER] o ON o.[ID] = i.[OTEL_ID]
+    INNER JOIN [dbo].[OTEL_OZELLIKLERI] oz ON oz.[ID] = i.[OZELLIK_ID]
+    WHERE oz.[OZELLIK_KODU] = N'KAHVALTI_DAHIL'
+      AND (o.[OTEL_KODU] LIKE N'ORK-IST-%' OR o.[OTEL_KODU] LIKE N'ORK-SEED-%')
+);
+DECLARE @OgleCount int = (
+    SELECT COUNT(DISTINCT i.[OTEL_ID])
+    FROM [dbo].[OTEL_OZELLIK_ILISKILERI] i
+    INNER JOIN [dbo].[OTELLER] o ON o.[ID] = i.[OTEL_ID]
+    INNER JOIN [dbo].[OTEL_OZELLIKLERI] oz ON oz.[ID] = i.[OZELLIK_ID]
+    WHERE oz.[OZELLIK_KODU] = N'OGLE_YEMEGI'
+      AND (o.[OTEL_KODU] LIKE N'ORK-IST-%' OR o.[OTEL_KODU] LIKE N'ORK-SEED-%')
+);
+DECLARE @AksamCount int = (
+    SELECT COUNT(DISTINCT i.[OTEL_ID])
+    FROM [dbo].[OTEL_OZELLIK_ILISKILERI] i
+    INNER JOIN [dbo].[OTELLER] o ON o.[ID] = i.[OTEL_ID]
+    INNER JOIN [dbo].[OTEL_OZELLIKLERI] oz ON oz.[ID] = i.[OZELLIK_ID]
+    WHERE oz.[OZELLIK_KODU] = N'AKSAM_YEMEGI'
+      AND (o.[OTEL_KODU] LIKE N'ORK-IST-%' OR o.[OTEL_KODU] LIKE N'ORK-SEED-%')
+);
+
+PRINT N'Yemek ozellik seed tamam.';
+PRINT N'  Kahvalti (KAHVALTI_DAHIL): ' + CAST(@KahvaltiCount AS nvarchar(12));
+PRINT N'  Ogle (OGLE_YEMEGI): ' + CAST(@OgleCount AS nvarchar(12));
+PRINT N'  Aksam (AKSAM_YEMEGI): ' + CAST(@AksamCount AS nvarchar(12));

@@ -46,33 +46,33 @@ public class EmailQueueService : IEmailQueueService
         var safeUserId = await ResolveSafeUserIdAsync(connection, transaction, request.UserId, request.RecipientEmail, cancellationToken);
         var attachmentsJson = BuildAttachmentsJson(request.Attachments);
 
-        var hasAttachmentsColumn = await ColumnExistsAsync(connection, transaction, "dbo.bildirim_loglari", "ekler_json", cancellationToken);
-        var hasServiceCodeColumn = await ColumnExistsAsync(connection, transaction, "dbo.bildirim_loglari", "email_servis_kodu", cancellationToken);
-        var hasSenderOverrideColumn = await ColumnExistsAsync(connection, transaction, "dbo.bildirim_loglari", "gonderen_eposta_override", cancellationToken);
+        var hasAttachmentsColumn = await ColumnExistsAsync(connection, transaction, "[dbo].[BILDIRIM_LOGLARI]", "ekler_json", cancellationToken);
+        var hasServiceCodeColumn = await ColumnExistsAsync(connection, transaction, "[dbo].[BILDIRIM_LOGLARI]", "email_servis_kodu", cancellationToken);
+        var hasSenderOverrideColumn = await ColumnExistsAsync(connection, transaction, "[dbo].[BILDIRIM_LOGLARI]", "gonderen_eposta_override", cancellationToken);
         var insertSql = hasAttachmentsColumn
             ? (hasServiceCodeColumn && hasSenderOverrideColumn
                 ? """
-                INSERT INTO bildirim_loglari
-                (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, email_servis_kodu, gonderen_eposta_override, ilgili_tablo, ilgili_kayit_id, ekler_json)
+                INSERT INTO [dbo].[BILDIRIM_LOGLARI]
+                ([KULLANICI_ID], [BILDIRIM_SABLON_ID], tur, [ALICI_EPOSTA], konu, [ICERIK], [GONDERILEN_ICERIK], [DURUM], [SAGLAYICI], email_servis_kodu, [GONDEREN_EPOSTA_OVERRIDE], [ILGILI_TABLO], [ILGILI_KAYIT_ID], [EKLER_JSON])
                 VALUES
                 (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @serviceCode, @senderEmail, @relatedTable, @relatedId, @attachmentsJson);
                 """
                 : """
-                INSERT INTO bildirim_loglari
-                (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, ilgili_tablo, ilgili_kayit_id, ekler_json)
+                INSERT INTO [dbo].[BILDIRIM_LOGLARI]
+                ([KULLANICI_ID], [BILDIRIM_SABLON_ID], tur, [ALICI_EPOSTA], konu, [ICERIK], [GONDERILEN_ICERIK], [DURUM], [SAGLAYICI], [ILGILI_TABLO], [ILGILI_KAYIT_ID], [EKLER_JSON])
                 VALUES
                 (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId, @attachmentsJson);
                 """)
             : (hasServiceCodeColumn && hasSenderOverrideColumn
                 ? """
-                INSERT INTO bildirim_loglari
-                (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, email_servis_kodu, gonderen_eposta_override, ilgili_tablo, ilgili_kayit_id)
+                INSERT INTO [dbo].[BILDIRIM_LOGLARI]
+                ([KULLANICI_ID], [BILDIRIM_SABLON_ID], tur, [ALICI_EPOSTA], konu, [ICERIK], [GONDERILEN_ICERIK], [DURUM], [SAGLAYICI], email_servis_kodu, [GONDEREN_EPOSTA_OVERRIDE], [ILGILI_TABLO], [ILGILI_KAYIT_ID])
                 VALUES
                 (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @serviceCode, @senderEmail, @relatedTable, @relatedId);
                 """
                 : """
-                INSERT INTO bildirim_loglari
-                (kullanici_id, bildirim_sablon_id, tur, alici_eposta, konu, icerik, gonderilen_icerik, durum, saglayici, ilgili_tablo, ilgili_kayit_id)
+                INSERT INTO [dbo].[BILDIRIM_LOGLARI]
+                ([KULLANICI_ID], [BILDIRIM_SABLON_ID], tur, [ALICI_EPOSTA], konu, [ICERIK], [GONDERILEN_ICERIK], [DURUM], [SAGLAYICI], [ILGILI_TABLO], [ILGILI_KAYIT_ID])
                 VALUES
                 (@userId, @templateId, 'E-posta', @email, @subject, @body, @body, 'Beklemede', @provider, @relatedTable, @relatedId);
                 """);
@@ -146,7 +146,7 @@ public class EmailQueueService : IEmailQueueService
     {
         if (requestedUserId > 0)
         {
-            const string userExistsSql = "SELECT COUNT(*) FROM users WHERE id = @userId;";
+            const string userExistsSql = "SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE id = @userId;";
             await using var userExistsCommand = new SqlCommand(userExistsSql, (SqlConnection)connection, (SqlTransaction?)transaction);
             userExistsCommand.Parameters.AddWithValue("@userId", requestedUserId);
             var exists = Convert.ToInt32(await userExistsCommand.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture) > 0;
@@ -160,8 +160,8 @@ public class EmailQueueService : IEmailQueueService
         {
             const string byEmailSql = @"
                 SELECT TOP (1) id
-                FROM users
-                WHERE LOWER(eposta) = LOWER(@email)
+                FROM [dbo].[KULLANICILAR]
+                WHERE LOWER([EPOSTA]) = LOWER(@email)
                 ORDER BY id ASC;";
             await using var byEmailCommand = new SqlCommand(byEmailSql, (SqlConnection)connection, (SqlTransaction?)transaction);
             byEmailCommand.Parameters.AddWithValue("@email", recipientEmail.Trim());
@@ -172,7 +172,7 @@ public class EmailQueueService : IEmailQueueService
             }
         }
 
-        const string fallbackSql = "SELECT MIN(id) FROM users;";
+        const string fallbackSql = "SELECT MIN(id) FROM [dbo].[KULLANICILAR];";
         await using var fallbackCommand = new SqlCommand(fallbackSql, (SqlConnection)connection, (SqlTransaction?)transaction);
         var fallbackScalar = await fallbackCommand.ExecuteScalarAsync(cancellationToken);
         if (fallbackScalar is not null && fallbackScalar != DBNull.Value)
@@ -253,9 +253,9 @@ public class EmailQueueService : IEmailQueueService
     {
         var safeLang = NormalizeLang(lang);
         const string sql = @"
-            SELECT TOP (1) id, COALESCE(konu, ''), COALESCE(icerik, '')
-            FROM bildirim_sablonlari
-            WHERE sablon_kodu = @templateCode AND tur = 'E-posta' AND aktif_mi = 1
+            SELECT TOP (1) id, COALESCE(konu, ''), COALESCE([ICERIK], '')
+            FROM [dbo].[BILDIRIM_SABLONLARI]
+            WHERE [SABLON_KODU] = @templateCode AND tur = 'E-posta' AND [AKTIF_MI] = 1
             ORDER BY
                 CASE WHEN dil = @lang THEN 2
                      WHEN dil = 'tr' THEN 1
@@ -335,13 +335,13 @@ public class EmailQueueService : IEmailQueueService
     private static async Task<EmailProviderSettings> LoadProviderAsync(DbConnection connection, DbTransaction? transaction, string? preferredServiceCode, string preferredSenderEmail, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT TOP (1) servis_kodu, saglayici, gonderen_ad, gonderen_eposta, test_modu
-            FROM email_services
-            WHERE aktif_mi = 1
+            SELECT TOP (1) [SERVIS_KODU], [SAGLAYICI], [GONDEREN_AD], [GONDEREN_EPOSTA], [TEST_MODU]
+            FROM [dbo].[EPOSTA_SERVISLERI]
+            WHERE [AKTIF_MI] = 1
             ORDER BY
-                CASE WHEN @serviceCode IS NOT NULL AND LOWER(servis_kodu) = LOWER(@serviceCode) THEN 3
-                     WHEN LOWER(gonderen_eposta) = LOWER(@senderEmail) THEN 2
-                     WHEN varsayilan_mi = 1 THEN 1
+                CASE WHEN @serviceCode IS NOT NULL AND LOWER([SERVIS_KODU]) = LOWER(@serviceCode) THEN 3
+                     WHEN LOWER([GONDEREN_EPOSTA]) = LOWER(@senderEmail) THEN 2
+                     WHEN [VARSAYILAN_MI] = 1 THEN 1
                      ELSE 0
                 END DESC,
                 id ASC;";

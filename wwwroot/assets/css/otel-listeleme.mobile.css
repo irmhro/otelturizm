@@ -1,3 +1,5 @@
+@import url("shared/mobile-viewport-shell.css");
+
 @media (max-width: 900px) {
     .listing-map-launch {
         margin-bottom: 14px;
@@ -6,6 +8,11 @@
     .listing-map-launch-btn {
         min-height: 48px;
         font-size: 0.92rem;
+    }
+
+    .listing-map-cta--button {
+        min-height: 48px;
+        touch-action: manipulation;
     }
 
     /* Mobile bottom dock (WOW bar) */
@@ -32,6 +39,18 @@
     .hotel-listing-shell {
         overflow-x: clip;
         padding-bottom: calc(36px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .listing-filter-fab,
+    .listing-yanbar-filter.listing-filter-fab {
+        bottom: calc(16px + var(--mob-sticky-cta-offset, env(safe-area-inset-bottom)));
+        min-width: var(--mob-touch-min, 44px);
+        min-height: var(--mob-touch-min, 44px);
+    }
+
+    .listing-yanbar-filter.listing-filter-fab.mob-sticky-cta {
+        padding: 0;
+        border-radius: 14px;
     }
     /* Footer: alt sabit bar yok; sadece safe-area + hafif nefes */
     .site-footer { padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important; }
@@ -453,9 +472,13 @@
     }
 
     .quick-filter-chip {
-        min-height: 40px;
+        min-height: 44px;
         padding: 0 14px;
         font-size: 0.84rem;
+    }
+
+    .listing-toolbar-filter-btn {
+        min-height: 44px;
     }
 
     .quick-filter-chip small {
@@ -514,9 +537,24 @@
     .features,
     .feature-tag,
     .campaign-info-chip,
-    .listing-discount-rate,
     .discount-info-btn {
         display: none !important;
+    }
+
+    .listing-discount-rate--pill {
+        display: inline-flex !important;
+        min-height: 24px;
+        padding: 0 8px;
+        font-size: 11px;
+        font-weight: 900;
+    }
+
+    .listing-card-discount-corner {
+        top: 8px;
+        left: 8px;
+        padding: 5px 10px;
+        font-size: 12px;
+        z-index: 5;
     }
 
     .campaign-filter-scroll {
@@ -745,7 +783,9 @@
         grid-area: btn;
         margin-left: 0;
         align-self: center;
-        padding: 9px 14px;
+        min-height: 44px;
+        min-width: 44px;
+        padding: 10px 16px;
         font-weight: 900;
         border-radius: 999px;
     }
@@ -797,8 +837,89 @@
         -webkit-tap-highlight-color: transparent;
     }
 
+    .listing-map-fab {
+        display: grid;
+        place-items: center;
+        position: fixed;
+        left: 12px;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        z-index: 144;
+        width: 48px;
+        height: 48px;
+        min-width: 44px;
+        min-height: 44px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        background: linear-gradient(145deg, #00a86b, #0d9488 72%, #14b8a6);
+        color: #fff;
+        text-decoration: none;
+        box-shadow: 0 16px 34px rgba(13, 148, 136, 0.34), 0 0 0 3px rgba(13, 148, 136, 0.12);
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .listing-map-fab i {
+        font-size: 18px;
+    }
+
+    .listing-concept-bar {
+        margin-bottom: 14px;
+        padding: 14px 14px 12px;
+        border-radius: 18px;
+    }
+
+    .listing-concept-bar__title {
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .listing-concept-bar__track {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .listing-concept-bar__track::-webkit-scrollbar {
+        display: none;
+    }
+
+    .listing-concept-btn {
+        flex-shrink: 0;
+        min-height: 44px;
+        font-size: 12px;
+        padding: 10px 14px;
+    }
+
     .listing-yanbar-filter {
         bottom: calc(16px + env(safe-area-inset-bottom));
+        min-width: 48px;
+        min-height: 48px;
+    }
+
+    /* Sabit filtre FAB footer linklerinin üstüne binmesin */
+    body:has(.listing-template-v41) .site-footer {
+        padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .listing-template-v41 .listing-empty-state {
+        font-size: 15px;
+        line-height: 1.45;
+        padding: 18px 16px;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+
+    .listing-empty-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .listing-empty-action {
+        width: 100%;
+        justify-content: center;
     }
 
     @media (max-height: 700px) {
@@ -809,6 +930,40 @@
 
         .hotel-card-media {
             min-height: 180px;
+        }
+    }
+
+    /* 390px vitrin: yatay taşma + FAB/offcanvas */
+    @media (max-width: 390px) {
+        .listing-template-v41,
+        .hotel-listing-shell,
+        .listing-toolbar,
+        .listing-hero-panel,
+        .filter-modal .modal-content {
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: clip;
+        }
+
+        .listing-toolbar-title h1,
+        .listing-hero-panel h1 {
+            font-size: clamp(1.15rem, 5.2vw, 1.45rem);
+            overflow-wrap: anywhere;
+        }
+
+        .listing-yanbar-filter {
+            right: 10px;
+            bottom: calc(14px + env(safe-area-inset-bottom));
+        }
+
+        .filter-modal .modal-content {
+            width: min(100vw, 100%);
+            margin-inline: auto;
+        }
+
+        .quick-filters,
+        .listing-toolbar-actions {
+            max-width: 100%;
         }
     }
 }

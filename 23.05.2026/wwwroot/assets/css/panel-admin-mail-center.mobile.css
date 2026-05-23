@@ -1,0 +1,20 @@
+@media (max-width: 900px) {
+    .admin-mail-center-hero,
+    .admin-mail-center-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-mail-center-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .admin-mail-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-mail-center-panel,
+    .admin-mail-center-hero {
+        padding: 18px;
+        border-radius: 20px;
+    }
+}

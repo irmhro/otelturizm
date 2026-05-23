@@ -1,0 +1,83 @@
+@media (max-width: 768px) {
+    .room-features-page {
+        gap: 14px;
+    }
+
+    .room-features-hero,
+    .room-feature-editor-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .room-features-hero {
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .room-features-hero .btn,
+    .room-feature-editor-head .btn {
+        width: 100%;
+    }
+
+    .room-feature-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .room-feature-stat {
+        min-width: 0;
+        padding: 11px;
+        border-radius: 12px;
+    }
+
+    .room-feature-stat strong {
+        font-size: 20px;
+    }
+
+    .room-choice-card {
+        min-width: 235px;
+    }
+
+    .feature-category-card {
+        padding: 13px;
+    }
+
+    .feature-category-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .feature-option {
+        min-height: 40px;
+        padding: 9px 11px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .room-feature-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .room-choice-grid {
+        display: grid;
+        overflow: visible;
+    }
+
+    .room-choice-card {
+        min-width: 0;
+        max-width: none;
+    }
+
+    .feature-option-wrap {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .feature-option {
+        width: 100%;
+        justify-content: flex-start;
+        border-radius: 12px;
+    }
+}

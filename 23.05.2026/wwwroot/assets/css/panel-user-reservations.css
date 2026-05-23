@@ -1,0 +1,270 @@
+.stats-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.stats-strip article {
+    padding: 18px;
+    border-radius: 18px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.stats-strip strong {
+    display: block;
+    font-size: 1.8rem;
+    color: #0f172a;
+}
+
+.stats-strip span {
+    color: #64748b;
+}
+
+.user-reservation-alert {
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-weight: 700;
+}
+
+.user-reservation-alert.is-success {
+    background: #ecfdf5;
+    border: 1px solid rgba(16, 185, 129, .35);
+    color: #047857;
+}
+
+.user-reservation-alert.is-error {
+    background: #fef2f2;
+    border: 1px solid rgba(239, 68, 68, .35);
+    color: #b91c1c;
+}
+
+.user-reservation-dialog {
+    border: none;
+    border-radius: 20px;
+    padding: 0;
+    width: min(760px, calc(100vw - 24px));
+    max-height: calc(100vh - 36px);
+}
+
+.user-reservation-dialog::backdrop {
+    background: rgba(15, 23, 42, .55);
+}
+
+.user-reservation-dialog-card {
+    background: #fff;
+    padding: 18px;
+}
+
+.user-reservation-dialog-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.user-reservation-dialog-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.user-reservation-dialog-grid article,
+.user-reservation-dialog-note {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px;
+    background: #f8fafc;
+}
+
+.user-reservation-dialog-grid span,
+.user-reservation-dialog-note span {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.user-reservation-dialog-grid strong {
+    color: #0f172a;
+}
+
+.user-reservation-dialog-note {
+    margin-top: 10px;
+}
+
+.user-reservation-dialog-note p {
+    margin: 0;
+    color: #0f172a;
+}
+
+.user-reservation-cancel-form {
+    display: grid;
+    gap: 10px;
+}
+
+.user-reservation-cancel-form label {
+    display: grid;
+    gap: 6px;
+}
+
+.user-reservation-cancel-form label span {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.user-reservation-cancel-form textarea {
+    width: 100%;
+    border: 1px solid #d6e2f0;
+    border-radius: 12px;
+    padding: 12px;
+    font: inherit;
+    resize: vertical;
+    min-height: 120px;
+}
+
+.user-reservation-filter-form {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.user-reservation-filter-form label {
+    display: grid;
+    gap: 6px;
+}
+
+.user-reservation-filter-form label span {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.user-reservation-filter-form input,
+.user-reservation-filter-form select {
+    min-height: 40px;
+    border: 1px solid #d6e2f0;
+    border-radius: 12px;
+    padding: 8px 12px;
+    font: inherit;
+    background: #fff;
+    color: #0f172a;
+}
+
+.user-reservation-filter-actions {
+    display: flex;
+    align-items: end;
+    gap: 8px;
+}
+
+.user-reservation-filter-actions .ghost-btn {
+    min-height: 40px;
+    padding: 0 14px;
+}
+
+.user-reservation-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 14px;
+    margin-top: 8px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.pager-link.disabled {
+    pointer-events: none;
+    opacity: .45;
+}
+
+@media (max-width: 640px) {
+    .stats-strip { grid-template-columns: 1fr; }
+    .user-reservation-dialog-grid { grid-template-columns: 1fr; }
+    .user-reservation-filter-form { grid-template-columns: 1fr; }
+    .user-reservation-filter-actions { align-items: stretch; }
+    .user-reservation-pager { flex-direction: column; align-items: flex-start; }
+}
+
+.user-review-form {
+    display: grid;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.user-review-field {
+    display: grid;
+    gap: 8px;
+}
+
+.user-review-field span {
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.user-review-field select,
+.user-review-field textarea {
+    width: 100%;
+    border: 1px solid #d6e2f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font: inherit;
+    background: #fff;
+    color: #0f172a;
+}
+
+.user-review-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.user-review-grid label {
+    display: grid;
+    gap: 6px;
+}
+
+.user-review-grid span {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.user-review-grid input {
+    min-height: 40px;
+    border: 1px solid #d6e2f0;
+    border-radius: 12px;
+    padding: 8px 10px;
+    font: inherit;
+}
+
+.user-review-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.user-review-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ghost-btn.primary {
+    background: #1d4ed8;
+    color: #fff;
+    border-color: #1d4ed8;
+}
+
+@media (max-width: 640px) {
+    .user-review-grid { grid-template-columns: 1fr 1fr; }
+}

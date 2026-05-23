@@ -1,0 +1,91 @@
+@{
+    var path = Context.Request.Path.Value ?? "/";
+    var query = Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : string.Empty;
+    var returnUrl = path + query;
+    var partnerShell = ViewData["PartnerShell"] as otelturizmnew.Models.Paneller.Partner.PartnerShellViewModel;
+    var pageDisplayTitle = !string.IsNullOrWhiteSpace(partnerShell?.SelectedHotelName)
+        ? partnerShell!.SelectedHotelName
+        : (ViewData["Title"] as string ?? returnUrl);
+    var panelKey = path.Contains("/panel/partner", StringComparison.OrdinalIgnoreCase) ? "partner"
+        : path.Contains("/panel/firma", StringComparison.OrdinalIgnoreCase) ? "firma"
+        : path.Contains("/panel/satis", StringComparison.OrdinalIgnoreCase) ? "satis"
+        : path.Contains("/panel/developer", StringComparison.OrdinalIgnoreCase) ? "developer"
+        : path.Contains("/panel/user", StringComparison.OrdinalIgnoreCase) ? "user"
+        : path.Contains("/admin", StringComparison.OrdinalIgnoreCase) ? "admin"
+        : "panel";
+    var modalId = $"developerFeedbackModal-{panelKey}";
+}
+
+@if (TempData["DeveloperFeedbackSubmitted"] as string == "1")
+{
+    <script type="application/json" data-dev-feedback-clear="true">{"panelKey":"@panelKey"}</script>
+}
+
+<button class="developer-feedback-trigger" type="button" data-dev-feedback-open="@modalId" aria-label="Hata veya geliştirme bildir">
+    <i class="fas fa-bug"></i>
+    <span>Bildir</span>
+</button>
+
+<div class="developer-feedback-modal" id="@modalId" aria-hidden="true">
+    <div class="developer-feedback-backdrop" data-dev-feedback-close></div>
+    <section class="developer-feedback-card" role="dialog" aria-modal="true" aria-labelledby="@(modalId)-title">
+        <button class="developer-feedback-close" type="button" data-dev-feedback-close aria-label="Kapat">
+            <i class="fas fa-xmark"></i>
+        </button>
+        <div class="developer-feedback-head">
+            <span class="developer-feedback-kicker">Beta geri bildirimi</span>
+            <h2 id="@(modalId)-title">Geliştirme ekibine bildir</h2>
+            <p>Hata, tasarım sorunu, eksik alan veya iş akışı önerisini ekran bilgisiyle birlikte kaydedelim.</p>
+        </div>
+        <div class="developer-feedback-context">
+            <span><i class="fas fa-location-dot"></i> @pageDisplayTitle</span>
+            <span><i class="fas fa-shield-halved"></i> Form gönderilene kadar taslak saklanır.</span>
+        </div>
+        <div class="developer-feedback-toolbar">
+            <button type="button" class="developer-feedback-tab is-active" data-dev-feedback-tab="form">Yeni bildirim</button>
+            <button type="button" class="developer-feedback-tab" data-dev-feedback-tab="history">Geçmiş bildirimler</button>
+        </div>
+        <div class="developer-feedback-result" data-dev-feedback-result hidden></div>
+        <form method="post" action="/dev-bildirim/gonder" enctype="multipart/form-data" class="developer-feedback-form" data-dev-feedback-form>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="FeedbackId" value="" data-dev-feedback-id />
+            <input type="hidden" name="PanelKey" value="@panelKey" />
+            <input type="hidden" name="PageUrl" value="@returnUrl" />
+            <input type="hidden" name="PageTitle" value="@pageDisplayTitle" />
+            <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+            <input type="hidden" name="Viewport" data-dev-feedback-viewport />
+            <input type="hidden" name="DeviceInfo" data-dev-feedback-device />
+            <label>
+                <span>Bildirim türü</span>
+                <select name="FeedbackType">
+                    <option value="Hata">Hata</option>
+                    <option value="Geliştirme" selected>Geliştirme</option>
+                    <option value="Öneri">Öneri</option>
+                    <option value="Şikayet">Şikayet</option>
+                    <option value="Tasarım">Tasarım</option>
+                </select>
+            </label>
+            <label>
+                <span>Başlık</span>
+                <input name="Title" maxlength="220" required placeholder="Örn: Fiyat güncelleme alanı mobilde taşıyor" />
+            </label>
+            <label>
+                <span>Talep içeriği</span>
+                <textarea name="Content" rows="5" required placeholder="Sorunu, beklenen davranışı ve nerede gördüğünüzü yazın."></textarea>
+            </label>
+            <label>
+                <span>Görsel ekle</span>
+                <input name="Screenshot" type="file" accept="image/png,image/jpeg,image/webp" />
+                <small>PNG, JPG veya WEBP. En fazla 8 MB.</small>
+            </label>
+            <button type="submit" class="developer-feedback-submit">
+                <i class="fas fa-paper-plane"></i>
+                Geliştirme ekibine gönder
+            </button>
+        </form>
+        <section class="developer-feedback-history" data-dev-feedback-history hidden>
+            <div class="developer-feedback-history-state" data-dev-feedback-history-state>Geçmiş bildirimler yükleniyor...</div>
+            <div class="developer-feedback-history-list" data-dev-feedback-history-list></div>
+        </section>
+    </section>
+</div>

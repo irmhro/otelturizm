@@ -1,3 +1,5 @@
+@import url("./user-mobile-bundle.css");
+
 @media (max-width: 1100px) {
   .reviews-filter-form {
     grid-template-columns: 1fr;
@@ -9,10 +11,17 @@
 
   .reviews-filter-actions .btn {
     flex: 1 1 0;
+    min-height: var(--user-mob-touch, 44px);
   }
 }
 
 @media (max-width: 900px) {
+  .reviews-page,
+  .user-reviews-page,
+  .reservation-review-page {
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+
   .reviews-page-hero {
     align-items: stretch;
     flex-direction: column;
@@ -30,10 +39,7 @@
 
   .reviews-page-hero-actions .btn {
     flex: 1 1 160px;
-  }
-
-  .reviews-stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-height: var(--user-mob-touch, 44px);
   }
 
   .reviews-filter-card .card-header {
@@ -49,6 +55,7 @@
 
   .reviews-tab {
     justify-content: center;
+    min-height: var(--user-mob-touch, 44px);
   }
 
   .review-row-card {
@@ -78,10 +85,22 @@
   .review-row-actions .review-edit-summary {
     width: 100%;
     justify-content: center;
+    min-height: var(--user-mob-touch, 44px);
   }
 
   .review-delete-inline .btn {
     width: 100%;
+    min-height: var(--user-mob-touch, 44px);
+  }
+
+  .reviews-empty {
+    padding: 28px 16px max(24px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .reviews-empty .btn {
+    min-height: var(--user-mob-touch, 44px);
+    width: 100%;
+    max-width: 320px;
   }
 
   .reviews-pager {
@@ -96,6 +115,7 @@
 
   .reviews-pager .btn {
     flex: 1 1 0;
+    min-height: var(--user-mob-touch, 44px);
   }
 
   .reservation-review-hero,
@@ -132,21 +152,26 @@
   }
 
   .star-option span {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .star-rating-value {
     width: 100%;
     margin-left: 0;
   }
+
+  .review-form-grid .form-control,
+  .review-form-grid textarea,
+  .user-review-actions .btn {
+    min-height: var(--user-mob-touch, 44px);
+    width: 100%;
+  }
 }
 
 @media (max-width: 560px) {
-  .reviews-stat-grid {
-    grid-template-columns: 1fr;
-  }
-
   .reviews-status-tabs {
     grid-template-columns: 1fr;
   }

@@ -64,17 +64,17 @@ public class AdminService : IAdminService
 
         const string metricsSql = @"
             SELECT
-                (SELECT COUNT(*) FROM oteller) AS total_hotels,
-                (SELECT COUNT(*) FROM rezervasyonlar) AS total_reservations,
-                (SELECT COUNT(*) FROM rezervasyonlar WHERE durum = 'İptal Edildi') AS cancelled_reservations,
-                (SELECT COALESCE(SUM(COALESCE(toplam_tutar,0)),0) FROM rezervasyonlar WHERE COALESCE(durum,'') <> 'İptal Edildi') AS gross_revenue,
-                (SELECT COALESCE(SUM(COALESCE(komisyon_tutari,0)),0) FROM komisyon_muhasebe_kayitlari) AS total_commission,
-                (SELECT COUNT(*) FROM odeme_islemleri WHERE odeme_durumu IN ('Başarılı','Geri Ödendi','Kısmi Geri Ödendi')) AS successful_payments,
-                (SELECT COUNT(*) FROM users WHERE rol = 'admin') AS admin_count,
-                (SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Beklemede') AS pending_partner_count,
-                (SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu, 'Beklemede') = 'Beklemede') AS pending_company_count,
-                (SELECT COUNT(*) FROM oteller WHERE yayin_durumu = 'Yayında' AND onay_durumu = 'Onaylandı') AS active_hotel_count,
-                (SELECT COUNT(*) FROM oteller WHERE COALESCE(onay_durumu, '') = 'Beklemede') AS pending_hotel_count;";
+                (SELECT COUNT(*) FROM [dbo].[OTELLER]) AS total_hotels,
+                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR]) AS total_reservations,
+                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [DURUM] = 'İptal Edildi') AS cancelled_reservations,
+                (SELECT COALESCE(SUM(COALESCE([TOPLAM_TUTAR],0)),0) FROM [dbo].[REZERVASYONLAR] WHERE COALESCE([DURUM],'') <> 'İptal Edildi') AS gross_revenue,
+                (SELECT COALESCE(SUM(COALESCE([KOMISYON_TUTARI],0)),0) FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI]) AS total_commission,
+                (SELECT COUNT(*) FROM [dbo].[ODEME_ISLEMLERI] WHERE [ODEME_DURUMU] IN ('Başarılı','Geri Ödendi','Kısmi Geri Ödendi')) AS successful_payments,
+                (SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE rol = 'admin') AS admin_count,
+                (SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU] = 'Beklemede') AS pending_partner_count,
+                (SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE COALESCE([ONAY_DURUMU], 'Beklemede') = 'Beklemede') AS pending_company_count,
+                (SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE [YAYIN_DURUMU] = 'Yayında' AND [ONAY_DURUMU] = 'Onaylandı') AS active_hotel_count,
+                (SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE COALESCE([ONAY_DURUMU], '') = 'Beklemede') AS pending_hotel_count;";
 
         await using (var command = new SqlCommand(metricsSql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -91,15 +91,57 @@ public class AdminService : IAdminService
                 model.Metrics.Add(new AdminMetricCardViewModel { Label = "Bekleyen Firma", Value = SafeInt(reader, 8).ToString(), TrendText = "Onay bekleyen firma basvurulari", IconClass = "fa-building", ToneClass = "info" });
                 model.Metrics.Add(new AdminMetricCardViewModel { Label = "Açık Otel", Value = SafeInt(reader, 9).ToString(), TrendText = "Yayinda ve onayli tesisler", IconClass = "fa-tower-broadcast", ToneClass = "success" });
                 model.Metrics.Add(new AdminMetricCardViewModel { Label = "Bekleyen Otel", Value = SafeInt(reader, 10).ToString(), TrendText = "Onay/yayin aksiyonunda bekleyen tesisler", IconClass = "fa-hourglass-half", ToneClass = "danger" });
+                model.PendingApprovalsQueueCount = shell.PendingPartnerApplications + shell.PendingCompanyApplications + SafeInt(reader, 10);
+            }
+        }
+
+        const string revenue30Sql = @"
+            SELECT
+                COALESCE(SUM(COALESCE(r.[TOPLAM_TUTAR], 0)), 0) AS gmv_30d,
+                COALESCE(SUM(COALESCE(r.[KOMISYON_TUTARI], 0)), 0) AS commission_30d,
+                COUNT(*) AS reservation_count_30d
+            FROM [dbo].[REZERVASYONLAR] r
+            WHERE COALESCE(r.[DURUM], N'') <> N'İptal Edildi'
+              AND r.[OLUSTURULMA_TARIHI] >= DATEADD(day, -30, CAST(GETDATE() AS date));";
+
+        await using (var revenue30Command = new SqlCommand(revenue30Sql, connection))
+        await using (var revenue30Reader = await revenue30Command.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await revenue30Reader.ReadAsync(cancellationToken))
+            {
+                model.Revenue30DayMetrics.Add(new AdminMetricCardViewModel
+                {
+                    Label = "Platform GMV (30 gün)",
+                    Value = $"{SafeDecimal(revenue30Reader, 0):N0} TL",
+                    TrendText = "İptal hariç rezervasyon cirosu",
+                    IconClass = "fa-chart-line",
+                    ToneClass = "success"
+                });
+                model.Revenue30DayMetrics.Add(new AdminMetricCardViewModel
+                {
+                    Label = "Platform komisyon (30 gün)",
+                    Value = $"{SafeDecimal(revenue30Reader, 1):N0} TL",
+                    TrendText = "Rezervasyon snapshot komisyonu",
+                    IconClass = "fa-percent",
+                    ToneClass = "warning"
+                });
+                model.Revenue30DayMetrics.Add(new AdminMetricCardViewModel
+                {
+                    Label = "Rezervasyon (30 gün)",
+                    Value = SafeInt(revenue30Reader, 2).ToString(),
+                    TrendText = "Son 30 günde oluşturulan kayıtlar",
+                    IconClass = "fa-calendar-check",
+                    ToneClass = "info"
+                });
             }
         }
 
         const string chartSql = @"
-            SELECT FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR') AS ay, COUNT(*) AS adet
-            FROM rezervasyonlar
-            WHERE olusturulma_tarihi >= DATEADD(MONTH, -5, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
-            GROUP BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi), FORMAT(olusturulma_tarihi, 'MMM', 'tr-TR')
-            ORDER BY YEAR(olusturulma_tarihi), MONTH(olusturulma_tarihi);";
+            SELECT FORMAT([OLUSTURULMA_TARIHI], 'MMM', 'tr-TR') AS ay, COUNT(*) AS adet
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [OLUSTURULMA_TARIHI] >= DATEADD(MONTH, -5, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
+            GROUP BY YEAR([OLUSTURULMA_TARIHI]), MONTH([OLUSTURULMA_TARIHI]), FORMAT([OLUSTURULMA_TARIHI], 'MMM', 'tr-TR')
+            ORDER BY YEAR([OLUSTURULMA_TARIHI]), MONTH([OLUSTURULMA_TARIHI]);";
 
         var chartRows = new List<(string Label, int Value)>();
         await using (var chartCommand = new SqlCommand(chartSql, connection))
@@ -126,20 +168,20 @@ public class AdminService : IAdminService
             SELECT TOP (6) *
             FROM
             (
-                SELECT 'Partner basvurusu' AS baslik,
-                       CONCAT(p.firma_unvani, ' · ', p.onay_durumu) AS alt_baslik,
-                       p.olusturulma_tarihi AS zaman
-                FROM partner_detaylari p
+                SELECT 'Partner basvurusu' AS [BASLIK],
+                       CONCAT(p.[FIRMA_UNVANI], ' · ', p.[ONAY_DURUMU]) AS [ALT_BASLIK],
+                       p.[OLUSTURULMA_TARIHI] AS zaman
+                FROM [dbo].[PARTNER_DETAYLARI] p
                 UNION ALL
                 SELECT 'Admin islemi',
-                       CONCAT(a.hedef_tablo, ' · ', a.islem_turu),
-                       a.islem_tarihi
-                FROM admin_islem_loglari a
+                       CONCAT(a.[HEDEF_TABLO], ' · ', a.[ISLEM_TURU]),
+                       a.[ISLEM_TARIHI]
+                FROM [dbo].[ADMIN_ISLEM_LOGLARI] a
                 UNION ALL
                 SELECT 'Sistem hatasi',
-                       CONCAT(s.hata_seviyesi, ' · ', LEFT(s.hata_mesaji, 70)),
-                       s.olusma_tarihi
-                FROM sistem_hata_loglari s
+                       CONCAT(s.[HATA_SEVIYESI], ' · ', LEFT(s.[HATA_MESAJI], 70)),
+                       s.[OLUSMA_TARIHI]
+                FROM [dbo].[SISTEM_HATA_LOGLARI] s
             ) activity_feed
             ORDER BY zaman DESC;";
 
@@ -166,14 +208,14 @@ public class AdminService : IAdminService
 
         const string hotelsSql = @"
             SELECT TOP (6)
-                o.otel_adi,
-                CONCAT(o.ilce, ', ', o.sehir) AS sehir_label,
-                o.yayin_durumu,
-                o.ortalama_puan,
+                o.[OTEL_ADI],
+                CONCAT(o.[ILCE], ', ', o.[SEHIR]) AS sehir_label,
+                o.[YAYIN_DURUMU],
+                o.[ORTALAMA_PUAN],
                 COUNT(r.id) AS rezervasyon_adedi
-            FROM oteller o
-            LEFT JOIN rezervasyonlar r ON r.otel_id = o.id
-            GROUP BY o.id, o.otel_adi, o.ilce, o.sehir, o.yayin_durumu, o.ortalama_puan
+            FROM [dbo].[OTELLER] o
+            LEFT JOIN [dbo].[REZERVASYONLAR] r ON r.[OTEL_ID] = o.id
+            GROUP BY o.id, o.[OTEL_ADI], o.[ILCE], o.[SEHIR], o.[YAYIN_DURUMU], o.[ORTALAMA_PUAN]
             ORDER BY rezervasyon_adedi DESC, o.id DESC;";
 
         await using (var hotelsCommand = new SqlCommand(hotelsSql, connection))
@@ -197,30 +239,30 @@ public class AdminService : IAdminService
         const string hotelKpiSql = @"
             SELECT TOP (30)
                 o.id,
-                o.otel_adi,
-                CONCAT(o.ilce, ', ', o.sehir) AS sehir_label,
-                o.yayin_durumu,
+                o.[OTEL_ADI],
+                CONCAT(o.[ILCE], ', ', o.[SEHIR]) AS sehir_label,
+                o.[YAYIN_DURUMU],
                 COALESCE(resStats.res_count, 0) AS res_count,
                 COALESCE(resStats.cancel_count, 0) AS cancel_count,
                 COALESCE(resStats.gross_revenue, 0) AS gross_revenue,
                 COALESCE(commStats.commission_amount, 0) AS commission_amount,
-                COALESCE(o.toplam_yorum_sayisi, 0) AS review_count,
-                COALESCE(o.ortalama_puan, 0) AS avg_score
-            FROM oteller o
+                COALESCE(o.[TOPLAM_YORUM_SAYISI], 0) AS review_count,
+                COALESCE(o.[ORTALAMA_PUAN], 0) AS avg_score
+            FROM [dbo].[OTELLER] o
             OUTER APPLY
             (
                 SELECT
                     COUNT(*) AS res_count,
-                    SUM(CASE WHEN r.durum = 'İptal Edildi' THEN 1 ELSE 0 END) AS cancel_count,
-                    SUM(CASE WHEN COALESCE(r.durum,'') <> 'İptal Edildi' THEN COALESCE(r.toplam_tutar,0) ELSE 0 END) AS gross_revenue
-                FROM rezervasyonlar r
-                WHERE r.otel_id = o.id
+                    SUM(CASE WHEN r.[DURUM] = 'İptal Edildi' THEN 1 ELSE 0 END) AS cancel_count,
+                    SUM(CASE WHEN COALESCE(r.[DURUM],'') <> 'İptal Edildi' THEN COALESCE(r.[TOPLAM_TUTAR],0) ELSE 0 END) AS gross_revenue
+                FROM [dbo].[REZERVASYONLAR] r
+                WHERE r.[OTEL_ID] = o.id
             ) resStats
             OUTER APPLY
             (
-                SELECT SUM(COALESCE(k.komisyon_tutari,0)) AS commission_amount
-                FROM komisyon_muhasebe_kayitlari k
-                WHERE k.otel_id = o.id
+                SELECT SUM(COALESCE(k.[KOMISYON_TUTARI],0)) AS commission_amount
+                FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] k
+                WHERE k.[OTEL_ID] = o.id
             ) commStats
             WHERE COALESCE(resStats.res_count, 0) > 0 OR COALESCE(commStats.commission_amount, 0) > 0
             ORDER BY COALESCE(resStats.gross_revenue, 0) DESC, COALESCE(resStats.res_count, 0) DESC, o.id DESC;";
@@ -321,7 +363,7 @@ public class AdminService : IAdminService
         var whereSql = where.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", where);
         var sort = string.Equals(model.Filter.Sort, "date_asc", StringComparison.OrdinalIgnoreCase) ? "ASC" : "DESC";
 
-        var countSql = $"SELECT COUNT(*) FROM admin_islem_loglari a {whereSql};";
+        var countSql = $"SELECT COUNT(*) FROM [dbo].[ADMIN_ISLEM_LOGLARI] a {whereSql};";
         await using (var countCmd = new SqlCommand(countSql, connection))
         {
             countCmd.Parameters.AddRange(prms.ToArray());
@@ -330,10 +372,10 @@ public class AdminService : IAdminService
 
         var offset = (safePage - 1) * safePageSize;
         var listSql = $"""
-            SELECT a.id, a.admin_kullanici_id, a.islem_turu, a.hedef_tablo, a.hedef_kayit_id, a.aciklama, a.ip_adresi, a.islem_tarihi
-            FROM admin_islem_loglari a
+            SELECT a.id, a.[ADMIN_KULLANICI_ID], a.[ISLEM_TURU], a.[HEDEF_TABLO], a.[HEDEF_KAYIT_ID], a.[ACIKLAMA], a.[IP_ADRESI], a.[ISLEM_TARIHI]
+            FROM [dbo].[ADMIN_ISLEM_LOGLARI] a
             {whereSql}
-            ORDER BY a.islem_tarihi {sort}, a.id {sort}
+            ORDER BY a.[ISLEM_TARIHI] {sort}, a.id {sort}
             OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
             """;
 
@@ -403,8 +445,8 @@ public class AdminService : IAdminService
         model.Filter.Page = safePage;
         model.Filter.PageSize = safePageSize;
 
-        var hasNextAttempt = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "sonraki_deneme_utc", cancellationToken);
-        var hasMaxAttemptsColumn = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "maksimum_deneme", cancellationToken);
+        var hasNextAttempt = await ColumnExistsAsync(connection, "[dbo].[BILDIRIM_LOGLARI]", "sonraki_deneme_utc", cancellationToken);
+        var hasMaxAttemptsColumn = await ColumnExistsAsync(connection, "[dbo].[BILDIRIM_LOGLARI]", "maksimum_deneme", cancellationToken);
         var maxAttemptsSql = hasMaxAttemptsColumn ? "COALESCE(b.maksimum_deneme,3)" : "3";
 
         var where = new List<string> { "b.tur = N'E-posta'" };
@@ -422,7 +464,7 @@ public class AdminService : IAdminService
 
         var whereSql = "WHERE " + string.Join(" AND ", where);
 
-        var countSql = $"SELECT COUNT(*) FROM bildirim_loglari b {whereSql};";
+        var countSql = $"SELECT COUNT(*) FROM [dbo].[BILDIRIM_LOGLARI] b {whereSql};";
         await using (var countCmd = new SqlCommand(countSql, connection))
         {
             countCmd.Parameters.AddRange(prms.ToArray());
@@ -432,22 +474,22 @@ public class AdminService : IAdminService
         var offset = (safePage - 1) * safePageSize;
         var listSql = hasNextAttempt
             ? $"""
-                SELECT b.id, COALESCE(b.kullanici_id, 0), COALESCE(b.alici_eposta,''), COALESCE(b.konu,''),
-                       COALESCE(b.durum,''), COALESCE(b.saglayici_mesaj_id,''), COALESCE(b.gonderme_denemesi,0), {maxAttemptsSql},
-                       COALESCE(b.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at,
+                SELECT b.id, COALESCE(b.[KULLANICI_ID], 0), COALESCE(b.[ALICI_EPOSTA],''), COALESCE(b.[KONU],''),
+                       COALESCE(b.[DURUM],''), COALESCE(b.[SAGLAYICI_MESAJ_ID],''), COALESCE(b.[GONDERME_DENEMESI],0), {maxAttemptsSql},
+                       COALESCE(b.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()) AS created_at,
                        b.sonraki_deneme_utc,
-                       COALESCE(b.hata_mesaji,'')
-                FROM bildirim_loglari b
+                       COALESCE(b.[HATA_MESAJI],'')
+                FROM [dbo].[BILDIRIM_LOGLARI] b
                 {whereSql}
                 ORDER BY b.id DESC
                 OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
                 """
             : $"""
-                SELECT b.id, COALESCE(b.kullanici_id, 0), COALESCE(b.alici_eposta,''), COALESCE(b.konu,''),
-                       COALESCE(b.durum,''), COALESCE(b.saglayici_mesaj_id,''), COALESCE(b.gonderme_denemesi,0), {maxAttemptsSql},
-                       COALESCE(b.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at,
-                       COALESCE(b.hata_mesaji,'')
-                FROM bildirim_loglari b
+                SELECT b.id, COALESCE(b.[KULLANICI_ID], 0), COALESCE(b.[ALICI_EPOSTA],''), COALESCE(b.[KONU],''),
+                       COALESCE(b.[DURUM],''), COALESCE(b.[SAGLAYICI_MESAJ_ID],''), COALESCE(b.[GONDERME_DENEMESI],0), {maxAttemptsSql},
+                       COALESCE(b.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()) AS created_at,
+                       COALESCE(b.[HATA_MESAJI],'')
+                FROM [dbo].[BILDIRIM_LOGLARI] b
                 {whereSql}
                 ORDER BY b.id DESC
                 OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
@@ -495,23 +537,23 @@ public class AdminService : IAdminService
 
         const string accountSql = """
             SELECT
-                servis_kodu,
-                servis_adi,
-                COALESCE(gonderen_ad, N''),
-                COALESCE(gonderen_eposta, N''),
-                yanitla_eposta,
-                COALESCE(saglayici, N''),
-                COALESCE(smtp_host, N''),
-                COALESCE(smtp_port, 0),
-                COALESCE(guvenlik_tipi, N''),
-                COALESCE(aktif_mi, 0),
-                COALESCE(varsayilan_mi, 0),
-                COALESCE(test_modu, 0),
-                son_basarili_test_tarihi,
-                son_hata_tarihi,
-                son_hata_mesaji
-            FROM email_services
-            ORDER BY varsayilan_mi DESC, aktif_mi DESC, id ASC;
+                [SERVIS_KODU],
+                [SERVIS_ADI],
+                COALESCE([GONDEREN_AD], N''),
+                COALESCE([GONDEREN_EPOSTA], N''),
+                [YANITLA_EPOSTA],
+                COALESCE([SAGLAYICI], N''),
+                COALESCE([SMTP_HOST], N''),
+                COALESCE([SMTP_PORT], 0),
+                COALESCE([GUVENLIK_TIPI], N''),
+                COALESCE([AKTIF_MI], 0),
+                COALESCE([VARSAYILAN_MI], 0),
+                COALESCE([TEST_MODU], 0),
+                [SON_BASARILI_TEST_TARIHI],
+                [SON_HATA_TARIHI],
+                [SON_HATA_MESAJI]
+            FROM [dbo].[EPOSTA_SERVISLERI]
+            ORDER BY [VARSAYILAN_MI] DESC, [AKTIF_MI] DESC, id ASC;
             """;
 
         await using (var command = new SqlCommand(accountSql, connection))
@@ -549,14 +591,14 @@ public class AdminService : IAdminService
 
         const string templateSql = """
             SELECT
-                COALESCE(sablon_kodu, N''),
-                COALESCE(sablon_adi, N''),
+                COALESCE([SABLON_KODU], N''),
+                COALESCE([SABLON_ADI], N''),
                 COALESCE(dil, N'tr'),
                 COALESCE(konu, N''),
-                COALESCE(icerik, N'')
-            FROM bildirim_sablonlari
+                COALESCE([ICERIK], N'')
+            FROM [dbo].[BILDIRIM_SABLONLARI]
             WHERE tur = N'E-posta'
-              AND COALESCE(aktif_mi, 1) = 1
+              AND COALESCE([AKTIF_MI], 1) = 1
             ORDER BY id ASC;
             """;
 
@@ -585,10 +627,10 @@ public class AdminService : IAdminService
 
         const string queueSql = """
             SELECT
-                SUM(CASE WHEN durum = N'Beklemede' THEN 1 ELSE 0 END) AS beklemede,
-                SUM(CASE WHEN durum IN (N'Gönderildi', N'SMTP Kabul', N'Dosyaya Yazıldı') THEN 1 ELSE 0 END) AS smtp_kabul,
-                SUM(CASE WHEN durum = N'Başarısız' THEN 1 ELSE 0 END) AS basarisiz
-            FROM bildirim_loglari
+                SUM(CASE WHEN [DURUM] = N'Beklemede' THEN 1 ELSE 0 END) AS beklemede,
+                SUM(CASE WHEN [DURUM] IN (N'Gönderildi', N'SMTP Kabul', N'Dosyaya Yazıldı') THEN 1 ELSE 0 END) AS smtp_kabul,
+                SUM(CASE WHEN [DURUM] = N'Başarısız' THEN 1 ELSE 0 END) AS basarisiz
+            FROM [dbo].[BILDIRIM_LOGLARI]
             WHERE tur = N'E-posta';
             """;
         await using (var queueCommand = new SqlCommand(queueSql, connection))
@@ -679,22 +721,22 @@ public class AdminService : IAdminService
         if (form.Id.HasValue)
         {
             const string updateSql = """
-                UPDATE dbo.platform_email_hesaplari
-                SET hesap_kodu = @code,
-                    hesap_adi = @name,
-                    email_adresi = @email,
-                    gelen_protokol = @protocol,
-                    gelen_sunucu = @incomingHost,
-                    gelen_port = @incomingPort,
-                    gelen_ssl = @incomingSsl,
-                    giden_sunucu = @outgoingHost,
-                    giden_port = @outgoingPort,
-                    giden_guvenlik_tipi = @outgoingSecurity,
-                    kullanici_adi = @username,
-                    sifre_sifreli = @password,
-                    aktif_mi = @active,
-                    varsayilan_gonderen_mi = @defaultSender,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[PLATFORM_EPOSTA_HESAPLARI]
+                SET [HESAP_KODU] = @code,
+                    [HESAP_ADI] = @name,
+                    [EPOSTA_ADRESI] = @email,
+                    [GELEN_PROTOKOL] = @protocol,
+                    [GELEN_SUNUCU] = @incomingHost,
+                    [GELEN_PORT] = @incomingPort,
+                    [GELEN_SSL] = @incomingSsl,
+                    [GIDEN_SUNUCU] = @outgoingHost,
+                    [GIDEN_PORT] = @outgoingPort,
+                    [GIDEN_GUVENLIK_TIPI] = @outgoingSecurity,
+                    [KULLANICI_ADI] = @username,
+                    [SIFRE_SIFRELI] = @password,
+                    [AKTIF_MI] = @active,
+                    [VARSAYILAN_GONDEREN_MI] = @defaultSender,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @id;
                 """;
             await using var updateCmd = new SqlCommand(updateSql, connection);
@@ -705,10 +747,10 @@ public class AdminService : IAdminService
         else
         {
             const string insertSql = """
-                INSERT INTO dbo.platform_email_hesaplari
+                INSERT INTO [dbo].[PLATFORM_EPOSTA_HESAPLARI]
                 (
-                    hesap_kodu, hesap_adi, email_adresi, gelen_protokol, gelen_sunucu, gelen_port, gelen_ssl,
-                    giden_sunucu, giden_port, giden_guvenlik_tipi, kullanici_adi, sifre_sifreli, aktif_mi, varsayilan_gonderen_mi
+                    [HESAP_KODU], [HESAP_ADI], [EPOSTA_ADRESI], [GELEN_PROTOKOL], [GELEN_SUNUCU], [GELEN_PORT], [GELEN_SSL],
+                    [GIDEN_SUNUCU], [GIDEN_PORT], [GIDEN_GUVENLIK_TIPI], [KULLANICI_ADI], [SIFRE_SIFRELI], [AKTIF_MI], [VARSAYILAN_GONDEREN_MI]
                 )
                 VALUES
                 (
@@ -741,7 +783,7 @@ public class AdminService : IAdminService
 
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
-        const string deleteMessagesSql = "DELETE FROM dbo.platform_email_mesajlari WHERE hesap_id = @id;";
+        const string deleteMessagesSql = "DELETE FROM [dbo].[PLATFORM_EPOSTA_MESAJLARI] WHERE [HESAP_ID] = @id;";
         await using (var deleteMessagesCmd = new SqlCommand(deleteMessagesSql, connection))
         {
             deleteMessagesCmd.Parameters.AddWithValue("@id", accountId);
@@ -750,7 +792,7 @@ public class AdminService : IAdminService
 
         await DeleteEmailServiceByAccountIdAsync(connection, accountId, cancellationToken);
 
-        const string deleteAccountSql = "DELETE FROM dbo.platform_email_hesaplari WHERE id = @id;";
+        const string deleteAccountSql = "DELETE FROM [dbo].[PLATFORM_EPOSTA_HESAPLARI] WHERE id = @id;";
         await using var deleteAccountCmd = new SqlCommand(deleteAccountSql, connection);
         deleteAccountCmd.Parameters.AddWithValue("@id", accountId);
         var affected = await deleteAccountCmd.ExecuteNonQueryAsync(cancellationToken);
@@ -797,11 +839,11 @@ public class AdminService : IAdminService
         await connection.OpenAsync(cancellationToken);
 
         const string sql = """
-            SELECT sablon_kodu, sablon_adi
-            FROM bildirim_sablonlari
+            SELECT [SABLON_KODU], [SABLON_ADI]
+            FROM [dbo].[BILDIRIM_SABLONLARI]
             WHERE tur = N'E-posta'
-              AND aktif_mi = 1
-            ORDER BY sablon_kodu ASC;
+              AND [AKTIF_MI] = 1
+            ORDER BY [SABLON_KODU] ASC;
             """;
 
         var templateRows = new List<(string Code, string Name)>();
@@ -830,7 +872,7 @@ public class AdminService : IAdminService
                 SubjectOverride = $"[TEST] {template.Name} ({template.Code})",
                 ServiceCodeOverride = ResolvePreferredServiceCode(template.Code),
                 SenderEmailOverride = ResolvePreferredSenderEmail(template.Code),
-                RelatedTable = "users",
+                RelatedTable = "KULLANICILAR",
                 RelatedRecordId = adminUserId,
                 Tokens = BuildTemplateTestTokens(template.Code, recipientEmail)
             }, cancellationToken);
@@ -845,10 +887,10 @@ public class AdminService : IAdminService
     {
         const string sql = """
             SELECT
-                id, hesap_kodu, hesap_adi, email_adresi, gelen_protokol, gelen_sunucu, gelen_port, gelen_ssl,
-                giden_sunucu, giden_port, giden_guvenlik_tipi, aktif_mi, varsayilan_gonderen_mi, son_senkron_tarihi, son_hata_mesaji
-            FROM dbo.platform_email_hesaplari
-            ORDER BY varsayilan_gonderen_mi DESC, email_adresi ASC;
+                id, [HESAP_KODU], [HESAP_ADI], [EPOSTA_ADRESI], [GELEN_PROTOKOL], [GELEN_SUNUCU], [GELEN_PORT], [GELEN_SSL],
+                [GIDEN_SUNUCU], [GIDEN_PORT], [GIDEN_GUVENLIK_TIPI], [AKTIF_MI], [VARSAYILAN_GONDEREN_MI], [SON_SENKRON_TARIHI], [SON_HATA_MESAJI]
+            FROM [dbo].[PLATFORM_EPOSTA_HESAPLARI]
+            ORDER BY [VARSAYILAN_GONDEREN_MI] DESC, [EPOSTA_ADRESI] ASC;
             """;
         var rows = new List<AdminMailAccountRowViewModel>();
         await using var command = new SqlCommand(sql, connection);
@@ -881,10 +923,10 @@ public class AdminService : IAdminService
     private async Task<string> LoadActiveSenderEmailAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT TOP (1) COALESCE(gonderen_eposta, N'')
-            FROM dbo.email_services
-            WHERE aktif_mi = 1
-            ORDER BY varsayilan_mi DESC, id ASC;
+            SELECT TOP (1) COALESCE([GONDEREN_EPOSTA], N'')
+            FROM [dbo].[EPOSTA_SERVISLERI]
+            WHERE [AKTIF_MI] = 1
+            ORDER BY [VARSAYILAN_MI] DESC, id ASC;
             """;
         await using var command = new SqlCommand(sql, connection);
         return Convert.ToString(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture) ?? string.Empty;
@@ -894,14 +936,14 @@ public class AdminService : IAdminService
     {
         var sql = """
             SELECT TOP (80)
-                m.id, m.hesap_id, h.email_adresi, COALESCE(m.klasor, N'INBOX'), COALESCE(m.gonderen, N''),
-                COALESCE(m.konu, N''), COALESCE(m.ozet, N''), m.internet_message_id, m.tarih_utc,
-                COALESCE(m.okunmus_mu, 0), COALESCE(m.spam_mi, 0)
-            FROM dbo.platform_email_mesajlari m
-            INNER JOIN dbo.platform_email_hesaplari h ON h.id = m.hesap_id
-            WHERE m.yon = N'Gelen'
-              AND (@accountId IS NULL OR m.hesap_id = @accountId)
-            ORDER BY COALESCE(m.tarih_utc, m.olusturulma_tarihi) DESC, m.id DESC;
+                m.id, m.[HESAP_ID], h.[EPOSTA_ADRESI], COALESCE(m.[KLASOR], N'INBOX'), COALESCE(m.[GONDEREN], N''),
+                COALESCE(m.[KONU], N''), COALESCE(m.[OZET], N''), m.[INTERNET_MESAJ_KIMLIGI], m.[TARIH_UTC],
+                COALESCE(m.[OKUNMUS_MU], 0), COALESCE(m.[SPAM_MI], 0)
+            FROM [dbo].[PLATFORM_EPOSTA_MESAJLARI] m
+            INNER JOIN [dbo].[PLATFORM_EPOSTA_HESAPLARI] h ON h.id = m.[HESAP_ID]
+            WHERE m.[YON] = N'Gelen'
+              AND (@accountId IS NULL OR m.[HESAP_ID] = @accountId)
+            ORDER BY COALESCE(m.[TARIH_UTC], m.[OLUSTURULMA_TARIHI]) DESC, m.id DESC;
             """;
 
         var rows = new List<AdminIncomingEmailRowViewModel>();
@@ -931,37 +973,37 @@ public class AdminService : IAdminService
 
     private async Task<List<AdminOutgoingEmailRowViewModel>> LoadOutgoingEmailsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
-        var hasSenderOverrideColumn = await TableColumnExistsAsync(connection, "dbo", "bildirim_loglari", "gonderen_eposta_override", cancellationToken);
+        var hasSenderOverrideColumn = await TableColumnExistsAsync(connection, "dbo", "BILDIRIM_LOGLARI", "GONDEREN_EPOSTA_OVERRIDE", cancellationToken);
         var sql = hasSenderOverrideColumn
             ? """
                 SELECT TOP (80)
                     b.id,
-                    b.kullanici_id,
-                    COALESCE(b.alici_eposta, N''),
-                    COALESCE(b.konu, N''),
-                    COALESCE(b.durum, N''),
-                    b.saglayici_mesaj_id,
-                    b.gonderim_tarihi,
-                    COALESCE(b.olusturulma_tarihi, SYSUTCDATETIME()),
-                    COALESCE(b.gonderen_eposta_override, N'')
-                FROM dbo.bildirim_loglari b
-                WHERE b.tur = N'E-posta'
-                ORDER BY COALESCE(b.gonderim_tarihi, b.olusturulma_tarihi) DESC, b.id DESC;
+                    b.[KULLANICI_ID],
+                    COALESCE(b.[ALICI_EPOSTA], N''),
+                    COALESCE(b.[KONU], N''),
+                    COALESCE(b.[DURUM], N''),
+                    b.[SAGLAYICI_MESAJ_ID],
+                    b.[GONDERIM_TARIHI],
+                    COALESCE(b.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()),
+                    COALESCE(b.[GONDEREN_EPOSTA_OVERRIDE], N'')
+                FROM [dbo].[BILDIRIM_LOGLARI] b
+                WHERE b.[TUR] = N'E-posta'
+                ORDER BY COALESCE(b.[GONDERIM_TARIHI], b.[OLUSTURULMA_TARIHI]) DESC, b.id DESC;
                 """
             : """
                 SELECT TOP (80)
                     b.id,
-                    b.kullanici_id,
-                    COALESCE(b.alici_eposta, N''),
-                    COALESCE(b.konu, N''),
-                    COALESCE(b.durum, N''),
-                    b.saglayici_mesaj_id,
-                    b.gonderim_tarihi,
-                    COALESCE(b.olusturulma_tarihi, SYSUTCDATETIME()),
+                    b.[KULLANICI_ID],
+                    COALESCE(b.[ALICI_EPOSTA], N''),
+                    COALESCE(b.[KONU], N''),
+                    COALESCE(b.[DURUM], N''),
+                    b.[SAGLAYICI_MESAJ_ID],
+                    b.[GONDERIM_TARIHI],
+                    COALESCE(b.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()),
                     N''
-                FROM dbo.bildirim_loglari b
-                WHERE b.tur = N'E-posta'
-                ORDER BY COALESCE(b.gonderim_tarihi, b.olusturulma_tarihi) DESC, b.id DESC;
+                FROM [dbo].[BILDIRIM_LOGLARI] b
+                WHERE b.[TUR] = N'E-posta'
+                ORDER BY COALESCE(b.[GONDERIM_TARIHI], b.[OLUSTURULMA_TARIHI]) DESC, b.id DESC;
                 """;
         var senderEmail = await LoadActiveSenderEmailAsync(connection, cancellationToken);
         var rows = new List<AdminOutgoingEmailRowViewModel>();
@@ -988,7 +1030,7 @@ public class AdminService : IAdminService
 
     private async Task<string?> GetStoredMailPasswordAsync(SqlConnection connection, long accountId, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT sifre_sifreli FROM dbo.platform_email_hesaplari WHERE id = @id;";
+        const string sql = "SELECT [SIFRE_SIFRELI] FROM [dbo].[PLATFORM_EPOSTA_HESAPLARI] WHERE id = @id;";
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@id", accountId);
         var scalar = await command.ExecuteScalarAsync(cancellationToken);
@@ -1016,10 +1058,10 @@ public class AdminService : IAdminService
     private async Task ClearOtherDefaultMailAccountsAsync(SqlConnection connection, long? currentId, string currentEmail, CancellationToken cancellationToken)
     {
         const string sql = """
-            UPDATE dbo.platform_email_hesaplari
-            SET varsayilan_gonderen_mi = 0,
-                guncellenme_tarihi = SYSUTCDATETIME()
-            WHERE email_adresi <> @email
+            UPDATE [dbo].[PLATFORM_EPOSTA_HESAPLARI]
+            SET [VARSAYILAN_GONDEREN_MI] = 0,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+            WHERE [EPOSTA_ADRESI] <> @email
               AND (@id IS NULL OR id <> @id);
             """;
         await using var command = new SqlCommand(sql, connection);
@@ -1031,59 +1073,59 @@ public class AdminService : IAdminService
     private async Task UpsertEmailServiceFromMailAccountAsync(SqlConnection connection, AdminMailAccountForm form, string storedPassword, CancellationToken cancellationToken)
     {
         const string sql = """
-            MERGE dbo.email_services AS target
+            MERGE [dbo].[EPOSTA_SERVISLERI] AS target
             USING (
                 SELECT
-                    @serviceCode AS servis_kodu,
-                    @serviceName AS servis_adi,
-                    N'SMTP' AS saglayici,
-                    @isDefault AS varsayilan_mi,
-                    @isActive AS aktif_mi,
-                    @senderName AS gonderen_ad,
-                    @senderEmail AS gonderen_eposta,
-                    @replyTo AS yanitla_eposta,
-                    @smtpHost AS smtp_host,
-                    @smtpPort AS smtp_port,
-                    @smtpUsername AS smtp_kullanici_adi,
-                    @smtpPassword AS smtp_sifre,
-                    CAST(0 AS bit) AS sifre_sifrelenmis_mi,
-                    @securityType AS guvenlik_tipi,
-                    CAST(45 AS smallint) AS baglanti_zaman_asimi_saniye,
-                    CAST(0 AS bit) AS test_modu,
-                    @metadata AS metadata
+                    @serviceCode AS [SERVIS_KODU],
+                    @serviceName AS [SERVIS_ADI],
+                    N'SMTP' AS [SAGLAYICI],
+                    @isDefault AS [VARSAYILAN_MI],
+                    @isActive AS [AKTIF_MI],
+                    @senderName AS [GONDEREN_AD],
+                    @senderEmail AS [GONDEREN_EPOSTA],
+                    @replyTo AS [YANITLA_EPOSTA],
+                    @smtpHost AS [SMTP_HOST],
+                    @smtpPort AS [SMTP_PORT],
+                    @smtpUsername AS [SMTP_KULLANICI_ADI],
+                    @smtpPassword AS [SMTP_SIFRE],
+                    CAST(0 AS bit) AS [SIFRE_SIFRELENMIS_MI],
+                    @securityType AS [GUVENLIK_TIPI],
+                    CAST(45 AS smallint) AS [BAGLANTI_ZAMAN_ASIMI_SANIYE],
+                    CAST(0 AS bit) AS [TEST_MODU],
+                    @metadata AS [METADATA]
             ) AS src
-            ON target.servis_kodu = src.servis_kodu
+            ON target.[SERVIS_KODU] = src.[SERVIS_KODU]
             WHEN MATCHED THEN
                 UPDATE SET
-                    servis_adi = src.servis_adi,
-                    saglayici = src.saglayici,
-                    varsayilan_mi = src.varsayilan_mi,
-                    aktif_mi = src.aktif_mi,
-                    gonderen_ad = src.gonderen_ad,
-                    gonderen_eposta = src.gonderen_eposta,
-                    yanitla_eposta = src.yanitla_eposta,
-                    smtp_host = src.smtp_host,
-                    smtp_port = src.smtp_port,
-                    smtp_kullanici_adi = src.smtp_kullanici_adi,
-                    smtp_sifre = src.smtp_sifre,
-                    sifre_sifrelenmis_mi = src.sifre_sifrelenmis_mi,
-                    guvenlik_tipi = src.guvenlik_tipi,
-                    baglanti_zaman_asimi_saniye = src.baglanti_zaman_asimi_saniye,
-                    test_modu = src.test_modu,
-                    metadata = src.metadata,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                    [SERVIS_ADI] = src.[SERVIS_ADI],
+                    [SAGLAYICI] = src.[SAGLAYICI],
+                    [VARSAYILAN_MI] = src.[VARSAYILAN_MI],
+                    [AKTIF_MI] = src.[AKTIF_MI],
+                    [GONDEREN_AD] = src.[GONDEREN_AD],
+                    [GONDEREN_EPOSTA] = src.[GONDEREN_EPOSTA],
+                    [YANITLA_EPOSTA] = src.[YANITLA_EPOSTA],
+                    [SMTP_HOST] = src.[SMTP_HOST],
+                    [SMTP_PORT] = src.[SMTP_PORT],
+                    [SMTP_KULLANICI_ADI] = src.[SMTP_KULLANICI_ADI],
+                    [SMTP_SIFRE] = src.[SMTP_SIFRE],
+                    [SIFRE_SIFRELENMIS_MI] = src.[SIFRE_SIFRELENMIS_MI],
+                    [GUVENLIK_TIPI] = src.[GUVENLIK_TIPI],
+                    [BAGLANTI_ZAMAN_ASIMI_SANIYE] = src.[BAGLANTI_ZAMAN_ASIMI_SANIYE],
+                    [TEST_MODU] = src.[TEST_MODU],
+                    [METADATA] = src.[METADATA],
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHEN NOT MATCHED THEN
                 INSERT
                 (
-                    servis_kodu, servis_adi, saglayici, varsayilan_mi, aktif_mi, gonderen_ad, gonderen_eposta,
-                    yanitla_eposta, smtp_host, smtp_port, smtp_kullanici_adi, smtp_sifre, sifre_sifrelenmis_mi,
-                    guvenlik_tipi, baglanti_zaman_asimi_saniye, test_modu, metadata
+                    [SERVIS_KODU], [SERVIS_ADI], [SAGLAYICI], [VARSAYILAN_MI], [AKTIF_MI], [GONDEREN_AD], [GONDEREN_EPOSTA],
+                    [YANITLA_EPOSTA], [SMTP_HOST], [SMTP_PORT], [SMTP_KULLANICI_ADI], [SMTP_SIFRE], [SIFRE_SIFRELENMIS_MI],
+                    [GUVENLIK_TIPI], [BAGLANTI_ZAMAN_ASIMI_SANIYE], [TEST_MODU], [METADATA]
                 )
                 VALUES
                 (
-                    src.servis_kodu, src.servis_adi, src.saglayici, src.varsayilan_mi, src.aktif_mi, src.gonderen_ad, src.gonderen_eposta,
-                    src.yanitla_eposta, src.smtp_host, src.smtp_port, src.smtp_kullanici_adi, src.smtp_sifre, src.sifre_sifrelenmis_mi,
-                    src.guvenlik_tipi, src.baglanti_zaman_asimi_saniye, src.test_modu, src.metadata
+                    src.[SERVIS_KODU], src.[SERVIS_ADI], src.[SAGLAYICI], src.[VARSAYILAN_MI], src.[AKTIF_MI], src.[GONDEREN_AD], src.[GONDEREN_EPOSTA],
+                    src.[YANITLA_EPOSTA], src.[SMTP_HOST], src.[SMTP_PORT], src.[SMTP_KULLANICI_ADI], src.[SMTP_SIFRE], src.[SIFRE_SIFRELENMIS_MI],
+                    src.[GUVENLIK_TIPI], src.[BAGLANTI_ZAMAN_ASIMI_SANIYE], src.[TEST_MODU], src.[METADATA]
                 );
             """;
 
@@ -1117,8 +1159,8 @@ public class AdminService : IAdminService
     {
         const string sql = """
             DELETE s
-            FROM dbo.email_services s
-            INNER JOIN dbo.platform_email_hesaplari h ON LOWER(h.hesap_kodu) = LOWER(REPLACE(s.servis_kodu, N'platform_', N''))
+            FROM [dbo].[EPOSTA_SERVISLERI] s
+            INNER JOIN [dbo].[PLATFORM_EPOSTA_HESAPLARI] h ON LOWER(h.[HESAP_KODU]) = LOWER(REPLACE(s.[SERVIS_KODU], N'platform_', N''))
             WHERE h.id = @id;
             """;
         await using var command = new SqlCommand(sql, connection);
@@ -1223,9 +1265,9 @@ public class AdminService : IAdminService
     {
         const string sql = """
             SELECT TOP (1)
-                id, hesap_kodu, hesap_adi, email_adresi, gelen_protokol, gelen_sunucu, gelen_port, gelen_ssl,
-                giden_sunucu, giden_port, giden_guvenlik_tipi, kullanici_adi, sifre_sifreli, aktif_mi
-            FROM dbo.platform_email_hesaplari
+                id, [HESAP_KODU], [HESAP_ADI], [EPOSTA_ADRESI], [GELEN_PROTOKOL], [GELEN_SUNUCU], [GELEN_PORT], [GELEN_SSL],
+                [GIDEN_SUNUCU], [GIDEN_PORT], [GIDEN_GUVENLIK_TIPI], [KULLANICI_ADI], [SIFRE_SIFRELI], [AKTIF_MI]
+            FROM [dbo].[PLATFORM_EPOSTA_HESAPLARI]
             WHERE id = @id;
             """;
         await using var command = new SqlCommand(sql, connection);
@@ -1321,11 +1363,11 @@ public class AdminService : IAdminService
     {
         const string existsSql = """
             SELECT TOP (1) id
-            FROM dbo.platform_email_mesajlari
-            WHERE hesap_id = @accountId
+            FROM [dbo].[PLATFORM_EPOSTA_MESAJLARI]
+            WHERE [HESAP_ID] = @accountId
               AND yon = N'Gelen'
-              AND klasor = @folder
-              AND uid_degeri = @uid;
+              AND [KLASOR] = @folder
+              AND [UID_DEGERI] = @uid;
             """;
         await using var existsCommand = new SqlCommand(existsSql, connection);
         existsCommand.Parameters.AddWithValue("@accountId", account.Id);
@@ -1342,19 +1384,19 @@ public class AdminService : IAdminService
         if (existingId is not null && existingId != DBNull.Value)
         {
             const string updateSql = """
-                UPDATE dbo.platform_email_mesajlari
+                UPDATE [dbo].[PLATFORM_EPOSTA_MESAJLARI]
                 SET konu = @subject,
-                    gonderen = @from,
-                    alicilar = @to,
+                    [GONDEREN] = @from,
+                    [ALICILAR] = @to,
                     cc = @cc,
-                    tarih_utc = @dateUtc,
+                    [TARIH_UTC] = @dateUtc,
                     ozet = @summary,
-                    html_icerik = @htmlBody,
-                    text_icerik = @textBody,
-                    okunmus_mu = 1,
-                    ham_basliklar = @headers,
-                    guncellenme_tarihi = SYSUTCDATETIME(),
-                    senkron_tarihi = SYSUTCDATETIME()
+                    [HTML_ICERIK] = @htmlBody,
+                    [METIN_ICERIK] = @textBody,
+                    [OKUNMUS_MU] = 1,
+                    [HAM_BASLIKLAR] = @headers,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME(),
+                    [SENKRON_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @id;
                 """;
             await using var updateCommand = new SqlCommand(updateSql, connection);
@@ -1373,10 +1415,10 @@ public class AdminService : IAdminService
         }
 
         const string insertSql = """
-            INSERT INTO dbo.platform_email_mesajlari
+            INSERT INTO [dbo].[PLATFORM_EPOSTA_MESAJLARI]
             (
-                hesap_id, yon, klasor, uid_degeri, internet_message_id, konu, gonderen, alicilar, cc,
-                tarih_utc, ozet, html_icerik, text_icerik, okunmus_mu, spam_mi, ham_basliklar
+                [HESAP_ID], yon, [KLASOR], [UID_DEGERI], [INTERNET_MESAJ_KIMLIGI], konu, [GONDEREN], [ALICILAR], cc,
+                [TARIH_UTC], ozet, [HTML_ICERIK], [METIN_ICERIK], [OKUNMUS_MU], [SPAM_MI], [HAM_BASLIKLAR]
             )
             VALUES
             (
@@ -1428,10 +1470,10 @@ public class AdminService : IAdminService
     private static async Task UpdateMailAccountSyncSuccessAsync(SqlConnection connection, long accountId, CancellationToken cancellationToken)
     {
         const string sql = """
-            UPDATE dbo.platform_email_hesaplari
-            SET son_senkron_tarihi = SYSUTCDATETIME(),
-                son_hata_mesaji = NULL,
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[PLATFORM_EPOSTA_HESAPLARI]
+            SET [SON_SENKRON_TARIHI] = SYSUTCDATETIME(),
+                [SON_HATA_MESAJI] = NULL,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @id;
             """;
         await using var command = new SqlCommand(sql, connection);
@@ -1442,9 +1484,9 @@ public class AdminService : IAdminService
     private static async Task UpdateMailAccountSyncErrorAsync(SqlConnection connection, long accountId, string errorMessage, CancellationToken cancellationToken)
     {
         const string sql = """
-            UPDATE dbo.platform_email_hesaplari
-            SET son_hata_mesaji = @error,
-                guncellenme_tarihi = SYSUTCDATETIME()
+            UPDATE [dbo].[PLATFORM_EPOSTA_HESAPLARI]
+            SET [SON_HATA_MESAJI] = @error,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
             WHERE id = @id;
             """;
         await using var command = new SqlCommand(sql, connection);
@@ -1461,7 +1503,7 @@ public class AdminService : IAdminService
         }
 
         const string sql = """
-            INSERT INTO dbo.admin_islem_loglari (admin_kullanici_id, islem_turu, hedef_tablo, hedef_kayit_id, aciklama, ip_adresi, islem_tarihi)
+            INSERT INTO [dbo].[ADMIN_ISLEM_LOGLARI] ([ADMIN_KULLANICI_ID], [ISLEM_TURU], [HEDEF_TABLO], [HEDEF_KAYIT_ID], [ACIKLAMA], [IP_ADRESI], [ISLEM_TARIHI])
             VALUES (@adminUserId, @actionType, @targetTable, @targetId, @note, NULL, SYSUTCDATETIME());
             """;
         await using var command = new SqlCommand(sql, connection);
@@ -1497,21 +1539,21 @@ public class AdminService : IAdminService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var hasNextAttempt = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "sonraki_deneme_utc", cancellationToken);
+        var hasNextAttempt = await ColumnExistsAsync(connection, "[dbo].[BILDIRIM_LOGLARI]", "sonraki_deneme_utc", cancellationToken);
         var sql = hasNextAttempt
             ? """
-                UPDATE bildirim_loglari
-                SET durum = N'Beklemede',
-                    hata_mesaji = NULL,
-                    hata_kodu = NULL,
+                UPDATE [dbo].[BILDIRIM_LOGLARI]
+                SET [DURUM] = N'Beklemede',
+                    [HATA_MESAJI] = NULL,
+                    [HATA_KODU] = NULL,
                     sonraki_deneme_utc = NULL
                 WHERE id = @id;
                 """
             : """
-                UPDATE bildirim_loglari
-                SET durum = N'Beklemede',
-                    hata_mesaji = NULL,
-                    hata_kodu = NULL
+                UPDATE [dbo].[BILDIRIM_LOGLARI]
+                SET [DURUM] = N'Beklemede',
+                    [HATA_MESAJI] = NULL,
+                    [HATA_KODU] = NULL
                 WHERE id = @id;
                 """;
 
@@ -1530,24 +1572,24 @@ public class AdminService : IAdminService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var hasNextAttempt = await ColumnExistsAsync(connection, "dbo.bildirim_loglari", "sonraki_deneme_utc", cancellationToken);
+        var hasNextAttempt = await ColumnExistsAsync(connection, "[dbo].[BILDIRIM_LOGLARI]", "sonraki_deneme_utc", cancellationToken);
         var sql = hasNextAttempt
             ? """
-                UPDATE bildirim_loglari
-                SET durum = N'Beklemede',
-                    hata_mesaji = NULL,
-                    hata_kodu = NULL,
+                UPDATE [dbo].[BILDIRIM_LOGLARI]
+                SET [DURUM] = N'Beklemede',
+                    [HATA_MESAJI] = NULL,
+                    [HATA_KODU] = NULL,
                     sonraki_deneme_utc = NULL
                 WHERE tur = N'E-posta'
-                  AND durum = N'Başarısız';
+                  AND [DURUM] = N'Başarısız';
                 """
             : """
-                UPDATE bildirim_loglari
-                SET durum = N'Beklemede',
-                    hata_mesaji = NULL,
-                    hata_kodu = NULL
+                UPDATE [dbo].[BILDIRIM_LOGLARI]
+                SET [DURUM] = N'Beklemede',
+                    [HATA_MESAJI] = NULL,
+                    [HATA_KODU] = NULL
                 WHERE tur = N'E-posta'
-                  AND durum = N'Başarısız';
+                  AND [DURUM] = N'Başarısız';
                 """;
 
         await using var command = new SqlCommand(sql, connection);
@@ -1562,8 +1604,8 @@ public class AdminService : IAdminService
         await connection.OpenAsync(cancellationToken);
 
         await using (var cmd = new SqlCommand("""
-            UPDATE bildirim_loglari
-            SET durum = N'Başarısız'
+            UPDATE [dbo].[BILDIRIM_LOGLARI]
+            SET [DURUM] = N'Başarısız'
             WHERE id = @id;
             """, connection))
         {
@@ -1606,10 +1648,10 @@ public class AdminService : IAdminService
 
         var countSql = $"""
             SELECT COUNT(*)
-            FROM rezervasyonlar r
-            LEFT JOIN oteller o ON o.id = r.otel_id
-            LEFT JOIN users u ON u.id = r.kullanici_id
-            LEFT JOIN firmalar f ON f.id = r.firma_id
+            FROM [dbo].[REZERVASYONLAR] r
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = r.[KULLANICI_ID]
+            LEFT JOIN [dbo].[FIRMALAR] f ON f.id = r.[FIRMA_ID]
             {whereSql};
             """;
         await using (var countCmd = new SqlCommand(countSql, connection))
@@ -1621,24 +1663,24 @@ public class AdminService : IAdminService
         var offset = (model.Page - 1) * model.PageSize;
         var listSql = $"""
             SELECT r.id,
-                   COALESCE(o.otel_adi,'-') AS otel_adi,
-                   COALESCE(u.ad_soyad,'') AS musteri_adi,
-                   COALESCE(u.eposta,'') AS musteri_eposta,
-                   COALESCE(f.firma_adi,'') AS firma_adi,
-                   COALESCE(r.durum,'') AS durum,
-                   COALESCE(r.toplam_tutar,0) AS toplam_tutar,
-                   COALESCE(r.para_birimi,'TRY') AS para_birimi,
-                   COALESCE(r.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at,
-                   COALESCE(r.komisyon_tutari, 0) AS komisyon_tutari,
+                   COALESCE(o.[OTEL_ADI],'-') AS [OTEL_ADI],
+                   COALESCE(u.[AD_SOYAD],'') AS musteri_adi,
+                   COALESCE(u.[EPOSTA],'') AS musteri_eposta,
+                   COALESCE(f.[FIRMA_ADI],'') AS [FIRMA_ADI],
+                   COALESCE(r.[DURUM],'') AS [DURUM],
+                   COALESCE(r.[TOPLAM_TUTAR],0) AS [TOPLAM_TUTAR],
+                   COALESCE(r.[PARA_BIRIMI],'TRY') AS [PARA_BIRIMI],
+                   COALESCE(r.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()) AS created_at,
+                   COALESCE(r.[KOMISYON_TUTARI], 0) AS [KOMISYON_TUTARI],
                    CASE
-                       WHEN r.firma_id IS NOT NULL THEN N'Firma'
-                       WHEN COALESCE(r.satis_temsilcisi_id, 0) > 0 THEN N'Satış'
+                       WHEN r.[FIRMA_ID] IS NOT NULL THEN N'Firma'
+                       WHEN COALESCE(r.[SATIS_TEMSILCISI_ID], 0) > 0 THEN N'Satış'
                        ELSE N'Bireysel'
-                   END AS kaynak
-            FROM rezervasyonlar r
-            LEFT JOIN oteller o ON o.id = r.otel_id
-            LEFT JOIN users u ON u.id = r.kullanici_id
-            LEFT JOIN firmalar f ON f.id = r.firma_id
+                   END AS [KAYNAK]
+            FROM [dbo].[REZERVASYONLAR] r
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = r.[KULLANICI_ID]
+            LEFT JOIN [dbo].[FIRMALAR] f ON f.id = r.[FIRMA_ID]
             {whereSql}
             ORDER BY r.id DESC
             OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
@@ -1688,14 +1730,14 @@ public class AdminService : IAdminService
             PageSize = Math.Clamp(pageSize <= 0 ? 25 : pageSize, 10, 200)
         };
 
-        if (!await TableExistsAsync(connection, "odeme_islemleri", cancellationToken))
+        if (!await TableExistsAsync(connection, "ODEME_ISLEMLERI", cancellationToken))
         {
             return model;
         }
 
         model.SummaryCards.AddRange(await LoadAdminPaymentSummaryAsync(connection, cancellationToken));
-        model.StatusOptions.AddRange(await LoadDistinctAdminOptionAsync(connection, "odeme_islemleri", "odeme_durumu", cancellationToken));
-        model.TypeOptions.AddRange(await LoadDistinctAdminOptionAsync(connection, "odeme_islemleri", "odeme_turu", cancellationToken));
+        model.StatusOptions.AddRange(await LoadDistinctAdminOptionAsync(connection, "ODEME_ISLEMLERI", "ODEME_DURUMU", cancellationToken));
+        model.TypeOptions.AddRange(await LoadDistinctAdminOptionAsync(connection, "ODEME_ISLEMLERI", "ODEME_TURU", cancellationToken));
 
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(model.Status)) where.Add("LOWER(p.odeme_durumu) = LOWER(@status)");
@@ -1708,10 +1750,10 @@ public class AdminService : IAdminService
         var whereSql = where.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", where);
         await using (var countCmd = new SqlCommand($"""
             SELECT COUNT(*)
-            FROM odeme_islemleri p
-            LEFT JOIN rezervasyonlar r ON r.id = p.rezervasyon_id
-            LEFT JOIN oteller o ON o.id = p.otel_id
-            LEFT JOIN users u ON u.id = p.kullanici_id
+            FROM [dbo].[ODEME_ISLEMLERI] p
+            LEFT JOIN [dbo].[REZERVASYONLAR] r ON r.id = p.[REZERVASYON_ID]
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = p.[OTEL_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = p.[KULLANICI_ID]
             {whereSql};
             """, connection))
         {
@@ -1721,27 +1763,27 @@ public class AdminService : IAdminService
 
         await using var cmd = new SqlCommand($"""
             SELECT p.id,
-                   COALESCE(p.islem_no, N'-'),
-                   COALESCE(r.rezervasyon_no, N'-'),
-                   COALESCE(o.otel_adi, N'-'),
-                   COALESCE(u.ad_soyad, N'-'),
-                   COALESCE(p.odeme_turu, N'-'),
-                   COALESCE(p.odeme_yontemi, N'-'),
-                   COALESCE(p.odeme_durumu, N'-'),
-                   COALESCE(p.tutar, 0),
-                   COALESCE(p.komisyon_tutari, 0),
-                   COALESCE(p.vergi_tutari, 0),
-                   COALESCE(p.toplam_tahsilat, 0),
-                   COALESCE(p.para_birimi, N'TRY'),
-                   COALESCE(p.odeme_saglayici, N'-'),
-                   COALESCE(p.risk_puani, 0),
-                   COALESCE(p.manuel_onay_gerektirir, 0),
-                   p.odeme_baslangic_tarihi,
-                   p.odeme_tamamlanma_tarihi
-            FROM odeme_islemleri p
-            LEFT JOIN rezervasyonlar r ON r.id = p.rezervasyon_id
-            LEFT JOIN oteller o ON o.id = p.otel_id
-            LEFT JOIN users u ON u.id = p.kullanici_id
+                   COALESCE(p.[ISLEM_NO], N'-'),
+                   COALESCE(r.[REZERVASYON_NO], N'-'),
+                   COALESCE(o.[OTEL_ADI], N'-'),
+                   COALESCE(u.[AD_SOYAD], N'-'),
+                   COALESCE(p.[ODEME_TURU], N'-'),
+                   COALESCE(p.[ODEME_YONTEMI], N'-'),
+                   COALESCE(p.[ODEME_DURUMU], N'-'),
+                   COALESCE(p.[TUTAR], 0),
+                   COALESCE(p.[KOMISYON_TUTARI], 0),
+                   COALESCE(p.[VERGI_TUTARI], 0),
+                   COALESCE(p.[TOPLAM_TAHSILAT], 0),
+                   COALESCE(p.[PARA_BIRIMI], N'TRY'),
+                   COALESCE(p.[ODEME_SAGLAYICI], N'-'),
+                   COALESCE(p.[RISK_PUANI], 0),
+                   COALESCE(p.[MANUEL_ONAY_GEREKTIRIR], 0),
+                   p.[ODEME_BASLANGIC_TARIHI],
+                   p.[ODEME_TAMAMLANMA_TARIHI]
+            FROM [dbo].[ODEME_ISLEMLERI] p
+            LEFT JOIN [dbo].[REZERVASYONLAR] r ON r.id = p.[REZERVASYON_ID]
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = p.[OTEL_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = p.[KULLANICI_ID]
             {whereSql}
             ORDER BY p.id DESC
             OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
@@ -1794,14 +1836,14 @@ public class AdminService : IAdminService
             PageSize = Math.Clamp(pageSize <= 0 ? 25 : pageSize, 10, 200)
         };
 
-        if (!await TableExistsAsync(connection, "faturalar", cancellationToken))
+        if (!await TableExistsAsync(connection, "FATURALAR", cancellationToken))
         {
             return model;
         }
 
         model.SummaryCards.AddRange(await LoadAdminInvoiceSummaryAsync(connection, cancellationToken));
-        model.StatusOptions.AddRange(await LoadDistinctAdminOptionAsync(connection, "faturalar", "fatura_durumu", cancellationToken));
-        model.TypeOptions.AddRange(await LoadDistinctAdminOptionAsync(connection, "faturalar", "fatura_turu", cancellationToken));
+        model.StatusOptions.AddRange(await LoadDistinctAdminOptionAsync(connection, "FATURALAR", "FATURA_DURUMU", cancellationToken));
+        model.TypeOptions.AddRange(await LoadDistinctAdminOptionAsync(connection, "FATURALAR", "FATURA_TURU", cancellationToken));
 
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(model.Status)) where.Add("LOWER(f.fatura_durumu) = LOWER(@status)");
@@ -1814,9 +1856,9 @@ public class AdminService : IAdminService
         var whereSql = where.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", where);
         await using (var countCmd = new SqlCommand($"""
             SELECT COUNT(*)
-            FROM faturalar f
-            LEFT JOIN oteller o ON o.id = f.otel_id
-            LEFT JOIN rezervasyonlar r ON r.id = f.rezervasyon_id
+            FROM [dbo].[FATURALAR] f
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = f.[OTEL_ID]
+            LEFT JOIN [dbo].[REZERVASYONLAR] r ON r.id = f.[REZERVASYON_ID]
             {whereSql};
             """, connection))
         {
@@ -1826,29 +1868,29 @@ public class AdminService : IAdminService
 
         await using var cmd = new SqlCommand($"""
             SELECT f.id,
-                   COALESCE(f.fatura_no, N'-'),
-                   COALESCE(f.fatura_turu, N'-'),
-                   COALESCE(o.otel_adi, N'-'),
-                   COALESCE(f.fatura_alici_unvan, u.ad_soyad, firma.firma_adi, N'-'),
-                   COALESCE(f.fatura_alici_eposta, u.eposta, N''),
-                   COALESCE(f.fatura_durumu, N'Taslak'),
-                   COALESCE(f.e_fatura_durumu, N'-'),
-                   COALESCE(f.ara_toplam, 0),
-                   COALESCE(f.kdv_tutari, 0),
-                   COALESCE(f.konaklama_vergisi_tutari, 0),
-                   COALESCE(f.genel_toplam, 0),
-                   COALESCE(f.para_birimi, N'TRY'),
-                   f.fatura_tarihi,
-                   f.vade_tarihi,
-                   f.odeme_tarihi,
-                   COALESCE(f.fatura_pdf_yolu, N'')
-            FROM faturalar f
-            LEFT JOIN oteller o ON o.id = f.otel_id
-            LEFT JOIN rezervasyonlar r ON r.id = f.rezervasyon_id
-            LEFT JOIN users u ON u.id = f.kullanici_id
-            LEFT JOIN firmalar firma ON firma.id = f.firma_id
+                   COALESCE(f.[FATURA_NO], N'-'),
+                   COALESCE(f.[FATURA_TURU], N'-'),
+                   COALESCE(o.[OTEL_ADI], N'-'),
+                   COALESCE(f.[FATURA_ALICI_UNVAN], u.[AD_SOYAD], firma.[FIRMA_ADI], N'-'),
+                   COALESCE(f.[FATURA_ALICI_EPOSTA], u.[EPOSTA], N''),
+                   COALESCE(f.[FATURA_DURUMU], N'Taslak'),
+                   COALESCE(f.[E_FATURA_DURUMU], N'-'),
+                   COALESCE(f.[ARA_TOPLAM], 0),
+                   COALESCE(f.[KDV_TUTARI], 0),
+                   COALESCE(f.[KONAKLAMA_VERGISI_TUTARI], 0),
+                   COALESCE(f.[GENEL_TOPLAM], 0),
+                   COALESCE(f.[PARA_BIRIMI], N'TRY'),
+                   f.[FATURA_TARIHI],
+                   f.[VADE_TARIHI],
+                   f.[ODEME_TARIHI],
+                   COALESCE(f.[FATURA_PDF_YOLU], N'')
+            FROM [dbo].[FATURALAR] f
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = f.[OTEL_ID]
+            LEFT JOIN [dbo].[REZERVASYONLAR] r ON r.id = f.[REZERVASYON_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = f.[KULLANICI_ID]
+            LEFT JOIN [dbo].[FIRMALAR] firma ON firma.id = f.[FIRMA_ID]
             {whereSql}
-            ORDER BY COALESCE(f.fatura_tarihi, CAST(f.olusturulma_tarihi AS date)) DESC, f.id DESC
+            ORDER BY COALESCE(f.[FATURA_TARIHI], CAST(f.[OLUSTURULMA_TARIHI] AS date)) DESC, f.id DESC
             OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
             """, connection);
         BindInvoiceFilters(cmd, model);
@@ -1901,10 +1943,10 @@ public class AdminService : IAdminService
         var cards = new List<AdminSummaryCardViewModel>();
         var definitions = new[]
         {
-            ("Toplam İşlem", "SELECT COUNT(*) FROM odeme_islemleri", "Tüm ödeme hareketleri", "info", "fa-credit-card"),
-            ("Başarılı", "SELECT COUNT(*) FROM odeme_islemleri WHERE odeme_durumu = N'Başarılı'", "Tamamlanan tahsilatlar", "success", "fa-circle-check"),
-            ("Riskli", "SELECT COUNT(*) FROM odeme_islemleri WHERE COALESCE(risk_puani,0) >= 70 OR COALESCE(manuel_onay_gerektirir,0)=1", "Risk/manuel onay bekleyenler", "warning", "fa-shield-halved"),
-            ("İade Edilen", "SELECT COALESCE(SUM(COALESCE(iade_edilen_tutar,0)),0) FROM odeme_islemleri", "Toplam iade tutarı", "danger", "fa-rotate-left")
+            ("Toplam İşlem", "SELECT COUNT(*) FROM [dbo].[ODEME_ISLEMLERI]", "Tüm ödeme hareketleri", "info", "fa-credit-card"),
+            ("Başarılı", "SELECT COUNT(*) FROM [dbo].[ODEME_ISLEMLERI] WHERE [ODEME_DURUMU] = N'Başarılı'", "Tamamlanan tahsilatlar", "success", "fa-circle-check"),
+            ("Riskli", "SELECT COUNT(*) FROM [dbo].[ODEME_ISLEMLERI] WHERE COALESCE([RISK_PUANI],0) >= 70 OR COALESCE([MANUEL_ONAY_GEREKTIRIR],0)=1", "Risk/manuel onay bekleyenler", "warning", "fa-shield-halved"),
+            ("İade Edilen", "SELECT COALESCE(SUM(COALESCE([IADE_EDILEN_TUTAR],0)),0) FROM [dbo].[ODEME_ISLEMLERI]", "Toplam iade tutarı", "danger", "fa-rotate-left")
         };
 
         foreach (var item in definitions)
@@ -1928,10 +1970,10 @@ public class AdminService : IAdminService
         var cards = new List<AdminSummaryCardViewModel>();
         var definitions = new[]
         {
-            ("Toplam Fatura", "SELECT COUNT(*) FROM faturalar", "Sistemdeki tüm fatura kayıtları", "info", "fa-file-invoice"),
-            ("Kesildi", "SELECT COUNT(*) FROM faturalar WHERE fatura_durumu = N'Kesildi'", "Aktif kesilmiş faturalar", "success", "fa-file-circle-check"),
-            ("Bekleyen", "SELECT COUNT(*) FROM faturalar WHERE COALESCE(fatura_durumu,N'Taslak') IN (N'Taslak',N'Beklemede')", "Hazırlık/onay bekleyenler", "warning", "fa-file-pen"),
-            ("Ciro", "SELECT COALESCE(SUM(COALESCE(genel_toplam,0)),0) FROM faturalar WHERE COALESCE(fatura_durumu,N'') <> N'İptal Edildi'", "İptal dışı toplam", "success", "fa-chart-line")
+            ("Toplam Fatura", "SELECT COUNT(*) FROM [dbo].[FATURALAR]", "Sistemdeki tüm fatura kayıtları", "info", "fa-file-invoice"),
+            ("Kesildi", "SELECT COUNT(*) FROM [dbo].[FATURALAR] WHERE [FATURA_DURUMU] = N'Kesildi'", "Aktif kesilmiş faturalar", "success", "fa-file-circle-check"),
+            ("Bekleyen", "SELECT COUNT(*) FROM [dbo].[FATURALAR] WHERE COALESCE([FATURA_DURUMU],N'Taslak') IN (N'Taslak',N'Beklemede')", "Hazırlık/onay bekleyenler", "warning", "fa-file-pen"),
+            ("Ciro", "SELECT COALESCE(SUM(COALESCE([GENEL_TOPLAM],0)),0) FROM [dbo].[FATURALAR] WHERE COALESCE([FATURA_DURUMU],N'') <> N'İptal Edildi'", "İptal dışı toplam", "success", "fa-chart-line")
         };
 
         foreach (var item in definitions)
@@ -1993,24 +2035,24 @@ public class AdminService : IAdminService
             FROM
             (
                 SELECT
-                    DATEFROMPARTS(YEAR(r.giris_tarihi), MONTH(r.giris_tarihi), 1) AS report_month,
+                    DATEFROMPARTS(YEAR(r.[GIRIS_TARIHI]), MONTH(r.[GIRIS_TARIHI]), 1) AS report_month,
                     o.id AS hotel_id,
-                    COALESCE(o.otel_adi, N'-') AS hotel_name,
-                    CONCAT(COALESCE(o.ilce, N'-'), N', ', COALESCE(o.sehir, N'-')) AS city_label,
+                    COALESCE(o.[OTEL_ADI], N'-') AS hotel_name,
+                    CONCAT(COALESCE(o.[ILCE], N'-'), N', ', COALESCE(o.[SEHIR], N'-')) AS city_label,
                     COUNT(*) AS reservation_count,
-                    SUM(CASE WHEN COALESCE(r.durum, N'') IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı') THEN 1 ELSE 0 END) AS completed_count,
-                    SUM(CASE WHEN COALESCE(r.durum, N'') LIKE N'%İptal%' OR COALESCE(r.durum, N'') LIKE N'%Iptal%' THEN 1 ELSE 0 END) AS cancelled_count,
-                    COALESCE(SUM(CASE WHEN COALESCE(r.durum, N'') NOT LIKE N'%İptal%' AND COALESCE(r.durum, N'') NOT LIKE N'%Iptal%' THEN COALESCE(r.toplam_tutar,0) ELSE 0 END),0) AS gross_revenue,
-                    COALESCE(SUM(CASE WHEN COALESCE(r.durum, N'') NOT LIKE N'%İptal%' AND COALESCE(r.durum, N'') NOT LIKE N'%Iptal%' THEN COALESCE(r.komisyon_tutari,0) ELSE 0 END),0) AS gross_commission,
-                    COALESCE(SUM(CASE WHEN COALESCE(r.durum, N'') NOT LIKE N'%İptal%' AND COALESCE(r.durum, N'') NOT LIKE N'%Iptal%' THEN COALESCE(r.platform_net_komisyon_tutari,0) ELSE 0 END),0) AS net_commission,
-                    COALESCE(SUM(COALESCE(r.konaklama_vergisi_tutari,0)),0) AS accommodation_tax,
-                    COALESCE(SUM(COALESCE(r.kdv_tutari,0)),0) AS kdv_amount
-                FROM rezervasyonlar r
-                INNER JOIN oteller o ON o.id = r.otel_id
-                WHERE r.giris_tarihi >= @fromDate
-                  AND r.giris_tarihi <= @toDate
+                    SUM(CASE WHEN COALESCE(r.[DURUM], N'') IN (N'Tamamlandı', N'Giriş Yaptı', N'Onaylandı') THEN 1 ELSE 0 END) AS completed_count,
+                    SUM(CASE WHEN COALESCE(r.[DURUM], N'') LIKE N'%İptal%' OR COALESCE(r.[DURUM], N'') LIKE N'%Iptal%' THEN 1 ELSE 0 END) AS cancelled_count,
+                    COALESCE(SUM(CASE WHEN COALESCE(r.[DURUM], N'') NOT LIKE N'%İptal%' AND COALESCE(r.[DURUM], N'') NOT LIKE N'%Iptal%' THEN COALESCE(r.[TOPLAM_TUTAR],0) ELSE 0 END),0) AS gross_revenue,
+                    COALESCE(SUM(CASE WHEN COALESCE(r.[DURUM], N'') NOT LIKE N'%İptal%' AND COALESCE(r.[DURUM], N'') NOT LIKE N'%Iptal%' THEN COALESCE(r.[KOMISYON_TUTARI],0) ELSE 0 END),0) AS gross_commission,
+                    COALESCE(SUM(CASE WHEN COALESCE(r.[DURUM], N'') NOT LIKE N'%İptal%' AND COALESCE(r.[DURUM], N'') NOT LIKE N'%Iptal%' THEN COALESCE(r.[PLATFORM_NET_KOMISYON_TUTARI],0) ELSE 0 END),0) AS net_commission,
+                    COALESCE(SUM(COALESCE(r.[KONAKLAMA_VERGISI_TUTARI],0)),0) AS accommodation_tax,
+                    COALESCE(SUM(COALESCE(r.[KDV_TUTARI],0)),0) AS kdv_amount
+                FROM [dbo].[REZERVASYONLAR] r
+                INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+                WHERE r.[GIRIS_TARIHI] >= @fromDate
+                  AND r.[GIRIS_TARIHI] <= @toDate
                   AND (@hotelId IS NULL OR o.id = @hotelId)
-                GROUP BY DATEFROMPARTS(YEAR(r.giris_tarihi), MONTH(r.giris_tarihi), 1), o.id, o.otel_adi, o.ilce, o.sehir
+                GROUP BY DATEFROMPARTS(YEAR(r.[GIRIS_TARIHI]), MONTH(r.[GIRIS_TARIHI]), 1), o.id, o.[OTEL_ADI], o.[ILCE], o.[SEHIR]
             ) grouped
             """;
 
@@ -2053,6 +2095,218 @@ public class AdminService : IAdminService
         return model;
     }
 
+    public async Task<AdminRevenueCommandCenterPageViewModel> GetRevenueCommandCenterAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var model = new AdminRevenueCommandCenterPageViewModel
+        {
+            Shell = await GetShellAsync(connection, "Gelir Komuta Merkezi", "Son 30 gün platform GMV, komisyon, rezervasyon trendi ve otel liderleri.", fullName, email, userRole, cancellationToken)
+        };
+
+        const string revenue30Sql = @"
+            SELECT
+                COALESCE(SUM(COALESCE(r.[TOPLAM_TUTAR], 0)), 0) AS gmv_30d,
+                COALESCE(SUM(COALESCE(r.[KOMISYON_TUTARI], 0)), 0) AS commission_30d,
+                COUNT(*) AS reservation_count_30d
+            FROM [dbo].[REZERVASYONLAR] r
+            WHERE COALESCE(r.[DURUM], N'') <> N'İptal Edildi'
+              AND r.[OLUSTURULMA_TARIHI] >= DATEADD(day, -30, CAST(GETDATE() AS date));";
+
+        const string cancel30Sql = @"
+            SELECT COUNT(*)
+            FROM [dbo].[REZERVASYONLAR] r
+            WHERE COALESCE(r.[DURUM], N'') = N'İptal Edildi'
+              AND r.[OLUSTURULMA_TARIHI] >= DATEADD(day, -30, CAST(GETDATE() AS date));";
+
+        decimal gmv30 = 0m;
+        decimal commission30 = 0m;
+        var reservationCount30 = 0;
+        var cancelledCount30 = 0;
+
+        await using (var revenue30Command = new SqlCommand(revenue30Sql, connection))
+        await using (var revenue30Reader = await revenue30Command.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await revenue30Reader.ReadAsync(cancellationToken))
+            {
+                gmv30 = SafeDecimal(revenue30Reader, 0);
+                commission30 = SafeDecimal(revenue30Reader, 1);
+                reservationCount30 = SafeInt(revenue30Reader, 2);
+            }
+        }
+
+        await using (var cancel30Command = new SqlCommand(cancel30Sql, connection))
+        {
+            cancelledCount30 = Convert.ToInt32(await cancel30Command.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+        }
+
+        var tr = CultureInfo.GetCultureInfo("tr-TR");
+        var createdTotal30 = reservationCount30 + cancelledCount30;
+        var cancelRate = createdTotal30 <= 0 ? 0m : Math.Round(cancelledCount30 * 100m / createdTotal30, 1, MidpointRounding.AwayFromZero);
+
+        model.SummaryCards.Add(new AdminSummaryCardViewModel
+        {
+            Label = "Platform GMV (30 gün)",
+            Value = $"{gmv30:N0} TL",
+            Description = "İptal hariç rezervasyon cirosu",
+            ToneClass = "success",
+            IconClass = "fa-chart-line"
+        });
+        model.SummaryCards.Add(new AdminSummaryCardViewModel
+        {
+            Label = "Platform komisyon (30 gün)",
+            Value = $"{commission30:N0} TL",
+            Description = "Rezervasyon snapshot komisyonu",
+            ToneClass = "warning",
+            IconClass = "fa-percent"
+        });
+        model.SummaryCards.Add(new AdminSummaryCardViewModel
+        {
+            Label = "Rezervasyon (30 gün)",
+            Value = reservationCount30.ToString("N0", tr),
+            Description = "Son 30 günde oluşturulan kayıtlar",
+            ToneClass = "info",
+            IconClass = "fa-calendar-check"
+        });
+        model.SummaryCards.Add(new AdminSummaryCardViewModel
+        {
+            Label = "İptal (30 gün)",
+            Value = $"{cancelledCount30:N0} · %{cancelRate:0.#}",
+            Description = "İptal adedi ve oran",
+            ToneClass = "danger",
+            IconClass = "fa-ban"
+        });
+
+        const string dailyTrendSql = @"
+            SELECT
+                CAST(r.[OLUSTURULMA_TARIHI] AS date) AS gun,
+                COALESCE(SUM(CASE WHEN COALESCE(r.[DURUM], N'') <> N'İptal Edildi' THEN COALESCE(r.[TOPLAM_TUTAR], 0) ELSE 0 END), 0) AS gmv,
+                COUNT(*) AS adet
+            FROM [dbo].[REZERVASYONLAR] r
+            WHERE r.[OLUSTURULMA_TARIHI] >= DATEADD(day, -30, CAST(GETDATE() AS date))
+            GROUP BY CAST(r.[OLUSTURULMA_TARIHI] AS date)
+            ORDER BY gun;";
+
+        var dailyRows = new Dictionary<DateTime, (decimal Gmv, int Count)>();
+        await using (var dailyCommand = new SqlCommand(dailyTrendSql, connection))
+        await using (var dailyReader = await dailyCommand.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await dailyReader.ReadAsync(cancellationToken))
+            {
+                var day = dailyReader.GetDateTime(0).Date;
+                dailyRows[day] = (SafeDecimal(dailyReader, 1), SafeInt(dailyReader, 2));
+            }
+        }
+
+        var trendStart = DateTime.Today.AddDays(-29);
+        var gmvSeries = new List<(string Label, decimal Value)>();
+        var countSeries = new List<(string Label, int Value)>();
+        for (var day = trendStart; day <= DateTime.Today; day = day.AddDays(1))
+        {
+            dailyRows.TryGetValue(day, out var row);
+            gmvSeries.Add((day.ToString("dd MMM", tr), row.Gmv));
+            countSeries.Add((day.ToString("dd MMM", tr), row.Count));
+        }
+
+        var maxGmv = Math.Max(gmvSeries.Count == 0 ? 0m : gmvSeries.Max(static item => item.Value), 1m);
+        foreach (var row in gmvSeries)
+        {
+            model.GmvDailyTrend.Add(new AdminChartBarViewModel
+            {
+                Label = row.Label,
+                Value = (int)Math.Round(row.Value, MidpointRounding.AwayFromZero),
+                HeightPercent = Math.Max(8, (int)Math.Round(row.Value * 100m / maxGmv, MidpointRounding.AwayFromZero))
+            });
+        }
+
+        var maxCount = Math.Max(countSeries.Count == 0 ? 0 : countSeries.Max(static item => item.Value), 1);
+        foreach (var row in countSeries)
+        {
+            model.ReservationDailyTrend.Add(new AdminChartBarViewModel
+            {
+                Label = row.Label,
+                Value = row.Value,
+                HeightPercent = Math.Max(8, (int)Math.Round(row.Value * 100m / maxCount, MidpointRounding.AwayFromZero))
+            });
+        }
+
+        const string topHotelsSql = @"
+            SELECT TOP (12)
+                o.[ID],
+                COALESCE(o.[OTEL_ADI], N'-') AS hotel_name,
+                CONCAT(COALESCE(o.[ILCE], N'-'), N', ', COALESCE(o.[SEHIR], N'-')) AS city_label,
+                COUNT(*) AS reservation_count,
+                SUM(CASE WHEN COALESCE(r.[DURUM], N'') = N'İptal Edildi' THEN 1 ELSE 0 END) AS cancelled_count,
+                COALESCE(SUM(CASE WHEN COALESCE(r.[DURUM], N'') <> N'İptal Edildi' THEN COALESCE(r.[TOPLAM_TUTAR], 0) ELSE 0 END), 0) AS gmv,
+                COALESCE(SUM(CASE WHEN COALESCE(r.[DURUM], N'') <> N'İptal Edildi' THEN COALESCE(r.[KOMISYON_TUTARI], 0) ELSE 0 END), 0) AS commission
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.[ID] = r.[OTEL_ID]
+            WHERE r.[OLUSTURULMA_TARIHI] >= DATEADD(day, -30, CAST(GETDATE() AS date))
+            GROUP BY o.[ID], o.[OTEL_ADI], o.[ILCE], o.[SEHIR]
+            ORDER BY gmv DESC, reservation_count DESC;";
+
+        await using (var topHotelsCommand = new SqlCommand(topHotelsSql, connection))
+        await using (var topHotelsReader = await topHotelsCommand.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await topHotelsReader.ReadAsync(cancellationToken))
+            {
+                model.TopHotels.Add(new AdminRevenueHotelLeaderRowViewModel
+                {
+                    HotelId = topHotelsReader.GetInt64(0),
+                    HotelName = topHotelsReader.GetString(1),
+                    CityLabel = topHotelsReader.GetString(2),
+                    ReservationCount = SafeInt(topHotelsReader, 3),
+                    CancelledCount = SafeInt(topHotelsReader, 4),
+                    Gmv = SafeDecimal(topHotelsReader, 5),
+                    Commission = SafeDecimal(topHotelsReader, 6)
+                });
+            }
+        }
+
+        model.PackageTablesReady = await TableExistsAsync(connection, "PARTNER_PAKET_BASVURULARI", cancellationToken);
+        if (model.PackageTablesReady)
+        {
+            const string packageSql = @"
+                SELECT
+                    COUNT(*) AS total_30d,
+                    SUM(CASE WHEN k.[KOD] = N'5651' THEN 1 ELSE 0 END) AS kod_5651,
+                    SUM(CASE WHEN k.[KOD] = N'5661' THEN 1 ELSE 0 END) AS kod_5661
+                FROM [dbo].[PARTNER_PAKET_BASVURULARI] b
+                INNER JOIN [dbo].[PLATFORM_PAKETLER] p ON p.[ID] = b.[PAKET_ID]
+                INNER JOIN [dbo].[PLATFORM_PAKET_KATEGORILERI] k ON k.[ID] = p.[KATEGORI_ID]
+                WHERE b.[OLUSTURULMA_UTC] >= DATEADD(day, -30, SYSUTCDATETIME());";
+
+            await using var packageCommand = new SqlCommand(packageSql, connection);
+            await using var packageReader = await packageCommand.ExecuteReaderAsync(cancellationToken);
+            if (await packageReader.ReadAsync(cancellationToken))
+            {
+                model.PackageApplications30d = SafeInt(packageReader, 0);
+                model.Package5651Applications30d = SafeInt(packageReader, 1);
+                model.Package5661Applications30d = SafeInt(packageReader, 2);
+            }
+
+            model.SummaryCards.Add(new AdminSummaryCardViewModel
+            {
+                Label = "5651/5661 başvuru (30 gün)",
+                Value = model.PackageApplications30d.ToString("N0", tr),
+                Description = $"5651: {model.Package5651Applications30d:N0} · 5661: {model.Package5661Applications30d:N0}",
+                ToneClass = "primary",
+                IconClass = "fa-shield-halved"
+            });
+        }
+
+        return model;
+    }
+
+    private static async Task<bool> TableExistsAsync(SqlConnection connection, string tableName, CancellationToken cancellationToken)
+    {
+        await using var cmd = new SqlCommand("SELECT CASE WHEN OBJECT_ID(@fullName, N'U') IS NULL THEN 0 ELSE 1 END;", connection);
+        cmd.Parameters.AddWithValue("@fullName", $"[dbo].[{tableName}]");
+        var exists = Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+        return exists == 1;
+    }
+
     private static void BindReportFilters(SqlCommand command, AdminReportsPageViewModel model)
     {
         command.Parameters.AddWithValue("@fromDate", model.DateFrom?.Date ?? DateTime.Today.AddMonths(-12));
@@ -2063,7 +2317,7 @@ public class AdminService : IAdminService
     private static async Task<List<AdminReportHotelOptionViewModel>> LoadReportHotelOptionsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         var options = new List<AdminReportHotelOptionViewModel>();
-        const string sql = "SELECT TOP (500) id, otel_adi FROM oteller ORDER BY otel_adi;";
+        const string sql = "SELECT TOP (500) id, [OTEL_ADI] FROM [dbo].[OTELLER] ORDER BY [OTEL_ADI];";
         await using var cmd = new SqlCommand(sql, connection);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -2079,13 +2333,13 @@ public class AdminService : IAdminService
         const string sql = """
             SELECT
                 COUNT(*) AS reservation_count,
-                COALESCE(SUM(CASE WHEN COALESCE(durum,N'') NOT LIKE N'%İptal%' AND COALESCE(durum,N'') NOT LIKE N'%Iptal%' THEN COALESCE(toplam_tutar,0) ELSE 0 END),0) AS gross_revenue,
-                COALESCE(SUM(CASE WHEN COALESCE(durum,N'') NOT LIKE N'%İptal%' AND COALESCE(durum,N'') NOT LIKE N'%Iptal%' THEN COALESCE(komisyon_tutari,0) ELSE 0 END),0) AS gross_commission,
-                COALESCE(SUM(CASE WHEN COALESCE(durum,N'') NOT LIKE N'%İptal%' AND COALESCE(durum,N'') NOT LIKE N'%Iptal%' THEN COALESCE(platform_net_komisyon_tutari,0) ELSE 0 END),0) AS net_commission
-            FROM rezervasyonlar
-            WHERE giris_tarihi >= @fromDate
-              AND giris_tarihi <= @toDate
-              AND (@hotelId IS NULL OR otel_id = @hotelId);
+                COALESCE(SUM(CASE WHEN COALESCE([DURUM],N'') NOT LIKE N'%İptal%' AND COALESCE([DURUM],N'') NOT LIKE N'%Iptal%' THEN COALESCE([TOPLAM_TUTAR],0) ELSE 0 END),0) AS gross_revenue,
+                COALESCE(SUM(CASE WHEN COALESCE([DURUM],N'') NOT LIKE N'%İptal%' AND COALESCE([DURUM],N'') NOT LIKE N'%Iptal%' THEN COALESCE([KOMISYON_TUTARI],0) ELSE 0 END),0) AS gross_commission,
+                COALESCE(SUM(CASE WHEN COALESCE([DURUM],N'') NOT LIKE N'%İptal%' AND COALESCE([DURUM],N'') NOT LIKE N'%Iptal%' THEN COALESCE([PLATFORM_NET_KOMISYON_TUTARI],0) ELSE 0 END),0) AS net_commission
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [GIRIS_TARIHI] >= @fromDate
+              AND [GIRIS_TARIHI] <= @toDate
+              AND (@hotelId IS NULL OR [OTEL_ID] = @hotelId);
             """;
         await using var cmd = new SqlCommand(sql, connection);
         BindReportFilters(cmd, model);
@@ -2112,7 +2366,7 @@ public class AdminService : IAdminService
         var shell = await GetShellAsync(connection, "Rate Limit İstatistikleri", "429 yanıtlarını endpoint bazında izleyin.", fullName, email, userRole, cancellationToken);
         var model = new AdminRateLimitStatsPageViewModel { Shell = shell, WindowHours = Math.Clamp(windowHours <= 0 ? 24 : windowHours, 1, 168) };
 
-        if (!await TableExistsAsync(connection, "api_loglari", cancellationToken))
+        if (!await TableExistsAsync(connection, "API_LOGLARI", cancellationToken))
         {
             return model;
         }
@@ -2120,13 +2374,13 @@ public class AdminService : IAdminService
         var since = DateTime.UtcNow.AddHours(-model.WindowHours);
         const string sql = """
             SELECT TOP (200)
-                COALESCE(endpoint,'') AS endpoint,
-                COALESCE(http_method,'') AS method,
+                COALESCE([ENDPOINT],'') AS [ENDPOINT],
+                COALESCE([HTTP_METHOD],'') AS method,
                 SUM(CASE WHEN response_status = 429 THEN 1 ELSE 0 END) AS count_429,
                 COUNT(*) AS count_total
-            FROM api_loglari
-            WHERE baslangic_tarihi >= @since
-            GROUP BY endpoint, http_method
+            FROM [dbo].[API_LOGLARI]
+            WHERE [BASLANGIC_TARIHI] >= @since
+            GROUP BY [ENDPOINT], [HTTP_METHOD]
             ORDER BY count_429 DESC, count_total DESC;
             """;
         await using var cmd = new SqlCommand(sql, connection);
@@ -2161,11 +2415,11 @@ public class AdminService : IAdminService
         model.Items["Security:Csp:Enforce"] = Get("Security:Csp:Enforce");
 
         // Email provider (DB)
-        if (await TableExistsAsync(connection, "email_services", cancellationToken))
+        if (await TableExistsAsync(connection, "EPOSTA_SERVISLERI", cancellationToken))
         {
             await using var cmd = new SqlCommand("""
-                SELECT TOP (1) COALESCE(saglayici,''), COALESCE(aktif_mi, 0)
-                FROM email_services
+                SELECT TOP (1) COALESCE([SAGLAYICI],''), COALESCE([AKTIF_MI], 0)
+                FROM [dbo].[EPOSTA_SERVISLERI]
                 ORDER BY id DESC;
                 """, connection);
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
@@ -2206,7 +2460,7 @@ public class AdminService : IAdminService
         model.SummaryCards.Add(new AdminSummaryCardViewModel
         {
             Label = "E-posta Kuyruğu",
-            Value = (await CountIfTableExistsAsync(connection, "bildirim_loglari", "COALESCE(durum,'') IN (N'Beklemede',N'Kuyrukta',N'Basarisiz',N'Başarısız')", cancellationToken)).ToString(CultureInfo.InvariantCulture),
+            Value = (await CountIfTableExistsAsync(connection, "BILDIRIM_LOGLARI", "COALESCE([DURUM],'') IN (N'Beklemede',N'Kuyrukta',N'Basarisiz',N'Başarısız')", cancellationToken)).ToString(CultureInfo.InvariantCulture),
             Description = "Bekleyen veya hatalı bildirim işleri",
             ToneClass = "info",
             IconClass = "fas fa-envelope-open-text"
@@ -2214,7 +2468,7 @@ public class AdminService : IAdminService
         model.SummaryCards.Add(new AdminSummaryCardViewModel
         {
             Label = "Aktif E-posta Servisi",
-            Value = (await CountIfTableExistsAsync(connection, "email_services", "COALESCE(aktif_mi,0)=1", cancellationToken)).ToString(CultureInfo.InvariantCulture),
+            Value = (await CountIfTableExistsAsync(connection, "EPOSTA_SERVISLERI", "COALESCE([AKTIF_MI],0)=1", cancellationToken)).ToString(CultureInfo.InvariantCulture),
             Description = "Canlı gönderime açık SMTP hesapları",
             ToneClass = "success",
             IconClass = "fas fa-server"
@@ -2250,7 +2504,7 @@ public class AdminService : IAdminService
             ("Firma çalışanları", "firma_calisanlari", "/firma/calisanlar")));
 
         model.Groups.Add(await BuildTableCheckGroupAsync(connection, "E-posta, Log ve Sağlık", "Kuyruk, şablon, servis, sistem logları ve health izleme.", "danger", cancellationToken,
-            ("E-posta servisleri", "email_services", "/admin/mail-merkezi"),
+            ("E-posta servisleri", "EPOSTA_SERVISLERI", "/admin/mail-merkezi"),
             ("Bildirim kuyruğu", "bildirim_loglari", "/admin/email-kuyruk"),
             ("Bildirim şablonları", "bildirim_sablonlari", "/admin/eposta-sablonlari"),
             ("Sistem hata logları", "sistem_hata_loglari", "/admin/loglar"),
@@ -2313,10 +2567,10 @@ public class AdminService : IAdminService
 
         var since = DateTime.UtcNow.AddDays(-7);
         const string kpiSql = """
-            SELECT COUNT(*), COALESCE(SUM(COALESCE(toplam_tutar,0)),0)
-            FROM rezervasyonlar
-            WHERE COALESCE(olusturulma_tarihi, SYSUTCDATETIME()) >= @since
-              AND COALESCE(durum,'') <> N'İptal Edildi';
+            SELECT COUNT(*), COALESCE(SUM(COALESCE([TOPLAM_TUTAR],0)),0)
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE COALESCE([OLUSTURULMA_TARIHI], SYSUTCDATETIME()) >= @since
+              AND COALESCE([DURUM],'') <> N'İptal Edildi';
             """;
         await using (var kpiCmd = new SqlCommand(kpiSql, connection))
         {
@@ -2329,20 +2583,20 @@ public class AdminService : IAdminService
             }
         }
 
-        if (await TableExistsAsync(connection, "oda_fiyat_musaitlik", cancellationToken))
+        if (await TableExistsAsync(connection, "ODA_FIYAT_MUSAITLIK", cancellationToken))
         {
             const string invSql = """
                 SELECT TOP (40)
-                    COALESCE(o.otel_adi,'') AS otel_adi,
-                    COALESCE(ot.oda_adi,'') AS oda_adi,
-                    ofm.tarih,
-                    (COALESCE(ofm.toplam_oda_sayisi,0) - COALESCE(ofm.satilan_oda_sayisi,0) - COALESCE(ofm.bloke_oda_sayisi,0)) AS kalan
-                FROM oda_fiyat_musaitlik ofm
-                JOIN oteller o ON o.id = ofm.otel_id
-                JOIN oda_tipleri ot ON ot.id = ofm.oda_tip_id
-                WHERE ofm.tarih >= CAST(SYSUTCDATETIME() AS date)
-                  AND (COALESCE(ofm.toplam_oda_sayisi,0) - COALESCE(ofm.satilan_oda_sayisi,0) - COALESCE(ofm.bloke_oda_sayisi,0)) BETWEEN 1 AND 3
-                ORDER BY kalan ASC, ofm.tarih ASC;
+                    COALESCE(o.[OTEL_ADI],'') AS [OTEL_ADI],
+                    COALESCE(ot.[ODA_ADI],'') AS [ODA_ADI],
+                    ofm.[TARIH],
+                    (COALESCE(ofm.[TOPLAM_ODA_SAYISI],0) - COALESCE(ofm.[SATILAN_ODA_SAYISI],0) - COALESCE(ofm.[BLOKE_ODA_SAYISI],0)) AS kalan
+                FROM [dbo].[ODA_FIYAT_MUSAITLIK] ofm
+                JOIN [dbo].[OTELLER] o ON o.id = ofm.[OTEL_ID]
+                JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = ofm.[ODA_TIP_ID]
+                WHERE ofm.[TARIH] >= CAST(SYSUTCDATETIME() AS date)
+                  AND (COALESCE(ofm.[TOPLAM_ODA_SAYISI],0) - COALESCE(ofm.[SATILAN_ODA_SAYISI],0) - COALESCE(ofm.[BLOKE_ODA_SAYISI],0)) BETWEEN 1 AND 3
+                ORDER BY kalan ASC, ofm.[TARIH] ASC;
                 """;
             await using var invCmd = new SqlCommand(invSql, connection);
             await using var invReader = await invCmd.ExecuteReaderAsync(cancellationToken);
@@ -2361,7 +2615,7 @@ public class AdminService : IAdminService
         var hid = model.PriceHistoryHotelId;
         if (hid <= 0)
         {
-            const string firstHotelSql = "SELECT TOP (1) id FROM oteller ORDER BY id ASC;";
+            const string firstHotelSql = "SELECT TOP (1) id FROM [dbo].[OTELLER] ORDER BY id ASC;";
             await using var fhCmd = new SqlCommand(firstHotelSql, connection);
             var scalar = await fhCmd.ExecuteScalarAsync(cancellationToken);
             if (scalar is not null && scalar != DBNull.Value)
@@ -2371,18 +2625,18 @@ public class AdminService : IAdminService
             }
         }
 
-        if (hid > 0 && await TableExistsAsync(connection, "oda_fiyat_musaitlik", cancellationToken))
+        if (hid > 0 && await TableExistsAsync(connection, "ODA_FIYAT_MUSAITLIK", cancellationToken))
         {
             const string priceSql = """
                 SELECT TOP (60)
-                    COALESCE(ot.oda_adi,'') AS oda_adi,
-                    ofm.tarih,
-                    COALESCE(ofm.gecelik_fiyat,0) AS gecelik,
-                    ofm.indirimli_fiyat
-                FROM oda_fiyat_musaitlik ofm
-                JOIN oda_tipleri ot ON ot.id = ofm.oda_tip_id
-                WHERE ofm.otel_id = @hotelId
-                ORDER BY ofm.tarih DESC, ofm.id DESC;
+                    COALESCE(ot.[ODA_ADI],'') AS [ODA_ADI],
+                    ofm.[TARIH],
+                    COALESCE(ofm.[GECELIK_FIYAT],0) AS gecelik,
+                    ofm.[INDIRIMLI_FIYAT]
+                FROM [dbo].[ODA_FIYAT_MUSAITLIK] ofm
+                JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = ofm.[ODA_TIP_ID]
+                WHERE ofm.[OTEL_ID] = @hotelId
+                ORDER BY ofm.[TARIH] DESC, ofm.id DESC;
                 """;
             await using var pCmd = new SqlCommand(priceSql, connection);
             pCmd.Parameters.AddWithValue("@hotelId", hid);
@@ -2399,9 +2653,9 @@ public class AdminService : IAdminService
             }
         }
 
-        if (await TableExistsAsync(connection, "rezervasyonlar_archive", cancellationToken))
+        if (await TableExistsAsync(connection, "REZERVASYONLAR_ARSIV", cancellationToken))
         {
-            await using var aCmd = new SqlCommand("SELECT COUNT(*) FROM rezervasyonlar_archive;", connection);
+            await using var aCmd = new SqlCommand("SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR_ARSIV];", connection);
             var ac = await aCmd.ExecuteScalarAsync(cancellationToken);
             model.ArchivedReservationSampleCount = ac is null || ac == DBNull.Value
                 ? 0
@@ -2410,7 +2664,7 @@ public class AdminService : IAdminService
         }
         else
         {
-            model.ArchiveHint = "rezervasyonlar_archive tablosu henüz oluşturulmadı (migration ile).";
+            model.ArchiveHint = "REZERVASYONLAR_ARSIV tablosu henüz oluşturulmadı (105_REZERVASYONLAR_ARSIV.sql migration ile).";
         }
 
         return model;
@@ -2430,21 +2684,21 @@ public class AdminService : IAdminService
 
         const string sql = """
             SELECT
-                FORMAT(DATEFROMPARTS(YEAR(r.giris_tarihi), MONTH(r.giris_tarihi), 1), 'yyyy-MM', 'en-US') AS ay,
+                FORMAT(DATEFROMPARTS(YEAR(r.[GIRIS_TARIHI]), MONTH(r.[GIRIS_TARIHI]), 1), 'yyyy-MM', 'en-US') AS ay,
                 o.id,
-                o.otel_adi,
-                COALESCE(o.sehir, '') AS sehir,
-                COALESCE(o.ilce, '') AS ilce,
+                o.[OTEL_ADI],
+                COALESCE(o.[SEHIR], '') AS [SEHIR],
+                COALESCE(o.[ILCE], '') AS ilce,
                 COUNT(*) AS rezervasyon,
-                COALESCE(SUM(COALESCE(r.toplam_tutar,0)),0) AS ciro,
-                COALESCE(SUM(COALESCE(r.komisyon_tutari,0)),0) AS brut_komisyon,
-                COALESCE(SUM(COALESCE(r.platform_net_komisyon_tutari,0)),0) AS net_komisyon
-            FROM rezervasyonlar r
-            INNER JOIN oteller o ON o.id = r.otel_id
-            WHERE COALESCE(r.durum,'') <> N'İptal Edildi'
-              AND r.giris_tarihi >= DATEADD(month, -6, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
-            GROUP BY DATEFROMPARTS(YEAR(r.giris_tarihi), MONTH(r.giris_tarihi), 1), o.id, o.otel_adi, o.sehir, o.ilce
-            ORDER BY DATEFROMPARTS(YEAR(r.giris_tarihi), MONTH(r.giris_tarihi), 1) DESC, ciro DESC;
+                COALESCE(SUM(COALESCE(r.[TOPLAM_TUTAR],0)),0) AS ciro,
+                COALESCE(SUM(COALESCE(r.[KOMISYON_TUTARI],0)),0) AS brut_komisyon,
+                COALESCE(SUM(COALESCE(r.[PLATFORM_NET_KOMISYON_TUTARI],0)),0) AS net_komisyon
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            WHERE COALESCE(r.[DURUM],'') <> N'İptal Edildi'
+              AND r.[GIRIS_TARIHI] >= DATEADD(month, -6, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
+            GROUP BY DATEFROMPARTS(YEAR(r.[GIRIS_TARIHI]), MONTH(r.[GIRIS_TARIHI]), 1), o.id, o.[OTEL_ADI], o.[SEHIR], o.[ILCE]
+            ORDER BY DATEFROMPARTS(YEAR(r.[GIRIS_TARIHI]), MONTH(r.[GIRIS_TARIHI]), 1) DESC, ciro DESC;
             """;
 
         var sb = new StringBuilder();
@@ -2513,10 +2767,10 @@ public class AdminService : IAdminService
 
         // SMTP / email service config
         const string smtpSql = @"
-            SELECT TOP (1) saglayici, gonderen_eposta, test_modu, aktif_mi
-            FROM email_services
-            WHERE aktif_mi = 1
-            ORDER BY varsayilan_mi DESC, id ASC;";
+            SELECT TOP (1) [SAGLAYICI], [GONDEREN_EPOSTA], [TEST_MODU], [AKTIF_MI]
+            FROM [dbo].[EPOSTA_SERVISLERI]
+            WHERE [AKTIF_MI] = 1
+            ORDER BY [VARSAYILAN_MI] DESC, id ASC;";
         await using (var smtpCmd = new SqlCommand(smtpSql, connection))
         await using (var smtpReader = await smtpCmd.ExecuteReaderAsync(cancellationToken))
         {
@@ -2535,18 +2789,18 @@ public class AdminService : IAdminService
             }
             else
             {
-                model.Checks.Add(new AdminSystemHealthCheckItemViewModel { Title = "E-posta Servisi", StatusText = "YOK", ToneClass = "danger", Detail = "Aktif email_services kaydı bulunamadı." });
+                model.Checks.Add(new AdminSystemHealthCheckItemViewModel { Title = "E-posta Servisi", StatusText = "YOK", ToneClass = "danger", Detail = "Aktif EPOSTA_SERVISLERI kaydı bulunamadı." });
             }
         }
 
         // Queue stats: bildirim_loglari (email)
         const string queueSql = @"
             SELECT
-                SUM(CASE WHEN tur='E-posta' AND durum='Beklemede' THEN 1 ELSE 0 END) AS email_pending,
-                SUM(CASE WHEN tur='E-posta' AND durum='Başarısız' THEN 1 ELSE 0 END) AS email_failed,
-                MIN(CASE WHEN tur='E-posta' AND durum='Beklemede' THEN olusturulma_tarihi ELSE NULL END) AS email_oldest_pending,
-                SUM(CASE WHEN tur='Sistem İçi' AND durum='Beklemede' THEN 1 ELSE 0 END) AS system_pending
-            FROM bildirim_loglari;";
+                SUM(CASE WHEN tur='E-posta' AND [DURUM]='Beklemede' THEN 1 ELSE 0 END) AS email_pending,
+                SUM(CASE WHEN tur='E-posta' AND [DURUM]='Başarısız' THEN 1 ELSE 0 END) AS email_failed,
+                MIN(CASE WHEN tur='E-posta' AND [DURUM]='Beklemede' THEN [OLUSTURULMA_TARIHI] ELSE NULL END) AS email_oldest_pending,
+                SUM(CASE WHEN tur='Sistem İçi' AND [DURUM]='Beklemede' THEN 1 ELSE 0 END) AS system_pending
+            FROM [dbo].[BILDIRIM_LOGLARI];";
         await using (var queueCmd = new SqlCommand(queueSql, connection))
         await using (var queueReader = await queueCmd.ExecuteReaderAsync(cancellationToken))
         {
@@ -2569,11 +2823,11 @@ public class AdminService : IAdminService
         // Critical operational counts
         const string opsSql = @"
             SELECT
-                (SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu,'Beklemede')='Beklemede') AS pending_company,
-                (SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu='Beklemede') AS pending_partner,
-                (SELECT COUNT(*) FROM yorumlar WHERE onay_durumu='Beklemede') AS pending_reviews,
-                (SELECT COUNT(*) FROM rezervasyonlar WHERE durum='Onay Bekliyor') AS pending_reservations,
-                (SELECT COUNT(*) FROM sistem_hata_loglari WHERE hata_seviyesi IN ('CRITICAL','ALERT','EMERGENCY') AND cozuldu_mu=0) AS critical_errors;";
+                (SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE COALESCE([ONAY_DURUMU],'Beklemede')='Beklemede') AS pending_company,
+                (SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU]='Beklemede') AS pending_partner,
+                (SELECT COUNT(*) FROM [dbo].[YORUMLAR] WHERE [ONAY_DURUMU]='Beklemede') AS pending_reviews,
+                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [DURUM]='Onay Bekliyor') AS pending_reservations,
+                (SELECT COUNT(*) FROM [dbo].[SISTEM_HATA_LOGLARI] WHERE [HATA_SEVIYESI] IN ('CRITICAL','ALERT','EMERGENCY') AND [COZULDU_MU]=0) AS critical_errors;";
         await using (var opsCmd = new SqlCommand(opsSql, connection))
         await using (var opsReader = await opsCmd.ExecuteReaderAsync(cancellationToken))
         {
@@ -2619,13 +2873,13 @@ public class AdminService : IAdminService
 
         // Corporate pricing table existence & volume
         const string firmPricingSql = """
-            IF OBJECT_ID(N'dbo.firma_oda_fiyat_musaitlik', N'U') IS NULL
+            IF OBJECT_ID(N'[dbo].[FIRMA_ODA_FIYAT_MUSAITLIK]', N'U') IS NULL
             BEGIN
                 SELECT 0 AS exists_flag, 0 AS row_count;
             END
             ELSE
             BEGIN
-                SELECT 1 AS exists_flag, (SELECT COUNT(*) FROM dbo.firma_oda_fiyat_musaitlik) AS row_count;
+                SELECT 1 AS exists_flag, (SELECT COUNT(*) FROM [dbo].[FIRMA_ODA_FIYAT_MUSAITLIK]) AS row_count;
             END
             """;
         await using (var firmPricingCmd = new SqlCommand(firmPricingSql, connection))
@@ -2647,13 +2901,13 @@ public class AdminService : IAdminService
 
         // Hotel listing subscriptions table existence & volume
         const string listingSubSql = """
-            IF OBJECT_ID(N'dbo.otel_liste_abonelikleri', N'U') IS NULL
+            IF OBJECT_ID(N'[dbo].[OTEL_LISTE_ABONELIKLERI]', N'U') IS NULL
             BEGIN
                 SELECT 0 AS exists_flag, 0 AS row_count;
             END
             ELSE
             BEGIN
-                SELECT 1 AS exists_flag, (SELECT COUNT(*) FROM dbo.otel_liste_abonelikleri) AS row_count;
+                SELECT 1 AS exists_flag, (SELECT COUNT(*) FROM [dbo].[OTEL_LISTE_ABONELIKLERI]) AS row_count;
             END
             """;
         await using (var listingSubCmd = new SqlCommand(listingSubSql, connection))
@@ -2751,26 +3005,26 @@ public class AdminService : IAdminService
         }
 
         const string sql = @"
-            SELECT p.id, p.kullanici_id, o.id AS hotel_id, p.firma_unvani, COALESCE(o.otel_adi, p.firma_unvani),
-                   p.yetkili_ad_soyad, p.yetkili_eposta, p.vergi_numarasi, p.onay_durumu, p.olusturulma_tarihi,
-                   p.onay_tarihi, u.email_dogrulama_tarihi,
+            SELECT p.id, p.[KULLANICI_ID], o.id AS hotel_id, p.[FIRMA_UNVANI], COALESCE(o.[OTEL_ADI], p.[FIRMA_UNVANI]),
+                   p.[YETKILI_AD_SOYAD], p.[YETKILI_EPOSTA], p.[VERGI_NUMARASI], p.[ONAY_DURUMU], p.[OLUSTURULMA_TARIHI],
+                   p.[ONAY_TARIHI], u.[EPOSTA_DOGRULAMA_TARIHI],
                    CASE
                         WHEN COL_LENGTH('partner_detaylari', 'eposta_giris_onayi_verildi_mi') IS NULL THEN 0
-                        ELSE COALESCE(p.eposta_giris_onayi_verildi_mi, 0)
+                        ELSE COALESCE(p.[EPOSTA_GIRIS_ONAYI_VERILDI_MI], 0)
                    END AS email_login_approved,
-                   (SELECT COUNT(*) FROM partner_basvuru_evraklari ped WHERE ped.partner_id = p.id) AS document_count,
-                   COALESCE(p.red_nedeni, '')
-            FROM partner_detaylari p
-            INNER JOIN users u ON u.id = p.kullanici_id
-            LEFT JOIN oteller o ON o.partner_id = p.id
+                   (SELECT COUNT(*) FROM [dbo].[PARTNER_BASVURU_EVRAKLARI] ped WHERE ped.[PARTNER_ID] = p.id) AS document_count,
+                   COALESCE(p.[RED_NEDENI], '')
+            FROM [dbo].[PARTNER_DETAYLARI] p
+            INNER JOIN [dbo].[KULLANICILAR] u ON u.id = p.[KULLANICI_ID]
+            LEFT JOIN [dbo].[OTELLER] o ON o.[PARTNER_ID] = p.id
             ORDER BY
-                CASE p.onay_durumu
+                CASE p.[ONAY_DURUMU]
                     WHEN 'Beklemede' THEN 0
                     WHEN 'Reddedildi' THEN 1
                     WHEN 'Askida' THEN 2
                     ELSE 3
                 END,
-                p.olusturulma_tarihi DESC;";
+                p.[OLUSTURULMA_TARIHI] DESC;";
 
         await using var listCommand = new SqlCommand(sql, connection);
         await using var reader = await listCommand.ExecuteReaderAsync(cancellationToken);
@@ -2834,22 +3088,22 @@ public class AdminService : IAdminService
         const string sql = @"
             SELECT TOP (200)
                 f.id,
-                f.firma_adi,
-                COALESCE(f.vergi_no,''),
-                COALESCE(f.yetkili_ad_soyad,''),
-                COALESCE(f.yetkili_eposta, f.firma_eposta, ''),
-                COALESCE(f.yetkili_telefon, f.firma_telefon, ''),
-                COALESCE(f.onay_durumu,'Beklemede'),
-                f.olusturulma_tarihi
-            FROM firmalar f
+                f.[FIRMA_ADI],
+                COALESCE(f.[VERGI_NO],''),
+                COALESCE(f.[YETKILI_AD_SOYAD],''),
+                COALESCE(f.[YETKILI_EPOSTA], f.[FIRMA_EPOSTA], ''),
+                COALESCE(f.[YETKILI_TELEFON], f.[FIRMA_TELEFON], ''),
+                COALESCE(f.[ONAY_DURUMU],'Beklemede'),
+                f.[OLUSTURULMA_TARIHI]
+            FROM [dbo].[FIRMALAR] f
             ORDER BY
-                CASE COALESCE(f.onay_durumu,'Beklemede')
+                CASE COALESCE(f.[ONAY_DURUMU],'Beklemede')
                     WHEN 'Beklemede' THEN 0
                     WHEN 'Askıda' THEN 1
                     WHEN 'Reddedildi' THEN 2
                     ELSE 3
                 END,
-                f.olusturulma_tarihi DESC;";
+                f.[OLUSTURULMA_TARIHI] DESC;";
 
         await using var listCmd = new SqlCommand(sql, connection);
         await using var reader = await listCmd.ExecuteReaderAsync(cancellationToken);
@@ -2891,14 +3145,14 @@ public class AdminService : IAdminService
 
         const string summarySql = @"
             SELECT
-                (SELECT COUNT(*) FROM oteller),
-                (SELECT COUNT(*) FROM oteller WHERE COALESCE(onay_durumu,'Beklemede') <> 'Onaylandi' OR COALESCE(yayin_durumu,'Kapali') <> 'Yayinda'),
-                (SELECT COUNT(*) FROM partner_detaylari WHERE COALESCE(onay_durumu,'Beklemede') = 'Beklemede'),
-                (SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu,'Beklemede') = 'Beklemede'),
-                (SELECT COUNT(*) FROM rezervasyonlar),
-                (SELECT COALESCE(SUM(COALESCE(toplam_tutar,0)),0) FROM rezervasyonlar WHERE COALESCE(durum,'') <> N'İptal Edildi'),
-                (SELECT COALESCE(SUM(COALESCE(komisyon_tutari,0)),0) FROM komisyon_muhasebe_kayitlari),
-                (SELECT COUNT(*) FROM faturalar WHERE COALESCE(fatura_durumu,'Taslak') IN ('Taslak','Beklemede'));";
+                (SELECT COUNT(*) FROM [dbo].[OTELLER]),
+                (SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE COALESCE([ONAY_DURUMU],'Beklemede') <> 'Onaylandi' OR COALESCE([YAYIN_DURUMU],'Kapali') <> 'Yayinda'),
+                (SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE COALESCE([ONAY_DURUMU],'Beklemede') = 'Beklemede'),
+                (SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE COALESCE([ONAY_DURUMU],'Beklemede') = 'Beklemede'),
+                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR]),
+                (SELECT COALESCE(SUM(COALESCE([TOPLAM_TUTAR],0)),0) FROM [dbo].[REZERVASYONLAR] WHERE COALESCE([DURUM],'') <> N'İptal Edildi'),
+                (SELECT COALESCE(SUM(COALESCE([KOMISYON_TUTARI],0)),0) FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI]),
+                (SELECT COUNT(*) FROM [dbo].[FATURALAR] WHERE COALESCE([FATURA_DURUMU],'Taslak') IN ('Taslak','Beklemede'));";
 
         await using (var command = new SqlCommand(summarySql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -2919,31 +3173,31 @@ public class AdminService : IAdminService
         const string approvalsSql = @"
             SELECT TOP (150) type_name, entity_id, title, detail, status_text, created_at, action_url
             FROM (
-                SELECT N'Partner' AS type_name, p.id AS entity_id, p.firma_unvani AS title,
-                       CONCAT(COALESCE(o.otel_adi, N'Otel bağlantısı yok'), N' · ', COALESCE(p.yetkili_eposta, N'')) AS detail,
-                       COALESCE(p.onay_durumu, N'Beklemede') AS status_text,
-                       COALESCE(p.olusturulma_tarihi, SYSUTCDATETIME()) AS created_at,
+                SELECT N'Partner' AS type_name, p.id AS entity_id, p.[FIRMA_UNVANI] AS title,
+                       CONCAT(COALESCE(o.[OTEL_ADI], N'Otel bağlantısı yok'), N' · ', COALESCE(p.[YETKILI_EPOSTA], N'')) AS detail,
+                       COALESCE(p.[ONAY_DURUMU], N'Beklemede') AS status_text,
+                       COALESCE(p.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()) AS created_at,
                        N'/admin/partner-basvurulari' AS action_url
-                FROM partner_detaylari p
-                LEFT JOIN oteller o ON o.partner_id = p.id
-                WHERE COALESCE(p.onay_durumu, N'Beklemede') <> N'Onaylandi'
+                FROM [dbo].[PARTNER_DETAYLARI] p
+                LEFT JOIN [dbo].[OTELLER] o ON o.[PARTNER_ID] = p.id
+                WHERE COALESCE(p.[ONAY_DURUMU], N'Beklemede') <> N'Onaylandi'
                 UNION ALL
-                SELECT N'Firma', f.id, f.firma_adi,
-                       CONCAT(COALESCE(f.yetkili_eposta, f.firma_eposta, N''), N' · ', COALESCE(f.vergi_no, N'')),
-                       COALESCE(f.onay_durumu, N'Beklemede'),
-                       COALESCE(f.olusturulma_tarihi, SYSUTCDATETIME()),
+                SELECT N'Firma', f.id, f.[FIRMA_ADI],
+                       CONCAT(COALESCE(f.[YETKILI_EPOSTA], f.[FIRMA_EPOSTA], N''), N' · ', COALESCE(f.[VERGI_NO], N'')),
+                       COALESCE(f.[ONAY_DURUMU], N'Beklemede'),
+                       COALESCE(f.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()),
                        N'/admin/firma-basvurulari'
-                FROM firmalar f
-                WHERE COALESCE(f.onay_durumu, N'Beklemede') <> N'Onaylandı'
+                FROM [dbo].[FIRMALAR] f
+                WHERE COALESCE(f.[ONAY_DURUMU], N'Beklemede') <> N'Onaylandı'
                 UNION ALL
-                SELECT N'Otel', o.id, o.otel_adi,
-                       CONCAT(COALESCE(o.ilce, N''), N', ', COALESCE(o.sehir, N''), N' · ', COALESCE(p.firma_unvani, N'Partner yok')),
-                       CONCAT(COALESCE(o.onay_durumu, N'Beklemede'), N' / ', COALESCE(o.yayin_durumu, N'Kapali')),
-                       COALESCE(o.olusturulma_tarihi, SYSUTCDATETIME()),
+                SELECT N'Otel', o.id, o.[OTEL_ADI],
+                       CONCAT(COALESCE(o.[ILCE], N''), N', ', COALESCE(o.[SEHIR], N''), N' · ', COALESCE(p.[FIRMA_UNVANI], N'Partner yok')),
+                       CONCAT(COALESCE(o.[ONAY_DURUMU], N'Beklemede'), N' / ', COALESCE(o.[YAYIN_DURUMU], N'Kapali')),
+                       COALESCE(o.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()),
                        CONCAT(N'/admin/otel-detay/', o.id)
-                FROM oteller o
-                LEFT JOIN partner_detaylari p ON p.id = o.partner_id
-                WHERE COALESCE(o.onay_durumu, N'Beklemede') <> N'Onaylandi' OR COALESCE(o.yayin_durumu, N'Kapali') <> N'Yayinda'
+                FROM [dbo].[OTELLER] o
+                LEFT JOIN [dbo].[PARTNER_DETAYLARI] p ON p.id = o.[PARTNER_ID]
+                WHERE COALESCE(o.[ONAY_DURUMU], N'Beklemede') <> N'Onaylandi' OR COALESCE(o.[YAYIN_DURUMU], N'Kapali') <> N'Yayinda'
             ) x
             ORDER BY created_at DESC;";
 
@@ -2970,18 +3224,18 @@ public class AdminService : IAdminService
         var monthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         const string hotelsSql = @"
             SELECT TOP (100)
-                o.id, o.otel_adi, COALESCE(p.firma_unvani, N'Partner yok'),
-                CONCAT(COALESCE(o.ilce, N''), N', ', COALESCE(o.sehir, N'')),
-                COALESCE(o.onay_durumu, N'Beklemede'), COALESCE(o.yayin_durumu, N'Kapali'),
-                COALESCE(o.varsayilan_komisyon_orani, 0),
-                COALESCE(SUM(CASE WHEN r.olusturulma_tarihi >= @monthStart AND COALESCE(r.durum,'') <> N'İptal Edildi' THEN COALESCE(r.toplam_tutar,0) ELSE 0 END),0),
-                COALESCE(SUM(CASE WHEN k.kayit_tarihi >= @monthStart THEN COALESCE(k.komisyon_tutari,0) ELSE 0 END),0)
-            FROM oteller o
-            LEFT JOIN partner_detaylari p ON p.id = o.partner_id
-            LEFT JOIN rezervasyonlar r ON r.otel_id = o.id
-            LEFT JOIN komisyon_muhasebe_kayitlari k ON k.otel_id = o.id
-            GROUP BY o.id, o.otel_adi, p.firma_unvani, o.ilce, o.sehir, o.onay_durumu, o.yayin_durumu, o.varsayilan_komisyon_orani
-            ORDER BY CASE WHEN COALESCE(o.onay_durumu,'Beklemede') <> 'Onaylandi' OR COALESCE(o.yayin_durumu,'Kapali') <> 'Yayinda' THEN 0 ELSE 1 END, o.id DESC;";
+                o.id, o.[OTEL_ADI], COALESCE(p.[FIRMA_UNVANI], N'Partner yok'),
+                CONCAT(COALESCE(o.[ILCE], N''), N', ', COALESCE(o.[SEHIR], N'')),
+                COALESCE(o.[ONAY_DURUMU], N'Beklemede'), COALESCE(o.[YAYIN_DURUMU], N'Kapali'),
+                COALESCE(o.[VARSAYILAN_KOMISYON_ORANI], 0),
+                COALESCE(SUM(CASE WHEN r.[OLUSTURULMA_TARIHI] >= @monthStart AND COALESCE(r.[DURUM],'') <> N'İptal Edildi' THEN COALESCE(r.[TOPLAM_TUTAR],0) ELSE 0 END),0),
+                COALESCE(SUM(CASE WHEN k.[KAYIT_TARIHI] >= @monthStart THEN COALESCE(k.[KOMISYON_TUTARI],0) ELSE 0 END),0)
+            FROM [dbo].[OTELLER] o
+            LEFT JOIN [dbo].[PARTNER_DETAYLARI] p ON p.id = o.[PARTNER_ID]
+            LEFT JOIN [dbo].[REZERVASYONLAR] r ON r.[OTEL_ID] = o.id
+            LEFT JOIN [dbo].[KOMISYON_MUHASEBE_KAYITLARI] k ON k.[OTEL_ID] = o.id
+            GROUP BY o.id, o.[OTEL_ADI], p.[FIRMA_UNVANI], o.[ILCE], o.[SEHIR], o.[ONAY_DURUMU], o.[YAYIN_DURUMU], o.[VARSAYILAN_KOMISYON_ORANI]
+            ORDER BY CASE WHEN COALESCE(o.[ONAY_DURUMU],'Beklemede') <> 'Onaylandi' OR COALESCE(o.[YAYIN_DURUMU],'Kapali') <> 'Yayinda' THEN 0 ELSE 1 END, o.id DESC;";
 
         await using (var command = new SqlCommand(hotelsSql, connection))
         {
@@ -3009,13 +3263,13 @@ public class AdminService : IAdminService
 
         const string invoicesSql = @"
             SELECT TOP (50)
-                f.id, COALESCE(f.fatura_no, CONCAT(N'Taslak-', f.id)), COALESCE(f.fatura_turu, N'Konaklama'),
-                COALESCE(o.otel_adi, N'-'), COALESCE(f.fatura_alici_unvan, u.ad_soyad, N'-'),
-                COALESCE(f.fatura_durumu, N'Taslak'), COALESCE(f.genel_toplam, 0), COALESCE(f.fatura_tarihi, f.olusturulma_tarihi)
-            FROM faturalar f
-            LEFT JOIN oteller o ON o.id = f.otel_id
-            LEFT JOIN users u ON u.id = f.kullanici_id
-            ORDER BY COALESCE(f.fatura_tarihi, f.olusturulma_tarihi) DESC, f.id DESC;";
+                f.id, COALESCE(f.[FATURA_NO], CONCAT(N'Taslak-', f.id)), COALESCE(f.[FATURA_TURU], N'Konaklama'),
+                COALESCE(o.[OTEL_ADI], N'-'), COALESCE(f.[FATURA_ALICI_UNVAN], u.[AD_SOYAD], N'-'),
+                COALESCE(f.[FATURA_DURUMU], N'Taslak'), COALESCE(f.[GENEL_TOPLAM], 0), COALESCE(f.[FATURA_TARIHI], f.[OLUSTURULMA_TARIHI])
+            FROM [dbo].[FATURALAR] f
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = f.[OTEL_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = f.[KULLANICI_ID]
+            ORDER BY COALESCE(f.[FATURA_TARIHI], f.[OLUSTURULMA_TARIHI]) DESC, f.id DESC;";
 
         await using (var command = new SqlCommand(invoicesSql, connection))
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -3064,7 +3318,7 @@ public class AdminService : IAdminService
         await using var tx = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            const string prevSql = "SELECT TOP (1) COALESCE(onay_durumu,'Beklemede'), COALESCE(firma_adi,'') FROM firmalar WHERE id = @id;";
+            const string prevSql = "SELECT TOP (1) COALESCE([ONAY_DURUMU],'Beklemede'), COALESCE([FIRMA_ADI],'') FROM [dbo].[FIRMALAR] WHERE id = @id;";
             string previous;
             string companyName;
             await using (var prevCmd = new SqlCommand(prevSql, connection, (SqlTransaction)tx))
@@ -3080,9 +3334,9 @@ public class AdminService : IAdminService
             }
 
             const string updateSql = @"
-                UPDATE firmalar
-                SET onay_durumu = @status,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[FIRMALAR]
+                SET [ONAY_DURUMU] = @status,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @id;";
             await using (var updateCmd = new SqlCommand(updateSql, connection, (SqlTransaction)tx))
             {
@@ -3092,7 +3346,7 @@ public class AdminService : IAdminService
             }
 
             // Firma başvuru hareketi (tablo varsa)
-            const string existsSql = "SELECT CASE WHEN OBJECT_ID(N'dbo.firma_basvuru_hareketleri', N'U') IS NULL THEN 0 ELSE 1 END;";
+            const string existsSql = "SELECT CASE WHEN OBJECT_ID(N'[dbo].[FIRMA_BASVURU_HAREKETLERI]', N'U') IS NULL THEN 0 ELSE 1 END;";
             var exists = false;
             await using (var existsCmd = new SqlCommand(existsSql, connection, (SqlTransaction)tx))
             {
@@ -3102,8 +3356,8 @@ public class AdminService : IAdminService
             if (exists)
             {
                 const string insertSql = @"
-                    INSERT INTO firma_basvuru_hareketleri
-                    (firma_id, onceki_durum, yeni_durum, hareket_tipi, aciklama, islem_yapan_kullanici_id, islem_kaynagi, ip_adresi, olusturulma_tarihi)
+                    INSERT INTO [dbo].[FIRMA_BASVURU_HAREKETLERI]
+                    ([FIRMA_ID], [ONCEKI_DURUM], [YENI_DURUM], [HAREKET_TIPI], [ACIKLAMA], [ISLEM_YAPAN_KULLANICI_ID], [ISLEM_KAYNAGI], [IP_ADRESI], [OLUSTURULMA_TARIHI])
                     VALUES
                     (@firmaId, @prev, @next, @type, @desc, @adminId, 'admin', NULL, SYSUTCDATETIME());";
                 await using var ins = new SqlCommand(insertSql, connection, (SqlTransaction)tx);
@@ -3153,8 +3407,8 @@ public class AdminService : IAdminService
         try
         {
             const string readSql = """
-                SELECT TOP (1) kullanici_id, onay_durumu
-                FROM partner_detaylari
+                SELECT TOP (1) [KULLANICI_ID], [ONAY_DURUMU]
+                FROM [dbo].[PARTNER_DETAYLARI]
                 WHERE id = @partnerId;
                 """;
 
@@ -3174,12 +3428,12 @@ public class AdminService : IAdminService
             }
 
             const string updateSql = @"
-                UPDATE partner_detaylari
-                SET onay_durumu = @targetStatus,
-                    onay_tarihi = CASE WHEN @targetStatus = 'Onaylandi' THEN SYSUTCDATETIME() ELSE onay_tarihi END,
-                    onaylayan_admin_id = @adminUserId,
-                    red_nedeni = @note,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[PARTNER_DETAYLARI]
+                SET [ONAY_DURUMU] = @targetStatus,
+                    [ONAY_TARIHI] = CASE WHEN @targetStatus = 'Onaylandi' THEN SYSUTCDATETIME() ELSE [ONAY_TARIHI] END,
+                    [ONAYLAYAN_ADMIN_ID] = @adminUserId,
+                    [RED_NEDENI] = @note,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @partnerId;";
 
             await using (var updateCommand = new SqlCommand(updateSql, connection, (SqlTransaction)transaction))
@@ -3192,19 +3446,19 @@ public class AdminService : IAdminService
             }
 
             const string hotelUpdateSql = @"
-                UPDATE oteller
-                SET onay_durumu = CASE
+                UPDATE [dbo].[OTELLER]
+                SET [ONAY_DURUMU] = CASE
                         WHEN @targetStatus = 'Onaylandi' THEN 'Onaylandı'
                         WHEN @targetStatus = 'Reddedildi' THEN 'Reddedildi'
                         ELSE 'Beklemede'
                     END,
-                    yayin_durumu = CASE
+                    [YAYIN_DURUMU] = CASE
                         WHEN @targetStatus = 'Askida' THEN 'Askıda'
                         WHEN @targetStatus = 'Reddedildi' THEN 'Taslak'
-                        ELSE yayin_durumu
+                        ELSE [YAYIN_DURUMU]
                     END,
-                    onay_tarihi = CASE WHEN @targetStatus = 'Onaylandi' THEN SYSUTCDATETIME() ELSE onay_tarihi END
-                WHERE partner_id = @partnerId;";
+                    [ONAY_TARIHI] = CASE WHEN @targetStatus = 'Onaylandi' THEN SYSUTCDATETIME() ELSE [ONAY_TARIHI] END
+                WHERE [PARTNER_ID] = @partnerId;";
 
             await using (var hotelUpdateCommand = new SqlCommand(hotelUpdateSql, connection, (SqlTransaction)transaction))
             {
@@ -3213,11 +3467,11 @@ public class AdminService : IAdminService
                 await hotelUpdateCommand.ExecuteNonQueryAsync(cancellationToken);
             }
 
-            if (await TableExistsAsync(connection, "partner_basvuru_hareketleri", cancellationToken, (SqlTransaction?)transaction))
+            if (await TableExistsAsync(connection, "PARTNER_BASVURU_HAREKETLERI", cancellationToken, (SqlTransaction?)transaction))
             {
                 const string historySql = @"
-                    INSERT INTO partner_basvuru_hareketleri
-                    (partner_id, onceki_durum, yeni_durum, islem_tipi, aciklama, islem_yapan_kullanici_id, olusturulma_tarihi)
+                    INSERT INTO [dbo].[PARTNER_BASVURU_HAREKETLERI]
+                    ([PARTNER_ID], [ONCEKI_DURUM], [YENI_DURUM], [ISLEM_TIPI], [ACIKLAMA], [ISLEM_YAPAN_KULLANICI_ID], [OLUSTURULMA_TARIHI])
                     VALUES
                     (@partnerId, @currentStatus, @targetStatus, 'AdminPartnerBasvuruKarari', @note, @adminUserId, SYSUTCDATETIME());";
 
@@ -3231,8 +3485,8 @@ public class AdminService : IAdminService
             }
 
             const string userSql = """
-                UPDATE users
-                SET hesap_durumu = CASE WHEN @targetStatus = 'Kara Liste' THEN 0 ELSE hesap_durumu END
+                UPDATE [dbo].[KULLANICILAR]
+                SET [HESAP_DURUMU] = CASE WHEN @targetStatus = 'Kara Liste' THEN 0 ELSE [HESAP_DURUMU] END
                 WHERE id = @userId;
                 """;
 
@@ -3273,11 +3527,11 @@ public class AdminService : IAdminService
         try
         {
             const string sql = """
-                UPDATE partner_detaylari
-                SET eposta_giris_onayi_verildi_mi = @approved,
-                    eposta_giris_onay_tarihi = CASE WHEN @approved = 1 THEN SYSUTCDATETIME() ELSE NULL END,
-                    eposta_giris_onaylayan_admin_id = CASE WHEN @approved = 1 THEN @adminUserId ELSE NULL END,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[PARTNER_DETAYLARI]
+                SET [EPOSTA_GIRIS_ONAYI_VERILDI_MI] = @approved,
+                    [EPOSTA_GIRIS_ONAY_TARIHI] = CASE WHEN @approved = 1 THEN SYSUTCDATETIME() ELSE NULL END,
+                    [EPOSTA_GIRIS_ONAYLAYAN_ADMIN_ID] = CASE WHEN @approved = 1 THEN @adminUserId ELSE NULL END,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @partnerId;
                 """;
 
@@ -3294,11 +3548,11 @@ public class AdminService : IAdminService
                 }
             }
 
-            if (await TableExistsAsync(connection, "partner_basvuru_hareketleri", cancellationToken, (SqlTransaction?)tx))
+            if (await TableExistsAsync(connection, "PARTNER_BASVURU_HAREKETLERI", cancellationToken, (SqlTransaction?)tx))
             {
                 const string historySql = """
-                    INSERT INTO partner_basvuru_hareketleri
-                    (partner_id, onceki_durum, yeni_durum, islem_tipi, aciklama, islem_yapan_kullanici_id, olusturulma_tarihi)
+                    INSERT INTO [dbo].[PARTNER_BASVURU_HAREKETLERI]
+                    ([PARTNER_ID], [ONCEKI_DURUM], [YENI_DURUM], [ISLEM_TIPI], [ACIKLAMA], [ISLEM_YAPAN_KULLANICI_ID], [OLUSTURULMA_TARIHI])
                     VALUES
                     (@partnerId, NULL, NULL, 'AdminPartnerEpostaGirisOnayi', @note, @adminUserId, SYSUTCDATETIME());
                     """;
@@ -3332,7 +3586,7 @@ public class AdminService : IAdminService
         };
 
         // Summary
-        var hasTable = await TableExistsAsync(connection, "otel_liste_abonelikleri", cancellationToken);
+        var hasTable = await TableExistsAsync(connection, "OTEL_LISTE_ABONELIKLERI", cancellationToken);
         if (!hasTable)
         {
             model.SummaryCards.Add(new AdminSummaryCardViewModel { Label = "Abonelik Tablosu", Value = "YOK", Description = "Migration uygulanmamış.", ToneClass = "danger", IconClass = "fa-triangle-exclamation" });
@@ -3341,10 +3595,10 @@ public class AdminService : IAdminService
 
         var summary = new (string Label, string Sql, string Tone, string Icon, string Desc)[]
         {
-            ("Toplam", "SELECT COUNT(*) FROM otel_liste_abonelikleri", "info", "fa-crown", "Tüm talepler"),
-            ("Bekleyen", "SELECT COUNT(*) FROM otel_liste_abonelikleri WHERE durum = N'Beklemede'", "warning", "fa-hourglass-half", "Admin onayı bekliyor"),
-            ("Aktif", "SELECT COUNT(*) FROM otel_liste_abonelikleri WHERE durum = N'Onaylandı' AND SYSUTCDATETIME() BETWEEN baslangic_utc AND bitis_utc", "success", "fa-circle-check", "Şu anda pin uygulanıyor"),
-            ("Süresi Dolan", "SELECT COUNT(*) FROM otel_liste_abonelikleri WHERE durum = N'Onaylandı' AND bitis_utc < SYSUTCDATETIME()", "secondary", "fa-clock", "Bitişi geçenler")
+            ("Toplam", "SELECT COUNT(*) FROM [dbo].[OTEL_LISTE_ABONELIKLERI]", "info", "fa-crown", "Tüm talepler"),
+            ("Bekleyen", "SELECT COUNT(*) FROM [dbo].[OTEL_LISTE_ABONELIKLERI] WHERE [DURUM] = N'Beklemede'", "warning", "fa-hourglass-half", "Admin onayı bekliyor"),
+            ("Aktif", "SELECT COUNT(*) FROM [dbo].[OTEL_LISTE_ABONELIKLERI] WHERE [DURUM] = N'Onaylandı' AND SYSUTCDATETIME() BETWEEN [BASLANGIC_UTC] AND bitis_utc", "success", "fa-circle-check", "Şu anda pin uygulanıyor"),
+            ("Süresi Dolan", "SELECT COUNT(*) FROM [dbo].[OTEL_LISTE_ABONELIKLERI] WHERE [DURUM] = N'Onaylandı' AND [BITIS_UTC] < SYSUTCDATETIME()", "secondary", "fa-clock", "Bitişi geçenler")
         };
         foreach (var item in summary)
         {
@@ -3356,21 +3610,21 @@ public class AdminService : IAdminService
         const string sql = @"
             SELECT TOP (200)
                 a.id,
-                a.otel_id,
-                COALESCE(o.otel_adi,'-') AS otel_adi,
-                CONCAT(COALESCE(o.ilce,''), ', ', COALESCE(o.sehir,'')) AS city_text,
-                COALESCE(a.kapsam_tipi,'-'),
-                COALESCE(a.kapsam_degeri,'-'),
-                COALESCE(a.hedef_sira,0),
-                COALESCE(a.durum,'-'),
-                a.baslangic_utc,
-                a.bitis_utc,
-                COALESCE(u.eposta,'') AS partner_email,
-                COALESCE(a.partner_notu,'')
-            FROM otel_liste_abonelikleri a
-            LEFT JOIN oteller o ON o.id = a.otel_id
-            LEFT JOIN users u ON u.id = a.talep_eden_user_id
-            ORDER BY a.olusturulma_tarihi DESC, a.id DESC;";
+                a.[OTEL_ID],
+                COALESCE(o.[OTEL_ADI],'-') AS [OTEL_ADI],
+                CONCAT(COALESCE(o.[ILCE],''), ', ', COALESCE(o.[SEHIR],'')) AS city_text,
+                COALESCE(a.[KAPSAM_TIPI],'-'),
+                COALESCE(a.[KAPSAM_DEGERI],'-'),
+                COALESCE(a.[HEDEF_SIRA],0),
+                COALESCE(a.[DURUM],'-'),
+                a.[BASLANGIC_UTC],
+                a.[BITIS_UTC],
+                COALESCE(u.[EPOSTA],'') AS partner_email,
+                COALESCE(a.[PARTNER_NOTU],'')
+            FROM [dbo].[OTEL_LISTE_ABONELIKLERI] a
+            LEFT JOIN [dbo].[OTELLER] o ON o.id = a.[OTEL_ID]
+            LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = a.[TALEP_EDEN_KULLANICI_ID]
+            ORDER BY a.[OLUSTURULMA_TARIHI] DESC, a.id DESC;";
 
         await using var listCmd = new SqlCommand(sql, connection);
         await using var reader = await listCmd.ExecuteReaderAsync(cancellationToken);
@@ -3432,7 +3686,7 @@ public class AdminService : IAdminService
 
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
-        if (!await TableExistsAsync(connection, "otel_liste_abonelikleri", cancellationToken))
+        if (!await TableExistsAsync(connection, "OTEL_LISTE_ABONELIKLERI", cancellationToken))
         {
             return (false, "Abonelik tablosu bulunamadı.");
         }
@@ -3442,8 +3696,8 @@ public class AdminService : IAdminService
         {
             const string readSql = @"
                 SELECT TOP (1)
-                    otel_id, kapsam_tipi, kapsam_degeri_normalized, hedef_sira, baslangic_utc, bitis_utc, durum
-                FROM otel_liste_abonelikleri
+                    [OTEL_ID], [KAPSAM_TIPI], [KAPSAM_DEGERI_NORMALIZE], [HEDEF_SIRA], [BASLANGIC_UTC], [BITIS_UTC], [DURUM]
+                FROM [dbo].[OTEL_LISTE_ABONELIKLERI]
                 WHERE id = @id;";
             long hotelId;
             string scopeType;
@@ -3473,14 +3727,14 @@ public class AdminService : IAdminService
             {
                 const string conflictSql = @"
                     SELECT COUNT(*)
-                    FROM otel_liste_abonelikleri
+                    FROM [dbo].[OTEL_LISTE_ABONELIKLERI]
                     WHERE id <> @id
-                      AND durum = N'Onaylandı'
-                      AND kapsam_tipi = @scopeType
-                      AND kapsam_degeri_normalized = @scopeNorm
-                      AND hedef_sira = @rank
+                      AND [DURUM] = N'Onaylandı'
+                      AND [KAPSAM_TIPI] = @scopeType
+                      AND [KAPSAM_DEGERI_NORMALIZE] = @scopeNorm
+                      AND [HEDEF_SIRA] = @rank
                       AND (
-                          (@startUtc < bitis_utc) AND (@endUtc > baslangic_utc)
+                          (@startUtc < [BITIS_UTC]) AND (@endUtc > [BASLANGIC_UTC])
                       );";
                 await using var conflict = new SqlCommand(conflictSql, connection, (SqlTransaction)tx);
                 conflict.Parameters.AddWithValue("@id", request.SubscriptionId);
@@ -3497,11 +3751,11 @@ public class AdminService : IAdminService
             }
 
             const string updateSql = @"
-                UPDATE otel_liste_abonelikleri
-                SET durum = @status,
-                    onaylayan_admin_user_id = @adminId,
-                    admin_notu = @note,
-                    onay_tarihi = CASE WHEN @status = N'Onaylandı' THEN SYSUTCDATETIME() ELSE onay_tarihi END
+                UPDATE [dbo].[OTEL_LISTE_ABONELIKLERI]
+                SET [DURUM] = @status,
+                    [ONAYLAYAN_ADMIN_KULLANICI_ID] = @adminId,
+                    [ADMIN_NOTU] = @note,
+                    [ONAY_TARIHI] = CASE WHEN @status = N'Onaylandı' THEN SYSUTCDATETIME() ELSE [ONAY_TARIHI] END
                 WHERE id = @id;";
             await using (var upd = new SqlCommand(updateSql, connection, (SqlTransaction)tx))
             {
@@ -3522,7 +3776,7 @@ public class AdminService : IAdminService
         }
     }
 
-    public async Task<AdminCommissionManagementPageViewModel> GetCommissionManagementAsync(string fullName, string email, string userRole, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, CancellationToken cancellationToken = default)
+    public async Task<AdminCommissionManagementPageViewModel> GetCommissionManagementAsync(string fullName, string email, string userRole, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, string? city = null, string? district = null, string? neighborhood = null, string? paymentStatus = null, int pageSize = 50, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -3533,11 +3787,16 @@ public class AdminService : IAdminService
         };
         model.DateFrom = dateFrom?.Date;
         model.DateTo = dateTo?.Date;
+        model.City = city?.Trim() ?? string.Empty;
+        model.District = district?.Trim() ?? string.Empty;
+        model.Neighborhood = neighborhood?.Trim() ?? string.Empty;
+        model.PaymentStatus = paymentStatus?.Trim() ?? string.Empty;
+        model.PageSize = Math.Clamp(pageSize <= 0 ? 50 : pageSize, 50, 500);
 
         const string hotelsSql = @"
-            SELECT o.id, o.otel_adi, o.otel_kodu, CONCAT(o.ilce, ', ', o.sehir) AS sehir_label
-            FROM oteller o
-            ORDER BY o.otel_adi ASC;";
+            SELECT o.id, o.[OTEL_ADI], o.[OTEL_KODU], CONCAT(o.[ILCE], ', ', o.[SEHIR]) AS sehir_label
+            FROM [dbo].[OTELLER] o
+            ORDER BY o.[OTEL_ADI] ASC;";
 
         await using (var hotelCommand = new SqlCommand(hotelsSql, connection))
         await using (var hotelReader = await hotelCommand.ExecuteReaderAsync(cancellationToken))
@@ -3559,13 +3818,13 @@ public class AdminService : IAdminService
 
         const string summarySql = @"
             SELECT
-                (SELECT COUNT(*) FROM komisyon_vergiler) AS total_rule_count,
-                (SELECT COUNT(DISTINCT otel_id) FROM komisyon_vergiler WHERE aktif_mi = 1) AS active_hotel_count,
-                (SELECT COALESCE(AVG(komisyon_orani), 0) FROM komisyon_vergiler WHERE aktif_mi = 1) AS avg_commission_rate,
+                (SELECT COUNT(*) FROM [dbo].[KOMISYON_VERGILER]) AS total_rule_count,
+                (SELECT COUNT(DISTINCT [OTEL_ID]) FROM [dbo].[KOMISYON_VERGILER] WHERE [AKTIF_MI] = 1) AS active_hotel_count,
+                (SELECT COALESCE(AVG([KOMISYON_ORANI]), 0) FROM [dbo].[KOMISYON_VERGILER] WHERE [AKTIF_MI] = 1) AS avg_commission_rate,
                 (
-                    SELECT COALESCE(SUM(COALESCE(kdv_orani, 0) + COALESCE(konaklama_vergisi_orani, 0)), 0)
-                    FROM komisyon_vergiler
-                    WHERE aktif_mi = 1
+                    SELECT COALESCE(SUM(COALESCE([KDV_ORANI], 0) + COALESCE([KONAKLAMA_VERGISI_ORANI], 0)), 0)
+                    FROM [dbo].[KOMISYON_VERGILER]
+                    WHERE [AKTIF_MI] = 1
                 ) AS total_tax_rate_sum;";
 
         await using (var summaryCommand = new SqlCommand(summarySql, connection))
@@ -3583,22 +3842,22 @@ public class AdminService : IAdminService
         const string rulesSql = @"
             SELECT TOP (100)
                 kv.id,
-                kv.otel_id,
-                o.otel_adi,
-                o.otel_kodu,
-                CONCAT(o.ilce, ', ', o.sehir) AS sehir_label,
-                kv.baslangic_tarihi,
-                kv.bitis_tarihi,
-                kv.komisyon_orani,
-                kv.komisyon_gelir_vergisi_orani,
-                kv.kdv_orani,
-                kv.konaklama_vergisi_orani,
-                kv.aktif_mi,
-                kv.aciklama
-            FROM komisyon_vergiler kv
-            INNER JOIN oteller o ON o.id = kv.otel_id
-            WHERE (@hotelId IS NULL OR kv.otel_id = @hotelId)
-            ORDER BY kv.otel_id ASC, kv.baslangic_tarihi DESC, kv.id DESC;";
+                kv.[OTEL_ID],
+                o.[OTEL_ADI],
+                o.[OTEL_KODU],
+                CONCAT(o.[ILCE], ', ', o.[SEHIR]) AS sehir_label,
+                kv.[BASLANGIC_TARIHI],
+                kv.[BITIS_TARIHI],
+                kv.[KOMISYON_ORANI],
+                kv.[KOMISYON_GELIR_VERGISI_ORANI],
+                kv.[KDV_ORANI],
+                kv.[KONAKLAMA_VERGISI_ORANI],
+                kv.[AKTIF_MI],
+                kv.[ACIKLAMA]
+            FROM [dbo].[KOMISYON_VERGILER] kv
+            INNER JOIN [dbo].[OTELLER] o ON o.id = kv.[OTEL_ID]
+            WHERE (@hotelId IS NULL OR kv.[OTEL_ID] = @hotelId)
+            ORDER BY kv.[OTEL_ID] ASC, kv.[BASLANGIC_TARIHI] DESC, kv.id DESC;";
 
         await using (var rulesCommand = new SqlCommand(rulesSql, connection))
         {
@@ -3642,48 +3901,61 @@ public class AdminService : IAdminService
         }
 
         const string financeSql = @"
-            SELECT TOP (15)
+            SELECT TOP (@take)
                 o.id,
-                o.otel_adi,
+                o.[OTEL_ADI],
                 COALESCE(reservationStats.gross_revenue, 0) AS gross_revenue,
                 COALESCE(commissionStats.total_commission, 0) AS total_commission,
                 COALESCE(commissionStats.paid_commission, 0) AS paid_commission,
                 COALESCE(reservationStats.reservation_count, 0) AS reservation_count,
                 COALESCE(reservationStats.completed_reservation_count, 0) AS completed_reservation_count,
                 COALESCE(reservationStats.platform_net_commission_total, 0) AS platform_net_commission_total
-            FROM oteller o
+            FROM [dbo].[OTELLER] o
             OUTER APPLY
             (
                 SELECT
-                    SUM(COALESCE(r.toplam_tutar, 0)) AS gross_revenue,
+                    SUM(COALESCE(r.[TOPLAM_TUTAR], 0)) AS gross_revenue,
                     COUNT(*) AS reservation_count,
-                    SUM(CASE WHEN COALESCE(r.durum, '') = N'Tamamlandı' THEN 1 ELSE 0 END) AS completed_reservation_count,
-                    SUM(COALESCE(r.platform_net_komisyon_tutari, 0)) AS platform_net_commission_total
-                FROM rezervasyonlar r
-                WHERE r.otel_id = o.id
-                  AND COALESCE(r.durum, '') <> 'İptal Edildi'
-                  AND (@dateFrom IS NULL OR CAST(r.giris_tarihi AS date) >= CAST(@dateFrom AS date))
-                  AND (@dateTo IS NULL OR CAST(r.cikis_tarihi AS date) <= CAST(@dateTo AS date))
+                    SUM(CASE WHEN COALESCE(r.[DURUM], '') = N'Tamamlandı' THEN 1 ELSE 0 END) AS completed_reservation_count,
+                    SUM(COALESCE(r.[PLATFORM_NET_KOMISYON_TUTARI], 0)) AS platform_net_commission_total
+                FROM [dbo].[REZERVASYONLAR] r
+                WHERE r.[OTEL_ID] = o.id
+                  AND COALESCE(r.[DURUM], '') <> N'İptal Edildi'
+                  AND (@dateFrom IS NULL OR CAST(r.[GIRIS_TARIHI] AS date) >= CAST(@dateFrom AS date))
+                  AND (@dateTo IS NULL OR CAST(r.[CIKIS_TARIHI] AS date) <= CAST(@dateTo AS date))
             ) reservationStats
             OUTER APPLY
             (
                 SELECT
-                    SUM(COALESCE(k.komisyon_tutari, 0)) AS total_commission,
-                    SUM(CASE WHEN COALESCE(k.otele_odeme_durumu, '') = 'Ödendi' THEN COALESCE(k.komisyon_tutari, 0) ELSE 0 END) AS paid_commission
-                FROM komisyon_muhasebe_kayitlari k
-                WHERE k.otel_id = o.id
-                  AND (@dateFrom IS NULL OR CAST(k.kayit_tarihi AS date) >= CAST(@dateFrom AS date))
-                  AND (@dateTo IS NULL OR CAST(k.kayit_tarihi AS date) <= CAST(@dateTo AS date))
+                    SUM(COALESCE(k.[KOMISYON_TUTARI], 0)) AS total_commission,
+                    SUM(CASE WHEN COALESCE(k.[OTELE_ODEME_DURUMU], N'') = N'Ödendi' THEN COALESCE(k.[KOMISYON_TUTARI], 0) ELSE 0 END) AS paid_commission
+                FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] k
+                WHERE k.[OTEL_ID] = o.id
+                  AND (@dateFrom IS NULL OR CAST(k.[KAYIT_TARIHI] AS date) >= CAST(@dateFrom AS date))
+                  AND (@dateTo IS NULL OR CAST(k.[KAYIT_TARIHI] AS date) <= CAST(@dateTo AS date))
             ) commissionStats
             WHERE (@hotelId IS NULL OR o.id = @hotelId)
+              AND (@city = N'' OR COALESCE(o.[SEHIR], N'') LIKE N'%' + @city + N'%')
+              AND (@district = N'' OR COALESCE(o.[ILCE], N'') LIKE N'%' + @district + N'%')
+              AND (@neighborhood = N'' OR COALESCE(o.[MAHALLE], N'') LIKE N'%' + @neighborhood + N'%')
               AND (COALESCE(reservationStats.gross_revenue, 0) > 0 OR COALESCE(commissionStats.total_commission, 0) > 0)
+              AND (
+                    @paymentStatus = N''
+                    OR (@paymentStatus = N'Ödendi' AND COALESCE(commissionStats.total_commission, 0) > 0 AND COALESCE(commissionStats.paid_commission, 0) >= COALESCE(commissionStats.total_commission, 0))
+                    OR (@paymentStatus = N'Ödenmedi' AND COALESCE(commissionStats.total_commission, 0) > COALESCE(commissionStats.paid_commission, 0))
+                  )
             ORDER BY COALESCE(reservationStats.gross_revenue, 0) DESC, o.id DESC;";
 
         await using (var financeCommand = new SqlCommand(financeSql, connection))
         {
+            financeCommand.Parameters.AddWithValue("@take", model.PageSize);
             financeCommand.Parameters.AddWithValue("@hotelId", hotelId.HasValue ? hotelId.Value : DBNull.Value);
             financeCommand.Parameters.AddWithValue("@dateFrom", dateFrom.HasValue ? dateFrom.Value.Date : DBNull.Value);
             financeCommand.Parameters.AddWithValue("@dateTo", dateTo.HasValue ? dateTo.Value.Date : DBNull.Value);
+            financeCommand.Parameters.AddWithValue("@city", model.City);
+            financeCommand.Parameters.AddWithValue("@district", model.District);
+            financeCommand.Parameters.AddWithValue("@neighborhood", model.Neighborhood);
+            financeCommand.Parameters.AddWithValue("@paymentStatus", model.PaymentStatus);
             await using var financeReader = await financeCommand.ExecuteReaderAsync(cancellationToken);
             while (await financeReader.ReadAsync(cancellationToken))
             {
@@ -3720,29 +3992,29 @@ public class AdminService : IAdminService
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-            IF EXISTS (SELECT 1 FROM komisyon_vergiler WHERE id = @ruleId)
+            IF EXISTS (SELECT 1 FROM [dbo].[KOMISYON_VERGILER] WHERE id = @ruleId)
             BEGIN
-                UPDATE komisyon_vergiler
-                SET otel_id = @hotelId,
-                    baslangic_tarihi = @startDate,
-                    bitis_tarihi = @endDate,
-                    komisyon_orani = @commissionRate,
-                    komisyon_gelir_vergisi_orani = @commissionIncomeTaxRate,
-                    kdv_orani = @vatRate,
-                    konaklama_vergisi_orani = @accommodationTaxRate,
-                    para_birimi = @currency,
-                    aktif_mi = 1,
-                    aciklama = @note,
-                    guncelleyen_kullanici_id = @adminUserId,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[KOMISYON_VERGILER]
+                SET [OTEL_ID] = @hotelId,
+                    [BASLANGIC_TARIHI] = @startDate,
+                    [BITIS_TARIHI] = @endDate,
+                    [KOMISYON_ORANI] = @commissionRate,
+                    [KOMISYON_GELIR_VERGISI_ORANI] = @commissionIncomeTaxRate,
+                    [KDV_ORANI] = @vatRate,
+                    [KONAKLAMA_VERGISI_ORANI] = @accommodationTaxRate,
+                    [PARA_BIRIMI] = @currency,
+                    [AKTIF_MI] = 1,
+                    [ACIKLAMA] = @note,
+                    [GUNCELLEYEN_KULLANICI_ID] = @adminUserId,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @ruleId;
             END
             ELSE
             BEGIN
-                INSERT INTO komisyon_vergiler
+                INSERT INTO [dbo].[KOMISYON_VERGILER]
                 (
-                    otel_id, baslangic_tarihi, bitis_tarihi, komisyon_orani, komisyon_gelir_vergisi_orani,
-                    kdv_orani, konaklama_vergisi_orani, para_birimi, aktif_mi, aciklama, olusturan_kullanici_id, guncelleyen_kullanici_id
+                    [OTEL_ID], [BASLANGIC_TARIHI], [BITIS_TARIHI], [KOMISYON_ORANI], [KOMISYON_GELIR_VERGISI_ORANI],
+                    [KDV_ORANI], [KONAKLAMA_VERGISI_ORANI], [PARA_BIRIMI], [AKTIF_MI], [ACIKLAMA], [OLUSTURAN_KULLANICI_ID], [GUNCELLEYEN_KULLANICI_ID]
                 )
                 VALUES
                 (
@@ -3781,9 +4053,9 @@ public class AdminService : IAdminService
         try
         {
             const string sql = @"
-                SELECT id, ad_soyad, unvan, eposta, aciklama, COALESCE(avatar_url, N''), COALESCE(siralama, 0), COALESCE(aktif_mi, 1)
-                FROM dbo.platform_ekip_uyeleri
-                ORDER BY COALESCE(siralama, 0) ASC, id ASC;";
+                SELECT id, [AD_SOYAD], [UNVAN], [EPOSTA], [ACIKLAMA], COALESCE([AVATAR_URL], N''), COALESCE([SIRALAMA], 0), COALESCE([AKTIF_MI], 1)
+                FROM [dbo].[PLATFORM_EKIP_UYELERI]
+                ORDER BY COALESCE([SIRALAMA], 0) ASC, id ASC;";
             await using var cmd = new SqlCommand(sql, connection);
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
@@ -3828,28 +4100,28 @@ public class AdminService : IAdminService
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-            IF OBJECT_ID(N'dbo.platform_ekip_uyeleri', N'U') IS NULL
+            IF OBJECT_ID(N'[dbo].[PLATFORM_EKIP_UYELERI]', N'U') IS NULL
             BEGIN
                 RAISERROR('platform_ekip_uyeleri tablosu yok.', 16, 1);
                 RETURN;
             END
 
-            IF (@id IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.platform_ekip_uyeleri WHERE id = @id))
+            IF (@id IS NOT NULL AND EXISTS (SELECT 1 FROM [dbo].[PLATFORM_EKIP_UYELERI] WHERE id = @id))
             BEGIN
-                UPDATE dbo.platform_ekip_uyeleri
-                SET ad_soyad = @name,
-                    unvan = @title,
-                    eposta = @email,
-                    aciklama = @desc,
-                    avatar_url = COALESCE(NULLIF(@avatarUrl, N''), avatar_url),
-                    siralama = @orderNo,
-                    aktif_mi = @active,
-                    guncellenme_tarihi = SYSUTCDATETIME()
+                UPDATE [dbo].[PLATFORM_EKIP_UYELERI]
+                SET [AD_SOYAD] = @name,
+                    [UNVAN] = @title,
+                    [EPOSTA] = @email,
+                    [ACIKLAMA] = @desc,
+                    [AVATAR_URL] = COALESCE(NULLIF(@avatarUrl, N''), [AVATAR_URL]),
+                    [SIRALAMA] = @orderNo,
+                    [AKTIF_MI] = @active,
+                    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
                 WHERE id = @id;
             END
             ELSE
             BEGIN
-                INSERT INTO dbo.platform_ekip_uyeleri(ad_soyad, unvan, eposta, aciklama, avatar_url, siralama, aktif_mi, olusturulma_tarihi)
+                INSERT INTO [dbo].[PLATFORM_EKIP_UYELERI]([AD_SOYAD], [UNVAN], [EPOSTA], [ACIKLAMA], [AVATAR_URL], [SIRALAMA], [AKTIF_MI], [OLUSTURULMA_TARIHI])
                 VALUES(@name, @title, @email, @desc, @avatarUrl, @orderNo, @active, SYSUTCDATETIME());
             END";
 
@@ -3881,7 +4153,7 @@ public class AdminService : IAdminService
 
         try
         {
-            await using var cmd = new SqlCommand("DELETE FROM dbo.platform_ekip_uyeleri WHERE id=@id;", connection);
+            await using var cmd = new SqlCommand("DELETE FROM [dbo].[PLATFORM_EKIP_UYELERI] WHERE id=@id;", connection);
             cmd.Parameters.AddWithValue("@id", id);
             var affected = await cmd.ExecuteNonQueryAsync(cancellationToken);
             return affected > 0 ? (true, "Kayıt silindi.") : (false, "Kayıt bulunamadı.");
@@ -3900,11 +4172,11 @@ public class AdminService : IAdminService
     {
         const string sql = @"
             SELECT
-                (SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Beklemede') AS pending_partner_applications,
-                (SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu, 'Beklemede') = 'Beklemede') AS pending_company_applications,
-                (SELECT COUNT(*) FROM sistem_ici_bildirimler WHERE okundu_mu = 0) AS unread_notifications,
-                (SELECT COUNT(*) FROM sistem_hata_loglari WHERE hata_seviyesi IN ('CRITICAL','ALERT','EMERGENCY') AND cozuldu_mu = 0) AS critical_logs,
-                (SELECT COUNT(*) FROM yorumlar WHERE onay_durumu = 'Beklemede') AS pending_reviews;";
+                (SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU] = 'Beklemede') AS pending_partner_applications,
+                (SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE COALESCE([ONAY_DURUMU], 'Beklemede') = 'Beklemede') AS pending_company_applications,
+                (SELECT COUNT(*) FROM [dbo].[SISTEM_ICI_BILDIRIMLER] WHERE [OKUNDU_MU] = 0) AS unread_notifications,
+                (SELECT COUNT(*) FROM [dbo].[SISTEM_HATA_LOGLARI] WHERE [HATA_SEVIYESI] IN ('CRITICAL','ALERT','EMERGENCY') AND [COZULDU_MU] = 0) AS critical_logs,
+                (SELECT COUNT(*) FROM [dbo].[YORUMLAR] WHERE [ONAY_DURUMU] = 'Beklemede') AS pending_reviews;";
 
         await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -3996,7 +4268,7 @@ public class AdminService : IAdminService
             "active-hotels" => ("Acik Oteller", "Yayinda ve onayli otelleri operasyonel performans ile izleyin.", new[] { "Otel", "Konum", "Puan", "Rezervasyon", "Gelir", "Guncelleme" }, "Acik otel bulunamadi.", null),
             "pending-hotels" => ("Bekleyen Oteller", "Onay veya yayin bekleyen tesisleri hizli aksiyon listesi olarak yonetin.", new[] { "Otel", "Konum", "Onay", "Yayin", "Olusturma", "Son Guncelleme" }, "Bekleyen otel bulunamadi.", null),
             "reviews" => ("Degerlendirmeler", "Yorum moderasyonu, raporlanan yorumlar ve dogrulanmis konaklama kayitlarini yonetin.", new[] { "Baslik", "Puan", "Durum", "Rapor", "Dogrulama", "Tarih" }, "Yorum kaydi bulunamadi.", null),
-            "reports" => ("Gelir / Komisyon Raporu", "Otel bazında aylık rezervasyon adedi, ciro ve komisyon toplamlarını izleyin.", new[] { "Ay", "Otel", "Rezervasyon", "Ciro", "Brüt Komisyon", "Net Komisyon" }, "Rapor kaydı bulunamadı.", "Kaynak tablo: dbo.rezervasyonlar (komisyon snapshot)"),
+            "reports" => ("Gelir / Komisyon Raporu", "Otel bazında aylık rezervasyon adedi, ciro ve komisyon toplamlarını izleyin.", new[] { "Ay", "Otel", "Rezervasyon", "Ciro", "Brüt Komisyon", "Net Komisyon" }, "Rapor kaydı bulunamadı.", "Kaynak tablo: [dbo].[REZERVASYONLAR] (komisyon snapshot)"),
             "campaigns" => ("Kampanyalar", "Kampanya performansini ve yayindaki indirim kurallarini izleyin.", new[] { "Kampanya", "Tur", "Baslangic", "Bitis", "Aktif", "Kullanim" }, "Kampanya bulunamadi.", null),
             "notifications" => ("Bildirimler", "Panel ici bildirimler ve sablon akislarini yonetin.", new[] { "Baslik", "Tur", "Onem", "Okundu", "Arsiv", "Olusturma" }, "Bildirim bulunamadi.", null),
             "settings" => ("Ayarlar", "Genel ayarlar icin veritabani karsiligi olan ayar tablolarini bir sonraki migration fazinda kuracagiz.", Array.Empty<string>(), "Ayar kaydi icin ayar tablolari gerekiyor.", "Bu ekran mevcut migration setinde karsiligi olmayan yeni tablo ailesi gerektiriyor."),
@@ -4006,8 +4278,8 @@ public class AdminService : IAdminService
             "faq" => ("SSS Yonetimi", "SSS kategori ve soru/cevap akisini veritabani kayitlari ile yonetin.", new[] { "Kategori", "Soru", "One Cikan", "Aktif", "Olusturma" }, "SSS kaydi bulunamadi.", null),
             "complaints" => ("Sikayetler", "Sikayet ve itiraz yonetimi icin yeni tablo ailesi planlanacak.", Array.Empty<string>(), "Sikayet modulu tablolari henuz eklenmedi.", "Yorum raporlari var; ancak referanstaki sikayet modulu icin ayri veri modeli gerekiyor."),
             "logs" => ("Log Kayitlari", "Admin islem, sistem hata ve API loglarini merkezi olarak izleyin.", new[] { "Hedef", "Islem", "IP", "Tarih", "Kaynak", "Not" }, "Log kaydi bulunamadi.", null),
-            "geo-search-logs" => ("Konum & Bölge Arama Logları", "Kullanıcının konumla arama yaptığı kayıtları; arama metni/bölgesi, yarıçap ve görünen oteller ile izleyin.", new[] { "Tarih", "Kaynak", "Arama Metni", "Arama Bölgesi", "Enlem", "Boylam", "Yarıçap(km)", "Görünen", "IP", "Cihaz" }, "Konum arama logu bulunamadı.", "Kaynak tablo: dbo.kullanici_konum_loglari (web/mobil arama istihbaratı)."),
-            "hotel-coordinate-changes" => ("Otel Koordinat Değişimleri", "Otel enlem/boylam değişikliklerini admin bazlı audit trail ile takip edin.", new[] { "Tarih", "Admin", "Otel", "Önceki", "Yeni", "IP", "Not" }, "Koordinat değişim kaydı bulunamadı.", "Kaynak tablo: dbo.otel_koordinat_degisim_loglari"),
+            "geo-search-logs" => ("Konum & Bölge Arama Logları", "Kullanıcının konumla arama yaptığı kayıtları; arama metni/bölgesi, yarıçap ve görünen oteller ile izleyin.", new[] { "Tarih", "Kaynak", "Arama Metni", "Arama Bölgesi", "Enlem", "Boylam", "Yarıçap(km)", "Görünen", "IP", "Cihaz" }, "Konum arama logu bulunamadı.", "Kaynak tablo: [dbo].[KULLANICI_KONUM_LOGLARI] (web/mobil arama istihbaratı)."),
+            "hotel-coordinate-changes" => ("Otel Koordinat Değişimleri", "Otel enlem/boylam değişikliklerini admin bazlı audit trail ile takip edin.", new[] { "Tarih", "Admin", "Otel", "Önceki", "Yeni", "IP", "Not" }, "Koordinat değişim kaydı bulunamadı.", "Kaynak tablo: [dbo].[OTEL_KOORDINAT_DEGISIM_LOGLARI]"),
             "backups" => ("Yedekleme", "Yedekleme operasyonu icin snapshot kaydi ve dosya metadata tablolarini ekleyecegiz.", Array.Empty<string>(), "Yedekleme kaydi henuz bulunmuyor.", "Referans yedekleme ekrani icin yeni migration gerekir."),
             _ => ("Admin Panel", "Bu admin bolumu icin veritabani baglantisi hazirlaniyor.", Array.Empty<string>(), "Veri bulunamadi.", null)
         };
@@ -4019,157 +4291,157 @@ public class AdminService : IAdminService
         {
             "users" =>
             [
-                ("Toplam Kullanici", "SELECT COUNT(*) FROM users", "Tum hesaplar", "info", "fa-users"),
-                ("Aktif Kullanici", "SELECT COUNT(*) FROM users WHERE hesap_durumu = 1", "Giris yapabilen hesaplar", "success", "fa-circle-check"),
-                ("Onaysiz E-posta", "SELECT COUNT(*) FROM users WHERE email_dogrulama_tarihi IS NULL", "E-posta dogrulamasi bekleyenler", "warning", "fa-envelope-circle-check"),
-                ("Pasif Kullanici", "SELECT COUNT(*) FROM users WHERE COALESCE(hesap_durumu, 0) = 0", "Panele veya siteye erisemeyen hesaplar", "danger", "fa-user-slash")
+                ("Toplam Kullanici", "SELECT COUNT(*) FROM [dbo].[KULLANICILAR]", "Tum hesaplar", "info", "fa-users"),
+                ("Aktif Kullanici", "SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE [HESAP_DURUMU] = 1", "Giris yapabilen hesaplar", "success", "fa-circle-check"),
+                ("Onaysiz E-posta", "SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE [EPOSTA_DOGRULAMA_TARIHI] IS NULL", "E-posta dogrulamasi bekleyenler", "warning", "fa-envelope-circle-check"),
+                ("Pasif Kullanici", "SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE COALESCE([HESAP_DURUMU], 0) = 0", "Panele veya siteye erisemeyen hesaplar", "danger", "fa-user-slash")
             ],
             "managers" =>
             [
-                ("Yonetici", "SELECT COUNT(*) FROM users WHERE rol = 'admin'", "Admin rolundeki kullanicilar", "danger", "fa-user-tie"),
-                ("Departman", "SELECT COUNT(*) FROM departmanlar", "Organizasyon birimleri", "info", "fa-sitemap"),
-                ("Rol", "SELECT COUNT(*) FROM roller", "Sistem rolleri", "warning", "fa-key"),
-                ("Rol Atamasi", "SELECT COUNT(*) FROM kullanici_rolleri", "Aktif veya gecmis rol kayitlari", "success", "fa-user-check")
+                ("Yonetici", "SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE rol = 'admin'", "Admin rolundeki kullanicilar", "danger", "fa-user-tie"),
+                ("Departman", "SELECT COUNT(*) FROM [dbo].[DEPARTMANLAR]", "Organizasyon birimleri", "info", "fa-sitemap"),
+                ("Rol", "SELECT COUNT(*) FROM [dbo].[ROLLER]", "Sistem rolleri", "warning", "fa-key"),
+                ("Rol Atamasi", "SELECT COUNT(*) FROM [dbo].[KULLANICI_ROLLERI]", "Aktif veya gecmis rol kayitlari", "success", "fa-user-check")
             ],
             "hotels" =>
             [
-                ("Toplam Otel", "SELECT COUNT(*) FROM oteller", "Tum tesis kayitlari", "info", "fa-hotel"),
-                ("Yayinda", "SELECT COUNT(*) FROM oteller WHERE yayin_durumu = 'Yayında'", "Canli satistaki tesisler", "success", "fa-tower-broadcast"),
-                ("Bekleyen Onay", "SELECT COUNT(*) FROM oteller WHERE onay_durumu = 'Beklemede'", "Inceleme bekleyen tesisler", "warning", "fa-hourglass-half"),
-                ("Oda Tipi", "SELECT COUNT(*) FROM oda_tipleri", "Toplam oda tipi sayisi", "danger", "fa-bed")
+                ("Toplam Otel", "SELECT COUNT(*) FROM [dbo].[OTELLER]", "Tum tesis kayitlari", "info", "fa-hotel"),
+                ("Yayinda", "SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE [YAYIN_DURUMU] = 'Yayında'", "Canli satistaki tesisler", "success", "fa-tower-broadcast"),
+                ("Bekleyen Onay", "SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE [ONAY_DURUMU] = 'Beklemede'", "Inceleme bekleyen tesisler", "warning", "fa-hourglass-half"),
+                ("Oda Tipi", "SELECT COUNT(*) FROM [dbo].[ODA_TIPLERI]", "Toplam oda tipi sayisi", "danger", "fa-bed")
             ],
             "reservations" =>
             [
-                ("Toplam Rezervasyon", "SELECT COUNT(*) FROM rezervasyonlar", "Tum rezervasyon kayitlari", "info", "fa-calendar-check"),
-                ("Onay Bekliyor", "SELECT COUNT(*) FROM rezervasyonlar WHERE durum = 'Onay Bekliyor'", "Islem bekleyen rezervasyonlar", "warning", "fa-clock"),
-                ("Tamamlandi", "SELECT COUNT(*) FROM rezervasyonlar WHERE durum = 'Tamamlandı'", "Konaklamasi biten rezervasyonlar", "success", "fa-circle-check"),
-                ("Iptal", "SELECT COUNT(*) FROM rezervasyonlar WHERE durum = 'İptal Edildi'", "Iptal edilenler", "danger", "fa-ban")
+                ("Toplam Rezervasyon", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR]", "Tum rezervasyon kayitlari", "info", "fa-calendar-check"),
+                ("Onay Bekliyor", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [DURUM] = 'Onay Bekliyor'", "Islem bekleyen rezervasyonlar", "warning", "fa-clock"),
+                ("Tamamlandi", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [DURUM] = 'Tamamlandı'", "Konaklamasi biten rezervasyonlar", "success", "fa-circle-check"),
+                ("Iptal", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [DURUM] = 'İptal Edildi'", "Iptal edilenler", "danger", "fa-ban")
             ],
             "payments" =>
             [
-                ("Odeme Islemi", "SELECT COUNT(*) FROM odeme_islemleri", "Tum odeme hareketleri", "info", "fa-credit-card"),
-                ("Basarili", "SELECT COUNT(*) FROM odeme_islemleri WHERE odeme_durumu = 'Başarılı'", "Tamamlanan tahsilatlar", "success", "fa-circle-check"),
-                ("Basarisiz", "SELECT COUNT(*) FROM odeme_islemleri WHERE odeme_durumu = 'Başarısız'", "Reddedilen islemler", "danger", "fa-circle-xmark"),
-                ("Askida/Bekleyen", "SELECT COUNT(*) FROM odeme_islemleri WHERE odeme_durumu IN ('Beklemede','İşleniyor','Askıda')", "Inceleme veya islem bekleyenler", "warning", "fa-hourglass-half")
+                ("Odeme Islemi", "SELECT COUNT(*) FROM [dbo].[ODEME_ISLEMLERI]", "Tum odeme hareketleri", "info", "fa-credit-card"),
+                ("Basarili", "SELECT COUNT(*) FROM [dbo].[ODEME_ISLEMLERI] WHERE [ODEME_DURUMU] = 'Başarılı'", "Tamamlanan tahsilatlar", "success", "fa-circle-check"),
+                ("Basarisiz", "SELECT COUNT(*) FROM [dbo].[ODEME_ISLEMLERI] WHERE [ODEME_DURUMU] = 'Başarısız'", "Reddedilen islemler", "danger", "fa-circle-xmark"),
+                ("Askida/Bekleyen", "SELECT COUNT(*) FROM [dbo].[ODEME_ISLEMLERI] WHERE [ODEME_DURUMU] IN ('Beklemede','İşleniyor','Askıda')", "Inceleme veya islem bekleyenler", "warning", "fa-hourglass-half")
             ],
             "invoices" =>
             [
-                ("Toplam Fatura", "SELECT COUNT(*) FROM faturalar", "Sistemdeki tum fatura kayitlari", "info", "fa-file-invoice"),
-                ("Kesildi", "SELECT COUNT(*) FROM faturalar WHERE fatura_durumu = 'Kesildi'", "Aktif kesilmis faturalar", "success", "fa-file-circle-check"),
-                ("Taslak", "SELECT COUNT(*) FROM faturalar WHERE fatura_durumu = 'Taslak'", "Hazirlik asamasindakiler", "warning", "fa-file-pen"),
-                ("Iptal", "SELECT COUNT(*) FROM faturalar WHERE fatura_durumu = 'İptal Edildi'", "Iptal edilen faturalar", "danger", "fa-file-circle-xmark")
+                ("Toplam Fatura", "SELECT COUNT(*) FROM [dbo].[FATURALAR]", "Sistemdeki tum fatura kayitlari", "info", "fa-file-invoice"),
+                ("Kesildi", "SELECT COUNT(*) FROM [dbo].[FATURALAR] WHERE [FATURA_DURUMU] = 'Kesildi'", "Aktif kesilmis faturalar", "success", "fa-file-circle-check"),
+                ("Taslak", "SELECT COUNT(*) FROM [dbo].[FATURALAR] WHERE [FATURA_DURUMU] = 'Taslak'", "Hazirlik asamasindakiler", "warning", "fa-file-pen"),
+                ("Iptal", "SELECT COUNT(*) FROM [dbo].[FATURALAR] WHERE [FATURA_DURUMU] = 'İptal Edildi'", "Iptal edilen faturalar", "danger", "fa-file-circle-xmark")
             ],
             "commissions" =>
             [
-                ("Komisyon Kaydi", "SELECT COUNT(*) FROM komisyon_muhasebe_kayitlari", "Muhasebe donem kayitlari", "info", "fa-percent"),
-                ("Beklemede", "SELECT COUNT(*) FROM komisyon_muhasebe_kayitlari WHERE otele_odeme_durumu = 'Beklemede'", "Otele odeme bekleyenler", "warning", "fa-wallet"),
-                ("Odendi", "SELECT COUNT(*) FROM komisyon_muhasebe_kayitlari WHERE otele_odeme_durumu = 'Ödendi'", "Kapatilan odemeler", "success", "fa-money-bill-transfer"),
-                ("Itirazli", "SELECT COUNT(*) FROM komisyon_muhasebe_kayitlari WHERE itiraz_var_mi = 1", "Mutabakat itirazli kayitlar", "danger", "fa-scale-balanced")
+                ("Komisyon Kaydi", "SELECT COUNT(*) FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI]", "Muhasebe donem kayitlari", "info", "fa-percent"),
+                ("Beklemede", "SELECT COUNT(*) FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] WHERE [OTELE_ODEME_DURUMU] = 'Beklemede'", "Otele odeme bekleyenler", "warning", "fa-wallet"),
+                ("Odendi", "SELECT COUNT(*) FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] WHERE [OTELE_ODEME_DURUMU] = 'Ödendi'", "Kapatilan odemeler", "success", "fa-money-bill-transfer"),
+                ("Itirazli", "SELECT COUNT(*) FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] WHERE [ITIRAZ_VAR_MI] = 1", "Mutabakat itirazli kayitlar", "danger", "fa-scale-balanced")
             ],
             "reports" =>
             [
-                ("30 Gün Ciro", "SELECT COALESCE(SUM(COALESCE(r.toplam_tutar,0)),0) FROM rezervasyonlar r WHERE COALESCE(r.durum,'') <> 'İptal Edildi' AND r.giris_tarihi >= DATEADD(day, -30, CAST(GETDATE() AS date))", "İptal hariç toplam", "success", "fa-money-bill-wave"),
-                ("30 Gün Brüt Komisyon", "SELECT COALESCE(SUM(COALESCE(r.komisyon_tutari,0)),0) FROM rezervasyonlar r WHERE COALESCE(r.durum,'') <> 'İptal Edildi' AND r.giris_tarihi >= DATEADD(day, -30, CAST(GETDATE() AS date))", "Tahakkuk eden brüt", "info", "fa-percent"),
-                ("30 Gün Net Komisyon", "SELECT COALESCE(SUM(COALESCE(r.platform_net_komisyon_tutari,0)),0) FROM rezervasyonlar r WHERE COALESCE(r.durum,'') <> 'İptal Edildi' AND r.giris_tarihi >= DATEADD(day, -30, CAST(GETDATE() AS date))", "Platform net", "primary", "fa-coins"),
-                ("Bu Ay Rezervasyon", "SELECT COUNT(*) FROM rezervasyonlar r WHERE COALESCE(r.durum,'') <> 'İptal Edildi' AND r.giris_tarihi >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)", "Ay başlangıcından bugüne", "warning", "fa-calendar-check")
+                ("30 Gün Ciro", "SELECT COALESCE(SUM(COALESCE(r.[TOPLAM_TUTAR],0)),0) FROM [dbo].[REZERVASYONLAR] r WHERE COALESCE(r.[DURUM],'') <> 'İptal Edildi' AND r.[GIRIS_TARIHI] >= DATEADD(day, -30, CAST(GETDATE() AS date))", "İptal hariç toplam", "success", "fa-money-bill-wave"),
+                ("30 Gün Brüt Komisyon", "SELECT COALESCE(SUM(COALESCE(r.[KOMISYON_TUTARI],0)),0) FROM [dbo].[REZERVASYONLAR] r WHERE COALESCE(r.[DURUM],'') <> 'İptal Edildi' AND r.[GIRIS_TARIHI] >= DATEADD(day, -30, CAST(GETDATE() AS date))", "Tahakkuk eden brüt", "info", "fa-percent"),
+                ("30 Gün Net Komisyon", "SELECT COALESCE(SUM(COALESCE(r.[PLATFORM_NET_KOMISYON_TUTARI],0)),0) FROM [dbo].[REZERVASYONLAR] r WHERE COALESCE(r.[DURUM],'') <> 'İptal Edildi' AND r.[GIRIS_TARIHI] >= DATEADD(day, -30, CAST(GETDATE() AS date))", "Platform net", "primary", "fa-coins"),
+                ("Bu Ay Rezervasyon", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE COALESCE(r.[DURUM],'') <> 'İptal Edildi' AND r.[GIRIS_TARIHI] >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)", "Ay başlangıcından bugüne", "warning", "fa-calendar-check")
             ],
             "company-reservations" =>
             [
-                ("Firma Rezervasyonu", "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id IS NOT NULL", "Firma bağlı tüm kayıtlar", "info", "fa-briefcase"),
-                ("Onay Bekleyen", "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id IS NOT NULL AND firma_onay_durumu = 'Beklemede'", "Firma onay akışında", "warning", "fa-hourglass-half"),
-                ("İptal", "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id IS NOT NULL AND durum = 'İptal Edildi'", "İptal edilenler", "danger", "fa-ban"),
-                ("Toplam Tutar", "SELECT COALESCE(SUM(COALESCE(toplam_tutar,0)),0) FROM rezervasyonlar WHERE firma_id IS NOT NULL AND COALESCE(durum,'') <> 'İptal Edildi'", "İptal hariç ciro", "success", "fa-money-bill-wave")
+                ("Firma Rezervasyonu", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [FIRMA_ID] IS NOT NULL", "Firma bağlı tüm kayıtlar", "info", "fa-briefcase"),
+                ("Onay Bekleyen", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [FIRMA_ID] IS NOT NULL AND [FIRMA_ONAY_DURUMU] = 'Beklemede'", "Firma onay akışında", "warning", "fa-hourglass-half"),
+                ("İptal", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [FIRMA_ID] IS NOT NULL AND [DURUM] = 'İptal Edildi'", "İptal edilenler", "danger", "fa-ban"),
+                ("Toplam Tutar", "SELECT COALESCE(SUM(COALESCE([TOPLAM_TUTAR],0)),0) FROM [dbo].[REZERVASYONLAR] WHERE [FIRMA_ID] IS NOT NULL AND COALESCE([DURUM],'') <> 'İptal Edildi'", "İptal hariç ciro", "success", "fa-money-bill-wave")
             ],
             "partner-applications" =>
             [
-                ("Toplam Partner", "SELECT COUNT(*) FROM partner_detaylari", "Tum partner hesaplari", "info", "fa-handshake-angle"),
-                ("Beklemede", "SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Beklemede'", "Inceleme bekleyen basvurular", "warning", "fa-hourglass-half"),
-                ("Onaylandi", "SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Onaylandi'", "Aktif partner hesaplari", "success", "fa-circle-check"),
-                ("Reddedildi", "SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Reddedildi'", "Reddedilen kayitlar", "danger", "fa-circle-xmark")
+                ("Toplam Partner", "SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI]", "Tum partner hesaplari", "info", "fa-handshake-angle"),
+                ("Beklemede", "SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU] = 'Beklemede'", "Inceleme bekleyen basvurular", "warning", "fa-hourglass-half"),
+                ("Onaylandi", "SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU] = 'Onaylandi'", "Aktif partner hesaplari", "success", "fa-circle-check"),
+                ("Reddedildi", "SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU] = 'Reddedildi'", "Reddedilen kayitlar", "danger", "fa-circle-xmark")
             ],
             "company-applications" =>
             [
-                ("Toplam Firma", "SELECT COUNT(*) FROM firmalar", "Tum firma profilleri", "info", "fa-building"),
-                ("Beklemede", "SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu,'Beklemede') = 'Beklemede'", "Onay bekleyen firmalar", "warning", "fa-hourglass-half"),
-                ("Onaylandi", "SELECT COUNT(*) FROM firmalar WHERE COALESCE(onay_durumu,'') = 'Onaylandı'", "Aktif firma hesaplari", "success", "fa-circle-check"),
-                ("Firma Rezervasyonu", "SELECT COUNT(*) FROM rezervasyonlar WHERE firma_id IS NOT NULL", "Firma baglantili rezervasyonlar", "danger", "fa-briefcase")
+                ("Toplam Firma", "SELECT COUNT(*) FROM [dbo].[FIRMALAR]", "Tum firma profilleri", "info", "fa-building"),
+                ("Beklemede", "SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE COALESCE([ONAY_DURUMU],'Beklemede') = 'Beklemede'", "Onay bekleyen firmalar", "warning", "fa-hourglass-half"),
+                ("Onaylandi", "SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE COALESCE([ONAY_DURUMU],'') = 'Onaylandı'", "Aktif firma hesaplari", "success", "fa-circle-check"),
+                ("Firma Rezervasyonu", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [FIRMA_ID] IS NOT NULL", "Firma baglantili rezervasyonlar", "danger", "fa-briefcase")
             ],
             "platform-officials" =>
             [
-                ("Yetkili Hesap", "SELECT COUNT(*) FROM users WHERE rol IN ('admin','superadmin')", "Admin ve superadmin kullanicilar", "info", "fa-user-shield"),
-                ("Aktif Yetkili", "SELECT COUNT(*) FROM users WHERE rol IN ('admin','superadmin') AND hesap_durumu = 1", "Panele erisebilen yetkililer", "success", "fa-user-check"),
-                ("Departman Kaydi", "SELECT COUNT(*) FROM kullanici_departman", "Yetkili departman baglantilari", "warning", "fa-sitemap"),
-                ("Rol Kaydi", "SELECT COUNT(*) FROM kullanici_rolleri", "Rol atama kayitlari", "danger", "fa-key")
+                ("Yetkili Hesap", "SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE rol IN ('admin','superadmin')", "Admin ve superadmin kullanicilar", "info", "fa-user-shield"),
+                ("Aktif Yetkili", "SELECT COUNT(*) FROM [dbo].[KULLANICILAR] WHERE rol IN ('admin','superadmin') AND [HESAP_DURUMU] = 1", "Panele erisebilen yetkililer", "success", "fa-user-check"),
+                ("Departman Kaydi", "SELECT COUNT(*) FROM [dbo].[KULLANICI_DEPARTMAN]", "Yetkili departman baglantilari", "warning", "fa-sitemap"),
+                ("Rol Kaydi", "SELECT COUNT(*) FROM [dbo].[KULLANICI_ROLLERI]", "Rol atama kayitlari", "danger", "fa-key")
             ],
             "active-hotels" =>
             [
-                ("Yayinda", "SELECT COUNT(*) FROM oteller WHERE yayin_durumu = 'Yayında' AND onay_durumu = 'Onaylandı'", "Yayinda ve onayli oteller", "success", "fa-tower-broadcast"),
-                ("Toplam Oda Tipi", "SELECT COUNT(*) FROM oda_tipleri ot INNER JOIN oteller o ON o.id = ot.otel_id WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı'", "Acik otellerdeki oda tipleri", "info", "fa-bed"),
-                ("Toplam Rezervasyon", "SELECT COUNT(*) FROM rezervasyonlar r INNER JOIN oteller o ON o.id = r.otel_id WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı'", "Acik otellere gelen rezervasyonlar", "warning", "fa-calendar-check"),
-                ("Toplam Gelir", "SELECT COALESCE(SUM(COALESCE(r.toplam_tutar,0)),0) FROM rezervasyonlar r INNER JOIN oteller o ON o.id = r.otel_id WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı' AND COALESCE(r.durum,'') <> 'İptal Edildi'", "Iptal disi rezervasyon gelirleri", "danger", "fa-money-bill-wave")
+                ("Yayinda", "SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE [YAYIN_DURUMU] = 'Yayında' AND [ONAY_DURUMU] = 'Onaylandı'", "Yayinda ve onayli oteller", "success", "fa-tower-broadcast"),
+                ("Toplam Oda Tipi", "SELECT COUNT(*) FROM [dbo].[ODA_TIPLERI] ot INNER JOIN [dbo].[OTELLER] o ON o.id = ot.[OTEL_ID] WHERE o.[YAYIN_DURUMU] = 'Yayında' AND o.[ONAY_DURUMU] = 'Onaylandı'", "Acik otellerdeki oda tipleri", "info", "fa-bed"),
+                ("Toplam Rezervasyon", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID] WHERE o.[YAYIN_DURUMU] = 'Yayında' AND o.[ONAY_DURUMU] = 'Onaylandı'", "Acik otellere gelen rezervasyonlar", "warning", "fa-calendar-check"),
+                ("Toplam Gelir", "SELECT COALESCE(SUM(COALESCE(r.[TOPLAM_TUTAR],0)),0) FROM [dbo].[REZERVASYONLAR] r INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID] WHERE o.[YAYIN_DURUMU] = 'Yayında' AND o.[ONAY_DURUMU] = 'Onaylandı' AND COALESCE(r.[DURUM],'') <> 'İptal Edildi'", "Iptal disi rezervasyon gelirleri", "danger", "fa-money-bill-wave")
             ],
             "pending-hotels" =>
             [
-                ("Bekleyen Onay", "SELECT COUNT(*) FROM oteller WHERE onay_durumu = 'Beklemede'", "Onay bekleyen tesisler", "warning", "fa-hourglass-half"),
-                ("Taslak Yayin", "SELECT COUNT(*) FROM oteller WHERE yayin_durumu <> 'Yayında'", "Yayina alinmamis tesisler", "info", "fa-file-pen"),
-                ("Partner Basvuru Bekliyor", "SELECT COUNT(*) FROM partner_detaylari WHERE onay_durumu = 'Beklemede'", "Partner adiminda bekleyenler", "danger", "fa-user-clock"),
-                ("Eksik Medya", "SELECT COUNT(*) FROM oteller o WHERE NOT EXISTS (SELECT 1 FROM otel_gorselleri g WHERE g.otel_id = o.id)", "Gorsel yuklenmemis oteller", "success", "fa-image")
+                ("Bekleyen Onay", "SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE [ONAY_DURUMU] = 'Beklemede'", "Onay bekleyen tesisler", "warning", "fa-hourglass-half"),
+                ("Taslak Yayin", "SELECT COUNT(*) FROM [dbo].[OTELLER] WHERE [YAYIN_DURUMU] <> 'Yayında'", "Yayina alinmamis tesisler", "info", "fa-file-pen"),
+                ("Partner Basvuru Bekliyor", "SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU] = 'Beklemede'", "Partner adiminda bekleyenler", "danger", "fa-user-clock"),
+                ("Eksik Medya", "SELECT COUNT(*) FROM [dbo].[OTELLER] o WHERE NOT EXISTS (SELECT 1 FROM [dbo].[OTEL_GORSELLERI] g WHERE g.[OTEL_ID] = o.id)", "Gorsel yuklenmemis oteller", "success", "fa-image")
             ],
             "reviews" =>
             [
-                ("Toplam Yorum", "SELECT COUNT(*) FROM yorumlar", "Tesis yorumlari", "info", "fa-star"),
-                ("Beklemede", "SELECT COUNT(*) FROM yorumlar WHERE onay_durumu = 'Beklemede'", "Moderasyon bekleyenler", "warning", "fa-hourglass-half"),
-                ("Onaylandi", "SELECT COUNT(*) FROM yorumlar WHERE onay_durumu = 'Onaylandı'", "Yayinda olan yorumlar", "success", "fa-thumbs-up"),
-                ("Raporlandi", "SELECT COUNT(*) FROM yorumlar WHERE rapor_sayisi > 0", "Incelenmesi gerekenler", "danger", "fa-flag")
+                ("Toplam Yorum", "SELECT COUNT(*) FROM [dbo].[YORUMLAR]", "Tesis yorumlari", "info", "fa-star"),
+                ("Beklemede", "SELECT COUNT(*) FROM [dbo].[YORUMLAR] WHERE [ONAY_DURUMU] = 'Beklemede'", "Moderasyon bekleyenler", "warning", "fa-hourglass-half"),
+                ("Onaylandi", "SELECT COUNT(*) FROM [dbo].[YORUMLAR] WHERE [ONAY_DURUMU] = 'Onaylandı'", "Yayinda olan yorumlar", "success", "fa-thumbs-up"),
+                ("Raporlandi", "SELECT COUNT(*) FROM [dbo].[YORUMLAR] WHERE [RAPOR_SAYISI] > 0", "Incelenmesi gerekenler", "danger", "fa-flag")
             ],
             "campaigns" =>
             [
-                ("Kampanya", "SELECT COUNT(*) FROM kampanyalar", "Tum kampanya kayitlari", "info", "fa-bullhorn"),
-                ("Aktif", "SELECT COUNT(*) FROM kampanyalar WHERE aktif_mi = 1", "Yayinda kampanyalar", "success", "fa-badge-percent"),
-                ("One Cikan", "SELECT COUNT(*) FROM kampanyalar WHERE one_cikan_kampanya = 1", "Ana sayfa on plana cikacak kampanyalar", "warning", "fa-fire"),
-                ("Toplam Kullanim", "SELECT COALESCE(SUM(kullanilan_adet),0) FROM kampanyalar", "Kampanya kullanim adedi", "danger", "fa-chart-column")
+                ("Kampanya", "SELECT COUNT(*) FROM [dbo].[KAMPANYALAR]", "Tum kampanya kayitlari", "info", "fa-bullhorn"),
+                ("Aktif", "SELECT COUNT(*) FROM [dbo].[KAMPANYALAR] WHERE [AKTIF_MI] = 1", "Yayinda kampanyalar", "success", "fa-badge-percent"),
+                ("One Cikan", "SELECT COUNT(*) FROM [dbo].[KAMPANYALAR] WHERE [ONE_CIKAN_KAMPANYA] = 1", "Ana sayfa on plana cikacak kampanyalar", "warning", "fa-fire"),
+                ("Toplam Kullanim", "SELECT COALESCE(SUM([KULLANILAN_ADET]),0) FROM [dbo].[KAMPANYALAR]", "Kampanya kullanim adedi", "danger", "fa-chart-column")
             ],
             "notifications" =>
             [
-                ("Sistem Bildirimi", "SELECT COUNT(*) FROM sistem_ici_bildirimler", "Tum panel bildirimleri", "info", "fa-bell"),
-                ("Okunmamis", "SELECT COUNT(*) FROM sistem_ici_bildirimler WHERE okundu_mu = 0", "Henuz gorulmeyen bildirimler", "warning", "fa-envelope-open-text"),
-                ("Bildirim Sablonu", "SELECT COUNT(*) FROM bildirim_sablonlari", "Push/SMS/mail sablonlari", "success", "fa-file-lines"),
-                ("Mesaj Sablonu", "SELECT COUNT(*) FROM mesaj_sablonlari", "Operasyonel mesaj sablonlari", "danger", "fa-comments")
+                ("Sistem Bildirimi", "SELECT COUNT(*) FROM [dbo].[SISTEM_ICI_BILDIRIMLER]", "Tum panel bildirimleri", "info", "fa-bell"),
+                ("Okunmamis", "SELECT COUNT(*) FROM [dbo].[SISTEM_ICI_BILDIRIMLER] WHERE [OKUNDU_MU] = 0", "Henuz gorulmeyen bildirimler", "warning", "fa-envelope-open-text"),
+                ("Bildirim Sablonu", "SELECT COUNT(*) FROM [dbo].[BILDIRIM_SABLONLARI]", "Push/SMS/mail sablonlari", "success", "fa-file-lines"),
+                ("Mesaj Sablonu", "SELECT COUNT(*) FROM [dbo].[MESAJ_SABLONLARI]", "Operasyonel mesaj sablonlari", "danger", "fa-comments")
             ],
             "logs" =>
             [
-                ("Admin Islem Logu", "SELECT COUNT(*) FROM admin_islem_loglari", "Yonetici aksiyon kayitlari", "info", "fa-clipboard-list"),
-                ("Sistem Hata", "SELECT COUNT(*) FROM sistem_hata_loglari", "Uygulama hata kayitlari", "danger", "fa-bug"),
-                ("API Logu", "SELECT COUNT(*) FROM api_loglari", "API erisim loglari", "warning", "fa-cloud-arrow-up"),
-                ("Kullanici Aktivitesi", "SELECT COUNT(*) FROM kullanici_aktivite_loglari", "Oturum ve hareket gecmisi", "success", "fa-user-clock")
+                ("Admin Islem Logu", "SELECT COUNT(*) FROM [dbo].[ADMIN_ISLEM_LOGLARI]", "Yonetici aksiyon kayitlari", "info", "fa-clipboard-list"),
+                ("Sistem Hata", "SELECT COUNT(*) FROM [dbo].[SISTEM_HATA_LOGLARI]", "Uygulama hata kayitlari", "danger", "fa-bug"),
+                ("API Logu", "SELECT COUNT(*) FROM [dbo].[API_LOGLARI]", "API erisim loglari", "warning", "fa-cloud-arrow-up"),
+                ("Kullanici Aktivitesi", "SELECT COUNT(*) FROM [dbo].[KULLANICI_AKTIVITE_LOGLARI]", "Oturum ve hareket gecmisi", "success", "fa-user-clock")
             ],
             "geo-search-logs" =>
             [
-                ("Toplam Log", "SELECT COUNT(*) FROM kullanici_konum_loglari", "Konumla arama log kayitlari", "info", "fa-location-dot"),
-                ("Bugün", "SELECT COUNT(*) FROM kullanici_konum_loglari WHERE CAST(kayit_tarihi AS date) = CAST(SYSUTCDATETIME() AS date)", "Bugün üretilen kayıtlar", "success", "fa-calendar-day"),
-                ("Konum Araması", "SELECT COUNT(*) FROM kullanici_konum_loglari WHERE COALESCE(arama_bolgesi,'') <> ''", "Arama bölgesi dolu kayıtlar", "warning", "fa-map-location-dot"),
-                ("Yarıçaplı", "SELECT COUNT(*) FROM kullanici_konum_loglari WHERE yaricap_km IS NOT NULL", "Yarıçap parametreli kayıtlar", "danger", "fa-circle-nodes")
+                ("Toplam Log", "SELECT COUNT(*) FROM [dbo].[KULLANICI_KONUM_LOGLARI]", "Konumla arama log kayitlari", "info", "fa-location-dot"),
+                ("Bugün", "SELECT COUNT(*) FROM [dbo].[KULLANICI_KONUM_LOGLARI] WHERE CAST([KAYIT_TARIHI] AS date) = CAST(SYSUTCDATETIME() AS date)", "Bugün üretilen kayıtlar", "success", "fa-calendar-day"),
+                ("Konum Araması", "SELECT COUNT(*) FROM [dbo].[KULLANICI_KONUM_LOGLARI] WHERE COALESCE([ARAMA_BOLGESI],'') <> ''", "Arama bölgesi dolu kayıtlar", "warning", "fa-map-location-dot"),
+                ("Yarıçaplı", "SELECT COUNT(*) FROM [dbo].[KULLANICI_KONUM_LOGLARI] WHERE [YARICAP_KM] IS NOT NULL", "Yarıçap parametreli kayıtlar", "danger", "fa-circle-nodes")
             ],
             "hotel-coordinate-changes" =>
             [
-                ("Toplam Değişim", "SELECT COUNT(*) FROM otel_koordinat_degisim_loglari", "Koordinat değişim kayıtları", "info", "fa-route"),
-                ("Bugün", "SELECT COUNT(*) FROM otel_koordinat_degisim_loglari WHERE CAST(kayit_tarihi AS date) = CAST(SYSUTCDATETIME() AS date)", "Bugün yapılan değişimler", "success", "fa-calendar-day"),
-                ("Farklı IP", "SELECT COUNT(DISTINCT ip_adresi) FROM otel_koordinat_degisim_loglari", "Değişim yapılan IP çeşitliliği", "warning", "fa-globe"),
-                ("Farklı Otel", "SELECT COUNT(DISTINCT otel_id) FROM otel_koordinat_degisim_loglari", "Etkilenen otel sayısı", "danger", "fa-hotel")
+                ("Toplam Değişim", "SELECT COUNT(*) FROM [dbo].[OTEL_KOORDINAT_DEGISIM_LOGLARI]", "Koordinat değişim kayıtları", "info", "fa-route"),
+                ("Bugün", "SELECT COUNT(*) FROM [dbo].[OTEL_KOORDINAT_DEGISIM_LOGLARI] WHERE CAST([KAYIT_TARIHI] AS date) = CAST(SYSUTCDATETIME() AS date)", "Bugün yapılan değişimler", "success", "fa-calendar-day"),
+                ("Farklı IP", "SELECT COUNT(DISTINCT [IP_ADRESI]) FROM [dbo].[OTEL_KOORDINAT_DEGISIM_LOGLARI]", "Değişim yapılan IP çeşitliliği", "warning", "fa-globe"),
+                ("Farklı Otel", "SELECT COUNT(DISTINCT [OTEL_ID]) FROM [dbo].[OTEL_KOORDINAT_DEGISIM_LOGLARI]", "Etkilenen otel sayısı", "danger", "fa-hotel")
             ],
             "email-templates" =>
             [
-                ("Mesaj Sablonu", "SELECT COUNT(*) FROM mesaj_sablonlari", "Mail/mesaj sablon seti", "info", "fa-envelope"),
-                ("Bildirim Sablonu", "SELECT COUNT(*) FROM bildirim_sablonlari", "Push/SMS/system ici sablonlar", "warning", "fa-paper-plane"),
-                ("Aktif Mesaj", "SELECT COUNT(*) FROM mesaj_sablonlari WHERE aktif_mi = 1", "Kullanilan mail sablonlari", "success", "fa-circle-check"),
-                ("Aktif Bildirim", "SELECT COUNT(*) FROM bildirim_sablonlari WHERE aktif_mi = 1", "Yayinda bildirim sablonlari", "danger", "fa-bell-concierge")
+                ("Mesaj Sablonu", "SELECT COUNT(*) FROM [dbo].[MESAJ_SABLONLARI]", "Mail/mesaj sablon seti", "info", "fa-envelope"),
+                ("Bildirim Sablonu", "SELECT COUNT(*) FROM [dbo].[BILDIRIM_SABLONLARI]", "Push/SMS/system ici sablonlar", "warning", "fa-paper-plane"),
+                ("Aktif Mesaj", "SELECT COUNT(*) FROM [dbo].[MESAJ_SABLONLARI] WHERE [AKTIF_MI] = 1", "Kullanilan mail sablonlari", "success", "fa-circle-check"),
+                ("Aktif Bildirim", "SELECT COUNT(*) FROM [dbo].[BILDIRIM_SABLONLARI] WHERE [AKTIF_MI] = 1", "Yayinda bildirim sablonlari", "danger", "fa-bell-concierge")
             ],
             "faq" =>
             [
-                ("SSS Kategorisi", "SELECT COUNT(*) FROM sss_kategorileri WHERE aktif_mi = 1", "Aktif destek kategorileri", "info", "fa-layer-group"),
-                ("Toplam Soru", "SELECT COUNT(*) FROM sss_sorulari", "Tum soru ve cevap kayitlari", "warning", "fa-circle-question"),
-                ("One Cikan", "SELECT COUNT(*) FROM sss_sorulari WHERE one_cikan_mi = 1", "Ana akista vurgulanan sorular", "success", "fa-fire"),
-                ("Aktif", "SELECT COUNT(*) FROM sss_sorulari WHERE aktif_mi = 1", "Yayinda olan soru/cevaplar", "danger", "fa-circle-check")
+                ("SSS Kategorisi", "SELECT COUNT(*) FROM [dbo].[SSS_KATEGORILERI] WHERE [AKTIF_MI] = 1", "Aktif destek kategorileri", "info", "fa-layer-group"),
+                ("Toplam Soru", "SELECT COUNT(*) FROM [dbo].[SSS_SORULARI]", "Tum soru ve cevap kayitlari", "warning", "fa-circle-question"),
+                ("One Cikan", "SELECT COUNT(*) FROM [dbo].[SSS_SORULARI] WHERE [ONE_CIKAN_MI] = 1", "Ana akista vurgulanan sorular", "success", "fa-fire"),
+                ("Aktif", "SELECT COUNT(*) FROM [dbo].[SSS_SORULARI] WHERE [AKTIF_MI] = 1", "Yayinda olan soru/cevaplar", "danger", "fa-circle-check")
             ],
             _ => []
         };
@@ -4181,9 +4453,9 @@ public class AdminService : IAdminService
         {
             "users" => @"SELECT TOP (40)
                                 CAST(u.id AS nvarchar(30)),
-                                COALESCE(NULLIF(u.ad_soyad, ''), '-'),
-                                COALESCE(NULLIF(u.eposta, ''), '-'),
-                                COALESCE(NULLIF(u.telefon, ''), NULLIF(u.telefon_e164, ''), '-'),
+                                COALESCE(NULLIF(u.[AD_SOYAD], ''), '-'),
+                                COALESCE(NULLIF(u.[EPOSTA], ''), '-'),
+                                COALESCE(NULLIF(u.[TELEFON], ''), NULLIF(u.[TELEFON_E164], ''), '-'),
                                 CASE
                                     WHEN reservationStats.reservation_count >= 10 OR reservationStats.total_spent >= 100000 THEN 'Gold'
                                     WHEN reservationStats.reservation_count >= 4 OR reservationStats.total_spent >= 30000 THEN 'Silver'
@@ -4192,124 +4464,124 @@ public class AdminService : IAdminService
                                 CAST(reservationStats.reservation_count AS nvarchar(20)),
                                 FORMAT(reservationStats.loyalty_points, 'N0', 'tr-TR'),
                                 CASE
-                                    WHEN COALESCE(u.hesap_durumu, 0) = 0 THEN 'Pasif'
-                                    WHEN u.email_dogrulama_tarihi IS NULL THEN 'Onaysiz'
+                                    WHEN COALESCE(u.[HESAP_DURUMU], 0) = 0 THEN 'Pasif'
+                                    WHEN u.[EPOSTA_DOGRULAMA_TARIHI] IS NULL THEN 'Onaysiz'
                                     ELSE 'Aktif'
                                 END,
-                                COALESCE(NULLIF(u.rol, ''), 'user'),
-                                FORMAT(u.olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR')
-                         FROM users u
+                                COALESCE(NULLIF(u.[ROL], ''), 'user'),
+                                FORMAT(u.[OLUSTURULMA_TARIHI], 'dd.MM.yyyy', 'tr-TR')
+                         FROM [dbo].[KULLANICILAR] u
                          OUTER APPLY
                          (
                              SELECT
                                  COUNT(r.id) AS reservation_count,
-                                 COALESCE(SUM(COALESCE(r.toplam_tutar, 0)), 0) AS total_spent,
-                                 CAST(ROUND(COALESCE(SUM(COALESCE(r.toplam_tutar, 0)), 0) / 12.5, 0) AS int) AS loyalty_points
-                             FROM rezervasyonlar r
-                             WHERE r.kullanici_id = u.id
-                               AND COALESCE(r.durum, '') <> 'İptal Edildi'
+                                 COALESCE(SUM(COALESCE(r.[TOPLAM_TUTAR], 0)), 0) AS total_spent,
+                                 CAST(ROUND(COALESCE(SUM(COALESCE(r.[TOPLAM_TUTAR], 0)), 0) / 12.5, 0) AS int) AS loyalty_points
+                             FROM [dbo].[REZERVASYONLAR] r
+                             WHERE r.[KULLANICI_ID] = u.id
+                               AND COALESCE(r.[DURUM], '') <> 'İptal Edildi'
                          ) reservationStats
                          ORDER BY u.id DESC;",
-            "managers" => @"SELECT TOP (12) u.ad_soyad, u.eposta, COALESCE(d.departman_adi, '-'), COALESCE(r.rol_adi, u.rol), COALESCE(FORMAT(u.son_giris_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR'), '-') FROM users u LEFT JOIN kullanici_departman kd ON kd.kullanici_id = u.id LEFT JOIN departmanlar d ON d.id = kd.departman_id LEFT JOIN kullanici_rolleri kr ON kr.kullanici_id = u.id AND (kr.bitis_tarihi IS NULL OR kr.bitis_tarihi > SYSUTCDATETIME()) LEFT JOIN roller r ON r.id = kr.rol_id WHERE u.rol = 'admin' ORDER BY u.id DESC;",
-            "hotels" => @"SELECT TOP (12) otel_adi, CONCAT(ilce, ', ', sehir), otel_turu, yayin_durumu, onay_durumu, FORMAT(ortalama_puan, '0.0', 'tr-TR') FROM oteller ORDER BY id DESC;",
-            "reservations" => @"SELECT TOP (12) rezervasyon_no, misafir_ad_soyad, FORMAT(giris_tarihi, 'dd.MM.yyyy', 'tr-TR'), FORMAT(cikis_tarihi, 'dd.MM.yyyy', 'tr-TR'), durum, FORMAT(toplam_tutar, 'N0', 'tr-TR') FROM rezervasyonlar ORDER BY id DESC;",
-            "payments" => @"SELECT TOP (12) islem_no, odeme_turu, odeme_durumu, odeme_yontemi, FORMAT(toplam_tahsilat, 'N0', 'tr-TR'), FORMAT(odeme_baslangic_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR') FROM odeme_islemleri ORDER BY id DESC;",
-            "invoices" => @"SELECT TOP (12) fatura_no, FORMAT(fatura_tarihi, 'dd.MM.yyyy', 'tr-TR'), fatura_turu, fatura_durumu, FORMAT(genel_toplam, 'N0', 'tr-TR'), para_birimi FROM faturalar ORDER BY id DESC;",
-            "commissions" => @"SELECT TOP (12) kayit_no, donem, o.otel_adi, FORMAT(komisyon_tutari, 'N0', 'tr-TR'), otele_odeme_durumu, mutabakat_durumu FROM komisyon_muhasebe_kayitlari k LEFT JOIN oteller o ON o.id = k.otel_id ORDER BY k.id DESC;",
+            "managers" => @"SELECT TOP (12) u.[AD_SOYAD], u.[EPOSTA], COALESCE(d.[DEPARTMAN_ADI], '-'), COALESCE(r.[ROL_ADI], u.[ROL]), COALESCE(FORMAT(u.[SON_GIRIS_TARIHI], 'dd.MM.yyyy HH:mm', 'tr-TR'), '-') FROM [dbo].[KULLANICILAR] u LEFT JOIN [dbo].[KULLANICI_DEPARTMAN] kd ON kd.[KULLANICI_ID] = u.id LEFT JOIN [dbo].[DEPARTMANLAR] d ON d.id = kd.[DEPARTMAN_ID] LEFT JOIN [dbo].[KULLANICI_ROLLERI] kr ON kr.[KULLANICI_ID] = u.id AND (kr.[BITIS_TARIHI] IS NULL OR kr.[BITIS_TARIHI] > SYSUTCDATETIME()) LEFT JOIN [dbo].[ROLLER] r ON r.id = kr.[ROL_ID] WHERE u.[ROL] = 'admin' ORDER BY u.id DESC;",
+            "hotels" => @"SELECT TOP (12) [OTEL_ADI], CONCAT(ilce, ', ', [SEHIR]), [OTEL_TURU], [YAYIN_DURUMU], [ONAY_DURUMU], FORMAT([ORTALAMA_PUAN], '0.0', 'tr-TR') FROM [dbo].[OTELLER] ORDER BY id DESC;",
+            "reservations" => @"SELECT TOP (12) [REZERVASYON_NO], [MISAFIR_AD_SOYAD], FORMAT([GIRIS_TARIHI], 'dd.MM.yyyy', 'tr-TR'), FORMAT([CIKIS_TARIHI], 'dd.MM.yyyy', 'tr-TR'), [DURUM], FORMAT([TOPLAM_TUTAR], 'N0', 'tr-TR') FROM [dbo].[REZERVASYONLAR] ORDER BY id DESC;",
+            "payments" => @"SELECT TOP (12) [ISLEM_NO], [ODEME_TURU], [ODEME_DURUMU], [ODEME_YONTEMI], FORMAT([TOPLAM_TAHSILAT], 'N0', 'tr-TR'), FORMAT([ODEME_BASLANGIC_TARIHI], 'dd.MM.yyyy HH:mm', 'tr-TR') FROM [dbo].[ODEME_ISLEMLERI] ORDER BY id DESC;",
+            "invoices" => @"SELECT TOP (12) [FATURA_NO], FORMAT([FATURA_TARIHI], 'dd.MM.yyyy', 'tr-TR'), [FATURA_TURU], [FATURA_DURUMU], FORMAT([GENEL_TOPLAM], 'N0', 'tr-TR'), [PARA_BIRIMI] FROM [dbo].[FATURALAR] ORDER BY id DESC;",
+            "commissions" => @"SELECT TOP (12) [KAYIT_NO], [DONEM], o.[OTEL_ADI], FORMAT([KOMISYON_TUTARI], 'N0', 'tr-TR'), [OTELE_ODEME_DURUMU], [MUTABAKAT_DURUMU] FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] k LEFT JOIN [dbo].[OTELLER] o ON o.id = k.[OTEL_ID] ORDER BY k.id DESC;",
             "reports" => @"SELECT TOP (240)
-                                FORMAT(DATEFROMPARTS(YEAR(r.giris_tarihi), MONTH(r.giris_tarihi), 1), 'yyyy-MM', 'en-US') AS ay,
-                                o.otel_adi AS otel,
+                                FORMAT(DATEFROMPARTS(YEAR(r.[GIRIS_TARIHI]), MONTH(r.[GIRIS_TARIHI]), 1), 'yyyy-MM', 'en-US') AS ay,
+                                o.[OTEL_ADI] AS otel,
                                 CAST(COUNT(*) AS nvarchar(20)) AS rezervasyon,
-                                FORMAT(COALESCE(SUM(COALESCE(r.toplam_tutar,0)),0), 'N0', 'tr-TR') AS ciro,
-                                FORMAT(COALESCE(SUM(COALESCE(r.komisyon_tutari,0)),0), 'N0', 'tr-TR') AS brut_komisyon,
-                                FORMAT(COALESCE(SUM(COALESCE(r.platform_net_komisyon_tutari,0)),0), 'N0', 'tr-TR') AS net_komisyon
-                         FROM rezervasyonlar r
-                         INNER JOIN oteller o ON o.id = r.otel_id
-                         WHERE COALESCE(r.durum,'') <> 'İptal Edildi'
-                           AND r.giris_tarihi >= DATEADD(month, -6, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
-                         GROUP BY DATEFROMPARTS(YEAR(r.giris_tarihi), MONTH(r.giris_tarihi), 1), o.otel_adi
-                         ORDER BY DATEFROMPARTS(YEAR(r.giris_tarihi), MONTH(r.giris_tarihi), 1) DESC, COALESCE(SUM(COALESCE(r.toplam_tutar,0)),0) DESC;",
+                                FORMAT(COALESCE(SUM(COALESCE(r.[TOPLAM_TUTAR],0)),0), 'N0', 'tr-TR') AS ciro,
+                                FORMAT(COALESCE(SUM(COALESCE(r.[KOMISYON_TUTARI],0)),0), 'N0', 'tr-TR') AS brut_komisyon,
+                                FORMAT(COALESCE(SUM(COALESCE(r.[PLATFORM_NET_KOMISYON_TUTARI],0)),0), 'N0', 'tr-TR') AS net_komisyon
+                         FROM [dbo].[REZERVASYONLAR] r
+                         INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+                         WHERE COALESCE(r.[DURUM],'') <> 'İptal Edildi'
+                           AND r.[GIRIS_TARIHI] >= DATEADD(month, -6, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1))
+                         GROUP BY DATEFROMPARTS(YEAR(r.[GIRIS_TARIHI]), MONTH(r.[GIRIS_TARIHI]), 1), o.[OTEL_ADI]
+                         ORDER BY DATEFROMPARTS(YEAR(r.[GIRIS_TARIHI]), MONTH(r.[GIRIS_TARIHI]), 1) DESC, COALESCE(SUM(COALESCE(r.[TOPLAM_TUTAR],0)),0) DESC;",
             "company-reservations" => @"SELECT TOP (120)
-                                            r.rezervasyon_no,
-                                            COALESCE(f.firma_adi,'-') AS firma,
-                                            COALESCE(u.ad_soyad, '-') AS personel,
-                                            o.otel_adi,
-                                            CONCAT(o.ilce, ', ', o.sehir) AS konum,
-                                            FORMAT(r.giris_tarihi, 'dd.MM.yyyy', 'tr-TR'),
-                                            FORMAT(r.cikis_tarihi, 'dd.MM.yyyy', 'tr-TR'),
-                                            COALESCE(r.durum,'-'),
-                                            COALESCE(r.firma_onay_durumu,'-'),
-                                            FORMAT(COALESCE(r.toplam_tutar,0), 'N0', 'tr-TR')
-                                         FROM rezervasyonlar r
-                                         INNER JOIN oteller o ON o.id = r.otel_id
-                                         LEFT JOIN firmalar f ON f.id = r.firma_id
-                                         LEFT JOIN users u ON u.id = r.firma_calisan_id
-                                         WHERE r.firma_id IS NOT NULL
-                                         ORDER BY r.olusturulma_tarihi DESC, r.id DESC;",
-            "partner-applications" => @"SELECT TOP (12) firma_unvani, yetkili_ad_soyad, yetkili_eposta, vergi_numarasi, onay_durumu, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR') FROM partner_detaylari ORDER BY id DESC;",
-            "company-applications" => @"SELECT TOP (20) f.firma_adi, COALESCE(f.onay_durumu, 'Beklemede'),
-                                                (SELECT COUNT(*) FROM users u WHERE u.firma_id = f.id AND u.rol LIKE 'firma_%'),
-                                                (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.firma_id = f.id),
-                                                FORMAT(f.olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR')
-                                         FROM firmalar f
+                                            r.[REZERVASYON_NO],
+                                            COALESCE(f.[FIRMA_ADI],'-') AS firma,
+                                            COALESCE(u.[AD_SOYAD], '-') AS personel,
+                                            o.[OTEL_ADI],
+                                            CONCAT(o.[ILCE], ', ', o.[SEHIR]) AS konum,
+                                            FORMAT(r.[GIRIS_TARIHI], 'dd.MM.yyyy', 'tr-TR'),
+                                            FORMAT(r.[CIKIS_TARIHI], 'dd.MM.yyyy', 'tr-TR'),
+                                            COALESCE(r.[DURUM],'-'),
+                                            COALESCE(r.[FIRMA_ONAY_DURUMU],'-'),
+                                            FORMAT(COALESCE(r.[TOPLAM_TUTAR],0), 'N0', 'tr-TR')
+                                         FROM [dbo].[REZERVASYONLAR] r
+                                         INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+                                         LEFT JOIN [dbo].[FIRMALAR] f ON f.id = r.[FIRMA_ID]
+                                         LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = r.[FIRMA_CALISAN_ID]
+                                         WHERE r.[FIRMA_ID] IS NOT NULL
+                                         ORDER BY r.[OLUSTURULMA_TARIHI] DESC, r.id DESC;",
+            "partner-applications" => @"SELECT TOP (12) [FIRMA_UNVANI], [YETKILI_AD_SOYAD], [YETKILI_EPOSTA], [VERGI_NUMARASI], [ONAY_DURUMU], FORMAT([OLUSTURULMA_TARIHI], 'dd.MM.yyyy', 'tr-TR') FROM [dbo].[PARTNER_DETAYLARI] ORDER BY id DESC;",
+            "company-applications" => @"SELECT TOP (20) f.[FIRMA_ADI], COALESCE(f.[ONAY_DURUMU], 'Beklemede'),
+                                                (SELECT COUNT(*) FROM [dbo].[KULLANICILAR] u WHERE u.[FIRMA_ID] = f.id AND u.[ROL] LIKE 'firma_%'),
+                                                (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE r.[FIRMA_ID] = f.id),
+                                                FORMAT(f.[OLUSTURULMA_TARIHI], 'dd.MM.yyyy', 'tr-TR')
+                                         FROM [dbo].[FIRMALAR] f
                                          ORDER BY f.id DESC;",
-            "platform-officials" => @"SELECT TOP (20) u.ad_soyad, u.eposta, COALESCE(NULLIF(u.rol, ''), 'admin'),
-                                               CASE WHEN COALESCE(u.hesap_durumu, 0) = 1 THEN 'Aktif' ELSE 'Pasif' END,
-                                               COALESCE(FORMAT(u.son_giris_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR'), '-'),
-                                               FORMAT(u.olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR')
-                                        FROM users u
-                                        WHERE u.rol IN ('admin', 'superadmin')
-                                        ORDER BY COALESCE(u.son_giris_tarihi, u.olusturulma_tarihi) DESC;",
+            "platform-officials" => @"SELECT TOP (20) u.[AD_SOYAD], u.[EPOSTA], COALESCE(NULLIF(u.[ROL], ''), 'admin'),
+                                               CASE WHEN COALESCE(u.[HESAP_DURUMU], 0) = 1 THEN 'Aktif' ELSE 'Pasif' END,
+                                               COALESCE(FORMAT(u.[SON_GIRIS_TARIHI], 'dd.MM.yyyy HH:mm', 'tr-TR'), '-'),
+                                               FORMAT(u.[OLUSTURULMA_TARIHI], 'dd.MM.yyyy', 'tr-TR')
+                                        FROM [dbo].[KULLANICILAR] u
+                                        WHERE u.[ROL] IN ('admin', 'superadmin')
+                                        ORDER BY COALESCE(u.[SON_GIRIS_TARIHI], u.[OLUSTURULMA_TARIHI]) DESC;",
             "active-hotels" => @"SELECT TOP (20)
-                                        o.otel_adi,
-                                        CONCAT(o.ilce, ', ', o.sehir),
-                                        FORMAT(COALESCE(o.ortalama_puan, 0), '0.0', 'tr-TR'),
-                                        (SELECT COUNT(*) FROM rezervasyonlar r WHERE r.otel_id = o.id),
-                                        FORMAT(COALESCE((SELECT SUM(COALESCE(r.toplam_tutar,0)) FROM rezervasyonlar r WHERE r.otel_id = o.id AND COALESCE(r.durum,'') <> 'İptal Edildi'),0), 'N0', 'tr-TR'),
-                                        FORMAT(COALESCE(o.guncellenme_tarihi, o.olusturulma_tarihi), 'dd.MM.yyyy HH:mm', 'tr-TR')
-                                     FROM oteller o
-                                     WHERE o.yayin_durumu = 'Yayında' AND o.onay_durumu = 'Onaylandı'
-                                     ORDER BY COALESCE(o.ortalama_puan, 0) DESC, o.id DESC;",
+                                        o.[OTEL_ADI],
+                                        CONCAT(o.[ILCE], ', ', o.[SEHIR]),
+                                        FORMAT(COALESCE(o.[ORTALAMA_PUAN], 0), '0.0', 'tr-TR'),
+                                        (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE r.[OTEL_ID] = o.id),
+                                        FORMAT(COALESCE((SELECT SUM(COALESCE(r.[TOPLAM_TUTAR],0)) FROM [dbo].[REZERVASYONLAR] r WHERE r.[OTEL_ID] = o.id AND COALESCE(r.[DURUM],'') <> 'İptal Edildi'),0), 'N0', 'tr-TR'),
+                                        FORMAT(COALESCE(o.[GUNCELLENME_TARIHI], o.[OLUSTURULMA_TARIHI]), 'dd.MM.yyyy HH:mm', 'tr-TR')
+                                     FROM [dbo].[OTELLER] o
+                                     WHERE o.[YAYIN_DURUMU] = 'Yayında' AND o.[ONAY_DURUMU] = 'Onaylandı'
+                                     ORDER BY COALESCE(o.[ORTALAMA_PUAN], 0) DESC, o.id DESC;",
             "pending-hotels" => @"SELECT TOP (20)
-                                         o.otel_adi,
-                                         CONCAT(o.ilce, ', ', o.sehir),
-                                         COALESCE(o.onay_durumu, '-'),
-                                         COALESCE(o.yayin_durumu, '-'),
-                                         FORMAT(o.olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR'),
-                                         FORMAT(COALESCE(o.guncellenme_tarihi, o.olusturulma_tarihi), 'dd.MM.yyyy HH:mm', 'tr-TR')
-                                  FROM oteller o
-                                  WHERE COALESCE(o.onay_durumu, '') = 'Beklemede'
-                                     OR COALESCE(o.yayin_durumu, '') <> 'Yayında'
-                                  ORDER BY o.olusturulma_tarihi DESC;",
-            "reviews" => @"SELECT TOP (12) COALESCE(yorum_basligi, 'Basliksiz'), genel_puan, onay_durumu, rapor_sayisi, dogrulanmis_konaklama, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR') FROM yorumlar ORDER BY id DESC;",
-            "campaigns" => @"SELECT TOP (12) kampanya_adi, tur, FORMAT(baslangic_tarihi, 'dd.MM.yyyy', 'tr-TR'), FORMAT(bitis_tarihi, 'dd.MM.yyyy', 'tr-TR'), aktif_mi, kullanilan_adet FROM kampanyalar ORDER BY id DESC;",
-            "notifications" => @"SELECT TOP (12) baslik, bildirim_turu, onem_derecesi, okundu_mu, arsivlendi_mi, FORMAT(olusturulma_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR') FROM sistem_ici_bildirimler ORDER BY id DESC;",
-            "logs" => @"SELECT TOP (6) hedef_tablo, islem_turu, ip_adresi, FORMAT(islem_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR'), 'Admin Islem', '' FROM admin_islem_loglari ORDER BY id DESC;",
+                                         o.[OTEL_ADI],
+                                         CONCAT(o.[ILCE], ', ', o.[SEHIR]),
+                                         COALESCE(o.[ONAY_DURUMU], '-'),
+                                         COALESCE(o.[YAYIN_DURUMU], '-'),
+                                         FORMAT(o.[OLUSTURULMA_TARIHI], 'dd.MM.yyyy', 'tr-TR'),
+                                         FORMAT(COALESCE(o.[GUNCELLENME_TARIHI], o.[OLUSTURULMA_TARIHI]), 'dd.MM.yyyy HH:mm', 'tr-TR')
+                                  FROM [dbo].[OTELLER] o
+                                  WHERE COALESCE(o.[ONAY_DURUMU], '') = 'Beklemede'
+                                     OR COALESCE(o.[YAYIN_DURUMU], '') <> 'Yayında'
+                                  ORDER BY o.[OLUSTURULMA_TARIHI] DESC;",
+            "reviews" => @"SELECT TOP (12) COALESCE([YORUM_BASLIGI], 'Basliksiz'), [GENEL_PUAN], [ONAY_DURUMU], [RAPOR_SAYISI], [DOGRULANMIS_KONAKLAMA], FORMAT([OLUSTURULMA_TARIHI], 'dd.MM.yyyy', 'tr-TR') FROM [dbo].[YORUMLAR] ORDER BY id DESC;",
+            "campaigns" => @"SELECT TOP (12) [KAMPANYA_ADI], tur, FORMAT([BASLANGIC_TARIHI], 'dd.MM.yyyy', 'tr-TR'), FORMAT([BITIS_TARIHI], 'dd.MM.yyyy', 'tr-TR'), [AKTIF_MI], [KULLANILAN_ADET] FROM [dbo].[KAMPANYALAR] ORDER BY id DESC;",
+            "notifications" => @"SELECT TOP (12) [BASLIK], [BILDIRIM_TURU], [ONEM_DERECESI], [OKUNDU_MU], [ARSIVLENDI_MI], FORMAT([OLUSTURULMA_TARIHI], 'dd.MM.yyyy HH:mm', 'tr-TR') FROM [dbo].[SISTEM_ICI_BILDIRIMLER] ORDER BY id DESC;",
+            "logs" => @"SELECT TOP (6) [HEDEF_TABLO], [ISLEM_TURU], [IP_ADRESI], FORMAT([ISLEM_TARIHI], 'dd.MM.yyyy HH:mm', 'tr-TR'), 'Admin Islem', '' FROM [dbo].[ADMIN_ISLEM_LOGLARI] ORDER BY id DESC;",
             "geo-search-logs" => @"SELECT TOP (80)
-                                        FORMAT(kayit_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR') AS tarih,
-                                        COALESCE(kaynak,'-') AS kaynak,
-                                        COALESCE(arama_metni,'-') AS arama_metni,
-                                        COALESCE(arama_bolgesi,'-') AS arama_bolgesi,
-                                        FORMAT(enlem, '0.0000000', 'en-US') AS enlem,
-                                        FORMAT(boylam, '0.0000000', 'en-US') AS boylam,
-                                        COALESCE(CAST(yaricap_km AS nvarchar(20)),'-') AS yaricap_km,
-                                        COALESCE(CAST(gorunen_otel_sayisi AS nvarchar(20)),'-') AS gorunen_otel_sayisi,
-                                        COALESCE(ip_adresi,'-') AS ip,
-                                        COALESCE(cihaz_tipi,'-') AS cihaz
-                                     FROM kullanici_konum_loglari
-                                     ORDER BY kayit_tarihi DESC;",
+                                        FORMAT([KAYIT_TARIHI], 'dd.MM.yyyy HH:mm', 'tr-TR') AS [TARIH],
+                                        COALESCE([KAYNAK],'-') AS [KAYNAK],
+                                        COALESCE([ARAMA_METNI],'-') AS [ARAMA_METNI],
+                                        COALESCE([ARAMA_BOLGESI],'-') AS [ARAMA_BOLGESI],
+                                        FORMAT([ENLEM], '0.0000000', 'en-US') AS [ENLEM],
+                                        FORMAT([BOYLAM], '0.0000000', 'en-US') AS [BOYLAM],
+                                        COALESCE(CAST([YARICAP_KM] AS nvarchar(20)),'-') AS [YARICAP_KM],
+                                        COALESCE(CAST([GORUNEN_OTEL_SAYISI] AS nvarchar(20)),'-') AS [GORUNEN_OTEL_SAYISI],
+                                        COALESCE([IP_ADRESI],'-') AS ip,
+                                        COALESCE([CIHAZ_TIPI],'-') AS cihaz
+                                     FROM [dbo].[KULLANICI_KONUM_LOGLARI]
+                                     ORDER BY [KAYIT_TARIHI] DESC;",
             "hotel-coordinate-changes" => @"SELECT TOP (120)
-                                                FORMAT(kayit_tarihi, 'dd.MM.yyyy HH:mm', 'tr-TR'),
-                                                COALESCE(admin_ad_soyad, CONCAT('Admin#', admin_kullanici_id)),
-                                                COALESCE(otel_adi, CONCAT('Otel#', otel_id)),
-                                                CONCAT(FORMAT(onceki_enlem, '0.0000000', 'en-US'), ', ', FORMAT(onceki_boylam, '0.0000000', 'en-US')),
-                                                CONCAT(FORMAT(yeni_enlem, '0.0000000', 'en-US'), ', ', FORMAT(yeni_boylam, '0.0000000', 'en-US')),
-                                                COALESCE(ip_adresi, '-'),
-                                                COALESCE(notlar, '-')
-                                           FROM otel_koordinat_degisim_loglari
-                                           ORDER BY kayit_tarihi DESC;",
-            "email-templates" => @"SELECT TOP (12) sablon_adi, kategori, dil, aktif_mi, sistem_geneli_mi, konu_basligi FROM mesaj_sablonlari ORDER BY id DESC;",
-            "faq" => @"SELECT TOP (20) k.kategori_adi, s.soru, s.one_cikan_mi, s.aktif_mi, FORMAT(s.olusturulma_tarihi, 'dd.MM.yyyy', 'tr-TR') FROM sss_sorulari s INNER JOIN sss_kategorileri k ON k.id = s.sss_kategori_id ORDER BY k.siralama, s.siralama, s.id;",
+                                                FORMAT([KAYIT_TARIHI], 'dd.MM.yyyy HH:mm', 'tr-TR'),
+                                                COALESCE([ADMIN_AD_SOYAD], CONCAT('Admin#', [ADMIN_KULLANICI_ID])),
+                                                COALESCE([OTEL_ADI], CONCAT('Otel#', [OTEL_ID])),
+                                                CONCAT(FORMAT([ONCEKI_ENLEM], '0.0000000', 'en-US'), ', ', FORMAT([ONCEKI_BOYLAM], '0.0000000', 'en-US')),
+                                                CONCAT(FORMAT([YENI_ENLEM], '0.0000000', 'en-US'), ', ', FORMAT([YENI_BOYLAM], '0.0000000', 'en-US')),
+                                                COALESCE([IP_ADRESI], '-'),
+                                                COALESCE([NOTLAR], '-')
+                                           FROM [dbo].[OTEL_KOORDINAT_DEGISIM_LOGLARI]
+                                           ORDER BY [KAYIT_TARIHI] DESC;",
+            "email-templates" => @"SELECT TOP (12) [SABLON_ADI], [KATEGORI], dil, [AKTIF_MI], [SISTEM_GENELI_MI], [KONU_BASLIGI] FROM [dbo].[MESAJ_SABLONLARI] ORDER BY id DESC;",
+            "faq" => @"SELECT TOP (20) k.[KATEGORI_ADI], s.[SORU], s.[ONE_CIKAN_MI], s.[AKTIF_MI], FORMAT(s.[OLUSTURULMA_TARIHI], 'dd.MM.yyyy', 'tr-TR') FROM [dbo].[SSS_SORULARI] s INNER JOIN [dbo].[SSS_KATEGORILERI] k ON k.id = s.[SSS_KATEGORI_ID] ORDER BY k.[SIRALAMA], s.[SIRALAMA], s.id;",
             _ => string.Empty
         };
     }
@@ -4360,7 +4632,7 @@ public class AdminService : IAdminService
         await using var tx = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            const string getSql = @"SELECT TOP (1) otel_id FROM yorumlar WHERE id = @id;";
+            const string getSql = @"SELECT TOP (1) [OTEL_ID] FROM [dbo].[YORUMLAR] WHERE id = @id;";
             long hotelId;
             await using (var getCmd = new SqlCommand(getSql, connection, (SqlTransaction)tx))
             {
@@ -4382,12 +4654,12 @@ public class AdminService : IAdminService
             };
 
             const string updSql = @"
-UPDATE yorumlar
-SET onay_durumu = @status,
-    onaylayan_admin_id = @adminId,
-    onay_tarihi = CASE WHEN @status LIKE N'Onaylan%' THEN SYSUTCDATETIME() ELSE onay_tarihi END,
-    red_nedeni = CASE WHEN @status <> N'Onaylandı' THEN @note ELSE NULL END,
-    guncellenme_tarihi = SYSUTCDATETIME()
+UPDATE [dbo].[YORUMLAR]
+SET [ONAY_DURUMU] = @status,
+    [ONAYLAYAN_ADMIN_ID] = @adminId,
+    [ONAY_TARIHI] = CASE WHEN @status LIKE N'Onaylan%' THEN SYSUTCDATETIME() ELSE [ONAY_TARIHI] END,
+    [RED_NEDENI] = CASE WHEN @status <> N'Onaylandı' THEN @note ELSE NULL END,
+    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
 WHERE id = @id;";
             await using (var updCmd = new SqlCommand(updSql, connection, (SqlTransaction)tx))
             {
@@ -4425,7 +4697,7 @@ WHERE id = @id;";
         await using var tx = await connection.BeginTransactionAsync(cancellationToken);
         try
         {
-            const string getSql = @"SELECT TOP (1) otel_id FROM yorumlar WHERE id = @id;";
+            const string getSql = @"SELECT TOP (1) [OTEL_ID] FROM [dbo].[YORUMLAR] WHERE id = @id;";
             long hotelId;
             await using (var getCmd = new SqlCommand(getSql, connection, (SqlTransaction)tx))
             {
@@ -4434,7 +4706,7 @@ WHERE id = @id;";
                 hotelId = obj is null || obj is DBNull ? 0 : Convert.ToInt64(obj, CultureInfo.InvariantCulture);
             }
 
-            const string delSql = @"DELETE FROM yorumlar WHERE id = @id;";
+            const string delSql = @"DELETE FROM [dbo].[YORUMLAR] WHERE id = @id;";
             await using (var delCmd = new SqlCommand(delSql, connection, (SqlTransaction)tx))
             {
                 delCmd.Parameters.AddWithValue("@id", form.ReviewId);
@@ -4477,9 +4749,9 @@ WHERE id = @id;";
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-INSERT INTO sistem_ici_bildirimler(
-    kullanici_id, bildirim_turu, baslik, mesaj, ikon, renk,
-    aksiyon_url, aksiyon_metni, onem_derecesi, ilgili_tablo, ilgili_kayit_id
+INSERT INTO [dbo].[SISTEM_ICI_BILDIRIMLER](
+    [KULLANICI_ID], [BILDIRIM_TURU], [BASLIK], [MESAJ], ikon, renk,
+    [AKSIYON_URL], [AKSIYON_METNI], [ONEM_DERECESI], [ILGILI_TABLO], [ILGILI_KAYIT_ID]
 )
 VALUES(
     @userId, N'ReviewViolation', N'Yorum ihlali bildirimi',
@@ -4512,18 +4784,18 @@ VALUES(
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-IF EXISTS (SELECT 1 FROM dbo.blockyorumkelime WHERE kelime = @w)
+IF EXISTS (SELECT 1 FROM [dbo].[BLOCKYORUMKELIME] WHERE [KELIME] = @w)
 BEGIN
-    UPDATE dbo.blockyorumkelime
-    SET aktif_mi = 1,
-        aciklama = COALESCE(NULLIF(@d,''), aciklama),
-        ekleyen_admin_id = COALESCE(@adminId, ekleyen_admin_id),
-        guncellenme_tarihi = SYSUTCDATETIME()
-    WHERE kelime = @w;
+    UPDATE [dbo].[BLOCKYORUMKELIME]
+    SET [AKTIF_MI] = 1,
+        [ACIKLAMA] = COALESCE(NULLIF(@d,''), [ACIKLAMA]),
+        [EKLEYEN_ADMIN_ID] = COALESCE(@adminId, [EKLEYEN_ADMIN_ID]),
+        [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+    WHERE [KELIME] = @w;
 END
 ELSE
 BEGIN
-    INSERT INTO dbo.blockyorumkelime(kelime, aktif_mi, aciklama, ekleyen_admin_id)
+    INSERT INTO [dbo].[BLOCKYORUMKELIME]([KELIME], [AKTIF_MI], [ACIKLAMA], [EKLEYEN_ADMIN_ID])
     VALUES(@w, 1, NULLIF(@d,''), @adminId);
 END";
         await using var cmd = new SqlCommand(sql, connection);
@@ -4545,11 +4817,11 @@ END";
         await connection.OpenAsync(cancellationToken);
 
         const string sql = @"
-UPDATE dbo.blockyorumkelime
-SET aktif_mi = @active,
-    ekleyen_admin_id = COALESCE(ekleyen_admin_id, @adminId),
-    guncellenme_tarihi = SYSUTCDATETIME()
-WHERE id = @id;";
+UPDATE [dbo].[BLOCKYORUMKELIME]
+SET [AKTIF_MI] = @active,
+    [EKLEYEN_ADMIN_ID] = COALESCE([EKLEYEN_ADMIN_ID], @adminId),
+    [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+WHERE [ID] = @id;";
         await using var cmd = new SqlCommand(sql, connection);
         cmd.Parameters.AddWithValue("@id", form.Id);
         cmd.Parameters.AddWithValue("@active", form.Active ? 1 : 0);
@@ -4563,25 +4835,25 @@ WHERE id = @id;";
         const string sql = @"
 ;WITH agg AS (
     SELECT
-        y.otel_id,
+        y.[OTEL_ID],
         COUNT(*) AS cnt,
-        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.genel_puan_10 AS DECIMAL(9, 4)),
+        CAST(ROUND(AVG(CAST(COALESCE(CAST(y.[GENEL_PUAN_10] AS DECIMAL(9, 4)),
             CASE
-                WHEN y.genel_puan <= 5 THEN CAST(y.genel_puan AS DECIMAL(9, 4)) * 2
-                WHEN y.genel_puan <= 10 THEN CAST(y.genel_puan AS DECIMAL(9, 4))
+                WHEN y.[GENEL_PUAN] <= 5 THEN CAST(y.[GENEL_PUAN] AS DECIMAL(9, 4)) * 2
+                WHEN y.[GENEL_PUAN] <= 10 THEN CAST(y.[GENEL_PUAN] AS DECIMAL(9, 4))
                 ELSE 10
             END) AS DECIMAL(9, 4))), 2) AS DECIMAL(5, 2)) AS avg_genel
-    FROM yorumlar AS y
-    WHERE y.otel_id = @hotelId
-      AND y.onay_durumu LIKE N'Onaylan%'
-    GROUP BY y.otel_id
+    FROM [dbo].[YORUMLAR] AS y
+    WHERE y.[OTEL_ID] = @hotelId
+      AND y.[ONAY_DURUMU] LIKE N'Onaylan%'
+    GROUP BY y.[OTEL_ID]
 )
 UPDATE o
 SET
-    o.toplam_yorum_sayisi = agg.cnt,
-    o.ortalama_puan = agg.avg_genel
-FROM oteller AS o
-INNER JOIN agg ON agg.otel_id = o.id;";
+    o.[TOPLAM_YORUM_SAYISI] = agg.cnt,
+    o.[ORTALAMA_PUAN] = agg.avg_genel
+FROM [dbo].[OTELLER] AS o
+INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         await using var cmd = new SqlCommand(sql, connection, transaction);
         cmd.Parameters.AddWithValue("@hotelId", hotelId);
         await cmd.ExecuteNonQueryAsync(cancellationToken);
@@ -4590,15 +4862,15 @@ INNER JOIN agg ON agg.otel_id = o.id;";
     private static async Task<List<AdminBlockedWordRowViewModel>> LoadBlockedWordsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         var items = new List<AdminBlockedWordRowViewModel>();
-        if (!await TableExistsAsync(connection, "blockyorumkelime", cancellationToken))
+        if (!await TableExistsAsync(connection, "BLOCKYORUMKELIME", cancellationToken))
         {
             return items;
         }
 
         const string sql = @"
-SELECT TOP (200) id, kelime, aktif_mi, aciklama, olusturulma_tarihi
-FROM dbo.blockyorumkelime
-ORDER BY aktif_mi DESC, id DESC;";
+SELECT TOP (200) [ID], [KELIME], [AKTIF_MI], [ACIKLAMA], [OLUSTURULMA_TARIHI]
+FROM [dbo].[BLOCKYORUMKELIME]
+ORDER BY [AKTIF_MI] DESC, [ID] DESC;";
         await using var cmd = new SqlCommand(sql, connection);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -4618,26 +4890,26 @@ ORDER BY aktif_mi DESC, id DESC;";
     private static async Task<List<AdminReviewTakedownRequestRowViewModel>> LoadReviewTakedownRequestsAsync(SqlConnection connection, CancellationToken cancellationToken)
     {
         var items = new List<AdminReviewTakedownRequestRowViewModel>();
-        if (!await TableExistsAsync(connection, "yorum_kaldirma_talepleri", cancellationToken))
+        if (!await TableExistsAsync(connection, "YORUM_KALDIRMA_TALEPLERI", cancellationToken))
         {
             return items;
         }
 
         const string sql = @"
 SELECT TOP (40)
-    t.id,
-    t.yorum_id,
-    COALESCE(t.otel_id, 0) AS otel_id,
-    COALESCE(o.otel_adi, '') AS otel_adi,
-    t.partner_kullanici_id,
-    COALESCE(pu.eposta, '') AS partner_eposta,
-    COALESCE(t.durum, 'Beklemede') AS durum,
-    COALESCE(t.sebep, '') AS sebep,
-    t.olusturulma_tarihi
-FROM dbo.yorum_kaldirma_talepleri t
-LEFT JOIN oteller o ON o.id = t.otel_id
-LEFT JOIN users pu ON pu.id = t.partner_kullanici_id
-ORDER BY CASE WHEN COALESCE(t.durum,'') = 'Beklemede' THEN 0 ELSE 1 END, t.olusturulma_tarihi DESC;";
+    t.[ID],
+    t.[YORUM_ID],
+    COALESCE(t.[OTEL_ID], 0) AS [OTEL_ID],
+    COALESCE(o.[OTEL_ADI], '') AS [OTEL_ADI],
+    t.[PARTNER_KULLANICI_ID],
+    COALESCE(pu.[EPOSTA], '') AS partner_eposta,
+    COALESCE(t.[DURUM], 'Beklemede') AS [DURUM],
+    COALESCE(t.[SEBEP], '') AS sebep,
+    t.[OLUSTURULMA_TARIHI]
+FROM [dbo].[YORUM_KALDIRMA_TALEPLERI] t
+LEFT JOIN [dbo].[OTELLER] o ON o.[ID] = t.[OTEL_ID]
+LEFT JOIN [dbo].[KULLANICILAR] pu ON pu.[ID] = t.[PARTNER_KULLANICI_ID]
+ORDER BY CASE WHEN COALESCE(t.[DURUM],'') = 'Beklemede' THEN 0 ELSE 1 END, t.[OLUSTURULMA_TARIHI] DESC;";
         await using var cmd = new SqlCommand(sql, connection);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -4665,24 +4937,24 @@ ORDER BY CASE WHEN COALESCE(t.durum,'') = 'Beklemede' THEN 0 ELSE 1 END, t.olust
         const string sql = @"
 SELECT TOP (@take)
     y.id,
-    y.otel_id,
-    COALESCE(o.otel_adi,'') AS otel_adi,
-    COALESCE(o.sehir,'') AS sehir,
-    COALESCE(o.ilce,'') AS ilce,
-    y.kullanici_id,
-    COALESCE(u.ad_soyad, u.eposta, 'Kullanıcı') AS kullanici,
-    COALESCE(y.genel_puan, 0) AS puan,
-    COALESCE(y.onay_durumu, 'Beklemede') AS durum,
-    COALESCE(y.rapor_sayisi, 0) AS rapor,
-    y.olusturulma_tarihi,
-    COALESCE(y.yorum_metni, '') AS yorum
-FROM yorumlar y
-LEFT JOIN oteller o ON o.id = y.otel_id
-LEFT JOIN users u ON u.id = y.kullanici_id
-WHERE (@q IS NULL OR (COALESCE(y.yorum_metni,'') LIKE N'%' + @q + N'%' OR COALESCE(o.otel_adi,'') LIKE N'%' + @q + N'%' OR COALESCE(u.ad_soyad,'') LIKE N'%' + @q + N'%' OR COALESCE(u.eposta,'') LIKE N'%' + @q + N'%'))
-  AND (@city IS NULL OR COALESCE(o.sehir,'') LIKE N'%' + @city + N'%')
-  AND (@hotel IS NULL OR COALESCE(o.otel_adi,'') LIKE N'%' + @hotel + N'%')
-ORDER BY y.olusturulma_tarihi DESC, y.id DESC;";
+    y.[OTEL_ID],
+    COALESCE(o.[OTEL_ADI],'') AS [OTEL_ADI],
+    COALESCE(o.[SEHIR],'') AS [SEHIR],
+    COALESCE(o.[ILCE],'') AS ilce,
+    y.[KULLANICI_ID],
+    COALESCE(u.[AD_SOYAD], u.[EPOSTA], 'Kullanıcı') AS kullanici,
+    COALESCE(y.[GENEL_PUAN], 0) AS puan,
+    COALESCE(y.[ONAY_DURUMU], 'Beklemede') AS [DURUM],
+    COALESCE(y.[RAPOR_SAYISI], 0) AS rapor,
+    y.[OLUSTURULMA_TARIHI],
+    COALESCE(y.[YORUM_METNI], '') AS yorum
+FROM [dbo].[YORUMLAR] y
+LEFT JOIN [dbo].[OTELLER] o ON o.id = y.[OTEL_ID]
+LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = y.[KULLANICI_ID]
+WHERE (@q IS NULL OR (COALESCE(y.[YORUM_METNI],'') LIKE N'%' + @q + N'%' OR COALESCE(o.[OTEL_ADI],'') LIKE N'%' + @q + N'%' OR COALESCE(u.[AD_SOYAD],'') LIKE N'%' + @q + N'%' OR COALESCE(u.[EPOSTA],'') LIKE N'%' + @q + N'%'))
+  AND (@city IS NULL OR COALESCE(o.[SEHIR],'') LIKE N'%' + @city + N'%')
+  AND (@hotel IS NULL OR COALESCE(o.[OTEL_ADI],'') LIKE N'%' + @hotel + N'%')
+ORDER BY y.[OLUSTURULMA_TARIHI] DESC, y.id DESC;";
 
         await using var cmd = new SqlCommand(sql, connection);
         cmd.Parameters.AddWithValue("@take", take);
@@ -4819,7 +5091,7 @@ ORDER BY y.olusturulma_tarihi DESC, y.id DESC;";
             return 0;
         }
 
-        var sql = $"SELECT COUNT(*) FROM dbo.{tableName} WHERE {whereClause};";
+        var sql = $"SELECT COUNT(*) FROM [dbo].[{tableName}] WHERE {whereClause};";
         await using var command = new SqlCommand(sql, connection);
         return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
     }
@@ -4935,6 +5207,416 @@ ORDER BY y.olusturulma_tarihi DESC, y.id DESC;";
             email,
             userRole,
             cancellationToken);
+    }
+
+    public async Task<AdminCommissionCollectionPageViewModel> GetCommissionCollectionLedgerAsync(string fullName, string email, string userRole, AdminCommissionCollectionFilter filter, CancellationToken cancellationToken = default)
+    {
+        var normalized = NormalizeCommissionCollectionFilter(filter);
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var model = new AdminCommissionCollectionPageViewModel
+        {
+            Shell = await GetShellAsync(connection, "Komisyon Tahsilat Merkezi", "Otel ve donem bazinda platform komisyon tahsilatini filtreleyin, sirlayin ve toplu isaretleyin.", fullName, email, userRole, cancellationToken),
+            Filter = normalized
+        };
+
+        var (whereSql, parameters) = BuildCommissionCollectionWhere(normalized);
+        var orderSql = BuildCommissionCollectionOrder(normalized.SortBy, normalized.SortDir);
+        var offset = (normalized.Page - 1) * normalized.PageSize;
+
+        var countSql = $@"
+            SELECT COUNT(*) FROM (
+                SELECT
+                    CASE
+                        WHEN SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'') = N'Itiraz' THEN 1 ELSE 0 END) > 0 THEN N'Itiraz'
+                        WHEN COALESCE(SUM(k.[KOMISYON_TUTARI]), 0) > 0
+                             AND COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) >= COALESCE(SUM(k.[KOMISYON_TUTARI]), 0)
+                            THEN N'TahsilEdildi'
+                        WHEN COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) > 0 THEN N'Kismi'
+                        ELSE N'Bekliyor'
+                    END AS tahsilat_ozet
+                FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] k
+                INNER JOIN [dbo].[OTELLER] o ON o.[ID] = k.[OTEL_ID]
+                {whereSql}
+                GROUP BY o.[ID], k.[DONEM]
+            ) agg
+            WHERE (@tahsilatStatus = N'' OR agg.[tahsilat_ozet] = @tahsilatStatus);";
+
+        await using (var countCmd = new SqlCommand(countSql, connection))
+        {
+            BindCommissionCollectionParameters(countCmd, parameters);
+            model.Total = Convert.ToInt32(await countCmd.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+        }
+
+        var listSql = $@"
+            SELECT
+                agg.[hotel_id],
+                agg.[otel_kodu],
+                agg.[otel_adi],
+                agg.[sehir],
+                agg.[ilce],
+                agg.[mahalle],
+                agg.[ilce_id],
+                agg.[partner_id],
+                agg.[donem],
+                agg.[rez_adet],
+                agg.[brut_komisyon],
+                agg.[tahsil_edilen],
+                agg.[bekleyen],
+                agg.[tahsilat_ozet],
+                agg.[odeme_ozet]
+            FROM (
+                SELECT
+                    o.[ID] AS hotel_id,
+                    COALESCE(o.[OTEL_KODU], N'') AS otel_kodu,
+                    COALESCE(o.[OTEL_ADI], N'') AS otel_adi,
+                    COALESCE(o.[SEHIR], N'') AS sehir,
+                    COALESCE(o.[ILCE], N'') AS ilce,
+                    COALESCE(o.[MAHALLE], N'') AS mahalle,
+                    o.[ILCE_ID] AS ilce_id,
+                    k.[PARTNER_ID] AS partner_id,
+                    k.[DONEM] AS donem,
+                    COUNT(*) AS rez_adet,
+                    COALESCE(SUM(k.[KOMISYON_TUTARI]), 0) AS brut_komisyon,
+                    COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) AS tahsil_edilen,
+                    COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') <> N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) AS bekleyen,
+                    CASE
+                        WHEN SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'') = N'Itiraz' THEN 1 ELSE 0 END) > 0 THEN N'Itiraz'
+                        WHEN COALESCE(SUM(k.[KOMISYON_TUTARI]), 0) > 0
+                             AND COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) >= COALESCE(SUM(k.[KOMISYON_TUTARI]), 0)
+                            THEN N'TahsilEdildi'
+                        WHEN COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) > 0 THEN N'Kismi'
+                        ELSE N'Bekliyor'
+                    END AS tahsilat_ozet,
+                    CASE
+                        WHEN SUM(CASE WHEN COALESCE(k.[OTELE_ODEME_DURUMU], N'') = N'Ödendi' THEN 1 ELSE 0 END) = COUNT(*) THEN N'Ödendi'
+                        WHEN SUM(CASE WHEN COALESCE(k.[OTELE_ODEME_DURUMU], N'') = N'Ödendi' THEN 1 ELSE 0 END) = 0 THEN N'Ödenmedi'
+                        ELSE N'Kısmi'
+                    END AS odeme_ozet
+                FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] k
+                INNER JOIN [dbo].[OTELLER] o ON o.[ID] = k.[OTEL_ID]
+                {whereSql}
+                GROUP BY o.[ID], o.[OTEL_KODU], o.[OTEL_ADI], o.[SEHIR], o.[ILCE], o.[MAHALLE], o.[ILCE_ID], k.[DONEM], k.[PARTNER_ID]
+            ) agg
+            WHERE (@tahsilatStatus = N'' OR agg.[tahsilat_ozet] = @tahsilatStatus)
+            ORDER BY {orderSql}
+            OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;";
+
+        await using (var listCmd = new SqlCommand(listSql, connection))
+        {
+            BindCommissionCollectionParameters(listCmd, parameters);
+            listCmd.Parameters.AddWithValue("@offset", offset);
+            listCmd.Parameters.AddWithValue("@take", normalized.PageSize);
+            await using var reader = await listCmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                model.Rows.Add(new AdminCommissionCollectionRowViewModel
+                {
+                    HotelId = reader.GetInt64(0),
+                    HotelCode = reader.GetString(1),
+                    HotelName = reader.GetString(2),
+                    City = reader.GetString(3),
+                    District = reader.GetString(4),
+                    Neighborhood = reader.GetString(5),
+                    IlceId = reader.IsDBNull(6) ? null : reader.GetInt64(6),
+                    PartnerId = reader.GetInt64(7),
+                    Donem = reader.GetString(8),
+                    ReservationCount = SafeInt(reader, 9),
+                    GrossCommission = SafeDecimal(reader, 10),
+                    CollectedAmount = SafeDecimal(reader, 11),
+                    PendingAmount = SafeDecimal(reader, 12),
+                    TahsilatStatus = reader.GetString(13),
+                    PaymentStatusSummary = reader.GetString(14)
+                });
+            }
+        }
+
+        var totalsSql = $@"
+            SELECT
+                COALESCE(SUM(agg.[rez_adet]), 0),
+                COALESCE(SUM(agg.[brut_komisyon]), 0),
+                COALESCE(SUM(agg.[tahsil_edilen]), 0),
+                COALESCE(SUM(agg.[bekleyen]), 0)
+            FROM (
+                SELECT
+                    COUNT(*) AS rez_adet,
+                    COALESCE(SUM(k.[KOMISYON_TUTARI]), 0) AS brut_komisyon,
+                    COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) AS tahsil_edilen,
+                    COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') <> N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) AS bekleyen,
+                    CASE
+                        WHEN SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'') = N'Itiraz' THEN 1 ELSE 0 END) > 0 THEN N'Itiraz'
+                        WHEN COALESCE(SUM(k.[KOMISYON_TUTARI]), 0) > 0
+                             AND COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) >= COALESCE(SUM(k.[KOMISYON_TUTARI]), 0)
+                            THEN N'TahsilEdildi'
+                        WHEN COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) > 0 THEN N'Kismi'
+                        ELSE N'Bekliyor'
+                    END AS tahsilat_ozet
+                FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] k
+                INNER JOIN [dbo].[OTELLER] o ON o.[ID] = k.[OTEL_ID]
+                {whereSql}
+                GROUP BY o.[ID], k.[DONEM]
+            ) agg
+            WHERE (@tahsilatStatus = N'' OR agg.[tahsilat_ozet] = @tahsilatStatus);";
+
+        await using (var totalsCmd = new SqlCommand(totalsSql, connection))
+        {
+            BindCommissionCollectionParameters(totalsCmd, parameters);
+            await using var reader = await totalsCmd.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                model.Totals = new AdminCommissionCollectionTotalsViewModel
+                {
+                    ReservationTotal = SafeInt(reader, 0),
+                    TotalCommission = SafeDecimal(reader, 1),
+                    CollectedTotal = SafeDecimal(reader, 2),
+                    PendingTotal = SafeDecimal(reader, 3)
+                };
+            }
+        }
+
+        return model;
+    }
+
+    public async Task<string> ExportCommissionCollectionCsvAsync(AdminCommissionCollectionFilter filter, CancellationToken cancellationToken = default)
+    {
+        var normalized = NormalizeCommissionCollectionFilter(filter);
+        normalized.Page = 1;
+        normalized.PageSize = 10000;
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var (whereSql, parameters) = BuildCommissionCollectionWhere(normalized);
+        var orderSql = BuildCommissionCollectionOrder(normalized.SortBy, normalized.SortDir);
+
+        var sql = $@"
+            SELECT
+                agg.[donem],
+                agg.[otel_kodu],
+                agg.[otel_adi],
+                agg.[sehir],
+                agg.[ilce],
+                agg.[mahalle],
+                agg.[rez_adet],
+                agg.[brut_komisyon],
+                agg.[tahsil_edilen],
+                agg.[bekleyen],
+                agg.[tahsilat_ozet],
+                agg.[odeme_ozet],
+                agg.[partner_id]
+            FROM (
+                SELECT
+                    k.[DONEM] AS donem,
+                    COALESCE(o.[OTEL_KODU], N'') AS otel_kodu,
+                    COALESCE(o.[OTEL_ADI], N'') AS otel_adi,
+                    COALESCE(o.[SEHIR], N'') AS sehir,
+                    COALESCE(o.[ILCE], N'') AS ilce,
+                    COALESCE(o.[MAHALLE], N'') AS mahalle,
+                    k.[PARTNER_ID] AS partner_id,
+                    COUNT(*) AS rez_adet,
+                    COALESCE(SUM(k.[KOMISYON_TUTARI]), 0) AS brut_komisyon,
+                    COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) AS tahsil_edilen,
+                    COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') <> N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) AS bekleyen,
+                    CASE
+                        WHEN SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'') = N'Itiraz' THEN 1 ELSE 0 END) > 0 THEN N'Itiraz'
+                        WHEN COALESCE(SUM(k.[KOMISYON_TUTARI]), 0) > 0
+                             AND COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) >= COALESCE(SUM(k.[KOMISYON_TUTARI]), 0)
+                            THEN N'TahsilEdildi'
+                        WHEN COALESCE(SUM(CASE WHEN COALESCE(k.[PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') = N'TahsilEdildi' THEN k.[KOMISYON_TUTARI] ELSE 0 END), 0) > 0 THEN N'Kismi'
+                        ELSE N'Bekliyor'
+                    END AS tahsilat_ozet,
+                    CASE
+                        WHEN SUM(CASE WHEN COALESCE(k.[OTELE_ODEME_DURUMU], N'') = N'Ödendi' THEN 1 ELSE 0 END) = COUNT(*) THEN N'Ödendi'
+                        WHEN SUM(CASE WHEN COALESCE(k.[OTELE_ODEME_DURUMU], N'') = N'Ödendi' THEN 1 ELSE 0 END) = 0 THEN N'Ödenmedi'
+                        ELSE N'Kısmi'
+                    END AS odeme_ozet
+                FROM [dbo].[KOMISYON_MUHASEBE_KAYITLARI] k
+                INNER JOIN [dbo].[OTELLER] o ON o.[ID] = k.[OTEL_ID]
+                {whereSql}
+                GROUP BY o.[ID], o.[OTEL_KODU], o.[OTEL_ADI], o.[SEHIR], o.[ILCE], o.[MAHALLE], k.[DONEM], k.[PARTNER_ID]
+            ) agg
+            WHERE (@tahsilatStatus = N'' OR agg.[tahsilat_ozet] = @tahsilatStatus)
+            ORDER BY {orderSql};";
+
+        var sb = new StringBuilder();
+        var inv = CultureInfo.InvariantCulture;
+        sb.AppendLine("donem,otel_kodu,otel_adi,sehir,ilce,mahalle,rezervasyon,brut_komisyon,tahsil_edilen,bekleyen,tahsilat_durumu,otele_odeme,partner_id");
+
+        await using var cmd = new SqlCommand(sql, connection);
+        BindCommissionCollectionParameters(cmd, parameters);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            sb.Append(Csv(reader.GetString(0))).Append(',')
+              .Append(Csv(reader.GetString(1))).Append(',')
+              .Append(Csv(reader.GetString(2))).Append(',')
+              .Append(Csv(reader.GetString(3))).Append(',')
+              .Append(Csv(reader.GetString(4))).Append(',')
+              .Append(Csv(reader.GetString(5))).Append(',')
+              .Append(SafeInt(reader, 6).ToString(inv)).Append(',')
+              .Append(SafeDecimal(reader, 7).ToString("0.##", inv)).Append(',')
+              .Append(SafeDecimal(reader, 8).ToString("0.##", inv)).Append(',')
+              .Append(SafeDecimal(reader, 9).ToString("0.##", inv)).Append(',')
+              .Append(Csv(reader.GetString(10))).Append(',')
+              .Append(Csv(reader.GetString(11))).Append(',')
+              .Append(reader.GetInt64(12).ToString(inv))
+              .AppendLine();
+        }
+
+        return sb.ToString();
+    }
+
+    public async Task<(bool Success, string Message, int UpdatedCount)> MarkCommissionCollectionPaidAsync(long adminUserId, AdminCommissionCollectionMarkPaidForm request, CancellationToken cancellationToken = default)
+    {
+        if (request.HotelIds.Count == 0 || request.Donems.Count == 0 || request.HotelIds.Count != request.Donems.Count)
+        {
+            return (false, "Tahsilat isareti icin en az bir otel-donem secilmelidir.", 0);
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var updated = 0;
+        var reference = string.IsNullOrWhiteSpace(request.Reference) ? $"ADMIN-{DateTime.UtcNow:yyyyMMddHHmmss}" : request.Reference.Trim();
+
+        const string sql = @"
+            UPDATE [dbo].[KOMISYON_MUHASEBE_KAYITLARI]
+            SET [PLATFORM_TAHSILAT_DURUMU] = N'TahsilEdildi',
+                [PLATFORM_TAHSILAT_TARIHI] = CAST(GETDATE() AS date),
+                [PLATFORM_TAHSILAT_REFERANSI] = @reference,
+                [PLATFORM_TAHSILAT_NOTU] = @note,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+            WHERE [OTEL_ID] = @hotelId
+              AND [DONEM] = @donem
+              AND COALESCE([PLATFORM_TAHSILAT_DURUMU], N'Bekliyor') <> N'TahsilEdildi';";
+
+        for (var i = 0; i < request.HotelIds.Count; i++)
+        {
+            var hotelId = request.HotelIds[i];
+            var donem = request.Donems[i]?.Trim() ?? string.Empty;
+            if (hotelId <= 0 || string.IsNullOrWhiteSpace(donem))
+            {
+                continue;
+            }
+
+            await using var cmd = new SqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@hotelId", hotelId);
+            cmd.Parameters.AddWithValue("@donem", donem);
+            cmd.Parameters.AddWithValue("@reference", reference);
+            cmd.Parameters.AddWithValue("@note", (object?)request.Note ?? DBNull.Value);
+            updated += await cmd.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        if (updated <= 0)
+        {
+            return (false, "Guncellenecek kayit bulunamadi veya zaten tahsil edilmis.", 0);
+        }
+
+        await TryLogAdminActionAsync(connection, adminUserId, "commission_collection_mark_paid", "komisyon_muhasebe_kayitlari", string.Join(';', request.HotelIds.Zip(request.Donems, (h, d) => $"{h}:{d}")), $"Tahsil edildi ({updated} kayit). Ref: {reference}", cancellationToken);
+        return (true, $"{updated} komisyon kaydi tahsil edildi olarak isaretlendi.", updated);
+    }
+
+    private static AdminCommissionCollectionFilter NormalizeCommissionCollectionFilter(AdminCommissionCollectionFilter filter)
+    {
+        filter ??= new AdminCommissionCollectionFilter();
+        filter.Donem = filter.Donem?.Trim() ?? string.Empty;
+        filter.City = filter.City?.Trim() ?? string.Empty;
+        filter.District = filter.District?.Trim() ?? string.Empty;
+        filter.Neighborhood = filter.Neighborhood?.Trim() ?? string.Empty;
+        filter.TahsilatStatus = filter.TahsilatStatus?.Trim() ?? string.Empty;
+        filter.PaymentStatus = filter.PaymentStatus?.Trim() ?? string.Empty;
+        filter.SortBy = string.IsNullOrWhiteSpace(filter.SortBy) ? "commission" : filter.SortBy.Trim().ToLowerInvariant();
+        filter.SortDir = string.Equals(filter.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";
+        filter.Page = Math.Max(1, filter.Page <= 0 ? 1 : filter.Page);
+        filter.PageSize = Math.Clamp(filter.PageSize <= 0 ? 50 : filter.PageSize, 50, 500);
+        return filter;
+    }
+
+    private static (string WhereSql, Dictionary<string, object?> Parameters) BuildCommissionCollectionWhere(AdminCommissionCollectionFilter filter)
+    {
+        var clauses = new List<string> { "WHERE 1=1" };
+        var parameters = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["@donem"] = filter.Donem,
+            ["@city"] = filter.City,
+            ["@district"] = filter.District,
+            ["@neighborhood"] = filter.Neighborhood,
+            ["@tahsilatStatus"] = filter.TahsilatStatus,
+            ["@paymentStatus"] = filter.PaymentStatus
+        };
+
+        if (!string.IsNullOrWhiteSpace(filter.Donem))
+        {
+            clauses.Add("AND k.[DONEM] = @donem");
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.City))
+        {
+            clauses.Add("AND COALESCE(o.[SEHIR], N'') LIKE N'%' + @city + N'%'");
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.District))
+        {
+            clauses.Add("AND COALESCE(o.[ILCE], N'') LIKE N'%' + @district + N'%'");
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Neighborhood))
+        {
+            clauses.Add("AND COALESCE(o.[MAHALLE], N'') LIKE N'%' + @neighborhood + N'%'");
+        }
+
+        if (filter.IlceId.HasValue)
+        {
+            clauses.Add("AND o.[ILCE_ID] = @ilceId");
+            parameters["@ilceId"] = filter.IlceId.Value;
+        }
+
+        if (filter.HotelId.HasValue)
+        {
+            clauses.Add("AND o.[ID] = @hotelId");
+            parameters["@hotelId"] = filter.HotelId.Value;
+        }
+
+        if (filter.PartnerId.HasValue)
+        {
+            clauses.Add("AND k.[PARTNER_ID] = @partnerId");
+            parameters["@partnerId"] = filter.PartnerId.Value;
+        }
+
+        if (string.Equals(filter.PaymentStatus, "Ödendi", StringComparison.OrdinalIgnoreCase))
+        {
+            clauses.Add("AND COALESCE(k.[OTELE_ODEME_DURUMU], N'') = N'Ödendi'");
+        }
+        else if (string.Equals(filter.PaymentStatus, "Ödenmedi", StringComparison.OrdinalIgnoreCase))
+        {
+            clauses.Add("AND COALESCE(k.[OTELE_ODEME_DURUMU], N'') <> N'Ödendi'");
+        }
+
+        return (string.Join(Environment.NewLine + "                ", clauses), parameters);
+    }
+
+    private static string BuildCommissionCollectionOrder(string sortBy, string sortDir)
+    {
+        var column = sortBy switch
+        {
+            "hotel" => "agg.[otel_adi]",
+            "district" => "agg.[ilce]",
+            "donem" => "agg.[donem]",
+            "rez" => "agg.[rez_adet]",
+            "collected" => "agg.[tahsil_edilen]",
+            "pending" => "agg.[bekleyen]",
+            _ => "agg.[brut_komisyon]"
+        };
+        var dir = sortDir == "asc" ? "ASC" : "DESC";
+        return $"{column} {dir}, agg.[otel_adi] ASC";
+    }
+
+    private static void BindCommissionCollectionParameters(SqlCommand command, Dictionary<string, object?> parameters)
+    {
+        foreach (var pair in parameters)
+        {
+            command.Parameters.AddWithValue(pair.Key, pair.Value ?? DBNull.Value);
+        }
     }
 }
 

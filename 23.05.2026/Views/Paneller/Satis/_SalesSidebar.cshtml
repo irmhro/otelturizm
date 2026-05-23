@@ -1,0 +1,37 @@
+@model otelturizmnew.Models.Paneller.Satis.SalesPanelShellViewModel
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+}
+<aside class="sales-sidebar">
+    <div class="sales-sidebar-header">
+        <a href="/panel/satis/dashboard" class="sales-brand-link" aria-label="Otelturizm Satis">
+            <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
+        </a>
+    </div>
+    <div class="sales-profile-card">
+        <div class="sales-avatar">@string.Concat(Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(static x => x[0]).Take(2))</div>
+        <div>
+            <h3>@Model.FullName</h3>
+            <p>@Model.Email</p>
+            <small>@Model.TeamName</small>
+        </div>
+    </div>
+    <nav class="sales-nav">
+        <a class="@(Model.ActiveSectionKey == "dashboard" ? "active" : string.Empty)" href="/panel/satis/dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+        <a class="@(Model.ActiveSectionKey == "create" ? "active" : string.Empty)" href="/panel/satis/yeni-rezervasyon"><i class="fas fa-plus-circle"></i><span>Yeni Rezervasyon</span></a>
+        <a class="@(Model.ActiveSectionKey == "availability" ? "active" : string.Empty)" href="/panel/satis/musaitlik-takvimi"><i class="fas fa-calendar-days"></i><span>Müsaitlik Takvimi</span></a>
+        <a class="@(Model.ActiveSectionKey == "reservations" ? "active" : string.Empty)" href="/panel/satis/rezervasyonlarim"><i class="fas fa-list-check"></i><span>Rezervasyonlarım</span></a>
+        <a class="@(Model.ActiveSectionKey == "customers" ? "active" : string.Empty)" href="/panel/satis/musteri-yonetimi"><i class="fas fa-users"></i><span>Müşteri Yönetimi</span></a>
+        <a class="@(Model.ActiveSectionKey == "reports" ? "active" : string.Empty)" href="/panel/satis/raporlar"><i class="fas fa-chart-column"></i><span>Raporlar</span></a>
+        <a class="@(Model.ActiveSectionKey == "hotels" ? "active" : string.Empty)" href="/panel/satis/otel-rehberi"><i class="fas fa-hotel"></i><span>Otel Rehberi</span></a>
+        <a class="@(currentAction == "Security" ? "active" : string.Empty)" href="/panel/satis/guvenlik"><i class="fas fa-shield-halved"></i><span>Güvenlik</span></a>
+    </nav>
+    <div class="sales-sidebar-meta">
+        <span>Günlük hedef: @Model.DailyTarget.ToString("N0") TL</span>
+        <span>Aylık hedef: @Model.MonthlyTarget.ToString("N0") TL</span>
+        <form method="post" action="/cikis-yap" class="panel-logout-form">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="sales-logout-link"><i class="fas fa-right-from-bracket"></i> Cikis Yap</button>
+        </form>
+    </div>
+</aside>

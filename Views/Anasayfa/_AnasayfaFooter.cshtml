@@ -1,3 +1,8 @@
+@using otelturizmnew.Services
+@{
+    var footerLang = (System.Globalization.CultureInfo.CurrentUICulture?.TwoLetterISOLanguageName ?? "tr").ToLowerInvariant();
+    var footerHotelsPath = InternationalSeoPaths.BuildPublicPath(footerLang, InternationalSeoPaths.PageKindListing, null, null);
+}
 <footer class="site-footer">
     <div class="footer-pattern"></div>
     <div class="footer-container">
@@ -16,9 +21,9 @@
             </div>
 
             <div class="footer-col">
-                <h4 class="footer-title">Şirket</h4>
+                <h4 class="footer-title">@SharedLocalizer["Footer.Company"]</h4>
                 <ul class="footer-links">
-                    <li><a href="/yardim-merkezi/sayfa/about/hakkimizda"><i class="fas fa-chevron-right"></i> Hakkımızda</a></li>
+                    <li><a href="/yardim-merkezi/sayfa/about/hakkimizda"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.About"]</a></li>
                     <li><a href="/yardim-merkezi/sayfa/career/kariyer"><i class="fas fa-chevron-right"></i> Kariyer</a></li>
                     <li><a href="/yardim-merkezi/sayfa/press/basin-odasi"><i class="fas fa-chevron-right"></i> Basın Odası</a></li>
                     <li><a href="/yardim-merkezi/sayfa/blog/blog"><i class="fas fa-chevron-right"></i> Blog</a></li>
@@ -28,8 +33,8 @@
             <div class="footer-col">
                 <h4 class="footer-title">Keşfet</h4>
                 <ul class="footer-links">
-                    <li><a href="/oteller"><i class="fas fa-chevron-right"></i> Tüm Oteller</a></li>
-                    <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> Son Dakika Fırsatları</a></li>
+                    <li><a href="@footerHotelsPath"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Hotels"]</a></li>
+                    <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Campaigns"]</a></li>
                     <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> Erken Rezervasyon</a></li>
                     <li><a href="/firma"><i class="fas fa-chevron-right"></i> İş Seyahatleri</a></li>
                 </ul>
@@ -46,19 +51,19 @@
             </div>
 
             <div class="footer-col">
-                <h4 class="footer-title">Destek</h4>
+                <h4 class="footer-title">@SharedLocalizer["Footer.Support"]</h4>
                 <ul class="footer-links">
-                    <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> Yardım Merkezi</a></li>
+                    <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Help"]</a></li>
                     <li><a href="/sss?kategori=iptal-iade"><i class="fas fa-chevron-right"></i> İptal ve İade</a></li>
                     <li><a href="/sss"><i class="fas fa-chevron-right"></i> SSS</a></li>
-                    <li><a href="/yardim-merkezi#destek-kanallari"><i class="fas fa-chevron-right"></i> İletişim</a></li>
+                    <li><a href="/yardim-merkezi#destek-kanallari"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Contact"]</a></li>
                 </ul>
             </div>
         </div>
 
         <div class="footer-bottom">
             <div class="footer-bottom-top">
-                <div class="footer-copyright">&copy; @DateTime.Now.Year Otelturizm. Tüm hakları saklıdır.</div>
+                <div class="footer-copyright">&copy; @DateTime.Now.Year Otelturizm. @SharedLocalizer["Footer.Copyright"]</div>
                 <div class="footer-agency-wrap">
                     <div class="trust-badges" role="group" aria-label="Güven taahhütleri">
                         <a class="trust-badge" href="/" title="HTTPS güvenliği"><i class="fas fa-lock" aria-hidden="true"></i> Şifreli bağlantı (HTTPS)</a>
@@ -68,8 +73,8 @@
                 </div>
             </div>
             <div class="footer-bottom-links">
-                <a asp-controller="Home" asp-action="Privacy">Gizlilik Politikası</a>
-                <a href="/sozlesmeler/kullanici-kullanim-kosullari">Kullanım Koşulları</a>
+                <a asp-controller="Home" asp-action="Privacy">@SharedLocalizer["Footer.Privacy"]</a>
+                <a href="/sozlesmeler/kullanici-kullanim-kosullari">@SharedLocalizer["Footer.Terms"]</a>
                 <a href="/sozlesmeler/kullanici-kvkk-aydinlatma">KVKK</a>
             </div>
         </div>
@@ -111,5 +116,7 @@
         }
     })();
 </script>
+
+<script src="~/assets/js/konum-kordinat.js" asp-append-version="true"></script>
 
 
