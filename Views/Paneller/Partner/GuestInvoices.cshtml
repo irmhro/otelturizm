@@ -119,3 +119,39 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script nonce="@(Context.Items["CspNonce"])">
+(() => {
+    document.querySelectorAll('.partner-guest-invoices .panel-form-ux-upload').forEach((zone) => {
+        const form = zone.closest('form');
+        const input = zone.querySelector('.panel-form-ux-upload-file');
+        if (!form || !input) return;
+
+        const onDrag = (active) => {
+            zone.classList.toggle('is-dragover', active);
+        };
+
+        ['dragenter', 'dragover'].forEach((evt) => {
+            zone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                onDrag(true);
+            });
+        });
+        ['dragleave', 'drop'].forEach((evt) => {
+            zone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                onDrag(false);
+            });
+        });
+        zone.addEventListener('drop', (e) => {
+            const file = e.dataTransfer?.files?.[0];
+            if (!file) return;
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+        });
+    });
+})();
+</script>
+}

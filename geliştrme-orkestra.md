@@ -184,7 +184,16 @@ Her 10 dk dalga bitince:
 2. [`geliştirme.md`](geliştirme.md) KPI tablosunu güncelle  
 3. `ORKESTRA_DURUM_KONTROL.md` snapshot  
 
-*Son otomatik dalga: #073 deploy-gap + görünür FE · Sonraki: #074 FE listing SS*
+*Son otomatik dalga: #074 Wave-XIX partner fatura mobil · Sonraki: #075 partner evrak SS*
+
+### #074 — Wave-XIX partner fatura mobil (2026-05-24)
+
+- **Görünür FE:** `Invoices.cshtml` — `partner-invoices-table--cards`, misafir fatura banner, `invoices.css` + `invoices.mobile.css`
+- **Upload UX:** `GuestInvoices.cshtml` — `panel-form-ux-upload` sürükle-bırak (`is-dragover`)
+- **SS path:** `Docs/frontend-screenshots/fe-partner-panel/faturalar/README.md` (PNG bekleniyor)
+- **Plan:** `PLATFORM_10DK_SONRAKI_DALGALAR.md` — döngü 13–24 eklendi
+- **Build:** `dotnet build -o .coord-build-xix` — 0 hata hedef
+- **Chat:** İlerleme `geliştrme-orkestra.md` + `geliştirme.md` başlığında; canlı için tam publish şart
 
 ### #073 — deploy-gap + görünür FE (2026-05-24)
 

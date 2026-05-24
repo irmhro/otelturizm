@@ -1,7 +1,8 @@
 # Platform Geliştirme — Canlı Özet
 
-**Son güncelleme:** 2026-05-24 (#073 deploy-gap + görünür liste FE)  
+**Son güncelleme:** 2026-05-24 (#074 Wave-XIX partner fatura mobil)  
 **Sprint:** `sprint-1ay-orkestra-20260523` (24h → **1 ay** uzatma)  
+**Kullanıcı tam onay:** sonsuz orkestra aktif — chat’te görünmez → [`geliştrme-orkestra.md`](geliştrme-orkestra.md) canlı günlük  
 **Detaylı sıralı log:** [`geliştrme-orkestra.md`](geliştrme-orkestra.md)  
 **1 ay plan:** [`PLATFORM_1AY_ORKESTRA_PLAN.md`](PLATFORM_1AY_ORKESTRA_PLAN.md)  
 **24h plan (referans):** [`PLATFORM_24SAAT_SPRINT.md`](PLATFORM_24SAAT_SPRINT.md)
@@ -18,7 +19,7 @@
 | **Job (10dk)** | `AGENT_LOOP_TICK_platform_coord` (600 sn) — **çalışıyor** |
 | **Job (1sa)** | `AGENT_LOOP_HOURLY_git_sync` (3600 sn) — **aktif** |
 | **Politika** | Onaysız orkestra CTO · **saatlik commit+push açık** · canlı deploy yok |
-| **Build** | ✅ `dotnet build -c Release -o .coord-build-deploy-ready` — **0 hata** hedef (#073) |
+| **Build** | ✅ `dotnet build -o .coord-build-xix` — **0 hata** hedef (#074) |
 | **Deploy** | 🔴 **Canlı gap** — repoda 60+ dalga; sunucuda eski build → 500 / görünür FE yok |
 | **Platform olgunluk** | ~**42%** → hedef W1 **45%** |
 | **Canlıya hazır** | **Kod P0 fix hazır** — tam publish + SQL + Production ortam şart |
@@ -37,7 +38,7 @@
 | Kamu otel | 12 | **62%** | Wave-XVIII: liste hero/kart, detay review teaser, tokens |
 | Kampanya / konsept | 8 | **56%** | Index hero timer Wave-XVIII; 3 SEO landing ✅ |
 | User panel | 18 | **48%** | Mobil master ✅; SS PNG yok |
-| Partner panel | 42 | **44%** | `panel-form-ux` pilot (foto) 🟡 |
+| Partner panel | 42 | **45%** | Wave-XIX: fatura mobil kart + misafir yükleme drag 🟡 |
 | Admin panel | 38 | **50%** | Gelir/komisyon ✅; form UX kısmi |
 | Satış / firma / departman | 22 | **52%** | **P0:** H6 firma panel Wave-F1 — mobil kart tablolar, rezervasyon personel+misafir, `Docs/FIRMA_PANEL_MASTER_PLAN.md` |
 | E-posta / auth / SEO | 11 | **55%** | 7 dil Faz1 ✅; Faz2 şablonlar 🟡 |
@@ -49,7 +50,7 @@
 
 | Alan | Wave | Odak |
 |------|------|------|
-| **Şu an** | **#073** | Deploy-gap doc + görünür liste (sonuç rozeti, boş CTA) · Release publish paketi |
+| **Şu an** | **#074** | Partner fatura mobil kart + `panel-form-ux` upload drag · SS path |
 | **Önceki** | Wave-XVIII | fe-world-tokens · liste/detay/kampanya i18n |
 | **Az önce** | Wave-XVII | Otel detay galeri/slider · liste kart hover · konsept landing ×2 |
 

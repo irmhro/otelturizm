@@ -1,0 +1,49 @@
+.partner-invoices-page .partner-invoices-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.partner-invoices-page .partner-invoices-upload-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(37, 99, 235, 0.22);
+    background: rgba(239, 246, 255, 0.72);
+}
+
+.partner-invoices-page .partner-invoices-upload-banner p {
+    margin: 0;
+    color: var(--partner-muted, #64748b);
+    font-size: 13px;
+    max-width: 52ch;
+}
+
+.partner-invoices-page .partner-invoices-table-wrap {
+    border-radius: 0 0 var(--tblr-card-border-radius, 8px) var(--tblr-card-border-radius, 8px);
+}
+
+.partner-invoices-page .partner-invoices-table .partner-invoices-download {
+    min-height: 40px;
+    border-radius: 12px;
+    font-weight: 700;
+}
+
+.partner-invoices-page .partner-invoices-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(148, 163, 184, 0.16);
+    color: #334155;
+}

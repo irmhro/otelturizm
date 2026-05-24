@@ -22,3 +22,22 @@
 **P0 blok:** Dalga 074–075 canlıda görünür olması için **her FE dalgasından önce veya sonra** tam Release publish (deploy doc).
 
 **Metrik dürüstlüğü:** Repoda 60+ dalga teslimi ≠ canlıda 60+ özellik. Canlı = **publish + SQL + Production ortam**.
+
+---
+
+## Döngü 13–24 (genişletilmiş orkestra)
+
+| Cycle | Dalga | Alan | Çıktı |
+|-------|-------|------|--------|
+| 13 | 086 | Kamu harita | Harita liste senkron, mobil filtre SS |
+| 14 | 087 | Partner evrak F2 | Evrak checklist + toplu onay mobil |
+| 15 | 088 | Admin gelir | Gelir komuta merkezi kart tablo |
+| 16 | 089 | Firma F3 | Limitler + onay akışı SS |
+| 17 | 090 | User panel | Rezervasyon detay mobil master |
+| 18 | 091 | Kampanya detay | Landing hero + countdown i18n |
+| 19 | 092 | E-posta F3 | Partner tahsilat hatırlatma şablonu |
+| 20 | 093 | SEO teknik | Schema.org otel + breadcrumb 7 dil |
+| 21 | 094 | Güvenlik | CSRF smoke tüm POST formları |
+| 22 | 095 | Performans | CDN görsel boyut profilleri |
+| 23 | 096 | Muhasebe | Admin mutabakat export + partner özet |
+| 24 | 097 | Release kapı | Tam publish + canlı smoke checklist |

@@ -1,0 +1,79 @@
+@import url("./invoices.css");
+
+@media (max-width: 900px) {
+    .partner-invoices-page .partner-invoices-upload-banner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .partner-invoices-page .partner-invoices-upload-banner .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .partner-invoices-page .partner-invoices-table-wrap {
+        overflow: visible;
+    }
+
+    .partner-invoices-page table.partner-invoices-table--cards thead {
+        display: none;
+    }
+
+    .partner-invoices-page table.partner-invoices-table--cards tbody {
+        display: grid;
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .partner-invoices-page table.partner-invoices-table--cards tr {
+        display: grid;
+        gap: 8px;
+        padding: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .partner-invoices-page table.partner-invoices-table--cards td {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        border: 0;
+        padding: 4px 0;
+    }
+
+    .partner-invoices-page table.partner-invoices-table--cards td::before {
+        content: attr(data-label);
+        flex: 0 0 42%;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #64748b;
+    }
+
+    .partner-invoices-page table.partner-invoices-table--cards td[colspan]::before {
+        display: none;
+    }
+
+    .partner-invoices-page table.partner-invoices-table--cards td[colspan] {
+        display: block;
+        text-align: center;
+    }
+
+    .partner-invoices-page table.partner-invoices-table--cards td[data-label="İndir"] {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .partner-invoices-page table.partner-invoices-table--cards td[data-label="İndir"]::before {
+        margin-bottom: 4px;
+    }
+
+    .partner-invoices-page .partner-invoices-download {
+        width: 100%;
+        min-height: 44px;
+    }
+}

@@ -2,67 +2,78 @@
 @{
     Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
     ViewData["PartnerShell"] = Model.Shell;
-    ViewData["PageCssPath"] = "paneller/partner/finance";
+    ViewData["PageCssPath"] = "paneller/partner/invoices";
 }
 
-<div class="page-header d-print-none">
-    <div class="row g-2 align-items-center">
-        <div class="col">
-            <div class="page-pretitle">Finans</div>
-            <h2 class="page-title">Faturalar</h2>
-            <div class="text-muted mt-1">Kesilen faturaları indirip dönem bazlı takip edebilirsiniz.</div>
+<div class="partner-invoices-page">
+    <div class="page-header d-print-none partner-invoices-hero">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle">Finans</div>
+                <h2 class="page-title">Faturalar</h2>
+                <div class="text-muted mt-1">Kesilen faturaları indirip dönem bazlı takip edebilirsiniz.</div>
+            </div>
+            <div class="col-auto">
+                <a class="btn btn-outline-primary btn-sm panel-form-ux-edit" href="/panel/partner/finans?otelId=@Model.Shell.SelectedHotelId">
+                    Finans merkezine dön
+                </a>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title mb-0">Fatura listesi</h3>
-        <div class="card-actions">
-            <a class="btn btn-outline-primary btn-sm" href="/panel/partner/finans?otelId=@Model.Shell.SelectedHotelId">
-                Finans merkezine dön
-            </a>
+    <div class="partner-invoices-upload-banner" role="region" aria-label="Misafir faturası yükleme">
+        <div>
+            <strong>Misafir faturası eksik mi?</strong>
+            <p>Tamamlanan rezervasyonlar için PDF veya görsel yükleyin; mobilde sürükle-bırak desteklenir.</p>
         </div>
+        <a class="btn btn-primary btn-sm panel-form-ux-edit" href="/panel/partner/finans/misafir-faturalari?otelId=@Model.Shell.SelectedHotelId">
+            <i class="fas fa-cloud-arrow-up me-1"></i>Misafir faturaları
+        </a>
     </div>
-    <div class="table-responsive">
-        <table class="table table-vcenter card-table">
-            <thead>
-                <tr>
-                    <th>Fatura No</th>
-                    <th>Tarih</th>
-                    <th>Tür</th>
-                    <th>Durum</th>
-                    <th>Toplam</th>
-                    <th>Alıcı</th>
-                    <th class="text-end">İndir</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model.Invoices.Count == 0)
-                {
-                    <tr><td colspan="7" class="text-muted p-3">Fatura kaydı bulunmuyor.</td></tr>
-                }
-                else
-                {
-                    @foreach (var item in Model.Invoices)
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Fatura listesi</h3>
+        </div>
+        <div class="table-responsive partner-invoices-table-wrap">
+            <table class="table table-vcenter card-table partner-invoices-table partner-invoices-table--cards">
+                <thead>
+                    <tr>
+                        <th>Fatura No</th>
+                        <th>Tarih</th>
+                        <th>Tür</th>
+                        <th>Durum</th>
+                        <th>Toplam</th>
+                        <th>Alıcı</th>
+                        <th class="text-end">İndir</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Invoices.Count == 0)
                     {
-                        <tr>
-                            <td class="fw-bold">@item.InvoiceNo</td>
-                            <td class="text-muted">@item.InvoiceDateText</td>
-                            <td>@item.InvoiceTypeText</td>
-                            <td>@item.InvoiceStatusText</td>
-                            <td class="fw-bold">@item.TotalText</td>
-                            <td class="text-muted">@item.RecipientText</td>
-                            <td class="text-end">
-                                <a class="btn btn-outline-primary btn-sm" href="/panel/partner/finans/fatura-indir?hotelId=@Model.Shell.SelectedHotelId&invoiceId=@item.InvoiceId">
-                                    <i class="fas fa-download me-1"></i>Doküman
-                                </a>
-                            </td>
-                        </tr>
+                        <tr><td colspan="7" class="text-muted p-3">Fatura kaydı bulunmuyor.</td></tr>
                     }
-                }
-            </tbody>
-        </table>
+                    else
+                    {
+                        @foreach (var item in Model.Invoices)
+                        {
+                            <tr>
+                                <td class="fw-bold" data-label="Fatura No">@item.InvoiceNo</td>
+                                <td class="text-muted" data-label="Tarih">@item.InvoiceDateText</td>
+                                <td data-label="Tür">@item.InvoiceTypeText</td>
+                                <td data-label="Durum"><span class="partner-invoices-status">@item.InvoiceStatusText</span></td>
+                                <td class="fw-bold" data-label="Toplam">@item.TotalText</td>
+                                <td class="text-muted" data-label="Alıcı">@item.RecipientText</td>
+                                <td class="text-end" data-label="İndir">
+                                    <a class="btn btn-outline-primary btn-sm partner-invoices-download panel-form-ux-edit" href="/panel/partner/finans/fatura-indir?hotelId=@Model.Shell.SelectedHotelId&invoiceId=@item.InvoiceId">
+                                        <i class="fas fa-download me-1"></i>Doküman
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
-
