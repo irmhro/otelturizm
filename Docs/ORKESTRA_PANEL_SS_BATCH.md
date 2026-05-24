@@ -1,6 +1,6 @@
 # Orkestra — Panel SS batch (H2 Partner · H4 User · H5 Satış · H6 Firma)
 
-Son güncelleme: **2026-05-23** (Wave-XI scope B — H4 user + H2 partner FE-CTO)  
+Son güncelleme: **2026-05-24** (#073 — kamu otel liste SS yolu + deploy notu)  
 Kaynak plan: `FRONTEND_ORKESTRATOR_PLAN.md` (`fe-partner`, `fe-firma`, `fe-user`, `fe-satis`) · görev: **T311** (H2), **T312** (H4)  
 Build doğrulama: `dotnet build otelturizm.csproj -o .build-panels-wave --no-restore`
 
@@ -94,6 +94,22 @@ Shell: `shell.mobile.css` + `viewport-fit=cover` (H5 sprint notu).
 - Klasör: `docs/frontend-screenshots/{panel}/{sayfa-slug}/{desktop|mobil}/step-NN-*.png`
 - Desktop 1440×900 · Mobil 390×844 (3× DPR)
 - Detay: `docs/frontend-screenshots/README.md`
+
+---
+
+## Kamu otel listesi — #073 batch (H1)
+
+**Route:** `/oteller` · **View:** `Views/Oteller/OtelListeleme.cshtml`  
+**Görünür doğrulama (#073):** üst bölümde **tesis sayısı rozeti**; boş sonuçta **“Tüm otelleri göster”** CTA.
+
+| Ortam | Desktop | Mobil |
+|-------|---------|-------|
+| Hedef path | `docs/frontend-screenshots/fe-otel-public/oteller-liste/desktop/step-01.png` | `docs/frontend-screenshots/fe-otel-public/oteller-liste/mobil/step-01.png` |
+| Localhost (deploy öncesi) | `http://localhost:5103/oteller` veya `https://localhost:7223/oteller` | viewport 390×844 |
+| Canlı (deploy sonrası) | `https://otelturizm.com/oteller` + Ctrl+F5 | aynı |
+
+**Yakalama:** `Docs/frontend-screenshots/fe-otel-public/oteller-liste/README.md`  
+**Bloker:** Canlı SS için önce [`DEPLOY_ACIL_500_VE_GORUNUR_GELISTIRME.md`](DEPLOY_ACIL_500_VE_GORUNUR_GELISTIRME.md) tam publish.
 
 ---
 

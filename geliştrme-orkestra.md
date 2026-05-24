@@ -184,7 +184,15 @@ Her 10 dk dalga bitince:
 2. [`geliştirme.md`](geliştirme.md) KPI tablosunu güncelle  
 3. `ORKESTRA_DURUM_KONTROL.md` snapshot  
 
-*Son otomatik dalga: #066 H6 firma Wave-F1 · Sonraki: H6 Wave-F2*
+*Son otomatik dalga: #073 deploy-gap + görünür FE · Sonraki: #074 FE listing SS*
+
+### #073 — deploy-gap + görünür FE (2026-05-24)
+
+- **Deploy doc:** `Docs/DEPLOY_ACIL_500_VE_GORUNUR_GELISTIRME.md` — neden canlıda görünmüyor, PowerShell publish, SQL sırası, smoke URL, Ctrl+F5
+- **Görünür FE:** `OtelListeleme.cshtml` — `listing-result-badge` (toplam tesis), boş liste CTA → `/oteller`, `fe-world-tokens` (`IncludeFeWorldTokens`)
+- **Plan:** `PLATFORM_10DK_SONRAKI_DALGALAR.md` — sonraki 12 × 10 dk dalga
+- **Build/publish:** `dotnet build -c Release -o .coord-build-deploy-ready` · `dotnet publish -c Release -o publish/deploy-ready`
+- **Dürüst:** Repoda #053–#072 çoğu dalga **deploy edilmeden** canlıda yok; 500 kök nedeni #063/#065 (Razor i18n) — tam DLL publish şart
 
 ### #066 — H6 firma panel Wave-F1 (2026-05-24)
 

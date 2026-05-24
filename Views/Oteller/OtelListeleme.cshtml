@@ -98,6 +98,10 @@
     string HotelDetailUrl(string slug) => InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindDetail, null, slug);
     var mapListingUrl = InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindMap, null, null)
         + "?q=" + Uri.EscapeDataString(Model.SearchTerm ?? string.Empty);
+    var allHotelsUrl = InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindListing, null, null)
+        ?? Url.Action("OtelListeleme", "Oteller") ?? "/oteller";
+    var resultCountDisplay = Model.TotalCount > 0 ? Model.TotalCount : hotels.Count;
+    var showingOnPage = hotels.Count;
 
     string NormalizeToken(string value)
     {
@@ -341,7 +345,31 @@
     flex-wrap: wrap;
     gap: 16px;
   }
-  .listing-search-header__summary h1 { font-size: clamp(1.25rem, 2.5vw, 1.5rem); font-weight: 700; margin-bottom: 4px; }
+  .listing-search-header__title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    margin-bottom: 6px;
+  }
+  .listing-search-header__summary h1 { font-size: clamp(1.25rem, 2.5vw, 1.5rem); font-weight: 700; margin: 0; }
+  .listing-result-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-full, 999px);
+    background: linear-gradient(135deg, rgba(0, 59, 149, 0.12), rgba(0, 168, 107, 0.1));
+    border: 1px solid rgba(0, 59, 149, 0.18);
+    color: var(--primary-dark, #002A6B);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+  .listing-result-badge strong { font-size: 15px; font-weight: 900; color: var(--primary, #003B95); }
+  .listing-result-badge--empty { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.22); color: #991b1b; }
+  .listing-result-badge--empty strong { color: #b91c1c; }
   .listing-search-header__summary p { color: var(--text-gray); font-size: 14px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 0; }
   .listing-search-header__actions { display: flex; gap: 12px; flex-wrap: wrap; }
   .listing-search-header__actions .btn-fe-outline,
@@ -1118,7 +1146,26 @@
     <div class="listing-container">
         <header class="listing-search-header" aria-label="@SharedLocalizer["Search.Title"]">
             <div class="listing-search-header__summary">
-                <h1>@SharedLocalizer["Listing.SearchFound", titleText, hotels.Count]</h1>
+                <div class="listing-search-header__title-row">
+                    <h1>@SharedLocalizer["Listing.SearchFound", titleText, resultCountDisplay]</h1>
+                    <span class="listing-result-badge @(resultCountDisplay == 0 ? "listing-result-badge--empty" : null)"
+                          id="listingResultCountBadge"
+                          aria-live="polite">
+                        <i class="fas fa-building" aria-hidden="true"></i>
+                        @if (resultCountDisplay > 0)
+                        {
+                            <span><strong>@resultCountDisplay</strong> tesis</span>
+                            @if (Model.TotalPages > 1 && showingOnPage > 0)
+                            {
+                                <span class="listing-result-badge__page">· bu sayfada @showingOnPage</span>
+                            }
+                        }
+                        else
+                        {
+                            <span><strong>0</strong> sonuç</span>
+                        }
+                    </span>
+                </div>
                 <p>
                     @if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
                     {
@@ -1350,11 +1397,11 @@
                     {
                         <div class="listing-empty-state" id="listingServerEmptyState" role="status" aria-live="polite">
                             <div class="listing-empty-icon" aria-hidden="true"><i class="fas fa-hotel"></i></div>
-                            <h2>Şu an listelenecek tesis yok</h2>
-                            <p>Arama veya bölge kriterlerini genişletin; haritada da keşfedebilirsiniz.</p>
+                            <h2>Bu kriterlerde tesis bulunamadı</h2>
+                            <p>Filtreleri sıfırlayıp tüm yayınlanan otellere dönebilir veya haritada arama yapabilirsiniz.</p>
                             <div class="listing-empty-actions">
-                                <a class="btn-detail listing-empty-action" href="@Url.Action("OtelListeleme", "Oteller")">Tüm oteller</a>
-                                <a class="listing-map-launch-btn listing-empty-action" href="@mapListingUrl">Haritada ara</a>
+                                <a class="btn-fe-primary listing-empty-action listing-empty-action--primary" href="@allHotelsUrl">Tüm otelleri göster</a>
+                                <a class="btn-fe-outline listing-empty-action" href="@mapListingUrl">Haritada ara</a>
                             </div>
                         </div>
                     }
@@ -1702,10 +1749,11 @@
                 <div class="listing-empty-state" id="listingClientEmptyState" hidden role="status" aria-live="polite">
                     <div class="listing-empty-icon" aria-hidden="true"><i class="fas fa-sliders"></i></div>
                     <h2>Filtrelere uygun tesis bulunamadı</h2>
-                    <p>Tarih, fiyat veya konum kriterlerini gevşetin; filtreleri sıfırlayıp tekrar deneyin.</p>
+                    <p>Filtreleri sıfırlayın veya tüm otel listesine dönün.</p>
                     <div class="listing-empty-actions">
-                        <button type="button" class="btn-detail listing-empty-action" id="listingEmptyClearFilters">Filtreleri temizle</button>
-                        <a class="listing-map-launch-btn listing-empty-action" href="@mapListingUrl">Haritada ara</a>
+                        <a class="btn-fe-primary listing-empty-action listing-empty-action--primary" href="@allHotelsUrl">Tüm oteller (/oteller)</a>
+                        <button type="button" class="btn-fe-outline listing-empty-action" id="listingEmptyClearFilters">Filtreleri temizle</button>
+                        <a class="btn-fe-outline listing-empty-action" href="@mapListingUrl">Haritada ara</a>
                     </div>
                 </div>
             </div>

@@ -1,10 +1,12 @@
 # Platform Geliştirme — Canlı Özet
 
-**Son güncelleme:** 2026-05-24 (firma panel Wave-F1)  
+**Son güncelleme:** 2026-05-24 (#073 deploy-gap + görünür liste FE)  
 **Sprint:** `sprint-1ay-orkestra-20260523` (24h → **1 ay** uzatma)  
 **Detaylı sıralı log:** [`geliştrme-orkestra.md`](geliştrme-orkestra.md)  
 **1 ay plan:** [`PLATFORM_1AY_ORKESTRA_PLAN.md`](PLATFORM_1AY_ORKESTRA_PLAN.md)  
 **24h plan (referans):** [`PLATFORM_24SAAT_SPRINT.md`](PLATFORM_24SAAT_SPRINT.md)
+
+> **CANLI UYARI:** Canlıda hiçbir şey görünmüyorsa → **tam Release publish zorunlu** (sadece cshtml yetmez). Adımlar: [`Docs/DEPLOY_ACIL_500_VE_GORUNUR_GELISTIRME.md`](Docs/DEPLOY_ACIL_500_VE_GORUNUR_GELISTIRME.md)
 
 ---
 
@@ -16,9 +18,10 @@
 | **Job (10dk)** | `AGENT_LOOP_TICK_platform_coord` (600 sn) — **çalışıyor** |
 | **Job (1sa)** | `AGENT_LOOP_HOURLY_git_sync` (3600 sn) — **aktif** |
 | **Politika** | Onaysız orkestra CTO · **saatlik commit+push açık** · canlı deploy yok |
-| **Build** | ✅ `dotnet build -o .coord-build-xviii` — **0 hata, 0 uyarı** |
+| **Build** | ✅ `dotnet build -c Release -o .coord-build-deploy-ready` — **0 hata** hedef (#073) |
+| **Deploy** | 🔴 **Canlı gap** — repoda 60+ dalga; sunucuda eski build → 500 / görünür FE yok |
 | **Platform olgunluk** | ~**42%** → hedef W1 **45%** |
-| **Canlıya hazır** | **Hayır** (K1–K8 kapıları tam değil) |
+| **Canlıya hazır** | **Kod P0 fix hazır** — tam publish + SQL + Production ortam şart |
 | **FE-CTO** | **6/151** onaylı · **14** hedef SS path (PNG bekliyor) |
 
 **Mandate:** Kullanıcı emanet — **10 dk dalgalar** + **1 ay sürekli orkestra** ile Booking/Expedia yörüngesi. Multigörev modunda arka plan ajanları durmadan devam eder.
@@ -46,8 +49,26 @@
 
 | Alan | Wave | Odak |
 |------|------|------|
-| **Şu an** | Wave-XVIII | FE dünya standardı: liste/detay/kampanya · fe-world-tokens · header i18n |
+| **Şu an** | **#073** | Deploy-gap doc + görünür liste (sonuç rozeti, boş CTA) · Release publish paketi |
+| **Önceki** | Wave-XVIII | fe-world-tokens · liste/detay/kampanya i18n |
 | **Az önce** | Wave-XVII | Otel detay galeri/slider · liste kart hover · konsept landing ×2 |
+
+### Sonraki 10 dalga (10 dk orkestra)
+
+| # | Odak |
+|---|------|
+| 074 | FE listing + SS (`oteller-liste`) |
+| 075 | Partner evrak upload |
+| 076 | Admin komisyon Faz2 |
+| 077 | Firma panel F2 |
+| 078 | Panel screenshot batch |
+| 079 | i18n panel backlog |
+| 080 | SEO sitemap 7 dil |
+| 081 | Security E2E smoke |
+| 082 | API sözleşme |
+| 083 | Muhasebe / partner fatura |
+
+Detay: [`PLATFORM_10DK_SONRAKI_DALGALAR.md`](PLATFORM_10DK_SONRAKI_DALGALAR.md)
 
 Kaynak: `ORKESTRA_DURUM_KONTROL.md` · `CTO_AJAN_ATAMA_KUYRUGU.md`
 
