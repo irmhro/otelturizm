@@ -27,9 +27,10 @@
     };
     var currentLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     var pathHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(Context.Request.Path.Value ?? "/");
-    var currentFlag = currentLang switch { "en" => "gb", "fr" => "fr", "de" => "de", "es" => "es", "ru" => "ru", "ar" => "sa", _ => "tr" };
+    var currentFlag = currentLang switch { "en" => "gb", "fr" => "fr", "de" => "de", "es" => "es", "ru" => "ru", _ => "tr" };
     var currentCurrency = (Context.Request.Cookies["ot_currency"] ?? "TRY").Trim().ToUpperInvariant();
     var hotelsListingPath = InternationalSeoPaths.BuildPublicPath(currentLang, InternationalSeoPaths.PageKindListing, null, null);
+    var drawerHotelsListingPath = InternationalSeoPaths.BuildPublicPath("tr", InternationalSeoPaths.PageKindListing, null, null);
     var hotelDetailPathPattern = InternationalSeoPaths.BuildPublicPath(currentLang, InternationalSeoPaths.PageKindDetail, null, "{slug}");
 }
 
@@ -169,13 +170,37 @@
         const languageExplicitKey = 'site:language:explicit:v1';
         const languageExplicitCookieKey = 'site_language_explicit_v1';
         const defaultLanguage = 'tr';
-        const supportedLanguages = ['tr', 'en', 'fr', 'de', 'es', 'ru', 'ar'];
-        const languageToFlagCode = { tr: 'tr', en: 'gb', fr: 'fr', de: 'de', es: 'es', ru: 'ru', ar: 'sa' };
+        const supportedLanguages = ['tr', 'en', 'fr', 'de', 'es', 'ru'];
+        const languageToFlagCode = { tr: 'tr', en: 'gb', fr: 'fr', de: 'de', es: 'es', ru: 'ru' };
         let pendingTranslateLanguage = null;
 
         function normalizeLanguage(value) {
             const lang = (value || defaultLanguage).toLowerCase();
+            if (lang === 'ar') {
+                return defaultLanguage;
+            }
             return supportedLanguages.includes(lang) ? lang : defaultLanguage;
+        }
+
+        function clearStoredArabicPreference() {
+            const keys = [languageStorageKey, legacyLanguageStorageKey, languageSessionKey, languageCookieKey];
+            keys.forEach(function (key) {
+                try {
+                    const localValue = localStorage.getItem(key);
+                    if (localValue === 'ar') {
+                        localStorage.setItem(key, defaultLanguage);
+                    }
+                    const sessionValue = sessionStorage.getItem(key);
+                    if (sessionValue === 'ar') {
+                        sessionStorage.setItem(key, defaultLanguage);
+                    }
+                } catch (err) {
+                    // ignore storage access errors
+                }
+            });
+            if (getCookie(languageCookieKey) === 'ar') {
+                setCookie(languageCookieKey, defaultLanguage, 365);
+            }
         }
 
         function setCookie(name, value, days) {
@@ -409,19 +434,28 @@
         };
 
         // Apply preference as early as possible on every page.
+        if (!pathHasLocalePrefix) {
+            clearStoredArabicPreference();
+            clearGoogleTranslateCookie();
+            document.documentElement.lang = defaultLanguage;
+            document.documentElement.dir = 'ltr';
+        }
         const startupLanguage = pathHasLocalePrefix
             ? normalizeLanguage(pathLangFromServer)
-            : persistLanguagePreference(getPreferredLanguage());
-        if (pathHasLocalePrefix || hasExplicitSelection()) {
+            : defaultLanguage;
+        if (pathHasLocalePrefix && hasExplicitSelection()) {
             if (startupLanguage !== defaultLanguage) {
                 setGoogleTranslateCookie(startupLanguage);
             } else {
                 clearGoogleTranslateCookie();
             }
-        } else {
+        } else if (!pathHasLocalePrefix) {
             clearGoogleTranslateCookie();
         }
-        document.documentElement.lang = pathHasLocalePrefix ? pathLangFromServer : startupLanguage;
+        document.documentElement.lang = pathHasLocalePrefix ? pathLangFromServer : defaultLanguage;
+        if (!pathHasLocalePrefix) {
+            document.documentElement.dir = 'ltr';
+        }
         clearGoogleTranslateHashIfNeeded(startupLanguage);
 
         function setupDropdown(id, storageKey){
@@ -521,18 +555,25 @@
         document.addEventListener('DOMContentLoaded', function(){
             setupDropdown('languageDropdown', languageStorageKey);
             setupMobileLanguageSelector();
-            const preferredLanguage = persistLanguagePreference(getPreferredLanguage());
+            if (!pathHasLocalePrefix) {
+                clearStoredArabicPreference();
+                clearGoogleTranslateCookie();
+                persistLanguagePreference(defaultLanguage);
+            }
+            const preferredLanguage = pathHasLocalePrefix
+                ? normalizeLanguage(pathLangFromServer)
+                : defaultLanguage;
             syncLanguageUi(preferredLanguage);
-            if (hasExplicitSelection()) {
+            document.documentElement.lang = preferredLanguage;
+            document.documentElement.dir = 'ltr';
+            if (pathHasLocalePrefix && hasExplicitSelection()) {
                 setGoogleTranslateCookie(preferredLanguage);
             } else {
                 clearGoogleTranslateCookie();
             }
             clearGoogleTranslateHashIfNeeded(preferredLanguage);
-            if (hasExplicitSelection()) {
-                if (preferredLanguage !== defaultLanguage) {
-                    requestTranslation(preferredLanguage);
-                }
+            if (pathHasLocalePrefix && hasExplicitSelection() && preferredLanguage !== defaultLanguage) {
+                requestTranslation(preferredLanguage);
             }
 
             const searchForm = document.querySelector('.public-header-search-form');
@@ -675,49 +716,49 @@
             }
             else
             {
-                <a href="/kullanici-giris" class="drawer-action primary"><i class="fas fa-right-to-bracket"></i> @SharedLocalizer["Nav.Login"]</a>
-                <a href="/kullanici-giris?sekme=kayit" class="drawer-action outline"><i class="fas fa-user-plus"></i> @SharedLocalizer["Nav.Register"]</a>
+                <a href="/kullanici-giris" class="drawer-action primary"><i class="fas fa-right-to-bracket"></i> @SharedLocalizer["Nav.Login"].Value</a>
+                <a href="/kullanici-giris?sekme=kayit" class="drawer-action outline"><i class="fas fa-user-plus"></i> @SharedLocalizer["Nav.Register"].Value</a>
             }
         </div>
 
         <div class="drawer-quick-features">
-            <a href="@hotelsListingPath" class="feature-tile">
+            <a href="@drawerHotelsListingPath" class="feature-tile">
                 <i class="fas fa-hotel"></i>
-                <span>@SharedLocalizer["Nav.Hotels"]</span>
+                <span>@SharedLocalizer["Nav.Hotels"].Value</span>
             </a>
-            <a href="@(hotelsListingPath)?etiket=kampanyaya-dahil-oteller" class="feature-tile">
+            <a href="@(drawerHotelsListingPath)?etiket=kampanyaya-dahil-oteller" class="feature-tile">
                 <i class="fas fa-badge-percent"></i>
-                <span>@SharedLocalizer["Nav.Campaigns"]</span>
+                <span>@SharedLocalizer["Nav.Campaigns"].Value</span>
             </a>
-            <a href="/oteller?etiket=butik-oteller" class="feature-tile">
+            <a href="@(drawerHotelsListingPath)?etiket=butik-oteller" class="feature-tile">
                 <i class="fas fa-city"></i>
-                <span>@SharedLocalizer["Nav.QuickLink.Boutique"]</span>
+                <span>@SharedLocalizer["Nav.QuickLink.Boutique"].Value</span>
             </a>
             <a href="/yardim-merkezi#destek-kanallari" class="feature-tile">
                 <i class="fas fa-headset"></i>
-                <span>@SharedLocalizer["Nav.Help"]</span>
+                <span>@SharedLocalizer["Nav.Help"].Value</span>
             </a>
         </div>
 
         <div class="drawer-section">
-            <div class="drawer-section-title">@SharedLocalizer["Nav.FeaturedDeals"]</div>
+            <div class="drawer-section-title">@SharedLocalizer["Nav.FeaturedDeals"].Value</div>
             <div class="drawer-promo-grid">
-                <a href="@(hotelsListingPath)?etiket=ay-sonu-ozel" class="drawer-link promo-link"><i class="fas fa-bolt"></i> @SharedLocalizer["Nav.QuickLink.EndOfMonth"]</a>
-                <a href="@(hotelsListingPath)?etiket=flash-indirim" class="drawer-link promo-link"><i class="fas fa-tag"></i> @SharedLocalizer["Nav.QuickLink.FlashDiscount"]</a>
-                <a href="@(hotelsListingPath)?etiket=hafta-sonu-firsatlari" class="drawer-link promo-link"><i class="fas fa-calendar-week"></i> @SharedLocalizer["Nav.QuickLink.WeekendDeals"]</a>
-                <a href="@(hotelsListingPath)?etiket=erken-rezervasyon" class="drawer-link promo-link"><i class="fas fa-clock"></i> @SharedLocalizer["Footer.EarlyBooking"]</a>
-                <a href="@(hotelsListingPath)?etiket=akilli-fiyat" class="drawer-link promo-link"><i class="fas fa-wand-magic-sparkles"></i> @SharedLocalizer["Nav.QuickLink.SmartPrice"]</a>
-                <a href="/yardim-merkezi#destek-kanallari" class="drawer-link promo-link"><i class="fas fa-headset"></i> @SharedLocalizer["Nav.Help"]</a>
+                <a href="@(drawerHotelsListingPath)?etiket=ay-sonu-ozel" class="drawer-link promo-link"><i class="fas fa-bolt"></i> @SharedLocalizer["Nav.QuickLink.EndOfMonth"].Value</a>
+                <a href="@(drawerHotelsListingPath)?etiket=flash-indirim" class="drawer-link promo-link"><i class="fas fa-tag"></i> @SharedLocalizer["Nav.QuickLink.FlashDiscount"].Value</a>
+                <a href="@(drawerHotelsListingPath)?etiket=hafta-sonu-firsatlari" class="drawer-link promo-link"><i class="fas fa-calendar-week"></i> @SharedLocalizer["Nav.QuickLink.WeekendDeals"].Value</a>
+                <a href="@(drawerHotelsListingPath)?etiket=erken-rezervasyon" class="drawer-link promo-link"><i class="fas fa-clock"></i> @SharedLocalizer["Footer.EarlyBooking"].Value</a>
+                <a href="@(drawerHotelsListingPath)?etiket=akilli-fiyat" class="drawer-link promo-link"><i class="fas fa-wand-magic-sparkles"></i> @SharedLocalizer["Nav.QuickLink.SmartPrice"].Value</a>
+                <a href="/yardim-merkezi#destek-kanallari" class="drawer-link promo-link"><i class="fas fa-headset"></i> @SharedLocalizer["Nav.Help"].Value</a>
             </div>
         </div>
 
         <div class="drawer-corp-row">
-            <a asp-controller="Home" asp-action="Kurumsal" class="drawer-action ghost"><i class="fas fa-building"></i> @SharedLocalizer["Nav.Corporate"]</a>
-            <a href="/firma" class="drawer-action ghost"><i class="fas fa-briefcase"></i> @SharedLocalizer["Nav.Firma"]</a>
+            <a asp-controller="Home" asp-action="Kurumsal" class="drawer-action ghost"><i class="fas fa-building"></i> @SharedLocalizer["Nav.Corporate"].Value</a>
+            <a href="/firma" class="drawer-action ghost"><i class="fas fa-briefcase"></i> @SharedLocalizer["Nav.Firma"].Value</a>
         </div>
 
         <div class="drawer-language-section">
-            <div class="drawer-section-title">@SharedLocalizer["Nav.LanguageSelection"]</div>
+            <div class="drawer-section-title">@SharedLocalizer["Nav.LanguageSelection"].Value</div>
             <div class="drawer-language-list">
                 <button type="button" class="drawer-language-btn" data-mobile-language-value="tr" aria-pressed="false">
                     <span class="flag-icon flag-icon-tr"></span><span>Türkçe</span>
@@ -736,9 +777,6 @@
                 </button>
                 <button type="button" class="drawer-language-btn" data-mobile-language-value="ru" aria-pressed="false">
                     <span class="flag-icon flag-icon-ru"></span><span>Русский</span>
-                </button>
-                <button type="button" class="drawer-language-btn" data-mobile-language-value="ar" aria-pressed="false">
-                    <span class="flag-icon flag-icon-sa"></span><span>العربية</span>
                 </button>
             </div>
         </div>

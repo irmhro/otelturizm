@@ -121,14 +121,21 @@
   <data name="Nav.Invoices" xml:space="preserve"><value>Invoices</value></data>
   <data name="Map.BackToList" xml:space="preserve"><value>Back to list</value></data>
   <data name="Map.BackToAllHotels" xml:space="preserve"><value>Back to all hotels</value></data>
+  <data name="Listing.AllRegions" xml:space="preserve"><value>All regions</value></data>
+  <data name="Listing.HotelsFound" xml:space="preserve"><value>{0} hotels found</value></data>
+  <data name="Listing.OnThisPage" xml:space="preserve"><value>{0} on this page</value></data>
   <data name="Listing.SearchFound" xml:space="preserve"><value>{0}: {1} hotels found</value></data>
   <data name="Listing.EditSearch" xml:space="preserve"><value>Edit search</value></data>
+  <data name="Listing.Map" xml:space="preserve"><value>Map</value></data>
   <data name="Listing.MapView" xml:space="preserve"><value>Map</value></data>
-  <data name="Listing.ConceptTitle" xml:space="preserve"><value>Concept filters · Quick pick</value></data>
+  <data name="Listing.ConceptFilters" xml:space="preserve"><value>Concept filters</value></data>
+  <data name="Listing.ConceptTitle" xml:space="preserve"><value>Concept filters</value></data>
   <data name="Listing.AllCampaigns" xml:space="preserve"><value>All campaigns</value></data>
   <data name="Listing.LoyaltyBadge" xml:space="preserve"><value>Guest favorite</value></data>
+  <data name="Listing.Excellent" xml:space="preserve"><value>Excellent</value></data>
   <data name="Listing.RatingExcellent" xml:space="preserve"><value>Excellent</value></data>
   <data name="Listing.RatingGood" xml:space="preserve"><value>Good</value></data>
+  <data name="Listing.ViewDetails" xml:space="preserve"><value>View details</value></data>
   <data name="Btn.ViewDetails" xml:space="preserve"><value>View details</value></data>
   <data name="Nav.QuickLink.EndOfMonth" xml:space="preserve"><value>End of month special</value></data>
   <data name="Nav.QuickLink.FlashDiscount" xml:space="preserve"><value>Flash deal</value></data>
@@ -173,6 +180,16 @@
   <data name="Detail.ReviewTeaser.None" xml:space="preserve"><value>No reviews yet — be the first.</value></data>
   <data name="Detail.ReviewTeaser.Count" xml:space="preserve"><value>{0} reviews · average {1}/10</value></data>
   <data name="Booking.MobileSummary" xml:space="preserve"><value>Mobile booking summary</value></data>
+  <data name="Detail.BackToHotels" xml:space="preserve"><value>Back to hotels</value></data>
+  <data name="Detail.Rooms.Title" xml:space="preserve"><value>Room types and rates</value></data>
+  <data name="Detail.Rooms.Subtitle" xml:space="preserve"><value>Select a room here to create your reservation.</value></data>
+  <data name="Detail.Rooms.GoToBooking" xml:space="preserve"><value>Go to booking</value></data>
+  <data name="Detail.Room.Nightly" xml:space="preserve"><value>Per night</value></data>
+  <data name="Detail.Room.Reserve" xml:space="preserve"><value>Book</value></data>
+  <data name="Detail.Room.NoPrice" xml:space="preserve"><value>No price</value></data>
+  <data name="Detail.Room.TaxesIncluded" xml:space="preserve"><value>Taxes included</value></data>
+  <data name="Detail.Booking.Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Detail.Booking.GoToReserve" xml:space="preserve"><value>Reserve now</value></data>
   <data name="Company.Hero.DefaultLead" xml:space="preserve"><value>We make stays transparent, secure, and accessible with Otelturizm.</value></data>
   <data name="Company.About.Title" xml:space="preserve"><value>About us</value></data>
   <data name="Company.About.MetaDescription" xml:space="preserve"><value>Otelturizm mission, vision, and values — secure hotel search and booking across Türkiye.</value></data>
@@ -248,4 +265,40 @@
   <data name="Company.Blog.Teaser2Text" xml:space="preserve"><value>Current discounts and early booking deals on the campaigns page.</value></data>
   <data name="Company.Blog.Teaser3Title" xml:space="preserve"><value>Pick hotels on the map</value></data>
   <data name="Company.Blog.Teaser3Text" xml:space="preserve"><value>Search in list or map view with region and price filters.</value></data>
+  <data name="Plan.Page.Title" xml:space="preserve"><value>Seyahat Planlama</value></data>
+  <data name="Plan.Hero.Kicker" xml:space="preserve"><value>Seyahat planlama</value></data>
+  <data name="Plan.Hero.Title" xml:space="preserve"><value>Kişiselleştirilmiş gezi planları</value></data>
+  <data name="Plan.Hero.Lead" xml:space="preserve"><value>Rota önerileri, bütçe tahmini, hafta sonu kaçamakları ve kampanya bazlı otel önerileriyle seyahatinizi tek ekrandan planlayın.</value></data>
+  <data name="Plan.Hero.StatsLabel" xml:space="preserve"><value>Planlama özeti</value></data>
+  <data name="Plan.Stat.Routes" xml:space="preserve"><value>rota önerisi</value></data>
+  <data name="Plan.Stat.Budget" xml:space="preserve"><value>Bütçe tahmini</value></data>
+  <data name="Plan.Stat.Campaigns" xml:space="preserve"><value>kampanya önerisi</value></data>
+  <data name="Plan.Routes.Title" xml:space="preserve"><value>Rota önerileri</value></data>
+  <data name="Plan.Routes.Description" xml:space="preserve"><value>Öne çıkan destinasyonlardan otel aramasına tek tıkla geçin.</value></data>
+  <data name="Plan.Routes.FromPrice" xml:space="preserve"><value>Gecelik yaklaşık {0} TRY'den</value></data>
+  <data name="Plan.Routes.Explore" xml:space="preserve"><value>Otelleri keşfet</value></data>
+  <data name="Plan.Budget.Title" xml:space="preserve"><value>Bütçe tahmini</value></data>
+  <data name="Plan.Budget.Description" xml:space="preserve"><value>Destinasyon, gece sayısı ve bütçenize göre tahmini konaklama aralığı hesaplayın; ardından uygun otelleri listeleyin.</value></data>
+  <data name="Plan.Budget.Destination" xml:space="preserve"><value>Destinasyon</value></data>
+  <data name="Plan.Budget.Nights" xml:space="preserve"><value>Gece sayısı</value></data>
+  <data name="Plan.Budget.Amount" xml:space="preserve"><value>Toplam bütçe (TRY)</value></data>
+  <data name="Plan.Budget.Calculate" xml:space="preserve"><value>Tahmini hesapla</value></data>
+  <data name="Plan.Budget.EstimateLabel" xml:space="preserve"><value>Tahmini konaklama aralığı</value></data>
+  <data name="Plan.Budget.NightsUnit" xml:space="preserve"><value>gece</value></data>
+  <data name="Plan.Budget.SearchHotels" xml:space="preserve"><value>Uygun otelleri listele</value></data>
+  <data name="Plan.Budget.BudgetFriendly" xml:space="preserve"><value>Bütçeme uygun oteller</value></data>
+  <data name="Plan.Weekend.Title" xml:space="preserve"><value>Hafta sonu kaçamakları</value></data>
+  <data name="Plan.Weekend.Description" xml:space="preserve"><value>Kısa konaklamalar ve hafta sonu etiketli fırsatlar.</value></data>
+  <data name="Plan.Weekend.View" xml:space="preserve"><value>Fırsatları gör</value></data>
+  <data name="Plan.Campaigns.Title" xml:space="preserve"><value>Kampanya bazlı öneriler</value></data>
+  <data name="Plan.Campaigns.Description" xml:space="preserve"><value>Yayında olan kampanyalardan seçilmiş öneriler; katılımcı otel sayısıyla birlikte.</value></data>
+  <data name="Plan.Campaigns.EmptyTitle" xml:space="preserve"><value>Şu an önerilecek aktif kampanya yok</value></data>
+  <data name="Plan.Campaigns.EmptyDescription" xml:space="preserve"><value>Kampanyalar yayına girdiğinde bu alan otomatik dolacaktır.</value></data>
+  <data name="Plan.Campaigns.FallbackDescription" xml:space="preserve"><value>Aktif kampanya detaylarını inceleyin.</value></data>
+  <data name="Plan.Campaigns.HotelCount" xml:space="preserve"><value>{0} katılımcı otel</value></data>
+  <data name="Plan.Loyalty.Title" xml:space="preserve"><value>OtelPuan ile planınızı güçlendirin</value></data>
+  <data name="Plan.Loyalty.Description" xml:space="preserve"><value>Kayıtlı kullanıcılar puan hareketlerini ve seviye avantajlarını sadakat merkezinden yönetir.</value></data>
+  <data name="Plan.Loyalty.OpenPanel" xml:space="preserve"><value>OtelPuan programına git</value></data>
+  <data name="Plan.Loyalty.SignIn" xml:space="preserve"><value>Giriş yap ve puan kazan</value></data>
+  <data name="Plan.Loyalty.ExploreHotels" xml:space="preserve"><value>Otelleri keşfet</value></data>
 </root>

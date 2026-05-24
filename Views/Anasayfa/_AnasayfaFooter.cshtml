@@ -2,6 +2,10 @@
 @{
     var footerLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     var footerHotelsPath = InternationalSeoPaths.BuildPublicPath(footerLang, InternationalSeoPaths.PageKindListing, null, null);
+    var footerIsTurkish = string.Equals(footerLang, "tr", StringComparison.OrdinalIgnoreCase);
+    var footerDescription = footerIsTurkish
+        ? "Türkiye genelinde güvenli bağlantı ile otel arayıp rezervasyon oluşturabileceğiniz platform; özet ve iptal koşullarını hesabınızdan takip edebilirsiniz."
+        : SharedLocalizer["Footer.Description"].Value;
 }
 <footer class="site-footer">
     <div class="footer-pattern"></div>
@@ -11,7 +15,7 @@
                 <div class="footer-logo">
                     <img src="~/uploads/logo/altlogo.png" alt="Otelturizm" class="footer-logo-image" />
                 </div>
-                <p class="footer-description">@SharedLocalizer["Footer.Description"]</p>
+                <p class="footer-description">@footerDescription</p>
                 <div class="footer-social">
                     <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                     <a href="/yardim-merkezi#destek-kanallari" class="social-link" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
@@ -20,44 +24,52 @@
                 </div>
             </div>
 
-            <div class="footer-col">
-                <h4 class="footer-title">@SharedLocalizer["Footer.Company"]</h4>
-                <ul class="footer-links">
-                    <li><a href="/hakkimizda"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.About"]</a></li>
-                    <li><a href="/kariyer"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Career"]</a></li>
-                    <li><a href="/basin-odasi"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Press"]</a></li>
-                    <li><a href="/blog"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Blog"]</a></li>
-                </ul>
+            <div class="footer-col footer-col--accordion">
+                <details class="footer-accordion" open>
+                    <summary class="footer-title">@SharedLocalizer["Footer.Company"]</summary>
+                    <ul class="footer-links">
+                        <li><a href="/hakkimizda"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.About"]</a></li>
+                        <li><a href="/kariyer"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Career"]</a></li>
+                        <li><a href="/basin-odasi"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Press"]</a></li>
+                        <li><a href="/blog"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Blog"]</a></li>
+                    </ul>
+                </details>
             </div>
 
-            <div class="footer-col">
-                <h4 class="footer-title">@SharedLocalizer["Footer.Explore"]</h4>
-                <ul class="footer-links">
-                    <li><a href="@footerHotelsPath"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Hotels"]</a></li>
-                    <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Campaigns"]</a></li>
-                    <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.EarlyBooking"]</a></li>
-                    <li><a href="/firma"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.BusinessTravel"]</a></li>
-                </ul>
+            <div class="footer-col footer-col--accordion">
+                <details class="footer-accordion" open>
+                    <summary class="footer-title">@SharedLocalizer["Footer.Explore"]</summary>
+                    <ul class="footer-links">
+                        <li><a href="@footerHotelsPath"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Hotels"]</a></li>
+                        <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Campaigns"]</a></li>
+                        <li><a href="/kampanyalar"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.EarlyBooking"]</a></li>
+                        <li><a href="/firma"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.BusinessTravel"]</a></li>
+                    </ul>
+                </details>
             </div>
 
-            <div class="footer-col">
-                <h4 class="footer-title">@SharedLocalizer["Footer.ForHotels"]</h4>
-                <ul class="footer-links">
-                    <li><a href="/partner-giris"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.ExtranetLogin"]</a></li>
-                    <li><a href="/kurumsal"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.PartnerProgram"]</a></li>
-                    <li><a href="/kurumsal"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.CommissionRates"]</a></li>
-                    <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.TrainingSupport"]</a></li>
-                </ul>
+            <div class="footer-col footer-col--accordion">
+                <details class="footer-accordion" open>
+                    <summary class="footer-title">@SharedLocalizer["Footer.ForHotels"]</summary>
+                    <ul class="footer-links">
+                        <li><a href="/partner-giris"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.ExtranetLogin"]</a></li>
+                        <li><a href="/kurumsal"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.PartnerProgram"]</a></li>
+                        <li><a href="/kurumsal"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.CommissionRates"]</a></li>
+                        <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.TrainingSupport"]</a></li>
+                    </ul>
+                </details>
             </div>
 
-            <div class="footer-col">
-                <h4 class="footer-title">@SharedLocalizer["Footer.Support"]</h4>
-                <ul class="footer-links">
-                    <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Help"]</a></li>
-                    <li><a href="/sss?kategori=iptal-iade"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.CancelRefund"]</a></li>
-                    <li><a href="/sss"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Faq"]</a></li>
-                    <li><a href="/yardim-merkezi#destek-kanallari"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Contact"]</a></li>
-                </ul>
+            <div class="footer-col footer-col--accordion">
+                <details class="footer-accordion" open>
+                    <summary class="footer-title">@SharedLocalizer["Footer.Support"]</summary>
+                    <ul class="footer-links">
+                        <li><a href="/yardim-merkezi"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Nav.Help"]</a></li>
+                        <li><a href="/sss?kategori=iptal-iade"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.CancelRefund"]</a></li>
+                        <li><a href="/sss"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Faq"]</a></li>
+                        <li><a href="/yardim-merkezi#destek-kanallari"><i class="fas fa-chevron-right"></i> @SharedLocalizer["Footer.Contact"]</a></li>
+                    </ul>
+                </details>
             </div>
         </div>
 

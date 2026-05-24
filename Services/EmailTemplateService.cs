@@ -8,7 +8,7 @@ public class EmailTemplateService : IEmailTemplateService
 {
     private const string EmailMasterRelativePath = "Views/Email/_EmailMaster.cshtml";
     private readonly IWebHostEnvironment _environment;
-    private static readonly string[] SupportedLanguages = ["tr", "en", "de", "fr", "es", "ru", "ar"];
+    private static readonly string[] SupportedLanguages = ["tr", "en", "de", "fr", "es", "ru"];
 
     public EmailTemplateService(IWebHostEnvironment environment)
     {

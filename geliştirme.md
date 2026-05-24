@@ -16,7 +16,7 @@
 | Gösterge | Durum |
 |----------|--------|
 | **Döngü** | **10 dk** geliştirme · **1 saat** GitHub push |
-| **Job (10dk)** | `AGENT_LOOP_TICK_platform_coord` (600 sn) — **çalışıyor** |
+| **Job (10dk)** | `AGENT_LOOP_TICK_platform_coord` (600 sn) - **KAPALI — sadece terminal logu yazıyordu, kod yazmıyordu** |
 | **Job (1sa)** | `AGENT_LOOP_HOURLY_git_sync` (3600 sn) — **aktif** |
 | **Politika** | Onaysız orkestra CTO · **saatlik commit+push açık** · canlı deploy yok |
 | **Build** | ✅ `dotnet build -o .coord-build-xix` — **0 hata** hedef (#074) |

@@ -1,8 +1,9 @@
 # I18N Key Registry — SharedResources (Faz 1–2)
 
 **Kaynak:** `Resources/SharedResources.resx` (varsayılan `tr-TR`)  
-**Kültür dosyaları:** `SharedResources.en-US.resx`, `SharedResources.de-DE.resx`, `SharedResources.fr.resx`, `SharedResources.es.resx`  
-**Kullanım:** `@SharedLocalizer["Key.Name"]` (`Views/_ViewImports.cshtml`)
+**Kültür dosyaları:** `SharedResources.en-US.resx`, `SharedResources.de-DE.resx`, `SharedResources.fr.resx`, `SharedResources.es.resx`, `SharedResources.ru.resx`  
+**Kayıt:** `AddLocalization()` — `ResourcesPath` yok; embedded ad `otelturizmnew.Resources.SharedResources`  
+**Varsayılan:** `tr-TR` LTR; **Arapça kaldırıldı** (#075)
 
 | Key | TR (default) | EN | DE | FR | ES |
 |-----|--------------|----|----|----|-----|
@@ -47,6 +48,37 @@ Yeni anahtarlar: `Listing.SearchFound`, `Listing.EditSearch`, `Listing.MapView`,
 
 ## Sonraki fazlar
 
-- `ru-RU`, `ar-SA` için ayrı `.resx` dosyaları
-- Footer keşif / otelci metinleri için ek anahtarlar
 - Rezervasyon akışı ve filtre chip tam kablolama
+- Footer keşif / otelci metinleri için ek anahtarlar
+
+## #075 — Arapça kaldırma + i18n düzeltme (2026-05-25)
+
+| Değişiklik | Dosya |
+|------------|-------|
+| `AddLocalization()` (ResourcesPath kaldırıldı — raw key kök nedeni) | `Program.cs` |
+| `/ar/*` → TR canonical 301 | `Program.cs` middleware |
+| `ar` route/prefix/hreflang kaldırıldı | `InternationalSeoPaths`, `OtellerController`, `InternationalSeoService`, `RoutePrefixRequestCultureProvider`, `_LanguageSwitcher`, header JS |
+| Zorunlu `lang=tr` `dir=ltr` prefix’siz rotalarda | `_Layout.cshtml`, `_AnasayfaHeader.cshtml` |
+| Google Translate / localStorage `ar` temizliği | `_AnasayfaHeader.cshtml` |
+
+**Not:** `Detail.ReviewTeaser.*` (doğru anahtar; `ReviewTabber` typo yok). `Campaign.Period.*` kullanılmıyor — timer `Campaign.Timer.*`.
+
+## #077 — Mobil drawer i18n + layout (2026-05-25)
+
+| Key / davranış | TR (default) | Drawer kullanımı |
+|----------------|--------------|-------------------|
+| `Nav.Login`, `Nav.Register` | Giriş Yap, Kayıt Ol | Auth satırı |
+| `Nav.Hotels`, `Nav.Campaigns`, `Nav.Help`, `Nav.Corporate`, `Nav.Firma` | Oteller, Kampanyalar, … | Hızlı kutular + alt satır |
+| `Nav.QuickLink.Boutique`, `.EndOfMonth`, `.FlashDiscount`, `.WeekendDeals`, `.SmartPrice` | Butik Seçimler, Ay Sonu Özel, … | Hızlı kutular + promo grid |
+| `Nav.FeaturedDeals` | Öne Çıkan Fırsatlar | Bölüm başlığı (uppercase CSS kaldırıldı) |
+| `Nav.LanguageSelection` | Dil Seçimi | Dil grid başlığı |
+| `Footer.EarlyBooking` | Erken Rezervasyon | Promo grid |
+| `Btn.Close`, `Btn.Cancel` | Kapat, İptal | Drawer kapat / çıkış |
+
+| Değişiklik | Dosya |
+|------------|-------|
+| Drawer linkleri her zaman TR canonical (`drawerHotelsListingPath` → `/oteller`) | `_AnasayfaHeader.cshtml` |
+| `SharedLocalizer[...].Value` drawer metinleri | `_AnasayfaHeader.cshtml` |
+| Arapça dil butonu yok (tr/en/fr/de/es/ru) | `_AnasayfaHeader.cshtml` |
+| Tek sütun tam genişlik, 44px touch, safe-area, 2-col dil grid | `site-layout.mobile.css` |
+| 7× `SharedResources*.resx` drawer anahtarları doğrulandı | `Resources/` |

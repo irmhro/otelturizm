@@ -80,7 +80,6 @@ public class LocaleController : Controller
             "de" => "de-DE",
             "es" => "es-ES",
             "ru" => "ru-RU",
-            "ar" => "ar-SA",
             _ => v
         };
 
@@ -94,9 +93,7 @@ public class LocaleController : Controller
             "fr-fr" => "fr-FR",
             "es-es" => "es-ES",
             "ru-ru" => "ru-RU",
-            "ar-sa" => "ar-SA",
             "ru" => "ru-RU",
-            "ar" => "ar-SA",
             _ => "tr-TR"
         };
     }

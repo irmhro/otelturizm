@@ -64,7 +64,7 @@ public sealed class RoutePrefixRequestCultureProvider : IRequestCultureProvider
         var two = raw.Length >= 2 ? raw[..2].ToLowerInvariant() : raw.ToLowerInvariant();
         cultureCode = two switch
         {
-            "en" or "de" or "fr" or "es" or "ru" or "ar" or "tr" => two,
+            "en" or "de" or "fr" or "es" or "ru" or "tr" => two,
             _ => "tr"
         };
         return true;
@@ -79,7 +79,6 @@ public sealed class RoutePrefixRequestCultureProvider : IRequestCultureProvider
             "fr" => "fr-FR",
             "es" => "es-ES",
             "ru" => "ru-RU",
-            "ar" => "ar-SA",
             _ => "tr-TR"
         };
 

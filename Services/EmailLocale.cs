@@ -6,7 +6,7 @@ namespace otelturizmnew.Services;
 /// <summary>E-posta şablonları ve kuyruk için iki harfli dil kodları.</summary>
 public static class EmailLocale
 {
-    public static readonly string[] SupportedTwoLetter = ["tr", "en", "fr", "de", "es", "ru", "ar"];
+    public static readonly string[] SupportedTwoLetter = ["tr", "en", "fr", "de", "es", "ru"];
 
     private static readonly HashSet<string> Supported = new(SupportedTwoLetter, StringComparer.OrdinalIgnoreCase);
 
@@ -31,7 +31,6 @@ public static class EmailLocale
             "de" => CultureInfo.GetCultureInfo("de-DE"),
             "es" => CultureInfo.GetCultureInfo("es-ES"),
             "ru" => CultureInfo.GetCultureInfo("ru-RU"),
-            "ar" => CultureInfo.GetCultureInfo("ar-SA"),
             _ => CultureInfo.GetCultureInfo("tr-TR"),
         };
     }

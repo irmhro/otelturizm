@@ -9,7 +9,7 @@ public sealed class InternationalSeoService
 {
     private static readonly string[] HreflangLocales =
     [
-        "tr-TR", "en-US", "en-GB", "de-DE", "fr-FR", "es-ES", "ru-RU", "ar-SA"
+        "tr-TR", "en-US", "en-GB", "de-DE", "fr-FR", "es-ES", "ru-RU"
     ];
 
     private static readonly Dictionary<string, string> LocaleToCulture = new(StringComparer.OrdinalIgnoreCase)
@@ -20,8 +20,7 @@ public sealed class InternationalSeoService
         ["de-DE"] = "de",
         ["fr-FR"] = "fr",
         ["es-ES"] = "es",
-        ["ru-RU"] = "ru",
-        ["ar-SA"] = "ar"
+        ["ru-RU"] = "ru"
     };
 
     private readonly IWebHostEnvironment _environment;
@@ -79,11 +78,6 @@ public sealed class InternationalSeoService
                     ? $"Отели Турции{countSuffix} | Otelturizm"
                     : $"Отели {cityLabel}{countSuffix} | Otelturizm",
                 $"Сравните отели в {cityLabel} и забронируйте на Otelturizm."),
-            "ar" => new ListingMeta(
-                string.IsNullOrWhiteSpace(cityLabel)
-                    ? $"فنادق تركيا{countSuffix} | Otelturizm"
-                    : $"فنادق {cityLabel}{countSuffix} | Otelturizm",
-                $"احجز فنادق في {cityLabel} عبر Otelturizm."),
             _ => new ListingMeta(
                 string.IsNullOrWhiteSpace(cityLabel)
                     ? $"Oteller{countSuffix} | Otelturizm"
@@ -180,7 +174,6 @@ public sealed class InternationalSeoService
             "fr" => CultureInfo.GetCultureInfo("fr-FR"),
             "es" => CultureInfo.GetCultureInfo("es-ES"),
             "ru" => CultureInfo.GetCultureInfo("ru-RU"),
-            "ar" => CultureInfo.GetCultureInfo("ar-SA"),
             _ => CultureInfo.GetCultureInfo("tr-TR")
         };
     }
@@ -274,7 +267,7 @@ public sealed class InternationalSeoService
         }
 
         var two = culture.Length >= 2 ? culture[..2].ToLowerInvariant() : culture.ToLowerInvariant();
-        return two is "en" or "de" or "fr" or "es" or "ru" or "ar" or "tr" ? two : "tr";
+        return two is "en" or "de" or "fr" or "es" or "ru" or "tr" ? two : "tr";
     }
 
     private static string FormatCityLabel(string? city, string culture)

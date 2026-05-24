@@ -1,9 +1,455 @@
-.plan-page{padding:40px 16px;max-width:1100px;margin:0 auto}
-.plan-hero{background:linear-gradient(135deg, rgba(37,99,235,.12), rgba(15,23,42,.03));border:1px solid rgba(15,23,42,.10);border-radius:18px;padding:28px}
-.plan-kicker{font-weight:800;letter-spacing:.12em;color:rgba(15,23,42,.55);font-size:12px;margin:0 0 8px}
-.plan-hero h1{margin:0 0 10px;font-size:28px}
-.plan-hero p{margin:0 0 16px;color:rgba(15,23,42,.74);max-width:70ch}
-.plan-actions{display:flex;gap:10px;flex-wrap:wrap}
-.plan-btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:12px;border:1px solid rgba(15,23,42,.16);text-decoration:none;font-weight:750;color:#0f172a;background:#fff}
-.plan-btn.primary{background:#2563eb;color:#fff;border-color:rgba(37,99,235,.35)}
+.plan-page {
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+    padding: 28px var(--space-8) calc(48px + var(--safe-area-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+}
 
+.plan-hero {
+    background: linear-gradient(135deg, rgba(0, 59, 149, 0.1), rgba(255, 56, 92, 0.06));
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-xl);
+    padding: 32px 28px;
+    box-shadow: var(--shadow-md);
+}
+
+.plan-kicker {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: var(--primary);
+    text-transform: uppercase;
+}
+
+.plan-hero h1 {
+    margin: 0 0 10px;
+    font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+    line-height: 1.08;
+    color: var(--text-dark);
+}
+
+.plan-hero-lead {
+    margin: 0 0 18px;
+    max-width: 68ch;
+    color: var(--text-gray);
+    line-height: 1.65;
+}
+
+.plan-hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.plan-stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: var(--radius-full);
+    background: var(--card-bg);
+    border: 1px solid var(--border-light);
+    color: var(--text-dark);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.plan-section {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.plan-section-head h2 {
+    margin: 0 0 6px;
+    font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+    color: var(--text-dark);
+}
+
+.plan-section-head p {
+    margin: 0;
+    color: var(--text-gray);
+    max-width: 62ch;
+    line-height: 1.6;
+}
+
+.plan-route-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.plan-route-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 18px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    text-decoration: none;
+    color: inherit;
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+    overflow: hidden;
+}
+
+.plan-route-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 6px;
+    background: var(--primary);
+}
+
+.plan-theme-istanbul::before { background: linear-gradient(180deg, #2563eb, #7c3aed); }
+.plan-theme-antalya::before { background: linear-gradient(180deg, #0ea5e9, #06b6d4); }
+.plan-theme-kapadokya::before { background: linear-gradient(180deg, #f59e0b, #ef4444); }
+.plan-theme-bodrum::before { background: linear-gradient(180deg, #14b8a6, #3b82f6); }
+
+@media (hover: hover) and (pointer: fine) {
+    .plan-route-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        border-color: rgba(0, 59, 149, 0.22);
+    }
+}
+
+.plan-route-card__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    background: var(--bg-light);
+    color: var(--primary);
+    font-size: 20px;
+}
+
+.plan-route-card__body h3 {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+}
+
+.plan-route-card__body p {
+    margin: 0 0 6px;
+    font-size: 0.92rem;
+    color: var(--text-gray);
+}
+
+.plan-route-card__meta {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.plan-route-card__cta {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--secondary);
+    white-space: nowrap;
+}
+
+.plan-budget-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.plan-budget-form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+}
+
+.plan-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.plan-input {
+    min-height: var(--touch-min);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
+    padding: 10px 12px;
+    font-size: 1rem;
+    color: var(--text-dark);
+    background: #fff;
+}
+
+.plan-budget-form .plan-btn.primary {
+    grid-column: 1 / -1;
+    justify-self: start;
+}
+
+.plan-budget-result {
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(0, 168, 107, 0.28);
+    background: linear-gradient(180deg, rgba(0, 168, 107, 0.08), rgba(255, 255, 255, 0.9));
+}
+
+.plan-budget-result.is-tight {
+    border-color: rgba(255, 184, 0, 0.45);
+    background: linear-gradient(180deg, rgba(255, 184, 0, 0.1), rgba(255, 255, 255, 0.92));
+}
+
+.plan-budget-result__range strong {
+    display: block;
+    font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+    color: var(--text-dark);
+    margin: 4px 0;
+}
+
+.plan-budget-result__label,
+.plan-budget-result__nights {
+    font-size: 0.86rem;
+    color: var(--text-gray);
+}
+
+.plan-budget-result p {
+    margin: 12px 0 14px;
+    color: var(--text-dark);
+    line-height: 1.55;
+}
+
+.plan-weekend-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.plan-weekend-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    background: var(--card-bg);
+    text-decoration: none;
+    color: inherit;
+    min-height: 160px;
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.plan-weekend-city { background: linear-gradient(160deg, rgba(37, 99, 235, 0.08), #fff 55%); }
+.plan-weekend-sea { background: linear-gradient(160deg, rgba(14, 165, 233, 0.1), #fff 55%); }
+.plan-weekend-all { background: linear-gradient(160deg, rgba(255, 56, 92, 0.08), #fff 55%); }
+
+@media (hover: hover) and (pointer: fine) {
+    .plan-weekend-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+}
+
+.plan-weekend-card__badge {
+    align-self: flex-start;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    background: var(--primary);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.plan-weekend-card h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.plan-weekend-card p {
+    margin: 0;
+    flex: 1;
+    color: var(--text-gray);
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.plan-weekend-card__link {
+    font-weight: 800;
+    color: var(--primary);
+    font-size: 0.88rem;
+}
+
+.plan-campaign-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.plan-campaign-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+    background: var(--card-bg);
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .plan-campaign-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+}
+
+.plan-campaign-card__media {
+    height: 120px;
+    background-size: cover;
+    background-position: center;
+    background-color: color-mix(in srgb, var(--plan-campaign-accent, var(--primary)) 18%, #fff);
+}
+
+.plan-campaign-card__body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.plan-campaign-card__badge {
+    align-self: flex-start;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--plan-campaign-accent, var(--primary)) 14%, #fff);
+    color: var(--plan-campaign-accent, var(--primary));
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.plan-campaign-card__body h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.plan-campaign-card__body p {
+    margin: 0;
+    color: var(--text-gray);
+    font-size: 0.9rem;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.plan-campaign-card__meta {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.plan-loyalty-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 26px;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(120deg, rgba(0, 59, 149, 0.12), rgba(255, 215, 0, 0.14));
+    border: 1px solid rgba(0, 59, 149, 0.16);
+}
+
+.plan-loyalty-cta__copy h2 {
+    margin: 0 0 6px;
+    font-size: 1.35rem;
+}
+
+.plan-loyalty-cta__copy p {
+    margin: 0;
+    color: var(--text-gray);
+    max-width: 52ch;
+}
+
+.plan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.plan-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--touch-min);
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
+    text-decoration: none;
+    font-weight: 750;
+    color: var(--text-dark);
+    background: #fff;
+    transition: background var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+}
+
+.plan-btn.primary {
+    background: var(--primary);
+    color: #fff;
+    border-color: rgba(0, 59, 149, 0.35);
+}
+
+.plan-empty {
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--border-light);
+    background: var(--bg-light);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+@media (max-width: 1100px) {
+    .plan-route-grid,
+    .plan-campaign-grid,
+    .plan-weekend-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .plan-budget-shell {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .plan-route-grid,
+    .plan-campaign-grid,
+    .plan-weekend-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .plan-budget-form {
+        grid-template-columns: 1fr;
+    }
+
+    .plan-route-card {
+        grid-template-columns: auto 1fr;
+    }
+
+    .plan-route-card__cta {
+        grid-column: 1 / -1;
+        justify-self: flex-start;
+    }
+}

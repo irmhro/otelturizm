@@ -221,7 +221,7 @@
     <div class="detail-breadcrumb-left">
         <a asp-controller="Oteller" asp-action="OtelListeleme" class="detail-back-link">
             <i class="fas fa-arrow-left"></i>
-            <span>Otellere Dön</span>
+            <span>@SharedLocalizer["Detail.BackToHotels"]</span>
         </a>
         <span class="detail-breadcrumb-sep" aria-hidden="true">·</span>
         <a class="detail-breadcrumb-context"
@@ -807,12 +807,12 @@
             <div class="section-head tabler-section-head">
                 <div class="tabler-section-headrow">
                     <div class="tabler-section-titles">
-                        <h2>Oda Tipleri ve Fiyatlar</h2>
-                        <p>Bu alandaki Odalardan rezervasyon Yapabilirsiniz</p>
+                        <h2>@SharedLocalizer["Detail.Rooms.Title"]</h2>
+                        <p>@SharedLocalizer["Detail.Rooms.Subtitle"]</p>
                     </div>
                     <div class="tabler-section-actions">
                         <button type="button" class="tabler-section-action-btn is-primary" data-scroll-booking>
-                            Rezervasyona geç
+                            @SharedLocalizer["Detail.Rooms.GoToBooking"]
                             <i class="fas fa-arrow-right" aria-hidden="true"></i>
                         </button>
                     </div>
@@ -1001,7 +1001,7 @@
                                             class="select-room-btn"
                                             data-room-id="@room.RoomTypeId"
                                             data-price="@room.Price.ToString("0", System.Globalization.CultureInfo.InvariantCulture)">
-                                        Rezervasyon
+                                        @SharedLocalizer["Detail.Room.Reserve"]
                                     </button>
                                 }
                                 else
@@ -1011,12 +1011,12 @@
                                             data-room-id="@room.RoomTypeId"
                                             data-price="0"
                                             disabled>
-                                        Fiyat Yok
+                                        @SharedLocalizer["Detail.Room.NoPrice"]
                                     </button>
                                 }
                             </div>
                             <div class="room-price-value">
-                                <small class="room-price-kicker">Gecelik</small>
+                                <small class="room-price-kicker">@SharedLocalizer["Detail.Room.Nightly"]</small>
                                 @{
                                     var hasRoomDiscount = room.DiscountPrice.HasValue
                                                          && room.BasePrice.HasValue
@@ -1062,7 +1062,7 @@
                                         <strong>₺@nightlyDisplay.ToString("N0")</strong>
                                     }
 
-                                    <span class="room-price-inclusive-label" title="Tüm vergiler dahil fiyat">Vergiler dahil</span>
+                                    <span class="room-price-inclusive-label" title="@SharedLocalizer["Detail.Room.TaxesIncluded"]">@SharedLocalizer["Detail.Room.TaxesIncluded"]</span>
                                     <small class="room-price-total">Toplam (@initialNightCount gece): ₺@stayTotal.ToString("N0")</small>
                                 }
                                 else
@@ -1508,10 +1508,10 @@
 
     <div class="mobile-booking-bar mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"]">
         <div class="mobile-booking-summary">
-            <span class="mobile-booking-label">Toplam</span>
+            <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"]</span>
             <strong id="mobileBookingPrice">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
         </div>
-        <button type="button" class="mobile-booking-cta" id="openBookingSheetBtn">Rezervasyona git</button>
+        <button type="button" class="mobile-booking-cta" id="openBookingSheetBtn">@SharedLocalizer["Detail.Booking.GoToReserve"]</button>
     </div>
 
     <article class="content-card detail-map-card">

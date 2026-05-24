@@ -22,7 +22,6 @@ namespace otelturizmnew.Controllers.Oteller;
 [Route("fr/hotels")]
 [Route("es/hoteles")]
 [Route("ru/oteli")]
-[Route("ar/oteller")]
 public class OtellerController : Controller
 {
     private const string ReservationDraftCookieName = "Otelturizm.ReservationDraftKey";
@@ -630,6 +629,12 @@ public class OtellerController : Controller
     {
         var culture = _internationalSeo.ResolveCultureFromPath(Request.Path);
         ViewData["SeoCulture"] = culture;
+        var cultureInfo = _internationalSeo.ResolveRequestCulture(culture);
+        var requestCulture = new Microsoft.AspNetCore.Localization.RequestCulture(cultureInfo, cultureInfo);
+        System.Globalization.CultureInfo.CurrentCulture = cultureInfo;
+        System.Globalization.CultureInfo.CurrentUICulture = cultureInfo;
+        HttpContext.Features.Set<Microsoft.AspNetCore.Localization.IRequestCultureFeature>(
+            new Microsoft.AspNetCore.Localization.RequestCultureFeature(requestCulture, provider: null));
         return culture;
     }
 

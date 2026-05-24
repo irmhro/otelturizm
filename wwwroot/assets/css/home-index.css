@@ -1413,23 +1413,52 @@
     box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
 }
 
-/* Desktop: lift swiper arrows so they don't cover hotel name */
+/* Hotel card swipers: prev/next on 16:9 image collage, not .card-content */
+.popular-swiper,
+.weekend-swiper,
+.home-category-swiper {
+    position: relative;
+    --hotel-nav-top: clamp(68px, calc((100vw - 3rem) * 9 / 32), 132px);
+}
+
+.popular-prev,
+.popular-next,
+.weekend-prev,
+.weekend-next,
+.home-category-prev,
+.home-category-next {
+    top: var(--hotel-nav-top);
+    bottom: auto;
+    margin-top: 0;
+    transform: translateY(-50%);
+    z-index: 6;
+}
+
+@media (min-width: 768px) {
+    .popular-swiper,
+    .weekend-swiper,
+    .home-category-swiper {
+        --hotel-nav-top: clamp(56px, 19%, 96px);
+    }
+}
+
 @media (min-width: 901px) {
     .popular-swiper,
     .weekend-swiper,
     .home-category-swiper {
-        position: relative;
+        --hotel-nav-top: clamp(52px, 16%, 88px);
     }
 
     .popular-prev,
-    .popular-next,
     .weekend-prev,
+    .home-category-prev {
+        left: 4px;
+    }
+
+    .popular-next,
     .weekend-next,
-    .home-category-prev,
     .home-category-next {
-        top: 42%;
-        transform: translateY(-50%);
-        z-index: 6;
+        right: 4px;
     }
 }
 
@@ -1702,12 +1731,6 @@
     .popular-swiper,
     .weekend-swiper,
     .home-category-swiper {
-        position: relative;
-    }
-
-    .popular-swiper,
-    .weekend-swiper,
-    .home-category-swiper {
         padding: 2px 2px 12px;
     }
 
@@ -1717,9 +1740,6 @@
     .weekend-next,
     .home-category-prev,
     .home-category-next {
-        top: clamp(176px, 56vw, 236px);
-        transform: translateY(-50%);
-        z-index: 6;
         background: rgba(255, 255, 255, 0.96);
     }
 

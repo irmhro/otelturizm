@@ -1,0 +1,77 @@
+.plan-page {
+    padding: 16px var(--space-5) calc(32px + var(--safe-area-bottom));
+    gap: 28px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.plan-hero {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+}
+
+.plan-hero-stats {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.plan-stat-chip {
+    min-height: var(--touch-min);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.plan-route-grid,
+.plan-weekend-grid,
+.plan-campaign-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100%;
+}
+
+.plan-route-card,
+.plan-weekend-card,
+.plan-campaign-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.plan-budget-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+}
+
+.plan-budget-form {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+}
+
+.plan-input,
+.plan-btn {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    touch-action: manipulation;
+}
+
+.plan-budget-form .plan-btn.primary {
+    width: 100%;
+    justify-self: stretch;
+}
+
+.plan-loyalty-cta {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px 16px;
+}
+
+.plan-actions {
+    flex-direction: column;
+    width: 100%;
+}
+
+.plan-actions .plan-btn {
+    width: 100%;
+}

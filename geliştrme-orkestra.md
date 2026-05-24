@@ -2,7 +2,7 @@
 
 **Sprint:** `sprint-1ay-orkestra-20260523` (+1 ay · 1440×10dk)  
 **Koordinatör:** Platform Coordinator · **CTO orkestralar:** H1–H14  
-**Döngü:** 10 dk · **Politika:** onaysız atama · commit/deploy yok  
+**Döngü:** 10 dk plan dalgası (Cursor sohbet/subagent) — **Politika:** onaysız atama · commit/deploy yok · **Yasak:** terminal `AGENT_LOOP_TICK_*` yalnızca `Write-Output` döngüsü (kod yazmaz)  
 
 > Bu dosya her dalga sonrası **sıralı** güncellenir. Özet dashboard: [`geliştirme.md`](geliştirme.md)
 
@@ -77,8 +77,14 @@
 | 070 | 2026-05-24 | Wave-A1 | H3 | Onay Merkezi T356 CTA + evrak link + mobil aksiyon UX | ✅ |
 | 071 | 2026-05-24 | Wave-A1 | H3 | Komisyon tahsilat yaşam döngüsü bar + mutabakat rapor linki | ✅ |
 | 072 | 2026-05-24 | Wave-A1 | H10 | `dotnet build -o .coord-build-admin` gate | ⏳ |
+| 075 | 2026-05-25 | P0 | H9+H13 | **ar-remove-i18n-fix:** `AddLocalization()` ResourcesPath kaldırıldı (raw key); Arapça route/UI/RTL kaldırıldı; `/ar/*`→TR 301; varsayılan tr-TR LTR | ✅ |
+| 076 | 2026-05-25 | Wave-XIX | H1 | Anasayfa kategori swiper mobil tam alan kart (`home-index.mobile.css`) | ✅ |
+| 079 | 2026-05-25 | Wave-Travel-Plan | H1 | `/seyahat-planlama` tam sayfa: rota, bütçe, hafta sonu, kampanya DB, OtelPuan CTA · `Docs/SEYAHAT_PLANLAMA_OZELLIK_PLANI.md` | ✅ |
+| 077 | 2026-05-25 | P0 | H1+H13 | **mobile-drawer-fix:** drawer i18n `.Value`, TR `/oteller` linkleri, Arapça dil kaldırıldı, tek sütun mobil CSS + safe-area · `dotnet build -o .coord-build-drawer` | ✅ |
+| 081 | 2026-05-25 | P0 | H1+H13 | **listing-i18n-ux:** `/oteller` path-locked TR UI; tek satır sonuç (`Tüm bölgeler · N otel bulundu`); Listing.* resx 7 dil; mobil header/konsept/kart CTA · `dotnet build -o .coord-build-listing-i18n` | ✅ |
+| 082 | 2026-05-25 | P0 | Koord | **AGENT_LOOP_TICK_platform_coord KAPALI:** terminal 703446 ~35h sonra durdu (exit 4294967295); kullanıcı talebi — yeniden başlatılmayacak; `AGENT_LOOP_HOURLY_git_sync` / `Invoke-HourlyGitSync.ps1` aynı | ✓ |
 
-**Toplam tamamlanan teslimat:** **64** (Wave-I → Wave-A1 + #053–#058, #065–#071; #072 build bekliyor)
+**Toplam tamamlanan teslimat:** **68** (Wave-I → Wave-A1 + #053–#058, #065–#071, #075–#077, #076, #079; #072 build bekliyor)
 
 ---
 
@@ -184,7 +190,14 @@ Her 10 dk dalga bitince:
 2. [`geliştirme.md`](geliştirme.md) KPI tablosunu güncelle  
 3. `ORKESTRA_DURUM_KONTROL.md` snapshot  
 
-*Son otomatik dalga: #074 Wave-XIX partner fatura mobil · Sonraki: #075 partner evrak SS*
+*Son otomatik dalga: #076 home-card-mobile-full · Sonraki: #075 partner evrak SS*
+
+### #076 — home-card-mobile-full (2026-05-25)
+
+- **Görünür FE:** Anasayfa kategori swiper — `.card-content` tam genişlik (safe-area), fiyat/indirim hiyerarşisi, puan rozeti sağ alt
+- **CSS:** `home-index.mobile.css` — `@media (max-width: 768px)` yalnızca `.home-category-section`
+- **JS:** `home-category-swiper` mobil `spaceBetween: 12`; desktop 16 korundu (640+ breakpoint)
+- **Build:** `dotnet build` — 0 hata hedef
 
 ### #074 — Wave-XIX partner fatura mobil (2026-05-24)
 
@@ -254,3 +267,22 @@ Her 10 dk dalga bitince:
 - **Gorsel:** Install-IstanbulIlceDemo.ps1, Install-DemoHotelMedia.ps1, DemoImageSeed (--root); 39 otel, 312 gorsel indir/guncelle; wwwroot ~366 dosya
 - **Dogrulama (LocalDB otelturizm_2026db):** 39 yayinda otel, 39 otel_gorsel; ornek https://localhost:7223/uploads/images/13/hotel/demo-cover.webp
 - **Not:** --run-sql-migrations bir scriptte ILCE/ILLER FK DELETE hatasi (mevcut otel verisi); publish scriptleri uygulandi
+
+### #077 - AGENT_LOOP_TICK devre disi (2026-05-25)
+
+- **Sorun:** Cursor terminalinde ad-hoc pwsh: while ($true) { Start-Sleep -Seconds 600; Write-Output 'AGENT_LOOP_TICK_platform_coord {...}' } — yalnizca plan/prompt metni; Cursor ajan cagrisi veya kaynak dosya degisikligi yok.
+- **Komut ornegi:** Write-Output + Start-Sleep -Seconds 600 (10 dk); ayri 5 dk dongu Start-Sleep -Seconds 300 (pid 10144) ayni anti-pattern.
+- **Repo:** 	ools/ altinda platform_coord 10 dk scripti yok; saatlik 	ools/Git/Invoke-HourlyGitSync.ps1 farkli is (git snapshot).
+- **Aksiyon:** Calisan AGENT_LOOP_TICK_platform_coord surecleri durduruldu (orn. pid 24456).
+- **Bundan sonra:** Dalga gelistirme **Cursor sohbet + subagent** ile; PLATFORM_10DK_PLAN_SABLONU / PLATFORM_10DK_SONRAKI_DALGALAR guncellemesi ve kod degisikligi terminal tick ile otomatiklenmez.
+
+
+
+
+### #082 - AGENT_LOOP_TICK kalıcı kapalı (2026-05-25)
+
+- **Durum:** `AGENT_LOOP_TICK_platform_coord` (terminal 703446) ~35 saat sonra durdu; exit_code **4294967295**; döngü yalnızca `Start-Sleep 600` + `Write-Output` idi (ajan/kod yok).
+- **Kullanıcı talebi:** Bu tick döngüsü **yeniden başlatılmayacak**.
+- **Devam eden:** `AGENT_LOOP_HOURLY_git_sync` (3600 sn) — `tools/Git/Invoke-HourlyGitSync.ps1` değişmedi.
+- **Referans:** #077 aynı anti-pattern; bu kayıt kullanıcı onayı ile kalıcı kapatma.
+

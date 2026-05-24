@@ -152,11 +152,11 @@
                 const prevEl = swiperEl.querySelector('.home-category-prev');
                 new Swiper(swiperEl, {
                     slidesPerView: 1,
-                    spaceBetween: 16,
+                    spaceBetween: 12,
                     breakpoints: {
-                        640: { slidesPerView: 2 },
-                        960: { slidesPerView: 3 },
-                        1280: { slidesPerView: 4 }
+                        640: { slidesPerView: 2, spaceBetween: 16 },
+                        960: { slidesPerView: 3, spaceBetween: 16 },
+                        1280: { slidesPerView: 4, spaceBetween: 16 }
                     },
                     navigation: { nextEl: nextEl, prevEl: prevEl }
                 });

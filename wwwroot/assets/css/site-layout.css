@@ -1318,6 +1318,19 @@ body {
   background: #fff;
 }
 
+@media (min-width: 901px) {
+  .footer-col--accordion .footer-accordion > summary {
+    pointer-events: none;
+    cursor: default;
+    padding: 0;
+    margin-bottom: 10px;
+  }
+
+  .footer-col--accordion .footer-accordion > summary::after {
+    display: none;
+  }
+}
+
 .footer-agency-note {
   font-size: 13px;
   font-weight: 700;

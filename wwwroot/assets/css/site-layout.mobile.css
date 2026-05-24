@@ -3,46 +3,101 @@
 /* Mobile overrides live here.
    Loaded only on (max-width: 900px) via layout. */
 
-/* Mobil menü (drawer) buton yüksekliklerini eşitle */
+/* Mobil menü (drawer) — tek sütun, tam genişlik, 44px dokunma hedefleri */
 .mobile-menu-drawer {
-  --drawer-cta-height: 52px;
-  --drawer-tile-height: 42px; /* %20 daha kısa (52px -> ~42px) */
+  --drawer-cta-height: 44px;
+  --drawer-tile-height: 44px;
+}
+
+.mobile-menu-drawer .drawer-nav {
+  padding: 12px 14px calc(16px + env(safe-area-inset-bottom));
+}
+
+.mobile-menu-drawer .drawer-auth-row,
+.mobile-menu-drawer .drawer-quick-features,
+.mobile-menu-drawer .drawer-promo-grid,
+.mobile-menu-drawer .drawer-corp-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  width: 100%;
 }
 
 .mobile-menu-drawer .drawer-action,
 .mobile-menu-drawer .feature-tile,
 .mobile-menu-drawer .drawer-link {
   min-height: var(--drawer-cta-height);
-  height: var(--drawer-cta-height);
+  height: auto;
   display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.mobile-menu-drawer .drawer-auth-row .drawer-action {
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 12px;
+}
+
+.mobile-menu-drawer .feature-tile {
+  min-height: var(--drawer-tile-height);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  justify-content: flex-start;
+}
+
+.mobile-menu-drawer .feature-tile span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mobile-menu-drawer .drawer-corp-row .drawer-action {
+  min-height: var(--drawer-tile-height);
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+.mobile-menu-drawer .drawer-link.promo-link {
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 0.92rem;
   align-items: center;
 }
 
-/* Üst aksiyon butonları (Giriş Yap / Kayıt Ol) */
-.mobile-menu-drawer .drawer-auth-row .drawer-action {
-  justify-content: center;
-  padding: 0 14px;
-  border-radius: 16px;
+.mobile-menu-drawer .drawer-section-title {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 13px;
+  font-weight: 800;
+  color: #475569;
+  text-align: left;
+  margin-bottom: 10px;
+  padding: 0 2px;
 }
 
-/* Orta kart butonları (Oteller / Kampanyalar / ...) */
-.mobile-menu-drawer .feature-tile {
-  min-height: var(--drawer-tile-height);
-  height: var(--drawer-tile-height);
-  padding: 0 12px;
-  border-radius: 16px;
+.mobile-menu-drawer .drawer-language-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-/* Alt row (Kurumsal / Firma) ile aynı hizaya getir */
-.mobile-menu-drawer .drawer-corp-row .drawer-action {
-  min-height: var(--drawer-tile-height);
-  height: var(--drawer-tile-height);
-  justify-content: center;
-  padding: 0 12px;
-  border-radius: 16px;
+.mobile-menu-drawer .drawer-language-btn {
+  min-height: 44px;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* İkonlar vertical-center ve sabit genişlikte */
 .mobile-menu-drawer .drawer-action i,
 .mobile-menu-drawer .feature-tile i,
 .mobile-menu-drawer .drawer-link i {

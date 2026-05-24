@@ -102,6 +102,19 @@
         ?? Url.Action("OtelListeleme", "Oteller") ?? "/oteller";
     var resultCountDisplay = Model.TotalCount > 0 ? Model.TotalCount : hotels.Count;
     var showingOnPage = hotels.Count;
+    var listingIsTurkishPath = string.Equals(listingPathLang, "tr", StringComparison.OrdinalIgnoreCase);
+    var listingRegionLabel = string.IsNullOrWhiteSpace(Model.SearchLabel)
+        || string.Equals(Model.SearchLabel, "Oteller", StringComparison.OrdinalIgnoreCase)
+        ? (listingIsTurkishPath ? "Tüm bölgeler" : SharedLocalizer["Listing.AllRegions"].Value)
+        : titleText;
+    var listingCountTemplate = listingIsTurkishPath
+        ? "{0} otel bulundu"
+        : SharedLocalizer["Listing.HotelsFound"].Value;
+    var listingCountCulture = listingIsTurkishPath
+        ? CultureInfo.GetCultureInfo("tr-TR")
+        : CultureInfo.CurrentUICulture;
+    var listingCountLine = string.Format(listingCountCulture, listingCountTemplate, resultCountDisplay);
+    var listingHeadline = $"{listingRegionLabel} · {listingCountLine}";
 
     string NormalizeToken(string value)
     {
@@ -347,29 +360,18 @@
   }
   .listing-search-header__title-row {
     display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
     margin-bottom: 6px;
   }
-  .listing-search-header__summary h1 { font-size: clamp(1.25rem, 2.5vw, 1.5rem); font-weight: 700; margin: 0; }
-  .listing-result-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: var(--radius-full, 999px);
-    background: linear-gradient(135deg, rgba(0, 59, 149, 0.12), rgba(0, 168, 107, 0.1));
-    border: 1px solid rgba(0, 59, 149, 0.18);
-    color: var(--primary-dark, #002A6B);
+  .listing-search-header__summary h1 { font-size: clamp(1.25rem, 2.5vw, 1.5rem); font-weight: 700; margin: 0; line-height: 1.3; overflow-wrap: anywhere; }
+  .listing-search-header__page-note {
+    margin: 0;
     font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.01em;
-    white-space: nowrap;
+    font-weight: 700;
+    color: var(--text-gray);
   }
-  .listing-result-badge strong { font-size: 15px; font-weight: 900; color: var(--primary, #003B95); }
-  .listing-result-badge--empty { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.22); color: #991b1b; }
-  .listing-result-badge--empty strong { color: #b91c1c; }
   .listing-search-header__summary p { color: var(--text-gray); font-size: 14px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 0; }
   .listing-search-header__actions { display: flex; gap: 12px; flex-wrap: wrap; }
   .listing-search-header__actions .btn-fe-outline,
@@ -424,10 +426,32 @@
   @@media (max-width: 700px) {
     .listing-hotel-card .card-image,
     .listing-hotel-card .card-image-link { aspect-ratio: 16 / 10; max-height: 200px; }
-    .listing-search-header { padding: 16px 20px; }
-    .listing-search-header__actions { width: 100%; }
+    .listing-search-header {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 16px;
+      gap: 14px;
+    }
+    .listing-search-header__actions {
+      width: 100%;
+      flex-direction: column;
+      gap: 10px;
+    }
     .listing-search-header__actions .btn-fe-outline,
-    .listing-search-header__actions .btn-fe-primary { flex: 1; justify-content: center; }
+    .listing-search-header__actions .btn-fe-primary {
+      width: 100%;
+      flex: none;
+      justify-content: center;
+    }
+    .listing-hotel-card .price-actions-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .listing-hotel-card .price-actions-row .btn-detail {
+      width: 100%;
+      justify-content: center;
+      border-radius: 12px;
+    }
   }
   @@media (min-width: 901px) {
     .listing-hotel-card { flex-direction: row !important; min-height: 240px; }
@@ -1147,24 +1171,11 @@
         <header class="listing-search-header" aria-label="@SharedLocalizer["Search.Title"]">
             <div class="listing-search-header__summary">
                 <div class="listing-search-header__title-row">
-                    <h1>@SharedLocalizer["Listing.SearchFound", titleText, resultCountDisplay]</h1>
-                    <span class="listing-result-badge @(resultCountDisplay == 0 ? "listing-result-badge--empty" : null)"
-                          id="listingResultCountBadge"
-                          aria-live="polite">
-                        <i class="fas fa-building" aria-hidden="true"></i>
-                        @if (resultCountDisplay > 0)
-                        {
-                            <span><strong>@resultCountDisplay</strong> tesis</span>
-                            @if (Model.TotalPages > 1 && showingOnPage > 0)
-                            {
-                                <span class="listing-result-badge__page">· bu sayfada @showingOnPage</span>
-                            }
-                        }
-                        else
-                        {
-                            <span><strong>0</strong> sonuç</span>
-                        }
-                    </span>
+                    <h1 id="listingResultHeadline" aria-live="polite">@listingHeadline</h1>
+                    @if (Model.TotalPages > 1 && showingOnPage > 0)
+                    {
+                        <p class="listing-search-header__page-note">@SharedLocalizer["Listing.OnThisPage", showingOnPage]</p>
+                    }
                 </div>
                 <p>
                     @if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
@@ -1182,7 +1193,7 @@
                     <i class="fas fa-pen" aria-hidden="true"></i> @SharedLocalizer["Listing.EditSearch"]
                 </button>
                 <a class="btn-fe-primary" href="@mapListingUrl">
-                    <i class="fas fa-map-location-dot" aria-hidden="true"></i> @SharedLocalizer["Listing.MapView"]
+                    <i class="fas fa-map-location-dot" aria-hidden="true"></i> @SharedLocalizer["Listing.Map"]
                 </a>
             </div>
         </header>
@@ -1356,7 +1367,7 @@
             <nav class="listing-concept-bar" aria-label="Özel konseptler">
                 <p class="listing-concept-bar__title">
                     <i class="fas fa-star" aria-hidden="true"></i>
-                    <span>@SharedLocalizer["Listing.ConceptTitle"]</span>
+                    <span>@SharedLocalizer["Listing.ConceptFilters"]</span>
                 </p>
                 <div class="listing-concept-bar__track">
                     @foreach (var concept in conceptFilters)
@@ -1580,7 +1591,7 @@
 
                                     <div class="rating-row" aria-label="@SharedLocalizer["Filter.Rating"]">
                                         <span class="rating-row__score">@hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) <i class="fas fa-star" aria-hidden="true"></i></span>
-                                        <span class="rating-row__label">@(hotel.Rating >= 8 ? SharedLocalizer["Listing.RatingExcellent"].Value : SharedLocalizer["Listing.RatingGood"].Value)</span>
+                                        <span class="rating-row__label">@(hotel.Rating >= 8 ? SharedLocalizer["Listing.Excellent"].Value : SharedLocalizer["Listing.RatingGood"].Value)</span>
                                     </div>
 
                                     <div class="listing-card-mobile-lines" aria-label="Liste özeti">
@@ -1738,7 +1749,7 @@
                                             </span>
                                         }
                                     }
-                                    <a href="@HotelDetailUrl(hotel.Slug)" class="btn-detail">@SharedLocalizer["Btn.ViewDetails"]</a>
+                                    <a href="@HotelDetailUrl(hotel.Slug)" class="btn-detail">@SharedLocalizer["Listing.ViewDetails"]</a>
                                 </div>
                                 </div>
                             </div>

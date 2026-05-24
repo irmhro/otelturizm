@@ -108,8 +108,8 @@ if (builder.Environment.IsDevelopment() && !builder.Environment.IsProduction())
 
 builder.Services.AddHttpContextAccessor();
 
-// Marker type: SharedResources (.resx under Resources/)
-builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+// Marker type: SharedResources (.resx under Resources/) — no ResourcesPath so base name matches embedded otelturizmnew.Resources.SharedResources
+builder.Services.AddLocalization();
 var supportedCultures = new[]
 {
     new CultureInfo("tr-TR"),
@@ -118,8 +118,7 @@ var supportedCultures = new[]
     new CultureInfo("de-DE"),
     new CultureInfo("fr-FR"),
     new CultureInfo("es-ES"),
-    new CultureInfo("ru-RU"),
-    new CultureInfo("ar-SA")
+    new CultureInfo("ru-RU")
 };
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
@@ -185,6 +184,7 @@ builder.Services.AddSingleton<ISlowSqlTracker, SlowSqlTracker>();
 builder.Services.AddScoped<IIdempotencyService, IdempotencyService>();
 builder.Services.AddScoped<IAdminHotelManagementService, AdminHotelManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
+builder.Services.AddScoped<ISeyahatPlanlamaService, SeyahatPlanlamaService>();
 builder.Services.AddScoped<IContractContentService, ContractContentService>();
 builder.Services.AddScoped<otelturizmnew.Services.Abstractions.IPanelThemeService, otelturizmnew.Services.PanelThemeService>();
 builder.Services.AddScoped<IDevelopmentRequestService, DevelopmentRequestService>();
@@ -679,6 +679,10 @@ app.Use(async (context, next) =>
         else if (path.StartsWith("/Kampanyalar", StringComparison.Ordinal))
         {
             redirectTarget = "/kampanyalar" + path["/Kampanyalar".Length..];
+        }
+        else if (path.StartsWith("/ar/", StringComparison.OrdinalIgnoreCase))
+        {
+            redirectTarget = InternationalSeoPaths.LocalizePath(path, "tr");
         }
 
         if (redirectTarget is not null)

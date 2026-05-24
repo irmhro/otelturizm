@@ -121,15 +121,22 @@
   <data name="Nav.Invoices" xml:space="preserve"><value>Factures</value></data>
   <data name="Map.BackToList" xml:space="preserve"><value>Retour à la liste</value></data>
   <data name="Map.BackToAllHotels" xml:space="preserve"><value>Tous les hôtels</value></data>
-  <data name="Listing.SearchFound" xml:space="preserve"><value>{0}: {1} hotels found</value></data>
-  <data name="Listing.EditSearch" xml:space="preserve"><value>Edit search</value></data>
-  <data name="Listing.MapView" xml:space="preserve"><value>Map</value></data>
-  <data name="Listing.ConceptTitle" xml:space="preserve"><value>Concept filters · Quick pick</value></data>
-  <data name="Listing.AllCampaigns" xml:space="preserve"><value>All campaigns</value></data>
-  <data name="Listing.LoyaltyBadge" xml:space="preserve"><value>Guest favorite</value></data>
+  <data name="Listing.AllRegions" xml:space="preserve"><value>Toutes les régions</value></data>
+  <data name="Listing.HotelsFound" xml:space="preserve"><value>{0} hôtels trouvés</value></data>
+  <data name="Listing.OnThisPage" xml:space="preserve"><value>{0} sur cette page</value></data>
+  <data name="Listing.SearchFound" xml:space="preserve"><value>{0} : {1} hôtels trouvés</value></data>
+  <data name="Listing.EditSearch" xml:space="preserve"><value>Modifier la recherche</value></data>
+  <data name="Listing.Map" xml:space="preserve"><value>Carte</value></data>
+  <data name="Listing.MapView" xml:space="preserve"><value>Carte</value></data>
+  <data name="Listing.ConceptFilters" xml:space="preserve"><value>Filtres par concept</value></data>
+  <data name="Listing.ConceptTitle" xml:space="preserve"><value>Filtres par concept</value></data>
+  <data name="Listing.AllCampaigns" xml:space="preserve"><value>Toutes les campagnes</value></data>
+  <data name="Listing.LoyaltyBadge" xml:space="preserve"><value>Coup de cœur</value></data>
+  <data name="Listing.Excellent" xml:space="preserve"><value>Excellent</value></data>
   <data name="Listing.RatingExcellent" xml:space="preserve"><value>Excellent</value></data>
-  <data name="Listing.RatingGood" xml:space="preserve"><value>Good</value></data>
-  <data name="Btn.ViewDetails" xml:space="preserve"><value>View details</value></data>
+  <data name="Listing.RatingGood" xml:space="preserve"><value>Bien</value></data>
+  <data name="Listing.ViewDetails" xml:space="preserve"><value>Voir les détails</value></data>
+  <data name="Btn.ViewDetails" xml:space="preserve"><value>Voir les détails</value></data>
   <data name="Nav.QuickLink.EndOfMonth" xml:space="preserve"><value>End of month special</value></data>
   <data name="Nav.QuickLink.FlashDiscount" xml:space="preserve"><value>Flash deal</value></data>
   <data name="Nav.QuickLink.WeekendDeals" xml:space="preserve"><value>Weekend deals</value></data>
@@ -173,6 +180,75 @@
   <data name="Detail.ReviewTeaser.None" xml:space="preserve"><value>No reviews yet — be the first.</value></data>
   <data name="Detail.ReviewTeaser.Count" xml:space="preserve"><value>{0} reviews · average {1}/10</value></data>
   <data name="Booking.MobileSummary" xml:space="preserve"><value>Mobile booking summary</value></data>
+  <data name="Detail.BackToHotels" xml:space="preserve"><value>Retour aux hôtels</value></data>
+  <data name="Detail.Rooms.Title" xml:space="preserve"><value>Types de chambres et tarifs</value></data>
+  <data name="Detail.Rooms.Subtitle" xml:space="preserve"><value>Choisissez une chambre ici pour créer votre réservation.</value></data>
+  <data name="Detail.Rooms.GoToBooking" xml:space="preserve"><value>Aller à la réservation</value></data>
+  <data name="Detail.Room.Nightly" xml:space="preserve"><value>Par nuit</value></data>
+  <data name="Detail.Room.Reserve" xml:space="preserve"><value>Réserver</value></data>
+  <data name="Detail.Room.NoPrice" xml:space="preserve"><value>Pas de prix</value></data>
+  <data name="Detail.Room.TaxesIncluded" xml:space="preserve"><value>Taxes incluses</value></data>
+  <data name="Detail.Booking.Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Detail.Booking.GoToReserve" xml:space="preserve"><value>Réserver</value></data>
+  <data name="Detail.BackToHotels" xml:space="preserve"><value>Retour aux hôtels</value></data>
+  <data name="Detail.Rooms.Title" xml:space="preserve"><value>Types de chambres et tarifs</value></data>
+  <data name="Detail.Rooms.Subtitle" xml:space="preserve"><value>Choisissez une chambre ici pour créer votre réservation.</value></data>
+  <data name="Detail.Rooms.GoToBooking" xml:space="preserve"><value>Aller à la réservation</value></data>
+  <data name="Detail.Room.Nightly" xml:space="preserve"><value>Par nuit</value></data>
+  <data name="Detail.Room.Reserve" xml:space="preserve"><value>Réserver</value></data>
+  <data name="Detail.Room.NoPrice" xml:space="preserve"><value>P server-side rendering (SSR) is a technique where a web page is generated on the server for each request, rather than being built entirely in the browser. This approach offers several advantages, particularly for SEO, performance, and initial load times.
+
+Here's a breakdown of how SSR works and its benefits:
+
+**How SSR Works:**
+
+1.  **User Request:** A user navigates to a URL in their browser.
+2.  **Server Processing:** The request hits the web server. The server-side application (e.g., Node.js with Express, Next.js, Nuxt.js, or a traditional backend like PHP, Python, Ruby) processes the request.
+3.  **Data Fetching:** The server-side code fetches any necessary data from databases, APIs, or other services.
+4.  **HTML Generation:** The server uses this data, along with templates or components, to construct a complete HTML document. This HTML includes all the content that should be visible on the page.
+5.  **Response to Browser:** The server sends this fully rendered HTML page back to the user's browser.
+6.  **Browser Display:** The browser receives the HTML and immediately displays the content to the user.
+7.  **Client-Side Hydration (Optional but common in modern SSR frameworks):** After the initial HTML is displayed, JavaScript bundles are downloaded and executed in the browser. This process, called "hydration," attaches event listeners and makes the static HTML interactive, turning it into a fully functional client-side application (like a React or Vue app).
+
+**Benefits of SSR:**
+
+*   **Improved SEO (Search Engine Optimization):** Search engine crawlers can easily read and index the fully rendered HTML content, leading to better search rankings. Client-side rendered (CSR) applications often struggle with SEO because crawlers might not execute JavaScript to see the dynamically generated content.
+*   **Faster Initial Page Load (First Contentful Paint - FCP):** Users see content much faster because the browser doesn't have to wait for JavaScript to download, parse, and execute before rendering anything. This is especially beneficial on slower networks or devices.
+*   **Better Performance on Low-Powered Devices:** Since the heavy lifting of rendering is done on the server, less processing power is required on the user's device, improving performance on older phones or computers.
+*   **Social Media Sharing:** When sharing links on social media platforms, SSR ensures that the correct preview images, titles, and descriptions are displayed, as these platforms often rely on scraping the initial HTML.
+*   **Accessibility:** Content is available immediately, which can be beneficial for users with disabilities or those using assistive technologies that might not fully support complex JavaScript rendering.
+
+**Drawbacks of SSR:**
+
+*   **Increased Server Load:** Each request requires the server to render a page, which can be more resource-intensive than serving static files or relying on client-side rendering.
+*   **Slower Time to Interactive (TTI):** While FCP is faster, the page might not become fully interactive until the client-side JavaScript has downloaded and "hydrated" the page.
+*   **Complexity:** Setting up and maintaining an SSR application can be more complex than a purely client-side application, especially when dealing with state management and data fetching across server and client.
+*   **Cost:** Higher server resource usage can lead to increased hosting costs.
+
+**When to Use SSR:**
+
+*   **Content-heavy websites:** Blogs, news sites, e-commerce product pages.
+*   **Applications where SEO is critical.**
+*   **Applications targeting users on slower networks or devices.**
+*   **Public-facing marketing pages.**
+
+**Examples of SSR Frameworks:**
+
+*   **Next.js (React):** A popular React framework that offers SSR, Static Site Generation (SSG), and Client-Side Rendering (CSR) options.
+*   **Nuxt.js (Vue):** A framework for Vue.js that provides similar capabilities to Next.js.
+*   **Angular Universal (Angular):** Allows Angular applications to be rendered on the server.
+*   **SvelteKit (Svelte):** The official application framework for Svelte, with built-in SSR support.
+*   **Remix (React):** A full-stack web framework that emphasizes web standards and SSR.
+
+In summary, SSR is a powerful technique for delivering fast, SEO-friendly web experiences by shifting the rendering burden from the client to the server. It's a key consideration in modern web development, often used in conjunction with client-side rendering for a hybrid approach that leverages the strengths of both.</image_description>
+Don't mention to the user that you only have a description of the image.
+</image>
+
+
+Your final response MUST be written in Turkish. It should summarize what changed, files touched, i18n keys fixed, and what the user must do (restart dotnet run --launch-profile https, Ctrl+F5 on mobile viewport).
+
+
+UpdateCurrentStep
 <data name="Company.Hero.DefaultLead" xml:space="preserve"><value>We make stays transparent, secure, and accessible with Otelturizm.</value></data>
   <data name="Company.About.Title" xml:space="preserve"><value>About us</value></data>
   <data name="Company.About.MetaDescription" xml:space="preserve"><value>Otelturizm mission, vision, and values — secure hotel search and booking across Türkiye.</value></data>
@@ -248,5 +324,41 @@
   <data name="Company.Blog.Teaser2Text" xml:space="preserve"><value>Current discounts and early booking deals on the campaigns page.</value></data>
   <data name="Company.Blog.Teaser3Title" xml:space="preserve"><value>Pick hotels on the map</value></data>
   <data name="Company.Blog.Teaser3Text" xml:space="preserve"><value>Search in list or map view with region and price filters.</value></data>
+  <data name="Plan.Page.Title" xml:space="preserve"><value>Seyahat Planlama</value></data>
+  <data name="Plan.Hero.Kicker" xml:space="preserve"><value>Seyahat planlama</value></data>
+  <data name="Plan.Hero.Title" xml:space="preserve"><value>Kişiselleştirilmiş gezi planları</value></data>
+  <data name="Plan.Hero.Lead" xml:space="preserve"><value>Rota önerileri, bütçe tahmini, hafta sonu kaçamakları ve kampanya bazlı otel önerileriyle seyahatinizi tek ekrandan planlayın.</value></data>
+  <data name="Plan.Hero.StatsLabel" xml:space="preserve"><value>Planlama özeti</value></data>
+  <data name="Plan.Stat.Routes" xml:space="preserve"><value>rota önerisi</value></data>
+  <data name="Plan.Stat.Budget" xml:space="preserve"><value>Bütçe tahmini</value></data>
+  <data name="Plan.Stat.Campaigns" xml:space="preserve"><value>kampanya önerisi</value></data>
+  <data name="Plan.Routes.Title" xml:space="preserve"><value>Rota önerileri</value></data>
+  <data name="Plan.Routes.Description" xml:space="preserve"><value>Öne çıkan destinasyonlardan otel aramasına tek tıkla geçin.</value></data>
+  <data name="Plan.Routes.FromPrice" xml:space="preserve"><value>Gecelik yaklaşık {0} TRY'den</value></data>
+  <data name="Plan.Routes.Explore" xml:space="preserve"><value>Otelleri keşfet</value></data>
+  <data name="Plan.Budget.Title" xml:space="preserve"><value>Bütçe tahmini</value></data>
+  <data name="Plan.Budget.Description" xml:space="preserve"><value>Destinasyon, gece sayısı ve bütçenize göre tahmini konaklama aralığı hesaplayın; ardından uygun otelleri listeleyin.</value></data>
+  <data name="Plan.Budget.Destination" xml:space="preserve"><value>Destinasyon</value></data>
+  <data name="Plan.Budget.Nights" xml:space="preserve"><value>Gece sayısı</value></data>
+  <data name="Plan.Budget.Amount" xml:space="preserve"><value>Toplam bütçe (TRY)</value></data>
+  <data name="Plan.Budget.Calculate" xml:space="preserve"><value>Tahmini hesapla</value></data>
+  <data name="Plan.Budget.EstimateLabel" xml:space="preserve"><value>Tahmini konaklama aralığı</value></data>
+  <data name="Plan.Budget.NightsUnit" xml:space="preserve"><value>gece</value></data>
+  <data name="Plan.Budget.SearchHotels" xml:space="preserve"><value>Uygun otelleri listele</value></data>
+  <data name="Plan.Budget.BudgetFriendly" xml:space="preserve"><value>Bütçeme uygun oteller</value></data>
+  <data name="Plan.Weekend.Title" xml:space="preserve"><value>Hafta sonu kaçamakları</value></data>
+  <data name="Plan.Weekend.Description" xml:space="preserve"><value>Kısa konaklamalar ve hafta sonu etiketli fırsatlar.</value></data>
+  <data name="Plan.Weekend.View" xml:space="preserve"><value>Fırsatları gör</value></data>
+  <data name="Plan.Campaigns.Title" xml:space="preserve"><value>Kampanya bazlı öneriler</value></data>
+  <data name="Plan.Campaigns.Description" xml:space="preserve"><value>Yayında olan kampanyalardan seçilmiş öneriler; katılımcı otel sayısıyla birlikte.</value></data>
+  <data name="Plan.Campaigns.EmptyTitle" xml:space="preserve"><value>Şu an önerilecek aktif kampanya yok</value></data>
+  <data name="Plan.Campaigns.EmptyDescription" xml:space="preserve"><value>Kampanyalar yayına girdiğinde bu alan otomatik dolacaktır.</value></data>
+  <data name="Plan.Campaigns.FallbackDescription" xml:space="preserve"><value>Aktif kampanya detaylarını inceleyin.</value></data>
+  <data name="Plan.Campaigns.HotelCount" xml:space="preserve"><value>{0} katılımcı otel</value></data>
+  <data name="Plan.Loyalty.Title" xml:space="preserve"><value>OtelPuan ile planınızı güçlendirin</value></data>
+  <data name="Plan.Loyalty.Description" xml:space="preserve"><value>Kayıtlı kullanıcılar puan hareketlerini ve seviye avantajlarını sadakat merkezinden yönetir.</value></data>
+  <data name="Plan.Loyalty.OpenPanel" xml:space="preserve"><value>OtelPuan programına git</value></data>
+  <data name="Plan.Loyalty.SignIn" xml:space="preserve"><value>Giriş yap ve puan kazan</value></data>
+  <data name="Plan.Loyalty.ExploreHotels" xml:space="preserve"><value>Otelleri keşfet</value></data>
 </root>
 

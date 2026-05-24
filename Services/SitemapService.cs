@@ -435,7 +435,6 @@ public sealed class SitemapService : ISitemapService
         "fr-FR" => "fr",
         "es-ES" => "es",
         "ru-RU" => "ru",
-        "ar-SA" => "ar",
         _ => null
     };
 

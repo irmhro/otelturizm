@@ -14,8 +14,7 @@ public static class InternationalSeoPaths
         ["de"] = new CultureRoute("de", "hotels"),
         ["fr"] = new CultureRoute("fr", "hotels"),
         ["es"] = new CultureRoute("es", "hoteles"),
-        ["ru"] = new CultureRoute("ru", "oteli"),
-        ["ar"] = new CultureRoute("ar", "oteller")
+        ["ru"] = new CultureRoute("ru", "oteli")
     };
 
     public static string BuildPublicPath(string culture, string pageKind, string? citySlug, string? hotelSlug)

@@ -1,16 +1,184 @@
+@model otelturizmnew.Models.SeyahatPlanlama.SeyahatPlanlamaPageViewModel
 @{
+    ViewData["Title"] = SharedLocalizer["Plan.Page.Title"].Value;
     ViewData["PageCss"] = "seyahat-planlama";
+    ViewData["PageCssMobile"] = "seyahat-planlama.mobile";
+    ViewData["IncludeFeWorldTokens"] = true;
+    ViewData["MetaDescription"] = Model.MetaDescription;
+    var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
+                  ?? "https://otelturizm.com";
+    ViewData["Canonical"] = $"{baseUrl}/seyahat-planlama";
 }
 
-<section class="plan-page">
-    <div class="plan-hero">
-        <p class="plan-kicker">SEYAHAT PLANLAMA</p>
-        <h1>Kişiselleştirilmiş gezi planları</h1>
-        <p>Yakında: rota önerileri, bütçe tahmini, hafta sonu kaçamakları ve kampanya bazlı öneriler. Şimdilik otel keşfine devam edebilirsiniz.</p>
-        <div class="plan-actions">
-            <a class="plan-btn primary" href="/oteller">Otelleri keşfet</a>
-            <a class="plan-btn" href="/kampanyalar">Kampanyalara göz at</a>
+<section class="plan-page" aria-label="@SharedLocalizer["Plan.Page.Title"]">
+    <header class="plan-hero">
+        <p class="plan-kicker">@SharedLocalizer["Plan.Hero.Kicker"]</p>
+        <h1>@SharedLocalizer["Plan.Hero.Title"]</h1>
+        <p class="plan-hero-lead">@SharedLocalizer["Plan.Hero.Lead"]</p>
+        <div class="plan-hero-stats" aria-label="@SharedLocalizer["Plan.Hero.StatsLabel"]">
+            <span class="plan-stat-chip"><i class="fas fa-route" aria-hidden="true"></i> @Model.RouteSuggestions.Count @SharedLocalizer["Plan.Stat.Routes"]</span>
+            <span class="plan-stat-chip"><i class="fas fa-calculator" aria-hidden="true"></i> @SharedLocalizer["Plan.Stat.Budget"]</span>
+            <span class="plan-stat-chip"><i class="fas fa-tags" aria-hidden="true"></i> @Model.CampaignSuggestions.Count @SharedLocalizer["Plan.Stat.Campaigns"]</span>
         </div>
-    </div>
-</section>
+    </header>
 
+    <section class="plan-section" aria-labelledby="planRoutesHeading">
+        <div class="plan-section-head">
+            <h2 id="planRoutesHeading">@SharedLocalizer["Plan.Routes.Title"]</h2>
+            <p>@SharedLocalizer["Plan.Routes.Description"]</p>
+        </div>
+        <div class="plan-route-grid">
+            @foreach (var route in Model.RouteSuggestions)
+            {
+                <a class="plan-route-card @route.ThemeClass" href="@route.HotelsUrl" title="@route.Title">
+                    <div class="plan-route-card__icon" aria-hidden="true"><i class="@route.IconClass"></i></div>
+                    <div class="plan-route-card__body">
+                        <h3>@route.Title</h3>
+                        <p>@route.Subtitle</p>
+                        <span class="plan-route-card__meta">
+                            @string.Format(SharedLocalizer["Plan.Routes.FromPrice"].Value, route.MinNightlyTry.ToString("N0"))
+                        </span>
+                    </div>
+                    <span class="plan-route-card__cta">@SharedLocalizer["Plan.Routes.Explore"] <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+                </a>
+            }
+        </div>
+    </section>
+
+    <section class="plan-section plan-section--budget" aria-labelledby="planBudgetHeading">
+        <div class="plan-section-head">
+            <h2 id="planBudgetHeading">@SharedLocalizer["Plan.Budget.Title"]</h2>
+            <p>@SharedLocalizer["Plan.Budget.Description"]</p>
+        </div>
+        <div class="plan-budget-shell">
+            <form class="plan-budget-form" method="get" action="/seyahat-planlama">
+                <input type="hidden" name="tahmin" value="true" />
+                <label class="plan-field">
+                    <span>@SharedLocalizer["Plan.Budget.Destination"]</span>
+                    <select name="dest" class="plan-input">
+                        @foreach (var route in Model.RouteSuggestions)
+                        {
+                            if (route.Key == Model.BudgetForm.DestinationKey)
+                            {
+                                <option value="@route.Key" selected="selected">@route.Title</option>
+                            }
+                            else
+                            {
+                                <option value="@route.Key">@route.Title</option>
+                            }
+                        }
+                    </select>
+                </label>
+                <label class="plan-field">
+                    <span>@SharedLocalizer["Plan.Budget.Nights"]</span>
+                    <input class="plan-input" type="number" name="gece" min="1" max="14" value="@Model.BudgetForm.Nights" required />
+                </label>
+                <label class="plan-field">
+                    <span>@SharedLocalizer["Plan.Budget.Amount"]</span>
+                    <input class="plan-input" type="number" name="butce" min="500" step="100" value="@((int)Model.BudgetForm.BudgetTry)" required />
+                </label>
+                <button type="submit" class="plan-btn primary fe-world-touch-target">@SharedLocalizer["Plan.Budget.Calculate"]</button>
+            </form>
+
+            @if (Model.BudgetEstimate is { } estimate)
+            {
+                <div class="plan-budget-result @(estimate.FitsBudget ? "is-fit" : "is-tight")" aria-live="polite">
+                    <div class="plan-budget-result__range">
+                        <span class="plan-budget-result__label">@SharedLocalizer["Plan.Budget.EstimateLabel"]</span>
+                        <strong>@estimate.EstimatedMinTotalTry.ToString("N0") – @estimate.EstimatedMaxTotalTry.ToString("N0") TRY</strong>
+                        <span class="plan-budget-result__nights">@estimate.Nights @SharedLocalizer["Plan.Budget.NightsUnit"] · @estimate.DestinationLabel</span>
+                    </div>
+                    <p>@estimate.SummaryText</p>
+                    <div class="plan-actions">
+                        <a class="plan-btn primary fe-world-touch-target" href="@estimate.HotelsUrl">@SharedLocalizer["Plan.Budget.SearchHotels"]</a>
+                        @if (!estimate.FitsBudget)
+                        {
+                            <a class="plan-btn fe-world-touch-target" href="/oteller?etiket=butceme-uygun-oteller">@SharedLocalizer["Plan.Budget.BudgetFriendly"]</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="plan-section" aria-labelledby="planWeekendHeading">
+        <div class="plan-section-head">
+            <h2 id="planWeekendHeading">@SharedLocalizer["Plan.Weekend.Title"]</h2>
+            <p>@SharedLocalizer["Plan.Weekend.Description"]</p>
+        </div>
+        <div class="plan-weekend-grid">
+            @foreach (var weekend in Model.WeekendEscapes)
+            {
+                <a class="plan-weekend-card @weekend.ThemeClass" href="@weekend.Url">
+                    <span class="plan-weekend-card__badge">@weekend.BadgeText</span>
+                    <h3>@weekend.Title</h3>
+                    <p>@weekend.Description</p>
+                    <span class="plan-weekend-card__link">@SharedLocalizer["Plan.Weekend.View"] <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+                </a>
+            }
+        </div>
+    </section>
+
+    <section class="plan-section" aria-labelledby="planCampaignHeading">
+        <div class="plan-section-head">
+            <h2 id="planCampaignHeading">@SharedLocalizer["Plan.Campaigns.Title"]</h2>
+            <p>@SharedLocalizer["Plan.Campaigns.Description"]</p>
+        </div>
+        @if (Model.CampaignSuggestions.Count == 0)
+        {
+            <div class="plan-empty">
+                <strong>@SharedLocalizer["Plan.Campaigns.EmptyTitle"]</strong>
+                <p>@SharedLocalizer["Plan.Campaigns.EmptyDescription"]</p>
+                <a class="plan-btn fe-world-touch-target" href="/kampanyalar">@SharedLocalizer["Nav.Campaigns"]</a>
+            </div>
+        }
+        else
+        {
+            <div class="plan-campaign-grid">
+                @foreach (var campaign in Model.CampaignSuggestions)
+                {
+                    var detailUrl = string.IsNullOrWhiteSpace(campaign.Slug)
+                        ? campaign.Url
+                        : $"/kampanyalar/{campaign.Slug}";
+                    <a class="plan-campaign-card" href="@detailUrl" style="--plan-campaign-accent:@campaign.ColorCode">
+                        @if (!string.IsNullOrWhiteSpace(campaign.HeroImageUrl))
+                        {
+                            <div class="plan-campaign-card__media" style="background-image:url('@campaign.HeroImageUrl')"></div>
+                        }
+                        <div class="plan-campaign-card__body">
+                            @if (!string.IsNullOrWhiteSpace(campaign.PromoBadge))
+                            {
+                                <span class="plan-campaign-card__badge">@campaign.PromoBadge</span>
+                            }
+                            <h3>@campaign.CampaignName</h3>
+                            <p>@(string.IsNullOrWhiteSpace(campaign.ShortDescription) ? SharedLocalizer["Plan.Campaigns.FallbackDescription"].Value : campaign.ShortDescription)</p>
+                            <span class="plan-campaign-card__meta">
+                                <i class="fas fa-hotel" aria-hidden="true"></i>
+                                @string.Format(SharedLocalizer["Plan.Campaigns.HotelCount"].Value, campaign.HotelCount)
+                            </span>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="plan-loyalty-cta" aria-labelledby="planLoyaltyHeading">
+        <div class="plan-loyalty-cta__copy">
+            <h2 id="planLoyaltyHeading">@SharedLocalizer["Plan.Loyalty.Title"]</h2>
+            <p>@SharedLocalizer["Plan.Loyalty.Description"]</p>
+        </div>
+        <div class="plan-actions">
+            @if (Model.IsAuthenticated)
+            {
+                <a class="plan-btn primary fe-world-touch-target" href="@Model.LoyaltyPanelUrl">@SharedLocalizer["Plan.Loyalty.OpenPanel"]</a>
+            }
+            else
+            {
+                <a class="plan-btn primary fe-world-touch-target" href="/giris?returnUrl=%2Fpanel%2Fuser%2Fotelpuan-programi">@SharedLocalizer["Plan.Loyalty.SignIn"]</a>
+                <a class="plan-btn fe-world-touch-target" href="/kayit">@SharedLocalizer["Nav.Register"]</a>
+            }
+            <a class="plan-btn fe-world-touch-target" href="/oteller">@SharedLocalizer["Plan.Loyalty.ExploreHotels"]</a>
+        </div>
+    </section>
+</section>
