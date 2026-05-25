@@ -9,7 +9,7 @@
 
 <partial name="~/Views/Kurumsal/_SirketPageHero.cshtml" />
 
-        <div class="corp-stats" aria-label="@SharedLocalizer["Company.About.StatsLabel"]">
+        <div class="corp-stats" aria-label="@SharedLocalizer["Company.About.StatsLabel"].Value">
             <div class="corp-stat">
                 <strong>39+</strong>
                 <span>@SharedLocalizer["Company.About.StatDistricts"]</span>
@@ -58,15 +58,15 @@
             </div>
         </section>
 
-        <section class="corp-cta" aria-label="@SharedLocalizer["Company.About.CtaLabel"]">
+        <section class="corp-cta" aria-label="@SharedLocalizer["Company.About.CtaLabel"].Value">
             <div class="corp-cta__inner">
                 <div>
                     <h2 class="corp-cta__title">@SharedLocalizer["Company.About.CtaTitle"]</h2>
                     <p class="corp-cta__text">@SharedLocalizer["Company.About.CtaText"]</p>
                 </div>
                 <div class="corp-cta__actions">
-                    <a class="corp-btn corp-btn--primary fe-world-touch-target" href="/yardim-merkezi">@SharedLocalizer["Nav.Help"]</a>
-                    <a class="corp-btn corp-btn--ghost fe-world-touch-target" href="/kurumsal">@SharedLocalizer["Nav.Corporate"]</a>
+                    <a class="corp-btn corp-btn--primary fe-world-touch-target" href="/yardim-merkezi">@SharedLocalizer["Nav.Help"].Value</a>
+                    <a class="corp-btn corp-btn--ghost fe-world-touch-target" href="/kurumsal">@SharedLocalizer["Nav.Corporate"].Value</a>
                 </div>
             </div>
         </section>

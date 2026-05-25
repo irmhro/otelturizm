@@ -1042,24 +1042,6 @@
 .hotel-weather { display:inline-flex; align-items:center; gap:6px; margin-left:12px; color:#475569; font-weight:700; }
 .hotel-weather .hotel-temp { font-weight:700; margin-left:4px; }
 
-.rating-price { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:8px; }
-.rating-box { display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
-.rating-value { display:inline-flex; align-items:center; gap:8px; background:#1d4ed8; color:#fff; padding:6px 10px; border-radius:12px; }
-.rating-value i { color: #ffd166; }
-.new-reviews { background:#eef2ff; color:#1d4ed8; }
-
-/* Home hotel card: price left, rating right */
-.rating-price { flex-direction: row; }
-.rating-price .price-box { order: 1; flex: 1 1 auto; min-width: 0; }
-.rating-price .rating-box {
-    order: 2;
-    margin-left: auto;
-    flex: 0 0 auto;
-    align-items: flex-end;
-    text-align: right;
-}
-
-
 .home-hotel-card-link {
     display: block;
     color: inherit;
@@ -1298,44 +1280,18 @@
     font-size: 13px;
 }
 
-.rating-price {
+.home-hotel-price-row {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding-top: 10px;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding-top: 8px;
     border-top: 1px solid #edf0f3;
     margin-top: auto;
 }
 
-.rating-price.no-rating {
-    justify-content: flex-start;
-}
-
-.rating-box {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-    min-width: 52px;
-    min-height: 44px;
-    border-radius: 12px;
-    background: #003b95;
-    color: #fff;
-    padding: 6px 8px;
-    text-align: right;
-}
-
-.rating-box strong {
-    font-size: 1rem;
-    line-height: 1;
-}
-
-.rating-box small {
-    margin-top: 4px;
-    font-size: 10px;
-    text-align: right;
-    opacity: 0.92;
+.home-hotel-price-row .price-box {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .price-box {
@@ -1777,18 +1733,7 @@
         align-items: start;
     }
 
-    /* Keep rating box on the right of the price row (mobile) */
-    .rating-price {
-        flex-direction: row;
-        align-items: center;
-    }
-
-    .rating-price .rating-box {
-        margin-left: auto;
-        flex: 0 0 auto;
-    }
-
-    .price-box {
+    .home-hotel-price-row .price-box {
         align-items: start;
     }
 }

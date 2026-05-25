@@ -83,8 +83,11 @@
 | 077 | 2026-05-25 | P0 | H1+H13 | **mobile-drawer-fix:** drawer i18n `.Value`, TR `/oteller` linkleri, Arapça dil kaldırıldı, tek sütun mobil CSS + safe-area · `dotnet build -o .coord-build-drawer` | ✅ |
 | 081 | 2026-05-25 | P0 | H1+H13 | **listing-i18n-ux:** `/oteller` path-locked TR UI; tek satır sonuç (`Tüm bölgeler · N otel bulundu`); Listing.* resx 7 dil; mobil header/konsept/kart CTA · `dotnet build -o .coord-build-listing-i18n` | ✅ |
 | 082 | 2026-05-25 | P0 | Koord | **AGENT_LOOP_TICK_platform_coord KAPALI:** terminal 703446 ~35h sonra durdu (exit 4294967295); kullanıcı talebi — yeniden başlatılmayacak; `AGENT_LOOP_HOURLY_git_sync` / `Invoke-HourlyGitSync.ps1` aynı | ✓ |
+| 084 | 2026-05-25 | P0 | H1 | **otel-detay-roomsCard:** Detail.* i18n `.Value` + 7 resx; oda görseli fallback/onerror; `#roomsCard` mobil+desktop CSS; `mobileBookingBar` CTA; JS seçili oda i18n · `dotnet build -o .coord-build-rooms-card` | ✅ |
+| 087 | 2026-05-25 | P0 | H1 | **otel-detay-benchmark:** 5 OTA kıyas (galeri/chip/oda/yorum/harita/sticky); full-bleed mobil galeri; `detail-hero-head` puan chip; sidebar inline; 10 Detail.* i18n · `dotnet build -o .coord-build-otel-detay-benchmark` | ✅ |
+| 083 | 2026-05-25 | Wave-XX | H1 | **confirm-modal-premium:** `#reservationConfirmModal` bottom sheet mobil, ikonlu kartlar, toplam, i18n · `otel-detay.css` / `.mobile.css` | ✅ |
 
-**Toplam tamamlanan teslimat:** **68** (Wave-I → Wave-A1 + #053–#058, #065–#071, #075–#077, #076, #079; #072 build bekliyor)
+**Toplam tamamlanan teslimat:** **70** (Wave-I → Wave-A1 + #053–#058, #065–#071, #075–#077, #076, #079, #083–#084; #072 build bekliyor)
 
 ---
 
@@ -192,6 +195,13 @@ Her 10 dk dalga bitince:
 
 *Son otomatik dalga: #076 home-card-mobile-full · Sonraki: #075 partner evrak SS*
 
+### #083 — OtelDetay rezervasyon onay modalı premium (2026-05-25)
+
+- **FE:** `#reservationConfirmModal` — mobil bottom sheet, desktop ~520px dialog, ikonlu özet kartları, toplam satırı, 44px CTA
+- **i18n:** `Detail.ConfirmModal.*` SharedLocalizer + `reservationConfirmI18nJson` JS köprüsü
+- **CSS:** `otel-detay.css`, `otel-detay.mobile.css` — fe-world-tokens, blur backdrop, açılış animasyonu
+- **Build:** `dotnet build -o .coord-build-confirm-modal` — 0 hata hedef
+
 ### #076 — home-card-mobile-full (2026-05-25)
 
 - **Görünür FE:** Anasayfa kategori swiper — `.card-content` tam genişlik (safe-area), fiyat/indirim hiyerarşisi, puan rozeti sağ alt
@@ -279,10 +289,41 @@ Her 10 dk dalga bitince:
 
 
 
-### #082 - AGENT_LOOP_TICK kalıcı kapalı (2026-05-25)
+### #083 — Otel Detay mobil rebuild + i18n (2026-05-25)
+
+- **i18n:** `Detail.BackToHotels`, `Detail.Booking.Total`, `Detail.Booking.GoToReserve` ve oda/rezervasyon anahtarları 7× `SharedResources*.resx`; `OtelDetay.cshtml` → `.Value`
+- **CSS:** `otel-detay.mobile.css` sıfırdan (≤900px): tam genişlik grid, full-bleed galeri, sticky CTA safe-area, `#roomsCard` tek sütun
+- **Desktop fix:** `otel-detay.css` — iki sütunlu `.detail-grid` yalnız `@media (min-width: 901px)` (mobilde ~230px sıkışma kök nedeni)
+- **Build:** `dotnet build -o .coord-build-otel-detay-rebuild` — 0 hata hedef
+- **Kullanıcı:** `dotnet run --launch-profile https` yeniden başlat + mobil viewport Ctrl+F5
+
+### #084 — Otel Detay mobil CTA i18n hotfix (2026-05-25)
+
+- **Kök neden:** `#mobileBookingBar` ve breadcrumb `SharedLocalizer["Detail.*"]` kullanıyordu; anahtarlar `SharedResources.resx` + uydu `.resx` dosyalarında eksik/henüz derlenmemişti → kaynak bulunamayınca ham key (`Detail.Booking.Total` vb.) render edildi.
+- **Düzeltme:** Tüm `Detail.*` / `Detail.ConfirmModal.*` anahtarları 7× `SharedResources*.resx` (TR: Otellere Dön, Toplam, Rezervasyona Git); `OtelDetay.cshtml` tüm `SharedLocalizer` → `.Value`; `OtellerController.OtelDetay` → `ApplyRouteListingCulture()` action başında (listeleme ile aynı).
+- **Build:** `dotnet build -o .coord-build-detail-i18n` — 0 hata
+- **Kullanıcı:** `dotnet run --launch-profile https` yeniden başlat + otel detay sayfasında mobil viewport Ctrl+F5
+
 
 - **Durum:** `AGENT_LOOP_TICK_platform_coord` (terminal 703446) ~35 saat sonra durdu; exit_code **4294967295**; döngü yalnızca `Start-Sleep 600` + `Write-Output` idi (ajan/kod yok).
 - **Kullanıcı talebi:** Bu tick döngüsü **yeniden başlatılmayacak**.
 - **Devam eden:** `AGENT_LOOP_HOURLY_git_sync` (3600 sn) — `tools/Git/Invoke-HourlyGitSync.ps1` değişmedi.
 - **Referans:** #077 aynı anti-pattern; bu kayıt kullanıcı onayı ile kalıcı kapatma.
+
+### #087 — Otel Detay global benchmark mobil+desktop (2026-05-25)
+
+- **Kıyas:** Booking.com, Expedia, Hotels.com, Agoda, Trip.com/Trivago — galeri swipe/dots, başlık+puan chip, sticky CTA, oda kartı (görsel üst + pill + CTA), yorum barları, harita z-index, tam viewport genişlik
+- **CSHTML:** `detail-hero-head` + `detail-rating-chip`; mobil galeri tek görsel; `SharedLocalizer` → `.Value` (About/Location/Reviews/Gallery)
+- **CSS:** `otel-detay.mobile.css` full-bleed galeri, sidebar grid gizle + inline, `#roomsCard`/`#reviewsSection` mobil; `otel-detay.css` hero chip + ≤900 tabler grid reset
+- **i18n:** `Detail.About.Title`, `Detail.Location.*`, `Detail.Reviews.*`, `Detail.Gallery.SwipeHint`, `Detail.Rating.*` → 7× resx
+- **Build:** `dotnet build -o .coord-build-otel-detay-benchmark`
+
+### #085 — Buton i18n taraması (2026-05-25)
+
+- **Tarama:** 362 `Views/**/*.cshtml`; 14 dosyada **51 buton/link/aria-label** düzeltmesi
+- **Kök neden:** `@SharedLocalizer["Key"]` `.Value` olmadan render → ham anahtar veya `LocalizedString` nesnesi
+- **Yeni anahtarlar (16):** `Detail.ConfirmModal.*` (11), `Listing.ClearAllFilters`, `Listing.ShowAllHotels`, `Listing.SearchOnMap`, `Btn.Filter`, `Btn.Clear` → 7× `SharedResources*.resx`
+- **Dosyalar:** `_AnasayfaHeader/Footer`, `OtelListeleme`, `SeyahatPlanlama/Index`, Kurumsal (BasinOdasi/Blog/BlogDetay/Hakkimizda/Kariyer), `Kampanyalar/Index+Detail`, `_Layout`, `yanbar`
+- **Build:** `dotnet build -o .coord-build-btn-fix` — 0 hata
+- **Ertelenen:** Panel drawer hardcoded TR (`_KurumsalHeader`, `_FirmaHeader`); auth sayfaları kasıtlı TR metin
 

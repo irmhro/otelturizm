@@ -125,6 +125,7 @@ public class OtellerController : Controller
     [OutputCache(PolicyName = "public-short")]
     public async Task<IActionResult> OtelDetay(string slug, CancellationToken cancellationToken)
     {
+        var detailCulture = ApplyRouteListingCulture();
         var model = await _hotelService.GetHotelDetailPageAsync(slug, cancellationToken);
         if (model is null)
         {
@@ -221,7 +222,6 @@ public class OtellerController : Controller
             }
         }
 
-        var detailCulture = ApplyRouteListingCulture();
         var detailMeta = _internationalSeo.BuildHotelDetailMeta(detailCulture, model.Name, model.City);
         ViewData["Title"] = detailMeta.Title;
         ViewData["MetaDescription"] = detailMeta.Description;

@@ -68,10 +68,10 @@
 
         <div class="search-wrapper">
             <form class="search-container public-header-search-form" method="get" action="@hotelsListingPath" autocomplete="off">
-                <input type="text" class="search-input" id="publicHeaderSearchInput" name="q" placeholder="@SharedLocalizer["Search.Placeholder"]" aria-label="@SharedLocalizer["Search.AriaLabel"]">
+                <input type="text" class="search-input" id="publicHeaderSearchInput" name="q" placeholder="@SharedLocalizer["Search.Placeholder"].Value" aria-label="@SharedLocalizer["Search.AriaLabel"].Value">
                 <input type="hidden" id="publicHeaderSelectedType" value="" />
                 <input type="hidden" id="publicHeaderSelectedSlug" value="" />
-                <button type="submit" class="search-btn header-search-btn" aria-label="@SharedLocalizer["Btn.Search"]">
+                <button type="submit" class="search-btn header-search-btn" aria-label="@SharedLocalizer["Btn.Search"].Value">
                     <i class="fas fa-search"></i>
                 </button>
                 <div class="header-search-suggestions" id="publicHeaderSearchSuggestions" hidden></div>
@@ -102,7 +102,7 @@
 
     @if (headerContext == "home")
     {
-        <div class="home-header-quick-links" aria-label="@SharedLocalizer["Nav.FeaturedLinks"]">
+        <div class="home-header-quick-links" aria-label="@SharedLocalizer["Nav.FeaturedLinks"].Value">
             <div class="quick-links-container">
             <div class="quick-links-pills" style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
                 <a href="@(hotelsListingPath)?etiket=ay-sonu-ozel" class="quick-link-pill hot-pill">
@@ -702,7 +702,7 @@
         <div class="drawer-user drawer-user-centered">
             <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="drawer-brand-logo drawer-brand-logo-plain" />
         </div>
-        <button class="drawer-close" id="drawerClose" type="button" aria-label="@SharedLocalizer["Btn.Close"]"><i class="fas fa-times"></i></button>
+        <button class="drawer-close" id="drawerClose" type="button" aria-label="@SharedLocalizer["Btn.Close"].Value"><i class="fas fa-times"></i></button>
     </div>
     <div class="drawer-nav">
         <div class="drawer-auth-row">
@@ -711,7 +711,7 @@
                 <a href="@homePanelUrl" class="drawer-action primary"><i class="fas fa-grid-2"></i> @homePanelLabel</a>
                 <form method="post" action="/cikis-yap" class="drawer-logout-form">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="drawer-action outline"><i class="fas fa-right-from-bracket"></i> @SharedLocalizer["Btn.Cancel"]</button>
+                    <button type="submit" class="drawer-action outline"><i class="fas fa-right-from-bracket"></i> @SharedLocalizer["Btn.Cancel"].Value</button>
                 </form>
             }
             else

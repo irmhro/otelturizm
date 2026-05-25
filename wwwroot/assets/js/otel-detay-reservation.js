@@ -167,15 +167,26 @@
         return items;
     }
 
+    function getDetailI18n() {
+        const root = document.querySelector('.otel-detail-template-v41');
+        return {
+            roomSelected: root?.dataset?.i18nRoomSelected || 'Seçili oda',
+            roomReserve: root?.dataset?.i18nRoomReserve || 'Rezervasyon'
+        };
+    }
+
     function updateRoomButtons(activeRoomId) {
+        const i18n = getDetailI18n();
         const selected = new Set(syncHiddenFields().map(x => String(x.roomTypeId)));
         document.querySelectorAll('.select-room-btn').forEach(btn => {
             const id = String(btn.getAttribute('data-room-id') || '');
             const isSelected = selected.has(id);
             btn.classList.toggle('is-selected-room', isSelected);
-            if (!btn.dataset.originalText) btn.dataset.originalText = btn.textContent?.trim() || 'Rezervasyon';
+            if (!btn.dataset.originalText) {
+                btn.dataset.originalText = btn.textContent?.trim() || i18n.roomReserve;
+            }
             if (isSelected) {
-                btn.innerHTML = '<span class="select-room-btn-text">Seçili oda</span>';
+                btn.innerHTML = '<span class="select-room-btn-text">' + i18n.roomSelected + '</span>';
                 btn.dataset.lastPickedRoomIndex = '0';
             } else {
                 btn.textContent = btn.dataset.originalText;
@@ -269,22 +280,122 @@
         }
     }
 
+    function readConfirmI18n() {
+        const el = document.getElementById('reservationConfirmI18nJson');
+        if (!el) return {};
+        try {
+            return JSON.parse(el.textContent || '{}');
+        } catch (err) {
+            return {};
+        }
+    }
+
+    const confirmI18n = readConfirmI18n();
+    const confirmUiCulture = confirmI18n.uiCulture || 'tr-TR';
+
+    function parseIsoDate(value) {
+        if (!value || typeof value !== 'string') return null;
+        const parts = value.split('-');
+        if (parts.length !== 3) return null;
+        const year = Number(parts[0]);
+        const month = Number(parts[1]);
+        const day = Number(parts[2]);
+        if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+        const parsed = new Date(year, month - 1, day);
+        if (Number.isNaN(parsed.getTime())) return null;
+        parsed.setHours(0, 0, 0, 0);
+        return parsed;
+    }
+
+    function formatDateHuman(iso) {
+        const parsed = parseIsoDate(iso);
+        if (!parsed) return String(iso || '-');
+        return parsed.toLocaleDateString(confirmUiCulture, {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    function countNights(checkIn, checkOut) {
+        const start = parseIsoDate(checkIn);
+        const end = parseIsoDate(checkOut);
+        if (!start || !end) return 0;
+        return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000));
+    }
+
+    function formatConfirmTemplate(template, value) {
+        return String(template || '{0}').replace('{0}', String(value));
+    }
+
+    function paymentConfirmIcon(paymentText) {
+        const normalized = String(paymentText || '').toLowerCase();
+        if (normalized.includes('online') || normalized.includes('kart')) return 'fa-credit-card';
+        if (normalized.includes('karma')) return 'fa-wallet';
+        return 'fa-hand-holding-dollar';
+    }
+
+    function buildConfirmRoomCard(item, index) {
+        const nights = countNights(item.checkIn, item.checkOut);
+        const nightsText = nights > 0 ? formatConfirmTemplate(confirmI18n.nights || '{0} gece', nights) : '';
+        const roomLabel = formatConfirmTemplate(confirmI18n.room || 'Oda {0}', index + 1);
+        const roomCount = clampRoomCount(item.roomCount);
+        const roomCountText = roomCount > 1
+            ? formatConfirmTemplate(confirmI18n.roomCount || '{0} oda', roomCount)
+            : '';
+
+        return '<article class="reservation-confirm-card reservation-confirm-card--room">' +
+            '<div class="reservation-confirm-card__icon" aria-hidden="true"><i class="fas fa-bed"></i></div>' +
+            '<div class="reservation-confirm-card__body">' +
+            '<span class="reservation-confirm-card__label">' + escapeHtml(roomLabel) + '</span>' +
+            '<strong class="reservation-confirm-card__title">' + escapeHtml(item.roomName) + '</strong>' +
+            '<div class="reservation-confirm-card__dates">' +
+            '<span class="reservation-confirm-date"><span class="reservation-confirm-date__tag">' + escapeHtml(confirmI18n.checkIn || 'Giriş') + '</span><time datetime="' + escapeHtml(item.checkIn || '') + '">' + escapeHtml(formatDateHuman(item.checkIn)) + '</time></span>' +
+            '<span class="reservation-confirm-date-sep" aria-hidden="true"><i class="fas fa-arrow-right"></i></span>' +
+            '<span class="reservation-confirm-date"><span class="reservation-confirm-date__tag">' + escapeHtml(confirmI18n.checkOut || 'Çıkış') + '</span><time datetime="' + escapeHtml(item.checkOut || '') + '">' + escapeHtml(formatDateHuman(item.checkOut)) + '</time></span>' +
+            '</div>' +
+            ((nightsText || roomCountText)
+                ? '<div class="reservation-confirm-card__meta">' + escapeHtml([nightsText, roomCountText].filter(Boolean).join(' · ')) + '</div>'
+                : '') +
+            '</div></article>';
+    }
+
+    function buildConfirmPaymentCard(paymentText) {
+        const icon = paymentConfirmIcon(paymentText);
+        return '<article class="reservation-confirm-card reservation-confirm-card--payment">' +
+            '<div class="reservation-confirm-card__icon" aria-hidden="true"><i class="fas ' + icon + '"></i></div>' +
+            '<div class="reservation-confirm-card__body">' +
+            '<span class="reservation-confirm-card__label">' + escapeHtml(confirmI18n.paymentPlan || 'Ödeme planı') + '</span>' +
+            '<strong class="reservation-confirm-card__title">' + escapeHtml(paymentText) + '</strong>' +
+            '<p class="reservation-confirm-card__note">' + escapeHtml(confirmI18n.paymentNote || '') + '</p>' +
+            '</div></article>';
+    }
+
+    function updateConfirmTotalDisplay() {
+        const totalRow = document.getElementById('reservationConfirmTotalRow');
+        const totalEl = document.getElementById('reservationConfirmTotal');
+        const bookingPrice = document.getElementById('bookingPrice');
+        if (!totalRow || !totalEl) return;
+
+        const raw = (bookingPrice?.textContent || '').replace(/[^\d]/g, '');
+        const amount = Number(raw || 0);
+        if (amount > 0) {
+            totalEl.textContent = bookingPrice.textContent.trim();
+            totalRow.hidden = false;
+            return;
+        }
+        totalRow.hidden = true;
+        totalEl.textContent = '—';
+    }
+
     function buildConfirm(items) {
         if (!confirmSummary) return;
-        const payment = (paymentMethodSelect?.value || '').trim() || 'Seçilmedi';
-        const rows = items.map((x, index) =>
-            '<div class="reservation-confirm-item">' +
-            '<strong>Oda ' + (index + 1) + '</strong>' +
-            '<span>' + escapeHtml(x.roomName) + '</span>' +
-            '<small>' + escapeHtml(x.checkIn) + ' - ' + escapeHtml(x.checkOut) + ' · ' + clampRoomCount(x.roomCount) + ' oda</small>' +
-            '</div>'
-        ).join('');
+        const payment = (paymentMethodSelect?.value || '').trim() || (confirmI18n.notSelected || 'Seçilmedi');
+        const roomCards = items.map((x, index) => buildConfirmRoomCard(x, index)).join('');
         confirmSummary.innerHTML =
-            '<div class="reservation-confirm-grid">' + rows +
-            '<div class="reservation-confirm-item is-accent">' +
-            '<strong>Ödeme planı</strong><span>' + escapeHtml(payment) + '</span>' +
-            '<small>Bilgiler doğruysa rezervasyon kaydı oluşturulacak.</small>' +
-            '</div></div>';
+            '<div class="reservation-confirm-stack">' + roomCards + buildConfirmPaymentCard(payment) + '</div>';
+        updateConfirmTotalDisplay();
     }
 
     function escapeHtml(value) {

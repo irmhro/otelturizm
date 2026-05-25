@@ -135,17 +135,7 @@
                 }
             </div>
 
-            <div class="rating-price @(Model.ReviewCount <= 0 ? "no-rating" : string.Empty)">
-                @if (Model.ReviewCount > 0)
-                {
-                    <div class="rating-box">
-                        <div class="rating-value">
-                            <i class="fas fa-star"></i>
-                            <strong>@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "-")</strong>
-                        </div>
-                        <small>@Model.ReviewCount yorum</small>
-                    </div>
-                }
+            <div class="home-hotel-price-row">
                 <div class="price-box">
                     @if (Model.HasDiscount && Model.OriginalPrice.HasValue && Model.DiscountedPrice.HasValue)
                     {

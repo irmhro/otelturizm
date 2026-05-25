@@ -29,7 +29,7 @@
     catch { }
 }
 
-<section class="campaign-index-shell" aria-label="@SharedLocalizer["Nav.Campaigns"]">
+<section class="campaign-index-shell" aria-label="@SharedLocalizer["Nav.Campaigns"].Value">
     <div class="campaign-hero campaign-index-hero-v2">
         <div class="campaign-hero__content">
             <div class="campaign-hero__text">
@@ -61,7 +61,7 @@
         </div>
     </div>
 
-    <div class="campaign-index-stats" aria-label="@SharedLocalizer["Campaign.Stat.Active"]">
+    <div class="campaign-index-stats" aria-label="@SharedLocalizer["Campaign.Stat.Active"].Value">
         <span class="campaign-stat-chip"><i class="fas fa-hotel" aria-hidden="true"></i> <strong>@Model.Campaigns.Count</strong> @SharedLocalizer["Campaign.Stat.Active"]</span>
         <a class="campaign-stat-chip campaign-stat-chip--link" href="/oteller?etiket=kampanyaya-dahil-oteller"><i class="fas fa-percent" aria-hidden="true"></i> @SharedLocalizer["Campaign.Stat.DiscountedHotels"]</a>
     </div>
@@ -81,7 +81,7 @@
         {
             var listingUrl = $"/oteller?kampanya={Uri.EscapeDataString(campaign.Slug ?? string.Empty)}";
             <article class="campaign-card" style="--campaign-accent:@campaign.ColorCode;">
-                <a class="campaign-card__tap" href="@listingUrl" aria-label="@campaign.CampaignName @SharedLocalizer["Campaign.ListHotels"]">
+                <a class="campaign-card__tap" href="@listingUrl" aria-label="@campaign.CampaignName @SharedLocalizer["Campaign.ListHotels"].Value">
                     <div class="campaign-card__media @(string.IsNullOrWhiteSpace(campaign.HeroImageUrl) ? string.Empty : "has-image")">
                         @if (!string.IsNullOrWhiteSpace(campaign.HeroImageUrl))
                         {
@@ -103,11 +103,11 @@
                             <span><i class="fas fa-tag"></i> @campaign.CampaignType</span>
                         </div>
                         <span class="campaign-card__date"><i class="fas fa-calendar-check"></i> @campaign.EndDateText</span>
-                        <span class="campaign-card__link">@SharedLocalizer["Campaign.ListHotels"]</span>
+                        <span class="campaign-card__link">@SharedLocalizer["Campaign.ListHotels"].Value</span>
                     </div>
                 </a>
                 <div class="campaign-card__footer">
-                    <a class="campaign-card__secondary" href="@campaign.Url" aria-label="@campaign.CampaignName @SharedLocalizer["Campaign.ViewDetail"]">
+                    <a class="campaign-card__secondary" href="@campaign.Url" aria-label="@campaign.CampaignName @SharedLocalizer["Campaign.ViewDetail"].Value">
                         @SharedLocalizer["Campaign.ViewDetail"] <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>

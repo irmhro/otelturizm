@@ -172,7 +172,7 @@
 @{
     ViewData["HeaderContext"] = ViewData["HeaderContext"] as string ?? "auth";
 }
-<a class="skip-link" href="#mainContent">@SharedLocalizer["Nav.SkipToContent"]</a>
+<a class="skip-link" href="#mainContent">@SharedLocalizer["Nav.SkipToContent"].Value</a>
 <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
 
 <script src="~/assets/js/sw-asset-guard.js" asp-append-version="true"></script>

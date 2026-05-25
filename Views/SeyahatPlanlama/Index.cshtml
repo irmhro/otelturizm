@@ -10,12 +10,12 @@
     ViewData["Canonical"] = $"{baseUrl}/seyahat-planlama";
 }
 
-<section class="plan-page" aria-label="@SharedLocalizer["Plan.Page.Title"]">
+<section class="plan-page" aria-label="@SharedLocalizer["Plan.Page.Title"].Value">
     <header class="plan-hero">
         <p class="plan-kicker">@SharedLocalizer["Plan.Hero.Kicker"]</p>
         <h1>@SharedLocalizer["Plan.Hero.Title"]</h1>
         <p class="plan-hero-lead">@SharedLocalizer["Plan.Hero.Lead"]</p>
-        <div class="plan-hero-stats" aria-label="@SharedLocalizer["Plan.Hero.StatsLabel"]">
+        <div class="plan-hero-stats" aria-label="@SharedLocalizer["Plan.Hero.StatsLabel"].Value">
             <span class="plan-stat-chip"><i class="fas fa-route" aria-hidden="true"></i> @Model.RouteSuggestions.Count @SharedLocalizer["Plan.Stat.Routes"]</span>
             <span class="plan-stat-chip"><i class="fas fa-calculator" aria-hidden="true"></i> @SharedLocalizer["Plan.Stat.Budget"]</span>
             <span class="plan-stat-chip"><i class="fas fa-tags" aria-hidden="true"></i> @Model.CampaignSuggestions.Count @SharedLocalizer["Plan.Stat.Campaigns"]</span>
@@ -77,7 +77,7 @@
                     <span>@SharedLocalizer["Plan.Budget.Amount"]</span>
                     <input class="plan-input" type="number" name="butce" min="500" step="100" value="@((int)Model.BudgetForm.BudgetTry)" required />
                 </label>
-                <button type="submit" class="plan-btn primary fe-world-touch-target">@SharedLocalizer["Plan.Budget.Calculate"]</button>
+                <button type="submit" class="plan-btn primary fe-world-touch-target">@SharedLocalizer["Plan.Budget.Calculate"].Value</button>
             </form>
 
             @if (Model.BudgetEstimate is { } estimate)
@@ -90,10 +90,10 @@
                     </div>
                     <p>@estimate.SummaryText</p>
                     <div class="plan-actions">
-                        <a class="plan-btn primary fe-world-touch-target" href="@estimate.HotelsUrl">@SharedLocalizer["Plan.Budget.SearchHotels"]</a>
+                        <a class="plan-btn primary fe-world-touch-target" href="@estimate.HotelsUrl">@SharedLocalizer["Plan.Budget.SearchHotels"].Value</a>
                         @if (!estimate.FitsBudget)
                         {
-                            <a class="plan-btn fe-world-touch-target" href="/oteller?etiket=butceme-uygun-oteller">@SharedLocalizer["Plan.Budget.BudgetFriendly"]</a>
+                            <a class="plan-btn fe-world-touch-target" href="/oteller?etiket=butceme-uygun-oteller">@SharedLocalizer["Plan.Budget.BudgetFriendly"].Value</a>
                         }
                     </div>
                 </div>
@@ -129,7 +129,7 @@
             <div class="plan-empty">
                 <strong>@SharedLocalizer["Plan.Campaigns.EmptyTitle"]</strong>
                 <p>@SharedLocalizer["Plan.Campaigns.EmptyDescription"]</p>
-                <a class="plan-btn fe-world-touch-target" href="/kampanyalar">@SharedLocalizer["Nav.Campaigns"]</a>
+                <a class="plan-btn fe-world-touch-target" href="/kampanyalar">@SharedLocalizer["Nav.Campaigns"].Value</a>
             </div>
         }
         else
@@ -171,14 +171,14 @@
         <div class="plan-actions">
             @if (Model.IsAuthenticated)
             {
-                <a class="plan-btn primary fe-world-touch-target" href="@Model.LoyaltyPanelUrl">@SharedLocalizer["Plan.Loyalty.OpenPanel"]</a>
+                <a class="plan-btn primary fe-world-touch-target" href="@Model.LoyaltyPanelUrl">@SharedLocalizer["Plan.Loyalty.OpenPanel"].Value</a>
             }
             else
             {
-                <a class="plan-btn primary fe-world-touch-target" href="/giris?returnUrl=%2Fpanel%2Fuser%2Fotelpuan-programi">@SharedLocalizer["Plan.Loyalty.SignIn"]</a>
-                <a class="plan-btn fe-world-touch-target" href="/kayit">@SharedLocalizer["Nav.Register"]</a>
+                <a class="plan-btn primary fe-world-touch-target" href="/giris?returnUrl=%2Fpanel%2Fuser%2Fotelpuan-programi">@SharedLocalizer["Plan.Loyalty.SignIn"].Value</a>
+                <a class="plan-btn fe-world-touch-target" href="/kayit">@SharedLocalizer["Nav.Register"].Value</a>
             }
-            <a class="plan-btn fe-world-touch-target" href="/oteller">@SharedLocalizer["Plan.Loyalty.ExploreHotels"]</a>
+            <a class="plan-btn fe-world-touch-target" href="/oteller">@SharedLocalizer["Plan.Loyalty.ExploreHotels"].Value</a>
         </div>
     </section>
 </section>

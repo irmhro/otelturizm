@@ -156,6 +156,14 @@
     var initialVat = Math.Round(initialSubtotal * vatRateFrac, 0);
     var initialAccommodationTax = Math.Max(0m, initialTotal - initialSubtotal - initialVat);
     var initialTax = initialVat + initialAccommodationTax;
+    var hotelImagePlaceholder = "/assets/img/placeholder-hotel.jpg";
+    string ResolveRoomImageUrl(string? url) =>
+        !string.IsNullOrWhiteSpace(url) ? url
+        : !string.IsNullOrWhiteSpace(mainImage) ? mainImage
+        : hotelImagePlaceholder;
+    var i18nRoomSelected = SharedLocalizer["Detail.Room.Selected"].Value;
+    var i18nRoomGalleryCount = SharedLocalizer["Detail.Room.GalleryCount"].Value;
+    var i18nRoomTotalLine = SharedLocalizer["Detail.Room.TotalLine"].Value;
     var initialInclusiveNightly = initialNightCount > 0 && initialRooms > 0
         ? Math.Round(initialTotal / initialNightCount / initialRooms, 0)
         : 0m;
@@ -166,6 +174,8 @@
     var weatherAccentIcon = "fa-cloud-sun";
     var mapLatitude = Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
     var mapLongitude = Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var checkInDisplay = Model.CheckInTime?.ToString(@"hh\:mm") ?? "14:00";
+    var checkOutDisplay = Model.CheckOutTime?.ToString(@"hh\:mm") ?? "12:00";
 
     if (todayWeather is not null)
     {
@@ -215,13 +225,16 @@
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       crossorigin="anonymous" />
 <link rel="stylesheet" href="~/assets/css/otel-detay-reservation.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/assets/css/otel-detay-world.css" asp-append-version="true" />
 
-<div class="otel-detail-template-v41 otel-detail-tabler">
+<div class="otel-detail-template-v41 otel-detail-tabler od-detail"
+     data-i18n-room-selected="@i18nRoomSelected"
+     data-i18n-room-reserve="@SharedLocalizer["Detail.Room.Reserve"].Value">
 <section class="detail-breadcrumb detail-breadcrumb-with-weather">
     <div class="detail-breadcrumb-left">
         <a asp-controller="Oteller" asp-action="OtelListeleme" class="detail-back-link">
             <i class="fas fa-arrow-left"></i>
-            <span>@SharedLocalizer["Detail.BackToHotels"]</span>
+            <span>@SharedLocalizer["Detail.BackToHotels"].Value</span>
         </a>
         <span class="detail-breadcrumb-sep" aria-hidden="true">·</span>
         <a class="detail-breadcrumb-context"
@@ -294,7 +307,7 @@
     </div>
 </section>
 
-<section class="gallery-grid" id="hotelGalleryRoot" data-slayt-lightbox="hotel-gallery" aria-label="Otel fotoğraf galerisi">
+<section class="gallery-grid od-gallery od-gallery--desktop" id="hotelGalleryRoot" data-slayt-lightbox="hotel-gallery" aria-label="Otel fotoğraf galerisi">
     <div class="gallery-main-image" style="--hotel-main-ambient: url('@mainImage');">
         @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
         {
@@ -387,9 +400,22 @@
         </div>
     </section>
  }
-    @if (gallery.Count > 1)
+    @if (gallery.Count > 0)
     {
-        <section class="gallery-mobile-strip" id="galleryMobileStrip" data-slayt-lightbox="hotel-gallery" aria-label="Mobil galeri slider">
+        <section class="gallery-mobile-strip od-gallery od-gallery--mobile" id="galleryMobileStrip" data-slayt-lightbox="hotel-gallery" aria-label="Mobil galeri slider">
+            <div class="gallery-mobile-chrome" aria-hidden="false">
+                <a asp-controller="Oteller" asp-action="OtelListeleme" class="gallery-mobile-back" aria-label="@SharedLocalizer["Detail.BackToHotels"].Value">
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                </a>
+                @if (gallery.Count > 0)
+                {
+                    <div class="gallery-mobile-counter" id="galleryMobileCounter" aria-live="polite">
+                        <span class="gallery-mobile-counter__current">1</span>
+                        <span class="gallery-mobile-counter__sep">/</span>
+                        <span class="gallery-mobile-counter__total">@gallery.Count</span>
+                    </div>
+                }
+            </div>
             @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
             {
                 <div class="gallery-star-badge gallery-star-badge-mobile" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
@@ -399,7 +425,10 @@
                     }
                 </div>
             }
-            <p class="gallery-swipe-hint" aria-hidden="true"><i class="fas fa-hand-pointer"></i> Kaydirarak gezin · dokunarak tam ekran</p>
+            @if (gallery.Count > 1)
+            {
+            <p class="gallery-swipe-hint" aria-hidden="true"><i class="fas fa-hand-pointer"></i> @SharedLocalizer["Detail.Gallery.SwipeHint"].Value</p>
+            }
             <div class="gallery-mobile-track" id="galleryMobileTrack">
                 @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
                 {
@@ -408,6 +437,8 @@
                     </button>
                 }
             </div>
+            @if (gallery.Count > 1)
+            {
             <div class="gallery-mobile-dots" id="galleryMobileDots" role="tablist" aria-label="Galeri gezinme">
                 @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
                 {
@@ -418,12 +449,14 @@
                             aria-selected="@(imageIndex == 0 ? "true" : "false")"></button>
                 }
             </div>
+            }
         </section>
     }
 
 @* Eski lightbox/slider DOM'u kaldırıldı: ortak SlaytGorsel (layout + slaytgorsel.js) kullanılıyor. *@
 
 <section class="detail-header hotel-title-section">
+    <div class="detail-hero-head">
     <div class="hotel-name">
         <h1>
             @Model.Name
@@ -456,7 +489,10 @@
             if (!string.IsNullOrWhiteSpace(Model.City)) locationPieces.Add(Model.City);
             var locationOnly = string.Join(", ", locationPieces);
         }
-        <p class="detail-location"><i class="fas fa-location-dot"></i> @locationOnly</p>
+        <p class="detail-location od-header__location-pill" role="text">
+            <i class="fas fa-location-dot" aria-hidden="true"></i>
+            <span>@locationOnly</span>
+        </p>
         <div class="detail-title-subnav" aria-label="Hızlı gezinme">
             @if (!string.IsNullOrWhiteSpace(Model.VideoUrl))
             {
@@ -495,6 +531,25 @@
         }
 
     </div>
+    <div class="rating-summary detail-rating-chip" id="ratingSummaryJump" role="button" tabindex="0" aria-label="@SharedLocalizer["Detail.Reviews.GoTo"].Value">
+        <div class="rating-big">
+            <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
+            <span class="rating-max">/10</span>
+        </div>
+        <div class="rating-text">
+            @if (Model.ReviewCount <= 0)
+            {
+                <strong>@SharedLocalizer["Detail.Rating.Pending"].Value</strong>
+                <span>@SharedLocalizer["Detail.Rating.NoReviews"].Value</span>
+            }
+            else
+            {
+                <strong>@Model.RatingText</strong>
+                <span>@SharedLocalizer["Detail.Rating.ReviewCount", Model.ReviewCount].Value</span>
+            }
+        </div>
+    </div>
+    </div>
     <div class="header-right-stack">
         <div class="header-top-metrics">
             <div class="detail-utility-row">
@@ -531,25 +586,39 @@
                     <span class="weather-inline-badge">3 Gunluk</span>
                 </button>
             </div>
-            <div class="rating-summary" id="ratingSummaryJump" role="button" tabindex="0" aria-label="Yorumlara git">
-                <div class="rating-big">
-                    <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
-                    <span class="rating-max">/10</span>
-                </div>
-                <div class="rating-text">
-                    @if (Model.ReviewCount <= 0)
-                    {
-                        <strong>Yorum Bekleniyor</strong><br />
-                        <span>Henüz yorum yok</span>
-                    }
-                    else
-                    {
-                        <strong>@Model.RatingText</strong><br />
-                        <span>@($"{Model.ReviewCount} yorum")</span>
-                    }
-                </div>
-            </div>
         </div>
+    </div>
+</section>
+
+<section class="od-quick-facts detail-quick-facts" aria-label="@SharedLocalizer["Detail.QuickFacts.Aria"].Value">
+    <ul class="od-quick-facts__list">
+        <li class="od-quick-facts__item">
+            <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-open"></i></span>
+            <span class="od-quick-facts__copy">
+                <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckIn"].Value</span>
+                <strong class="od-quick-facts__value">@checkInDisplay</strong>
+            </span>
+        </li>
+        <li class="od-quick-facts__item">
+            <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-closed"></i></span>
+            <span class="od-quick-facts__copy">
+                <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckOut"].Value</span>
+                <strong class="od-quick-facts__value">@checkOutDisplay</strong>
+            </span>
+        </li>
+    </ul>
+    <div class="od-quick-facts__chips">
+        @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+        {
+            <span class="od-chip od-chip--property">
+                <i class="fas fa-star" aria-hidden="true"></i>
+                @SharedLocalizer["Detail.QuickFacts.StarHotel", Model.StarCount.Value].Value
+            </span>
+        }
+        <span class="od-chip od-chip--property">
+            <i class="fas fa-hotel" aria-hidden="true"></i>
+            @SharedLocalizer["Detail.QuickFacts.Hotel"].Value
+        </span>
     </div>
 </section>
 
@@ -688,49 +757,56 @@
     var reviewFeedPayloadJson = System.Text.Json.JsonSerializer.Serialize(reviewFeedPayload);
 }
 
-<section class="detail-grid">
-    <div class="detail-content">
-        <article class="content-card">
-            <div class="section-head tabler-section-head">
-                <div class="tabler-section-headrow">
+<section class="detail-grid od-detail__layout">
+    <div class="detail-content od-detail__main">
+        <article class="content-card detail-about-card od-section od-section--about">
+            <details class="detail-collapsible detail-about-collapsible" open>
+                <summary class="detail-collapsible__summary tabler-section-head">
                     <div class="tabler-section-titles">
-                        <h2>Tesis Hakkinda</h2>
-                        <p class="hotel-about-text" id="hotelAboutText">
-                            @(!string.IsNullOrWhiteSpace(Model.LocationDescription) ? Model.LocationDescription : longDescription)
-                        </p>
+                        <h2>@SharedLocalizer["Detail.About.Title"].Value</h2>
+                        <p class="detail-collapsible__hint">@SharedLocalizer["Detail.About.ToggleHint"].Value</p>
                     </div>
-                    <div class="tabler-section-actions">
-                        <button type="button" class="tabler-section-action-btn" data-about-toggle hidden>
-                            Tümünü gör
-                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                        </button>
-                        <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden>
-                            Tümünü gör
-                        </button>
-                    </div>
+                    <i class="fas fa-chevron-down detail-collapsible__chevron" aria-hidden="true"></i>
+                </summary>
+                <div class="detail-collapsible__body">
+                    <p class="hotel-about-text" id="hotelAboutText">
+                        @(!string.IsNullOrWhiteSpace(Model.LocationDescription) ? Model.LocationDescription : longDescription)
+                    </p>
+                    <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden>
+                        @SharedLocalizer["Detail.About.ShowMore"].Value
+                    </button>
                 </div>
-            </div>
+            </details>
         </article>
 
-        <article class="content-card featured-amenities-card">
-            <div class="section-head tabler-section-head">
+        <article class="content-card featured-amenities-card od-section od-section--amenities">
+            <div class="section-head tabler-section-head od-section__head">
                 <div class="tabler-section-headrow">
                     <div class="tabler-section-titles">
-                        <h2>Tesis Ozellikleri</h2>
-                        <p>Konaklama deneyimini guclendiren one cikan tesis ozellikleri.</p>
+                        <h2>@SharedLocalizer["Detail.Amenities.Title"].Value</h2>
+                        <p>@SharedLocalizer["Detail.Amenities.Subtitle"].Value</p>
                     </div>
                     @if (Model.Amenities.Count > 0)
                     {
                         <div class="tabler-section-actions">
-                            <button type="button" class="tabler-section-action-btn" data-open-amenities>
-                                Tüm özellikler
+                            <button type="button" class="tabler-section-action-btn od-amenities__see-all" data-open-amenities>
+                                @SharedLocalizer["Detail.Amenities.SeeAll"].Value
                                 <i class="fas fa-chevron-right" aria-hidden="true"></i>
                             </button>
                         </div>
                     }
                 </div>
             </div>
-            <div class="amenities-list-clean" role="list" aria-label="Tesis ozellik listesi">
+            <div class="od-amenities__scroll" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
+                @foreach (var item in Model.Amenities.Where(x => !string.IsNullOrWhiteSpace(x.Name)).Take(12))
+                {
+                    <button type="button" class="od-amenity-chip" role="listitem" data-open-amenities>
+                        <span class="od-amenity-chip__icon" aria-hidden="true"><i class="fas @item.IconClass"></i></span>
+                        <span class="od-amenity-chip__label">@item.Name</span>
+                    </button>
+                }
+            </div>
+            <div class="amenities-list-clean od-amenities__grid" role="list" aria-label="Tesis ozellik listesi">
                 @foreach (var item in featuredAmenities)
                 {
                     <div class="amenities-list-item" role="listitem">
@@ -778,23 +854,23 @@
         <article class="content-card review-teaser-block" id="reviewsTeaser">
             <div class="review-teaser-block__head">
                 <div>
-                    <h2>@SharedLocalizer["Detail.ReviewTeaser.Title"]</h2>
+                    <h2>@SharedLocalizer["Detail.ReviewTeaser.Title"].Value</h2>
                     @if (Model.ReviewCount <= 0)
                     {
-                        <p>@SharedLocalizer["Detail.ReviewTeaser.None"]</p>
+                        <p>@SharedLocalizer["Detail.ReviewTeaser.None"].Value</p>
                     }
                     else
                     {
-                        <p>@SharedLocalizer["Detail.ReviewTeaser.Count", Model.ReviewCount, Model.Rating.ToString("0.0")]</p>
+                        <p>@SharedLocalizer["Detail.ReviewTeaser.Count", Model.ReviewCount, Model.Rating.ToString("0.0")].Value</p>
                     }
                 </div>
-                <a class="review-teaser-block__cta fe-world-touch-target" href="#reviewsSection">@SharedLocalizer["Detail.ReviewTeaser.SeeAll"] <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                <a class="review-teaser-block__cta fe-world-touch-target" href="#reviewsSection">@SharedLocalizer["Detail.ReviewTeaser.SeeAll"].Value <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
             </div>
             @if (Model.ReviewCount > 0 && sortedReviews.Count > 0)
             {
                 var teaserReview = sortedReviews.First();
                 <blockquote class="review-teaser-block__quote">
-                    <div class="review-teaser-block__score" aria-label="@SharedLocalizer["Filter.Rating"]">
+                    <div class="review-teaser-block__score" aria-label="@SharedLocalizer["Filter.Rating"].Value">
                         <strong>@teaserReview.Score.ToString("0.0")</strong><span>/10</span>
                     </div>
                     <p>@FixMojibake(teaserReview.Text)</p>
@@ -803,16 +879,16 @@
             }
         </article>
 
-        <article class="content-card" id="roomsCard">
+        <article class="content-card od-section od-section--rooms" id="roomsCard">
             <div class="section-head tabler-section-head">
                 <div class="tabler-section-headrow">
                     <div class="tabler-section-titles">
-                        <h2>@SharedLocalizer["Detail.Rooms.Title"]</h2>
-                        <p>@SharedLocalizer["Detail.Rooms.Subtitle"]</p>
+                        <h2>@SharedLocalizer["Detail.Rooms.Title"].Value</h2>
+                        <p>@SharedLocalizer["Detail.Rooms.Subtitle"].Value</p>
                     </div>
                     <div class="tabler-section-actions">
                         <button type="button" class="tabler-section-action-btn is-primary" data-scroll-booking>
-                            @SharedLocalizer["Detail.Rooms.GoToBooking"]
+                            @SharedLocalizer["Detail.Rooms.GoToBooking"].Value
                             <i class="fas fa-arrow-right" aria-hidden="true"></i>
                         </button>
                     </div>
@@ -840,55 +916,79 @@
                     var roomCoverImage = !string.IsNullOrWhiteSpace(room.ImageUrl)
                         ? room.ImageUrl
                         : roomGallery.FirstOrDefault();
+                    var roomCoverImageResolved = ResolveRoomImageUrl(roomCoverImage);
+                    var roomGalleryResolved = roomGallery
+                        .Select(ResolveRoomImageUrl)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                    if (roomGalleryResolved.Count == 0)
+                    {
+                        roomGalleryResolved.Add(roomCoverImageResolved);
+                    }
 
-                    <div class="room-card">
-                        <div class="room-card-main">
+                    <div class="room-card od-room-card">
+                        <div class="room-card-main od-room-card__body">
                             <div class="room-card-media">
-                                @if (!string.IsNullOrWhiteSpace(roomCoverImage))
+                                <div class="room-card-cover">
+                                    <button type="button"
+                                            class="room-gallery-trigger"
+                                            data-room-name="@room.Name"
+                                            data-room-id="@room.RoomTypeId"
+                                            data-room-gallery-start="0"
+                                            aria-label="@room.Name galerisi">
+                                        <img src="@roomCoverImageResolved"
+                                             alt="@room.Name"
+                                             loading="lazy"
+                                             decoding="async"
+                                             onerror="this.onerror=null;this.src='@hotelImagePlaceholder';" />
+                                        @if (roomGalleryResolved.Count > 1)
+                                        {
+                                            <span class="room-gallery-count">
+                                                <i class="fas fa-images" aria-hidden="true"></i>
+                                                @string.Format(i18nRoomGalleryCount, roomGalleryResolved.Count)
+                                            </span>
+                                        }
+                                    </button>
+                                </div>
+                                @if (roomGalleryResolved.Count > 1)
                                 {
-                                    <div class="room-card-cover">
-                                        <button type="button"
-                                                class="room-gallery-trigger"
-                                                data-room-name="@room.Name"
-                                                data-room-id="@room.RoomTypeId"
-                                                data-room-gallery-start="0"
-                                                aria-label="@room.Name galerisi">
-                                            <span class="room-cover-title">@room.Name</span>
-                                            <img src="@roomCoverImage" alt="@room.Name" />
-                                            @if (roomGallery.Count > 1)
-                                            {
-                                                <span class="room-gallery-count">
-                                                    <i class="fas fa-images"></i>
-                                                    @roomGallery.Count gorsel
-                                                </span>
-                                            }
-                                        </button>
+                                    <div class="room-thumb-strip" aria-label="@room.Name gorselleri">
+                                        @for (var imageIndex = 0; imageIndex < Math.Min(roomGalleryResolved.Count, 6); imageIndex++)
+                                        {
+                                            <button type="button"
+                                                    class="room-gallery-trigger room-thumb-item @(imageIndex == 0 ? "active" : string.Empty)"
+                                                    data-room-name="@room.Name"
+                                                    data-room-id="@room.RoomTypeId"
+                                                    data-room-gallery-start="@imageIndex"
+                                                    aria-label="@room.Name gorsel @(imageIndex + 1)">
+                                                <img src="@roomGalleryResolved[imageIndex]"
+                                                     alt="@room.Name gorsel @(imageIndex + 1)"
+                                                     loading="lazy"
+                                                     decoding="async"
+                                                     onerror="this.onerror=null;this.src='@hotelImagePlaceholder';" />
+                                            </button>
+                                        }
                                     </div>
-                                    @if (roomGallery.Count > 1)
-                                    {
-                                        <div class="room-thumb-strip" aria-label="@room.Name gorselleri">
-                                            @for (var imageIndex = 0; imageIndex < Math.Min(roomGallery.Count, 6); imageIndex++)
-                                            {
-                                                <button type="button"
-                                                        class="room-gallery-trigger room-thumb-item @(imageIndex == 0 ? "active" : string.Empty)"
-                                                        data-room-name="@room.Name"
-                                                        data-room-id="@room.RoomTypeId"
-                                                        data-room-gallery-start="@imageIndex"
-                                                        aria-label="@room.Name gorsel @(imageIndex + 1)">
-                                                    <img src="@roomGallery[imageIndex]" alt="@room.Name gorsel @(imageIndex + 1)" />
-                                                </button>
-                                            }
-                                        </div>
-                                    }
-                                }
-                                else
-                                {
-                                    <div class="room-card-media-placeholder"><i class="fas fa-bed"></i></div>
                                 }
                             </div>
-                            <div class="room-card-copy">
-                                <h3>@room.Name</h3>
-                                <p>@room.Specs</p>
+                            <div class="room-card-copy od-room-card__content">
+                                <h3 class="od-room-card__title">@room.Name</h3>
+                                <div class="od-room-card__meta">
+                                    @if (!string.IsNullOrWhiteSpace(room.BedType))
+                                    {
+                                        <span class="od-pill od-pill--bed"><i class="fas fa-bed" aria-hidden="true"></i> @room.BedType</span>
+                                    }
+                                    @if (room.SquareMeter.HasValue && room.SquareMeter.Value > 0)
+                                    {
+                                        <span class="od-pill od-pill--size"><i class="fas fa-ruler-combined" aria-hidden="true"></i> @room.SquareMeter m²</span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(room.CancellationText))
+                                    {
+                                        <span class="od-pill od-pill--meal"><i class="fas fa-utensils" aria-hidden="true"></i> @room.CancellationText</span>
+                                    }
+                                </div>
+                                <p class="od-room-card__specs">@room.Specs</p>
                                 @{
                                     var roomFeatureSeed = room.Features ?? new List<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>();
                                     var roomTopFeatures = roomFeatureSeed.Take(3).ToList();
@@ -993,7 +1093,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="room-price-box">
+                        <div class="room-price-box od-room-card__pricing">
                             <div class="room-price-actions">
                                 @if (room.Price > 0m)
                                 {
@@ -1001,7 +1101,7 @@
                                             class="select-room-btn"
                                             data-room-id="@room.RoomTypeId"
                                             data-price="@room.Price.ToString("0", System.Globalization.CultureInfo.InvariantCulture)">
-                                        @SharedLocalizer["Detail.Room.Reserve"]
+                                        @SharedLocalizer["Detail.Room.Reserve"].Value
                                     </button>
                                 }
                                 else
@@ -1011,12 +1111,12 @@
                                             data-room-id="@room.RoomTypeId"
                                             data-price="0"
                                             disabled>
-                                        @SharedLocalizer["Detail.Room.NoPrice"]
+                                        @SharedLocalizer["Detail.Room.NoPrice"].Value
                                     </button>
                                 }
                             </div>
                             <div class="room-price-value">
-                                <small class="room-price-kicker">@SharedLocalizer["Detail.Room.Nightly"]</small>
+                                <small class="room-price-kicker">@SharedLocalizer["Detail.Room.Nightly"].Value</small>
                                 @{
                                     var hasRoomDiscount = room.DiscountPrice.HasValue
                                                          && room.BasePrice.HasValue
@@ -1062,8 +1162,8 @@
                                         <strong>₺@nightlyDisplay.ToString("N0")</strong>
                                     }
 
-                                    <span class="room-price-inclusive-label" title="@SharedLocalizer["Detail.Room.TaxesIncluded"]">@SharedLocalizer["Detail.Room.TaxesIncluded"]</span>
-                                    <small class="room-price-total">Toplam (@initialNightCount gece): ₺@stayTotal.ToString("N0")</small>
+                                    <span class="room-price-inclusive-label" title="@SharedLocalizer["Detail.Room.TaxesIncluded"].Value">@SharedLocalizer["Detail.Room.TaxesIncluded"].Value</span>
+                                    <small class="room-price-total">@string.Format(i18nRoomTotalLine, initialNightCount): ₺@stayTotal.ToString("N0")</small>
                                 }
                                 else
                                 {
@@ -1139,16 +1239,16 @@
             </section>
         </article>
 
-        <article class="content-card" id="reviewsSection">
+        <article class="content-card od-section od-section--reviews" id="reviewsSection">
             <div class="section-head tabler-section-head">
                 <div class="tabler-section-headrow">
                     <div class="tabler-section-titles">
-                        <h2>Misafir Değerlendirmeleri</h2>
-                        <p>Yorumlar ve puan ortalamasi dogrudan veritabanindan alinmaktadir.</p>
+                        <h2>@SharedLocalizer["Detail.Reviews.Title"].Value</h2>
+                        <p>@SharedLocalizer["Detail.Reviews.Subtitle"].Value</p>
                     </div>
                     <div class="tabler-section-actions">
                         <button type="button" class="tabler-section-action-btn" data-scroll-reviews>
-                            Yorumlara git
+                            @SharedLocalizer["Detail.Reviews.GoTo"].Value
                             <i class="fas fa-chevron-down" aria-hidden="true"></i>
                         </button>
                     </div>
@@ -1172,17 +1272,16 @@
                 </div>
             }
 
-            <div class="review-signature">
-                <div class="review-signature-score">
-                    <span class="laurel" aria-hidden="true">❧</span>
-                    <strong>@(signatureScore > 0 ? signatureScore.ToString("0.0") : "0.0")</strong>
-                    <span class="laurel" aria-hidden="true">❧</span>
+            <div class="review-summary review-summary--ota">
+                <div class="review-summary-score-col">
+                    <div class="review-score-circle" aria-label="@SharedLocalizer["Filter.Rating"].Value">
+                        <strong>@(signatureScore > 0 ? signatureScore.ToString("0.0") : "0.0")</strong>
+                        <span>/10</span>
+                    </div>
+                    <p class="review-signature-title">@Model.RatingText</p>
+                    <small class="review-verified-count">@(Model.ReviewCount > 0 ? SharedLocalizer["Detail.Review.VerifiedCount", Model.ReviewCount].Value : SharedLocalizer["Detail.Rating.NoReviews"].Value)</small>
                 </div>
-                <p class="review-signature-title">@Model.RatingText</p>
-                <small>@(Model.ReviewCount > 0 ? $"{Model.ReviewCount} doğrulanmış değerlendirme" : "Henüz değerlendirme yok")</small>
-            </div>
-
-            <div class="review-summary">
+                <div class="review-summary-bars-col">
                 <div class="review-bars">
                     <div><span>Genel</span><div class="bar"><span style="width:@(overallBarWidth)%"></span></div><strong>@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "-")</strong></div>
                     <div><span>Konum</span><div class="bar"><span style="width:@(locationBarWidth)%"></span></div><strong>@(locScore > 0 ? locScore.ToString("0.0") : "-")</strong></div>
@@ -1191,6 +1290,7 @@
                     <div><span>Fiyat/Performans</span><div class="bar"><span style="width:@(valueBarWidth)%"></span></div><strong>@(valScore > 0 ? valScore.ToString("0.0") : "-")</strong></div>
                     <div><span>Sessizlik</span><div class="bar"><span style="width:@(quietBarWidth)%"></span></div><strong>@(quietScore > 0 ? quietScore.ToString("0.0") : "-")</strong></div>
                     <div><span>Ulaşım</span><div class="bar"><span style="width:@(transportBarWidth)%"></span></div><strong>@(transportScore > 0 ? transportScore.ToString("0.0") : "-")</strong></div>
+                </div>
                 </div>
             </div>
 
@@ -1247,15 +1347,18 @@
                         {
                             <article class="review-card">
                                 <div class="review-meta">
-                                    <div>
-                                        <h4>@MaskName(review.Name)</h4>
-                                        <p>
-                                            @review.DateText
-                                            @if (!string.IsNullOrWhiteSpace(review.ReservationNoTail))
-                                            {
-                                                <span class="review-reservation-chip">Rez. ***@review.ReservationNoTail</span>
-                                            }
-                                        </p>
+                                    <div class="review-meta-author">
+                                        <span class="review-avatar" aria-hidden="true">@(!string.IsNullOrWhiteSpace(review.Avatar) ? review.Avatar : "OT")</span>
+                                        <div>
+                                            <h4>@MaskName(review.Name)</h4>
+                                            <p class="review-meta-date">
+                                                @review.DateText
+                                                @if (!string.IsNullOrWhiteSpace(review.ReservationNoTail))
+                                                {
+                                                    <span class="review-verified-badge"><i class="fas fa-circle-check" aria-hidden="true"></i> @SharedLocalizer["Detail.Review.Verified"].Value</span>
+                                                }
+                                            </p>
+                                        </div>
                                     </div>
                                     <span class="review-chip">@review.Score.ToString("0.0")</span>
                                 </div>
@@ -1298,19 +1401,69 @@
             }
         </article>
 
+        <article class="content-card detail-map-card od-section od-section--map">
+            <div class="section-head tabler-section-head">
+                <div class="tabler-section-headrow">
+                    <div class="tabler-section-titles">
+                        <h2>@SharedLocalizer["Detail.Location.Title"].Value</h2>
+                        <p>@locationText</p>
+                    </div>
+                    @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+                    {
+                        <div class="tabler-section-actions">
+                            <a class="tabler-section-action-btn" target="_blank" rel="noopener"
+                               href="https://www.google.com/maps?q=@mapLatitude,@mapLongitude">
+                                @SharedLocalizer["Detail.Location.OpenMap"].Value
+                                <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="map-card">
+                @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+                {
+                    <div id="detailLocationMap"
+                         class="detail-location-map"
+                         data-lat="@mapLatitude"
+                         data-lon="@mapLongitude"
+                         data-name="@Model.Name"
+                         data-location="@locationText"
+                         data-address="@Model.Address"
+                         data-ulke-id="@(Model.UlkeId?.ToString() ?? "")"
+                         data-sehir-id="@(Model.SehirId?.ToString() ?? "")"
+                         data-ilce-id="@(Model.IlceId?.ToString() ?? "")"
+                         data-mahalle-id="@(Model.MahalleId?.ToString() ?? "")"
+                         aria-label="Otel konum haritası"></div>
+                }
+                else
+                {
+                    <div class="map-fallback">
+                        <strong>Koordinat bilgisi bekleniyor</strong>
+                        <span>@Model.Address</span>
+                    </div>
+                }
+            </div>
+        </article>
+
     </div>
 
     <div class="booking-modal-backdrop" id="bookingModalBackdrop" hidden></div>
-    <aside class="booking-sidebar" id="bookingSidebar">
+    <aside class="booking-sidebar od-detail__booking" id="bookingSidebar">
         <div class="booking-card">
             <button type="button" class="booking-modal-close" id="bookingModalClose" aria-label="Rezervasyon panelini kapat">
                 <i class="fas fa-times"></i>
             </button>
-            <div class="booking-price-head">
+            <div class="booking-price-head booking-price-head--ota">
                 <div class="booking-price-row">
                     <div class="booking-price-main">
-                        <strong id="bookingPrice">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
-                        <span class="booking-price-unit">Toplam • Vergiler dahil</span>
+                        @if (initialInclusiveNightly > 0m)
+                        {
+                            <span class="booking-price-from">@SharedLocalizer["Detail.Booking.FromNight"].Value <strong id="bookingNightlyFrom">₺@initialInclusiveNightly.ToString("N0")</strong></span>
+                        }
+                        <strong id="bookingPrice" class="booking-price-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
+                        <span class="booking-price-unit">@SharedLocalizer["Detail.Booking.Total"].Value · @SharedLocalizer["Detail.Room.TaxesIncluded"].Value</span>
+                        <small class="booking-price-tax-note">@SharedLocalizer["Detail.Booking.TaxesNote"].Value</small>
                     </div>
                 </div>
             </div>
@@ -1506,59 +1659,18 @@
         </div>
     </aside>
 
-    <div class="mobile-booking-bar mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"]">
+    <div class="mobile-booking-bar od-sticky-cta mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"].Value">
         <div class="mobile-booking-summary">
-            <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"]</span>
-            <strong id="mobileBookingPrice">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
+            @if (initialInclusiveNightly > 0m)
+            {
+                <span class="mobile-booking-from">@SharedLocalizer["Detail.Booking.FromNight"].Value <strong id="mobileBookingNightly">₺@initialInclusiveNightly.ToString("N0")</strong></span>
+            }
+            <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
+            <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
+            <small class="mobile-booking-tax-note">@SharedLocalizer["Detail.Booking.TaxesNote"].Value</small>
         </div>
-        <button type="button" class="mobile-booking-cta" id="openBookingSheetBtn">@SharedLocalizer["Detail.Booking.GoToReserve"]</button>
+        <button type="button" class="mobile-booking-cta" id="openBookingSheetBtn">@SharedLocalizer["Detail.Booking.GoToReserve"].Value</button>
     </div>
-
-    <article class="content-card detail-map-card">
-        <div class="section-head tabler-section-head">
-            <div class="tabler-section-headrow">
-                <div class="tabler-section-titles">
-                    <h2>Konum</h2>
-                    <p>@locationText</p>
-                </div>
-                @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
-                {
-                    <div class="tabler-section-actions">
-                        <a class="tabler-section-action-btn" target="_blank" rel="noopener"
-                           href="https://www.google.com/maps?q=@mapLatitude,@mapLongitude">
-                            Haritada aç
-                            <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-                        </a>
-                    </div>
-                }
-            </div>
-        </div>
-        <div class="map-card">
-            @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
-            {
-                <div id="detailLocationMap"
-                     class="detail-location-map"
-                     data-lat="@mapLatitude"
-                     data-lon="@mapLongitude"
-                     data-name="@Model.Name"
-                     data-location="@locationText"
-                     data-address="@Model.Address"
-                     data-ulke-id="@(Model.UlkeId?.ToString() ?? "")"
-                     data-sehir-id="@(Model.SehirId?.ToString() ?? "")"
-                     data-ilce-id="@(Model.IlceId?.ToString() ?? "")"
-                     data-mahalle-id="@(Model.MahalleId?.ToString() ?? "")"
-                     aria-label="Otel konum haritası"></div>
-            }
-            else
-            {
-                <div class="map-fallback">
-                    <strong>Koordinat bilgisi bekleniyor</strong>
-                    <span>@Model.Address</span>
-                </div>
-            }
-        </div>
-
-    </article>
 
 </section>
 
@@ -1697,20 +1809,42 @@
 </section>
 
 <section class="detail-modal detail-confirm-modal" id="reservationConfirmModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="reservationConfirmModalTitle">
-    <button type="button" class="detail-modal-close" data-close-modal="reservationConfirmModal" aria-label="Kapat"><i class="fas fa-times"></i></button>
-    <div class="detail-modal-head">
-        <div>
-            <span class="detail-modal-kicker">Son Kontrol</span>
-            <h3 id="reservationConfirmModalTitle">Rezervasyonu gözden geçirin</h3>
-        </div>
-    </div>
-    <p class="detail-modal-copy">Bilgiler doğruysa rezervasyonu oluşturabilirsiniz. Tarih, oda ve ödeme planını son kez kontrol edin.</p>
-    <div class="reservation-confirm-summary" id="reservationConfirmSummary"></div>
-    <div class="detail-modal-actions">
-        <button type="button" class="detail-modal-secondary" data-close-modal="reservationConfirmModal">Düzenlemeye Dön</button>
-        <button type="button" class="detail-modal-primary" id="reservationConfirmSubmitBtn">Rezervasyonu Oluştur</button>
+    <div class="detail-confirm-modal__inner fe-world-safe-bottom">
+        <header class="detail-confirm-modal__head">
+            <div class="detail-confirm-modal__head-copy">
+                <span class="detail-confirm-modal__badge">@SharedLocalizer["Detail.ConfirmModal.Kicker"].Value</span>
+                <h3 id="reservationConfirmModalTitle">@SharedLocalizer["Detail.ConfirmModal.Title"].Value</h3>
+            </div>
+            <button type="button" class="detail-modal-close detail-confirm-modal__close fe-world-touch-target" data-close-modal="reservationConfirmModal" aria-label="@SharedLocalizer["Btn.Close"].Value"><i class="fas fa-times" aria-hidden="true"></i></button>
+        </header>
+        <p class="detail-confirm-modal__lead">@SharedLocalizer["Detail.ConfirmModal.Lead"].Value</p>
+        <div class="reservation-confirm-summary" id="reservationConfirmSummary" aria-live="polite"></div>
+        <footer class="detail-confirm-modal__footer">
+            <div class="detail-confirm-modal__total" id="reservationConfirmTotalRow" hidden>
+                <div class="detail-confirm-modal__total-copy">
+                    <span class="detail-confirm-modal__total-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
+                    <small class="detail-confirm-modal__total-hint">@SharedLocalizer["Detail.Room.TaxesIncluded"].Value</small>
+                </div>
+                <strong class="detail-confirm-modal__total-value" id="reservationConfirmTotal">—</strong>
+            </div>
+            <div class="detail-confirm-modal__actions detail-modal-actions">
+                <button type="button" class="detail-modal-secondary detail-confirm-modal__btn-back fe-world-touch-target" data-close-modal="reservationConfirmModal">@SharedLocalizer["Detail.ConfirmModal.BackToEdit"].Value</button>
+                <button type="button" class="detail-modal-primary detail-confirm-modal__btn-submit fe-world-touch-target" id="reservationConfirmSubmitBtn">@SharedLocalizer["Detail.ConfirmModal.Submit"].Value</button>
+            </div>
+        </footer>
     </div>
 </section>
+<script type="application/json" id="reservationConfirmI18nJson">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+    room = SharedLocalizer["Detail.ConfirmModal.Room"].Value,
+    paymentPlan = SharedLocalizer["Detail.ConfirmModal.PaymentPlan"].Value,
+    paymentNote = SharedLocalizer["Detail.ConfirmModal.PaymentNote"].Value,
+    notSelected = SharedLocalizer["Detail.ConfirmModal.NotSelected"].Value,
+    nights = SharedLocalizer["Detail.ConfirmModal.Nights"].Value,
+    roomCount = SharedLocalizer["Detail.ConfirmModal.RoomCount"].Value,
+    checkIn = SharedLocalizer["Booking.CheckIn"].Value,
+    checkOut = SharedLocalizer["Booking.CheckOut"].Value,
+    uiCulture = uiCulture
+}))</script>
 
 <div class="room-pick-popover" id="roomPickPopover" hidden aria-hidden="true">
     <div class="room-pick-popover__title">Odayı seç</div>
@@ -2114,6 +2248,9 @@
                     (location ? '<span>' + location + '</span>' : '')
                 );
                 map.setView([lat, lon], 14);
+                window.setTimeout(function () {
+                    map.invalidateSize();
+                }, 150);
             }
 
             initFavoriteAnimations();
@@ -2407,6 +2544,11 @@
                     const currentEl = counter.querySelector('.gallery-count-badge__current');
                     if (currentEl) currentEl.textContent = String(safeIndex + 1);
                 }
+                const mobileCounter = document.getElementById('galleryMobileCounter');
+                if (mobileCounter) {
+                    const mobileCurrent = mobileCounter.querySelector('.gallery-mobile-counter__current');
+                    if (mobileCurrent) mobileCurrent.textContent = String(safeIndex + 1);
+                }
                 document.querySelectorAll('.gallery-thumb, .gallery-filmstrip-thumb').forEach(function (thumb) {
                     const thumbIndex = parseInt(thumb.getAttribute('data-gallery-index') || '0', 10);
                     thumb.classList.toggle('active', thumbIndex === safeIndex);
@@ -2547,10 +2689,19 @@
 
             // Not: Eski inline lightbox event'leri kaldırıldı; ortak SlaytGorsel kullanılıyor.
 
+            function getDetailPageI18n() {
+                const root = document.querySelector('.otel-detail-template-v41');
+                return {
+                    roomSelected: root?.dataset?.i18nRoomSelected || 'Seçili oda',
+                    roomReserve: root?.dataset?.i18nRoomReserve || 'Rezervasyon'
+                };
+            }
+
             function ensureSelectButtonOriginalText(button) {
                 if (!button) return;
+                const i18n = getDetailPageI18n();
                 if (!button.dataset.originalText) {
-                    button.dataset.originalText = button.textContent?.trim() || 'Odanı Seç';
+                    button.dataset.originalText = button.textContent?.trim() || i18n.roomReserve;
                 }
             }
 
@@ -2569,6 +2720,7 @@
             }
 
             function updateSelectRoomButtons() {
+                const i18n = getDetailPageI18n();
                 const selectionMap = getRoomSelectionMap();
                 document.querySelectorAll('.select-room-btn').forEach(function (btn) {
                     ensureSelectButtonOriginalText(btn);
@@ -2576,7 +2728,7 @@
                     const indexes = roomId ? (selectionMap.get(roomId) || []) : [];
                     if (!indexes.length) {
                         btn.classList.remove('is-selected-room');
-                        btn.textContent = btn.dataset.originalText || 'Odanı Seç';
+                        btn.textContent = btn.dataset.originalText || i18n.roomReserve;
                         btn.removeAttribute('title');
                         return;
                     }
@@ -3160,6 +3312,109 @@
                 return '₺' + Number(value || 0).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
             }
 
+            const confirmI18n = (function () {
+                const el = document.getElementById('reservationConfirmI18nJson');
+                if (!el) {
+                    return {};
+                }
+                try {
+                    return JSON.parse(el.textContent || '{}');
+                } catch (err) {
+                    return {};
+                }
+            })();
+            const confirmUiCulture = confirmI18n.uiCulture || '@uiCulture';
+
+            function formatDateHuman(iso) {
+                const parsed = parseIsoDate(iso);
+                if (!parsed) {
+                    return (iso || '-').toString();
+                }
+                return parsed.toLocaleDateString(confirmUiCulture, {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
+
+            function countNights(checkIn, checkOut) {
+                const start = parseIsoDate(checkIn);
+                const end = parseIsoDate(checkOut);
+                if (!start || !end) {
+                    return 0;
+                }
+                return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000));
+            }
+
+            function formatConfirmTemplate(template, value) {
+                return String(template || '{0}').replace('{0}', String(value));
+            }
+
+            function paymentConfirmIcon(paymentText) {
+                const normalized = (paymentText || '').toLowerCase();
+                if (normalized.indexOf('online') >= 0 || normalized.indexOf('kart') >= 0) {
+                    return 'fa-credit-card';
+                }
+                if (normalized.indexOf('karma') >= 0) {
+                    return 'fa-wallet';
+                }
+                return 'fa-hand-holding-dollar';
+            }
+
+            function buildConfirmRoomCard(item, index, roomName) {
+                const nights = countNights(item.checkIn, item.checkOut);
+                const nightsText = nights > 0 ? formatConfirmTemplate(confirmI18n.nights || '{0} gece', nights) : '';
+                const roomLabel = formatConfirmTemplate(confirmI18n.room || 'Oda {0}', index + 1);
+                const roomCount = Math.max(1, parseInt(item.roomCount || '1', 10) || 1);
+                const roomCountText = roomCount > 1
+                    ? formatConfirmTemplate(confirmI18n.roomCount || '{0} oda', roomCount)
+                    : '';
+
+                return '<article class="reservation-confirm-card reservation-confirm-card--room">'
+                    + '<div class="reservation-confirm-card__icon" aria-hidden="true"><i class="fas fa-bed"></i></div>'
+                    + '<div class="reservation-confirm-card__body">'
+                    + '<span class="reservation-confirm-card__label">' + escapeHtml(roomLabel) + '</span>'
+                    + '<strong class="reservation-confirm-card__title">' + escapeHtml(roomName) + '</strong>'
+                    + '<div class="reservation-confirm-card__dates">'
+                    + '<span class="reservation-confirm-date"><span class="reservation-confirm-date__tag">' + escapeHtml(confirmI18n.checkIn || 'Giriş') + '</span><time datetime="' + escapeHtml(item.checkIn || '') + '">' + escapeHtml(formatDateHuman(item.checkIn)) + '</time></span>'
+                    + '<span class="reservation-confirm-date-sep" aria-hidden="true"><i class="fas fa-arrow-right"></i></span>'
+                    + '<span class="reservation-confirm-date"><span class="reservation-confirm-date__tag">' + escapeHtml(confirmI18n.checkOut || 'Çıkış') + '</span><time datetime="' + escapeHtml(item.checkOut || '') + '">' + escapeHtml(formatDateHuman(item.checkOut)) + '</time></span>'
+                    + '</div>'
+                    + ((nightsText || roomCountText)
+                        ? '<div class="reservation-confirm-card__meta">' + escapeHtml([nightsText, roomCountText].filter(Boolean).join(' · ')) + '</div>'
+                        : '')
+                    + '</div>'
+                    + '</article>';
+            }
+
+            function buildConfirmPaymentCard(paymentText) {
+                const icon = paymentConfirmIcon(paymentText);
+                return '<article class="reservation-confirm-card reservation-confirm-card--payment">'
+                    + '<div class="reservation-confirm-card__icon" aria-hidden="true"><i class="fas ' + icon + '"></i></div>'
+                    + '<div class="reservation-confirm-card__body">'
+                    + '<span class="reservation-confirm-card__label">' + escapeHtml(confirmI18n.paymentPlan || 'Ödeme planı') + '</span>'
+                    + '<strong class="reservation-confirm-card__title">' + escapeHtml(paymentText) + '</strong>'
+                    + '<p class="reservation-confirm-card__note">' + escapeHtml(confirmI18n.paymentNote || '') + '</p>'
+                    + '</div>'
+                    + '</article>';
+            }
+
+            function updateConfirmTotalDisplay() {
+                const totalRow = document.getElementById('reservationConfirmTotalRow');
+                const totalEl = document.getElementById('reservationConfirmTotal');
+                if (!totalRow || !totalEl) {
+                    return;
+                }
+                if (lastBookingTotalAmount > 0) {
+                    totalEl.textContent = formatMoney(lastBookingTotalAmount);
+                    totalRow.hidden = false;
+                    return;
+                }
+                totalRow.hidden = true;
+                totalEl.textContent = '—';
+            }
+
             const detailVatFraction = @((Model.TaxDisplayVatPercent / 100m).ToString(System.Globalization.CultureInfo.InvariantCulture));
             const detailAccommodationFraction = @((Model.TaxDisplayAccommodationPercent / 100m).ToString(System.Globalization.CultureInfo.InvariantCulture));
             const detailVatPctLabel = '@Model.TaxDisplayVatPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)';
@@ -3364,24 +3619,19 @@
                     return;
                 }
 
-                const paymentText = (paymentMethodSelect?.value || '').trim() || 'Seçilmedi';
+                const paymentText = (paymentMethodSelect?.value || '').trim() || (confirmI18n.notSelected || 'Seçilmedi');
+                const roomCards = items.map(function (item, index) {
+                    const room = roomOptions.find(function (opt) { return Number(opt.id) === Number(item.roomTypeId); });
+                    const roomName = room?.name || item.roomName || (confirmI18n.notSelected || 'Seçilmedi');
+                    return buildConfirmRoomCard(item, index, roomName);
+                }).join('');
+
                 reservationConfirmSummary.innerHTML =
-                    '<div class="reservation-confirm-grid">'
-                    + items.map(function (item, index) {
-                        const room = roomOptions.find(function (opt) { return Number(opt.id) === Number(item.roomTypeId); });
-                        const roomName = room?.name || item.roomName || 'Oda seçilmedi';
-                        return '<div class="reservation-confirm-item">'
-                            + '<strong>Oda ' + (index + 1) + '</strong>'
-                            + '<span>' + escapeHtml(roomName) + '</span>'
-                            + '<small>' + escapeHtml(formatDateHuman(item.checkIn)) + ' - ' + escapeHtml(formatDateHuman(item.checkOut)) + '</small>'
-                            + '</div>';
-                    }).join('')
-                    + '<div class="reservation-confirm-item is-accent">'
-                    + '<strong>Ödeme planı</strong>'
-                    + '<span>' + escapeHtml(paymentText) + '</span>'
-                    + '<small>Bilgiler doğruysa sonraki adımda rezervasyon kaydı oluşturulacak.</small>'
-                    + '</div>'
+                    '<div class="reservation-confirm-stack">'
+                    + roomCards
+                    + buildConfirmPaymentCard(paymentText)
                     + '</div>';
+                updateConfirmTotalDisplay();
             }
 
             function continueReservationAttemptAfterProfile() {
@@ -3488,6 +3738,7 @@
             }
 
             let lastQuoteUnavailable = false;
+            let lastBookingTotalAmount = 0;
 
             function syncReserveButtonEnabled() {
                 const reserveButton = bookingForm?.querySelector('.reserve-btn');
@@ -3783,11 +4034,26 @@
                     return;
                 }
 
-                // price head: tek satır toplam (vergiler dahil)
                 const unitEl = document.querySelector('.booking-price-unit');
                 bookingPrice.textContent = formatMoney(totals.totalAmount);
-                if (unitEl) unitEl.textContent = 'Toplam • Vergiler dahil';
+                lastBookingTotalAmount = Number(totals.totalAmount || 0);
                 if (mobileBookingPrice) mobileBookingPrice.textContent = formatMoney(totals.totalAmount);
+
+                const firstItem = items[0];
+                const nightsForNightly = firstItem
+                    ? Math.max(1, Math.round((new Date(firstItem.checkOut).getTime() - new Date(firstItem.checkIn).getTime()) / 86400000))
+                    : 1;
+                const roomsForNightly = firstItem ? Math.max(1, parseInt(firstItem.roomCount || 1, 10) || 1) : 1;
+                const nightlyAmount = totals.totalAmount > 0
+                    ? Math.round(totals.totalAmount / nightsForNightly / roomsForNightly)
+                    : 0;
+                const bookingNightlyFrom = document.getElementById('bookingNightlyFrom');
+                const mobileBookingNightly = document.getElementById('mobileBookingNightly');
+                if (nightlyAmount > 0) {
+                    const nightlyText = formatMoney(nightlyAmount);
+                    if (bookingNightlyFrom) bookingNightlyFrom.textContent = nightlyText;
+                    if (mobileBookingNightly) mobileBookingNightly.textContent = nightlyText;
+                }
 
                 breakdown.innerHTML = buildMultiRoomBreakdownHtml(perRoom, totals);
 

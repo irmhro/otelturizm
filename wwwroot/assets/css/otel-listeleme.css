@@ -461,11 +461,32 @@ img.card-main-image {
 }
 
 .listing-hotel-card {
-    display: grid;
-    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     border-radius: 28px;
-    min-height: 240px;
+    min-height: 0;
+    height: 100%;
+}
+
+.listing-cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    align-items: stretch;
+}
+
+@media (min-width: 720px) {
+    .listing-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1100px) {
+    .listing-cards {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 20px;
+    }
 }
 
 .hotel-card-media {
@@ -1316,25 +1337,46 @@ body.listing-modal-open {
     font-weight: 600;
 }
 
-.listing-template-v41 .hotel-card-list {
-    display: flex;
-    flex-direction: column;
+.listing-template-v41 .hotel-card-list,
+.listing-template-v41 .listing-cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
+    align-items: stretch;
 }
 
-.listing-template-v41 .hotel-card {
+@media (min-width: 720px) {
+    .listing-template-v41 .hotel-card-list,
+    .listing-template-v41 .listing-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1100px) {
+    .listing-template-v41 .hotel-card-list,
+    .listing-template-v41 .listing-cards {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.listing-template-v41 .hotel-card,
+.listing-template-v41 .listing-hotel-card {
     display: flex;
+    flex-direction: column;
     border-radius: 20px;
     border: 1px solid var(--listing-border);
     background: #fff;
     overflow: hidden;
-    min-height: 210px;
+    min-height: 0;
+    height: 100%;
     box-shadow: var(--shadow-sm);
 }
 
-.listing-template-v41 .card-image {
-    width: 280px;
-    min-width: 280px;
+.listing-template-v41 .card-image,
+.listing-template-v41 .listing-hotel-card .card-image-section {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
     height: auto;
     position: relative;
 }
@@ -3094,7 +3136,36 @@ body.listing-modal-open {
     }
 }
 
-/* Wave-XIII — konsept bar (OTEL LİSTELEME SAYFASI.html) */
+/* Wave-XIII — üst filtre bandı (konsept + yemek) */
+.listing-top-filters {
+    margin: 0 0 16px;
+    padding: 16px 18px;
+    border-radius: 20px;
+    border: 1px solid var(--listing-border);
+    background: var(--listing-surface);
+    box-shadow: var(--listing-shadow-sm);
+    display: grid;
+    gap: 14px;
+}
+
+.listing-top-filters__label {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--listing-muted);
+}
+
+.listing-top-filters__label i {
+    color: #ffd700;
+}
+
+.listing-top-filters__label--meals i {
+    color: var(--listing-success);
+}
+
 .listing-concept-bar {
     margin: 0 0 20px;
     padding: 16px 18px;

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
@@ -58,248 +58,862 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Nav.Hotels" xml:space="preserve"><value>الفنادق</value></data>
-  <data name="Nav.Corporate" xml:space="preserve"><value>الشركات</value></data>
-  <data name="Nav.Home" xml:space="preserve"><value>الرئيسية</value></data>
-  <data name="Nav.Campaigns" xml:space="preserve"><value>العروض</value></data>
-  <data name="Nav.Help" xml:space="preserve"><value>المساعدة</value></data>
-  <data name="Nav.Login" xml:space="preserve"><value>تسجيل الدخول</value></data>
-  <data name="Nav.Register" xml:space="preserve"><value>التسجيل</value></data>
-  <data name="Nav.Account" xml:space="preserve"><value>حسابي</value></data>
-  <data name="Nav.Map" xml:space="preserve"><value>الخريطة</value></data>
-  <data name="Nav.SkipToContent" xml:space="preserve"><value>انتقل إلى المحتوى</value></data>
-  <data name="Search.Placeholder" xml:space="preserve"><value>إلى أين تريد السفر؟</value></data>
-  <data name="Search.AriaLabel" xml:space="preserve"><value>ابحث عن فندق أو وجهة</value></data>
-  <data name="Search.Title" xml:space="preserve"><value>بحث</value></data>
-  <data name="Search.NoResults" xml:space="preserve"><value>لا توجد نتائج</value></data>
-  <data name="Search.Suggestions" xml:space="preserve"><value>اقتراحات</value></data>
-  <data name="Search.Recent" xml:space="preserve"><value>عمليات البحث الأخيرة</value></data>
-  <data name="Booking.CheckIn" xml:space="preserve"><value>تسجيل الوصول</value></data>
-  <data name="Booking.CheckOut" xml:space="preserve"><value>تسجيل المغادرة</value></data>
-  <data name="Booking.Guests" xml:space="preserve"><value>الضيوف</value></data>
-  <data name="Booking.Rooms" xml:space="preserve"><value>الغرف</value></data>
-  <data name="Booking.Nights" xml:space="preserve"><value>الليالي</value></data>
-  <data name="Booking.Total" xml:space="preserve"><value>الإجمالي</value></data>
-  <data name="Booking.Confirm" xml:space="preserve"><value>تأكيد الحجز</value></data>
-  <data name="Booking.Cancel" xml:space="preserve"><value>إلغاء الحجز</value></data>
-  <data name="Filter.Breakfast" xml:space="preserve"><value>إفطار مشمول</value></data>
-  <data name="Filter.FreeCancel" xml:space="preserve"><value>إلغاء مجاني</value></data>
-  <data name="Filter.Pool" xml:space="preserve"><value>مسبح</value></data>
-  <data name="Filter.Spa" xml:space="preserve"><value>سبا</value></data>
-  <data name="Filter.Parking" xml:space="preserve"><value>موقف سيارات</value></data>
-  <data name="Filter.Wifi" xml:space="preserve"><value>واي فاي مجاني</value></data>
-  <data name="Filter.Rating" xml:space="preserve"><value>التقييم</value></data>
-  <data name="Filter.Price" xml:space="preserve"><value>السعر</value></data>
-  <data name="Filter.Sort" xml:space="preserve"><value>ترتيب</value></data>
-  <data name="Filter.Clear" xml:space="preserve"><value>مسح الفلاتر</value></data>
-  <data name="Btn.Search" xml:space="preserve"><value>بحث</value></data>
-  <data name="Btn.Book" xml:space="preserve"><value>احجز الآن</value></data>
-  <data name="Btn.Save" xml:space="preserve"><value>حفظ</value></data>
-  <data name="Btn.Cancel" xml:space="preserve"><value>إلغاء</value></data>
-  <data name="Btn.Close" xml:space="preserve"><value>إغلاق</value></data>
-  <data name="Btn.Back" xml:space="preserve"><value>رجوع</value></data>
-  <data name="Btn.Continue" xml:space="preserve"><value>متابعة</value></data>
-  <data name="Btn.Apply" xml:space="preserve"><value>تطبيق</value></data>
-  <data name="Footer.About" xml:space="preserve"><value>من نحن</value></data>
-  <data name="Footer.Contact" xml:space="preserve"><value>اتصل بنا</value></data>
-  <data name="Footer.Privacy" xml:space="preserve"><value>سياسة الخصوصية</value></data>
-  <data name="Footer.Terms" xml:space="preserve"><value>شروط الاستخدام</value></data>
-  <data name="Footer.Copyright" xml:space="preserve"><value>جميع الحقوق محفوظة.</value></data>
-  <data name="Footer.Company" xml:space="preserve"><value>الشركة</value></data>
-  <data name="Footer.Support" xml:space="preserve"><value>الدعم</value></data>
-  <data name="Footer.Explore" xml:space="preserve"><value>استكشف</value></data>
-  <data name="Footer.EarlyBooking" xml:space="preserve"><value>حجز مبكر</value></data>
-  <data name="Footer.BusinessTravel" xml:space="preserve"><value>سفر الأعمال</value></data>
-  <data name="Footer.Https" xml:space="preserve"><value>اتصال آمن (HTTPS)</value></data>
-  <data name="Footer.ReservationSummary" xml:space="preserve"><value>ملخص الحجز في الحساب</value></data>
-  <data name="Footer.KvkkProcessing" xml:space="preserve"><value>معالجة البيانات بموجب KVKK</value></data>
-  <data name="Footer.Kvkk" xml:space="preserve"><value>KVKK</value></data>
-  <data name="Nav.Firma" xml:space="preserve"><value>الشركات</value></data>
-  <data name="Nav.FirmaLogin" xml:space="preserve"><value>دخول الشركات</value></data>
-  <data name="Nav.FirmaRegister" xml:space="preserve"><value>تسجيل الشركات</value></data>
-  <data name="Nav.Reservations" xml:space="preserve"><value>الحجوزات</value></data>
-  <data name="Nav.Invoices" xml:space="preserve"><value>الفواتير</value></data>
-  <data name="Map.BackToList" xml:space="preserve"><value>العودة للقائمة</value></data>
-  <data name="Map.BackToAllHotels" xml:space="preserve"><value>جميع الفنادق</value></data>
-  <data name="Listing.AllRegions" xml:space="preserve"><value>جميع المناطق</value></data>
-  <data name="Listing.HotelsFound" xml:space="preserve"><value>تم العثور على {0} فندق</value></data>
-  <data name="Listing.OnThisPage" xml:space="preserve"><value>{0} في هذه الصفحة</value></data>
-  <data name="Listing.SearchFound" xml:space="preserve"><value>{0}: تم العثور على {1} فندق</value></data>
-  <data name="Listing.EditSearch" xml:space="preserve"><value>تعديل البحث</value></data>
-  <data name="Listing.Map" xml:space="preserve"><value>الخريطة</value></data>
-  <data name="Listing.MapView" xml:space="preserve"><value>الخريطة</value></data>
-  <data name="Listing.ConceptFilters" xml:space="preserve"><value>فلاتر المفهوم</value></data>
-  <data name="Listing.ConceptTitle" xml:space="preserve"><value>فلاتر المفهوم</value></data>
-  <data name="Listing.AllCampaigns" xml:space="preserve"><value>جميع الحملات</value></data>
-  <data name="Listing.LoyaltyBadge" xml:space="preserve"><value>مفضل الضيوف</value></data>
-  <data name="Listing.Excellent" xml:space="preserve"><value>ممتاز</value></data>
-  <data name="Listing.RatingExcellent" xml:space="preserve"><value>ممتاز</value></data>
-  <data name="Listing.RatingGood" xml:space="preserve"><value>جيد</value></data>
-  <data name="Listing.ViewDetails" xml:space="preserve"><value>عرض التفاصيل</value></data>
-  <data name="Btn.ViewDetails" xml:space="preserve"><value>عرض التفاصيل</value></data>
-  <data name="Nav.QuickLink.EndOfMonth" xml:space="preserve"><value>End of month special</value></data>
-  <data name="Nav.QuickLink.FlashDiscount" xml:space="preserve"><value>Flash deal</value></data>
-  <data name="Nav.QuickLink.WeekendDeals" xml:space="preserve"><value>Weekend deals</value></data>
-  <data name="Nav.QuickLink.SmartPrice" xml:space="preserve"><value>Smart price</value></data>
-  <data name="Nav.QuickLink.Boutique" xml:space="preserve"><value>Boutique picks</value></data>
-  <data name="Nav.FeaturedLinks" xml:space="preserve"><value>Featured links</value></data>
-  <data name="Nav.FeaturedDeals" xml:space="preserve"><value>Featured deals</value></data>
-  <data name="Nav.LanguageSelection" xml:space="preserve"><value>Language</value></data>
-  <data name="Nav.Panel.Partner" xml:space="preserve"><value>Partner panel</value></data>
-  <data name="Nav.Panel.Firma" xml:space="preserve"><value>Company panel</value></data>
-  <data name="Nav.Panel.Admin" xml:space="preserve"><value>Admin panel</value></data>
-  <data name="Nav.Panel.Developer" xml:space="preserve"><value>Developer panel</value></data>
-  <data name="Nav.Panel.Sales" xml:space="preserve"><value>Sales panel</value></data>
-  <data name="Footer.Description" xml:space="preserve"><value>Search and book hotels across Türkiye securely; track summaries and cancellation terms in your account.</value></data>
-  <data name="Footer.Career" xml:space="preserve"><value>Careers</value></data>
-  <data name="Footer.Press" xml:space="preserve"><value>Press room</value></data>
-  <data name="Footer.Blog" xml:space="preserve"><value>Blog</value></data>
-  <data name="Footer.ForHotels" xml:space="preserve"><value>For hoteliers</value></data>
-  <data name="Footer.ExtranetLogin" xml:space="preserve"><value>Extranet login</value></data>
-  <data name="Footer.PartnerProgram" xml:space="preserve"><value>Partner program</value></data>
-  <data name="Footer.CommissionRates" xml:space="preserve"><value>Commission rates</value></data>
-  <data name="Footer.TrainingSupport" xml:space="preserve"><value>Training &amp; support</value></data>
-  <data name="Footer.CancelRefund" xml:space="preserve"><value>Cancellation &amp; refund</value></data>
-  <data name="Footer.Faq" xml:space="preserve"><value>FAQ</value></data>
-  <data name="Footer.TrustCommitments" xml:space="preserve"><value>Trust commitments</value></data>
-  <data name="Campaign.Hero.Title" xml:space="preserve"><value>Campaign hotels and seasonal deals</value></data>
-  <data name="Campaign.Hero.Description" xml:space="preserve"><value>Explore live campaigns, browse participating properties, or read terms on the detail page.</value></data>
-  <data name="Campaign.Stat.Active" xml:space="preserve"><value>active campaigns</value></data>
-  <data name="Campaign.Stat.DiscountedHotels" xml:space="preserve"><value>Campaign hotels</value></data>
-  <data name="Campaign.Timer.Label" xml:space="preserve"><value>Time left until campaign ends</value></data>
-  <data name="Campaign.Timer.Days" xml:space="preserve"><value>Days</value></data>
-  <data name="Campaign.Timer.Hours" xml:space="preserve"><value>Hours</value></data>
-  <data name="Campaign.Timer.Minutes" xml:space="preserve"><value>Minutes</value></data>
-  <data name="Campaign.Timer.Seconds" xml:space="preserve"><value>Seconds</value></data>
-  <data name="Campaign.Empty.Title" xml:space="preserve"><value>No active campaigns right now.</value></data>
-  <data name="Campaign.Empty.Description" xml:space="preserve"><value>This page fills automatically when campaign dates become active.</value></data>
-  <data name="Campaign.ListHotels" xml:space="preserve"><value>List hotels</value></data>
-  <data name="Campaign.ViewDetail" xml:space="preserve"><value>Campaign details</value></data>
-  <data name="Detail.ReviewTeaser.Title" xml:space="preserve"><value>Guest reviews</value></data>
-  <data name="Detail.ReviewTeaser.SeeAll" xml:space="preserve"><value>See all reviews</value></data>
-  <data name="Detail.ReviewTeaser.None" xml:space="preserve"><value>No reviews yet — be the first.</value></data>
-  <data name="Detail.ReviewTeaser.Count" xml:space="preserve"><value>{0} reviews · average {1}/10</value></data>
-  <data name="Booking.MobileSummary" xml:space="preserve"><value>Mobile booking summary</value></data>
-  <data name="Detail.BackToHotels" xml:space="preserve"><value>العودة إلى الفنادق</value></data>
-  <data name="Detail.Rooms.Title" xml:space="preserve"><value>أنواع الغرف والأسعار</value></data>
-  <data name="Detail.Rooms.Subtitle" xml:space="preserve"><value>اختر غرفة هنا لإنشاء حجزك.</value></data>
-  <data name="Detail.Rooms.GoToBooking" xml:space="preserve"><value>الانتقال إلى الحجز</value></data>
-  <data name="Detail.Room.Nightly" xml:space="preserve"><value>لليلة</value></data>
-  <data name="Detail.Room.Reserve" xml:space="preserve"><value>احجز</value></data>
-  <data name="Detail.Room.NoPrice" xml:space="preserve"><value>لا يوجد سعر</value></data>
-  <data name="Detail.Room.TaxesIncluded" xml:space="preserve"><value>الضرائب مشمولة</value></data>
-  <data name="Detail.Booking.Total" xml:space="preserve"><value>الإجمالي</value></data>
-  <data name="Detail.Booking.GoToReserve" xml:space="preserve"><value>احجز الآن</value></data>
-<data name="Company.Hero.DefaultLead" xml:space="preserve"><value>We make stays transparent, secure, and accessible with Otelturizm.</value></data>
-  <data name="Company.About.Title" xml:space="preserve"><value>About us</value></data>
-  <data name="Company.About.MetaDescription" xml:space="preserve"><value>Otelturizm mission, vision, and values — secure hotel search and booking across Türkiye.</value></data>
-  <data name="Company.About.HeroLead" xml:space="preserve"><value>One transparent booking experience for travelers, hoteliers, and corporate teams.</value></data>
-  <data name="Company.About.StatsLabel" xml:space="preserve"><value>Platform highlights</value></data>
-  <data name="Company.About.StatDistricts" xml:space="preserve"><value>District coverage</value></data>
-  <data name="Company.About.StatLanguages" xml:space="preserve"><value>Language support</value></data>
-  <data name="Company.About.StatSupport" xml:space="preserve"><value>Help center access</value></data>
-  <data name="Company.About.MissionTitle" xml:space="preserve"><value>Our mission</value></data>
-  <data name="Company.About.MissionText" xml:space="preserve"><value>Simplify stay decisions with price, cancellation terms, and trust signals on one screen.</value></data>
-  <data name="Company.About.VisionTitle" xml:space="preserve"><value>Our vision</value></data>
-  <data name="Company.About.VisionText" xml:space="preserve"><value>Become Türkiye's most trusted digital stays platform with sustainable growth for hotels and guests.</value></data>
-  <data name="Company.About.ValuesTitle" xml:space="preserve"><value>Our values</value></data>
-  <data name="Company.About.ValueTrustTitle" xml:space="preserve"><value>Transparency</value></data>
-  <data name="Company.About.ValueTrustText" xml:space="preserve"><value>Reservation summary, cancellation terms, and privacy notices in your account.</value></data>
-  <data name="Company.About.ValueSpeedTitle" xml:space="preserve"><value>Speed</value></data>
-  <data name="Company.About.ValueSpeedText" xml:space="preserve"><value>Mobile-first, touch-friendly listing, map, and campaign experiences.</value></data>
-  <data name="Company.About.ValuePartnerTitle" xml:space="preserve"><value>Partnership</value></data>
-  <data name="Company.About.ValuePartnerText" xml:space="preserve"><value>Partner extranet and corporate panels that support hotel operations.</value></data>
-  <data name="Company.About.CtaLabel" xml:space="preserve"><value>Contact call to action</value></data>
-  <data name="Company.About.CtaTitle" xml:space="preserve"><value>Questions?</value></data>
-  <data name="Company.About.CtaText" xml:space="preserve"><value>Reach us through the help center and support channels.</value></data>
-  <data name="Company.Career.Title" xml:space="preserve"><value>Careers</value></data>
-  <data name="Company.Career.MetaDescription" xml:space="preserve"><value>Otelturizm careers — join product, engineering, and partner success teams.</value></data>
-  <data name="Company.Career.HeroLead" xml:space="preserve"><value>Build travel technology with impact; hybrid work and growth-focused culture.</value></data>
-  <data name="Company.Career.PerkHybridTitle" xml:space="preserve"><value>Hybrid work</value></data>
-  <data name="Company.Career.PerkHybridText" xml:space="preserve"><value>Istanbul-based team with balanced office and remote rhythm.</value></data>
-  <data name="Company.Career.PerkGrowthTitle" xml:space="preserve"><value>Growth</value></data>
-  <data name="Company.Career.PerkGrowthText" xml:space="preserve"><value>Mentorship, learning budget, and product-led sprint cadence.</value></data>
-  <data name="Company.Career.PerkWellnessTitle" xml:space="preserve"><value>Well-being</value></data>
-  <data name="Company.Career.PerkWellnessText" xml:space="preserve"><value>Flexible hours and team events for a sustainable pace.</value></data>
-  <data name="Company.Career.OpenRolesTitle" xml:space="preserve"><value>Open roles</value></data>
-  <data name="Company.Career.RoleProduct" xml:space="preserve"><value>Product</value></data>
-  <data name="Company.Career.RoleProductText" xml:space="preserve"><value>Design system and accessibility on public and panel experiences.</value></data>
-  <data name="Company.Career.RoleEngineering" xml:space="preserve"><value>Engineering</value></data>
-  <data name="Company.Career.RoleEngineeringText" xml:space="preserve"><value>ASP.NET Core, SQL Server, and high-traffic booking flows.</value></data>
-  <data name="Company.Career.RolePartner" xml:space="preserve"><value>Partner</value></data>
-  <data name="Company.Career.RolePartnerText" xml:space="preserve"><value>Extranet adoption and revenue optimization for hotel partners.</value></data>
-  <data name="Company.Career.Apply" xml:space="preserve"><value>Apply</value></data>
-  <data name="Company.Career.CtaLabel" xml:space="preserve"><value>General application</value></data>
-  <data name="Company.Career.CtaTitle" xml:space="preserve"><value>Don't see your role?</value></data>
-  <data name="Company.Career.CtaText" xml:space="preserve"><value>Send your CV; we'll reach out when a matching role opens.</value></data>
-  <data name="Company.Career.CtaButton" xml:space="preserve"><value>careers@otelturizm.com</value></data>
-  <data name="Company.Press.Title" xml:space="preserve"><value>Press room</value></data>
-  <data name="Company.Press.MetaDescription" xml:space="preserve"><value>Otelturizm press room — media kit, contact, and company news.</value></data>
-  <data name="Company.Press.HeroLead" xml:space="preserve"><value>Logos, visuals, and platform news for media representatives.</value></data>
-  <data name="Company.Press.KitTitle" xml:space="preserve"><value>Media kit</value></data>
-  <data name="Company.Press.KitText" xml:space="preserve"><value>Logo, color palette, and short platform overview on request.</value></data>
-  <data name="Company.Press.KitButton" xml:space="preserve"><value>Request kit</value></data>
-  <data name="Company.Press.ContactTitle" xml:space="preserve"><value>Press contact</value></data>
-  <data name="Company.Press.ContactText" xml:space="preserve"><value>Contact our press team for interviews, data, and image usage.</value></data>
-  <data name="Company.Press.NewsTitle" xml:space="preserve"><value>News</value></data>
-  <data name="Company.Press.News1Title" xml:space="preserve"><value>Multilingual hotel listing live</value></data>
-  <data name="Company.Press.News1Text" xml:space="preserve"><value>Path-based SEO and hreflang across seven languages on public hotel pages.</value></data>
-  <data name="Company.Press.News2Title" xml:space="preserve"><value>Partner extranet mobile update</value></data>
-  <data name="Company.Press.News2Text" xml:space="preserve"><value>Photo upload and guest invoice flows refreshed with mobile-first panel UX.</value></data>
-  <data name="Company.Press.News3Title" xml:space="preserve"><value>Corporate panel expansion</value></data>
-  <data name="Company.Press.News3Text" xml:space="preserve"><value>Business travel budget and invoice tracking in one corporate panel.</value></data>
-  <data name="Company.Press.CtaLabel" xml:space="preserve"><value>Blog redirect</value></data>
-  <data name="Company.Press.CtaTitle" xml:space="preserve"><value>Long reads on the blog</value></data>
-  <data name="Company.Press.CtaText" xml:space="preserve"><value>Visit our blog for guides and travel tips.</value></data>
-  <data name="Company.Blog.Title" xml:space="preserve"><value>Blog</value></data>
-  <data name="Company.Blog.MetaDescription" xml:space="preserve"><value>Otelturizm blog — stay tips, campaigns, and platform updates.</value></data>
-  <data name="Company.Blog.HeroLead" xml:space="preserve"><value>Travel guides, early booking tips, and news from the platform.</value></data>
-  <data name="Company.Blog.GridLabel" xml:space="preserve"><value>Blog post list</value></data>
-  <data name="Company.Blog.ReadMore" xml:space="preserve"><value>Read more</value></data>
-  <data name="Company.Blog.BackToList" xml:space="preserve"><value>Back to blog</value></data>
-  <data name="Company.Blog.EmptyTitle" xml:space="preserve"><value>No posts yet</value></data>
-  <data name="Company.Blog.EmptyDescription" xml:space="preserve"><value>New content is coming soon. You can also visit the help center.</value></data>
-  <data name="Company.Blog.Teaser1Title" xml:space="preserve"><value>Track your reservation summary in account</value></data>
-  <data name="Company.Blog.Teaser1Text" xml:space="preserve"><value>Cancellation terms and payment status on one screen — detailed guide in help center.</value></data>
-  <data name="Company.Blog.Teaser2Title" xml:space="preserve"><value>Discover campaign hotels</value></data>
-  <data name="Company.Blog.Teaser2Text" xml:space="preserve"><value>Current discounts and early booking deals on the campaigns page.</value></data>
-  <data name="Company.Blog.Teaser3Title" xml:space="preserve"><value>Pick hotels on the map</value></data>
-  <data name="Company.Blog.Teaser3Text" xml:space="preserve"><value>Search in list or map view with region and price filters.</value></data>
-  <data name="Plan.Page.Title" xml:space="preserve"><value>Seyahat Planlama</value></data>
-  <data name="Plan.Hero.Kicker" xml:space="preserve"><value>Seyahat planlama</value></data>
-  <data name="Plan.Hero.Title" xml:space="preserve"><value>Kişiselleştirilmiş gezi planları</value></data>
-  <data name="Plan.Hero.Lead" xml:space="preserve"><value>Rota önerileri, bütçe tahmini, hafta sonu kaçamakları ve kampanya bazlı otel önerileriyle seyahatinizi tek ekrandan planlayın.</value></data>
-  <data name="Plan.Hero.StatsLabel" xml:space="preserve"><value>Planlama özeti</value></data>
-  <data name="Plan.Stat.Routes" xml:space="preserve"><value>rota önerisi</value></data>
-  <data name="Plan.Stat.Budget" xml:space="preserve"><value>Bütçe tahmini</value></data>
-  <data name="Plan.Stat.Campaigns" xml:space="preserve"><value>kampanya önerisi</value></data>
-  <data name="Plan.Routes.Title" xml:space="preserve"><value>Rota önerileri</value></data>
-  <data name="Plan.Routes.Description" xml:space="preserve"><value>Öne çıkan destinasyonlardan otel aramasına tek tıkla geçin.</value></data>
-  <data name="Plan.Routes.FromPrice" xml:space="preserve"><value>Gecelik yaklaşık {0} TRY'den</value></data>
-  <data name="Plan.Routes.Explore" xml:space="preserve"><value>Otelleri keşfet</value></data>
-  <data name="Plan.Budget.Title" xml:space="preserve"><value>Bütçe tahmini</value></data>
-  <data name="Plan.Budget.Description" xml:space="preserve"><value>Destinasyon, gece sayısı ve bütçenize göre tahmini konaklama aralığı hesaplayın; ardından uygun otelleri listeleyin.</value></data>
-  <data name="Plan.Budget.Destination" xml:space="preserve"><value>Destinasyon</value></data>
-  <data name="Plan.Budget.Nights" xml:space="preserve"><value>Gece sayısı</value></data>
-  <data name="Plan.Budget.Amount" xml:space="preserve"><value>Toplam bütçe (TRY)</value></data>
-  <data name="Plan.Budget.Calculate" xml:space="preserve"><value>Tahmini hesapla</value></data>
-  <data name="Plan.Budget.EstimateLabel" xml:space="preserve"><value>Tahmini konaklama aralığı</value></data>
-  <data name="Plan.Budget.NightsUnit" xml:space="preserve"><value>gece</value></data>
-  <data name="Plan.Budget.SearchHotels" xml:space="preserve"><value>Uygun otelleri listele</value></data>
-  <data name="Plan.Budget.BudgetFriendly" xml:space="preserve"><value>Bütçeme uygun oteller</value></data>
-  <data name="Plan.Weekend.Title" xml:space="preserve"><value>Hafta sonu kaçamakları</value></data>
-  <data name="Plan.Weekend.Description" xml:space="preserve"><value>Kısa konaklamalar ve hafta sonu etiketli fırsatlar.</value></data>
-  <data name="Plan.Weekend.View" xml:space="preserve"><value>Fırsatları gör</value></data>
-  <data name="Plan.Campaigns.Title" xml:space="preserve"><value>Kampanya bazlı öneriler</value></data>
-  <data name="Plan.Campaigns.Description" xml:space="preserve"><value>Yayında olan kampanyalardan seçilmiş öneriler; katılımcı otel sayısıyla birlikte.</value></data>
-  <data name="Plan.Campaigns.EmptyTitle" xml:space="preserve"><value>Şu an önerilecek aktif kampanya yok</value></data>
-  <data name="Plan.Campaigns.EmptyDescription" xml:space="preserve"><value>Kampanyalar yayına girdiğinde bu alan otomatik dolacaktır.</value></data>
-  <data name="Plan.Campaigns.FallbackDescription" xml:space="preserve"><value>Aktif kampanya detaylarını inceleyin.</value></data>
-  <data name="Plan.Campaigns.HotelCount" xml:space="preserve"><value>{0} katılımcı otel</value></data>
-  <data name="Plan.Loyalty.Title" xml:space="preserve"><value>OtelPuan ile planınızı güçlendirin</value></data>
-  <data name="Plan.Loyalty.Description" xml:space="preserve"><value>Kayıtlı kullanıcılar puan hareketlerini ve seviye avantajlarını sadakat merkezinden yönetir.</value></data>
-  <data name="Plan.Loyalty.OpenPanel" xml:space="preserve"><value>OtelPuan programına git</value></data>
-  <data name="Plan.Loyalty.SignIn" xml:space="preserve"><value>Giriş yap ve puan kazan</value></data>
-  <data name="Plan.Loyalty.ExploreHotels" xml:space="preserve"><value>Otelleri keşfet</value></data>
+  <data name="Nav.Hotels" xml:space="preserve">
+    <value>الفنادق</value>
+  </data>
+  <data name="Nav.Corporate" xml:space="preserve">
+    <value>الشركات</value>
+  </data>
+  <data name="Nav.Home" xml:space="preserve">
+    <value>الرئيسية</value>
+  </data>
+  <data name="Nav.Campaigns" xml:space="preserve">
+    <value>العروض</value>
+  </data>
+  <data name="Nav.Help" xml:space="preserve">
+    <value>المساعدة</value>
+  </data>
+  <data name="Nav.Login" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+  <data name="Nav.Register" xml:space="preserve">
+    <value>التسجيل</value>
+  </data>
+  <data name="Nav.Account" xml:space="preserve">
+    <value>حسابي</value>
+  </data>
+  <data name="Nav.Map" xml:space="preserve">
+    <value>الخريطة</value>
+  </data>
+  <data name="Nav.SkipToContent" xml:space="preserve">
+    <value>انتقل إلى المحتوى</value>
+  </data>
+  <data name="Search.Placeholder" xml:space="preserve">
+    <value>إلى أين تريد السفر؟</value>
+  </data>
+  <data name="Search.AriaLabel" xml:space="preserve">
+    <value>ابحث عن فندق أو وجهة</value>
+  </data>
+  <data name="Search.Title" xml:space="preserve">
+    <value>بحث</value>
+  </data>
+  <data name="Search.NoResults" xml:space="preserve">
+    <value>لا توجد نتائج</value>
+  </data>
+  <data name="Search.Suggestions" xml:space="preserve">
+    <value>اقتراحات</value>
+  </data>
+  <data name="Search.Recent" xml:space="preserve">
+    <value>عمليات البحث الأخيرة</value>
+  </data>
+  <data name="Booking.CheckIn" xml:space="preserve">
+    <value>تسجيل الوصول</value>
+  </data>
+  <data name="Booking.CheckOut" xml:space="preserve">
+    <value>تسجيل المغادرة</value>
+  </data>
+  <data name="Booking.Guests" xml:space="preserve">
+    <value>الضيوف</value>
+  </data>
+  <data name="Booking.Rooms" xml:space="preserve">
+    <value>الغرف</value>
+  </data>
+  <data name="Booking.Nights" xml:space="preserve">
+    <value>الليالي</value>
+  </data>
+  <data name="Booking.Total" xml:space="preserve">
+    <value>الإجمالي</value>
+  </data>
+  <data name="Booking.Confirm" xml:space="preserve">
+    <value>تأكيد الحجز</value>
+  </data>
+  <data name="Booking.Cancel" xml:space="preserve">
+    <value>إلغاء الحجز</value>
+  </data>
+  <data name="Filter.Breakfast" xml:space="preserve">
+    <value>إفطار مشمول</value>
+  </data>
+  <data name="Filter.FreeCancel" xml:space="preserve">
+    <value>إلغاء مجاني</value>
+  </data>
+  <data name="Filter.Pool" xml:space="preserve">
+    <value>مسبح</value>
+  </data>
+  <data name="Filter.Spa" xml:space="preserve">
+    <value>سبا</value>
+  </data>
+  <data name="Filter.Parking" xml:space="preserve">
+    <value>موقف سيارات</value>
+  </data>
+  <data name="Filter.Wifi" xml:space="preserve">
+    <value>واي فاي مجاني</value>
+  </data>
+  <data name="Filter.Rating" xml:space="preserve">
+    <value>التقييم</value>
+  </data>
+  <data name="Filter.Price" xml:space="preserve">
+    <value>السعر</value>
+  </data>
+  <data name="Filter.Sort" xml:space="preserve">
+    <value>ترتيب</value>
+  </data>
+  <data name="Filter.Clear" xml:space="preserve">
+    <value>مسح الفلاتر</value>
+  </data>
+  <data name="Btn.Search" xml:space="preserve">
+    <value>بحث</value>
+  </data>
+  <data name="Btn.Book" xml:space="preserve">
+    <value>احجز الآن</value>
+  </data>
+  <data name="Btn.Save" xml:space="preserve">
+    <value>حفظ</value>
+  </data>
+  <data name="Btn.Cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
+  <data name="Btn.Close" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
+  <data name="Btn.Back" xml:space="preserve">
+    <value>رجوع</value>
+  </data>
+  <data name="Btn.Continue" xml:space="preserve">
+    <value>متابعة</value>
+  </data>
+  <data name="Btn.Apply" xml:space="preserve">
+    <value>تطبيق</value>
+  </data>
+  <data name="Footer.About" xml:space="preserve">
+    <value>من نحن</value>
+  </data>
+  <data name="Footer.Contact" xml:space="preserve">
+    <value>اتصل بنا</value>
+  </data>
+  <data name="Footer.Privacy" xml:space="preserve">
+    <value>سياسة الخصوصية</value>
+  </data>
+  <data name="Footer.Terms" xml:space="preserve">
+    <value>شروط الاستخدام</value>
+  </data>
+  <data name="Footer.Copyright" xml:space="preserve">
+    <value>جميع الحقوق محفوظة.</value>
+  </data>
+  <data name="Footer.Company" xml:space="preserve">
+    <value>الشركة</value>
+  </data>
+  <data name="Footer.Support" xml:space="preserve">
+    <value>الدعم</value>
+  </data>
+  <data name="Footer.Explore" xml:space="preserve">
+    <value>استكشف</value>
+  </data>
+  <data name="Footer.EarlyBooking" xml:space="preserve">
+    <value>حجز مبكر</value>
+  </data>
+  <data name="Footer.BusinessTravel" xml:space="preserve">
+    <value>سفر الأعمال</value>
+  </data>
+  <data name="Footer.Https" xml:space="preserve">
+    <value>اتصال آمن (HTTPS)</value>
+  </data>
+  <data name="Footer.ReservationSummary" xml:space="preserve">
+    <value>ملخص الحجز في الحساب</value>
+  </data>
+  <data name="Footer.KvkkProcessing" xml:space="preserve">
+    <value>معالجة البيانات بموجب KVKK</value>
+  </data>
+  <data name="Footer.Kvkk" xml:space="preserve">
+    <value>KVKK</value>
+  </data>
+  <data name="Nav.Firma" xml:space="preserve">
+    <value>الشركات</value>
+  </data>
+  <data name="Nav.FirmaLogin" xml:space="preserve">
+    <value>دخول الشركات</value>
+  </data>
+  <data name="Nav.FirmaRegister" xml:space="preserve">
+    <value>تسجيل الشركات</value>
+  </data>
+  <data name="Nav.Reservations" xml:space="preserve">
+    <value>الحجوزات</value>
+  </data>
+  <data name="Nav.Invoices" xml:space="preserve">
+    <value>الفواتير</value>
+  </data>
+  <data name="Map.BackToList" xml:space="preserve">
+    <value>العودة للقائمة</value>
+  </data>
+  <data name="Map.BackToAllHotels" xml:space="preserve">
+    <value>جميع الفنادق</value>
+  </data>
+  <data name="Listing.AllRegions" xml:space="preserve">
+    <value>جميع المناطق</value>
+  </data>
+  <data name="Listing.HotelsFound" xml:space="preserve">
+    <value>تم العثور على {0} فندق</value>
+  </data>
+  <data name="Listing.OnThisPage" xml:space="preserve">
+    <value>{0} في هذه الصفحة</value>
+  </data>
+  <data name="Listing.SearchFound" xml:space="preserve">
+    <value>{0}: تم العثور على {1} فندق</value>
+  </data>
+  <data name="Listing.EditSearch" xml:space="preserve">
+    <value>تعديل البحث</value>
+  </data>
+  <data name="Listing.Map" xml:space="preserve">
+    <value>الخريطة</value>
+  </data>
+  <data name="Listing.MapView" xml:space="preserve">
+    <value>الخريطة</value>
+  </data>
+  <data name="Listing.ConceptFilters" xml:space="preserve">
+    <value>فلاتر المفهوم</value>
+  </data>
+  <data name="Listing.ConceptTitle" xml:space="preserve">
+    <value>فلاتر المفهوم</value>
+  </data>
+  <data name="Listing.AllCampaigns" xml:space="preserve">
+    <value>جميع الحملات</value>
+  </data>
+  <data name="Listing.LoyaltyBadge" xml:space="preserve">
+    <value>مفضل الضيوف</value>
+  </data>
+  <data name="Listing.Excellent" xml:space="preserve">
+    <value>ممتاز</value>
+  </data>
+  <data name="Listing.RatingExcellent" xml:space="preserve">
+    <value>ممتاز</value>
+  </data>
+  <data name="Listing.RatingGood" xml:space="preserve">
+    <value>جيد</value>
+  </data>
+  <data name="Listing.ViewDetails" xml:space="preserve">
+    <value>عرض التفاصيل</value>
+  </data>
+  <data name="Btn.ViewDetails" xml:space="preserve">
+    <value>عرض التفاصيل</value>
+  </data>
+  <data name="Nav.QuickLink.EndOfMonth" xml:space="preserve">
+    <value>End of month special</value>
+  </data>
+  <data name="Nav.QuickLink.FlashDiscount" xml:space="preserve">
+    <value>Flash deal</value>
+  </data>
+  <data name="Nav.QuickLink.WeekendDeals" xml:space="preserve">
+    <value>Weekend deals</value>
+  </data>
+  <data name="Nav.QuickLink.SmartPrice" xml:space="preserve">
+    <value>Smart price</value>
+  </data>
+  <data name="Nav.QuickLink.Boutique" xml:space="preserve">
+    <value>Boutique picks</value>
+  </data>
+  <data name="Nav.FeaturedLinks" xml:space="preserve">
+    <value>Featured links</value>
+  </data>
+  <data name="Nav.FeaturedDeals" xml:space="preserve">
+    <value>Featured deals</value>
+  </data>
+  <data name="Nav.LanguageSelection" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Nav.Panel.Partner" xml:space="preserve">
+    <value>Partner panel</value>
+  </data>
+  <data name="Nav.Panel.Firma" xml:space="preserve">
+    <value>Company panel</value>
+  </data>
+  <data name="Nav.Panel.Admin" xml:space="preserve">
+    <value>Admin panel</value>
+  </data>
+  <data name="Nav.Panel.Developer" xml:space="preserve">
+    <value>Developer panel</value>
+  </data>
+  <data name="Nav.Panel.Sales" xml:space="preserve">
+    <value>Sales panel</value>
+  </data>
+  <data name="Footer.Description" xml:space="preserve">
+    <value>Search and book hotels across Türkiye securely; track summaries and cancellation terms in your account.</value>
+  </data>
+  <data name="Footer.Career" xml:space="preserve">
+    <value>Careers</value>
+  </data>
+  <data name="Footer.Press" xml:space="preserve">
+    <value>Press room</value>
+  </data>
+  <data name="Footer.Blog" xml:space="preserve">
+    <value>Blog</value>
+  </data>
+  <data name="Footer.ForHotels" xml:space="preserve">
+    <value>For hoteliers</value>
+  </data>
+  <data name="Footer.ExtranetLogin" xml:space="preserve">
+    <value>Extranet login</value>
+  </data>
+  <data name="Footer.PartnerProgram" xml:space="preserve">
+    <value>Partner program</value>
+  </data>
+  <data name="Footer.CommissionRates" xml:space="preserve">
+    <value>Commission rates</value>
+  </data>
+  <data name="Footer.TrainingSupport" xml:space="preserve">
+    <value>Training &amp; support</value>
+  </data>
+  <data name="Footer.CancelRefund" xml:space="preserve">
+    <value>Cancellation &amp; refund</value>
+  </data>
+  <data name="Footer.Faq" xml:space="preserve">
+    <value>FAQ</value>
+  </data>
+  <data name="Footer.TrustCommitments" xml:space="preserve">
+    <value>Trust commitments</value>
+  </data>
+  <data name="Campaign.Hero.Title" xml:space="preserve">
+    <value>Campaign hotels and seasonal deals</value>
+  </data>
+  <data name="Campaign.Hero.Description" xml:space="preserve">
+    <value>Explore live campaigns, browse participating properties, or read terms on the detail page.</value>
+  </data>
+  <data name="Campaign.Stat.Active" xml:space="preserve">
+    <value>active campaigns</value>
+  </data>
+  <data name="Campaign.Stat.DiscountedHotels" xml:space="preserve">
+    <value>Campaign hotels</value>
+  </data>
+  <data name="Campaign.Timer.Label" xml:space="preserve">
+    <value>Time left until campaign ends</value>
+  </data>
+  <data name="Campaign.Timer.Days" xml:space="preserve">
+    <value>Days</value>
+  </data>
+  <data name="Campaign.Timer.Hours" xml:space="preserve">
+    <value>Hours</value>
+  </data>
+  <data name="Campaign.Timer.Minutes" xml:space="preserve">
+    <value>Minutes</value>
+  </data>
+  <data name="Campaign.Timer.Seconds" xml:space="preserve">
+    <value>Seconds</value>
+  </data>
+  <data name="Campaign.Empty.Title" xml:space="preserve">
+    <value>No active campaigns right now.</value>
+  </data>
+  <data name="Campaign.Empty.Description" xml:space="preserve">
+    <value>This page fills automatically when campaign dates become active.</value>
+  </data>
+  <data name="Campaign.ListHotels" xml:space="preserve">
+    <value>List hotels</value>
+  </data>
+  <data name="Campaign.ViewDetail" xml:space="preserve">
+    <value>Campaign details</value>
+  </data>
+  <data name="Detail.ReviewTeaser.Title" xml:space="preserve">
+    <value>Guest reviews</value>
+  </data>
+  <data name="Detail.ReviewTeaser.SeeAll" xml:space="preserve">
+    <value>See all reviews</value>
+  </data>
+  <data name="Detail.ReviewTeaser.None" xml:space="preserve">
+    <value>No reviews yet — be the first.</value>
+  </data>
+  <data name="Detail.ReviewTeaser.Count" xml:space="preserve">
+    <value>{0} reviews · average {1}/10</value>
+  </data>
+  <data name="Booking.MobileSummary" xml:space="preserve">
+    <value>Mobile booking summary</value>
+  </data>
+  <data name="Detail.BackToHotels" xml:space="preserve">
+    <value>العودة إلى الفنادق</value>
+  </data>
+  <data name="Detail.Rooms.Title" xml:space="preserve">
+    <value>أنواع الغرف والأسعار</value>
+  </data>
+  <data name="Detail.Rooms.Subtitle" xml:space="preserve">
+    <value>اختر غرفة هنا لإنشاء حجزك.</value>
+  </data>
+  <data name="Detail.Rooms.GoToBooking" xml:space="preserve">
+    <value>الانتقال إلى الحجز</value>
+  </data>
+  <data name="Detail.Room.Nightly" xml:space="preserve">
+    <value>لليلة</value>
+  </data>
+  <data name="Detail.Room.Reserve" xml:space="preserve">
+    <value>احجز</value>
+  </data>
+  <data name="Detail.Room.NoPrice" xml:space="preserve">
+    <value>لا يوجد سعر</value>
+  </data>
+  <data name="Detail.Room.TaxesIncluded" xml:space="preserve">
+    <value>الضرائب مشمولة</value>
+  </data>
+  <data name="Detail.Booking.Total" xml:space="preserve">
+    <value>الإجمالي</value>
+  </data>
+  <data name="Detail.Booking.GoToReserve" xml:space="preserve">
+    <value>احجز الآن</value>
+  </data>
+  <data name="Detail.Booking.FromNight" xml:space="preserve">
+    <value>ابتداءً من لليلة</value>
+  </data>
+  <data name="Detail.Booking.TaxesNote" xml:space="preserve">
+    <value>الأسعار تشمل الضرائب والرسوم</value>
+  </data>
+  <data name="Detail.About.ToggleHint" xml:space="preserve">
+    <value>إظهار أو إخفاء الوصف</value>
+  </data>
+  <data name="Detail.About.ShowMore" xml:space="preserve">
+    <value>عرض المزيد</value>
+  </data>
+  <data name="Detail.Review.Verified" xml:space="preserve">
+    <value>إقامة موثقة</value>
+  </data>
+  <data name="Detail.Review.VerifiedCount" xml:space="preserve">
+    <value>{0} تقييمات موثقة</value>
+  </data>
+  <data name="Detail.About.Title" xml:space="preserve">
+    <value>عن المنشأة</value>
+  </data>
+  <data name="Detail.Location.Title" xml:space="preserve">
+    <value>الموقع</value>
+  </data>
+  <data name="Detail.Location.OpenMap" xml:space="preserve">
+    <value>فتح في الخريطة</value>
+  </data>
+  <data name="Detail.Reviews.Title" xml:space="preserve">
+    <value>تقييمات الضيوف</value>
+  </data>
+  <data name="Detail.Reviews.Subtitle" xml:space="preserve">
+    <value>يتم تحميل التقييمات مباشرة من قاعدة البيانات.</value>
+  </data>
+  <data name="Detail.Reviews.GoTo" xml:space="preserve">
+    <value>انتقل إلى التقييمات</value>
+  </data>
+  <data name="Detail.Gallery.SwipeHint" xml:space="preserve">
+    <value>اسحب للتصفح · اضغط لملء الشاشة</value>
+  </data>
+  <data name="Detail.Rating.Pending" xml:space="preserve">
+    <value>في انتظار التقييمات</value>
+  </data>
+  <data name="Detail.Rating.NoReviews" xml:space="preserve">
+    <value>لا توجد تقييمات بعد</value>
+  </data>
+  <data name="Detail.Rating.ReviewCount" xml:space="preserve">
+    <value>{0} تقييم</value>
+  </data>
+  <data name="Detail.QuickFacts.Aria" xml:space="preserve">
+    <value>معلومات المنشأة</value>
+  </data>
+  <data name="Detail.QuickFacts.CheckIn" xml:space="preserve">
+    <value>تسجيل الوصول</value>
+  </data>
+  <data name="Detail.QuickFacts.CheckOut" xml:space="preserve">
+    <value>تسجيل المغادرة</value>
+  </data>
+  <data name="Detail.QuickFacts.StarHotel" xml:space="preserve">
+    <value>فندق {0} نجوم</value>
+  </data>
+  <data name="Detail.QuickFacts.Hotel" xml:space="preserve">
+    <value>فندق</value>
+  </data>
+  <data name="Detail.Amenities.Title" xml:space="preserve">
+    <value>مرافق المنشأة</value>
+  </data>
+  <data name="Detail.Amenities.Subtitle" xml:space="preserve">
+    <value>كل ما يسهّل إقامتك</value>
+  </data>
+  <data name="Detail.Amenities.SeeAll" xml:space="preserve">
+    <value>عرض الكل</value>
+  </data>
+  <data name="Detail.Room.Selected" xml:space="preserve">
+    <value>الغرفة المحددة</value>
+  </data>
+  <data name="Detail.Room.GalleryCount" xml:space="preserve">
+    <value>{0} صور</value>
+  </data>
+  <data name="Detail.Room.TotalLine" xml:space="preserve">
+    <value>الإجمالي ({0} ليالٍ)</value>
+  </data>
+  <data name="Detail.ConfirmModal.Kicker" xml:space="preserve">
+    <value>التحقق النهائي</value>
+  </data>
+  <data name="Detail.ConfirmModal.Title" xml:space="preserve">
+    <value>تأكيد الحجز</value>
+  </data>
+  <data name="Detail.ConfirmModal.Lead" xml:space="preserve">
+    <value>إذا كانت المعلومات صحيحة، سيتم إنشاء الحجز في الخطوة التالية.</value>
+  </data>
+  <data name="Detail.ConfirmModal.BackToEdit" xml:space="preserve">
+    <value>العودة للتعديل</value>
+  </data>
+  <data name="Detail.ConfirmModal.Submit" xml:space="preserve">
+    <value>إنشاء الحجز</value>
+  </data>
+  <data name="Detail.ConfirmModal.Room" xml:space="preserve">
+    <value>غرفة {0}</value>
+  </data>
+  <data name="Detail.ConfirmModal.PaymentPlan" xml:space="preserve">
+    <value>خطة الدفع</value>
+  </data>
+  <data name="Detail.ConfirmModal.PaymentNote" xml:space="preserve">
+    <value>إذا كانت المعلومات صحيحة، سيتم إنشاء الحجز في الخطوة التالية.</value>
+  </data>
+  <data name="Detail.ConfirmModal.NotSelected" xml:space="preserve">
+    <value>غير محدد</value>
+  </data>
+  <data name="Detail.ConfirmModal.Nights" xml:space="preserve">
+    <value>{0} ليلة</value>
+  </data>
+  <data name="Detail.ConfirmModal.RoomCount" xml:space="preserve">
+    <value>{0} غرف</value>
+  </data>
+  <data name="Company.Hero.DefaultLead" xml:space="preserve">
+    <value>We make stays transparent, secure, and accessible with Otelturizm.</value>
+  </data>
+  <data name="Company.About.Title" xml:space="preserve">
+    <value>About us</value>
+  </data>
+  <data name="Company.About.MetaDescription" xml:space="preserve">
+    <value>Otelturizm mission, vision, and values — secure hotel search and booking across Türkiye.</value>
+  </data>
+  <data name="Company.About.HeroLead" xml:space="preserve">
+    <value>One transparent booking experience for travelers, hoteliers, and corporate teams.</value>
+  </data>
+  <data name="Company.About.StatsLabel" xml:space="preserve">
+    <value>Platform highlights</value>
+  </data>
+  <data name="Company.About.StatDistricts" xml:space="preserve">
+    <value>District coverage</value>
+  </data>
+  <data name="Company.About.StatLanguages" xml:space="preserve">
+    <value>Language support</value>
+  </data>
+  <data name="Company.About.StatSupport" xml:space="preserve">
+    <value>Help center access</value>
+  </data>
+  <data name="Company.About.MissionTitle" xml:space="preserve">
+    <value>Our mission</value>
+  </data>
+  <data name="Company.About.MissionText" xml:space="preserve">
+    <value>Simplify stay decisions with price, cancellation terms, and trust signals on one screen.</value>
+  </data>
+  <data name="Company.About.VisionTitle" xml:space="preserve">
+    <value>Our vision</value>
+  </data>
+  <data name="Company.About.VisionText" xml:space="preserve">
+    <value>Become Türkiye's most trusted digital stays platform with sustainable growth for hotels and guests.</value>
+  </data>
+  <data name="Company.About.ValuesTitle" xml:space="preserve">
+    <value>Our values</value>
+  </data>
+  <data name="Company.About.ValueTrustTitle" xml:space="preserve">
+    <value>Transparency</value>
+  </data>
+  <data name="Company.About.ValueTrustText" xml:space="preserve">
+    <value>Reservation summary, cancellation terms, and privacy notices in your account.</value>
+  </data>
+  <data name="Company.About.ValueSpeedTitle" xml:space="preserve">
+    <value>Speed</value>
+  </data>
+  <data name="Company.About.ValueSpeedText" xml:space="preserve">
+    <value>Mobile-first, touch-friendly listing, map, and campaign experiences.</value>
+  </data>
+  <data name="Company.About.ValuePartnerTitle" xml:space="preserve">
+    <value>Partnership</value>
+  </data>
+  <data name="Company.About.ValuePartnerText" xml:space="preserve">
+    <value>Partner extranet and corporate panels that support hotel operations.</value>
+  </data>
+  <data name="Company.About.CtaLabel" xml:space="preserve">
+    <value>Contact call to action</value>
+  </data>
+  <data name="Company.About.CtaTitle" xml:space="preserve">
+    <value>Questions?</value>
+  </data>
+  <data name="Company.About.CtaText" xml:space="preserve">
+    <value>Reach us through the help center and support channels.</value>
+  </data>
+  <data name="Company.Career.Title" xml:space="preserve">
+    <value>Careers</value>
+  </data>
+  <data name="Company.Career.MetaDescription" xml:space="preserve">
+    <value>Otelturizm careers — join product, engineering, and partner success teams.</value>
+  </data>
+  <data name="Company.Career.HeroLead" xml:space="preserve">
+    <value>Build travel technology with impact; hybrid work and growth-focused culture.</value>
+  </data>
+  <data name="Company.Career.PerkHybridTitle" xml:space="preserve">
+    <value>Hybrid work</value>
+  </data>
+  <data name="Company.Career.PerkHybridText" xml:space="preserve">
+    <value>Istanbul-based team with balanced office and remote rhythm.</value>
+  </data>
+  <data name="Company.Career.PerkGrowthTitle" xml:space="preserve">
+    <value>Growth</value>
+  </data>
+  <data name="Company.Career.PerkGrowthText" xml:space="preserve">
+    <value>Mentorship, learning budget, and product-led sprint cadence.</value>
+  </data>
+  <data name="Company.Career.PerkWellnessTitle" xml:space="preserve">
+    <value>Well-being</value>
+  </data>
+  <data name="Company.Career.PerkWellnessText" xml:space="preserve">
+    <value>Flexible hours and team events for a sustainable pace.</value>
+  </data>
+  <data name="Company.Career.OpenRolesTitle" xml:space="preserve">
+    <value>Open roles</value>
+  </data>
+  <data name="Company.Career.RoleProduct" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="Company.Career.RoleProductText" xml:space="preserve">
+    <value>Design system and accessibility on public and panel experiences.</value>
+  </data>
+  <data name="Company.Career.RoleEngineering" xml:space="preserve">
+    <value>Engineering</value>
+  </data>
+  <data name="Company.Career.RoleEngineeringText" xml:space="preserve">
+    <value>ASP.NET Core, SQL Server, and high-traffic booking flows.</value>
+  </data>
+  <data name="Company.Career.RolePartner" xml:space="preserve">
+    <value>Partner</value>
+  </data>
+  <data name="Company.Career.RolePartnerText" xml:space="preserve">
+    <value>Extranet adoption and revenue optimization for hotel partners.</value>
+  </data>
+  <data name="Company.Career.Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="Company.Career.CtaLabel" xml:space="preserve">
+    <value>General application</value>
+  </data>
+  <data name="Company.Career.CtaTitle" xml:space="preserve">
+    <value>Don't see your role?</value>
+  </data>
+  <data name="Company.Career.CtaText" xml:space="preserve">
+    <value>Send your CV; we'll reach out when a matching role opens.</value>
+  </data>
+  <data name="Company.Career.CtaButton" xml:space="preserve">
+    <value>careers@otelturizm.com</value>
+  </data>
+  <data name="Company.Press.Title" xml:space="preserve">
+    <value>Press room</value>
+  </data>
+  <data name="Company.Press.MetaDescription" xml:space="preserve">
+    <value>Otelturizm press room — media kit, contact, and company news.</value>
+  </data>
+  <data name="Company.Press.HeroLead" xml:space="preserve">
+    <value>Logos, visuals, and platform news for media representatives.</value>
+  </data>
+  <data name="Company.Press.KitTitle" xml:space="preserve">
+    <value>Media kit</value>
+  </data>
+  <data name="Company.Press.KitText" xml:space="preserve">
+    <value>Logo, color palette, and short platform overview on request.</value>
+  </data>
+  <data name="Company.Press.KitButton" xml:space="preserve">
+    <value>Request kit</value>
+  </data>
+  <data name="Company.Press.ContactTitle" xml:space="preserve">
+    <value>Press contact</value>
+  </data>
+  <data name="Company.Press.ContactText" xml:space="preserve">
+    <value>Contact our press team for interviews, data, and image usage.</value>
+  </data>
+  <data name="Company.Press.NewsTitle" xml:space="preserve">
+    <value>News</value>
+  </data>
+  <data name="Company.Press.News1Title" xml:space="preserve">
+    <value>Multilingual hotel listing live</value>
+  </data>
+  <data name="Company.Press.News1Text" xml:space="preserve">
+    <value>Path-based SEO and hreflang across seven languages on public hotel pages.</value>
+  </data>
+  <data name="Company.Press.News2Title" xml:space="preserve">
+    <value>Partner extranet mobile update</value>
+  </data>
+  <data name="Company.Press.News2Text" xml:space="preserve">
+    <value>Photo upload and guest invoice flows refreshed with mobile-first panel UX.</value>
+  </data>
+  <data name="Company.Press.News3Title" xml:space="preserve">
+    <value>Corporate panel expansion</value>
+  </data>
+  <data name="Company.Press.News3Text" xml:space="preserve">
+    <value>Business travel budget and invoice tracking in one corporate panel.</value>
+  </data>
+  <data name="Company.Press.CtaLabel" xml:space="preserve">
+    <value>Blog redirect</value>
+  </data>
+  <data name="Company.Press.CtaTitle" xml:space="preserve">
+    <value>Long reads on the blog</value>
+  </data>
+  <data name="Company.Press.CtaText" xml:space="preserve">
+    <value>Visit our blog for guides and travel tips.</value>
+  </data>
+  <data name="Company.Blog.Title" xml:space="preserve">
+    <value>Blog</value>
+  </data>
+  <data name="Company.Blog.MetaDescription" xml:space="preserve">
+    <value>Otelturizm blog — stay tips, campaigns, and platform updates.</value>
+  </data>
+  <data name="Company.Blog.HeroLead" xml:space="preserve">
+    <value>Travel guides, early booking tips, and news from the platform.</value>
+  </data>
+  <data name="Company.Blog.GridLabel" xml:space="preserve">
+    <value>Blog post list</value>
+  </data>
+  <data name="Company.Blog.ReadMore" xml:space="preserve">
+    <value>Read more</value>
+  </data>
+  <data name="Company.Blog.BackToList" xml:space="preserve">
+    <value>Back to blog</value>
+  </data>
+  <data name="Company.Blog.EmptyTitle" xml:space="preserve">
+    <value>No posts yet</value>
+  </data>
+  <data name="Company.Blog.EmptyDescription" xml:space="preserve">
+    <value>New content is coming soon. You can also visit the help center.</value>
+  </data>
+  <data name="Company.Blog.Teaser1Title" xml:space="preserve">
+    <value>Track your reservation summary in account</value>
+  </data>
+  <data name="Company.Blog.Teaser1Text" xml:space="preserve">
+    <value>Cancellation terms and payment status on one screen — detailed guide in help center.</value>
+  </data>
+  <data name="Company.Blog.Teaser2Title" xml:space="preserve">
+    <value>Discover campaign hotels</value>
+  </data>
+  <data name="Company.Blog.Teaser2Text" xml:space="preserve">
+    <value>Current discounts and early booking deals on the campaigns page.</value>
+  </data>
+  <data name="Company.Blog.Teaser3Title" xml:space="preserve">
+    <value>Pick hotels on the map</value>
+  </data>
+  <data name="Company.Blog.Teaser3Text" xml:space="preserve">
+    <value>Search in list or map view with region and price filters.</value>
+  </data>
+  <data name="Plan.Page.Title" xml:space="preserve">
+    <value>Seyahat Planlama</value>
+  </data>
+  <data name="Plan.Hero.Kicker" xml:space="preserve">
+    <value>Seyahat planlama</value>
+  </data>
+  <data name="Plan.Hero.Title" xml:space="preserve">
+    <value>Kişiselleştirilmiş gezi planları</value>
+  </data>
+  <data name="Plan.Hero.Lead" xml:space="preserve">
+    <value>Rota önerileri, bütçe tahmini, hafta sonu kaçamakları ve kampanya bazlı otel önerileriyle seyahatinizi tek ekrandan planlayın.</value>
+  </data>
+  <data name="Plan.Hero.StatsLabel" xml:space="preserve">
+    <value>Planlama özeti</value>
+  </data>
+  <data name="Plan.Stat.Routes" xml:space="preserve">
+    <value>rota önerisi</value>
+  </data>
+  <data name="Plan.Stat.Budget" xml:space="preserve">
+    <value>Bütçe tahmini</value>
+  </data>
+  <data name="Plan.Stat.Campaigns" xml:space="preserve">
+    <value>kampanya önerisi</value>
+  </data>
+  <data name="Plan.Routes.Title" xml:space="preserve">
+    <value>Rota önerileri</value>
+  </data>
+  <data name="Plan.Routes.Description" xml:space="preserve">
+    <value>Öne çıkan destinasyonlardan otel aramasına tek tıkla geçin.</value>
+  </data>
+  <data name="Plan.Routes.FromPrice" xml:space="preserve">
+    <value>Gecelik yaklaşık {0} TRY'den</value>
+  </data>
+  <data name="Plan.Routes.Explore" xml:space="preserve">
+    <value>Otelleri keşfet</value>
+  </data>
+  <data name="Plan.Budget.Title" xml:space="preserve">
+    <value>Bütçe tahmini</value>
+  </data>
+  <data name="Plan.Budget.Description" xml:space="preserve">
+    <value>Destinasyon, gece sayısı ve bütçenize göre tahmini konaklama aralığı hesaplayın; ardından uygun otelleri listeleyin.</value>
+  </data>
+  <data name="Plan.Budget.Destination" xml:space="preserve">
+    <value>Destinasyon</value>
+  </data>
+  <data name="Plan.Budget.Nights" xml:space="preserve">
+    <value>Gece sayısı</value>
+  </data>
+  <data name="Plan.Budget.Amount" xml:space="preserve">
+    <value>Toplam bütçe (TRY)</value>
+  </data>
+  <data name="Plan.Budget.Calculate" xml:space="preserve">
+    <value>Tahmini hesapla</value>
+  </data>
+  <data name="Plan.Budget.EstimateLabel" xml:space="preserve">
+    <value>Tahmini konaklama aralığı</value>
+  </data>
+  <data name="Plan.Budget.NightsUnit" xml:space="preserve">
+    <value>gece</value>
+  </data>
+  <data name="Plan.Budget.SearchHotels" xml:space="preserve">
+    <value>Uygun otelleri listele</value>
+  </data>
+  <data name="Plan.Budget.BudgetFriendly" xml:space="preserve">
+    <value>Bütçeme uygun oteller</value>
+  </data>
+  <data name="Plan.Weekend.Title" xml:space="preserve">
+    <value>Hafta sonu kaçamakları</value>
+  </data>
+  <data name="Plan.Weekend.Description" xml:space="preserve">
+    <value>Kısa konaklamalar ve hafta sonu etiketli fırsatlar.</value>
+  </data>
+  <data name="Plan.Weekend.View" xml:space="preserve">
+    <value>Fırsatları gör</value>
+  </data>
+  <data name="Plan.Campaigns.Title" xml:space="preserve">
+    <value>Kampanya bazlı öneriler</value>
+  </data>
+  <data name="Plan.Campaigns.Description" xml:space="preserve">
+    <value>Yayında olan kampanyalardan seçilmiş öneriler; katılımcı otel sayısıyla birlikte.</value>
+  </data>
+  <data name="Plan.Campaigns.EmptyTitle" xml:space="preserve">
+    <value>Şu an önerilecek aktif kampanya yok</value>
+  </data>
+  <data name="Plan.Campaigns.EmptyDescription" xml:space="preserve">
+    <value>Kampanyalar yayına girdiğinde bu alan otomatik dolacaktır.</value>
+  </data>
+  <data name="Plan.Campaigns.FallbackDescription" xml:space="preserve">
+    <value>Aktif kampanya detaylarını inceleyin.</value>
+  </data>
+  <data name="Plan.Campaigns.HotelCount" xml:space="preserve">
+    <value>{0} katılımcı otel</value>
+  </data>
+  <data name="Plan.Loyalty.Title" xml:space="preserve">
+    <value>OtelPuan ile planınızı güçlendirin</value>
+  </data>
+  <data name="Plan.Loyalty.Description" xml:space="preserve">
+    <value>Kayıtlı kullanıcılar puan hareketlerini ve seviye avantajlarını sadakat merkezinden yönetir.</value>
+  </data>
+  <data name="Plan.Loyalty.OpenPanel" xml:space="preserve">
+    <value>OtelPuan programına git</value>
+  </data>
+  <data name="Plan.Loyalty.SignIn" xml:space="preserve">
+    <value>Giriş yap ve puan kazan</value>
+  </data>
+  <data name="Plan.Loyalty.ExploreHotels" xml:space="preserve">
+    <value>Otelleri keşfet</value>
+  </data>
+  <data name="Btn.Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="Btn.Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Listing.ClearAllFilters" xml:space="preserve">
+    <value>Clear all filters</value>
+  </data>
+  <data name="Listing.SearchOnMap" xml:space="preserve">
+    <value>Search on map</value>
+  </data>
+  <data name="Listing.ShowAllHotels" xml:space="preserve">
+    <value>Show all hotels</value>
+  </data>
 </root>
-

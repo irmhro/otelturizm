@@ -40,11 +40,7 @@
 
 .home-hotel-tags, .amenities { gap: 6px; }
 
-.rating-price { flex-direction: column !important; align-items: stretch !important; gap: 8px; }
-
-.rating-box { min-width: 48px; min-height: 48px; }
-
-.price-box { align-items: flex-start; }
+.home-hotel-price-row .price-box { align-items: flex-start; }
 
 .badge-smart { top: 10px; left: 10px; padding: 5px 10px; font-size: 11px; }
 
@@ -222,46 +218,20 @@
         font-size: clamp(0.76rem, 3.1vw, 0.84rem);
     }
 
-    /* Fiyat solda, puan rozeti sağ altta */
-    .home-category-section .rating-price {
-        flex-direction: row !important;
+    /* Fiyat satırı */
+    .home-category-section .home-hotel-price-row {
         align-items: flex-end !important;
-        justify-content: space-between !important;
-        gap: 10px !important;
-        padding-top: 12px;
+        justify-content: flex-start !important;
+        gap: 0 !important;
+        padding-top: 10px;
         margin-top: auto;
     }
 
-    .home-category-section .rating-price .price-box {
+    .home-category-section .home-hotel-price-row .price-box {
         flex: 1 1 auto;
         min-width: 0;
-        order: 1;
         align-items: flex-start;
         gap: 4px;
-    }
-
-    .home-category-section .rating-price .rating-box {
-        order: 2;
-        margin-left: auto;
-        flex: 0 0 auto;
-        min-width: 52px;
-        min-height: 44px;
-        align-items: flex-end;
-        text-align: right;
-        padding: 6px 10px;
-    }
-
-    .home-category-section .rating-box .rating-value {
-        gap: 6px;
-    }
-
-    .home-category-section .rating-box strong {
-        font-size: clamp(0.95rem, 4vw, 1.05rem);
-    }
-
-    .home-category-section .rating-box small {
-        font-size: clamp(0.62rem, 2.6vw, 0.7rem);
-        line-height: 1.2;
     }
 
     /* İndirim satırı: üstü çizili + yeşil rozet + kalın indirimli fiyat */

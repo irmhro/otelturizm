@@ -944,6 +944,49 @@
         font-size: 18px;
     }
 
+    .listing-top-filters {
+        margin-bottom: 12px;
+        padding: 12px;
+        border-radius: 18px;
+        overflow: hidden;
+        max-width: 100%;
+        box-sizing: border-box;
+        gap: 10px;
+    }
+
+    .listing-top-filters__label {
+        font-size: 13px;
+    }
+
+    .listing-top-filters__track,
+    .listing-concept-bar__track {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0 6px 8px;
+        margin: 0 -6px;
+        scroll-padding-inline: 8px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        overscroll-behavior-x: contain;
+    }
+
+    .listing-top-filters__track::-webkit-scrollbar,
+    .listing-concept-bar__track::-webkit-scrollbar {
+        display: none;
+    }
+
+    .listing-top-filters__row--meals .quick-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+    }
+
+    .listing-top-filters__row--meals .quick-filters::-webkit-scrollbar {
+        display: none;
+    }
+
     .listing-concept-bar {
         margin-bottom: 14px;
         padding: 14px 12px 12px;
@@ -958,27 +1001,26 @@
         margin-bottom: 10px;
     }
 
-    .listing-concept-bar__track {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 0 6px 8px;
-        margin: 0 -6px;
-        scroll-padding-inline: 8px;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        overscroll-behavior-x: contain;
-    }
-
-    .listing-concept-bar__track::-webkit-scrollbar {
-        display: none;
-    }
-
     .listing-concept-btn {
         flex-shrink: 0;
         min-height: 44px;
         font-size: 12px;
         padding: 10px 14px;
+    }
+
+    .listing-cards {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .listing-hotel-card {
+        flex-direction: column !important;
+    }
+
+    .listing-hotel-card .card-image-section {
+        width: 100%;
+        max-width: none;
     }
 
     .listing-yanbar-filter {

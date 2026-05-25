@@ -82,3 +82,22 @@ Yeni anahtarlar: `Listing.SearchFound`, `Listing.EditSearch`, `Listing.MapView`,
 | Arapça dil butonu yok (tr/en/fr/de/es/ru) | `_AnasayfaHeader.cshtml` |
 | Tek sütun tam genişlik, 44px touch, safe-area, 2-col dil grid | `site-layout.mobile.css` |
 | 7× `SharedResources*.resx` drawer anahtarları doğrulandı | `Resources/` |
+
+## #085 — Buton i18n taraması (2026-05-25)
+
+| Key | TR | Kullanım |
+|-----|-----|----------|
+| `Detail.ConfirmModal.*` (11) | Rezervasyon özeti, Düzenlemeye dön, … | `OtelDetay.cshtml` onay modalı |
+| `Listing.ClearAllFilters` | Tüm Filtreleri Temizle | Liste sidebar + empty state |
+| `Listing.ShowAllHotels` | Tüm otelleri göster | Liste empty CTA |
+| `Listing.SearchOnMap` | Haritada ara | Liste empty / header harita |
+| `Btn.Filter` | Filtrele | `Kampanyalar/Detail.cshtml` |
+| `Btn.Clear` | Temizle | `Kampanyalar/Detail.cshtml` |
+
+| Düzeltme türü | Dosyalar |
+|---------------|----------|
+| `SharedLocalizer[...].Value` eksik (buton metni / aria-label) | `_AnasayfaHeader`, `_AnasayfaFooter`, `OtelListeleme`, `SeyahatPlanlama/Index`, Kurumsal (4), `Kampanyalar/Index`, `_Layout`, `yanbar` |
+| Hardcoded TR → i18n | `OtelListeleme` (5), `Kampanyalar/Detail` (2) |
+| Eksik resx anahtarları | 7× `SharedResources*.resx` (+16 anahtar) |
+
+**Build:** `dotnet build -o .coord-build-btn-fix` — 0 hata.

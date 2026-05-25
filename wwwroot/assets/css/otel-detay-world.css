@@ -1,0 +1,256 @@
+/* Wave World Detail — BEM od-* layer (desktop ≥901) */
+
+.otel-detail-template-v41.od-detail {
+    --od-brand: #003b95;
+    --od-accent: #ff385c;
+    --od-radius: 16px;
+    --od-radius-pill: 999px;
+}
+
+.otel-detail-template-v41.od-detail .detail-breadcrumb,
+.otel-detail-template-v41.od-detail .gallery-grid,
+.otel-detail-template-v41.od-detail .gallery-filmstrip-wrap,
+.otel-detail-template-v41.od-detail .detail-header,
+.otel-detail-template-v41.od-detail .od-quick-facts,
+.otel-detail-template-v41.od-detail .detail-grid {
+    width: min(var(--page-max-width, 1280px), calc(100% - 48px));
+    margin-inline: auto;
+}
+
+/* Quick facts — Booking / Otelz */
+.otel-detail-template-v41.od-detail .od-quick-facts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px 20px;
+    padding: 14px 18px;
+    margin: 0 auto 12px;
+    border-radius: var(--od-radius);
+    border: 1px solid var(--border-light, #e7e9ec);
+    background: var(--card-bg, #fff);
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.04));
+}
+
+.otel-detail-template-v41.od-detail .od-quick-facts__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 28px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.otel-detail-template-v41.od-detail .od-quick-facts__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.otel-detail-template-v41.od-detail .od-quick-facts__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 59, 149, 0.08);
+    color: var(--od-brand);
+    font-size: 1rem;
+}
+
+.otel-detail-template-v41.od-detail .od-quick-facts__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.otel-detail-template-v41.od-detail .od-quick-facts__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.otel-detail-template-v41.od-detail .od-quick-facts__value {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+}
+
+.otel-detail-template-v41.od-detail .od-quick-facts__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.otel-detail-template-v41.od-detail .od-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: var(--od-radius-pill);
+    border: 1px solid rgba(0, 59, 149, 0.16);
+    background: rgba(0, 59, 149, 0.06);
+    color: var(--od-brand);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.otel-detail-template-v41.od-detail .od-header__location-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 6px;
+    padding: 6px 12px;
+    border-radius: var(--od-radius-pill);
+    background: rgba(0, 59, 149, 0.06);
+    color: #334155;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.otel-detail-template-v41.od-detail .od-header__location-pill span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Amenities — Hotels.com icons + horizontal chips (mobile via mobile.css) */
+.otel-detail-template-v41.od-detail .od-amenities__scroll {
+    display: none;
+}
+
+.otel-detail-template-v41.od-detail .od-amenity-chip {
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: #f8fafc;
+    color: #0f172a;
+    cursor: pointer;
+}
+
+.otel-detail-template-v41.od-detail .od-amenities__grid {
+    display: grid;
+}
+
+/* Room cards — Booking horizontal desktop */
+@media (min-width: 901px) {
+    .otel-detail-template-v41.od-detail .od-detail__layout {
+        grid-template-columns: minmax(0, 62fr) minmax(280px, 38fr);
+    }
+
+    .otel-detail-template-v41.od-detail .od-gallery--mobile {
+        display: none;
+    }
+
+    .otel-detail-template-v41.od-detail .od-gallery--desktop {
+        display: grid;
+    }
+
+    .otel-detail-template-v41.od-detail #roomsCard .od-room-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(200px, 240px);
+        gap: 20px;
+        align-items: stretch;
+    }
+
+    .otel-detail-template-v41.od-detail #roomsCard .od-room-card__body {
+        display: grid;
+        grid-template-columns: minmax(0, 40%) minmax(0, 60%);
+        gap: 16px;
+        align-items: start;
+    }
+
+    .otel-detail-template-v41.od-detail #roomsCard .room-card-cover {
+        aspect-ratio: 16 / 10;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .otel-detail-template-v41.od-detail #roomsCard .room-card-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .otel-detail-template-v41.od-detail #roomsCard .od-room-card__pricing {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: stretch;
+        padding: 16px 0 0 16px;
+        border-left: 1px solid rgba(148, 163, 184, 0.22);
+    }
+
+    .otel-detail-template-v41.od-detail #roomsCard .select-room-btn {
+        width: 100%;
+        min-height: 48px;
+        border-radius: var(--od-radius-pill);
+        background: var(--od-brand);
+        border-color: var(--od-brand);
+        font-weight: 800;
+    }
+
+    .otel-detail-template-v41.od-detail .od-detail__booking {
+        position: sticky;
+        top: 96px;
+        align-self: start;
+    }
+
+    .otel-detail-template-v41.od-detail .od-sticky-cta {
+        display: none;
+    }
+}
+
+.otel-detail-template-v41.od-detail .od-room-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 6px 0 4px;
+}
+
+.otel-detail-template-v41.od-detail .od-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: var(--od-radius-pill);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.otel-detail-template-v41.od-detail .od-pill--bed {
+    background: #eef4ff;
+    color: #1e3a8a;
+}
+
+.otel-detail-template-v41.od-detail .od-pill--size {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.otel-detail-template-v41.od-detail .od-pill--meal {
+    background: rgba(0, 168, 107, 0.1);
+    color: #047857;
+}
+
+.otel-detail-template-v41.od-detail .od-room-card__title {
+    margin: 0 0 4px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.otel-detail-template-v41.od-detail .od-room-card__specs {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.86rem;
+}
+
+.otel-detail-template-v41.od-detail .od-section {
+    scroll-margin-top: 96px;
+}

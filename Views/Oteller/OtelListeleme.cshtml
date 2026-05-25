@@ -338,8 +338,55 @@
       border-color: transparent;
       box-shadow: 0 16px 30px rgba(0,59,149,0.18);
   }
-  .hotel-list { flex: 1; display: flex; flex-direction: column; gap: var(--space-5); }
-  .hotel-card { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light); overflow: hidden; display: flex; flex-direction: column; position: relative; }
+  .hotel-list { flex: 1; display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+  .listing-cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: stretch;
+  }
+  @@media (min-width: 720px) {
+    .listing-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+  }
+  @@media (min-width: 1100px) {
+    .listing-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); }
+  }
+  .listing-top-filters {
+    display: grid;
+    gap: 12px;
+    margin: 0 0 var(--space-4);
+    padding: 14px 16px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+  }
+  .listing-top-filters__row { display: grid; gap: 8px; min-width: 0; }
+  .listing-top-filters__row--meals.filter-sort-bar {
+    height: auto;
+    min-height: 0;
+    padding-bottom: 0;
+    align-items: flex-start;
+  }
+  .listing-top-filters__label {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-gray);
+  }
+  .listing-top-filters__label i { color: var(--primary); font-size: 14px; }
+  .listing-top-filters__label--meals i { color: var(--success); }
+  .listing-top-filters__track {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+  .hotel-card { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-light); overflow: hidden; display: flex; flex-direction: column; position: relative; height: 100%; }
+  .listing-hotel-card { flex-direction: column !important; min-height: 0; }
   .card-image { position: relative; flex-shrink: 0; }
   .card-image-link { display: block; width: 100%; height: 100%; }
   .card-image-link img { width: 100%; height: 100%; object-fit: cover; display:block; }
@@ -454,9 +501,11 @@
     }
   }
   @@media (min-width: 901px) {
-    .listing-hotel-card { flex-direction: row !important; min-height: 240px; }
-    .listing-hotel-card .card-image-section { width: 42%; max-width: 360px; flex-shrink: 0; }
-    .listing-hotel-card .card-content { flex: 1; }
+    .listing-hotel-card { flex-direction: column !important; min-height: 0; }
+    .listing-hotel-card .card-image-section { width: 100%; max-width: none; flex-shrink: 0; }
+    .listing-hotel-card .card-content { flex: 1; min-width: 0; }
+    .listing-hotel-card .hotel-name { font-size: 16px; }
+    .listing-hotel-card .price-block .current-price { font-size: 22px; }
   }
   .card-campaign-badges { position: absolute; left: var(--space-3); bottom: var(--space-3); z-index: 3; display: flex; flex-wrap: wrap; gap: 8px; max-width: calc(100% - (var(--space-3) * 2)); pointer-events: none; }
   .card-campaign-badge { display: inline-flex; align-items: center; max-width: 100%; padding: 7px 12px; border-radius: 999px; background: rgba(15, 23, 42, 0.78); color: #fff; font-weight: 900; font-size: 12px; line-height: 1; box-shadow: 0 14px 28px rgba(2, 6, 23, 0.22); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -683,8 +732,12 @@
   }
   @@media (max-width: 639px) {
     .hotel-card:not(.listing-hotel-card) .card-image { height: 200px; }
-    .listing-hotel-card .card-image { height: 66px !important; }
-    .listing-hotel-card .card-image-link { height: 66px !important; min-height: 66px !important; }
+    .listing-hotel-card .card-image,
+    .listing-hotel-card .card-image-link { height: auto !important; min-height: 0 !important; aspect-ratio: 16 / 10; max-height: none; }
+    .listing-top-filters { padding: 12px; gap: 10px; }
+    .listing-top-filters__track { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+    .listing-top-filters__track::-webkit-scrollbar { display: none; }
+    .listing-top-filters__row--meals .quick-filters { flex-wrap: nowrap; }
   }
 
   .filter-accordion { border: 0; }
@@ -1168,7 +1221,7 @@
         </div>
     </div>
     <div class="listing-container">
-        <header class="listing-search-header" aria-label="@SharedLocalizer["Search.Title"]">
+        <header class="listing-search-header" aria-label="@SharedLocalizer["Search.Title"].Value">
             <div class="listing-search-header__summary">
                 <div class="listing-search-header__title-row">
                     <h1 id="listingResultHeadline" aria-live="polite">@listingHeadline</h1>
@@ -1189,11 +1242,11 @@
                 </p>
             </div>
             <div class="listing-search-header__actions">
-                <button type="button" class="btn-fe-outline" id="listingEditSearchBtn" aria-label="@SharedLocalizer["Listing.EditSearch"]">
-                    <i class="fas fa-pen" aria-hidden="true"></i> @SharedLocalizer["Listing.EditSearch"]
+                <button type="button" class="btn-fe-outline" id="listingEditSearchBtn" aria-label="@SharedLocalizer["Listing.EditSearch"].Value">
+                    <i class="fas fa-pen" aria-hidden="true"></i> @SharedLocalizer["Listing.EditSearch"].Value
                 </button>
                 <a class="btn-fe-primary" href="@mapListingUrl">
-                    <i class="fas fa-map-location-dot" aria-hidden="true"></i> @SharedLocalizer["Listing.Map"]
+                    <i class="fas fa-map-location-dot" aria-hidden="true"></i> @SharedLocalizer["Listing.Map"].Value
                 </a>
             </div>
         </header>
@@ -1291,18 +1344,6 @@
                         </div>
                     </details>
 
-                    <details class="filter-accordion" open>
-                        <summary class="filter-accordion-summary">
-                            <span>Özel Konseptler</span>
-                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                        </summary>
-                        <div class="filter-accordion-body">
-                            <div class="filter-options">
-                                <label class="filter-check"><input type="checkbox" class="listing-featured-filter" value="1"> En İyi Fiyat</label>
-                                <label class="filter-check"><input type="checkbox" class="listing-featured-filter" value="1"> Kampanyalı</label>
-                            </div>
-                        </div>
-                    </details>
                     <details class="filter-accordion" id="filterCampaigns" open>
                         <summary class="filter-accordion-summary">
                             <span>Kampanyalar</span>
@@ -1359,46 +1400,52 @@
                           </div>
                       </details>
 
-                    <button type="button" class="btn-detail" id="clearAllFiltersBtn" style="width:100%;">Tüm Filtreleri Temizle</button>
+                    <button type="button" class="btn-detail" id="clearAllFiltersBtn" style="width:100%;">@SharedLocalizer["Listing.ClearAllFilters"].Value</button>
                 </div>
             </aside>
 
             <div class="listing-main">
-            <nav class="listing-concept-bar" aria-label="Özel konseptler">
-                <p class="listing-concept-bar__title">
-                    <i class="fas fa-star" aria-hidden="true"></i>
-                    <span>@SharedLocalizer["Listing.ConceptFilters"]</span>
-                </p>
-                <div class="listing-concept-bar__track">
-                    @foreach (var concept in conceptFilters)
-                    {
-                        var conceptActive = string.Equals(Model.ActiveTag, concept.Slug, StringComparison.OrdinalIgnoreCase);
-                        <a class="listing-concept-btn @concept.Modifier @(conceptActive ? "is-active" : null)"
-                           href="@BuildConceptFilterUrl(concept.Slug)">
-                            <i class="fas @concept.Icon" aria-hidden="true"></i>
-                            <span>@concept.Label</span>
+            <div class="listing-top-filters" aria-label="Üst filtreler">
+                <div class="listing-top-filters__row listing-top-filters__row--concepts">
+                    <p class="listing-top-filters__label">
+                        <i class="fas fa-star" aria-hidden="true"></i>
+                        <span>@SharedLocalizer["Listing.ConceptFilters"]</span>
+                    </p>
+                    <div class="listing-top-filters__track listing-concept-bar__track" role="group" aria-label="Özel konseptler">
+                        @foreach (var concept in conceptFilters)
+                        {
+                            var conceptActive = string.Equals(Model.ActiveTag, concept.Slug, StringComparison.OrdinalIgnoreCase);
+                            <a class="listing-concept-btn @concept.Modifier @(conceptActive ? "is-active" : null)"
+                               href="@BuildConceptFilterUrl(concept.Slug)">
+                                <i class="fas @concept.Icon" aria-hidden="true"></i>
+                                <span>@concept.Label</span>
+                            </a>
+                        }
+                        <a class="listing-concept-btn campaign-alt"
+                           href="/kampanyalar"
+                           @(Context.Request.Path.StartsWithSegments("/kampanyalar", StringComparison.OrdinalIgnoreCase) ? "aria-current=\"page\"" : null)>
+                            <i class="fas fa-bullhorn" aria-hidden="true"></i>
+                            <span>@SharedLocalizer["Listing.AllCampaigns"]</span>
                         </a>
-                    }
-                    <a class="listing-concept-btn campaign-alt"
-                       href="/kampanyalar"
-                       @(Context.Request.Path.StartsWithSegments("/kampanyalar", StringComparison.OrdinalIgnoreCase) ? "aria-current=\"page\"" : null)>
-                        <i class="fas fa-bullhorn" aria-hidden="true"></i>
-                        <span>@SharedLocalizer["Listing.AllCampaigns"]</span>
-                    </a>
+                    </div>
                 </div>
-            </nav>
-            <div class="filter-sort-bar" aria-label="Hızlı yemek filtreleri">
-                <div class="quick-filters">
-                    @foreach (var meal in mealFilters)
-                    {
-                        var mealQuickActive = string.Equals(Model.ActiveTag, meal.Slug, StringComparison.OrdinalIgnoreCase);
-                        <a class="quick-filter-btn @(mealQuickActive ? "active" : null)"
-                           href="@BuildMealFilterUrl(meal.Slug)"
-                           data-meal-slug="@meal.Slug">
-                            <i class="fas @meal.Icon" aria-hidden="true"></i>
-                            <span>@meal.Label</span>
-                        </a>
-                    }
+                <div class="listing-top-filters__row listing-top-filters__row--meals filter-sort-bar" aria-label="Hızlı yemek filtreleri">
+                    <p class="listing-top-filters__label listing-top-filters__label--meals">
+                        <i class="fas fa-utensils" aria-hidden="true"></i>
+                        <span>Yemek planı</span>
+                    </p>
+                    <div class="quick-filters">
+                        @foreach (var meal in mealFilters)
+                        {
+                            var mealQuickActive = string.Equals(Model.ActiveTag, meal.Slug, StringComparison.OrdinalIgnoreCase);
+                            <a class="quick-filter-btn @(mealQuickActive ? "active" : null)"
+                               href="@BuildMealFilterUrl(meal.Slug)"
+                               data-meal-slug="@meal.Slug">
+                                <i class="fas @meal.Icon" aria-hidden="true"></i>
+                                <span>@meal.Label</span>
+                            </a>
+                        }
+                    </div>
                 </div>
             </div>
             <div class="listing-reel-viewport" id="listingReelViewport">
@@ -1411,8 +1458,8 @@
                             <h2>Bu kriterlerde tesis bulunamadı</h2>
                             <p>Filtreleri sıfırlayıp tüm yayınlanan otellere dönebilir veya haritada arama yapabilirsiniz.</p>
                             <div class="listing-empty-actions">
-                                <a class="btn-fe-primary listing-empty-action listing-empty-action--primary" href="@allHotelsUrl">Tüm otelleri göster</a>
-                                <a class="btn-fe-outline listing-empty-action" href="@mapListingUrl">Haritada ara</a>
+                                <a class="btn-fe-primary listing-empty-action listing-empty-action--primary" href="@allHotelsUrl">@SharedLocalizer["Listing.ShowAllHotels"].Value</a>
+                                <a class="btn-fe-outline listing-empty-action" href="@mapListingUrl">@SharedLocalizer["Listing.SearchOnMap"].Value</a>
                             </div>
                         </div>
                     }
@@ -1589,7 +1636,7 @@
                                     </div>
                                     <div class="hotel-location"><i class="fas fa-map-pin"></i> @locationText</div>
 
-                                    <div class="rating-row" aria-label="@SharedLocalizer["Filter.Rating"]">
+                                    <div class="rating-row" aria-label="@SharedLocalizer["Filter.Rating"].Value">
                                         <span class="rating-row__score">@hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) <i class="fas fa-star" aria-hidden="true"></i></span>
                                         <span class="rating-row__label">@(hotel.Rating >= 8 ? SharedLocalizer["Listing.Excellent"].Value : SharedLocalizer["Listing.RatingGood"].Value)</span>
                                     </div>
@@ -1749,7 +1796,7 @@
                                             </span>
                                         }
                                     }
-                                    <a href="@HotelDetailUrl(hotel.Slug)" class="btn-detail">@SharedLocalizer["Listing.ViewDetails"]</a>
+                                    <a href="@HotelDetailUrl(hotel.Slug)" class="btn-detail">@SharedLocalizer["Listing.ViewDetails"].Value</a>
                                 </div>
                                 </div>
                             </div>
@@ -1762,9 +1809,9 @@
                     <h2>Filtrelere uygun tesis bulunamadı</h2>
                     <p>Filtreleri sıfırlayın veya tüm otel listesine dönün.</p>
                     <div class="listing-empty-actions">
-                        <a class="btn-fe-primary listing-empty-action listing-empty-action--primary" href="@allHotelsUrl">Tüm oteller (/oteller)</a>
-                        <button type="button" class="btn-fe-outline listing-empty-action" id="listingEmptyClearFilters">Filtreleri temizle</button>
-                        <a class="btn-fe-outline listing-empty-action" href="@mapListingUrl">Haritada ara</a>
+                        <a class="btn-fe-primary listing-empty-action listing-empty-action--primary" href="@allHotelsUrl">@SharedLocalizer["Listing.ShowAllHotels"].Value</a>
+                        <button type="button" class="btn-fe-outline listing-empty-action" id="listingEmptyClearFilters">@SharedLocalizer["Filter.Clear"].Value</button>
+                        <a class="btn-fe-outline listing-empty-action" href="@mapListingUrl">@SharedLocalizer["Listing.SearchOnMap"].Value</a>
                     </div>
                 </div>
             </div>
