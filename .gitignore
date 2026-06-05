@@ -204,9 +204,10 @@ publish/
 # Publish Web Output
 *.[Pp]ublish.xml
 *.azurePubxml
-# Note: Comment the next line if you want to checkin your web deploy settings,
-# but database connection strings (with potential passwords) will be unencrypted
+# Publish profilleri repoda (IISProfile, FolderProfile) — .user dosyaları şifre içerebilir
 *.pubxml
+!Properties/PublishProfiles/*.pubxml
+*.pubxml.user
 *.publishproj
 
 # Microsoft Azure Web App publish settings. Comment the next line if you want to
@@ -395,6 +396,12 @@ tmp_*.log
 
 # Local duplicate/copy assets (Windows)
 * - Kopya.*
+
+# Yerel publish doğrulama / geçici klasörler
+_publish-verify/
+_bak_check/
+otelturizm-clone-test/
+artifacts/
 
 # Yerel Release publish ciktisi (tools/Release/Publish-To-YayinKlasoru.ps1)
 yayinlanacakderlenmisdosyalar/
