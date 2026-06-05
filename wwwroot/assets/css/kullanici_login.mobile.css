@@ -81,7 +81,8 @@
     }
 
     .auth-solo-title {
-        font-size: 21px;
+        font-size: 20px;
+        line-height: 1.2;
     }
 
     .auth-solo-desc {
@@ -276,7 +277,19 @@
     }
 
     .auth-card--verify .auth-form-panel--solo {
-        padding: 18px 14px 16px;
+        padding: 16px 14px 14px;
+        overflow: hidden;
+    }
+
+    .auth-card--verify {
+        max-width: 100%;
+        width: 100%;
+        margin-inline: auto;
+        overflow: clip;
+    }
+
+    .login-main:has(.auth-card--verify) {
+        padding: 12px max(12px, env(safe-area-inset-right)) 20px max(12px, env(safe-area-inset-left));
     }
 
     .auth-card--verify .auth-verify-banner {
@@ -286,10 +299,10 @@
     }
 
     .auth-form--verify .form-control--otp {
-        min-height: 48px;
-        font-size: 22px;
-        letter-spacing: 0.22em;
-        padding: 10px 12px;
+        min-height: 46px;
+        font-size: 18px;
+        letter-spacing: 0.12em;
+        padding: 10px 8px;
         border-radius: 10px;
     }
 
@@ -297,6 +310,8 @@
         margin-top: 6px;
         font-size: 11.5px;
         text-align: center;
+        padding-inline: 4px;
+        overflow-wrap: anywhere;
     }
 
     .auth-verify-footer {
@@ -319,5 +334,13 @@
 @media (min-width: 901px) {
     .login-main {
         padding: 36px 24px 56px;
+    }
+
+    .login-main:has(.auth-card--verify) {
+        padding: 32px 24px 48px;
+    }
+
+    .auth-card--verify .auth-form-panel--solo {
+        padding: 32px 28px 24px;
     }
 }
