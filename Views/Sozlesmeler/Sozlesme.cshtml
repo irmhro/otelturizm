@@ -46,6 +46,14 @@
                 <div class="sozlesme-summary">@Html.Raw(Model.SummaryHtml)</div>
             }
             <div class="sozlesme-content">@Html.Raw(Model.ContentHtml)</div>
+            @if (!string.IsNullOrWhiteSpace(Model.PdfUrl))
+            {
+                <div class="sozlesme-pdf-footer">
+                    <a class="sozlesme-pdf-btn" href="@Model.PdfUrl" target="_blank" rel="noopener noreferrer" download>
+                        <i class="fas fa-download" aria-hidden="true"></i> PDF olarak indir
+                    </a>
+                </div>
+            }
         </article>
 
         @if (Model.RelatedContracts?.Count > 0)
